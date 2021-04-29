@@ -25,24 +25,33 @@ import javax.xml.xpath.XPathFactory;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.Collection;
+import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import org.w3c.dom.Document;
+import org.w3c.dom.Element;
 import org.w3c.dom.NodeList;
 
 public class Modules {
 
    private final Path base;
+   private HashMap<String, Set<Path>> moduleMapping = new HashMap<>();
 
    public Modules(Path base) {
       this.base = base;
    }
 
-   public List<Path> find(Manifest.Entry entry) {
+   public Collection<Path> find(Manifest.Entry entry) {
       try {
          final Stream<Path> modules = Files.walk(base.resolve("modules"));
+         if (moduleMapping.containsKey(entry.getFileName())) {
+            return moduleMapping.get(entry.getFileName());
+         }
          List<Path> updates = modules.filter(p-> p.getFileName().toString().equals("module.xml"))
             .filter(p->containsArtifact(p, entry.getFileName())).collect(Collectors.toList());
 
@@ -60,9 +69,27 @@ public class Modules {
          Document input = factory.newDocumentBuilder().parse(p.toFile());
 
          XPath xpath = XPathFactory.newInstance().newXPath();
-         String expr = String.format("//resources/resource-root[contains(@%s, '%s')]", "path", artifactName);
+         String expr = "//resources/resource-root";
          NodeList nodes = (NodeList) xpath.evaluate(expr, input, XPathConstants.NODESET);
-         return nodes.getLength() > 0;
+         for (int i=0; i < nodes.getLength(); i++) {
+            Element node = (Element)nodes.item(i);
+            final String path = node.getAttribute("path");
+
+            if (!path.endsWith(".jar")) {
+               continue;
+            }
+
+            // build cache of modules
+            if (!moduleMapping.containsKey(path)) {
+               moduleMapping.put(path, new HashSet<>());
+            }
+            moduleMapping.get(path).add(p);
+
+            if (path.equals(artifactName)) {
+               return true;
+            }
+         }
+         return false;
       } catch (Exception e) {
          throw new RuntimeException(e);
       }

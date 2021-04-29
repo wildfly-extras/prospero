@@ -31,7 +31,7 @@ import java.io.Writer;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
-import java.util.List;
+import java.util.Collection;
 import java.util.TreeSet;
 
 import org.apache.commons.io.FileUtils;
@@ -55,6 +55,7 @@ public class Update {
 
    private void update(Path base, Path repo) throws Exception {
       final Manifest manifest = Manifest.parseManifest(base.resolve("manifest.xml"));
+      final Modules modules = new Modules(base);
 
       boolean updatesFound = false;
       for (Manifest.Entry entry : manifest.getEntries()) {
@@ -79,7 +80,7 @@ public class Update {
             System.out.printf("Updating [%s:%s]\t\t%s => %s%n", entry.aPackage, entry.name, entry.version, latestVersion.version);
 
             // find module defining old version
-            List<Path> updates = new Modules(base).find(entry);
+            Collection<Path> updates = modules.find(entry);
 
             if (updates.isEmpty()) {
                throw new RuntimeException("Artifact " + entry.getFileName() + " not found");

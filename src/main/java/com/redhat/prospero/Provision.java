@@ -20,7 +20,7 @@ package com.redhat.prospero;
 import java.io.IOException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.List;
+import java.util.Collection;
 
 import org.apache.commons.io.FileUtils;
 
@@ -42,8 +42,9 @@ public class Provision {
       final Manifest manifest = Manifest.parseManifest(base.resolve("manifest.xml"));
 
       System.out.println("Resolving artifacts from " + repo);
+      final Modules modules = new Modules(base);
       // foreach artifact
-      manifest.getEntries().stream().parallel().forEach(entry -> {
+      manifest.getEntries().forEach(entry -> {
          //  download from maven repo
          // TODO: use proper maven resolution :)
          Path artifactSource = repo.resolve(Paths.get(
@@ -55,7 +56,7 @@ public class Provision {
 
          //  find in modules
          // TODO: index modules.xml to make it faster instead of walking them every time
-         List<Path> updates = new Modules(base).find(entry);
+            Collection<Path> updates = modules.find(entry);
 
          if (updates.isEmpty()) {
             throw new RuntimeException("Artifact " + entry.getFileName() + " not found");
