@@ -37,9 +37,12 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import net.lingala.zip4j.ZipFile;
 import org.apache.commons.io.FileUtils;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
@@ -63,6 +66,37 @@ public class TestEnvBuilder {
       exportManifest(Paths.get(targetWfly, "modules"), Paths.get(targetWfly, "manifest.xml"));
       replaceArtifactsWithResources(Paths.get(targetWfly, "modules"));
       exportMvnRepo(Paths.get(targetWfly, "manifest.xml"), LOCAL_MVN_REPO, Paths.get(targetRepo));
+      generatePackages(Paths.get(targetWfly), Paths.get(targetRepo));
+
+      FileUtils.deleteDirectory(Paths.get(targetWfly).toFile());
+   }
+
+   private static void generatePackages(Path base, Path repo) throws Exception {
+      System.out.println("Creating WFLY packages");
+
+      final ZipFile baseZip = new ZipFile("wildfly-base-1.0.0.zip");
+      baseZip.addFiles(Arrays.asList("LICENSE.txt", "README.txt", "copyright.txt", "jboss-modules.jar", "manifest.xml")
+                          .stream().map(p->base.resolve(p).toFile()).collect(Collectors.toList()));
+      baseZip.addFolder(base.resolve("welcome-content").toFile());
+      exportToRepo(repo, baseZip.getFile(), "wildfly-base", "1.0.0");
+
+      final ZipFile binZip = new ZipFile("wildfly-bin-1.0.0.zip");
+      binZip.addFolder(base.resolve("bin").toFile());
+      exportToRepo(repo, binZip.getFile(), "wildfly-bin", "1.0.0");
+
+      final ZipFile modulesZip = new ZipFile("wildfly-modules-1.0.0.zip");
+      modulesZip.addFolder(base.resolve("modules").toFile());
+      exportToRepo(repo, modulesZip.getFile(), "wildfly-modules", "1.0.0");
+
+      final ZipFile standaloneZip = new ZipFile("wildfly-standalone-1.0.0.zip");
+      standaloneZip.addFolder(base.resolve("standalone").toFile());
+      exportToRepo(repo, standaloneZip.getFile(), "wildfly-standalone", "1.0.0");
+   }
+
+   private static void exportToRepo(Path repo, File zip, String name, String version) throws IOException {
+      final Path targetDir = repo.resolve(Paths.get("org", "wildfly", "prospero", name, version));
+      Files.createDirectories(targetDir);
+      Files.move(zip.toPath(), targetDir.resolve(zip.getName()));
    }
 
    private static void exportMvnRepo(Path manifestPath, Path sourceRepo, Path targetRepo) throws XPathExpressionException, ParserConfigurationException, IOException, SAXException {
@@ -99,6 +133,14 @@ public class TestEnvBuilder {
       File f = manifestPath.toFile();
       final PrintWriter printWriter = new PrintWriter(f);
       printWriter.println("<manifest>");
+      // add packages
+      for (String pack : Arrays.asList("wildfly-bin", "wildfly-modules", "wildfly-standalone")) {
+         printWriter.println(String.format("<package group=\"%s\" name=\"%s\" version=\"%s\"/>",
+                                        "org.wildfly.prospero", pack, "1.0.0"));
+
+      }
+
+      // add artifacts
       modules.filter(p-> p.getFileName().toString().equals("module.xml"))
          .flatMap(p-> TestEnvBuilder.extractArtifacts(p).stream())
          .forEach(gav -> {

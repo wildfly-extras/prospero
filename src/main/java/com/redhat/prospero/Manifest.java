@@ -45,9 +45,11 @@ class Manifest {
 
    private final ArrayList<Entry> entries;
    private final Path manifestFile;
+   private final ArrayList<Package> packages;
 
-   private Manifest(ArrayList<Entry> entries, Path manifestFile) {
+   private Manifest(ArrayList<Entry> entries, ArrayList<Package> packages, Path manifestFile) {
       this.entries = entries;
+      this.packages = packages;
       this.manifestFile = manifestFile;
    }
 
@@ -57,6 +59,13 @@ class Manifest {
       factory.setFeature("http://apache.org/xml/features/disallow-doctype-decl", true);
       Document input = factory.newDocumentBuilder().parse(manifestPath.toFile());
 
+      final ArrayList<Entry> entries = parseArtifacts(input);
+      final ArrayList<Package> packages = parsePackages(input);
+      final Manifest manifest = new Manifest(entries, packages, manifestPath);
+      return manifest;
+   }
+
+   private static ArrayList<Entry> parseArtifacts(Document input) throws XPathExpressionException {
       XPath xpath = XPathFactory.newInstance().newXPath();
       String expr = "//artifact";
       NodeList nodes = (NodeList) xpath.evaluate(expr, input, XPathConstants.NODESET);
@@ -68,12 +77,29 @@ class Manifest {
                             node.getAttribute("version"),
                             node.getAttribute("classifier")));
       }
-      final Manifest manifest = new Manifest(entries, manifestPath);
-      return manifest;
+      return entries;
+   }
+
+   private static ArrayList<Package> parsePackages(Document input) throws XPathExpressionException {
+      XPath xpath = XPathFactory.newInstance().newXPath();
+      String expr = "//package";
+      NodeList nodes = (NodeList) xpath.evaluate(expr, input, XPathConstants.NODESET);
+      final ArrayList<Package> entries = new ArrayList<>(nodes.getLength());
+      for (int i = 0; i < nodes.getLength(); i++) {
+         Element node = (Element) nodes.item(i);
+         entries.add(new Package(node.getAttribute("group"),
+                               node.getAttribute("name"),
+                               node.getAttribute("version")));
+      }
+      return entries;
    }
 
    public ArrayList<Entry> getEntries() {
       return new ArrayList<>(entries);
+   }
+
+   public ArrayList<Package> getPackages() {
+      return packages;
    }
 
    public void updateVersion(Entry newVersion) {
@@ -164,6 +190,40 @@ class Manifest {
 
       public Entry newVersion(String newVersion) {
          return new Entry(aPackage, name, newVersion, classifier);
+      }
+   }
+
+   static class Package {
+
+      public final String group;
+      public final String name;
+      public final String version;
+
+      public Package(String group, String name, String version) {
+         this.group = group;
+         this.name = name;
+         this.version = version;
+      }
+
+      public String getFileName() {
+         return String.format("%s-%s.zip", name, version);
+      }
+
+      public Path getRelativePath() {
+         List<String> path = new ArrayList<>();
+         String start = null;
+         for (String f : group.split("\\.")) {
+            if (start == null) {
+               start = f;
+            } else {
+               path.add(f);
+            }
+         }
+         path.add(name);
+         path.add(version);
+         path.add(getFileName());
+
+         return Paths.get(start, path.toArray(new String[]{}));
       }
    }
 }

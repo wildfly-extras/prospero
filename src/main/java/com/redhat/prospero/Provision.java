@@ -22,6 +22,7 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Collection;
 
+import net.lingala.zip4j.ZipFile;
 import org.apache.commons.io.FileUtils;
 
 public class Provision {
@@ -38,8 +39,32 @@ public class Provision {
    }
 
    public void provision(Path base, Path repo) throws Exception {
+      System.out.println("Installing base package");
+
+      // install base package
+      String basePackageGroup = "org.wildfly.prospero";
+      String basePackageArtifact = "wildfly-base";
+      String basePackageVersion = "1.0.0";
+      final Manifest.Package basePackage = new Manifest.Package(basePackageGroup, basePackageArtifact, basePackageVersion);
+      Path basePackageSource = repo.resolve(basePackage.getRelativePath());
+      if (!basePackageSource.toFile().exists()) {
+         throw new RuntimeException("Unable to find artifact " + basePackageSource);
+      }
+      unzip(basePackageSource, base);
+
       // go through manifest
       final Manifest manifest = Manifest.parseManifest(base.resolve("manifest.xml"));
+
+      System.out.println("Installing remaining packages");
+      // resolve packages
+      for (Manifest.Package aPackage : manifest.getPackages()) {
+         System.out.printf("Installing package [%s] %n", aPackage.name);
+         Path packagePath = repo.resolve(aPackage.getRelativePath());
+         if (!packagePath.toFile().exists()) {
+            throw new RuntimeException("Unable to find artifact " + aPackage.name  );
+         }
+         unzip(packagePath, base);
+      }
 
       System.out.println("Resolving artifacts from " + repo);
       final Modules modules = new Modules(base);
@@ -72,5 +97,9 @@ public class Provision {
          });
       });
       System.out.println("Installation provisioned and ready at " + base);
+   }
+
+   private void unzip(Path archive, Path target) throws Exception {
+      new ZipFile(archive.toFile()).extractAll(target.toString());
    }
 }
