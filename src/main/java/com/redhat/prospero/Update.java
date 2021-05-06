@@ -49,16 +49,26 @@ public class Update {
       }
       final String base = args[0];
       final String repo = args[1];
+      final String artifact;
+      if (args.length == 3) {
+         // TODO: take multiple artifacts
+         artifact = args[2];
+      } else {
+         artifact = null;
+      }
       
-      new Update().update(Paths.get(base), Paths.get(repo));
+      new Update().update(Paths.get(base), Paths.get(repo), artifact);
    }
 
-   private void update(Path base, Path repo) throws Exception {
+   private void update(Path base, Path repo, String artifact) throws Exception {
       final Manifest manifest = Manifest.parseManifest(base.resolve("manifest.xml"));
       final Modules modules = new Modules(base);
 
       boolean updatesFound = false;
       for (Manifest.Entry entry : manifest.getEntries()) {
+         if (artifact != null && !artifact.equals(entry.name)) {
+            continue;
+         }
          final Path relativePath = entry.getRelativePath();
          // check if newer version exists
          final String[] versions = repo.resolve(relativePath).getParent().getParent().toFile().list();
