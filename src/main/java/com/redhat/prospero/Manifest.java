@@ -41,7 +41,7 @@ import org.w3c.dom.Element;
 import org.w3c.dom.NodeList;
 import org.xml.sax.SAXException;
 
-class Manifest {
+public class Manifest {
 
    private final ArrayList<Entry> entries;
    private final Path manifestFile;
@@ -53,7 +53,7 @@ class Manifest {
       this.manifestFile = manifestFile;
    }
 
-   static Manifest parseManifest(Path manifestPath) throws ParserConfigurationException, SAXException, IOException, XPathExpressionException {
+   public static Manifest parseManifest(Path manifestPath) throws ParserConfigurationException, SAXException, IOException, XPathExpressionException {
       DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
       factory.setFeature(XMLConstants.FEATURE_SECURE_PROCESSING, true);
       factory.setFeature("http://apache.org/xml/features/disallow-doctype-decl", true);
@@ -158,7 +158,7 @@ class Manifest {
       return null;
    }
 
-   static class Entry {
+   public static class Entry {
 
       public final String aPackage;
       public final String name;

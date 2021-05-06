@@ -1,0 +1,22 @@
+#!/bin/bash
+
+CLASSPATH="target/prospero-1.0-SNAPSHOT.jar:target/dependency/*"
+
+if [ "$1" == 'init' ];
+then
+  if [ ! -d "${2}" ];
+  then
+    echo "Need valid Wildfly."
+    exit 1;
+  fi
+
+  java -cp "${CLASSPATH}" com.redhat.prospero.TestEnvBuilder "${2}" "target/wfly" "target/prospero-repo"
+elif [ "$1" == 'mock' ];
+then
+
+  java -cp "${CLASSPATH}" com.redhat.prospero.demo.Mocker "${2}" "${3}" "target/wfly" "target/prospero-repo" "${@:4}"
+
+else
+  echo "Unrecognized command"
+  exit 1;
+fi

@@ -98,7 +98,7 @@ public class Update {
                   Manifest.Entry e = manifest.find(dep.group, dep.name, dep.classifier);
 
                   if (new ComparableVersion(e.version).compareTo(new ComparableVersion(dep.minVersion)) < 0) {
-                     System.out.println("Found upgrades required for " + dep.name);
+                     System.out.println("Found upgrades required for " + latestVersion.name);
                      // update dependencies if needed
                      update(base, repo, e.name);
                   }
@@ -131,7 +131,7 @@ public class Update {
                   throw new RuntimeException(e);
                }
             }
-            System.out.printf("  Done [%s:%s]", entry.aPackage, entry.name);
+            System.out.printf("  Done [%s:%s]%n", entry.aPackage, entry.name);
          }
       }
 

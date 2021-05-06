@@ -1,0 +1,22 @@
+#!/bin/bash
+
+CLASSPATH="target/prospero-1.0-SNAPSHOT.jar:target/dependency/*"
+
+if [ "$1" == 'install' ];
+then
+  java -cp "${CLASSPATH}" com.redhat.prospero.Provision "target/wfly" "target/prospero-repo"
+elif [ "$1" == 'update' ];
+then
+  if [ -n "${2}" ];
+  then
+    java -cp "${CLASSPATH}" com.redhat.prospero.Update "target/wfly" "target/prospero-repo" "${2}"
+  else
+    java -cp "${CLASSPATH}" com.redhat.prospero.Update "target/wfly" "target/prospero-repo"
+  fi
+elif [ "$1" == 'deploy' ];
+then
+    java -cp "${CLASSPATH}" com.redhat.prospero.Deployer "${2}" "${3}" "${4}" "${5}" "target/prospero-repo" "${@:6}"
+else
+  echo "Unrecognized command"
+  exit 1;
+fi

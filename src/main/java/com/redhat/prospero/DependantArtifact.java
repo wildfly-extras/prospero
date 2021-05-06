@@ -34,11 +34,6 @@ import org.w3c.dom.NodeList;
 
 public class DependantArtifact {
 
-   public static void main(String[] args) throws Exception {
-      final DependantArtifact dependantArtifact = parseXml(Paths.get("/Users/spyrkob/workspaces/set/prospero/prospero/test-dep.xml"));
-      System.out.println(dependantArtifact);
-   }
-
    public final String group;
    public final String name;
    public final String version;
