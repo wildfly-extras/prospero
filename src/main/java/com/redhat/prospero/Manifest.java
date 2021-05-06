@@ -149,6 +149,15 @@ class Manifest {
       xformer.transform(new DOMSource(input), new StreamResult(output));
    }
 
+   public Entry find(String group, String name, String classifier) {
+      for (Entry entry : entries) {
+         if (entry.aPackage.equals(group) && entry.name.equals(name) && entry.classifier.equals(classifier)) {
+            return entry;
+         }
+      }
+      return null;
+   }
+
    static class Entry {
 
       public final String aPackage;

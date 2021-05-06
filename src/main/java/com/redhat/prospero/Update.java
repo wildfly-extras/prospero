@@ -87,6 +87,26 @@ public class Update {
 
          if (latestVersion != null) {
             updatesFound = true;
+
+            // check if dependency info exists
+            final Path dependenciesXml = repo.resolve(latestVersion.getRelativePath().getParent()).resolve("dependencies.xml");
+            if (dependenciesXml.toFile().exists()) {
+               final DependantArtifact dependantArtifact = DependantArtifact.parseXml(dependenciesXml);
+
+               // check if all dependencies are at least on the min version
+               for (DependantArtifact.Dependency dep : dependantArtifact.deps) {
+                  Manifest.Entry e = manifest.find(dep.group, dep.name, dep.classifier);
+
+                  if (new ComparableVersion(e.version).compareTo(new ComparableVersion(dep.minVersion)) < 0) {
+                     System.out.println("Found upgrades required for " + dep.name);
+                     // update dependencies if needed
+                     update(base, repo, e.name);
+                  }
+                  // verify new version is enough
+               }
+
+            }
+
             System.out.printf("Updating [%s:%s]\t\t%s => %s%n", entry.aPackage, entry.name, entry.version, latestVersion.version);
 
             // find module defining old version
