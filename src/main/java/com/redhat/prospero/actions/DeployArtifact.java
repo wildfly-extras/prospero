@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-package com.redhat.prospero;
+package com.redhat.prospero.actions;
 
 import java.io.PrintWriter;
 import java.nio.file.Files;
@@ -24,11 +24,11 @@ import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.List;
 
-public class Deployer {
+public class DeployArtifact {
 
    private final String repo;
 
-   public Deployer(String repo) {
+   public DeployArtifact(String repo) {
       this.repo = repo;
    }
 
@@ -46,11 +46,11 @@ public class Deployer {
          }
       }
 
-      final Deployer deployer = new Deployer(repo);
-      deployer.deploy(group, artifact, version, fileToDeploy);
+      final DeployArtifact installer = new DeployArtifact(repo);
+      installer.deploy(group, artifact, version, fileToDeploy);
 
       if (!deps.isEmpty()) {
-         deployer.generateManifest(group, artifact, version, deps);
+         installer.generateManifest(group, artifact, version, deps);
       }
    }
 

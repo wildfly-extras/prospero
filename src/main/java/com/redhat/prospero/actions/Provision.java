@@ -15,13 +15,15 @@
  * limitations under the License.
  */
 
-package com.redhat.prospero;
+package com.redhat.prospero.actions;
 
 import java.io.IOException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Collection;
 
+import com.redhat.prospero.descriptors.Manifest;
+import com.redhat.prospero.modules.Modules;
 import net.lingala.zip4j.ZipFile;
 import org.apache.commons.io.FileUtils;
 

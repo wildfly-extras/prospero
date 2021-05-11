@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-package com.redhat.prospero;
+package com.redhat.prospero.demo;
 
 import javax.xml.XMLConstants;
 import javax.xml.parsers.DocumentBuilderFactory;
@@ -42,6 +42,7 @@ import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import com.redhat.prospero.descriptors.Manifest;
 import net.lingala.zip4j.ZipFile;
 import org.apache.commons.io.FileUtils;
 import org.w3c.dom.Document;
@@ -49,7 +50,7 @@ import org.w3c.dom.Element;
 import org.w3c.dom.NodeList;
 import org.xml.sax.SAXException;
 
-public class TestEnvBuilder {
+public class DemoInitializer {
 
    public static final Path LOCAL_MVN_REPO = Paths.get(System.getProperty("user.home"), ".m2", "repository");
 
@@ -142,7 +143,7 @@ public class TestEnvBuilder {
 
       // add artifacts
       modules.filter(p-> p.getFileName().toString().equals("module.xml"))
-         .flatMap(p-> TestEnvBuilder.extractArtifacts(p).stream())
+         .flatMap(p-> DemoInitializer.extractArtifacts(p).stream())
          .forEach(gav -> {
             final String[] coords = gav.split(":");
             if (coords.length != 3 && coords.length != 4) {

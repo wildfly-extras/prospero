@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-package com.redhat.prospero;
+package com.redhat.prospero.modules;
 
 import javax.xml.XMLConstants;
 import javax.xml.parsers.DocumentBuilderFactory;
@@ -33,6 +33,7 @@ import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import com.redhat.prospero.descriptors.Manifest;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.NodeList;

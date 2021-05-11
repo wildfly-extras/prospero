@@ -10,11 +10,11 @@ then
     exit 1;
   fi
 
-  java -cp "${CLASSPATH}" com.redhat.prospero.TestEnvBuilder "${2}" "target/wfly" "target/prospero-repo"
+  java -cp "${CLASSPATH}" com.redhat.prospero.demo.DemoInitializer "${2}" "target/wfly" "target/prospero-repo"
 elif [ "$1" == 'mock' ];
 then
 
-  java -cp "${CLASSPATH}" com.redhat.prospero.demo.Mocker "${2}" "${3}" "target/wfly" "target/prospero-repo" "${@:4}"
+  java -cp "${CLASSPATH}" com.redhat.prospero.demo.ArtifactMocker "${2}" "${3}" "target/wfly" "target/prospero-repo" "${@:4}"
 
 else
   echo "Unrecognized command"

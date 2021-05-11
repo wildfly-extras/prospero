@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-package com.redhat.prospero;
+package com.redhat.prospero.actions;
 
 import javax.xml.XMLConstants;
 import javax.xml.parsers.DocumentBuilderFactory;
@@ -34,6 +34,9 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.TreeSet;
 
+import com.redhat.prospero.descriptors.DependencyDescriptor;
+import com.redhat.prospero.descriptors.Manifest;
+import com.redhat.prospero.modules.Modules;
 import org.apache.commons.io.FileUtils;
 import org.apache.maven.artifact.versioning.ComparableVersion;
 import org.w3c.dom.Document;
@@ -91,10 +94,10 @@ public class Update {
             // check if dependency info exists
             final Path dependenciesXml = repo.resolve(latestVersion.getRelativePath().getParent()).resolve("dependencies.xml");
             if (dependenciesXml.toFile().exists()) {
-               final DependantArtifact dependantArtifact = DependantArtifact.parseXml(dependenciesXml);
+               final DependencyDescriptor dependencyDescriptor = DependencyDescriptor.parseXml(dependenciesXml);
 
                // check if all dependencies are at least on the min version
-               for (DependantArtifact.Dependency dep : dependantArtifact.deps) {
+               for (DependencyDescriptor.Dependency dep : dependencyDescriptor.deps) {
                   Manifest.Entry e = manifest.find(dep.group, dep.name, dep.classifier);
 
                   if (new ComparableVersion(e.version).compareTo(new ComparableVersion(dep.minVersion)) < 0) {

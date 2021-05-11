@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-package com.redhat.prospero;
+package com.redhat.prospero.descriptors;
 
 import javax.xml.XMLConstants;
 import javax.xml.parsers.DocumentBuilderFactory;
@@ -23,16 +23,14 @@ import javax.xml.xpath.XPath;
 import javax.xml.xpath.XPathConstants;
 import javax.xml.xpath.XPathFactory;
 
-import java.io.File;
 import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.util.ArrayList;
 
 import org.w3c.dom.Document;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
 
-public class DependantArtifact {
+public class DependencyDescriptor {
 
    public final String group;
    public final String name;
@@ -40,7 +38,7 @@ public class DependantArtifact {
    public final String classifier;
    public final ArrayList<Dependency> deps;
 
-   private DependantArtifact(String group, String name, String version, String classifier, ArrayList<Dependency> deps) {
+   private DependencyDescriptor(String group, String name, String version, String classifier, ArrayList<Dependency> deps) {
       this.group = group;
       this.name = name;
       this.version = version;
@@ -48,7 +46,7 @@ public class DependantArtifact {
       this.deps = deps;
    }
 
-   public static DependantArtifact parseXml(Path path) throws Exception {
+   public static DependencyDescriptor parseXml(Path path) throws Exception {
       DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
       factory.setFeature(XMLConstants.FEATURE_SECURE_PROCESSING, true);
       factory.setFeature("http://apache.org/xml/features/disallow-doctype-decl", true);
@@ -66,7 +64,7 @@ public class DependantArtifact {
          deps.add(parseDependency(nodes.item(i)));
       }
 
-      return new DependantArtifact(group, name, version, classifier, deps);
+      return new DependencyDescriptor(group, name, version, classifier, deps);
    }
 
    private static Dependency parseDependency(Node dep) throws Exception {

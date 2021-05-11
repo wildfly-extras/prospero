@@ -17,16 +17,15 @@
 
 package com.redhat.prospero.demo;
 
-import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.List;
 
-import com.redhat.prospero.Deployer;
-import com.redhat.prospero.Manifest;
+import com.redhat.prospero.actions.DeployArtifact;
+import com.redhat.prospero.descriptors.Manifest;
 
-public class Mocker {
+public class ArtifactMocker {
 
    public static void main(String[] args) throws Exception {
       String name = args[0];
@@ -41,7 +40,7 @@ public class Mocker {
          }
       }
 
-      new Mocker().mockArtifact(name, newVersion, base, repo, deps);
+      new ArtifactMocker().mockArtifact(name, newVersion, base, repo, deps);
    }
 
    public void mockArtifact(String name, String newVersion, String base, String repo, List<String> deps) throws Exception {
@@ -74,7 +73,7 @@ public class Mocker {
 //      Files.copy(oldArtifact, newArtifact);
 //
 //      // generate dependency manifest
-      final Deployer deployer = new Deployer(repo);
+      final DeployArtifact deployer = new DeployArtifact(repo);
       deployer.deploy(oldEntry.aPackage, oldEntry.name, newVersion, oldArtifact.toString());
       deployer.generateManifest(oldEntry.aPackage, oldEntry.name, newVersion, deps);
       System.out.printf("Mocked %s %s as %s.%n", oldArtifact, oldEntry.version, newVersion);

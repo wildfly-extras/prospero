@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-package com.redhat.prospero;
+package com.redhat.prospero.descriptors;
 
 import javax.xml.XMLConstants;
 import javax.xml.parsers.DocumentBuilderFactory;
@@ -202,7 +202,7 @@ public class Manifest {
       }
    }
 
-   static class Package {
+   public static class Package {
 
       public final String group;
       public final String name;
