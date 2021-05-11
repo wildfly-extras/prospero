@@ -46,10 +46,10 @@ public class ArtifactMocker {
    public void mockArtifact(String name, String newVersion, String base, String repo, List<String> deps) throws Exception {
       // find current version and group name of artifact
       final Manifest manifest = Manifest.parseManifest(Paths.get(base).resolve("manifest.xml"));
-      Manifest.Entry oldEntry = null;
-      for (Manifest.Entry entry : manifest.getEntries()) {
-         if (entry.name.equals(name)) {
-            oldEntry = entry;
+      Manifest.Artifact oldEntry = null;
+      for (Manifest.Artifact artifact : manifest.getArtifacts()) {
+         if (artifact.artifactId.equals(name)) {
+            oldEntry = artifact;
             break;
          }
       }
@@ -74,8 +74,8 @@ public class ArtifactMocker {
 //
 //      // generate dependency manifest
       final DeployArtifact deployer = new DeployArtifact(repo);
-      deployer.deploy(oldEntry.aPackage, oldEntry.name, newVersion, oldArtifact.toString());
-      deployer.generateManifest(oldEntry.aPackage, oldEntry.name, newVersion, deps);
+      deployer.deploy(oldEntry.groupId, oldEntry.artifactId, newVersion, oldArtifact.toString());
+      deployer.generateManifest(oldEntry.groupId, oldEntry.artifactId, newVersion, deps);
       System.out.printf("Mocked %s %s as %s.%n", oldArtifact, oldEntry.version, newVersion);
    }
 

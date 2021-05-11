@@ -26,7 +26,6 @@ import javax.xml.transform.stream.StreamResult;
 import javax.xml.xpath.XPath;
 import javax.xml.xpath.XPathConstants;
 import javax.xml.xpath.XPathFactory;
-import java.io.File;
 import java.io.FileWriter;
 import java.io.Writer;
 import java.nio.file.Path;
@@ -40,7 +39,7 @@ import org.w3c.dom.NodeList;
 
 public class ModuleWriter {
 
-   public static void updateVersionInModuleXml(Path module, Manifest.Entry oldVersion, Manifest.Entry newVersion) throws Exception {
+   public static void updateVersionInModuleXml(Path module, Manifest.Artifact oldVersion, Manifest.Artifact newVersion) throws Exception {
       DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
       factory.setFeature(XMLConstants.FEATURE_SECURE_PROCESSING, true);
       factory.setFeature("http://apache.org/xml/features/disallow-doctype-decl", true);

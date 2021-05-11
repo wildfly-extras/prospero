@@ -47,14 +47,14 @@ public class Modules {
       this.base = base;
    }
 
-   public Collection<Path> find(Manifest.Entry entry) {
+   public Collection<Path> find(Manifest.Artifact artifact) {
       try {
          final Stream<Path> modules = Files.walk(base.resolve("modules"));
-         if (moduleMapping.containsKey(entry.getFileName())) {
-            return moduleMapping.get(entry.getFileName());
+         if (moduleMapping.containsKey(artifact.getFileName())) {
+            return moduleMapping.get(artifact.getFileName());
          }
          List<Path> updates = modules.filter(p-> p.getFileName().toString().equals("module.xml"))
-            .filter(p->containsArtifact(p, entry.getFileName())).collect(Collectors.toList());
+            .filter(p->containsArtifact(p, artifact.getFileName())).collect(Collectors.toList());
 
          return updates;
       } catch (IOException e) {

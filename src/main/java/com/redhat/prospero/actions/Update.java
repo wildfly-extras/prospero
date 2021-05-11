@@ -55,14 +55,14 @@ public class Update {
       final Modules modules = new Modules(base);
 
       boolean updatesFound = false;
-      for (Manifest.Entry entry : manifest.getEntries()) {
-         if (artifact != null && !artifact.equals(entry.name)) {
+      for (Manifest.Artifact entry : manifest.getArtifacts()) {
+         if (artifact != null && !artifact.equals(entry.artifactId)) {
             continue;
          }
          final Path relativePath = entry.getRelativePath();
          // check if newer version exists
          final String[] versions = repo.resolve(relativePath).getParent().getParent().toFile().list();
-         Manifest.Entry latestVersion = null;
+         Manifest.Artifact latestVersion = null;
          if (versions.length > 1) {
             final TreeSet<ComparableVersion> comparableVersions = new TreeSet<>();
             for (String version : versions) {
@@ -85,19 +85,19 @@ public class Update {
 
                // check if all dependencies are at least on the min version
                for (DependencyDescriptor.Dependency dep : dependencyDescriptor.deps) {
-                  Manifest.Entry e = manifest.find(dep.group, dep.name, dep.classifier);
+                  Manifest.Artifact e = manifest.find(dep.group, dep.name, dep.classifier);
 
                   if (new ComparableVersion(e.version).compareTo(new ComparableVersion(dep.minVersion)) < 0) {
-                     System.out.println("Found upgrades required for " + latestVersion.name);
+                     System.out.println("Found upgrades required for " + latestVersion.artifactId);
                      // update dependencies if needed
-                     update(base, repo, e.name);
+                     update(base, repo, e.artifactId);
                   }
                   // verify new version is enough
                }
 
             }
 
-            System.out.printf("Updating [%s:%s]\t\t%s => %s%n", entry.aPackage, entry.name, entry.version, latestVersion.version);
+            System.out.printf("Updating [%s:%s]\t\t%s => %s%n", entry.groupId, entry.artifactId, entry.version, latestVersion.version);
 
             // find module defining old version
             Collection<Path> updates = modules.find(entry);
@@ -124,7 +124,7 @@ public class Update {
                throw new RuntimeException(e);
             }
 
-            System.out.printf("  Done [%s:%s]%n", entry.aPackage, entry.name);
+            System.out.printf("  Done [%s:%s]%n", entry.groupId, entry.artifactId);
          }
       }
 

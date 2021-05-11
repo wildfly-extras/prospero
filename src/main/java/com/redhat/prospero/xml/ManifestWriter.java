@@ -44,13 +44,13 @@ public class ManifestWriter {
          // add packages
          for (Manifest.Package aPackage : manifest.getPackages()) {
             printWriter.println(String.format("<package group=\"%s\" name=\"%s\" version=\"%s\"/>",
-                                              aPackage.group, aPackage.name, aPackage.version));
+                                              aPackage.groupId, aPackage.artifact, aPackage.version));
          }
 
          // add artifacts
-         for (Manifest.Entry entry : manifest.getEntries()) {
+         for (Manifest.Artifact artifact : manifest.getArtifacts()) {
             printWriter.println(String.format("<artifact package=\"%s\" name=\"%s\" version=\"%s\" classifier=\"%s\"/>",
-                                              entry.aPackage, entry.name, entry.version, entry.classifier));
+                                              artifact.groupId, artifact.artifactId, artifact.version, artifact.classifier));
          }
 
          printWriter.println("</manifest>");

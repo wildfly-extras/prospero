@@ -32,15 +32,15 @@ import org.w3c.dom.NodeList;
 
 public class DependencyDescriptor {
 
-   public final String group;
-   public final String name;
+   public final String groupId;
+   public final String artifactId;
    public final String version;
    public final String classifier;
    public final ArrayList<Dependency> deps;
 
-   private DependencyDescriptor(String group, String name, String version, String classifier, ArrayList<Dependency> deps) {
-      this.group = group;
-      this.name = name;
+   private DependencyDescriptor(String groupId, String artifactId, String version, String classifier, ArrayList<Dependency> deps) {
+      this.groupId = groupId;
+      this.artifactId = artifactId;
       this.version = version;
       this.classifier = classifier;
       this.deps = deps;

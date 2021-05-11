@@ -60,10 +60,10 @@ public class Provision {
       System.out.println("Installing remaining packages");
       // resolve packages
       for (Manifest.Package aPackage : manifest.getPackages()) {
-         System.out.printf("Installing package [%s] %n", aPackage.name);
+         System.out.printf("Installing package [%s] %n", aPackage.artifact);
          Path packagePath = repo.resolve(aPackage.getRelativePath());
          if (!packagePath.toFile().exists()) {
-            throw new RuntimeException("Unable to find artifact " + aPackage.name  );
+            throw new RuntimeException("Unable to find artifact " + aPackage.artifact);
          }
          unzip(packagePath, base);
       }
@@ -71,12 +71,12 @@ public class Provision {
       System.out.println("Resolving artifacts from " + repo);
       final Modules modules = new Modules(base);
       // foreach artifact
-      manifest.getEntries().forEach(entry -> {
+      manifest.getArtifacts().forEach(entry -> {
          //  download from maven repo
          // TODO: use proper maven resolution :)
          Path artifactSource = repo.resolve(Paths.get(
-                                         entry.aPackage.replace(".", "/"),
-                                         entry.name, entry.version, entry.getFileName()));
+            entry.groupId.replace(".", "/"),
+            entry.artifactId, entry.version, entry.getFileName()));
          if (!artifactSource.toFile().exists()) {
             throw new RuntimeException("Unable to find artifact " + artifactSource);
          }

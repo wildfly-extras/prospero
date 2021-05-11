@@ -89,7 +89,7 @@ public class DemoInitializer {
       System.out.println("Building test repository at " + targetRepo + ".");
       final Manifest manifest = Manifest.parseManifest(manifestPath);
 
-      manifest.getEntries().stream().forEach(entry-> {
+      manifest.getArtifacts().stream().forEach(entry-> {
          // build relative path
          final Path relativePath = entry.getRelativePath();
 
@@ -122,7 +122,7 @@ public class DemoInitializer {
 
       // add artifacts
       final Stream<Path> modules = Files.walk(modulesPath);
-      List<Manifest.Entry> artifacts = modules.filter(p-> p.getFileName().toString().equals("module.xml"))
+      List<Manifest.Artifact> artifacts = modules.filter(p-> p.getFileName().toString().equals("module.xml"))
          .flatMap(p-> {
             try {
                return ModuleReader.extractArtifacts(p).stream();
@@ -135,7 +135,7 @@ public class DemoInitializer {
             if (coords.length != 3 && coords.length != 4) {
                throw new RuntimeException("Unexpected GAV: " + gav);
             }
-            return new Manifest.Entry(coords[0], coords[1], coords[2], coords.length==4?coords[3]:"");
+            return new Manifest.Artifact(coords[0], coords[1], coords[2], coords.length==4?coords[3]:"");
          }).collect(Collectors.toList());
 
       Manifest manifest = new Manifest(artifacts, packages, manifestPath);

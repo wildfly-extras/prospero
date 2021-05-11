@@ -27,12 +27,12 @@ import com.redhat.prospero.xml.XmlException;
 
 public class Manifest {
 
-   private final List<Entry> entries;
+   private final List<Artifact> artifacts;
    private final Path manifestFile;
    private final List<Package> packages;
 
-   public Manifest(List<Entry> entries, List<Package> packages, Path manifestFile) {
-      this.entries = entries;
+   public Manifest(List<Artifact> artifacts, List<Package> packages, Path manifestFile) {
+      this.artifacts = artifacts;
       this.packages = packages;
       this.manifestFile = manifestFile;
    }
@@ -41,8 +41,8 @@ public class Manifest {
       return ManifestReader.parse(manifestPath.toFile());
    }
 
-   public List<Entry> getEntries() {
-      return new ArrayList<>(entries);
+   public List<Artifact> getArtifacts() {
+      return new ArrayList<>(artifacts);
    }
 
    public List<Package> getPackages() {
@@ -53,104 +53,104 @@ public class Manifest {
       return manifestFile;
    }
 
-   public void updateVersion(Entry newVersion) {
+   public void updateVersion(Artifact newVersion) {
       // we can only update if we have old version of the same artifact
-      Entry oldEntry = null;
-      for (Entry entry : entries) {
-         if (entry.aPackage.equals(newVersion.aPackage) && entry.name.equals(newVersion.name) && entry.classifier.equals(newVersion.classifier)) {
-            oldEntry = entry;
+      Artifact oldArtifact = null;
+      for (Artifact artifact : artifacts) {
+         if (artifact.groupId.equals(newVersion.groupId) && artifact.artifactId.equals(newVersion.artifactId) && artifact.classifier.equals(newVersion.classifier)) {
+            oldArtifact = artifact;
             break;
          }
       }
 
-      if (oldEntry == null) {
+      if (oldArtifact == null) {
          throw new RuntimeException("Previous verison of " + newVersion.getFileName() + " not found.");
       }
 
-      entries.remove(oldEntry);
-      entries.add(newVersion);
+      artifacts.remove(oldArtifact);
+      artifacts.add(newVersion);
    }
 
-   public Entry find(String group, String name, String classifier) {
-      for (Entry entry : entries) {
-         if (entry.aPackage.equals(group) && entry.name.equals(name) && entry.classifier.equals(classifier)) {
-            return entry;
+   public Artifact find(String group, String name, String classifier) {
+      for (Artifact artifact : artifacts) {
+         if (artifact.groupId.equals(group) && artifact.artifactId.equals(name) && artifact.classifier.equals(classifier)) {
+            return artifact;
          }
       }
       return null;
    }
 
-   public static class Entry {
+   public static class Artifact {
 
-      public final String aPackage;
-      public final String name;
+      public final String groupId;
+      public final String artifactId;
       public final String version;
       public final String classifier;
 
-      public Entry(String aPackage, String name, String version, String classifier) {
-         this.aPackage = aPackage;
-         this.name = name;
+      public Artifact(String groupId, String artifactId, String version, String classifier) {
+         this.groupId = groupId;
+         this.artifactId = artifactId;
          this.version = version;
          this.classifier = classifier;
       }
 
       public String getFileName() {
          if (classifier == null || classifier.length() == 0) {
-            return String.format("%s-%s.jar", name, version);
+            return String.format("%s-%s.jar", artifactId, version);
          } else {
-            return String.format("%s-%s-%s.jar", name, version, classifier);
+            return String.format("%s-%s-%s.jar", artifactId, version, classifier);
          }
       }
 
       public Path getRelativePath() {
          List<String> path = new ArrayList<>();
          String start = null;
-         for (String f : aPackage.split("\\.")) {
+         for (String f : groupId.split("\\.")) {
             if (start == null) {
                start = f;
             } else {
                path.add(f);
             }
          }
-         path.add(name);
+         path.add(artifactId);
          path.add(version);
          path.add(getFileName());
 
          return Paths.get(start, path.toArray(new String[]{}));
       }
 
-      public Entry newVersion(String newVersion) {
-         return new Entry(aPackage, name, newVersion, classifier);
+      public Artifact newVersion(String newVersion) {
+         return new Artifact(groupId, artifactId, newVersion, classifier);
       }
    }
 
    public static class Package {
 
-      public final String group;
-      public final String name;
+      public final String groupId;
+      public final String artifact;
       public final String version;
 
-      public Package(String group, String name, String version) {
-         this.group = group;
-         this.name = name;
+      public Package(String groupId, String artifact, String version) {
+         this.groupId = groupId;
+         this.artifact = artifact;
          this.version = version;
       }
 
       public String getFileName() {
-         return String.format("%s-%s.zip", name, version);
+         return String.format("%s-%s.zip", artifact, version);
       }
 
       public Path getRelativePath() {
          List<String> path = new ArrayList<>();
          String start = null;
-         for (String f : group.split("\\.")) {
+         for (String f : groupId.split("\\.")) {
             if (start == null) {
                start = f;
             } else {
                path.add(f);
             }
          }
-         path.add(name);
+         path.add(artifact);
          path.add(version);
          path.add(getFileName());
 
