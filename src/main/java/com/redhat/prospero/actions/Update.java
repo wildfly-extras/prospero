@@ -17,31 +17,18 @@
 
 package com.redhat.prospero.actions;
 
-import javax.xml.XMLConstants;
-import javax.xml.parsers.DocumentBuilderFactory;
-import javax.xml.transform.Transformer;
-import javax.xml.transform.TransformerFactory;
-import javax.xml.transform.dom.DOMSource;
-import javax.xml.transform.stream.StreamResult;
-import javax.xml.xpath.XPath;
-import javax.xml.xpath.XPathConstants;
-import javax.xml.xpath.XPathFactory;
-import java.io.FileWriter;
-import java.io.Writer;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.ArrayList;
 import java.util.Collection;
 import java.util.TreeSet;
 
 import com.redhat.prospero.descriptors.DependencyDescriptor;
 import com.redhat.prospero.descriptors.Manifest;
 import com.redhat.prospero.modules.Modules;
+import com.redhat.prospero.xml.ManifestWriter;
+import com.redhat.prospero.xml.ModuleWriter;
 import org.apache.commons.io.FileUtils;
 import org.apache.maven.artifact.versioning.ComparableVersion;
-import org.w3c.dom.Document;
-import org.w3c.dom.Element;
-import org.w3c.dom.NodeList;
 
 public class Update {
 
@@ -119,21 +106,24 @@ public class Update {
                throw new RuntimeException("Artifact " + entry.getFileName() + " not found");
             }
 
-            for (Path module : updates) {
-               // copy the new artifact
-               Path target = module.getParent();
-               try {
+            try {
+               for (Path module : updates) {
+                  // copy the new artifact
+                  Path target = module.getParent();
                   FileUtils.copyFile(repo.resolve(latestVersion.getRelativePath()).toFile(), target.resolve(latestVersion.getFileName()).toFile());
 
                   // update model.xml
-                  updateVersionInModuleXml(module, entry, latestVersion);
+                  ModuleWriter.updateVersionInModuleXml(module, entry, latestVersion);
 
                   // update manifest.xml
                   manifest.updateVersion(latestVersion);
-               } catch (Exception e) {
-                  throw new RuntimeException(e);
                }
+
+               ManifestWriter.write(manifest);
+            } catch (Exception e) {
+               throw new RuntimeException(e);
             }
+
             System.out.printf("  Done [%s:%s]%n", entry.aPackage, entry.name);
          }
       }
@@ -144,29 +134,5 @@ public class Update {
       }else {
          System.out.println("Installation up-to-date, no updates found.");
       }
-   }
-
-   private void updateVersionInModuleXml(Path module, Manifest.Entry oldVersion, Manifest.Entry newVersion) throws Exception {
-      DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
-      factory.setFeature(XMLConstants.FEATURE_SECURE_PROCESSING, true);
-      factory.setFeature("http://apache.org/xml/features/disallow-doctype-decl", true);
-      Document input = factory.newDocumentBuilder().parse(module.toFile());
-
-      XPath xpath = XPathFactory.newInstance().newXPath();
-      String expr = String.format("//resources/resource-root[contains(@path, '%s')]", oldVersion.getFileName());
-      NodeList nodes = (NodeList) xpath.evaluate(expr, input, XPathConstants.NODESET);
-
-      final ArrayList<String> gavs = new ArrayList<>();
-      for (int i = 0; i < nodes.getLength(); i++) {
-         Element oldNode = (Element) nodes.item(i);
-
-         oldNode.setAttribute("path", newVersion.getFileName());
-      }
-
-      TransformerFactory transformerFactory = TransformerFactory.newInstance();
-      transformerFactory.setFeature(XMLConstants.FEATURE_SECURE_PROCESSING, true);
-      Transformer xformer = transformerFactory.newTransformer();
-      Writer output = new FileWriter(module.toFile());
-      xformer.transform(new DOMSource(input), new StreamResult(output));
    }
 }

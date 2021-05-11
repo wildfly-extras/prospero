@@ -82,8 +82,7 @@ public class Provision {
          }
 
          //  find in modules
-         // TODO: index modules.xml to make it faster instead of walking them every time
-            Collection<Path> updates = modules.find(entry);
+         Collection<Path> updates = modules.find(entry);
 
          if (updates.isEmpty()) {
             throw new RuntimeException("Artifact " + entry.getFileName() + " not found");

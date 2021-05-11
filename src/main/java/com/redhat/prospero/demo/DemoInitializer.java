@@ -17,38 +17,23 @@
 
 package com.redhat.prospero.demo;
 
-import javax.xml.XMLConstants;
-import javax.xml.parsers.DocumentBuilderFactory;
-import javax.xml.parsers.ParserConfigurationException;
-import javax.xml.transform.Transformer;
-import javax.xml.transform.TransformerFactory;
-import javax.xml.transform.dom.DOMSource;
-import javax.xml.transform.stream.StreamResult;
-import javax.xml.xpath.XPath;
-import javax.xml.xpath.XPathConstants;
-import javax.xml.xpath.XPathExpressionException;
-import javax.xml.xpath.XPathFactory;
 import java.io.File;
-import java.io.FileWriter;
 import java.io.IOException;
-import java.io.PrintWriter;
-import java.io.Writer;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import com.redhat.prospero.descriptors.Manifest;
+import com.redhat.prospero.xml.ManifestWriter;
+import com.redhat.prospero.xml.ModuleReader;
+import com.redhat.prospero.xml.ModuleWriter;
+import com.redhat.prospero.xml.XmlException;
 import net.lingala.zip4j.ZipFile;
 import org.apache.commons.io.FileUtils;
-import org.w3c.dom.Document;
-import org.w3c.dom.Element;
-import org.w3c.dom.NodeList;
-import org.xml.sax.SAXException;
 
 public class DemoInitializer {
 
@@ -100,7 +85,7 @@ public class DemoInitializer {
       Files.move(zip.toPath(), targetDir.resolve(zip.getName()));
    }
 
-   private static void exportMvnRepo(Path manifestPath, Path sourceRepo, Path targetRepo) throws XPathExpressionException, ParserConfigurationException, IOException, SAXException {
+   private static void exportMvnRepo(Path manifestPath, Path sourceRepo, Path targetRepo) throws XmlException {
       System.out.println("Building test repository at " + targetRepo + ".");
       final Manifest manifest = Manifest.parseManifest(manifestPath);
 
@@ -129,110 +114,46 @@ public class DemoInitializer {
 
    private static void exportManifest(Path modulesPath, Path manifestPath) throws Exception {
       System.out.println("Creating manifest of module libraries.");
-      final Stream<Path> modules = Files.walk(modulesPath);
 
-      File f = manifestPath.toFile();
-      final PrintWriter printWriter = new PrintWriter(f);
-      printWriter.println("<manifest>");
       // add packages
-      for (String pack : Arrays.asList("wildfly-bin", "wildfly-modules", "wildfly-standalone")) {
-         printWriter.println(String.format("<package group=\"%s\" name=\"%s\" version=\"%s\"/>",
-                                        "org.wildfly.prospero", pack, "1.0.0"));
-
-      }
+      List<Manifest.Package> packages = Stream.of("wildfly-bin", "wildfly-modules", "wildfly-standalone")
+         .map(pack -> new Manifest.Package("org.wildfly.prospero", pack, "1.0.0"))
+         .collect(Collectors.toList());
 
       // add artifacts
-      modules.filter(p-> p.getFileName().toString().equals("module.xml"))
-         .flatMap(p-> DemoInitializer.extractArtifacts(p).stream())
-         .forEach(gav -> {
+      final Stream<Path> modules = Files.walk(modulesPath);
+      List<Manifest.Entry> artifacts = modules.filter(p-> p.getFileName().toString().equals("module.xml"))
+         .flatMap(p-> {
+            try {
+               return ModuleReader.extractArtifacts(p).stream();
+            } catch (XmlException e) {
+               throw new RuntimeException(e);
+            }
+         })
+         .map(gav -> {
             final String[] coords = gav.split(":");
             if (coords.length != 3 && coords.length != 4) {
-               System.out.println("!!!! Unexpected GAV: " + gav);
+               throw new RuntimeException("Unexpected GAV: " + gav);
             }
-            printWriter.println(String.format("<artifact package=\"%s\" name=\"%s\" version=\"%s\" classifier=\"%s\"/>",
-                                              coords[0], coords[1], coords[2], coords.length==4?coords[3]:""));
-         });
+            return new Manifest.Entry(coords[0], coords[1], coords[2], coords.length==4?coords[3]:"");
+         }).collect(Collectors.toList());
 
-      printWriter.println("</manifest>");
-      printWriter.flush();
-      printWriter.close();
+      Manifest manifest = new Manifest(artifacts, packages, manifestPath);
+      ManifestWriter.write(manifest, manifestPath.toFile());
    }
 
    private static void replaceArtifactsWithResources(Path modulesPath) throws Exception {
       System.out.println("Changing module descriptors to use local resources instead of Maven GAVs.");
       final Stream<Path> modules = Files.walk(modulesPath);
+
       modules.filter(p-> p.getFileName().toString().equals("module.xml"))
-         .forEach(p-> replaceArtifact(p));
-
-   }
-
-   private static List<String> replaceArtifact(Path module) {
-      try {
-         DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
-         factory.setFeature(XMLConstants.FEATURE_SECURE_PROCESSING, true);
-         factory.setFeature("http://apache.org/xml/features/disallow-doctype-decl", true);
-         Document input = factory.newDocumentBuilder().parse(module.toFile());
-
-         XPath xpath = XPathFactory.newInstance().newXPath();
-         String expr = "//resources/artifact";
-         NodeList nodes = (NodeList) xpath.evaluate(expr, input, XPathConstants.NODESET);
-
-         final ArrayList<String> gavs = new ArrayList<>();
-         for (int i = 0; i < nodes.getLength(); i++) {
-            Element oldNode = (Element) nodes.item(i);
-            final String[] gav = oldNode.getAttribute("name").split(":");
-
-            final Element newNode = oldNode.getOwnerDocument().createElement("resource-root");
-            if (gav.length == 3) {
-               newNode.setAttribute("path", String.format("%s-%s.jar", gav[1], gav[2]));
-            } else if (gav.length == 4) {
-               newNode.setAttribute("path", String.format("%s-%s-%s.jar", gav[1], gav[2], gav[3]));
-            } else {
-               throw new Exception("Unrecognized gav " + String.join(":",gav));
+         .forEach(p-> {
+            try {
+               ModuleWriter.replaceArtifactWithResource(p);
+            } catch (XmlException e) {
+               throw new RuntimeException(e);
             }
-            // copy excludes
-            final NodeList childNodes = oldNode.getChildNodes();
-            for (int j=0; j < childNodes.getLength(); j++) {
-               newNode.appendChild(childNodes.item(j).cloneNode(true));
-            }
-            oldNode.getParentNode().replaceChild(newNode, nodes.item(i));
-         }
+         });
 
-         TransformerFactory transformerFactory = TransformerFactory.newInstance();
-         transformerFactory.setFeature(XMLConstants.FEATURE_SECURE_PROCESSING, true);
-         Transformer xformer = transformerFactory.newTransformer();
-         Writer output = new FileWriter(module.toFile());
-         xformer.transform(new DOMSource(input), new StreamResult(output));
-
-         return gavs;
-      } catch (Exception e) {
-         e.printStackTrace();
-         return null;
-      }
    }
-
-   private static List<String> extractArtifacts(Path module) {
-      try {
-         DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
-         factory.setFeature(XMLConstants.FEATURE_SECURE_PROCESSING, true);
-         factory.setFeature("http://apache.org/xml/features/disallow-doctype-decl", true);
-         Document input = factory.newDocumentBuilder().parse(module.toFile());
-
-         XPath xpath = XPathFactory.newInstance().newXPath();
-         String expr = "//resources/artifact";
-         NodeList nodes = (NodeList) xpath.evaluate(expr, input, XPathConstants.NODESET);
-
-         final ArrayList<String> gavs = new ArrayList<>();
-         for (int i = 0; i < nodes.getLength(); i++) {
-            Element value = (Element) nodes.item(i);
-            final String gav = value.getAttribute("name");
-            gavs.add(gav);
-         }
-         return gavs;
-      } catch (Exception e) {
-         e.printStackTrace();
-         return null;
-      }
-   }
-
 }

@@ -17,89 +17,40 @@
 
 package com.redhat.prospero.descriptors;
 
-import javax.xml.XMLConstants;
-import javax.xml.parsers.DocumentBuilderFactory;
-import javax.xml.parsers.ParserConfigurationException;
-import javax.xml.transform.Transformer;
-import javax.xml.transform.TransformerFactory;
-import javax.xml.transform.dom.DOMSource;
-import javax.xml.transform.stream.StreamResult;
-import javax.xml.xpath.XPath;
-import javax.xml.xpath.XPathConstants;
-import javax.xml.xpath.XPathExpressionException;
-import javax.xml.xpath.XPathFactory;
-import java.io.FileWriter;
-import java.io.IOException;
-import java.io.Writer;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.w3c.dom.Document;
-import org.w3c.dom.Element;
-import org.w3c.dom.NodeList;
-import org.xml.sax.SAXException;
+import com.redhat.prospero.xml.ManifestReader;
+import com.redhat.prospero.xml.XmlException;
 
 public class Manifest {
 
-   private final ArrayList<Entry> entries;
+   private final List<Entry> entries;
    private final Path manifestFile;
-   private final ArrayList<Package> packages;
+   private final List<Package> packages;
 
-   private Manifest(ArrayList<Entry> entries, ArrayList<Package> packages, Path manifestFile) {
+   public Manifest(List<Entry> entries, List<Package> packages, Path manifestFile) {
       this.entries = entries;
       this.packages = packages;
       this.manifestFile = manifestFile;
    }
 
-   public static Manifest parseManifest(Path manifestPath) throws ParserConfigurationException, SAXException, IOException, XPathExpressionException {
-      DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
-      factory.setFeature(XMLConstants.FEATURE_SECURE_PROCESSING, true);
-      factory.setFeature("http://apache.org/xml/features/disallow-doctype-decl", true);
-      Document input = factory.newDocumentBuilder().parse(manifestPath.toFile());
-
-      final ArrayList<Entry> entries = parseArtifacts(input);
-      final ArrayList<Package> packages = parsePackages(input);
-      final Manifest manifest = new Manifest(entries, packages, manifestPath);
-      return manifest;
+   public static Manifest parseManifest(Path manifestPath) throws XmlException {
+      return ManifestReader.parse(manifestPath.toFile());
    }
 
-   private static ArrayList<Entry> parseArtifacts(Document input) throws XPathExpressionException {
-      XPath xpath = XPathFactory.newInstance().newXPath();
-      String expr = "//artifact";
-      NodeList nodes = (NodeList) xpath.evaluate(expr, input, XPathConstants.NODESET);
-      final ArrayList<Entry> entries = new ArrayList<>(nodes.getLength());
-      for (int i = 0; i < nodes.getLength(); i++) {
-         Element node = (Element) nodes.item(i);
-         entries.add(new Entry(node.getAttribute("package"),
-                            node.getAttribute("name"),
-                            node.getAttribute("version"),
-                            node.getAttribute("classifier")));
-      }
-      return entries;
-   }
-
-   private static ArrayList<Package> parsePackages(Document input) throws XPathExpressionException {
-      XPath xpath = XPathFactory.newInstance().newXPath();
-      String expr = "//package";
-      NodeList nodes = (NodeList) xpath.evaluate(expr, input, XPathConstants.NODESET);
-      final ArrayList<Package> entries = new ArrayList<>(nodes.getLength());
-      for (int i = 0; i < nodes.getLength(); i++) {
-         Element node = (Element) nodes.item(i);
-         entries.add(new Package(node.getAttribute("group"),
-                               node.getAttribute("name"),
-                               node.getAttribute("version")));
-      }
-      return entries;
-   }
-
-   public ArrayList<Entry> getEntries() {
+   public List<Entry> getEntries() {
       return new ArrayList<>(entries);
    }
 
-   public ArrayList<Package> getPackages() {
+   public List<Package> getPackages() {
       return packages;
+   }
+
+   public Path getManifestFile() {
+      return manifestFile;
    }
 
    public void updateVersion(Entry newVersion) {
@@ -118,35 +69,6 @@ public class Manifest {
 
       entries.remove(oldEntry);
       entries.add(newVersion);
-
-      // export
-      try {
-         exportChange(oldEntry, newVersion);
-      } catch (Exception e) {
-         throw new RuntimeException(e);
-      }
-   }
-
-   private void exportChange(Entry oldEntry, Entry newEntry) throws Exception {
-      DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
-      factory.setFeature(XMLConstants.FEATURE_SECURE_PROCESSING, true);
-      factory.setFeature("http://apache.org/xml/features/disallow-doctype-decl", true);
-      Document input = factory.newDocumentBuilder().parse(manifestFile.toFile());
-
-      XPath xpath = XPathFactory.newInstance().newXPath();
-      String expr = String.format("//artifact[contains(@name, '%s') and contains(@package, '%s') and contains(@classifier, '%s')]",
-                                  oldEntry.name, oldEntry.aPackage, oldEntry.classifier);
-      NodeList nodes = (NodeList) xpath.evaluate(expr, input, XPathConstants.NODESET);
-      for (int i = 0; i < nodes.getLength(); i++) {
-         Element node = (Element) nodes.item(i);
-         node.setAttribute("version", newEntry.version);
-      }
-
-      TransformerFactory transformerFactory = TransformerFactory.newInstance();
-      transformerFactory.setFeature(XMLConstants.FEATURE_SECURE_PROCESSING, true);
-      Transformer xformer = transformerFactory.newTransformer();
-      Writer output = new FileWriter(manifestFile.toFile());
-      xformer.transform(new DOMSource(input), new StreamResult(output));
    }
 
    public Entry find(String group, String name, String classifier) {
