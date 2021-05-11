@@ -18,10 +18,10 @@
 package com.redhat.prospero.descriptors;
 
 import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.List;
 
+import com.redhat.prospero.api.Gav;
 import com.redhat.prospero.xml.ManifestReader;
 import com.redhat.prospero.xml.XmlException;
 
@@ -57,7 +57,7 @@ public class Manifest {
       // we can only update if we have old version of the same artifact
       Artifact oldArtifact = null;
       for (Artifact artifact : artifacts) {
-         if (artifact.groupId.equals(newVersion.groupId) && artifact.artifactId.equals(newVersion.artifactId) && artifact.classifier.equals(newVersion.classifier)) {
+         if (artifact.getGroupId().equals(newVersion.getGroupId()) && artifact.getArtifactId().equals(newVersion.getArtifactId()) && artifact.getClassifier().equals(newVersion.getClassifier())) {
             oldArtifact = artifact;
             break;
          }
@@ -73,50 +73,17 @@ public class Manifest {
 
    public Artifact find(String group, String name, String classifier) {
       for (Artifact artifact : artifacts) {
-         if (artifact.groupId.equals(group) && artifact.artifactId.equals(name) && artifact.classifier.equals(classifier)) {
+         if (artifact.getGroupId().equals(group) && artifact.getArtifactId().equals(name) && artifact.getClassifier().equals(classifier)) {
             return artifact;
          }
       }
       return null;
    }
 
-   public static class Artifact {
-
-      public final String groupId;
-      public final String artifactId;
-      public final String version;
-      public final String classifier;
+   public static class Artifact extends Gav {
 
       public Artifact(String groupId, String artifactId, String version, String classifier) {
-         this.groupId = groupId;
-         this.artifactId = artifactId;
-         this.version = version;
-         this.classifier = classifier;
-      }
-
-      public String getFileName() {
-         if (classifier == null || classifier.length() == 0) {
-            return String.format("%s-%s.jar", artifactId, version);
-         } else {
-            return String.format("%s-%s-%s.jar", artifactId, version, classifier);
-         }
-      }
-
-      public Path getRelativePath() {
-         List<String> path = new ArrayList<>();
-         String start = null;
-         for (String f : groupId.split("\\.")) {
-            if (start == null) {
-               start = f;
-            } else {
-               path.add(f);
-            }
-         }
-         path.add(artifactId);
-         path.add(version);
-         path.add(getFileName());
-
-         return Paths.get(start, path.toArray(new String[]{}));
+         super(groupId, artifactId, version, classifier, "jar");
       }
 
       public Artifact newVersion(String newVersion) {
@@ -124,37 +91,10 @@ public class Manifest {
       }
    }
 
-   public static class Package {
+   public static class Package extends Gav {
 
-      public final String groupId;
-      public final String artifact;
-      public final String version;
-
-      public Package(String groupId, String artifact, String version) {
-         this.groupId = groupId;
-         this.artifact = artifact;
-         this.version = version;
-      }
-
-      public String getFileName() {
-         return String.format("%s-%s.zip", artifact, version);
-      }
-
-      public Path getRelativePath() {
-         List<String> path = new ArrayList<>();
-         String start = null;
-         for (String f : groupId.split("\\.")) {
-            if (start == null) {
-               start = f;
-            } else {
-               path.add(f);
-            }
-         }
-         path.add(artifact);
-         path.add(version);
-         path.add(getFileName());
-
-         return Paths.get(start, path.toArray(new String[]{}));
+      public Package(String groupId, String artifactId, String version) {
+         super(groupId, artifactId, version, null, "zip");
       }
    }
 }

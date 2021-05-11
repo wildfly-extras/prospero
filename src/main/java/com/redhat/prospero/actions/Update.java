@@ -19,9 +19,12 @@ package com.redhat.prospero.actions;
 
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.ArrayList;
 import java.util.Collection;
+import java.util.List;
 import java.util.TreeSet;
 
+import com.redhat.prospero.api.Gav;
 import com.redhat.prospero.descriptors.DependencyDescriptor;
 import com.redhat.prospero.descriptors.Manifest;
 import com.redhat.prospero.modules.Modules;
@@ -50,16 +53,33 @@ public class Update {
       new Update().update(Paths.get(base), Paths.get(repo), artifact);
    }
 
+   private Path getRelativePath(Gav artifact) {
+      List<String> path = new ArrayList<>();
+      String start = null;
+      for (String f : artifact.getGroupId().split("\\.")) {
+         if (start == null) {
+            start = f;
+         } else {
+            path.add(f);
+         }
+      }
+      path.add(artifact.getArtifactId());
+      path.add(artifact.getVersion());
+      path.add(artifact.getFileName());
+
+      return Paths.get(start, path.toArray(new String[]{}));
+   }
+
    private void update(Path base, Path repo, String artifact) throws Exception {
       final Manifest manifest = Manifest.parseManifest(base.resolve("manifest.xml"));
       final Modules modules = new Modules(base);
 
       boolean updatesFound = false;
       for (Manifest.Artifact entry : manifest.getArtifacts()) {
-         if (artifact != null && !artifact.equals(entry.artifactId)) {
+         if (artifact != null && !artifact.equals(entry.getArtifactId())) {
             continue;
          }
-         final Path relativePath = entry.getRelativePath();
+         final Path relativePath = getRelativePath(entry);
          // check if newer version exists
          final String[] versions = repo.resolve(relativePath).getParent().getParent().toFile().list();
          Manifest.Artifact latestVersion = null;
@@ -70,7 +90,7 @@ public class Update {
             }
 
             String latestVersionSting = comparableVersions.descendingSet().first().toString();
-            if (!latestVersionSting.equals(entry.version)) {
+            if (!latestVersionSting.equals(entry.getVersion())) {
                latestVersion = entry.newVersion(latestVersionSting);
             }
          }
@@ -79,7 +99,7 @@ public class Update {
             updatesFound = true;
 
             // check if dependency info exists
-            final Path dependenciesXml = repo.resolve(latestVersion.getRelativePath().getParent()).resolve("dependencies.xml");
+            final Path dependenciesXml = repo.resolve(getRelativePath(latestVersion).getParent()).resolve("dependencies.xml");
             if (dependenciesXml.toFile().exists()) {
                final DependencyDescriptor dependencyDescriptor = DependencyDescriptor.parseXml(dependenciesXml);
 
@@ -87,17 +107,17 @@ public class Update {
                for (DependencyDescriptor.Dependency dep : dependencyDescriptor.deps) {
                   Manifest.Artifact e = manifest.find(dep.group, dep.name, dep.classifier);
 
-                  if (new ComparableVersion(e.version).compareTo(new ComparableVersion(dep.minVersion)) < 0) {
-                     System.out.println("Found upgrades required for " + latestVersion.artifactId);
+                  if (new ComparableVersion(e.getVersion()).compareTo(new ComparableVersion(dep.minVersion)) < 0) {
+                     System.out.println("Found upgrades required for " + latestVersion.getArtifactId());
                      // update dependencies if needed
-                     update(base, repo, e.artifactId);
+                     update(base, repo, e.getArtifactId());
                   }
                   // verify new version is enough
                }
 
             }
 
-            System.out.printf("Updating [%s:%s]\t\t%s => %s%n", entry.groupId, entry.artifactId, entry.version, latestVersion.version);
+            System.out.printf("Updating [%s:%s]\t\t%s => %s%n", entry.getGroupId(), entry.getArtifactId(), entry.getVersion(), latestVersion.getVersion());
 
             // find module defining old version
             Collection<Path> updates = modules.find(entry);
@@ -110,7 +130,7 @@ public class Update {
                for (Path module : updates) {
                   // copy the new artifact
                   Path target = module.getParent();
-                  FileUtils.copyFile(repo.resolve(latestVersion.getRelativePath()).toFile(), target.resolve(latestVersion.getFileName()).toFile());
+                  FileUtils.copyFile(repo.resolve(getRelativePath(latestVersion)).toFile(), target.resolve(latestVersion.getFileName()).toFile());
 
                   // update model.xml
                   ModuleWriter.updateVersionInModuleXml(module, entry, latestVersion);
@@ -124,7 +144,7 @@ public class Update {
                throw new RuntimeException(e);
             }
 
-            System.out.printf("  Done [%s:%s]%n", entry.groupId, entry.artifactId);
+            System.out.printf("  Done [%s:%s]%n", entry.getGroupId(), entry.getArtifactId());
          }
       }
 

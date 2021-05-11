@@ -17,6 +17,7 @@
 
 package com.redhat.prospero.demo;
 
+import java.io.File;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
@@ -24,6 +25,7 @@ import java.util.List;
 
 import com.redhat.prospero.actions.DeployArtifact;
 import com.redhat.prospero.descriptors.Manifest;
+import com.redhat.prospero.impl.LocalRepository;
 
 public class ArtifactMocker {
 
@@ -48,7 +50,7 @@ public class ArtifactMocker {
       final Manifest manifest = Manifest.parseManifest(Paths.get(base).resolve("manifest.xml"));
       Manifest.Artifact oldEntry = null;
       for (Manifest.Artifact artifact : manifest.getArtifacts()) {
-         if (artifact.artifactId.equals(name)) {
+         if (artifact.getArtifactId().equals(name)) {
             oldEntry = artifact;
             break;
          }
@@ -59,8 +61,8 @@ public class ArtifactMocker {
          return;
       }
       // work out path in repo to current artifact
-      final Path repoPath = Paths.get(repo);
-      final Path oldArtifact = repoPath.resolve(oldEntry.getRelativePath());
+      final LocalRepository localRepository = new LocalRepository(Paths.get(repo));
+      final File oldArtifact = localRepository.resolve(oldEntry);
 
 //      // build a path to new version
 //      final Manifest.Entry newEntry = new Manifest.Entry(oldEntry.aPackage, oldEntry.name, newVersion, oldEntry.classifier);
@@ -74,9 +76,9 @@ public class ArtifactMocker {
 //
 //      // generate dependency manifest
       final DeployArtifact deployer = new DeployArtifact(repo);
-      deployer.deploy(oldEntry.groupId, oldEntry.artifactId, newVersion, oldArtifact.toString());
-      deployer.generateManifest(oldEntry.groupId, oldEntry.artifactId, newVersion, deps);
-      System.out.printf("Mocked %s %s as %s.%n", oldArtifact, oldEntry.version, newVersion);
+      deployer.deploy(oldEntry.getGroupId(), oldEntry.getArtifactId(), newVersion, oldArtifact.toString());
+      deployer.generateManifest(oldEntry.getGroupId(), oldEntry.getArtifactId(), newVersion, deps);
+      System.out.printf("Mocked %s %s as %s.%n", oldArtifact, oldEntry.getVersion(), newVersion);
    }
 
 }

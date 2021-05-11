@@ -17,12 +17,15 @@
 
 package com.redhat.prospero.actions;
 
+import java.io.File;
 import java.io.IOException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Collection;
 
 import com.redhat.prospero.descriptors.Manifest;
+import com.redhat.prospero.impl.LocalInstallation;
+import com.redhat.prospero.impl.LocalRepository;
 import com.redhat.prospero.modules.Modules;
 import net.lingala.zip4j.ZipFile;
 import org.apache.commons.io.FileUtils;
@@ -47,12 +50,15 @@ public class Provision {
       String basePackageGroup = "org.wildfly.prospero";
       String basePackageArtifact = "wildfly-base";
       String basePackageVersion = "1.0.0";
+
+      final LocalRepository localRepository = new LocalRepository(repo);
       final Manifest.Package basePackage = new Manifest.Package(basePackageGroup, basePackageArtifact, basePackageVersion);
-      Path basePackageSource = repo.resolve(basePackage.getRelativePath());
-      if (!basePackageSource.toFile().exists()) {
-         throw new RuntimeException("Unable to find artifact " + basePackageSource);
-      }
-      unzip(basePackageSource, base);
+      File basePackageFile = localRepository.resolve(basePackage);
+
+      final LocalInstallation localInstallation = LocalInstallation.provision(base, basePackageFile);
+
+
+      localInstallation.installPackage(basePackageFile);
 
       // go through manifest
       final Manifest manifest = Manifest.parseManifest(base.resolve("manifest.xml"));
@@ -60,47 +66,23 @@ public class Provision {
       System.out.println("Installing remaining packages");
       // resolve packages
       for (Manifest.Package aPackage : manifest.getPackages()) {
-         System.out.printf("Installing package [%s] %n", aPackage.artifact);
-         Path packagePath = repo.resolve(aPackage.getRelativePath());
-         if (!packagePath.toFile().exists()) {
-            throw new RuntimeException("Unable to find artifact " + aPackage.artifact);
-         }
-         unzip(packagePath, base);
+         System.out.printf("Installing package [%s] %n", aPackage.getArtifactId());
+         File packageFile = localRepository.resolve(aPackage);
+         localInstallation.installPackage(packageFile);
       }
 
       System.out.println("Resolving artifacts from " + repo);
-      final Modules modules = new Modules(base);
+//      final Modules modules = new Modules(base);
       // foreach artifact
-      manifest.getArtifacts().forEach(entry -> {
-         //  download from maven repo
+      for (Manifest.Artifact entry : manifest.getArtifacts()) {//  download from maven repo
          // TODO: use proper maven resolution :)
-         Path artifactSource = repo.resolve(Paths.get(
-            entry.groupId.replace(".", "/"),
-            entry.artifactId, entry.version, entry.getFileName()));
-         if (!artifactSource.toFile().exists()) {
-            throw new RuntimeException("Unable to find artifact " + artifactSource);
-         }
-
-         //  find in modules
-         Collection<Path> updates = modules.find(entry);
-
-         if (updates.isEmpty()) {
-            throw new RuntimeException("Artifact " + entry.getFileName() + " not found");
-         }
-
-         //  drop jar into module folder
-         updates.forEach(p-> {
-            try {
-               FileUtils.copyFile(artifactSource.toFile(), p.getParent().resolve(artifactSource.getFileName()).toFile());
-            } catch (IOException e) {
-               throw new RuntimeException(e);
-            }
-         });
-      });
+         File artifactFile = localRepository.resolve(entry);
+         localInstallation.installArtifact(entry, artifactFile);
+      }
       System.out.println("Installation provisioned and ready at " + base);
    }
 
-   private void unzip(Path archive, Path target) throws Exception {
-      new ZipFile(archive.toFile()).extractAll(target.toString());
+   private void unzip(File archive, Path target) throws Exception {
+      new ZipFile(archive).extractAll(target.toString());
    }
 }

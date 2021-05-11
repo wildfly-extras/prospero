@@ -22,11 +22,13 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import com.redhat.prospero.api.Gav;
 import com.redhat.prospero.descriptors.Manifest;
 import com.redhat.prospero.xml.ManifestWriter;
 import com.redhat.prospero.xml.ModuleReader;
@@ -91,7 +93,7 @@ public class DemoInitializer {
 
       manifest.getArtifacts().stream().forEach(entry-> {
          // build relative path
-         final Path relativePath = entry.getRelativePath();
+         final Path relativePath = getRelativePath(entry);
 
          // verify source exists
          if (!sourceRepo.resolve(relativePath).toFile().exists()) {
@@ -105,6 +107,23 @@ public class DemoInitializer {
             throw new RuntimeException(e);
          }
       });
+   }
+
+   private static Path getRelativePath(Gav artifact) {
+      List<String> path = new ArrayList<>();
+      String start = null;
+      for (String f : artifact.getGroupId().split("\\.")) {
+         if (start == null) {
+            start = f;
+         } else {
+            path.add(f);
+         }
+      }
+      path.add(artifact.getArtifactId());
+      path.add(artifact.getVersion());
+      path.add(artifact.getFileName());
+
+      return Paths.get(start, path.toArray(new String[]{}));
    }
 
    private static void copyStructure(Path source, Path target) throws Exception {
