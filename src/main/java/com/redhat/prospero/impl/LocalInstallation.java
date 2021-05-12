@@ -37,7 +37,7 @@ public class LocalInstallation {
    private final Path base;
    private final Modules modules;
 
-   public static LocalInstallation provision(Path base, File basePackage) throws PackageInstallationException, XmlException {
+   public static LocalInstallation newInstallation(Path base, File basePackage) throws PackageInstallationException, XmlException {
       installPackage(basePackage, base);
       return new LocalInstallation(base);
    }
@@ -80,5 +80,9 @@ public class LocalInstallation {
             throw new RuntimeException(e);
          }
       });
+   }
+
+   public Manifest getManifest() {
+      return manifest;
    }
 }

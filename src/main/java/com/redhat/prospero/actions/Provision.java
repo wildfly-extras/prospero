@@ -18,17 +18,12 @@
 package com.redhat.prospero.actions;
 
 import java.io.File;
-import java.io.IOException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.Collection;
 
 import com.redhat.prospero.descriptors.Manifest;
 import com.redhat.prospero.impl.LocalInstallation;
 import com.redhat.prospero.impl.LocalRepository;
-import com.redhat.prospero.modules.Modules;
-import net.lingala.zip4j.ZipFile;
-import org.apache.commons.io.FileUtils;
 
 public class Provision {
 
@@ -55,34 +50,25 @@ public class Provision {
       final Manifest.Package basePackage = new Manifest.Package(basePackageGroup, basePackageArtifact, basePackageVersion);
       File basePackageFile = localRepository.resolve(basePackage);
 
-      final LocalInstallation localInstallation = LocalInstallation.provision(base, basePackageFile);
+      final LocalInstallation localInstallation = LocalInstallation.newInstallation(base, basePackageFile);
 
+      final Manifest manifest = localInstallation.getManifest();
 
-      localInstallation.installPackage(basePackageFile);
-
-      // go through manifest
-      final Manifest manifest = Manifest.parseManifest(base.resolve("manifest.xml"));
-
-      System.out.println("Installing remaining packages");
       // resolve packages
+      System.out.println("Installing remaining packages");
       for (Manifest.Package aPackage : manifest.getPackages()) {
          System.out.printf("Installing package [%s] %n", aPackage.getArtifactId());
          File packageFile = localRepository.resolve(aPackage);
          localInstallation.installPackage(packageFile);
       }
 
+      // resolve artifacts
       System.out.println("Resolving artifacts from " + repo);
-//      final Modules modules = new Modules(base);
-      // foreach artifact
-      for (Manifest.Artifact entry : manifest.getArtifacts()) {//  download from maven repo
+      for (Manifest.Artifact entry : manifest.getArtifacts()) {
          // TODO: use proper maven resolution :)
          File artifactFile = localRepository.resolve(entry);
          localInstallation.installArtifact(entry, artifactFile);
       }
       System.out.println("Installation provisioned and ready at " + base);
-   }
-
-   private void unzip(File archive, Path target) throws Exception {
-      new ZipFile(archive).extractAll(target.toString());
    }
 }
