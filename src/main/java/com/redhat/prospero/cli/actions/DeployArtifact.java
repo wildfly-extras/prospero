@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-package com.redhat.prospero.actions;
+package com.redhat.prospero.cli.actions;
 
 import java.io.PrintWriter;
 import java.nio.file.Files;

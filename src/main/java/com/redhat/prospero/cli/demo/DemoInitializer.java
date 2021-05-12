@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-package com.redhat.prospero.demo;
+package com.redhat.prospero.cli.demo;
 
 import java.io.File;
 import java.io.IOException;
@@ -28,8 +28,10 @@ import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import com.redhat.prospero.api.Artifact;
 import com.redhat.prospero.api.Gav;
-import com.redhat.prospero.descriptors.Manifest;
+import com.redhat.prospero.api.Package;
+import com.redhat.prospero.api.Manifest;
 import com.redhat.prospero.xml.ManifestWriter;
 import com.redhat.prospero.xml.ModuleReader;
 import com.redhat.prospero.xml.ModuleWriter;
@@ -135,13 +137,13 @@ public class DemoInitializer {
       System.out.println("Creating manifest of module libraries.");
 
       // add packages
-      List<Manifest.Package> packages = Stream.of("wildfly-bin", "wildfly-modules", "wildfly-standalone")
-         .map(pack -> new Manifest.Package("org.wildfly.prospero", pack, "1.0.0"))
+      List<Package> packages = Stream.of("wildfly-bin", "wildfly-modules", "wildfly-standalone")
+         .map(pack -> new Package("org.wildfly.prospero", pack, "1.0.0"))
          .collect(Collectors.toList());
 
       // add artifacts
       final Stream<Path> modules = Files.walk(modulesPath);
-      List<Manifest.Artifact> artifacts = modules.filter(p-> p.getFileName().toString().equals("module.xml"))
+      List<Artifact> artifacts = modules.filter(p-> p.getFileName().toString().equals("module.xml"))
          .flatMap(p-> {
             try {
                return ModuleReader.extractArtifacts(p).stream();
@@ -154,7 +156,7 @@ public class DemoInitializer {
             if (coords.length != 3 && coords.length != 4) {
                throw new RuntimeException("Unexpected GAV: " + gav);
             }
-            return new Manifest.Artifact(coords[0], coords[1], coords[2], coords.length==4?coords[3]:"");
+            return new Artifact(coords[0], coords[1], coords[2], coords.length==4?coords[3]:"");
          }).collect(Collectors.toList());
 
       Manifest manifest = new Manifest(artifacts, packages, manifestPath);

@@ -15,13 +15,15 @@
  * limitations under the License.
  */
 
-package com.redhat.prospero.actions;
+package com.redhat.prospero.cli.actions;
 
 import java.io.File;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 
-import com.redhat.prospero.descriptors.Manifest;
+import com.redhat.prospero.api.Artifact;
+import com.redhat.prospero.api.Package;
+import com.redhat.prospero.api.Manifest;
 import com.redhat.prospero.impl.LocalInstallation;
 import com.redhat.prospero.impl.LocalRepository;
 
@@ -47,7 +49,7 @@ public class Provision {
       String basePackageVersion = "1.0.0";
 
       final LocalRepository localRepository = new LocalRepository(repo);
-      final Manifest.Package basePackage = new Manifest.Package(basePackageGroup, basePackageArtifact, basePackageVersion);
+      final Package basePackage = new Package(basePackageGroup, basePackageArtifact, basePackageVersion);
       File basePackageFile = localRepository.resolve(basePackage);
 
       final LocalInstallation localInstallation = LocalInstallation.newInstallation(base, basePackageFile);
@@ -56,7 +58,7 @@ public class Provision {
 
       // resolve packages
       System.out.println("Installing remaining packages");
-      for (Manifest.Package aPackage : manifest.getPackages()) {
+      for (Package aPackage : manifest.getPackages()) {
          System.out.printf("Installing package [%s] %n", aPackage.getArtifactId());
          File packageFile = localRepository.resolve(aPackage);
          localInstallation.installPackage(packageFile);
@@ -64,7 +66,7 @@ public class Provision {
 
       // resolve artifacts
       System.out.println("Resolving artifacts from " + repo);
-      for (Manifest.Artifact entry : manifest.getArtifacts()) {
+      for (Artifact entry : manifest.getArtifacts()) {
          // TODO: use proper maven resolution :)
          File artifactFile = localRepository.resolve(entry);
          localInstallation.installArtifact(entry, artifactFile);

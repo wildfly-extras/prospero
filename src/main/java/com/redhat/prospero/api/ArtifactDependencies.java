@@ -15,31 +15,25 @@
  * limitations under the License.
  */
 
-package com.redhat.prospero.descriptors;
+package com.redhat.prospero.api;
 
 import java.util.ArrayList;
 
-import com.redhat.prospero.api.Gav;
+public class ArtifactDependencies extends Gav {
 
-public class DependencyDescriptor {
+   private final ArrayList<Artifact> dependencies;
 
-   public final String groupId;
-   public final String artifactId;
-   public final String version;
-   public final String classifier;
-   public final ArrayList<Dependency> deps;
-
-   public DependencyDescriptor(String groupId, String artifactId, String version, String classifier, ArrayList<Dependency> deps) {
-      this.groupId = groupId;
-      this.artifactId = artifactId;
-      this.version = version;
-      this.classifier = classifier;
-      this.deps = deps;
+   public ArtifactDependencies(String groupId, String artifactId, String version, String classifier, ArrayList<Artifact> dependencies) {
+      super(groupId, artifactId, version, classifier, "jar");
+      this.dependencies = dependencies;
    }
 
-   public static class Dependency extends Gav {
-      public Dependency(String group, String name, String minVersion, String classifier) {
-         super(group, name, minVersion, classifier, "jar");
-      }
+   @Override
+   public Gav newVersion(String newVersion) {
+      return new ArtifactDependencies(groupId, artifactId, newVersion, classifier, dependencies);
+   }
+
+   public ArrayList<Artifact> getDependencies() {
+      return dependencies;
    }
 }

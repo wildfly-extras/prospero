@@ -22,9 +22,10 @@ import java.io.IOException;
 import java.nio.file.Path;
 import java.util.Collection;
 
+import com.redhat.prospero.api.Artifact;
+import com.redhat.prospero.api.Installation;
+import com.redhat.prospero.api.Manifest;
 import com.redhat.prospero.api.PackageInstallationException;
-import com.redhat.prospero.descriptors.Manifest;
-import com.redhat.prospero.modules.Modules;
 import com.redhat.prospero.xml.ManifestReader;
 import com.redhat.prospero.xml.ModuleWriter;
 import com.redhat.prospero.xml.XmlException;
@@ -32,7 +33,7 @@ import net.lingala.zip4j.ZipFile;
 import net.lingala.zip4j.exception.ZipException;
 import org.apache.commons.io.FileUtils;
 
-public class LocalInstallation {
+public class LocalInstallation implements Installation {
 
    private final Manifest manifest;
    private final Path base;
@@ -49,11 +50,13 @@ public class LocalInstallation {
       modules = new Modules(base);
    }
 
+   @Override
    public void installPackage(File packageFile) throws PackageInstallationException {
       installPackage(packageFile, base);
    }
 
-   public void installArtifact(Manifest.Artifact definition, File archiveFile) throws PackageInstallationException {
+   @Override
+   public void installArtifact(Artifact definition, File archiveFile) throws PackageInstallationException {
       //  find in modules
       Collection<Path> updates = modules.find(definition);
 
@@ -71,7 +74,8 @@ public class LocalInstallation {
       });
    }
 
-   public void updateArtifact(Manifest.Artifact oldArtifact, Manifest.Artifact newArtifact, File artifactFile) throws PackageInstallationException {
+   @Override
+   public void updateArtifact(Artifact oldArtifact, Artifact newArtifact, File artifactFile) throws PackageInstallationException {
       Collection<Path> updates = modules.find(oldArtifact);
 
       if (updates.isEmpty()) {
@@ -99,6 +103,7 @@ public class LocalInstallation {
       }
    }
 
+   @Override
    public Manifest getManifest() {
       return manifest;
    }

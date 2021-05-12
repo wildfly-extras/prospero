@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-package com.redhat.prospero.modules;
+package com.redhat.prospero.impl;
 
 import javax.xml.XMLConstants;
 import javax.xml.parsers.DocumentBuilderFactory;
@@ -33,7 +33,7 @@ import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-import com.redhat.prospero.descriptors.Manifest;
+import com.redhat.prospero.api.Artifact;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.NodeList;
@@ -47,7 +47,7 @@ public class Modules {
       this.base = base;
    }
 
-   public Collection<Path> find(Manifest.Artifact artifact) {
+   public Collection<Path> find(Artifact artifact) {
       try {
          final Stream<Path> modules = Files.walk(base.resolve("modules"));
          if (moduleMapping.containsKey(artifact.getFileName())) {

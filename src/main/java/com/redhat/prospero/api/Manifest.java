@@ -15,13 +15,12 @@
  * limitations under the License.
  */
 
-package com.redhat.prospero.descriptors;
+package com.redhat.prospero.api;
 
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
 
-import com.redhat.prospero.api.Gav;
 import com.redhat.prospero.xml.ManifestReader;
 import com.redhat.prospero.xml.XmlException;
 
@@ -79,29 +78,5 @@ public class Manifest {
          }
       }
       return null;
-   }
-
-   public static class Artifact extends Gav {
-
-      public Artifact(String groupId, String artifactId, String version, String classifier) {
-         super(groupId, artifactId, version, classifier, "jar");
-      }
-
-      @Override
-      public Artifact newVersion(String newVersion) {
-         return new Artifact(groupId, artifactId, newVersion, classifier);
-      }
-   }
-
-   public static class Package extends Gav {
-
-      public Package(String groupId, String artifactId, String version) {
-         super(groupId, artifactId, version, null, "zip");
-      }
-
-      @Override
-      public Package newVersion(String newVersion) {
-         return new Package(groupId, artifactId, newVersion);
-      }
    }
 }

@@ -17,10 +17,9 @@
 
 package com.redhat.prospero.api;
 
-import com.redhat.prospero.descriptors.Manifest;
 import org.apache.maven.artifact.versioning.ComparableVersion;
 
-public class Gav {
+public abstract class Gav {
 
    protected final String groupId;
    protected final String artifactId;
@@ -68,9 +67,7 @@ public class Gav {
       return new ComparableVersion(this.getVersion()).compareTo(new ComparableVersion(other.getVersion()));
    }
 
-   public Gav newVersion(String latestVersionSting) {
-      return null;
-   }
+   public abstract Gav newVersion(String latestVersionSting);
 
    @Override
    public String toString() {

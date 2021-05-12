@@ -28,7 +28,9 @@ import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
 
-import com.redhat.prospero.descriptors.Manifest;
+import com.redhat.prospero.api.Artifact;
+import com.redhat.prospero.api.Package;
+import com.redhat.prospero.api.Manifest;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.NodeList;
@@ -50,37 +52,37 @@ public class ManifestReader {
       factory.setFeature("http://apache.org/xml/features/disallow-doctype-decl", true);
       Document input = factory.newDocumentBuilder().parse(manifestFile);
 
-      final ArrayList<Manifest.Artifact> entries = parseArtifacts(input);
-      final ArrayList<Manifest.Package> packages = parsePackages(input);
+      final ArrayList<Artifact> entries = parseArtifacts(input);
+      final ArrayList<Package> packages = parsePackages(input);
       final Manifest manifest = new Manifest(entries, packages, manifestFile.toPath());
       return manifest;
    }
 
-   private static ArrayList<Manifest.Artifact> parseArtifacts(Document input) throws XPathExpressionException {
+   private static ArrayList<Artifact> parseArtifacts(Document input) throws XPathExpressionException {
       XPath xpath = XPathFactory.newInstance().newXPath();
       String expr = "//artifact";
       NodeList nodes = (NodeList) xpath.evaluate(expr, input, XPathConstants.NODESET);
-      final ArrayList<Manifest.Artifact> entries = new ArrayList<>(nodes.getLength());
+      final ArrayList<Artifact> entries = new ArrayList<>(nodes.getLength());
       for (int i = 0; i < nodes.getLength(); i++) {
          Element node = (Element) nodes.item(i);
-         entries.add(new Manifest.Artifact(node.getAttribute("package"),
-                                           node.getAttribute("name"),
-                                           node.getAttribute("version"),
-                                           node.getAttribute("classifier")));
+         entries.add(new Artifact(node.getAttribute("package"),
+                                  node.getAttribute("name"),
+                                  node.getAttribute("version"),
+                                  node.getAttribute("classifier")));
       }
       return entries;
    }
 
-   private static ArrayList<Manifest.Package> parsePackages(Document input) throws XPathExpressionException {
+   private static ArrayList<Package> parsePackages(Document input) throws XPathExpressionException {
       XPath xpath = XPathFactory.newInstance().newXPath();
       String expr = "//package";
       NodeList nodes = (NodeList) xpath.evaluate(expr, input, XPathConstants.NODESET);
-      final ArrayList<Manifest.Package> entries = new ArrayList<>(nodes.getLength());
+      final ArrayList<Package> entries = new ArrayList<>(nodes.getLength());
       for (int i = 0; i < nodes.getLength(); i++) {
          Element node = (Element) nodes.item(i);
-         entries.add(new Manifest.Package(node.getAttribute("group"),
-                                          node.getAttribute("name"),
-                                          node.getAttribute("version")));
+         entries.add(new Package(node.getAttribute("group"),
+                                 node.getAttribute("name"),
+                                 node.getAttribute("version")));
       }
       return entries;
    }

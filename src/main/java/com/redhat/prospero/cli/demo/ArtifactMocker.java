@@ -15,16 +15,16 @@
  * limitations under the License.
  */
 
-package com.redhat.prospero.demo;
+package com.redhat.prospero.cli.demo;
 
 import java.io.File;
-import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.List;
 
-import com.redhat.prospero.actions.DeployArtifact;
-import com.redhat.prospero.descriptors.Manifest;
+import com.redhat.prospero.api.Artifact;
+import com.redhat.prospero.api.Manifest;
+import com.redhat.prospero.cli.actions.DeployArtifact;
 import com.redhat.prospero.impl.LocalRepository;
 
 public class ArtifactMocker {
@@ -48,8 +48,8 @@ public class ArtifactMocker {
    public void mockArtifact(String name, String newVersion, String base, String repo, List<String> deps) throws Exception {
       // find current version and group name of artifact
       final Manifest manifest = Manifest.parseManifest(Paths.get(base).resolve("manifest.xml"));
-      Manifest.Artifact oldEntry = null;
-      for (Manifest.Artifact artifact : manifest.getArtifacts()) {
+      Artifact oldEntry = null;
+      for (Artifact artifact : manifest.getArtifacts()) {
          if (artifact.getArtifactId().equals(name)) {
             oldEntry = artifact;
             break;

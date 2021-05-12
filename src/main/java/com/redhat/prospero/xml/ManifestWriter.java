@@ -24,7 +24,9 @@ import java.io.PrintWriter;
 import java.nio.file.Files;
 import java.nio.file.StandardCopyOption;
 
-import com.redhat.prospero.descriptors.Manifest;
+import com.redhat.prospero.api.Artifact;
+import com.redhat.prospero.api.Package;
+import com.redhat.prospero.api.Manifest;
 
 public class ManifestWriter {
    public static void write(Manifest manifest, File manifestFile) throws XmlException {
@@ -42,13 +44,13 @@ public class ManifestWriter {
          final PrintWriter printWriter = new PrintWriter(manifestFile);
          printWriter.println("<manifest>");
          // add packages
-         for (Manifest.Package aPackage : manifest.getPackages()) {
+         for (Package aPackage : manifest.getPackages()) {
             printWriter.println(String.format("<package group=\"%s\" name=\"%s\" version=\"%s\"/>",
                                               aPackage.getGroupId(), aPackage.getArtifactId(), aPackage.getVersion()));
          }
 
          // add artifacts
-         for (Manifest.Artifact artifact : manifest.getArtifacts()) {
+         for (Artifact artifact : manifest.getArtifacts()) {
             printWriter.println(String.format("<artifact package=\"%s\" name=\"%s\" version=\"%s\" classifier=\"%s\"/>",
                                               artifact.getGroupId(), artifact.getArtifactId(), artifact.getVersion(), artifact.getClassifier()));
          }

@@ -28,7 +28,8 @@ import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
 
-import com.redhat.prospero.descriptors.DependencyDescriptor;
+import com.redhat.prospero.api.Artifact;
+import com.redhat.prospero.api.ArtifactDependencies;
 import org.w3c.dom.Document;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
@@ -36,7 +37,7 @@ import org.xml.sax.SAXException;
 
 public class DependencyDescriptorParser {
 
-   public static DependencyDescriptor parse(File descriptorFile) throws XmlException {
+   public static ArtifactDependencies parse(File descriptorFile) throws XmlException {
       try {
          DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
          factory.setFeature(XMLConstants.FEATURE_SECURE_PROCESSING, true);
@@ -50,12 +51,12 @@ public class DependencyDescriptorParser {
 
          XPath xpath = XPathFactory.newInstance().newXPath();
          NodeList nodes = (NodeList) xpath.evaluate("//dependencies/dependency", input, XPathConstants.NODESET);
-         ArrayList<DependencyDescriptor.Dependency> deps = new ArrayList<>(nodes.getLength());
+         ArrayList<Artifact> deps = new ArrayList<>(nodes.getLength());
          for (int i = 0; i < nodes.getLength(); i++) {
             deps.add(parseDependency(nodes.item(i)));
          }
 
-         return new DependencyDescriptor(group, name, version, classifier, deps);
+         return new ArtifactDependencies(group, name, version, classifier, deps);
       } catch (ParserConfigurationException | XPathExpressionException | SAXException | IOException e) {
          throw new XmlException("Failed to parse dependency descriptor", e);
       }
@@ -72,7 +73,7 @@ public class DependencyDescriptorParser {
       return nodes.item(0).getTextContent();
    }
 
-   private static DependencyDescriptor.Dependency parseDependency(Node dep) throws XmlException {
+   private static Artifact parseDependency(Node dep) throws XmlException {
       String group = null;
       String name = null;
       String minVersion = null;
@@ -100,6 +101,6 @@ public class DependencyDescriptorParser {
          }
       }
 
-      return new DependencyDescriptor.Dependency(group, name, minVersion, classifier);
+      return new Artifact(group, name, minVersion, classifier);
    }
 }

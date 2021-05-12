@@ -21,7 +21,6 @@ import javax.xml.XMLConstants;
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
 import javax.xml.transform.Transformer;
-import javax.xml.transform.TransformerConfigurationException;
 import javax.xml.transform.TransformerException;
 import javax.xml.transform.TransformerFactory;
 import javax.xml.transform.dom.DOMSource;
@@ -37,7 +36,7 @@ import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
 
-import com.redhat.prospero.descriptors.Manifest;
+import com.redhat.prospero.api.Artifact;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.NodeList;
@@ -45,7 +44,7 @@ import org.xml.sax.SAXException;
 
 public class ModuleWriter {
 
-   public static void updateVersionInModuleXml(Path module, Manifest.Artifact oldVersion, Manifest.Artifact newVersion) throws XmlException {
+   public static void updateVersionInModuleXml(Path module, Artifact oldVersion, Artifact newVersion) throws XmlException {
       try {
          DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
          factory.setFeature(XMLConstants.FEATURE_SECURE_PROCESSING, true);

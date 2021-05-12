@@ -26,13 +26,13 @@ import java.util.TreeSet;
 
 import com.redhat.prospero.api.ArtifactNotFoundException;
 import com.redhat.prospero.api.Gav;
-import com.redhat.prospero.descriptors.DependencyDescriptor;
-import com.redhat.prospero.descriptors.Manifest;
+import com.redhat.prospero.api.ArtifactDependencies;
+import com.redhat.prospero.api.Repository;
 import com.redhat.prospero.xml.DependencyDescriptorParser;
 import com.redhat.prospero.xml.XmlException;
 import org.apache.maven.artifact.versioning.ComparableVersion;
 
-public class LocalRepository {
+public class LocalRepository implements Repository {
 
    private final Path base;
 
@@ -40,6 +40,7 @@ public class LocalRepository {
       this.base = base;
    }
 
+   @Override
    public File resolve(Gav artifact) throws ArtifactNotFoundException {
       final File file = base.resolve(getRelativePath(artifact)).toFile();
       if (!file.exists()) {
@@ -48,6 +49,7 @@ public class LocalRepository {
       return file;
    }
 
+   @Override
    public Gav findLatestVersionOf(Gav artifact) {
       final String[] versions = base.resolve(getRelativePath(artifact)).getParent().getParent().toFile().list();
 
@@ -66,7 +68,8 @@ public class LocalRepository {
       return latestVersion;
    }
 
-   public DependencyDescriptor resolveDescriptor(Gav latestVersion) throws XmlException {
+   @Override
+   public ArtifactDependencies resolveDescriptor(Gav latestVersion) throws XmlException {
       final Path descriptorPath = base.resolve(getRelativePath(latestVersion).getParent()).resolve("dependencies.xml");
       if (descriptorPath.toFile().exists()) {
          return DependencyDescriptorParser.parse(descriptorPath.toFile());
