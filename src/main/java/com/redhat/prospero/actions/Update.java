@@ -25,7 +25,6 @@ import com.redhat.prospero.descriptors.Manifest;
 import com.redhat.prospero.impl.LocalInstallation;
 import com.redhat.prospero.impl.LocalRepository;
 import com.redhat.prospero.xml.ManifestWriter;
-import org.apache.maven.artifact.versioning.ComparableVersion;
 
 public class Update {
 
@@ -70,13 +69,12 @@ public class Update {
 
                // check if all dependencies are at least on the min version
                for (DependencyDescriptor.Dependency dep : dependencyDescriptor.deps) {
-                  Manifest.Artifact e = manifest.find(dep);
+                  Manifest.Artifact current = manifest.find(dep);
 
-                  // TODO: move to Gav
-                  if (new ComparableVersion(e.getVersion()).compareTo(new ComparableVersion(dep.getVersion())) < 0) {
+                  if (current.compareVersion(dep) < 0) {
                      System.out.println("Found upgrades required for " + latestVersion.getArtifactId());
                      // update dependencies if needed
-                     update(localRepository, localInstallation, e.getArtifactId());
+                     update(localRepository, localInstallation, current.getArtifactId());
                   }
                   // TODO: verify new version is enough
                }
