@@ -19,18 +19,18 @@ package com.redhat.prospero.api;
 
 import java.util.ArrayList;
 
-public class ArtifactDependencies extends Gav {
+public class ArtifactDependencies {
 
+   private final Artifact artifact;
    private final ArrayList<Artifact> dependencies;
 
-   public ArtifactDependencies(String groupId, String artifactId, String version, String classifier, ArrayList<Artifact> dependencies) {
-      super(groupId, artifactId, version, classifier, "jar");
+   public ArtifactDependencies(Artifact artifact, ArrayList<Artifact> dependencies) {
+      this.artifact = artifact;
       this.dependencies = dependencies;
    }
 
-   @Override
-   public Gav newVersion(String newVersion) {
-      return new ArtifactDependencies(groupId, artifactId, newVersion, classifier, dependencies);
+   public Artifact getArtifact() {
+      return artifact;
    }
 
    public ArrayList<Artifact> getDependencies() {

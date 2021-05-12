@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-package com.redhat.prospero.impl;
+package com.redhat.prospero.impl.repository;
 
 import java.io.File;
 import java.nio.file.Path;

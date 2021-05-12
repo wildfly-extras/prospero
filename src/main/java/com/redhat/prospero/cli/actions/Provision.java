@@ -24,8 +24,8 @@ import java.nio.file.Paths;
 import com.redhat.prospero.api.Artifact;
 import com.redhat.prospero.api.Package;
 import com.redhat.prospero.api.Manifest;
-import com.redhat.prospero.impl.LocalInstallation;
-import com.redhat.prospero.impl.LocalRepository;
+import com.redhat.prospero.impl.installation.LocalInstallation;
+import com.redhat.prospero.impl.repository.LocalRepository;
 
 public class Provision {
 

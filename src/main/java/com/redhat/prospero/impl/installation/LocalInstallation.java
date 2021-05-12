@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-package com.redhat.prospero.impl;
+package com.redhat.prospero.impl.installation;
 
 import java.io.File;
 import java.io.IOException;

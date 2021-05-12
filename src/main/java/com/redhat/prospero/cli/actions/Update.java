@@ -23,8 +23,8 @@ import com.redhat.prospero.api.Artifact;
 import com.redhat.prospero.api.Gav;
 import com.redhat.prospero.api.ArtifactDependencies;
 import com.redhat.prospero.api.Manifest;
-import com.redhat.prospero.impl.LocalInstallation;
-import com.redhat.prospero.impl.LocalRepository;
+import com.redhat.prospero.impl.installation.LocalInstallation;
+import com.redhat.prospero.impl.repository.LocalRepository;
 import com.redhat.prospero.xml.ManifestWriter;
 
 public class Update {

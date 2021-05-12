@@ -56,7 +56,7 @@ public class DependencyDescriptorParser {
             deps.add(parseDependency(nodes.item(i)));
          }
 
-         return new ArtifactDependencies(group, name, version, classifier, deps);
+         return new ArtifactDependencies(new Artifact(group, name, version, classifier), deps);
       } catch (ParserConfigurationException | XPathExpressionException | SAXException | IOException e) {
          throw new XmlException("Failed to parse dependency descriptor", e);
       }

@@ -4,18 +4,18 @@ CLASSPATH="target/prospero-1.0-SNAPSHOT.jar:target/dependency/*"
 
 if [ "$1" == 'install' ];
 then
-  java -cp "${CLASSPATH}" com.redhat.prospero.actions.Provision "target/wfly" "target/prospero-repo"
+  java -cp "${CLASSPATH}" com.redhat.prospero.cli.actions.Provision "target/wfly" "target/prospero-repo"
 elif [ "$1" == 'update' ];
 then
   if [ -n "${2}" ];
   then
-    java -cp "${CLASSPATH}" com.redhat.prospero.actions.Update "target/wfly" "target/prospero-repo" "${2}"
+    java -cp "${CLASSPATH}" com.redhat.prospero.cli.actions.Update "target/wfly" "target/prospero-repo" "${2}"
   else
-    java -cp "${CLASSPATH}" com.redhat.prospero.actions.Update "target/wfly" "target/prospero-repo"
+    java -cp "${CLASSPATH}" com.redhat.prospero.cli.actions.Update "target/wfly" "target/prospero-repo"
   fi
 elif [ "$1" == 'deploy' ];
 then
-    java -cp "${CLASSPATH}" com.redhat.prospero.actions.DeployerArtifact "${2}" "${3}" "${4}" "${5}" "target/prospero-repo" "${@:6}"
+    java -cp "${CLASSPATH}" com.redhat.prospero.cli.actions.DeployerArtifact "${2}" "${3}" "${4}" "${5}" "target/prospero-repo" "${@:6}"
 else
   echo "Unrecognized command"
   exit 1;

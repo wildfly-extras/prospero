@@ -25,7 +25,7 @@ import java.util.List;
 import com.redhat.prospero.api.Artifact;
 import com.redhat.prospero.api.Manifest;
 import com.redhat.prospero.cli.actions.DeployArtifact;
-import com.redhat.prospero.impl.LocalRepository;
+import com.redhat.prospero.impl.repository.LocalRepository;
 
 public class ArtifactMocker {
 
