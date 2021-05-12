@@ -71,9 +71,10 @@ public class Manifest {
       artifacts.add(newVersion);
    }
 
-   public Artifact find(String group, String name, String classifier) {
+   public Artifact find(Gav gav) {
       for (Artifact artifact : artifacts) {
-         if (artifact.getGroupId().equals(group) && artifact.getArtifactId().equals(name) && artifact.getClassifier().equals(classifier)) {
+         // TODO: move to Gav
+         if (artifact.getGroupId().equals(gav.getGroupId()) && artifact.getArtifactId().equals(gav.getArtifactId()) && artifact.getClassifier().equals(gav.getClassifier())) {
             return artifact;
          }
       }
@@ -86,6 +87,7 @@ public class Manifest {
          super(groupId, artifactId, version, classifier, "jar");
       }
 
+      @Override
       public Artifact newVersion(String newVersion) {
          return new Artifact(groupId, artifactId, newVersion, classifier);
       }
@@ -95,6 +97,11 @@ public class Manifest {
 
       public Package(String groupId, String artifactId, String version) {
          super(groupId, artifactId, version, null, "zip");
+      }
+
+      @Override
+      public Package newVersion(String newVersion) {
+         return new Package(groupId, artifactId, newVersion);
       }
    }
 }

@@ -22,4 +22,8 @@ public class XmlException extends Exception {
    public XmlException(String message, Exception e) {
       super(message, e);
    }
+
+   public XmlException(String message) {
+      super(message);
+   }
 }

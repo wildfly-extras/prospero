@@ -22,9 +22,15 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.TreeSet;
 
 import com.redhat.prospero.api.ArtifactNotFoundException;
 import com.redhat.prospero.api.Gav;
+import com.redhat.prospero.descriptors.DependencyDescriptor;
+import com.redhat.prospero.descriptors.Manifest;
+import com.redhat.prospero.xml.DependencyDescriptorParser;
+import com.redhat.prospero.xml.XmlException;
+import org.apache.maven.artifact.versioning.ComparableVersion;
 
 public class LocalRepository {
 
@@ -40,6 +46,33 @@ public class LocalRepository {
          throw new ArtifactNotFoundException("Unable to resolve artifact " + artifact);
       }
       return file;
+   }
+
+   public Gav findLatestVersionOf(Gav artifact) {
+      final String[] versions = base.resolve(getRelativePath(artifact)).getParent().getParent().toFile().list();
+
+      Gav latestVersion = null;
+      if (versions.length > 1) {
+         final TreeSet<ComparableVersion> comparableVersions = new TreeSet<>();
+         for (String version : versions) {
+            comparableVersions.add(new ComparableVersion(version));
+         }
+
+         String latestVersionSting = comparableVersions.descendingSet().first().toString();
+         if (!latestVersionSting.equals(artifact.getVersion())) {
+            latestVersion = artifact.newVersion(latestVersionSting);
+         }
+      }
+      return latestVersion;
+   }
+
+   public DependencyDescriptor resolveDescriptor(Gav latestVersion) throws XmlException {
+      final Path descriptorPath = base.resolve(getRelativePath(latestVersion).getParent()).resolve("dependencies.xml");
+      if (descriptorPath.toFile().exists()) {
+         return DependencyDescriptorParser.parse(descriptorPath.toFile());
+      } else {
+         return null;
+      }
    }
 
    private Path getRelativePath(Gav artifact) {
@@ -58,5 +91,4 @@ public class LocalRepository {
 
       return Paths.get(start, path.toArray(new String[]{}));
    }
-
 }

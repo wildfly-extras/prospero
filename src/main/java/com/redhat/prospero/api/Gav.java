@@ -17,6 +17,8 @@
 
 package com.redhat.prospero.api;
 
+import com.redhat.prospero.descriptors.Manifest;
+
 public class Gav {
 
    protected final String groupId;
@@ -59,5 +61,14 @@ public class Gav {
       } else {
          return String.format("%s-%s-%s.%s", artifactId, version, classifier, packaging);
       }
+   }
+
+   public Gav newVersion(String latestVersionSting) {
+      return null;
+   }
+
+   @Override
+   public String toString() {
+      return "Gav{" + "groupId='" + groupId + '\'' + ", artifactId='" + artifactId + '\'' + ", version='" + version + '\'' + ", classifier='" + classifier + '\'' + ", packaging='" + packaging + '\'' + '}';
    }
 }

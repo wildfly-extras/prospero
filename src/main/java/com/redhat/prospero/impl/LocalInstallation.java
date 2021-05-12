@@ -26,6 +26,7 @@ import com.redhat.prospero.api.PackageInstallationException;
 import com.redhat.prospero.descriptors.Manifest;
 import com.redhat.prospero.modules.Modules;
 import com.redhat.prospero.xml.ManifestReader;
+import com.redhat.prospero.xml.ModuleWriter;
 import com.redhat.prospero.xml.XmlException;
 import net.lingala.zip4j.ZipFile;
 import net.lingala.zip4j.exception.ZipException;
@@ -52,18 +53,6 @@ public class LocalInstallation {
       installPackage(packageFile, base);
    }
 
-   private static void installPackage(File packageFile, Path base) throws PackageInstallationException {
-      try {
-         new ZipFile(packageFile).extractAll(base.toString());
-      } catch (ZipException e) {
-         throw new PackageInstallationException("Error when extracting package: " + packageFile, e);
-      }
-   }
-
-   public void installPackage(Manifest.Package definition, File archiveFile) {
-
-   }
-
    public void installArtifact(Manifest.Artifact definition, File archiveFile) throws PackageInstallationException {
       //  find in modules
       Collection<Path> updates = modules.find(definition);
@@ -82,7 +71,43 @@ public class LocalInstallation {
       });
    }
 
+   public void updateArtifact(Manifest.Artifact oldArtifact, Manifest.Artifact newArtifact, File artifactFile) throws PackageInstallationException {
+      Collection<Path> updates = modules.find(oldArtifact);
+
+      if (updates.isEmpty()) {
+         throw new PackageInstallationException("Artifact " + oldArtifact.getFileName() + " not found");
+      }
+
+      for (Path module : updates) {
+         // copy the new artifact
+         Path target = module.getParent();
+         try {
+            FileUtils.copyFile(artifactFile, target.resolve(newArtifact.getFileName()).toFile());
+         } catch (IOException e) {
+            throw new PackageInstallationException("Unable to install package " + newArtifact, e);
+         }
+
+         // update model.xml
+         try {
+            ModuleWriter.updateVersionInModuleXml(module, oldArtifact, newArtifact);
+         } catch (XmlException e) {
+            throw new PackageInstallationException("Unable to write changes in module xml", e);
+         }
+
+         // update manifest.xml
+         manifest.updateVersion(newArtifact);
+      }
+   }
+
    public Manifest getManifest() {
       return manifest;
+   }
+
+   private static void installPackage(File packageFile, Path base) throws PackageInstallationException {
+      try {
+         new ZipFile(packageFile).extractAll(base.toString());
+      } catch (ZipException e) {
+         throw new PackageInstallationException("Error when extracting package: " + packageFile, e);
+      }
    }
 }
