@@ -26,8 +26,8 @@ import com.redhat.prospero.api.Artifact;
 import com.redhat.prospero.api.Installation;
 import com.redhat.prospero.api.Manifest;
 import com.redhat.prospero.api.PackageInstallationException;
-import com.redhat.prospero.xml.ManifestReader;
-import com.redhat.prospero.xml.ModuleWriter;
+import com.redhat.prospero.xml.ManifestXmlSupport;
+import com.redhat.prospero.xml.ModuleXmlSupport;
 import com.redhat.prospero.xml.XmlException;
 import net.lingala.zip4j.ZipFile;
 import net.lingala.zip4j.exception.ZipException;
@@ -46,7 +46,7 @@ public class LocalInstallation implements Installation {
 
    public LocalInstallation(Path base) throws XmlException {
       this.base = base;
-      manifest = ManifestReader.parse(base.resolve("manifest.xml").toFile());
+      manifest = ManifestXmlSupport.parse(base.resolve("manifest.xml").toFile());
       modules = new Modules(base);
    }
 
@@ -93,7 +93,7 @@ public class LocalInstallation implements Installation {
 
          // update model.xml
          try {
-            ModuleWriter.updateVersionInModuleXml(module, oldArtifact, newArtifact);
+            ModuleXmlSupport.INSTANCE.updateVersionInModuleXml(module, oldArtifact, newArtifact);
          } catch (XmlException e) {
             throw new PackageInstallationException("Unable to write changes in module xml", e);
          }

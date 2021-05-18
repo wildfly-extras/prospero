@@ -32,9 +32,8 @@ import com.redhat.prospero.api.Artifact;
 import com.redhat.prospero.api.Gav;
 import com.redhat.prospero.api.Package;
 import com.redhat.prospero.api.Manifest;
-import com.redhat.prospero.xml.ManifestWriter;
-import com.redhat.prospero.xml.ModuleReader;
-import com.redhat.prospero.xml.ModuleWriter;
+import com.redhat.prospero.xml.ManifestXmlSupport;
+import com.redhat.prospero.xml.ModuleXmlSupport;
 import com.redhat.prospero.xml.XmlException;
 import net.lingala.zip4j.ZipFile;
 import org.apache.commons.io.FileUtils;
@@ -146,7 +145,7 @@ public class DemoInitializer {
       List<Artifact> artifacts = modules.filter(p-> p.getFileName().toString().equals("module.xml"))
          .flatMap(p-> {
             try {
-               return ModuleReader.extractArtifacts(p).stream();
+               return ModuleXmlSupport.INSTANCE.extractArtifacts(p).stream();
             } catch (XmlException e) {
                throw new RuntimeException(e);
             }
@@ -160,7 +159,7 @@ public class DemoInitializer {
          }).collect(Collectors.toList());
 
       Manifest manifest = new Manifest(artifacts, packages, manifestPath);
-      ManifestWriter.write(manifest, manifestPath.toFile());
+      ManifestXmlSupport.write(manifest, manifestPath.toFile());
    }
 
    private static void replaceArtifactsWithResources(Path modulesPath) throws Exception {
@@ -170,7 +169,7 @@ public class DemoInitializer {
       modules.filter(p-> p.getFileName().toString().equals("module.xml"))
          .forEach(p-> {
             try {
-               ModuleWriter.replaceArtifactWithResource(p);
+               ModuleXmlSupport.INSTANCE.replaceArtifactWithResource(p);
             } catch (XmlException e) {
                throw new RuntimeException(e);
             }

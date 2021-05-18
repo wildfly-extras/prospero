@@ -23,12 +23,27 @@ import java.io.IOException;
 import java.io.PrintWriter;
 import java.nio.file.Files;
 import java.nio.file.StandardCopyOption;
+import java.util.ArrayList;
 
 import com.redhat.prospero.api.Artifact;
 import com.redhat.prospero.api.Package;
 import com.redhat.prospero.api.Manifest;
+import org.w3c.dom.Document;
+import org.w3c.dom.Element;
+import org.w3c.dom.NodeList;
 
-public class ManifestWriter {
+public class ManifestXmlSupport extends XmlSupport {
+
+   private static final ManifestXmlSupport INSTANCE = new ManifestXmlSupport();
+
+   private ManifestXmlSupport() {
+
+   }
+
+   public static Manifest parse(File manifestFile) throws XmlException {
+      return INSTANCE.doParse(manifestFile);
+   }
+
    public static void write(Manifest manifest, File manifestFile) throws XmlException {
       // if file exists backup it (move)
       if (manifestFile.exists()) {
@@ -66,5 +81,39 @@ public class ManifestWriter {
 
    public static void write(Manifest manifest) throws XmlException {
       write(manifest, manifest.getManifestFile().toFile());
+   }
+
+   private Manifest doParse(File manifestFile) throws XmlException {
+      Document input = readDocument(manifestFile);
+
+      final ArrayList<Artifact> entries = parseArtifacts(input);
+      final ArrayList<Package> packages = parsePackages(input);
+      final Manifest manifest = new Manifest(entries, packages, manifestFile.toPath());
+      return manifest;
+   }
+
+   private ArrayList<Artifact> parseArtifacts(Document input) throws XmlException {
+      NodeList nodes = nodesFromXPath(input, "//artifact");
+      final ArrayList<Artifact> entries = new ArrayList<>(nodes.getLength());
+      for (int i = 0; i < nodes.getLength(); i++) {
+         Element node = (Element) nodes.item(i);
+         entries.add(new Artifact(node.getAttribute("package"),
+                                  node.getAttribute("name"),
+                                  node.getAttribute("version"),
+                                  node.getAttribute("classifier")));
+      }
+      return entries;
+   }
+
+   private ArrayList<Package> parsePackages(Document input) throws XmlException {
+      NodeList nodes = nodesFromXPath(input, "//package");
+      final ArrayList<Package> entries = new ArrayList<>(nodes.getLength());
+      for (int i = 0; i < nodes.getLength(); i++) {
+         Element node = (Element) nodes.item(i);
+         entries.add(new Package(node.getAttribute("group"),
+                                 node.getAttribute("name"),
+                                 node.getAttribute("version")));
+      }
+      return entries;
    }
 }

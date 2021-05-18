@@ -21,7 +21,7 @@ import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
 
-import com.redhat.prospero.xml.ManifestReader;
+import com.redhat.prospero.xml.ManifestXmlSupport;
 import com.redhat.prospero.xml.XmlException;
 
 public class Manifest {
@@ -37,7 +37,7 @@ public class Manifest {
    }
 
    public static Manifest parseManifest(Path manifestPath) throws XmlException {
-      return ManifestReader.parse(manifestPath.toFile());
+      return ManifestXmlSupport.parse(manifestPath.toFile());
    }
 
    public List<Artifact> getArtifacts() {

@@ -28,7 +28,7 @@ import com.redhat.prospero.api.ArtifactNotFoundException;
 import com.redhat.prospero.api.Gav;
 import com.redhat.prospero.api.ArtifactDependencies;
 import com.redhat.prospero.api.Repository;
-import com.redhat.prospero.xml.DependencyDescriptorParser;
+import com.redhat.prospero.xml.ArtifactDependencyReader;
 import com.redhat.prospero.xml.XmlException;
 import org.apache.maven.artifact.versioning.ComparableVersion;
 
@@ -72,7 +72,7 @@ public class LocalRepository implements Repository {
    public ArtifactDependencies resolveDescriptor(Gav latestVersion) throws XmlException {
       final Path descriptorPath = base.resolve(getRelativePath(latestVersion).getParent()).resolve("dependencies.xml");
       if (descriptorPath.toFile().exists()) {
-         return DependencyDescriptorParser.parse(descriptorPath.toFile());
+         return ArtifactDependencyReader.parse(descriptorPath.toFile());
       } else {
          return null;
       }

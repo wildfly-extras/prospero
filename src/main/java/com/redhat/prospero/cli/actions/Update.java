@@ -25,7 +25,7 @@ import com.redhat.prospero.api.ArtifactDependencies;
 import com.redhat.prospero.api.Manifest;
 import com.redhat.prospero.impl.installation.LocalInstallation;
 import com.redhat.prospero.impl.repository.LocalRepository;
-import com.redhat.prospero.xml.ManifestWriter;
+import com.redhat.prospero.xml.ManifestXmlSupport;
 
 public class Update {
 
@@ -86,7 +86,7 @@ public class Update {
             // TODO: handle zip upgrade as well
             localInstallation.updateArtifact(artifact, (Artifact) latestVersion, localRepository.resolve(latestVersion));
 
-            ManifestWriter.write(manifest);
+            ManifestXmlSupport.write(manifest);
             System.out.printf("  Done [%s:%s]%n", artifact.getGroupId(), artifact.getArtifactId());
          }
       }

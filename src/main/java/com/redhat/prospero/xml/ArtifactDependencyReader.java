@@ -17,15 +17,7 @@
 
 package com.redhat.prospero.xml;
 
-import javax.xml.XMLConstants;
-import javax.xml.parsers.DocumentBuilderFactory;
-import javax.xml.parsers.ParserConfigurationException;
-import javax.xml.xpath.XPath;
-import javax.xml.xpath.XPathConstants;
-import javax.xml.xpath.XPathExpressionException;
-import javax.xml.xpath.XPathFactory;
 import java.io.File;
-import java.io.IOException;
 import java.util.ArrayList;
 
 import com.redhat.prospero.api.Artifact;
@@ -33,38 +25,34 @@ import com.redhat.prospero.api.ArtifactDependencies;
 import org.w3c.dom.Document;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
-import org.xml.sax.SAXException;
 
-public class DependencyDescriptorParser {
+public class ArtifactDependencyReader extends XmlSupport {
+
+   private static final ArtifactDependencyReader INSTANCE = new ArtifactDependencyReader();
 
    public static ArtifactDependencies parse(File descriptorFile) throws XmlException {
-      try {
-         DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
-         factory.setFeature(XMLConstants.FEATURE_SECURE_PROCESSING, true);
-         factory.setFeature("http://apache.org/xml/features/disallow-doctype-decl", true);
-         Document input = factory.newDocumentBuilder().parse(descriptorFile);
-
-         String group = readNode(input, "/artifact/group");
-         String name = readNode(input, "/artifact/name");
-         String version = readNode(input, "/artifact/version");
-         String classifier = readNode(input, "/artifact/classifier");
-
-         XPath xpath = XPathFactory.newInstance().newXPath();
-         NodeList nodes = (NodeList) xpath.evaluate("//dependencies/dependency", input, XPathConstants.NODESET);
-         ArrayList<Artifact> deps = new ArrayList<>(nodes.getLength());
-         for (int i = 0; i < nodes.getLength(); i++) {
-            deps.add(parseDependency(nodes.item(i)));
-         }
-
-         return new ArtifactDependencies(new Artifact(group, name, version, classifier), deps);
-      } catch (ParserConfigurationException | XPathExpressionException | SAXException | IOException e) {
-         throw new XmlException("Failed to parse dependency descriptor", e);
-      }
+      return INSTANCE.doParse(descriptorFile);
    }
 
-   private static String readNode(Document input, String expr) throws XmlException, XPathExpressionException {
-      XPath xpath = XPathFactory.newInstance().newXPath();
-      NodeList nodes = (NodeList) xpath.evaluate(expr, input, XPathConstants.NODESET);
+   private ArtifactDependencies doParse(File descriptorFile) throws XmlException {
+      Document input = readDocument(descriptorFile);
+
+      String group = readTextValue(input, "/artifact/group");
+      String name = readTextValue(input, "/artifact/name");
+      String version = readTextValue(input, "/artifact/version");
+      String classifier = readTextValue(input, "/artifact/classifier");
+
+      NodeList nodes = nodesFromXPath(input, "//dependencies/dependency");
+      ArrayList<Artifact> deps = new ArrayList<>(nodes.getLength());
+      for (int i = 0; i < nodes.getLength(); i++) {
+         deps.add(parseDependency(nodes.item(i)));
+      }
+
+      return new ArtifactDependencies(new Artifact(group, name, version, classifier), deps);
+   }
+
+   private String readTextValue(Node input, String expr) throws XmlException {
+      NodeList nodes = nodesFromXPath(input, expr);
 
       if (nodes.getLength() != 1) {
          throw new XmlException(String.format("Parse error: should only have one %s node", expr));
@@ -73,7 +61,7 @@ public class DependencyDescriptorParser {
       return nodes.item(0).getTextContent();
    }
 
-   private static Artifact parseDependency(Node dep) throws XmlException {
+   private Artifact parseDependency(Node dep) throws XmlException {
       String group = null;
       String name = null;
       String minVersion = null;
