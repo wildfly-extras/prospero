@@ -77,7 +77,9 @@ public class ArtifactMocker {
 //      // generate dependency manifest
       final DeployArtifact deployer = new DeployArtifact(repo);
       deployer.deploy(oldEntry.getGroupId(), oldEntry.getArtifactId(), newVersion, oldArtifact.toString());
-      deployer.generateManifest(oldEntry.getGroupId(), oldEntry.getArtifactId(), newVersion, deps);
+      if (!deps.isEmpty()) {
+         deployer.generateManifest(oldEntry.getGroupId(), oldEntry.getArtifactId(), newVersion, deps);
+      }
       System.out.printf("Mocked %s %s as %s.%n", oldArtifact, oldEntry.getVersion(), newVersion);
    }
 
