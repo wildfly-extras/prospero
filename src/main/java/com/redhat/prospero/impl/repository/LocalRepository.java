@@ -51,7 +51,7 @@ public class LocalRepository implements Repository {
 
    @Override
    public Gav findLatestVersionOf(Gav artifact) {
-      final String[] versions = base.resolve(getRelativePath(artifact)).getParent().getParent().toFile().list();
+      final String[] versions = listVersions(artifact);
 
       Gav latestVersion = null;
       if (versions.length > 1) {
@@ -74,8 +74,30 @@ public class LocalRepository implements Repository {
       if (descriptorPath.toFile().exists()) {
          return ArtifactDependencyReader.parse(descriptorPath.toFile());
       } else {
+         final String[] versions = listVersions(latestVersion);
+         if (versions.length == 1) {
+            return null;
+         }
+
+         final TreeSet<ComparableVersion> comparableVersions = new TreeSet<>();
+         for (String version : versions) {
+            comparableVersions.add(new ComparableVersion(version));
+         }
+
+         for (ComparableVersion comparableVersion : comparableVersions.descendingSet()) {
+            final Path path = base.resolve(getRelativePath(latestVersion.newVersion(comparableVersion.toString())).getParent()).resolve("dependencies.xml");
+            if (path.toFile().exists()) {
+               return ArtifactDependencyReader.parse(path.toFile());
+            }
+         }
+
          return null;
       }
+   }
+
+   private String[] listVersions(Gav artifact) {
+      final String[] versions = base.resolve(getRelativePath(artifact)).getParent().getParent().toFile().list();
+      return versions;
    }
 
    private Path getRelativePath(Gav artifact) {
