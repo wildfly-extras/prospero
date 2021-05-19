@@ -61,11 +61,10 @@ public class LocalRepository implements Repository {
          }
 
          String latestVersionSting = comparableVersions.descendingSet().first().toString();
-         if (!latestVersionSting.equals(artifact.getVersion())) {
-            latestVersion = artifact.newVersion(latestVersionSting);
-         }
+         return artifact.newVersion(latestVersionSting);
+      } else {
+         return artifact.newVersion(versions[0]);
       }
-      return latestVersion;
    }
 
    @Override

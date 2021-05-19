@@ -9,4 +9,4 @@ Demo:
 1. Mock up updated artifacts:
     1. new version of undertow `./demo mock undertow-core 2.2.7.Final`
     1. new version of wildfly-undertow with dependency on undertow `./demo mock wildfly-undertow 24.0.1.Final io.undertow:undertow-core:2.2.8.Final`
-1. Update wildfly-core `./prospero update wildfly-undertow`
+1. Update wildfly-core `./prospero update org.wildfly:wildfly-undertow`
