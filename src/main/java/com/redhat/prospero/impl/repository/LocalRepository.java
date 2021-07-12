@@ -54,6 +54,9 @@ public class LocalRepository implements Repository {
       final String[] versions = listVersions(artifact);
 
       Gav latestVersion = null;
+      if (versions == null || versions.length == 0) {
+         return artifact;
+      }
       if (versions.length > 1) {
          final TreeSet<ComparableVersion> comparableVersions = new TreeSet<>();
          for (String version : versions) {

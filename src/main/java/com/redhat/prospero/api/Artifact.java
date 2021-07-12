@@ -23,6 +23,10 @@ public class Artifact extends Gav {
       super(groupId, artifactId, version, classifier, "jar");
    }
 
+   public Artifact(String groupId, String artifactId, String version, String classifier, String packaging) {
+      super(groupId, artifactId, version, classifier, packaging);
+   }
+
    @Override
    public Artifact newVersion(String newVersion) {
       return new Artifact(groupId, artifactId, newVersion, classifier);

@@ -1,17 +1,19 @@
 #!/bin/bash
 
 CLASSPATH="target/prospero-1.0-SNAPSHOT.jar:target/dependency/*"
+#TARGET_SERVER="target/wfly"
+TARGET_SERVER="/Users/spyrkob/workspaces/set/eap/galleon/out"
 
 if [ "$1" == 'install' ];
 then
-  java -cp "${CLASSPATH}" com.redhat.prospero.cli.actions.Provision "target/wfly" "target/prospero-repo"
+  java -cp "${CLASSPATH}" com.redhat.prospero.cli.actions.Provision "${TARGET_SERVER}" "target/prospero-repo"
 elif [ "$1" == 'update' ];
 then
   if [ -n "${2}" ];
   then
-    java -cp "${CLASSPATH}" com.redhat.prospero.cli.actions.Update "target/wfly" "target/prospero-repo" "${2}"
+    java -agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=*:5005 -cp "${CLASSPATH}" com.redhat.prospero.cli.actions.Update "${TARGET_SERVER}" "target/prospero-repo" "${2}"
   else
-    java -cp "${CLASSPATH}" com.redhat.prospero.cli.actions.Update "target/wfly" "target/prospero-repo"
+    java -cp "${CLASSPATH}" com.redhat.prospero.cli.actions.Update "${TARGET_SERVER}" "target/prospero-repo"
   fi
 elif [ "$1" == 'deploy' ];
 then

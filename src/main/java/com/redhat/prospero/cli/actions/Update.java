@@ -29,19 +29,21 @@ import com.redhat.prospero.api.Gav;
 import com.redhat.prospero.api.ArtifactDependencies;
 import com.redhat.prospero.api.Manifest;
 import com.redhat.prospero.api.PackageInstallationException;
+import com.redhat.prospero.api.Repository;
 import com.redhat.prospero.impl.installation.LocalInstallation;
 import com.redhat.prospero.impl.repository.LocalRepository;
+import com.redhat.prospero.impl.repository.MavenRepository;
 import com.redhat.prospero.xml.ManifestXmlSupport;
 import com.redhat.prospero.xml.XmlException;
 
 public class Update {
 
    private final LocalInstallation localInstallation;
-   private final LocalRepository localRepository;
+   private final Repository repository;
 
-   public Update(LocalRepository localRepository, LocalInstallation localInstallation) {
+   public Update(Repository repository, LocalInstallation localInstallation) {
       this.localInstallation = localInstallation;
-      this.localRepository = localRepository;
+      this.repository = repository;
    }
 
    public static void main(String[] args) throws Exception {
@@ -59,22 +61,50 @@ public class Update {
          artifact = null;
       }
 
-      LocalRepository localRepository = new LocalRepository(Paths.get(repo));
+//      Repository repository = new LocalRepository(Paths.get(repo));
+      Repository repository = new MavenRepository();
       LocalInstallation localInstallation = new LocalInstallation(Paths.get(base));
-      new Update(localRepository, localInstallation).doUpdate(artifact.split(":")[0], artifact.split(":")[1]);
+      if (artifact == null) {
+         new Update(repository, localInstallation).doUpdateAll();
+      } else {
+         new Update(repository, localInstallation).doUpdate(artifact.split(":")[0], artifact.split(":")[1]);
+      }
+   }
+
+   public void doUpdateAll() throws ArtifactNotFoundException, XmlException, PackageInstallationException {
+      final List<UpdateAction> updates = new ArrayList<>();
+      for (Artifact artifact : localInstallation.getManifest().getArtifacts()) {
+         updates.addAll(findUpdates(artifact.getGroupId(), artifact.getArtifactId()));
+      }
+      if (updates.isEmpty()) {
+         System.out.println("No updates to execute");
+         return;
+      }
+
+      System.out.println("Updates found: ");
+      for (UpdateAction update : updates) {
+         System.out.print(update + "\t\t\t\t\t");
+
+         localInstallation.updateArtifact(update.oldVersion, update.newVersion, repository.resolve(update.newVersion));
+
+         System.out.println("DONE");
+      }
+
+      ManifestXmlSupport.write(localInstallation.getManifest());
    }
 
    public void doUpdate(String groupId, String artifactId) throws ArtifactNotFoundException, XmlException, PackageInstallationException {
       final List<UpdateAction> updates = findUpdates(groupId, artifactId);
       if (updates.isEmpty()) {
          System.out.println("No updates to execute");
+         return;
       }
 
       System.out.println("Updates found: ");
       for (UpdateAction update : updates) {
-         System.out.print(update + "\t\t\t\t\t\t");
+         System.out.print(update + "\t\t\t\t\t");
 
-         localInstallation.updateArtifact(update.oldVersion, update.newVersion, localRepository.resolve(update.newVersion));
+         localInstallation.updateArtifact(update.oldVersion, update.newVersion, repository.resolve(update.newVersion));
 
          System.out.println("DONE");
       }
@@ -95,18 +125,18 @@ public class Update {
          throw new ArtifactNotFoundException(String.format("Artifact [%s:%s] not found", groupId, artifactId));
       }
 
-      final Gav latestVersion = localRepository.findLatestVersionOf(artifact);
+      final Gav latestVersion = repository.findLatestVersionOf(artifact);
 
       if (latestVersion.compareVersion(artifact) <= 0) {
          return updates;
       }
 
-      final ArtifactDependencies artifactDependencies = localRepository.resolveDescriptor(latestVersion);
+      updates.add(new UpdateAction(artifact, (Artifact) latestVersion));
+
+      final ArtifactDependencies artifactDependencies = repository.resolveDescriptor(latestVersion);
       if (artifactDependencies == null) {
          return updates;
       }
-
-      updates.add(new UpdateAction(artifact, (Artifact) latestVersion));
 
       for (Artifact required : artifactDependencies.getDependencies()) {
          unresolved.add(required);
@@ -125,7 +155,7 @@ public class Update {
             continue;
          } else {
             // can we resolve the required version?
-            final Gav depLatestVersion = localRepository.findLatestVersionOf(required);
+            final Gav depLatestVersion = repository.findLatestVersionOf(required);
             if (depLatestVersion.compareVersion(required) < 0) {
                throw new ArtifactNotFoundException(String.format("Unable to find [%s, %s] in version >= %s", required.getGroupId(),
                                                                  required.getArtifactId(), required.getVersion()));
@@ -134,7 +164,7 @@ public class Update {
             updates.add(new UpdateAction(dep, (Artifact)depLatestVersion));
             // process dependencies
 
-            final ArtifactDependencies depDependencies = localRepository.resolveDescriptor(latestVersion);
+            final ArtifactDependencies depDependencies = repository.resolveDescriptor(latestVersion);
             if (artifactDependencies != null) {
                for (Artifact depReq : depDependencies.getDependencies()) {
                   unresolved.add(depReq);
