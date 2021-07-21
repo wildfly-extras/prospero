@@ -13,6 +13,7 @@
 
     <modules>
       <module>prospero-cli</module>
+      <module>prospero-galleon-plugin</module>
     </modules>
 
     <build>
