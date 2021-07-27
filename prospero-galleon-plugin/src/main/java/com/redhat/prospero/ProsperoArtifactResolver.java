@@ -61,12 +61,21 @@ import org.jboss.galleon.universe.maven.repo.MavenArtifactVersion;
 
 public class ProsperoArtifactResolver {
 
+   private final List<Channel> channels;
    private RepositorySystem repoSystem;
    private RepositorySystemSession repoSession;
    private Map<String, String> artifactStreams;
+   private Map<String, String> resolvedArtifactStreams = new HashMap<>();
 
-   public ProsperoArtifactResolver(Path streamsPath) throws ProvisioningException {
+   public ProsperoArtifactResolver(Path streamsPath, Path channelFile) throws ProvisioningException {
       System.out.println("Using ProsperoResolver");
+
+      try {
+         this.channels = Channel.readChannels(channelFile);
+      } catch (IOException e) {
+         throw new ProvisioningException(e);
+      }
+
       try {
          repoSystem = newRepositorySystem();
          repoSession = newRepositorySystemSession(repoSystem);
@@ -81,18 +90,49 @@ public class ProsperoArtifactResolver {
       }
    }
 
-   public static void writeManifestFile(ProvisioningRuntime runtime, Map<String, String> mergedArtifactVersions) throws MavenUniverseException {
+   public ProsperoArtifactResolver(Path streamsPath, String channel) throws ProvisioningException {
+      System.out.println("Using ProsperoResolver");
+
+      this.channels = new ArrayList<>();
+      this.channels.add(new Channel(channel, "http://localhost:8081/repository/"+channel));
+
+      try {
+         repoSystem = newRepositorySystem();
+         repoSession = newRepositorySystemSession(repoSystem);
+      } catch (IOException e) {
+         throw new ProvisioningException(e);
+      }
+
+      if(Files.exists(streamsPath)) {
+         artifactStreams = readProperties(streamsPath);
+      } else {
+         artifactStreams = new HashMap<>();
+      }
+   }
+
+   public void writeManifestFile(ProvisioningRuntime runtime, Map<String, String> mergedArtifactVersions, String channelName) throws MavenUniverseException {
       final File file = runtime.getStagedDir().resolve("manifest.xml").toFile();
       try (final FileWriter fileWriter = new FileWriter(file)) {
          fileWriter.write("<manifest>\n");
-         for (String str : mergedArtifactVersions.values()) {
-            final MavenArtifact artifact = MavenArtifact.fromString(str);
-            // TODO: why is the version read as extension??
+         for (Map.Entry<String, String> entry : mergedArtifactVersions.entrySet()) {
+            final MavenArtifact artifact = MavenArtifact.fromString(entry.getValue());
+            String version = artifact.getExtension(); // something's messed up here?
+            if (resolvedArtifactStreams.containsKey(entry.getKey())) {
+               version = resolvedArtifactStreams.get(entry.getKey());
+            }
             fileWriter.write(String.format("<artifact package=\"%s\" name=\"%s\" version=\"%s\" classifier=\"\"/>%n",
-                                           artifact.getGroupId(), artifact.getArtifactId(), artifact.getExtension()));
+                                           artifact.getGroupId(), artifact.getArtifactId(), version));
 
          }
          fileWriter.write("</manifest>\n");
+      } catch (IOException e) {
+         e.printStackTrace();
+      }
+
+      // write channels into installation
+      final File channelsFile = runtime.getStagedDir().resolve("channels.json").toFile();
+      try {
+         Channel.writeChannels(channels, channelsFile);
       } catch (IOException e) {
          e.printStackTrace();
       }
@@ -104,6 +144,7 @@ public class ProsperoArtifactResolver {
       }
 
       final String latestVersion = doGetHighestVersion(artifact, null, null, null);
+      resolvedArtifactStreams.put(artifact.getGroupId() + ":" + artifact.getArtifactId(), latestVersion);
 
       final ArtifactRequest request = new ArtifactRequest();
       request.setArtifact(new DefaultArtifact(artifact.getGroupId(), artifact.getArtifactId(), artifact.getClassifier(),
@@ -122,6 +163,7 @@ public class ProsperoArtifactResolver {
       if (result.isMissing()) {
          throw new MavenUniverseException("Repository is missing artifact " + request.getArtifact().toString());
       }
+      artifact.setVersion(result.getArtifact().getVersion());
       artifact.setPath(Paths.get(result.getArtifact().getFile().toURI()));
    }
 
@@ -133,7 +175,7 @@ public class ProsperoArtifactResolver {
          if (latest == null) {
             return mavenArtifact.getVersion();
          }
-         System.out.println(mavenArtifact.toString() + " == " + latest);
+         System.out.println(streamDef.toString() + " == " + latest);
          return latest.toString();
    }
 
@@ -152,11 +194,13 @@ public class ProsperoArtifactResolver {
 
    private List<RemoteRepository> getRepositories() {
       final ArrayList<RemoteRepository> repos = new ArrayList<>();
-      RemoteRepository channelRepo = new RemoteRepository.Builder("channel", "default", "http://localhost:8081/repository/dev/")
-         .setReleasePolicy(new RepositoryPolicy(true, RepositoryPolicy.UPDATE_POLICY_ALWAYS, null))
-         .setSnapshotPolicy(new RepositoryPolicy(true, RepositoryPolicy.UPDATE_POLICY_ALWAYS, null))
-         .build();
-      repos.add(channelRepo);
+      for (Channel channel : channels) {
+         RemoteRepository channelRepo = new RemoteRepository.Builder(channel.getName(), "default", channel.getUrl())
+            .setReleasePolicy(new RepositoryPolicy(true, RepositoryPolicy.UPDATE_POLICY_ALWAYS, null))
+            .setSnapshotPolicy(new RepositoryPolicy(true, RepositoryPolicy.UPDATE_POLICY_ALWAYS, null))
+            .build();
+         repos.add(channelRepo);
+      }
       return repos;
    }
 
@@ -195,10 +239,6 @@ public class ProsperoArtifactResolver {
       return session;
    }
 
-   private static final String EXPRESSION_PREFIX = "${";
-   private static final String EXPRESSION_SUFFIX = "}";
-   private static final String EXPRESSION_ENV_VAR = "env.";
-   private static final String EXPRESSION_DEFAULT_VALUE_SEPARATOR = ":";
    private static void readProperties(Path propsFile, Map<String, String> propsMap) throws ProvisioningException {
       try(BufferedReader reader = Files.newBufferedReader(propsFile)) {
          String line = reader.readLine();

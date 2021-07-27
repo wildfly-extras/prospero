@@ -24,6 +24,8 @@ import java.io.PrintWriter;
 import java.nio.file.Files;
 import java.nio.file.StandardCopyOption;
 import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.Map;
 
 import com.redhat.prospero.api.Artifact;
 import com.redhat.prospero.api.Package;
