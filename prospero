@@ -1,17 +1,39 @@
 #!/bin/bash
 
-CLASSPATH="target/prospero-1.0-SNAPSHOT.jar:target/dependency/*"
-#TARGET_SERVER="target/wfly"
-TARGET_SERVER="/Users/spyrkob/workspaces/set/eap/galleon/out"
+if [ -z "${PROSPERO_HOME}" ];
+then
+ full_path=$(realpath $0)
+ PROSPERO_HOME=$(dirname $full_path)
+fi
+CLASSPATH="${PROSPERO_HOME}/prospero-cli/target/prospero-cli-1.0-SNAPSHOT.jar:${PROSPERO_HOME}/prospero-cli/target/dependency/*"
+TARGET_SERVER="${PROSPERO_HOME}/out"
 
 if [ "$1" == 'install' ];
 then
-  java -cp "${CLASSPATH}" com.redhat.prospero.cli.actions.Provision "${TARGET_SERVER}" "target/prospero-repo"
+  if [ -n "${2}" ];
+  then
+    TARGET_SERVER="$(greadlink -f ${2})"
+    if [ ! -d "${TARGET_SERVER}" ];
+    then
+      mkdir "${TARGET_SERVER}"
+    fi
+    echo "Installing into ${TARGET_SERVER}"
+  fi
+  java -cp "${CLASSPATH}" com.redhat.prospero.cli.actions.GalleonTest "${TARGET_SERVER}" "target/prospero-repo"
 elif [ "$1" == 'update' ];
 then
   if [ -n "${2}" ];
   then
-    java -agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=*:5005 -cp "${CLASSPATH}" com.redhat.prospero.cli.actions.Update "${TARGET_SERVER}" "target/prospero-repo" "${2}"
+    TARGET_SERVER="$(greadlink -f ${2})"
+    if [ ! -d "${TARGET_SERVER}" ];
+    then
+      echo "There is no folder ${TARGET_SERVER}"
+      exit 1
+    fi
+  fi
+  if [ -n "${3}" ];
+  then
+    java -agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=*:5005 -cp "${CLASSPATH}" com.redhat.prospero.cli.actions.Update "${TARGET_SERVER}" "target/prospero-repo" "${3}"
   else
     java -cp "${CLASSPATH}" com.redhat.prospero.cli.actions.Update "${TARGET_SERVER}" "target/prospero-repo"
   fi
