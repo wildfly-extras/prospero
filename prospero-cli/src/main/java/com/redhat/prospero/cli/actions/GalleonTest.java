@@ -53,6 +53,16 @@ public class GalleonTest {
    public static final String JBOSS_UNIVERSE_GROUP_ID = "org.jboss.universe";
    public static final String JBOSS_UNIVERSE_ARTIFACT_ID = "community-universe";
 
+   static {
+      enableJBossLogManager();
+   }
+
+   private static void enableJBossLogManager() {
+      if (System.getProperty("java.util.logging.manager") == null) {
+         System.setProperty("java.util.logging.manager", "org.jboss.logmanager.LogManager");
+      }
+   }
+
    public static void main(String[] args) throws ProvisioningException, IOException {
       if (args.length < 1) {
          System.out.println("Not enough parameters. Need to provide WFLY installation.");
