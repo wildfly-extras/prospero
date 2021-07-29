@@ -25,7 +25,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import com.redhat.prospero.api.Channel;
+import com.redhat.prospero.cli.GalleonProgressCallback;
 import org.apache.maven.repository.internal.MavenRepositorySystemUtils;
 import org.eclipse.aether.DefaultRepositorySystemSession;
 import org.eclipse.aether.RepositorySystem;
@@ -75,10 +75,13 @@ public class GalleonTest {
    }
 
    public static void installCore(String path, String channelsFile) throws ProvisioningException, IOException {
-      ProvisioningManager.Builder builder = ProvisioningManager.builder();
-      builder.setLayoutFactory(getLayoutFactory());
+      final ProvisioningLayoutFactory layoutFactory = getLayoutFactory();
+      addProgressCallbacks(layoutFactory);
+
+      final ProvisioningManager.Builder builder = ProvisioningManager.builder();
+      builder.setLayoutFactory(layoutFactory);
       builder.setInstallationHome(Paths.get(path));
-      builder.setMessageWriter(getMessageWriter());
+
       final ProvisioningManager provMgr = builder.build();
       FeaturePackLocation loc = FeaturePackLocation.fromString("wildfly-core:16/snapshot");
       loc = loc.replaceUniverse(new UniverseSpec(MavenUniverseFactory.ID,
@@ -90,8 +93,11 @@ public class GalleonTest {
       provMgr.install(loc, params);
    }
 
-   private static MessageWriter getMessageWriter() {
-      return new DefaultMessageWriter(System.out, System.err, false);
+   private static void addProgressCallbacks(ProvisioningLayoutFactory layoutFactory) {
+      layoutFactory.setProgressCallback("LAYOUT_BUILD", new GalleonProgressCallback<FeaturePackLocation.FPID>("Resolving feature-pack", "Feature-packs resolved."));
+      layoutFactory.setProgressCallback("PACKAGES", new GalleonProgressCallback<FeaturePackLocation.FPID>("Installing packages", "Packages installed."));
+      layoutFactory.setProgressCallback("CONFIGS", new GalleonProgressCallback<FeaturePackLocation.FPID>("Generating configuration", "Configurations generated."));
+      layoutFactory.setProgressCallback("JBMODULES", new GalleonProgressCallback<FeaturePackLocation.FPID>("Installing JBoss modules", "JBoss modules installed."));
    }
 
    private static ProvisioningLayoutFactory getLayoutFactory() throws ProvisioningException, IOException {
