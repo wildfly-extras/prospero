@@ -21,8 +21,10 @@ import java.io.File;
 import java.io.IOException;
 import java.nio.file.Path;
 import java.util.Collection;
+import java.util.List;
 
 import com.redhat.prospero.api.Artifact;
+import com.redhat.prospero.api.Channel;
 import com.redhat.prospero.api.Installation;
 import com.redhat.prospero.api.Manifest;
 import com.redhat.prospero.api.PackageInstallationException;
@@ -38,16 +40,18 @@ public class LocalInstallation implements Installation {
    private final Manifest manifest;
    private final Path base;
    private final Modules modules;
+   private final List<Channel> channels;
 
-   public static LocalInstallation newInstallation(Path base, File basePackage) throws PackageInstallationException, XmlException {
+   public static LocalInstallation newInstallation(Path base, File basePackage) throws PackageInstallationException, XmlException, IOException {
       installPackage(basePackage, base);
       return new LocalInstallation(base);
    }
 
-   public LocalInstallation(Path base) throws XmlException {
+   public LocalInstallation(Path base) throws XmlException, IOException {
       this.base = base;
       manifest = ManifestXmlSupport.parse(base.resolve("manifest.xml").toFile());
       modules = new Modules(base);
+      this.channels = Channel.readChannels(base.resolve("channels.json"));
    }
 
    @Override
@@ -106,6 +110,11 @@ public class LocalInstallation implements Installation {
    @Override
    public Manifest getManifest() {
       return manifest;
+   }
+
+   @Override
+   public List<Channel> getChannels() {
+      return channels;
    }
 
    private static void installPackage(File packageFile, Path base) throws PackageInstallationException {

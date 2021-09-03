@@ -21,12 +21,12 @@ import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
+import java.util.stream.Collectors;
 
-import com.redhat.prospero.api.Artifact;
 import com.redhat.prospero.api.ArtifactDependencies;
 import com.redhat.prospero.api.ArtifactNotFoundException;
+import com.redhat.prospero.api.Channel;
 import com.redhat.prospero.api.Gav;
 import com.redhat.prospero.api.Repository;
 import com.redhat.prospero.xml.XmlException;
@@ -53,15 +53,23 @@ import org.eclipse.aether.version.Version;
 
 public class MavenRepository implements Repository {
 
-   public static void main(String[] args) throws Exception {
-//      System.out.println(new MavenRepository().resolve(new Artifact("io.undertow", "undertow-core", "2.2.7.Final", "")));
-      System.out.println(new MavenRepository().findLatestVersionOf(new Artifact("io.undertow", "undertow-core", "2.2.7.Final", "")));
-   }
-
    private final RepositorySystem repoSystem;
    private final RepositorySystemSession repoSession;
+   private final List<Channel> channels;
 
-   public MavenRepository() {
+   public MavenRepository(String channelName, String channelUrl) {
+      channels = new ArrayList<>();
+      channels.add(new Channel(channelName, channelUrl));
+      try {
+         repoSystem = newRepositorySystem();
+         repoSession = newRepositorySystemSession(repoSystem );
+      } catch (IOException e) {
+         throw new RuntimeException(e);
+      }
+   }
+
+   public MavenRepository(List<Channel> channels) {
+      this.channels = channels;
       try {
          repoSystem = newRepositorySystem();
          repoSession = newRepositorySystemSession(repoSystem );
@@ -74,7 +82,7 @@ public class MavenRepository implements Repository {
    public File resolve(Gav artifact) throws ArtifactNotFoundException {
       ArtifactRequest req = new ArtifactRequest();
       req.setArtifact(new DefaultArtifact(artifact.getGroupId(), artifact.getArtifactId(), artifact.getPackaging(), artifact.getVersion()));
-      req.setRepositories(newRepositories(repoSystem, repoSession));
+      req.setRepositories(newRepositories());
       try {
          final ArtifactResult artifactResult = repoSystem.resolveArtifact(repoSession, req);
          return artifactResult.getArtifact().getFile();
@@ -88,7 +96,7 @@ public class MavenRepository implements Repository {
       VersionRangeRequest req = new VersionRangeRequest();
       final DefaultArtifact artifact1 = new DefaultArtifact(artifact.getGroupId(), artifact.getArtifactId(), artifact.getPackaging(), "[" + artifact.getVersion() + ",)");
       req.setArtifact(artifact1);
-      req.setRepositories(newRepositories(repoSystem, repoSession));
+      req.setRepositories(newRepositories());
 
       try {
          final VersionRangeResult versionRangeResult = repoSystem.resolveVersionRange(repoSession, req);
@@ -152,16 +160,13 @@ public class MavenRepository implements Repository {
       return session;
    }
 
-   public static List<RemoteRepository> newRepositories(RepositorySystem system, RepositorySystemSession session )
+   public List<RemoteRepository> newRepositories()
    {
-      return new ArrayList<>(Collections.singletonList(newCentralRepository() ) );
+      return channels.stream().map(c-> newRepository(c.getName(), c.getUrl())).collect(Collectors.toList());
    }
 
-   private static RemoteRepository newCentralRepository()
+   private RemoteRepository newRepository(String channel, String url)
    {
-      //      return new RemoteRepository.Builder( "central", "default", "https://repo.maven.apache.org/maven2/" ).build();
-      //      return new RemoteRepository.Builder( "mrrc", "default", "https://maven.repository.redhat.com/earlyaccess/all/" ).build();
-      //      return new RemoteRepository.Builder( "mrrc", "default", "https://maven.repository.redhat.com/ga" ).build();
-      return new RemoteRepository.Builder( "dev", "default", "http://localhost:8081/repository/dev/" ).build();
+      return new RemoteRepository.Builder( channel, "default", url ).build();
    }
 }

@@ -21,11 +21,8 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 
-import com.redhat.prospero.api.Channel;
 import org.apache.maven.repository.internal.MavenRepositorySystemUtils;
 import org.eclipse.aether.DefaultRepositorySystemSession;
 import org.eclipse.aether.RepositorySystem;
@@ -37,12 +34,15 @@ import org.eclipse.aether.spi.connector.RepositoryConnectorFactory;
 import org.eclipse.aether.spi.connector.transport.TransporterFactory;
 import org.eclipse.aether.transport.file.FileTransporterFactory;
 import org.eclipse.aether.transport.http.HttpTransporterFactory;
-import org.jboss.galleon.DefaultMessageWriter;
-import org.jboss.galleon.MessageWriter;
 import org.jboss.galleon.ProvisioningException;
 import org.jboss.galleon.ProvisioningManager;
+import org.jboss.galleon.config.ProvisioningConfig;
+import org.jboss.galleon.layout.FeaturePackLayout;
+import org.jboss.galleon.layout.ProvisioningLayout;
 import org.jboss.galleon.layout.ProvisioningLayoutFactory;
 import org.jboss.galleon.maven.plugin.util.MavenArtifactRepositoryManager;
+import org.jboss.galleon.runtime.ProvisioningRuntime;
+import org.jboss.galleon.runtime.ProvisioningRuntimeBuilder;
 import org.jboss.galleon.universe.FeaturePackLocation;
 import org.jboss.galleon.universe.UniverseResolver;
 import org.jboss.galleon.universe.UniverseSpec;
@@ -54,34 +54,37 @@ public class GalleonTest {
    public static final String JBOSS_UNIVERSE_ARTIFACT_ID = "community-universe";
 
    public static void main(String[] args) throws ProvisioningException, IOException {
-      if (args.length < 1) {
-         System.out.println("Not enough parameters. Need to provide WFLY installation.");
-         return;
-      }
-      final String base = args[0];
-      final String channelsFile = args[1];
-
-      installCore(base, channelsFile);
+      testSimple();
    }
 
-   public static void installCore(String path, String channelsFile) throws ProvisioningException, IOException {
+   public static void testRuntime() throws ProvisioningException, IOException {
+      final ProvisioningRuntimeBuilder provisioningRuntimeBuilder = ProvisioningRuntimeBuilder.newInstance();
+      final ProvisioningLayoutFactory layoutFactory = getLayoutFactory();
+      FeaturePackLocation loc = FeaturePackLocation.fromString("wildfly-core@maven(org.jboss.universe:community-universe):16/snapshot");
+//      loc = loc.replaceUniverse(new UniverseSpec(MavenUniverseFactory.ID,
+//                                                 JBOSS_UNIVERSE_GROUP_ID + ":" + JBOSS_UNIVERSE_ARTIFACT_ID));
+//      System.out.println(loc);
+      ProvisioningConfig config = ProvisioningConfig.builder()
+                                    .addFeaturePackDep(loc)
+                                    .build();
+      final ProvisioningLayout<FeaturePackLayout> configLayout = layoutFactory.newConfigLayout(config);
+      provisioningRuntimeBuilder.initLayout(configLayout);
+      final ProvisioningRuntime runtime = provisioningRuntimeBuilder.build();
+
+      System.out.println(runtime.getStagedDir());
+      runtime.provision();
+   }
+
+   public static void testSimple() throws ProvisioningException, IOException {
       ProvisioningManager.Builder builder = ProvisioningManager.builder();
       builder.setLayoutFactory(getLayoutFactory());
-      builder.setInstallationHome(Paths.get(path));
-      builder.setMessageWriter(getMessageWriter());
+      builder.setInstallationHome(Paths.get("/Users/spyrkob/workspaces/set/prospero/prospero/gall-test"));
+//      builder.setMessageWriter(getMessageWriter(verbose));
       final ProvisioningManager provMgr = builder.build();
       FeaturePackLocation loc = FeaturePackLocation.fromString("wildfly-core:16/snapshot");
       loc = loc.replaceUniverse(new UniverseSpec(MavenUniverseFactory.ID,
                        JBOSS_UNIVERSE_GROUP_ID + ":" + JBOSS_UNIVERSE_ARTIFACT_ID));
-
-      Map<String, String> params = new HashMap<>();
-      params.put("use-prospero", "true");
-      params.put("prospero-channels-file", channelsFile);
-      provMgr.install(loc, params);
-   }
-
-   private static MessageWriter getMessageWriter() {
-      return new DefaultMessageWriter(System.out, System.err, false);
+      provMgr.install(loc);
    }
 
    private static ProvisioningLayoutFactory getLayoutFactory() throws ProvisioningException, IOException {

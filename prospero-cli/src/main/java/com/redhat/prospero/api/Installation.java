@@ -1,6 +1,7 @@
 package com.redhat.prospero.api;
 
 import java.io.File;
+import java.util.List;
 
 public interface Installation {
 
@@ -13,4 +14,6 @@ public interface Installation {
                        File artifactFile) throws PackageInstallationException;
 
    Manifest getManifest();
+
+   List<Channel> getChannels();
 }

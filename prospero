@@ -19,7 +19,7 @@ then
     fi
     echo "Installing into ${TARGET_SERVER}"
   fi
-  java -cp "${CLASSPATH}" com.redhat.prospero.cli.actions.GalleonTest "${TARGET_SERVER}" "target/prospero-repo"
+  java -cp "${CLASSPATH}" com.redhat.prospero.cli.actions.GalleonTest "${TARGET_SERVER}" "${3}"
 elif [ "$1" == 'update' ];
 then
   if [ -n "${2}" ];
