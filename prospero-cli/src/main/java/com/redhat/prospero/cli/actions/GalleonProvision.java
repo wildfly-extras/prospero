@@ -37,8 +37,6 @@ import org.eclipse.aether.spi.connector.RepositoryConnectorFactory;
 import org.eclipse.aether.spi.connector.transport.TransporterFactory;
 import org.eclipse.aether.transport.file.FileTransporterFactory;
 import org.eclipse.aether.transport.http.HttpTransporterFactory;
-import org.jboss.galleon.DefaultMessageWriter;
-import org.jboss.galleon.MessageWriter;
 import org.jboss.galleon.ProvisioningException;
 import org.jboss.galleon.ProvisioningManager;
 import org.jboss.galleon.layout.ProvisioningLayoutFactory;
@@ -48,7 +46,7 @@ import org.jboss.galleon.universe.UniverseResolver;
 import org.jboss.galleon.universe.UniverseSpec;
 import org.jboss.galleon.universe.maven.MavenUniverseFactory;
 
-public class GalleonTest {
+public class GalleonProvision {
 
    public static final String JBOSS_UNIVERSE_GROUP_ID = "org.jboss.universe";
    public static final String JBOSS_UNIVERSE_ARTIFACT_ID = "community-universe";
@@ -64,17 +62,18 @@ public class GalleonTest {
    }
 
    public static void main(String[] args) throws ProvisioningException, IOException {
-      if (args.length < 1) {
-         System.out.println("Not enough parameters. Need to provide WFLY installation.");
+      if (args.length < 3) {
+         System.out.println("Not enough parameters. Need to provide FPL, output directory and channels file.");
          return;
       }
-      final String base = args[0];
-      final String channelsFile = args[1];
+      final String fpl = args[0];
+      final String base = args[1];
+      final String channelsFile = args[2];
 
-      installCore(base, channelsFile);
+      installFeaturePack(fpl, base, channelsFile);
    }
 
-   public static void installCore(String path, String channelsFile) throws ProvisioningException, IOException {
+   public static void installFeaturePack(String fpl, String path, String channelsFile) throws ProvisioningException, IOException {
       final ProvisioningLayoutFactory layoutFactory = getLayoutFactory();
       addProgressCallbacks(layoutFactory);
 
@@ -83,7 +82,7 @@ public class GalleonTest {
       builder.setInstallationHome(Paths.get(path));
 
       final ProvisioningManager provMgr = builder.build();
-      FeaturePackLocation loc = FeaturePackLocation.fromString("wildfly-core:16/snapshot");
+      FeaturePackLocation loc = FeaturePackLocation.fromString(fpl);
       loc = loc.replaceUniverse(new UniverseSpec(MavenUniverseFactory.ID,
                        JBOSS_UNIVERSE_GROUP_ID + ":" + JBOSS_UNIVERSE_ARTIFACT_ID));
 
@@ -103,6 +102,9 @@ public class GalleonTest {
    private static ProvisioningLayoutFactory getLayoutFactory() throws ProvisioningException, IOException {
       final RepositorySystem repoSystem = newRepositorySystem();
       List<RemoteRepository> repos = new ArrayList<>();
+      // TODO: make it separate repo just for community-universe and feature pack
+      // This repo is used to resolve galleon artifacts - feature packs, universe definition etc.
+      // It's a local repo to allow to consume local builds of wfly
       final RemoteRepository.Builder repoBuilder = new RemoteRepository.Builder("dev", "default", "http://localhost:8081/repository/dev/");
       repos.add(repoBuilder.build());
       final MavenArtifactRepositoryManager maven = new MavenArtifactRepositoryManager(repoSystem, newRepositorySystemSession(repoSystem), repos);
