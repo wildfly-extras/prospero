@@ -24,6 +24,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 
 import com.redhat.prospero.cli.GalleonProgressCallback;
 import org.apache.maven.repository.internal.MavenRepositorySystemUtils;
@@ -37,6 +38,8 @@ import org.eclipse.aether.spi.connector.RepositoryConnectorFactory;
 import org.eclipse.aether.spi.connector.transport.TransporterFactory;
 import org.eclipse.aether.transport.file.FileTransporterFactory;
 import org.eclipse.aether.transport.http.HttpTransporterFactory;
+import org.eclipse.microprofile.config.Config;
+import org.eclipse.microprofile.config.ConfigProvider;
 import org.jboss.galleon.ProvisioningException;
 import org.jboss.galleon.ProvisioningManager;
 import org.jboss.galleon.layout.ProvisioningLayoutFactory;
@@ -51,6 +54,7 @@ public class GalleonProvision {
    public static final String JBOSS_UNIVERSE_GROUP_ID = "org.jboss.universe";
    public static final String JBOSS_UNIVERSE_ARTIFACT_ID = "community-universe";
 
+   private final Optional<String> localRepoUrl;
    static {
       enableJBossLogManager();
    }
@@ -70,10 +74,15 @@ public class GalleonProvision {
       final String base = args[1];
       final String channelsFile = args[2];
 
-      installFeaturePack(fpl, base, channelsFile);
+      new GalleonProvision().installFeaturePack(fpl, base, channelsFile);
    }
 
-   public static void installFeaturePack(String fpl, String path, String channelsFile) throws ProvisioningException, IOException {
+   public GalleonProvision() {
+      Config config = ConfigProvider.getConfig();
+      localRepoUrl = config.getOptionalValue("prospero.local.repo.url", String.class);
+   }
+
+   public void installFeaturePack(String fpl, String path, String channelsFile) throws ProvisioningException, IOException {
       final ProvisioningLayoutFactory layoutFactory = getLayoutFactory();
       addProgressCallbacks(layoutFactory);
 
@@ -92,28 +101,29 @@ public class GalleonProvision {
       provMgr.install(loc, params);
    }
 
-   private static void addProgressCallbacks(ProvisioningLayoutFactory layoutFactory) {
+   private void addProgressCallbacks(ProvisioningLayoutFactory layoutFactory) {
       layoutFactory.setProgressCallback("LAYOUT_BUILD", new GalleonProgressCallback<FeaturePackLocation.FPID>("Resolving feature-pack", "Feature-packs resolved."));
       layoutFactory.setProgressCallback("PACKAGES", new GalleonProgressCallback<FeaturePackLocation.FPID>("Installing packages", "Packages installed."));
       layoutFactory.setProgressCallback("CONFIGS", new GalleonProgressCallback<FeaturePackLocation.FPID>("Generating configuration", "Configurations generated."));
       layoutFactory.setProgressCallback("JBMODULES", new GalleonProgressCallback<FeaturePackLocation.FPID>("Installing JBoss modules", "JBoss modules installed."));
    }
 
-   private static ProvisioningLayoutFactory getLayoutFactory() throws ProvisioningException, IOException {
+   private ProvisioningLayoutFactory getLayoutFactory() throws ProvisioningException, IOException {
       final RepositorySystem repoSystem = newRepositorySystem();
       List<RemoteRepository> repos = new ArrayList<>();
-      // TODO: make it separate repo just for community-universe and feature pack
       // This repo is used to resolve galleon artifacts - feature packs, universe definition etc.
       // It's a local repo to allow to consume local builds of wfly
-      final RemoteRepository.Builder repoBuilder = new RemoteRepository.Builder("dev", "default", "http://localhost:8081/repository/dev/");
-      repos.add(repoBuilder.build());
+      if (localRepoUrl.isPresent()) {
+         repos.add(new RemoteRepository.Builder("galleon", "default", localRepoUrl.get()).build());
+      }
+      repos.add(new RemoteRepository.Builder("repo1", "default", "https://repo1.maven.org/maven2/").build());
       final MavenArtifactRepositoryManager maven = new MavenArtifactRepositoryManager(repoSystem, newRepositorySystemSession(repoSystem), repos);
 
       final UniverseResolver resolver = UniverseResolver.builder().addArtifactResolver(maven).build();
       return ProvisioningLayoutFactory.getInstance(resolver);
    }
 
-   private static RepositorySystem newRepositorySystem()
+   private RepositorySystem newRepositorySystem()
    {
       /*
        * Aether's components implement org.eclipse.aether.spi.locator.Service to ease manual wiring and using the
@@ -139,7 +149,7 @@ public class GalleonProvision {
       return locator.getService( RepositorySystem.class );
    }
 
-   private static DefaultRepositorySystemSession newRepositorySystemSession(RepositorySystem system ) throws IOException {
+   private DefaultRepositorySystemSession newRepositorySystemSession(RepositorySystem system ) throws IOException {
       DefaultRepositorySystemSession session = MavenRepositorySystemUtils.newSession();
 
       org.eclipse.aether.repository.LocalRepository localRepo = new LocalRepository(Files.createTempDirectory("mvn-repo").toString() );
