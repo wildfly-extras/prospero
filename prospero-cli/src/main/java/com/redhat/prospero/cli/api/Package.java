@@ -15,32 +15,18 @@
  * limitations under the License.
  */
 
-package com.redhat.prospero.cli;
+package com.redhat.prospero.cli.api;
 
-import org.jboss.galleon.progresstracking.ProgressCallback;
-import org.jboss.galleon.progresstracking.ProgressTracker;
+import com.redhat.prospero.api.Gav;
 
-public class GalleonProgressCallback<T> implements ProgressCallback<T> {
+public class Package extends Gav {
 
-   private final String start;
-   private final String end;
-
-   public GalleonProgressCallback(String start, String end) {
-      this.start = start;
-      this.end = end;
+   public Package(String groupId, String artifactId, String version) {
+      super(groupId, artifactId, version, null, "zip");
    }
 
    @Override
-   public void starting(ProgressTracker<T> progressTracker) {
-      System.out.println(start);
-   }
-
-   @Override
-   public void pulse(ProgressTracker<T> progressTracker) {
-   }
-
-   @Override
-   public void complete(ProgressTracker<T> progressTracker) {
-      System.out.println(end);
+   public Package newVersion(String newVersion) {
+      return new Package(groupId, artifactId, newVersion);
    }
 }

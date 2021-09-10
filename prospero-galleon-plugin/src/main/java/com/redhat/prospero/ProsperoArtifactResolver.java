@@ -17,250 +17,101 @@
 
 package com.redhat.prospero;
 
-import java.io.BufferedReader;
 import java.io.File;
-import java.io.FileWriter;
 import java.io.IOException;
-import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.regex.Pattern;
 
-import org.apache.maven.repository.internal.MavenRepositorySystemUtils;
-import org.eclipse.aether.DefaultRepositorySystemSession;
-import org.eclipse.aether.RepositorySystem;
-import org.eclipse.aether.RepositorySystemSession;
-import org.eclipse.aether.artifact.Artifact;
-import org.eclipse.aether.artifact.DefaultArtifact;
-import org.eclipse.aether.connector.basic.BasicRepositoryConnectorFactory;
-import org.eclipse.aether.impl.DefaultServiceLocator;
-import org.eclipse.aether.repository.LocalRepository;
-import org.eclipse.aether.repository.RemoteRepository;
-import org.eclipse.aether.repository.RepositoryPolicy;
-import org.eclipse.aether.resolution.ArtifactRequest;
-import org.eclipse.aether.resolution.ArtifactResult;
-import org.eclipse.aether.resolution.VersionRangeRequest;
-import org.eclipse.aether.resolution.VersionRangeResolutionException;
-import org.eclipse.aether.resolution.VersionRangeResult;
-import org.eclipse.aether.spi.connector.RepositoryConnectorFactory;
-import org.eclipse.aether.spi.connector.transport.TransporterFactory;
-import org.eclipse.aether.transport.file.FileTransporterFactory;
-import org.eclipse.aether.transport.http.HttpTransporterFactory;
-import org.jboss.galleon.Errors;
+import com.redhat.prospero.api.ArtifactNotFoundException;
+import com.redhat.prospero.api.Channel;
+import com.redhat.prospero.api.Manifest;
+import com.redhat.prospero.impl.repository.MavenRepository;
+import com.redhat.prospero.xml.ManifestXmlSupport;
+import com.redhat.prospero.xml.XmlException;
 import org.jboss.galleon.ProvisioningException;
 import org.jboss.galleon.runtime.ProvisioningRuntime;
 import org.jboss.galleon.universe.maven.MavenArtifact;
-import org.jboss.galleon.universe.maven.MavenErrors;
-import org.jboss.galleon.universe.maven.MavenLatestVersionNotAvailableException;
 import org.jboss.galleon.universe.maven.MavenUniverseException;
-import org.jboss.galleon.universe.maven.repo.MavenArtifactVersion;
 
 public class ProsperoArtifactResolver {
 
    private final List<Channel> channels;
-   private RepositorySystem repoSystem;
-   private RepositorySystemSession repoSession;
-   private Map<String, String> artifactStreams;
    private Map<String, String> resolvedArtifactStreams = new HashMap<>();
+   private MavenRepository repository;
 
-   public ProsperoArtifactResolver(Path streamsPath, Path channelFile) throws ProvisioningException {
-      System.out.println("Using ProsperoResolver");
-
-      try {
-         this.channels = Channel.readChannels(channelFile);
-      } catch (IOException e) {
-         throw new ProvisioningException(e);
-      }
-
-      try {
-         repoSystem = newRepositorySystem();
-         repoSession = newRepositorySystemSession(repoSystem);
-      } catch (IOException e) {
-         throw new ProvisioningException(e);
-      }
-
-      if(Files.exists(streamsPath)) {
-         artifactStreams = readProperties(streamsPath);
-      } else {
-         artifactStreams = new HashMap<>();
-      }
+   public ProsperoArtifactResolver(Path channelFile) throws ProvisioningException {
+      this(readChannels(channelFile));
    }
 
-   public ProsperoArtifactResolver(Path streamsPath, String channel) throws ProvisioningException {
+   public ProsperoArtifactResolver(String channelUrl) throws ProvisioningException {
+      this(Arrays.asList(new Channel("prospero", channelUrl)));
+   }
+
+   private ProsperoArtifactResolver(List<Channel> channels) throws ProvisioningException {
       System.out.println("Using ProsperoResolver");
 
-      this.channels = new ArrayList<>();
-      this.channels.add(new Channel(channel, "http://localhost:8081/repository/"+channel));
+      this.channels = channels;
+      repository = new MavenRepository(channels);
+   }
 
+   private static List<Channel> readChannels(Path channelFile) throws ProvisioningException {
       try {
-         repoSystem = newRepositorySystem();
-         repoSession = newRepositorySystemSession(repoSystem);
+         return Channel.readChannels(channelFile);
       } catch (IOException e) {
          throw new ProvisioningException(e);
-      }
-
-      if(Files.exists(streamsPath)) {
-         artifactStreams = readProperties(streamsPath);
-      } else {
-         artifactStreams = new HashMap<>();
       }
    }
 
    public void writeManifestFile(ProvisioningRuntime runtime, Map<String, String> mergedArtifactVersions, String channelName) throws MavenUniverseException {
-      final File file = runtime.getStagedDir().resolve("manifest.xml").toFile();
-      try (final FileWriter fileWriter = new FileWriter(file)) {
-         fileWriter.write("<manifest>\n");
-         for (Map.Entry<String, String> entry : mergedArtifactVersions.entrySet()) {
-            final MavenArtifact artifact = MavenArtifact.fromString(entry.getValue());
-            String version = artifact.getExtension(); // something's messed up here?
-            if (resolvedArtifactStreams.containsKey(entry.getKey())) {
-               version = resolvedArtifactStreams.get(entry.getKey());
-            }
-            fileWriter.write(String.format("<artifact package=\"%s\" name=\"%s\" version=\"%s\" classifier=\"\"/>%n",
-                                           artifact.getGroupId(), artifact.getArtifactId(), version));
-
+      List<com.redhat.prospero.api.Artifact> artifacts = new ArrayList<>();
+      for (Map.Entry<String, String> entry : mergedArtifactVersions.entrySet()) {
+         final MavenArtifact artifact = MavenArtifact.fromString(entry.getValue());
+         String version = artifact.getExtension(); // something's messed up here?
+         if (resolvedArtifactStreams.containsKey(entry.getKey())) {
+            version = resolvedArtifactStreams.get(entry.getKey());
          }
-         fileWriter.write("</manifest>\n");
-      } catch (IOException e) {
+         artifacts.add(new com.redhat.prospero.api.Artifact(artifact.getGroupId(), artifact.getArtifactId(), version, ""));
+
+      }
+
+      try {
+         ManifestXmlSupport.write(new Manifest(artifacts, Collections.emptyList(), runtime.getStagedDir().resolve("manifest.xml")));
+      } catch (XmlException e) {
          e.printStackTrace();
       }
 
       // write channels into installation
       final File channelsFile = runtime.getStagedDir().resolve("channels.json").toFile();
       try {
-         Channel.writeChannels(channels, channelsFile);
+         com.redhat.prospero.api.Channel.writeChannels(channels, channelsFile);
       } catch (IOException e) {
          e.printStackTrace();
       }
    }
 
    public void resolve(MavenArtifact artifact) throws MavenUniverseException {
+
       if (artifact.isResolved()) {
          throw new MavenUniverseException("Artifact is already resolved");
       }
+      final com.redhat.prospero.api.Artifact prosperoArtifact = new com.redhat.prospero.api.Artifact(artifact.getGroupId(), artifact.getArtifactId(), artifact.getVersion(), artifact.getClassifier());
+      final String latestVersion = repository.findLatestVersionOf(prosperoArtifact).getVersion();
+      final MavenArtifact streamDef = MavenArtifact.fromString(artifact.getGroupId() + ":" + artifact.getArtifactId() + ":[" + artifact.getVersion() + ",)");
+      System.out.println(streamDef.toString() + " == " + latestVersion);
 
-      final String latestVersion = doGetHighestVersion(artifact, null, null, null);
       resolvedArtifactStreams.put(artifact.getGroupId() + ":" + artifact.getArtifactId(), latestVersion);
 
-      final ArtifactRequest request = new ArtifactRequest();
-      request.setArtifact(new DefaultArtifact(artifact.getGroupId(), artifact.getArtifactId(), artifact.getClassifier(),
-                                              artifact.getExtension(), latestVersion));
-      request.setRepositories(getRepositories());
-
-      final ArtifactResult result;
       try {
-         result = repoSystem.resolveArtifact(repoSession, request);
-      } catch (Exception e) {
-         throw new MavenUniverseException("Failed to resolve " + request.getArtifact().toString(), e);
+         final File resolvedPath = repository.resolve(prosperoArtifact.newVersion(latestVersion));
+         artifact.setVersion(latestVersion);
+         artifact.setPath(resolvedPath.toPath());
+      } catch (ArtifactNotFoundException e) {
+         throw new MavenUniverseException(e.getMessage(), e);
       }
-      if (!result.isResolved()) {
-         throw new MavenUniverseException("Failed to resolve " +request.getArtifact().toString());
-      }
-      if (result.isMissing()) {
-         throw new MavenUniverseException("Repository is missing artifact " + request.getArtifact().toString());
-      }
-      artifact.setVersion(result.getArtifact().getVersion());
-      artifact.setPath(Paths.get(result.getArtifact().getFile().toURI()));
-   }
-
-   private String doGetHighestVersion(MavenArtifact mavenArtifact, String lowestQualifier, Pattern includeVersion, Pattern excludeVersion) throws MavenUniverseException {
-      final String artifactStreamId = mavenArtifact.getGroupId() + ":" + mavenArtifact.getArtifactId();
-         final MavenArtifact streamDef = MavenArtifact.fromString(artifactStreamId + ":[" + mavenArtifact.getVersion() + ",)");
-         final VersionRangeResult rangeResult = getVersionRange(new DefaultArtifact(streamDef.getGroupId(), streamDef.getArtifactId(), streamDef.getExtension(), streamDef.getVersionRange()));
-         final MavenArtifactVersion latest = rangeResult == null ? null : MavenArtifactVersion.getLatest(rangeResult.getVersions(), lowestQualifier, includeVersion, excludeVersion);
-         if (latest == null) {
-            return mavenArtifact.getVersion();
-         }
-         System.out.println(streamDef.toString() + " == " + latest);
-         return latest.toString();
-   }
-
-   private VersionRangeResult getVersionRange(Artifact artifact) throws MavenUniverseException {
-      VersionRangeRequest rangeRequest = new VersionRangeRequest();
-      rangeRequest.setArtifact(artifact);
-      rangeRequest.setRepositories(getRepositories());
-      VersionRangeResult rangeResult;
-      try {
-         rangeResult = repoSystem.resolveVersionRange(repoSession, rangeRequest);
-      } catch (VersionRangeResolutionException ex) {
-         throw new MavenUniverseException(ex.getLocalizedMessage(), ex);
-      }
-      return rangeResult;
-   }
-
-   private List<RemoteRepository> getRepositories() {
-      final ArrayList<RemoteRepository> repos = new ArrayList<>();
-      for (Channel channel : channels) {
-         RemoteRepository channelRepo = new RemoteRepository.Builder(channel.getName(), "default", channel.getUrl())
-            .setReleasePolicy(new RepositoryPolicy(true, RepositoryPolicy.UPDATE_POLICY_ALWAYS, null))
-            .setSnapshotPolicy(new RepositoryPolicy(true, RepositoryPolicy.UPDATE_POLICY_ALWAYS, null))
-            .build();
-         repos.add(channelRepo);
-      }
-      return repos;
-   }
-
-   private static RepositorySystem newRepositorySystem()
-   {
-      /*
-       * Aether's components implement org.eclipse.aether.spi.locator.Service to ease manual wiring and using the
-       * prepopulated DefaultServiceLocator, we only need to register the repository connector and transporter
-       * factories.
-       */
-      DefaultServiceLocator locator = MavenRepositorySystemUtils.newServiceLocator();
-      locator.addService(RepositoryConnectorFactory.class, BasicRepositoryConnectorFactory.class );
-      locator.addService(TransporterFactory.class, FileTransporterFactory.class );
-      locator.addService( TransporterFactory.class, HttpTransporterFactory.class );
-
-      locator.setErrorHandler( new DefaultServiceLocator.ErrorHandler()
-      {
-         @Override
-         public void serviceCreationFailed( Class<?> type, Class<?> impl, Throwable exception )
-         {
-            System.out.println(String.format("Service creation failed for %s with implementation %s",
-                                             type, impl ));
-            exception.printStackTrace();
-         }
-      } );
-
-      return locator.getService( RepositorySystem.class );
-   }
-
-   private static DefaultRepositorySystemSession newRepositorySystemSession(RepositorySystem system ) throws IOException {
-      DefaultRepositorySystemSession session = MavenRepositorySystemUtils.newSession();
-
-      org.eclipse.aether.repository.LocalRepository localRepo = new LocalRepository(Files.createTempDirectory("mvn-repo").toString() );
-      session.setLocalRepositoryManager( system.newLocalRepositoryManager( session, localRepo ) );
-
-      return session;
-   }
-
-   private static void readProperties(Path propsFile, Map<String, String> propsMap) throws ProvisioningException {
-      try(BufferedReader reader = Files.newBufferedReader(propsFile)) {
-         String line = reader.readLine();
-         while(line != null) {
-            line = line.trim();
-            if(line.charAt(0) != '#' && !line.isEmpty()) {
-               final int i = line.indexOf('=');
-               if(i < 0) {
-                  throw new ProvisioningException("Failed to parse property " + line + " from " + propsFile);
-               }
-               propsMap.put(line.substring(0, i), line.substring(i + 1));
-            }
-            line = reader.readLine();
-         }
-      } catch (IOException e) {
-         throw new ProvisioningException(Errors.readFile(propsFile), e);
-      }
-   }
-
-   private static Map<String, String> readProperties(final Path propsFile) throws ProvisioningException {
-      final Map<String, String> propsMap = new HashMap<>();
-      readProperties(propsFile, propsMap);
-      return propsMap;
    }
 }

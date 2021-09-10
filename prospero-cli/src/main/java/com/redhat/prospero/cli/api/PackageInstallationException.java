@@ -15,32 +15,23 @@
  * limitations under the License.
  */
 
-package com.redhat.prospero.cli;
+package com.redhat.prospero.cli.api;
 
-import org.jboss.galleon.progresstracking.ProgressCallback;
-import org.jboss.galleon.progresstracking.ProgressTracker;
+import java.io.IOException;
 
-public class GalleonProgressCallback<T> implements ProgressCallback<T> {
+import net.lingala.zip4j.exception.ZipException;
 
-   private final String start;
-   private final String end;
+public class PackageInstallationException extends Exception {
 
-   public GalleonProgressCallback(String start, String end) {
-      this.start = start;
-      this.end = end;
+   public PackageInstallationException(String message, ZipException e) {
+      super(message, e);
    }
 
-   @Override
-   public void starting(ProgressTracker<T> progressTracker) {
-      System.out.println(start);
+   public PackageInstallationException(String message) {
+      super(message);
    }
 
-   @Override
-   public void pulse(ProgressTracker<T> progressTracker) {
-   }
-
-   @Override
-   public void complete(ProgressTracker<T> progressTracker) {
-      System.out.println(end);
+   public PackageInstallationException(String message, Throwable throwable) {
+      super(message, throwable);
    }
 }

@@ -12,8 +12,9 @@
     </properties>
 
     <modules>
-      <module>prospero-cli</module>
+      <module>prospero-common</module>
       <module>prospero-galleon-plugin</module>
+      <module>prospero-cli</module>
     </modules>
 
     <build>
