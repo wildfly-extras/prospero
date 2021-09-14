@@ -11,11 +11,34 @@
         <mavenVersion>3.5.0</mavenVersion>
     </properties>
 
-    <modules>
-      <module>prospero-common</module>
-      <module>prospero-galleon-plugin</module>
-      <module>prospero-cli</module>
-    </modules>
+    <profiles>
+      <profile>
+        <id>all</id>
+        <activation>
+          <property>
+            <name>!galleon</name>
+          </property>
+        </activation>
+        <modules>
+          <module>prospero-common</module>
+          <module>prospero-galleon-plugin</module>
+          <module>prospero-cli</module>
+        </modules>
+      </profile>
+      <profile>
+        <id>galleon</id>
+        <activation>
+          <property>
+            <name>galleon</name>
+          </property>
+        </activation>
+        <modules>
+          <module>prospero-common</module>
+         <module>prospero-galleon-plugin</module>
+        </modules>
+
+      </profile>
+    </profiles>
 
     <build>
         <plugins>

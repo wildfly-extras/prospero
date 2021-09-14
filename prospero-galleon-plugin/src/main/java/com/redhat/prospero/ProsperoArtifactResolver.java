@@ -102,7 +102,7 @@ public class ProsperoArtifactResolver {
       final com.redhat.prospero.api.Artifact prosperoArtifact = new com.redhat.prospero.api.Artifact(artifact.getGroupId(), artifact.getArtifactId(), artifact.getVersion(), artifact.getClassifier());
       final String latestVersion = repository.findLatestVersionOf(prosperoArtifact).getVersion();
       final MavenArtifact streamDef = MavenArtifact.fromString(artifact.getGroupId() + ":" + artifact.getArtifactId() + ":[" + artifact.getVersion() + ",)");
-      System.out.println(streamDef.toString() + " == " + latestVersion);
+      System.out.println(streamDef + " == " + latestVersion);
 
       resolvedArtifactStreams.put(artifact.getGroupId() + ":" + artifact.getArtifactId(), latestVersion);
 

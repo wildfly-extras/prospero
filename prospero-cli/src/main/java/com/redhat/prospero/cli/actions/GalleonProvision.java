@@ -116,7 +116,7 @@ public class GalleonProvision {
       if (localRepoUrl.isPresent()) {
          repos.add(new RemoteRepository.Builder("galleon", "default", localRepoUrl.get()).build());
       }
-      repos.add(new RemoteRepository.Builder("repo1", "default", "https://repo1.maven.org/maven2/").build());
+//      repos.add(new RemoteRepository.Builder("repo1", "default", "https://repo1.maven.org/maven2/").build());
       final MavenArtifactRepositoryManager maven = new MavenArtifactRepositoryManager(repoSystem, newRepositorySystemSession(repoSystem), repos);
 
       final UniverseResolver resolver = UniverseResolver.builder().addArtifactResolver(maven).build();

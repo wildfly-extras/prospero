@@ -46,14 +46,20 @@ deploy() {
   done < "${1}"
 }
 
-if [ -z "${WILDFLY_SRC}" ] || [ -z "${WILDFLY_CORE_SRC}" ];
+if [ -z "${WILDFLY_SRC}" ] && [ -z "${WILDFLY_CORE_SRC}" ];
 then
-  echo "WILDFLY_SRC and WILDFLY_CORE_SRC env variables need to be set"
+  echo "At least one of (WILDFLY_SRC, WILDFLY_CORE_SRC) env variables need to be set"
   exit 1
 fi
 
 mkdir "tmp"
-deploy $(realpath "${WILDFLY_SRC}/ee-feature-pack/galleon-feature-pack/target"/*-artifact-list.txt)
-deploy $(realpath "${WILDFLY_SRC}/galleon-pack/galleon-feature-pack/target"/*-artifact-list.txt)
-deploy $(realpath "${WILDFLY_CORE_SRC}/core-feature-pack/galleon-feature-pack/target"/*-artifact-list.txt)
+if [ -n "${WILDFLY_SCR}" ];
+then
+  deploy $(realpath "${WILDFLY_SRC}/ee-feature-pack/galleon-feature-pack/target"/*-artifact-list.txt)
+  deploy $(realpath "${WILDFLY_SRC}/galleon-pack/galleon-feature-pack/target"/*-artifact-list.txt)
+fi
+if [ -n "${WILDFLY_CORE_SRC}" ];
+then
+  deploy $(realpath "${WILDFLY_CORE_SRC}/core-feature-pack/galleon-feature-pack/target"/*-artifact-list.txt)
+fi
 rm -rf "tmp"
