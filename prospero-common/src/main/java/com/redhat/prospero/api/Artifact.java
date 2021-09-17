@@ -29,6 +29,6 @@ public class Artifact extends Gav {
 
    @Override
    public Artifact newVersion(String newVersion) {
-      return new Artifact(groupId, artifactId, newVersion, classifier);
+      return new Artifact(groupId, artifactId, newVersion, classifier, packaging);
    }
 }
