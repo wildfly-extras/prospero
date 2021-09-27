@@ -32,8 +32,10 @@ import com.redhat.prospero.installation.LocalInstallation;
 import com.redhat.prospero.installation.Modules;
 import com.redhat.prospero.xml.ManifestXmlSupport;
 import com.redhat.prospero.xml.XmlException;
+
 import java.util.HashSet;
 import java.util.Set;
+
 import org.eclipse.aether.RepositorySystem;
 import org.eclipse.aether.RepositorySystemSession;
 import org.eclipse.aether.artifact.Artifact;
@@ -50,14 +52,14 @@ public class ProsperoArtifactResolver {
     private MavenResolver repository;
 
     public ProsperoArtifactResolver(Path channelFile,
-            RepositorySystem repoSystem, RepositorySystemSession repoSession,
-            RepositorySystemSession fallbackRepoSession, List<RemoteRepository> fallbackRepositories) throws ProvisioningException {
+                                    RepositorySystem repoSystem, RepositorySystemSession repoSession,
+                                    RepositorySystemSession fallbackRepoSession, List<RemoteRepository> fallbackRepositories) throws ProvisioningException {
         this(readChannels(channelFile), repoSystem, repoSession, fallbackRepoSession, fallbackRepositories);
     }
 
     private ProsperoArtifactResolver(List<Channel> channels,
-            RepositorySystem repoSystem, RepositorySystemSession repoSession,
-            RepositorySystemSession fallbackRepoSession, List<RemoteRepository> fallbackRepositories) throws ProvisioningException {
+                                     RepositorySystem repoSystem, RepositorySystemSession repoSession,
+                                     RepositorySystemSession fallbackRepoSession, List<RemoteRepository> fallbackRepositories) throws ProvisioningException {
         this.channels = channels;
         repository = new MavenResolver(channels, repoSystem, repoSession, fallbackRepoSession, fallbackRepositories);
     }

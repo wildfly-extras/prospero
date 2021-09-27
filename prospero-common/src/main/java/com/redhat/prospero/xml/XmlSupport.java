@@ -5,9 +5,9 @@
  * The ASF licenses this file to You under the Apache License, Version 2.0
  * (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
- *
+ * <p>
  * http://www.apache.org/licenses/LICENSE-2.0
- *
+ * <p>
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -34,26 +34,26 @@ import org.xml.sax.SAXException;
 
 public class XmlSupport {
 
-   protected XPath xpath = XPathFactory.newInstance().newXPath();
+    protected XPath xpath = XPathFactory.newInstance().newXPath();
 
-   protected Document readDocument(File xmlFile) throws XmlException {
-      try {
-         DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
-         factory.setFeature(XMLConstants.FEATURE_SECURE_PROCESSING, true);
-         factory.setFeature("http://apache.org/xml/features/disallow-doctype-decl", true);
-         Document input = factory.newDocumentBuilder().parse(xmlFile);
-         return input;
-      } catch (IOException | ParserConfigurationException | SAXException e) {
-         throw new XmlException("Failed to parse XML descriptor", e);
-      }
-   }
+    protected Document readDocument(File xmlFile) throws XmlException {
+        try {
+            DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
+            factory.setFeature(XMLConstants.FEATURE_SECURE_PROCESSING, true);
+            factory.setFeature("http://apache.org/xml/features/disallow-doctype-decl", true);
+            Document input = factory.newDocumentBuilder().parse(xmlFile);
+            return input;
+        } catch (IOException | ParserConfigurationException | SAXException e) {
+            throw new XmlException("Failed to parse XML descriptor", e);
+        }
+    }
 
-   protected NodeList nodesFromXPath(Node input, String expr) throws XmlException {
-      try {
-         NodeList nodes = (NodeList) xpath.evaluate(expr, input, XPathConstants.NODESET);
-         return nodes;
-      } catch (XPathExpressionException e) {
-         throw new XmlException("Failed to parse XML descriptor", e);
-      }
-   }
+    protected NodeList nodesFromXPath(Node input, String expr) throws XmlException {
+        try {
+            NodeList nodes = (NodeList) xpath.evaluate(expr, input, XPathConstants.NODESET);
+            return nodes;
+        } catch (XPathExpressionException e) {
+            throw new XmlException("Failed to parse XML descriptor", e);
+        }
+    }
 }

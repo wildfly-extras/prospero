@@ -13,6 +13,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+
 import org.apache.maven.repository.internal.MavenRepositorySystemUtils;
 import org.eclipse.aether.DefaultRepositorySystemSession;
 import org.eclipse.aether.RepositorySystem;
@@ -22,7 +23,6 @@ import org.eclipse.aether.repository.RepositoryPolicy;
 import org.jboss.galleon.util.PropertyUtils;
 
 /**
- *
  * @author jdenise
  */
 public class MavenFallback {
@@ -43,6 +43,7 @@ public class MavenFallback {
             this.snapshotPolicy = snapshotPolicy;
         }
     }
+
     public static final String GA_REPO_URL = "https://maven.repository.redhat.com/ga/";
     public static final String NEXUS_REPO_URL = "https://repository.jboss.org/nexus/content/groups/public/";
     private static final String DEFAULT_REPOSITORY_TYPE = "default";

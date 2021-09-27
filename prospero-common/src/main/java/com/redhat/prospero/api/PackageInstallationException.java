@@ -5,9 +5,9 @@
  * The ASF licenses this file to You under the Apache License, Version 2.0
  * (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
- *
+ * <p>
  * http://www.apache.org/licenses/LICENSE-2.0
- *
+ * <p>
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -23,15 +23,15 @@ import net.lingala.zip4j.exception.ZipException;
 
 public class PackageInstallationException extends Exception {
 
-   public PackageInstallationException(String message, ZipException e) {
-      super(message, e);
-   }
+    public PackageInstallationException(String message, ZipException e) {
+        super(message, e);
+    }
 
-   public PackageInstallationException(String message) {
-      super(message);
-   }
+    public PackageInstallationException(String message) {
+        super(message);
+    }
 
-   public PackageInstallationException(String message, Throwable throwable) {
-      super(message, throwable);
-   }
+    public PackageInstallationException(String message, Throwable throwable) {
+        super(message, throwable);
+    }
 }

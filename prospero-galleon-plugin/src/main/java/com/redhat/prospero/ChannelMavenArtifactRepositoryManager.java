@@ -20,6 +20,7 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
+
 import org.apache.maven.repository.internal.MavenRepositorySystemUtils;
 import org.eclipse.aether.DefaultRepositorySystemSession;
 
@@ -46,9 +47,9 @@ public class ChannelMavenArtifactRepositoryManager extends AbstractMavenArtifact
     private Path tmpLocalCache;
 
     public ChannelMavenArtifactRepositoryManager(final RepositorySystem repoSystem, final RepositorySystemSession fallbackRepoSession,
-            final List<RemoteRepository> fallBackRepositories,
-            Path channels,
-            boolean disableLatest, Path localCache) throws ProvisioningException {
+                                                 final List<RemoteRepository> fallBackRepositories,
+                                                 Path channels,
+                                                 boolean disableLatest, Path localCache) throws ProvisioningException {
         super(repoSystem);
         this.disableLatest = disableLatest;
         try {

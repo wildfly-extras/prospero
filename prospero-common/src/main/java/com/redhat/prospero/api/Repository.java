@@ -6,9 +6,9 @@ import com.redhat.prospero.xml.XmlException;
 
 public interface Repository {
 
-   File resolve(Gav artifact) throws ArtifactNotFoundException;
+    File resolve(Gav artifact) throws ArtifactNotFoundException;
 
-   Gav findLatestVersionOf(Gav artifact);
+    Gav findLatestVersionOf(Gav artifact);
 
-   ArtifactDependencies resolveDescriptor(Gav latestVersion) throws XmlException;
+    ArtifactDependencies resolveDescriptor(Gav latestVersion) throws XmlException;
 }

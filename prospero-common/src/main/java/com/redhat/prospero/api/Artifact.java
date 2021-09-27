@@ -5,9 +5,9 @@
  * The ASF licenses this file to You under the Apache License, Version 2.0
  * (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
- *
+ * <p>
  * http://www.apache.org/licenses/LICENSE-2.0
- *
+ * <p>
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -21,21 +21,21 @@ import org.jboss.galleon.universe.maven.MavenArtifact;
 
 public class Artifact extends Gav {
 
-   public Artifact(String groupId, String artifactId, String version, String classifier) {
-      super(groupId, artifactId, version, classifier, "jar");
-   }
+    public Artifact(String groupId, String artifactId, String version, String classifier) {
+        super(groupId, artifactId, version, classifier, "jar");
+    }
 
-   public Artifact(String groupId, String artifactId, String version, String classifier, String packaging) {
-      super(groupId, artifactId, version, classifier, packaging);
-   }
+    public Artifact(String groupId, String artifactId, String version, String classifier, String packaging) {
+        super(groupId, artifactId, version, classifier, packaging);
+    }
 
-   public static Artifact from(MavenArtifact mavenArtifact) {
-      return new Artifact(mavenArtifact.getGroupId(), mavenArtifact.getArtifactId(), mavenArtifact.getVersion(),
-                          mavenArtifact.getClassifier(), mavenArtifact.getExtension());
-   }
+    public static Artifact from(MavenArtifact mavenArtifact) {
+        return new Artifact(mavenArtifact.getGroupId(), mavenArtifact.getArtifactId(), mavenArtifact.getVersion(),
+                mavenArtifact.getClassifier(), mavenArtifact.getExtension());
+    }
 
-   @Override
-   public Artifact newVersion(String newVersion) {
-      return new Artifact(groupId, artifactId, newVersion, classifier, packaging);
-   }
+    @Override
+    public Artifact newVersion(String newVersion) {
+        return new Artifact(groupId, artifactId, newVersion, classifier, packaging);
+    }
 }

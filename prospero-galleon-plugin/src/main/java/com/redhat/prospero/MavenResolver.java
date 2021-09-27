@@ -28,8 +28,10 @@ import org.eclipse.aether.RepositorySystemSession;
 import org.eclipse.aether.artifact.Artifact;
 import org.eclipse.aether.artifact.DefaultArtifact;
 import org.eclipse.aether.repository.RemoteRepository;
+
 import static org.eclipse.aether.repository.RepositoryPolicy.CHECKSUM_POLICY_WARN;
 import static org.eclipse.aether.repository.RepositoryPolicy.UPDATE_POLICY_NEVER;
+
 import org.eclipse.aether.resolution.ArtifactRequest;
 import org.eclipse.aether.resolution.ArtifactResolutionException;
 import org.eclipse.aether.resolution.ArtifactResult;
@@ -48,7 +50,7 @@ public class MavenResolver {
     private final List<RemoteRepository> fallbackRepositories;
 
     public MavenResolver(List<Channel> channels, RepositorySystem repoSystem,
-            RepositorySystemSession repoSession, RepositorySystemSession fallbackRepoSession, List<RemoteRepository> fallbackRepositories) {
+                         RepositorySystemSession repoSession, RepositorySystemSession fallbackRepoSession, List<RemoteRepository> fallbackRepositories) {
         this.repoSystem = repoSystem;
         this.repoSession = repoSession;
         this.repositories = newRepositories(channels);

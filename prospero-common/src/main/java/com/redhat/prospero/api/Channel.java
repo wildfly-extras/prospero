@@ -5,9 +5,9 @@
  * The ASF licenses this file to You under the Apache License, Version 2.0
  * (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
- *
+ * <p>
  * http://www.apache.org/licenses/LICENSE-2.0
- *
+ * <p>
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -27,48 +27,48 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 
 public class Channel {
 
-   public static void writeChannels(List<Channel> channels, File channelsFile) throws IOException {
-      new ObjectMapper().writeValue(channelsFile, channels);
-   }
+    public static void writeChannels(List<Channel> channels, File channelsFile) throws IOException {
+        new ObjectMapper().writeValue(channelsFile, channels);
+    }
 
-   public static List<Channel> readChannels(Path path) throws IOException {
-      final ObjectMapper objectMapper = new ObjectMapper();
-      JavaType type = objectMapper.getTypeFactory().constructCollectionType(List.class, Channel.class);
-      final List<Channel> channels = objectMapper.readValue(path.toFile(), type);
+    public static List<Channel> readChannels(Path path) throws IOException {
+        final ObjectMapper objectMapper = new ObjectMapper();
+        JavaType type = objectMapper.getTypeFactory().constructCollectionType(List.class, Channel.class);
+        final List<Channel> channels = objectMapper.readValue(path.toFile(), type);
 
-      return channels;
-   }
+        return channels;
+    }
 
-   private String name;
-   private String url;
+    private String name;
+    private String url;
 
-   public Channel() {
+    public Channel() {
 
-   }
+    }
 
-   public Channel(String name, String url) {
-      this.name = name;
-      this.url = url;
-   }
+    public Channel(String name, String url) {
+        this.name = name;
+        this.url = url;
+    }
 
-   public String getName() {
-      return name;
-   }
+    public String getName() {
+        return name;
+    }
 
-   public void setName(String name) {
-      this.name = name;
-   }
+    public void setName(String name) {
+        this.name = name;
+    }
 
-   public String getUrl() {
-      return url;
-   }
+    public String getUrl() {
+        return url;
+    }
 
-   public void setUrl(String url) {
-      this.url = url;
-   }
+    public void setUrl(String url) {
+        this.url = url;
+    }
 
-   @Override
-   public String toString() {
-      return "Channel{" + "name='" + name + '\'' + ", url='" + url + '\'' + '}';
-   }
+    @Override
+    public String toString() {
+        return "Channel{" + "name='" + name + '\'' + ", url='" + url + '\'' + '}';
+    }
 }
