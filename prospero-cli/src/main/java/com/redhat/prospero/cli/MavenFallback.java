@@ -56,6 +56,9 @@ public class MavenFallback {
         REQUIRED_REPOSITORIES.put(NEXUS_REPO_URL, new RequiredRepository("jboss-public-repository", DEFAULT_REPOSITORY_TYPE, NEXUS_REPO_URL,
                 new RepositoryPolicy(true, RepositoryPolicy.UPDATE_POLICY_DAILY, RepositoryPolicy.CHECKSUM_POLICY_WARN),
                 new RepositoryPolicy(false, RepositoryPolicy.UPDATE_POLICY_NEVER, RepositoryPolicy.CHECKSUM_POLICY_FAIL)));
+        REQUIRED_REPOSITORIES.put("https://repo1.maven.org/maven2", new RequiredRepository("repo1", DEFAULT_REPOSITORY_TYPE, NEXUS_REPO_URL,
+                new RepositoryPolicy(true, RepositoryPolicy.UPDATE_POLICY_DAILY, RepositoryPolicy.CHECKSUM_POLICY_WARN),
+                new RepositoryPolicy(false, RepositoryPolicy.UPDATE_POLICY_NEVER, RepositoryPolicy.CHECKSUM_POLICY_FAIL)));
     }
 
     public static List<RemoteRepository> buildRepositories() throws RuntimeException {
