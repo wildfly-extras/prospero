@@ -17,6 +17,8 @@
 
 package com.redhat.prospero.api;
 
+import org.jboss.galleon.universe.maven.MavenArtifact;
+
 public class Artifact extends Gav {
 
    public Artifact(String groupId, String artifactId, String version, String classifier) {
@@ -25,6 +27,11 @@ public class Artifact extends Gav {
 
    public Artifact(String groupId, String artifactId, String version, String classifier, String packaging) {
       super(groupId, artifactId, version, classifier, packaging);
+   }
+
+   public static Artifact from(MavenArtifact mavenArtifact) {
+      return new Artifact(mavenArtifact.getGroupId(), mavenArtifact.getArtifactId(), mavenArtifact.getVersion(),
+                          mavenArtifact.getClassifier(), mavenArtifact.getExtension());
    }
 
    @Override

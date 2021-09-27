@@ -67,6 +67,10 @@ public class ChannelMavenArtifactRepositoryManager extends AbstractMavenArtifact
         this.repositories = resolver.getRepositories();
     }
 
+    public ProsperoArtifactResolver getResolver() {
+        return resolver;
+    }
+
     @Override
     protected VersionRangeResult getVersionRange(Artifact artifact) throws MavenUniverseException {
         return resolver.getVersionRange(artifact);

@@ -17,23 +17,45 @@
 
 package com.redhat.prospero.cli.actions;
 
+import java.io.IOException;
+import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Scanner;
 import java.util.Set;
+import java.util.stream.Collectors;
 
+import com.redhat.prospero.ChannelMavenArtifactRepositoryManager;
 import com.redhat.prospero.api.Artifact;
 import com.redhat.prospero.api.ArtifactDependencies;
 import com.redhat.prospero.api.ArtifactNotFoundException;
 import com.redhat.prospero.api.Gav;
 import com.redhat.prospero.api.Manifest;
-import com.redhat.prospero.cli.api.PackageInstallationException;
+import com.redhat.prospero.api.PackageInstallationException;
+import com.redhat.prospero.cli.MavenFallback;
 import com.redhat.prospero.api.Repository;
-import com.redhat.prospero.cli.impl.installation.LocalInstallation;
+import com.redhat.prospero.installation.LocalInstallation;
 import com.redhat.prospero.impl.repository.MavenRepository;
+import com.redhat.prospero.installation.Modules;
 import com.redhat.prospero.xml.ManifestXmlSupport;
 import com.redhat.prospero.xml.XmlException;
+import org.apache.maven.repository.internal.MavenRepositorySystemUtils;
+import org.eclipse.aether.RepositorySystem;
+import org.eclipse.aether.connector.basic.BasicRepositoryConnectorFactory;
+import org.eclipse.aether.impl.DefaultServiceLocator;
+import org.eclipse.aether.spi.connector.RepositoryConnectorFactory;
+import org.eclipse.aether.spi.connector.transport.TransporterFactory;
+import org.eclipse.aether.transport.file.FileTransporterFactory;
+import org.eclipse.aether.transport.http.HttpTransporterFactory;
+import org.jboss.galleon.ProvisioningException;
+import org.jboss.galleon.ProvisioningManager;
+import org.jboss.galleon.layout.FeaturePackUpdatePlan;
+import org.jboss.galleon.layout.ProvisioningPlan;
+import org.jboss.galleon.universe.FeaturePackLocation;
+import org.jboss.galleon.universe.maven.MavenArtifact;
 
 public class Update {
 
@@ -59,37 +81,116 @@ public class Update {
          artifact = null;
       }
 
-//      Repository repository = new LocalRepository(Paths.get(repo));
+
       LocalInstallation localInstallation = new LocalInstallation(Paths.get(base));
       MavenRepository repository = new MavenRepository(localInstallation.getChannels());
 
+      final Update update = new Update(repository, localInstallation);
       if (artifact == null) {
-         new Update(repository, localInstallation).doUpdateAll();
+         update.doUpdateAll(Paths.get(base));
       } else {
-         new Update(repository, localInstallation).doUpdate(artifact.split(":")[0], artifact.split(":")[1]);
+         update.doUpdate(artifact.split(":")[0], artifact.split(":")[1]);
       }
    }
 
-   public void doUpdateAll() throws ArtifactNotFoundException, XmlException, PackageInstallationException {
+   public void doUpdateAll(Path installationDir) throws ArtifactNotFoundException, XmlException, PackageInstallationException, ProvisioningException, IOException {
       final List<UpdateAction> updates = new ArrayList<>();
       for (Artifact artifact : localInstallation.getManifest().getArtifacts()) {
          updates.addAll(findUpdates(artifact.getGroupId(), artifact.getArtifactId()));
       }
-      if (updates.isEmpty()) {
+      final ProvisioningPlan fpUpdates = findFPUpdates(installationDir);
+
+      if (updates.isEmpty() && fpUpdates.isEmpty()) {
          System.out.println("No updates to execute");
          return;
       }
 
-      System.out.println("Updates found: ");
+      if (!fpUpdates.isEmpty()) {
+         System.out.println("Feature pack updates:");
+         for (FeaturePackUpdatePlan update : fpUpdates.getUpdates()) {
+            final FeaturePackLocation oldFp = update.getInstalledLocation();
+            final FeaturePackLocation newFp = update.getNewLocation();
+            System.out.println(newFp.getProducerName() + "   " + oldFp.getBuild()  + "  ==>  " + newFp.getBuild());
+         }
+
+      }
+
+      if (!updates.isEmpty()) {
+         System.out.println("Artefact updates found: ");
+         for (UpdateAction update : updates) {
+            System.out.println(update);
+         }
+      }
+
+      System.out.print("Continue with update [y/n]: ");
+      Scanner sc = new Scanner(System.in);
+      while (true) {
+         String resp = sc.nextLine();
+         if (resp.equalsIgnoreCase("n")) {
+            System.out.println("Update cancelled");
+            return;
+         } else if (resp.equalsIgnoreCase("y")) {
+            System.out.println("Applying updates");
+            break;
+         } else {
+            System.out.print("Choose [y/n]: ");
+         }
+      }
+
+      final Set<Artifact> updated;
+      if (!fpUpdates.isEmpty()) {
+         updated = applyFpUpdates(fpUpdates, installationDir);
+      } else {
+         updated = Collections.emptySet();
+      }
+
       for (UpdateAction update : updates) {
-         System.out.print(update + "\t\t\t\t\t");
-
-         localInstallation.updateArtifact(update.oldVersion, update.newVersion, repository.resolve(update.newVersion));
-
-         System.out.println("DONE");
+         if (!updated.contains(update.newVersion)) {
+            localInstallation.updateArtifact(update.oldVersion, update.newVersion, repository.resolve(update.newVersion));
+         }
       }
 
       ManifestXmlSupport.write(localInstallation.getManifest());
+   }
+
+   private ProvisioningPlan findFPUpdates(Path installDir) throws ProvisioningException, IOException {
+      final RepositorySystem repoSystem = newRepositorySystem();
+
+      final ChannelMavenArtifactRepositoryManager maven
+         = new ChannelMavenArtifactRepositoryManager(repoSystem, MavenFallback.getDefaultRepositorySystemSession(repoSystem),
+                                                     MavenFallback.buildRepositories(), installDir.resolve("channels.json"), false, null);
+      try {
+         ProvisioningManager provMgr = ProvisioningManager.builder().addArtifactResolver(maven).setInstallationHome(installDir).build();
+         final ProvisioningPlan updates = provMgr.getUpdates(true);
+         return updates;
+      }finally {
+         maven.close();
+      }
+   }
+
+   private Set<Artifact> applyFpUpdates(ProvisioningPlan updates, Path installDir) throws ProvisioningException, IOException {
+      final RepositorySystem repoSystem = newRepositorySystem();
+
+      final ChannelMavenArtifactRepositoryManager maven
+         = new ChannelMavenArtifactRepositoryManager(repoSystem, MavenFallback.getDefaultRepositorySystemSession(repoSystem),
+                                                     MavenFallback.buildRepositories(), installDir.resolve("channels.json"), false, null);
+      try {
+         ProvisioningManager provMgr = ProvisioningManager.builder().addArtifactResolver(maven).setInstallationHome(installDir).build();
+         provMgr.apply(updates);
+      }finally {
+         final Set<MavenArtifact> resolvedArtfacts = maven.getResolver().resolvedArtfacts();
+
+         // filter out non-installed artefacts
+         final Modules modules = new Modules(installDir);
+         final Set<Artifact> collected = resolvedArtfacts.stream()
+            .map(Artifact::from)
+            .filter(a -> !(modules.find(a)).isEmpty())
+            .collect(Collectors.toSet());
+         localInstallation.registerUpdates(collected);
+
+         maven.close();
+         return collected;
+      }
    }
 
    public void doUpdate(String groupId, String artifactId) throws ArtifactNotFoundException, XmlException, PackageInstallationException {
@@ -173,6 +274,31 @@ public class Update {
       }
 
       return updates;
+   }
+
+   private RepositorySystem newRepositorySystem() {
+      /*
+       * Aether's components implement org.eclipse.aether.spi.locator.Service to ease manual wiring and using the
+       * prepopulated DefaultServiceLocator, we only need to register the repository connector and transporter
+       * factories.
+       */
+      DefaultServiceLocator locator = MavenRepositorySystemUtils.newServiceLocator();
+      locator.addService(RepositoryConnectorFactory.class, BasicRepositoryConnectorFactory.class );
+      locator.addService(TransporterFactory.class, FileTransporterFactory.class );
+      locator.addService( TransporterFactory.class, HttpTransporterFactory.class );
+
+      locator.setErrorHandler( new DefaultServiceLocator.ErrorHandler()
+      {
+         @Override
+         public void serviceCreationFailed( Class<?> type, Class<?> impl, Throwable exception )
+         {
+            System.out.println(String.format("Service creation failed for %s with implementation %s",
+                                             type, impl ));
+            exception.printStackTrace();
+         }
+      } );
+
+      return locator.getService( RepositorySystem.class );
    }
 
    class UpdateAction {

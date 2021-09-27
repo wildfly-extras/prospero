@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-package com.redhat.prospero.cli.xml;
+package com.redhat.prospero.xml;
 
 import javax.xml.XMLConstants;
 import javax.xml.transform.Transformer;
@@ -31,8 +31,6 @@ import java.util.ArrayList;
 import java.util.List;
 
 import com.redhat.prospero.api.Artifact;
-import com.redhat.prospero.xml.XmlException;
-import com.redhat.prospero.xml.XmlSupport;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.NodeList;

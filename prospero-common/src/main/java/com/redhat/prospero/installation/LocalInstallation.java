@@ -15,25 +15,27 @@
  * limitations under the License.
  */
 
-package com.redhat.prospero.cli.impl.installation;
+package com.redhat.prospero.installation;
 
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Path;
 import java.util.Collection;
 import java.util.List;
+import java.util.Set;
 
 import com.redhat.prospero.api.Artifact;
 import com.redhat.prospero.api.Channel;
-import com.redhat.prospero.cli.api.Installation;
+import com.redhat.prospero.api.Installation;
 import com.redhat.prospero.api.Manifest;
-import com.redhat.prospero.cli.api.PackageInstallationException;
+import com.redhat.prospero.api.PackageInstallationException;
 import com.redhat.prospero.xml.ManifestXmlSupport;
-import com.redhat.prospero.cli.xml.ModuleXmlSupport;
+import com.redhat.prospero.xml.ModuleXmlSupport;
 import com.redhat.prospero.xml.XmlException;
 import net.lingala.zip4j.ZipFile;
 import net.lingala.zip4j.exception.ZipException;
 import org.apache.commons.io.FileUtils;
+import org.jboss.galleon.universe.maven.MavenArtifact;
 
 public class LocalInstallation implements Installation {
 
@@ -115,6 +117,12 @@ public class LocalInstallation implements Installation {
    @Override
    public List<Channel> getChannels() {
       return channels;
+   }
+
+   public void registerUpdates(Set<Artifact> artifacts) {
+      for (Artifact artifact : artifacts) {
+         manifest.updateVersion(artifact);
+      }
    }
 
    private static void installPackage(File packageFile, Path base) throws PackageInstallationException {

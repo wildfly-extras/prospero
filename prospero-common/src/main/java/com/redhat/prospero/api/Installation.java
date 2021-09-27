@@ -1,4 +1,4 @@
-package com.redhat.prospero.cli.api;
+package com.redhat.prospero.api;
 
 import java.io.File;
 import java.util.List;

@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-package com.redhat.prospero.cli.impl.installation;
+package com.redhat.prospero.installation;
 
 import javax.xml.XMLConstants;
 import javax.xml.parsers.DocumentBuilderFactory;
