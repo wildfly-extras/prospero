@@ -28,6 +28,8 @@ import com.redhat.prospero.api.ArtifactNotFoundException;
 import com.redhat.prospero.api.Channel;
 import com.redhat.prospero.api.Gav;
 import com.redhat.prospero.api.Manifest;
+import com.redhat.prospero.installation.LocalInstallation;
+import com.redhat.prospero.installation.Modules;
 import com.redhat.prospero.xml.ManifestXmlSupport;
 import com.redhat.prospero.xml.XmlException;
 import java.util.HashSet;
@@ -184,7 +186,22 @@ public class ProsperoArtifactResolver {
     }
 
     void provisioningDone(Path home) throws MavenUniverseException {
-        writeManifestFile(home, resolvedArtifacts);
+        final Modules modules = new Modules(home);
+        Set<MavenArtifact> installed = new HashSet<>();
+        for (MavenArtifact resolvedArtifact : resolvedArtifacts) {
+            if (containsArtifact(resolvedArtifact, modules)) {
+                installed.add(resolvedArtifact);
+            }
+        }
+        writeManifestFile(home, installed);
+    }
+
+    public Set<MavenArtifact> resolvedArtfacts() {
+        return resolvedArtifacts;
+    }
+
+    private boolean containsArtifact(MavenArtifact resolvedArtifact, Modules modules) {
+        return !modules.find(new com.redhat.prospero.api.Artifact(resolvedArtifact.getGroupId(), resolvedArtifact.getArtifactId(), resolvedArtifact.getVersion(), resolvedArtifact.getClassifier(), resolvedArtifact.getExtension())).isEmpty();
     }
 
 }
