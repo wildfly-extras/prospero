@@ -145,7 +145,7 @@ public class MavenResolver {
 
     private static RemoteRepository newRepository(String channel, String url) {
         RemoteRepository.Builder builder = new RemoteRepository.Builder(channel, "default", url);
-        builder.setSnapshotPolicy(new org.eclipse.aether.repository.RepositoryPolicy(false, UPDATE_POLICY_NEVER, CHECKSUM_POLICY_WARN));
+        builder.setSnapshotPolicy(new org.eclipse.aether.repository.RepositoryPolicy(true, UPDATE_POLICY_NEVER, CHECKSUM_POLICY_WARN));
         builder.setReleasePolicy(new org.eclipse.aether.repository.RepositoryPolicy(true, UPDATE_POLICY_NEVER, CHECKSUM_POLICY_WARN));
         return builder.build();
     }
