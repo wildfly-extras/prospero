@@ -28,7 +28,6 @@ import com.redhat.prospero.api.ArtifactNotFoundException;
 import com.redhat.prospero.api.Channel;
 import com.redhat.prospero.api.Gav;
 import com.redhat.prospero.api.Manifest;
-import com.redhat.prospero.installation.LocalInstallation;
 import com.redhat.prospero.installation.Modules;
 import com.redhat.prospero.xml.ManifestXmlSupport;
 import com.redhat.prospero.xml.XmlException;
@@ -36,6 +35,8 @@ import com.redhat.prospero.xml.XmlException;
 import java.util.HashSet;
 import java.util.Set;
 
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.eclipse.aether.RepositorySystem;
 import org.eclipse.aether.RepositorySystemSession;
 import org.eclipse.aether.artifact.Artifact;
@@ -46,6 +47,7 @@ import org.jboss.galleon.universe.maven.MavenArtifact;
 import org.jboss.galleon.universe.maven.MavenUniverseException;
 
 public class ProsperoArtifactResolver {
+    private final static Logger log = LogManager.getLogger(ProsperoArtifactResolver.class);
 
     private final List<Channel> channels;
     private final Set<MavenArtifact> resolvedArtifacts = new HashSet<>();
@@ -110,7 +112,7 @@ public class ProsperoArtifactResolver {
             range = "[" + artifact.getVersion() + ",)";
         } else {
             if (artifact.getVersion() != null) {
-                System.out.println("WARNING: Version is set for " + artifact + " although a range is provided " + artifact.getVersionRange());
+                log.warn("WARNING: Version is set for " + artifact + " although a range is provided " + artifact.getVersionRange());
             }
             range = artifact.getVersionRange();
         }
@@ -120,12 +122,12 @@ public class ProsperoArtifactResolver {
             // First attempt to get the highest version from the channels
             Gav gav = repository.findLatestVersionOf(prosperoArtifact, range);
             if (gav == null) {
-                System.out.println("The artifact " + artifact.getGroupId() + ":" + artifact.getArtifactId() + " not found in channel, falling back");
+                log.info("The artifact {}:{} not found in channel, falling back", artifact.getGroupId(), artifact.getArtifactId());
                 if (artifact.getVersion() == null) {
-                    System.out.println("We must first retrieve the version");
+                    log.debug("Finding fallback version");
                     gav = repository.findLatestFallBack(prosperoArtifact, range);
                 } else {
-                    System.out.println("Re-using artifact version " + artifact.getVersion());
+                    log.debug("Re-using artifact version {}", artifact.getVersion());
                     gav = prosperoArtifact.newVersion(artifact.getVersion());
                 }
                 if (gav == null) {
@@ -139,7 +141,7 @@ public class ProsperoArtifactResolver {
                 artifact.setVersion(gav.getVersion());
                 artifact.setPath(resolvedPath.toPath());
             }
-            System.out.println("LATEST: version " + artifact.getVersion() + " for range " + range);
+            log.debug("LATEST: 1234 version {} for range {}", artifact.getVersion(), range);
         } catch (ArtifactNotFoundException ex) {
             throw new MavenUniverseException(ex.getLocalizedMessage(), ex);
         }
@@ -164,7 +166,7 @@ public class ProsperoArtifactResolver {
             throw new MavenUniverseException("Version is not set for " + artifact);
         }
         if (artifact.getVersionRange() != null) {
-            System.out.println("WARNING: Version range is set for " + artifact);
+            log.warn("WARNING: Version range is set for {}", artifact);
         }
 
         final com.redhat.prospero.api.Artifact prosperoArtifact = new com.redhat.prospero.api.Artifact(artifact.getGroupId(),
@@ -173,7 +175,7 @@ public class ProsperoArtifactResolver {
             final File resolvedPath = repository.resolve(prosperoArtifact);
             artifact.setPath(resolvedPath.toPath());
         } catch (ArtifactNotFoundException ex) {
-            System.out.println("FALLBACK: The artifact " + artifact.getGroupId() + ":" + artifact.getArtifactId() + " not found in channel, falling back");
+            log.info("FALLBACK: The artifact {}:{} not found in channel, falling back", artifact.getGroupId(), artifact.getArtifactId());
             try {
                 final File resolvedPath = repository.resolveFallback(prosperoArtifact);
                 artifact.setPath(resolvedPath.toPath());
@@ -181,7 +183,7 @@ public class ProsperoArtifactResolver {
                 throw new MavenUniverseException(ex.getLocalizedMessage(), e);
             }
         }
-        System.out.println("RESOLVED: " + artifact);
+        log.info("RESOLVED: " + artifact);
         if ("jar".equals(artifact.getExtension())) {
             resolvedArtifacts.add(artifact);
         }

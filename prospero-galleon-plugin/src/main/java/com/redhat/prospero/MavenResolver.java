@@ -23,6 +23,8 @@ import java.util.stream.Collectors;
 import com.redhat.prospero.api.ArtifactNotFoundException;
 import com.redhat.prospero.api.Channel;
 import com.redhat.prospero.api.Gav;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.eclipse.aether.RepositorySystem;
 import org.eclipse.aether.RepositorySystemSession;
 import org.eclipse.aether.artifact.Artifact;
@@ -42,6 +44,7 @@ import org.eclipse.aether.version.Version;
 import org.jboss.galleon.universe.maven.MavenUniverseException;
 
 public class MavenResolver {
+    private final Logger log = LogManager.getLogger(MavenResolver.class);
 
     private final RepositorySystem repoSystem;
     private final RepositorySystemSession repoSession;
@@ -112,7 +115,7 @@ public class MavenResolver {
             if (highestVersion == null) {
                 return null;
             } else {
-                System.out.println("FOUND latest version " + highestVersion + " for " + artifact);
+                log.info("FOUND latest version {} for {}", highestVersion, artifact);
                 return artifact.newVersion(highestVersion.toString());
             }
         } catch (VersionRangeResolutionException e) {

@@ -9,7 +9,7 @@
     </parent>
 
     <modelVersion>4.0.0</modelVersion>
-    <groupId>com.redhat.propsero</groupId>
+    <groupId>com.redhat.prospero</groupId>
     <artifactId>prospero-common</artifactId>
     <version>1.0-SNAPSHOT</version>
     <packaging>jar</packaging>

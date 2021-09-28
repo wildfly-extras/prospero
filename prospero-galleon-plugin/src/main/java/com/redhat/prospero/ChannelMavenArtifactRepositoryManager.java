@@ -21,6 +21,8 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
 
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.apache.maven.repository.internal.MavenRepositorySystemUtils;
 import org.eclipse.aether.DefaultRepositorySystemSession;
 
@@ -39,6 +41,7 @@ import org.jboss.galleon.universe.maven.MavenUniverseException;
 import org.jboss.galleon.util.IoUtils;
 
 public class ChannelMavenArtifactRepositoryManager extends AbstractMavenArtifactRepositoryManager {
+    private static final Logger log = LogManager.getLogger(ChannelMavenArtifactRepositoryManager.class);
 
     private final RepositorySystemSession session;
     private final List<RemoteRepository> repositories;
@@ -107,7 +110,7 @@ public class ChannelMavenArtifactRepositoryManager extends AbstractMavenArtifact
 
     public void close() throws MavenUniverseException {
         if (tmpLocalCache != null) {
-            System.out.println("Deleting local cache " + tmpLocalCache);
+            log.debug("Deleting local cache " + tmpLocalCache);
             IoUtils.recursiveDelete(tmpLocalCache);
         }
     }
