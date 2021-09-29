@@ -18,6 +18,7 @@
 package com.redhat.prospero.cli.actions;
 
 import com.redhat.prospero.ChannelMavenArtifactRepositoryManager;
+import com.redhat.prospero.cli.GalleonProgressCallback;
 import com.redhat.prospero.cli.MavenFallback;
 
 import java.io.IOException;
@@ -35,6 +36,7 @@ import org.eclipse.aether.transport.file.FileTransporterFactory;
 import org.eclipse.aether.transport.http.HttpTransporterFactory;
 import org.jboss.galleon.ProvisioningException;
 import org.jboss.galleon.ProvisioningManager;
+import org.jboss.galleon.layout.ProvisioningLayoutFactory;
 import org.jboss.galleon.universe.FeaturePackLocation;
 
 public class GalleonProvision {
@@ -76,12 +78,20 @@ public class GalleonProvision {
         try {
             ProvisioningManager provMgr = ProvisioningManager.builder().addArtifactResolver(maven)
                     .setInstallationHome(installDir).build();
+            addProgressCallbacks(provMgr.getLayoutFactory());
             FeaturePackLocation loc = FeaturePackLocation.fromString(fpl);
             provMgr.install(loc);
             maven.done(installDir);
         } finally {
             maven.close();
         }
+    }
+
+    private void addProgressCallbacks(ProvisioningLayoutFactory layoutFactory) {
+        layoutFactory.setProgressCallback("LAYOUT_BUILD", new GalleonProgressCallback<FeaturePackLocation.FPID>("Resolving feature-pack", "Feature-packs resolved."));
+        layoutFactory.setProgressCallback("PACKAGES", new GalleonProgressCallback<FeaturePackLocation.FPID>("Installing packages", "Packages installed."));
+        layoutFactory.setProgressCallback("CONFIGS", new GalleonProgressCallback<FeaturePackLocation.FPID>("Generating configuration", "Configurations generated."));
+        layoutFactory.setProgressCallback("JBMODULES", new GalleonProgressCallback<FeaturePackLocation.FPID>("Installing JBoss modules", "JBoss modules installed."));
     }
 
     private RepositorySystem newRepositorySystem() {

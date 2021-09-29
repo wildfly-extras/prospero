@@ -35,6 +35,7 @@ import com.redhat.prospero.api.ArtifactNotFoundException;
 import com.redhat.prospero.api.Gav;
 import com.redhat.prospero.api.Manifest;
 import com.redhat.prospero.api.PackageInstallationException;
+import com.redhat.prospero.cli.GalleonProgressCallback;
 import com.redhat.prospero.cli.MavenFallback;
 import com.redhat.prospero.api.Repository;
 import com.redhat.prospero.installation.LocalInstallation;
@@ -53,6 +54,7 @@ import org.eclipse.aether.transport.http.HttpTransporterFactory;
 import org.jboss.galleon.ProvisioningException;
 import org.jboss.galleon.ProvisioningManager;
 import org.jboss.galleon.layout.FeaturePackUpdatePlan;
+import org.jboss.galleon.layout.ProvisioningLayoutFactory;
 import org.jboss.galleon.layout.ProvisioningPlan;
 import org.jboss.galleon.universe.FeaturePackLocation;
 import org.jboss.galleon.universe.maven.MavenArtifact;
@@ -151,6 +153,8 @@ public class Update {
         }
 
         ManifestXmlSupport.write(localInstallation.getManifest());
+
+        System.out.println("Done");
     }
 
     private ProvisioningPlan findFPUpdates(Path installDir) throws ProvisioningException, IOException {
@@ -176,6 +180,7 @@ public class Update {
                 MavenFallback.buildRepositories(), installDir.resolve("channels.json"), false, null);
         try {
             ProvisioningManager provMgr = ProvisioningManager.builder().addArtifactResolver(maven).setInstallationHome(installDir).build();
+            addProgressCallbacks(provMgr.getLayoutFactory());
             provMgr.apply(updates);
         } finally {
             final Set<MavenArtifact> resolvedArtfacts = maven.getResolver().resolvedArtfacts();
@@ -191,6 +196,12 @@ public class Update {
             maven.close();
             return collected;
         }
+    }
+    private void addProgressCallbacks(ProvisioningLayoutFactory layoutFactory) {
+        layoutFactory.setProgressCallback("LAYOUT_BUILD", new GalleonProgressCallback<FeaturePackLocation.FPID>("Resolving feature-pack", "Feature-packs resolved."));
+        layoutFactory.setProgressCallback("PACKAGES", new GalleonProgressCallback<FeaturePackLocation.FPID>("Installing packages", "Packages installed."));
+        layoutFactory.setProgressCallback("CONFIGS", new GalleonProgressCallback<FeaturePackLocation.FPID>("Generating configuration", "Configurations generated."));
+        layoutFactory.setProgressCallback("JBMODULES", new GalleonProgressCallback<FeaturePackLocation.FPID>("Installing JBoss modules", "JBoss modules installed."));
     }
 
     public void doUpdate(String groupId, String artifactId) throws ArtifactNotFoundException, XmlException, PackageInstallationException {

@@ -112,7 +112,7 @@ public class ProsperoArtifactResolver {
             range = "[" + artifact.getVersion() + ",)";
         } else {
             if (artifact.getVersion() != null) {
-                log.warn("WARNING: Version is set for " + artifact + " although a range is provided " + artifact.getVersionRange());
+                log.info("Version is set for {} although a range is provided {}. Using provided range." + artifact, artifact.getVersionRange());
             }
             range = artifact.getVersionRange();
         }
@@ -141,7 +141,7 @@ public class ProsperoArtifactResolver {
                 artifact.setVersion(gav.getVersion());
                 artifact.setPath(resolvedPath.toPath());
             }
-            log.debug("LATEST: 1234 version {} for range {}", artifact.getVersion(), range);
+            log.debug("LATEST: Found version {} for range {}", artifact.getVersion(), range);
         } catch (ArtifactNotFoundException ex) {
             throw new MavenUniverseException(ex.getLocalizedMessage(), ex);
         }
