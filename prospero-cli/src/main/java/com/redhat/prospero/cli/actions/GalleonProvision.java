@@ -18,31 +18,17 @@
 package com.redhat.prospero.cli.actions;
 
 import com.redhat.prospero.ChannelMavenArtifactRepositoryManager;
-import com.redhat.prospero.cli.GalleonProgressCallback;
-import com.redhat.prospero.cli.MavenFallback;
 
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 
-import org.apache.maven.repository.internal.MavenRepositorySystemUtils;
-import org.eclipse.aether.RepositorySystem;
-import org.eclipse.aether.connector.basic.BasicRepositoryConnectorFactory;
-import org.eclipse.aether.impl.DefaultServiceLocator;
-import org.eclipse.aether.spi.connector.RepositoryConnectorFactory;
-import org.eclipse.aether.spi.connector.transport.TransporterFactory;
-import org.eclipse.aether.transport.file.FileTransporterFactory;
-import org.eclipse.aether.transport.http.HttpTransporterFactory;
 import org.jboss.galleon.ProvisioningException;
 import org.jboss.galleon.ProvisioningManager;
-import org.jboss.galleon.layout.ProvisioningLayoutFactory;
 import org.jboss.galleon.universe.FeaturePackLocation;
 
 public class GalleonProvision {
-
-    public static final String JBOSS_UNIVERSE_GROUP_ID = "org.jboss.universe";
-    public static final String JBOSS_UNIVERSE_ARTIFACT_ID = "community-universe";
 
     static {
         enableJBossLogManager();
@@ -67,54 +53,17 @@ public class GalleonProvision {
     }
 
     public void installFeaturePack(String fpl, String path, String channelsFile) throws ProvisioningException, IOException {
-        final RepositorySystem repoSystem = newRepositorySystem();
         Path installDir = Paths.get(path);
         if (Files.exists(installDir)) {
             throw new ProvisioningException("Installation dir " + installDir + " already exists");
         }
-        final ChannelMavenArtifactRepositoryManager maven
-                = new ChannelMavenArtifactRepositoryManager(repoSystem, MavenFallback.getDefaultRepositorySystemSession(repoSystem),
-                MavenFallback.buildRepositories(), Paths.get(channelsFile), false, null);
-        try {
-            ProvisioningManager provMgr = ProvisioningManager.builder().addArtifactResolver(maven)
-                    .setInstallationHome(installDir).build();
-            addProgressCallbacks(provMgr.getLayoutFactory());
+        try (final ChannelMavenArtifactRepositoryManager maven
+                = GalleonUtils.getChannelRepositoryManager(Paths.get(channelsFile), GalleonUtils.newRepositorySystem())) {
+            ProvisioningManager provMgr = GalleonUtils.getProvisioningManager(installDir, maven);
             FeaturePackLocation loc = FeaturePackLocation.fromString(fpl);
             provMgr.install(loc);
             maven.done(installDir);
-        } finally {
-            maven.close();
         }
-    }
-
-    private void addProgressCallbacks(ProvisioningLayoutFactory layoutFactory) {
-        layoutFactory.setProgressCallback("LAYOUT_BUILD", new GalleonProgressCallback<FeaturePackLocation.FPID>("Resolving feature-pack", "Feature-packs resolved."));
-        layoutFactory.setProgressCallback("PACKAGES", new GalleonProgressCallback<FeaturePackLocation.FPID>("Installing packages", "Packages installed."));
-        layoutFactory.setProgressCallback("CONFIGS", new GalleonProgressCallback<FeaturePackLocation.FPID>("Generating configuration", "Configurations generated."));
-        layoutFactory.setProgressCallback("JBMODULES", new GalleonProgressCallback<FeaturePackLocation.FPID>("Installing JBoss modules", "JBoss modules installed."));
-    }
-
-    private RepositorySystem newRepositorySystem() {
-        /*
-         * Aether's components implement org.eclipse.aether.spi.locator.Service to ease manual wiring and using the
-         * prepopulated DefaultServiceLocator, we only need to register the repository connector and transporter
-         * factories.
-         */
-        DefaultServiceLocator locator = MavenRepositorySystemUtils.newServiceLocator();
-        locator.addService(RepositoryConnectorFactory.class, BasicRepositoryConnectorFactory.class);
-        locator.addService(TransporterFactory.class, FileTransporterFactory.class);
-        locator.addService(TransporterFactory.class, HttpTransporterFactory.class);
-
-        locator.setErrorHandler(new DefaultServiceLocator.ErrorHandler() {
-            @Override
-            public void serviceCreationFailed(Class<?> type, Class<?> impl, Throwable exception) {
-                System.out.println(String.format("Service creation failed for %s with implementation %s",
-                        type, impl));
-                exception.printStackTrace();
-            }
-        });
-
-        return locator.getService(RepositorySystem.class);
     }
 
 }

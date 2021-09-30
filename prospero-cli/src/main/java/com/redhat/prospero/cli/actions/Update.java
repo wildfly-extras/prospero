@@ -35,38 +35,31 @@ import com.redhat.prospero.api.ArtifactNotFoundException;
 import com.redhat.prospero.api.Gav;
 import com.redhat.prospero.api.Manifest;
 import com.redhat.prospero.api.PackageInstallationException;
-import com.redhat.prospero.cli.GalleonProgressCallback;
-import com.redhat.prospero.cli.MavenFallback;
 import com.redhat.prospero.api.Repository;
 import com.redhat.prospero.installation.LocalInstallation;
 import com.redhat.prospero.impl.repository.MavenRepository;
 import com.redhat.prospero.installation.Modules;
 import com.redhat.prospero.xml.ManifestXmlSupport;
 import com.redhat.prospero.xml.XmlException;
-import org.apache.maven.repository.internal.MavenRepositorySystemUtils;
-import org.eclipse.aether.RepositorySystem;
-import org.eclipse.aether.connector.basic.BasicRepositoryConnectorFactory;
-import org.eclipse.aether.impl.DefaultServiceLocator;
-import org.eclipse.aether.spi.connector.RepositoryConnectorFactory;
-import org.eclipse.aether.spi.connector.transport.TransporterFactory;
-import org.eclipse.aether.transport.file.FileTransporterFactory;
-import org.eclipse.aether.transport.http.HttpTransporterFactory;
 import org.jboss.galleon.ProvisioningException;
 import org.jboss.galleon.ProvisioningManager;
 import org.jboss.galleon.layout.FeaturePackUpdatePlan;
-import org.jboss.galleon.layout.ProvisioningLayoutFactory;
 import org.jboss.galleon.layout.ProvisioningPlan;
 import org.jboss.galleon.universe.FeaturePackLocation;
 import org.jboss.galleon.universe.maven.MavenArtifact;
 
-public class Update {
+public class Update implements AutoCloseable {
 
     private final LocalInstallation localInstallation;
     private final Repository repository;
+    private final ChannelMavenArtifactRepositoryManager maven;
+    private final ProvisioningManager provMgr;
 
-    public Update(Repository repository, LocalInstallation localInstallation) {
-        this.localInstallation = localInstallation;
-        this.repository = repository;
+    public Update(Path installDir) throws XmlException, IOException, ProvisioningException {
+        this.localInstallation = new LocalInstallation(installDir);
+        this.repository = new MavenRepository(localInstallation.getChannels());
+        this.maven = GalleonUtils.getChannelRepositoryManager(installDir.resolve("channels.json"), GalleonUtils.newRepositorySystem());
+        this.provMgr = GalleonUtils.getProvisioningManager(installDir, maven);
     }
 
     public static void main(String[] args) throws Exception {
@@ -83,15 +76,12 @@ public class Update {
             artifact = null;
         }
 
-
-        LocalInstallation localInstallation = new LocalInstallation(Paths.get(base));
-        MavenRepository repository = new MavenRepository(localInstallation.getChannels());
-
-        final Update update = new Update(repository, localInstallation);
-        if (artifact == null) {
-            update.doUpdateAll(Paths.get(base));
-        } else {
-            update.doUpdate(artifact.split(":")[0], artifact.split(":")[1]);
+        try(Update update = new Update(Paths.get(base))) {
+            if (artifact == null) {
+                update.doUpdateAll(Paths.get(base));
+            } else {
+                update.doUpdate(artifact.split(":")[0], artifact.split(":")[1]);
+            }
         }
     }
 
@@ -146,7 +136,9 @@ public class Update {
             updated = Collections.emptySet();
         }
 
+        final Artifact artifact = updated.stream().filter(a -> a.getArtifactId().equals("wildfly-cli")).findFirst().get();
         for (UpdateAction update : updates) {
+            artifact.equals(update.newVersion);
             if (!updated.contains(update.newVersion)) {
                 localInstallation.updateArtifact(update.oldVersion, update.newVersion, repository.resolve(update.newVersion));
             }
@@ -157,51 +149,28 @@ public class Update {
         System.out.println("Done");
     }
 
-    private ProvisioningPlan findFPUpdates(Path installDir) throws ProvisioningException, IOException {
-        final RepositorySystem repoSystem = newRepositorySystem();
+    @Override
+    public void close() throws Exception {
+        this.maven.close();
+    }
 
-        final ChannelMavenArtifactRepositoryManager maven
-                = new ChannelMavenArtifactRepositoryManager(repoSystem, MavenFallback.getDefaultRepositorySystemSession(repoSystem),
-                MavenFallback.buildRepositories(), installDir.resolve("channels.json"), false, null);
-        try {
-            ProvisioningManager provMgr = ProvisioningManager.builder().addArtifactResolver(maven).setInstallationHome(installDir).build();
-            final ProvisioningPlan updates = provMgr.getUpdates(true);
-            return updates;
-        } finally {
-            maven.close();
-        }
+    private ProvisioningPlan findFPUpdates(Path installDir) throws ProvisioningException, IOException {
+        return provMgr.getUpdates(true);
     }
 
     private Set<Artifact> applyFpUpdates(ProvisioningPlan updates, Path installDir) throws ProvisioningException, IOException {
-        final RepositorySystem repoSystem = newRepositorySystem();
+        provMgr.apply(updates);
 
-        final ChannelMavenArtifactRepositoryManager maven
-                = new ChannelMavenArtifactRepositoryManager(repoSystem, MavenFallback.getDefaultRepositorySystemSession(repoSystem),
-                MavenFallback.buildRepositories(), installDir.resolve("channels.json"), false, null);
-        try {
-            ProvisioningManager provMgr = ProvisioningManager.builder().addArtifactResolver(maven).setInstallationHome(installDir).build();
-            addProgressCallbacks(provMgr.getLayoutFactory());
-            provMgr.apply(updates);
-        } finally {
-            final Set<MavenArtifact> resolvedArtfacts = maven.getResolver().resolvedArtfacts();
+        final Set<MavenArtifact> resolvedArtfacts = maven.getResolver().resolvedArtfacts();
 
-            // filter out non-installed artefacts
-            final Modules modules = new Modules(installDir);
-            final Set<Artifact> collected = resolvedArtfacts.stream()
-                    .map(Artifact::from)
-                    .filter(a -> !(modules.find(a)).isEmpty())
-                    .collect(Collectors.toSet());
-            localInstallation.registerUpdates(collected);
-
-            maven.close();
-            return collected;
-        }
-    }
-    private void addProgressCallbacks(ProvisioningLayoutFactory layoutFactory) {
-        layoutFactory.setProgressCallback("LAYOUT_BUILD", new GalleonProgressCallback<FeaturePackLocation.FPID>("Resolving feature-pack", "Feature-packs resolved."));
-        layoutFactory.setProgressCallback("PACKAGES", new GalleonProgressCallback<FeaturePackLocation.FPID>("Installing packages", "Packages installed."));
-        layoutFactory.setProgressCallback("CONFIGS", new GalleonProgressCallback<FeaturePackLocation.FPID>("Generating configuration", "Configurations generated."));
-        layoutFactory.setProgressCallback("JBMODULES", new GalleonProgressCallback<FeaturePackLocation.FPID>("Installing JBoss modules", "JBoss modules installed."));
+        // filter out non-installed artefacts
+        final Modules modules = new Modules(installDir);
+        final Set<Artifact> collected = resolvedArtfacts.stream()
+                .map(Artifact::from)
+                .filter(a -> !(modules.find(a)).isEmpty())
+                .collect(Collectors.toSet());
+        localInstallation.registerUpdates(collected);
+        return collected;
     }
 
     public void doUpdate(String groupId, String artifactId) throws ArtifactNotFoundException, XmlException, PackageInstallationException {
@@ -285,29 +254,6 @@ public class Update {
         }
 
         return updates;
-    }
-
-    private RepositorySystem newRepositorySystem() {
-        /*
-         * Aether's components implement org.eclipse.aether.spi.locator.Service to ease manual wiring and using the
-         * prepopulated DefaultServiceLocator, we only need to register the repository connector and transporter
-         * factories.
-         */
-        DefaultServiceLocator locator = MavenRepositorySystemUtils.newServiceLocator();
-        locator.addService(RepositoryConnectorFactory.class, BasicRepositoryConnectorFactory.class);
-        locator.addService(TransporterFactory.class, FileTransporterFactory.class);
-        locator.addService(TransporterFactory.class, HttpTransporterFactory.class);
-
-        locator.setErrorHandler(new DefaultServiceLocator.ErrorHandler() {
-            @Override
-            public void serviceCreationFailed(Class<?> type, Class<?> impl, Throwable exception) {
-                System.out.println(String.format("Service creation failed for %s with implementation %s",
-                        type, impl));
-                exception.printStackTrace();
-            }
-        });
-
-        return locator.getService(RepositorySystem.class);
     }
 
     class UpdateAction {

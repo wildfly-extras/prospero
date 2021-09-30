@@ -19,6 +19,8 @@ package com.redhat.prospero.api;
 
 import org.apache.maven.artifact.versioning.ComparableVersion;
 
+import java.util.Objects;
+
 public abstract class Gav {
 
     protected final String groupId;
@@ -72,5 +74,18 @@ public abstract class Gav {
     @Override
     public String toString() {
         return "Gav{" + "groupId='" + groupId + '\'' + ", artifactId='" + artifactId + '\'' + ", version='" + version + '\'' + ", classifier='" + classifier + '\'' + ", packaging='" + packaging + '\'' + '}';
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        Gav gav = (Gav) o;
+        return groupId.equals(gav.groupId) && artifactId.equals(gav.artifactId) && version.equals(gav.version) && classifier.equals(gav.classifier) && packaging.equals(gav.packaging);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(groupId, artifactId, version, classifier, packaging);
     }
 }

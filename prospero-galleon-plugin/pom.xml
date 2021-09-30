@@ -20,7 +20,7 @@
     <dependencies>
 
         <dependency>
-            <groupId>com.redhat.propsero</groupId>
+            <groupId>com.redhat.prospero</groupId>
             <artifactId>prospero-common</artifactId>
             <version>${project.version}</version>
         </dependency>

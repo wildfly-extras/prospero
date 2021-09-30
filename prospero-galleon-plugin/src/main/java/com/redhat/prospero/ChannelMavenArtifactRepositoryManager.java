@@ -40,7 +40,7 @@ import org.jboss.galleon.universe.maven.MavenArtifact;
 import org.jboss.galleon.universe.maven.MavenUniverseException;
 import org.jboss.galleon.util.IoUtils;
 
-public class ChannelMavenArtifactRepositoryManager extends AbstractMavenArtifactRepositoryManager {
+public class ChannelMavenArtifactRepositoryManager extends AbstractMavenArtifactRepositoryManager implements AutoCloseable {
     private static final Logger log = LogManager.getLogger(ChannelMavenArtifactRepositoryManager.class);
 
     private final RepositorySystemSession session;
@@ -108,6 +108,7 @@ public class ChannelMavenArtifactRepositoryManager extends AbstractMavenArtifact
         resolver.provisioningDone(home);
     }
 
+    @Override
     public void close() throws MavenUniverseException {
         if (tmpLocalCache != null) {
             log.debug("Deleting local cache " + tmpLocalCache);
