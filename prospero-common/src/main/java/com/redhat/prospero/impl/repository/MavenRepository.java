@@ -20,7 +20,6 @@ package com.redhat.prospero.impl.repository;
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -48,16 +47,16 @@ import org.eclipse.aether.spi.connector.transport.TransporterFactory;
 import org.eclipse.aether.transport.file.FileTransporterFactory;
 import org.eclipse.aether.transport.http.HttpTransporterFactory;
 import org.eclipse.aether.version.Version;
+import org.jboss.galleon.universe.maven.MavenUniverseException;
 
 public class MavenRepository implements Repository {
 
     private final RepositorySystem repoSystem;
     private final RepositorySystemSession repoSession;
-    private final List<Channel> channels;
+    private final List<RemoteRepository> repositories;
 
-    public MavenRepository(String channelName, String channelUrl) {
-        channels = new ArrayList<>();
-        channels.add(new Channel(channelName, channelUrl));
+    public MavenRepository(List<Channel> channels) {
+        this.repositories = newRepositories(channels);
         try {
             repoSystem = newRepositorySystem();
             repoSession = newRepositorySystemSession(repoSystem);
@@ -66,11 +65,21 @@ public class MavenRepository implements Repository {
         }
     }
 
-    public MavenRepository(List<Channel> channels) {
-        this.channels = channels;
+    public MavenRepository(RepositorySystem repositorySystem, List<Channel> channels) {
+        this.repoSystem = repositorySystem;
+        this.repositories = newRepositories(channels);
         try {
-            repoSystem = newRepositorySystem();
-            repoSession = newRepositorySystemSession(repoSystem);
+            this.repoSession = newRepositorySystemSession(repoSystem);
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    public MavenRepository(List<RemoteRepository> repositories, RepositorySystem repositorySystem) {
+        this.repositories = repositories;
+        this.repoSystem = repositorySystem;
+        try {
+            this.repoSession = newRepositorySystemSession(repoSystem);
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
@@ -98,6 +107,7 @@ public class MavenRepository implements Repository {
     @Override
     public Artifact findLatestVersionOf(Artifact artifact) {
         VersionRangeRequest req = new VersionRangeRequest();
+        // TODO: if already a range do not change it
         final DefaultArtifact artifact1 = new DefaultArtifact(artifact.getGroupId(), artifact.getArtifactId(), artifact.getPackaging(), "[" + artifact.getVersion() + ",)");
         req.setArtifact(artifact1);
         req.setRepositories(newRepositories());
@@ -106,9 +116,7 @@ public class MavenRepository implements Repository {
             final VersionRangeResult versionRangeResult = repoSystem.resolveVersionRange(repoSession, req);
             final Version highestVersion = versionRangeResult.getHighestVersion();
             if (highestVersion == null) {
-                // TODO: fix the zip artifacts
-//            System.out.println("Artifact not found: [" + artifact + "]");
-                return artifact;
+                return null;
             } else {
                 return artifact.newVersion(highestVersion.toString());
             }
@@ -116,6 +124,21 @@ public class MavenRepository implements Repository {
             e.printStackTrace();
             return null;
         }
+    }
+
+    @Override
+    public VersionRangeResult getVersionRange(Artifact artifact) throws MavenUniverseException {
+        final DefaultArtifact artifact1 = new DefaultArtifact(artifact.getGroupId(), artifact.getArtifactId(), artifact.getPackaging(), artifact.getVersion());
+        VersionRangeRequest rangeRequest = new VersionRangeRequest();
+        rangeRequest.setArtifact(artifact1);
+        rangeRequest.setRepositories(newRepositories());
+        VersionRangeResult rangeResult;
+        try {
+            rangeResult = repoSystem.resolveVersionRange(repoSession, rangeRequest);
+        } catch (VersionRangeResolutionException ex) {
+            throw new MavenUniverseException(ex.getLocalizedMessage(), ex);
+        }
+        return rangeResult;
     }
 
     private static RepositorySystem newRepositorySystem() {
@@ -151,6 +174,10 @@ public class MavenRepository implements Repository {
     }
 
     public List<RemoteRepository> newRepositories() {
+        return repositories;
+    }
+
+    public List<RemoteRepository> newRepositories(List<Channel> channels) {
         return channels.stream().map(c -> newRepository(c.getName(), c.getUrl())).collect(Collectors.toList());
     }
 

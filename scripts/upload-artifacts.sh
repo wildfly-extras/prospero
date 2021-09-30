@@ -1,7 +1,7 @@
 #!/bin/bash
 
 readonly REPO_ID=${REPO_ID:-"nexus2"}
-readonly REPO_URL=${REPO_URL:-"http://localhost:8081/repository/dev"}
+readonly REPO_URL=${REPO_URL:-"http://localhost:8081/repository/updates"}
 readonly LOCAL_MVN_REPO=${LOCAL_MVN_REPO:-"${HOME}/.m2/repository"}
 
 deploy() {

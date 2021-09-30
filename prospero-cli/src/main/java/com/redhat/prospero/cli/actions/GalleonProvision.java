@@ -17,16 +17,28 @@
 
 package com.redhat.prospero.cli.actions;
 
-import com.redhat.prospero.ChannelMavenArtifactRepositoryManager;
+import com.redhat.prospero.galleon.ChannelMavenArtifactRepositoryManager;
 
+import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
 
+import com.redhat.prospero.api.Artifact;
+import com.redhat.prospero.api.Channel;
+import com.redhat.prospero.api.Manifest;
+import com.redhat.prospero.installation.Modules;
+import com.redhat.prospero.xml.ManifestXmlSupport;
+import com.redhat.prospero.xml.XmlException;
 import org.jboss.galleon.ProvisioningException;
 import org.jboss.galleon.ProvisioningManager;
 import org.jboss.galleon.universe.FeaturePackLocation;
+import org.jboss.galleon.universe.maven.MavenArtifact;
 
 public class GalleonProvision {
 
@@ -58,12 +70,56 @@ public class GalleonProvision {
             throw new ProvisioningException("Installation dir " + installDir + " already exists");
         }
         try (final ChannelMavenArtifactRepositoryManager maven
-                = GalleonUtils.getChannelRepositoryManager(Paths.get(channelsFile), GalleonUtils.newRepositorySystem())) {
+                = GalleonUtils.getChannelRepositoryManager(readChannels(Paths.get(channelsFile)), GalleonUtils.newRepositorySystem())) {
             ProvisioningManager provMgr = GalleonUtils.getProvisioningManager(installDir, maven);
             FeaturePackLocation loc = FeaturePackLocation.fromString(fpl);
             provMgr.install(loc);
-            maven.done(installDir);
+            writeProsperoMetadata(installDir, maven, Paths.get(channelsFile));
         }
     }
 
+    private void writeProsperoMetadata(Path home, ChannelMavenArtifactRepositoryManager maven, Path path) throws ProvisioningException {
+            final Modules modules = new Modules(home);
+            Set<MavenArtifact> installed = new HashSet<>();
+            for (MavenArtifact resolvedArtifact : maven.resolvedArtfacts()) {
+                if (containsArtifact(resolvedArtifact, modules)) {
+                    installed.add(resolvedArtifact);
+                }
+            }
+            writeManifestFile(home, installed, readChannels(path));
+        }
+
+        private boolean containsArtifact(MavenArtifact resolvedArtifact, Modules modules) {
+            return !modules.find(new com.redhat.prospero.api.Artifact(resolvedArtifact.getGroupId(), resolvedArtifact.getArtifactId(), resolvedArtifact.getVersion(), resolvedArtifact.getClassifier(), resolvedArtifact.getExtension())).isEmpty();
+        }
+
+        private void writeManifestFile(Path home, Set<MavenArtifact> artifactSet, List<Channel> channels) throws ProvisioningException {
+            List<Artifact> artifacts = new ArrayList<>();
+            for (MavenArtifact artifact : artifactSet) {
+                artifacts.add(new com.redhat.prospero.api.Artifact(artifact.getGroupId(), artifact.getArtifactId(), artifact.getVersion(),
+                        artifact.getClassifier(), artifact.getExtension()));
+            }
+
+            try {
+                ManifestXmlSupport.write(new Manifest(artifacts, home.resolve("manifest.xml")));
+            } catch (XmlException e) {
+                e.printStackTrace();
+            }
+
+            // write channels into installation
+            final File channelsFile = home.resolve("channels.json").toFile();
+            try {
+                com.redhat.prospero.api.Channel.writeChannels(channels, channelsFile);
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        }
+
+    private static List<Channel> readChannels(Path channelFile) throws ProvisioningException {
+        try {
+            return Channel.readChannels(channelFile);
+        } catch (IOException e) {
+            throw new ProvisioningException(e);
+        }
+    }
 }

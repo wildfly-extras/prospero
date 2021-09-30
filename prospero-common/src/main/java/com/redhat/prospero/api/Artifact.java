@@ -51,6 +51,11 @@ public class Artifact {
                 mavenArtifact.getClassifier(), mavenArtifact.getExtension());
     }
 
+    public static Artifact from(org.eclipse.aether.artifact.Artifact artifact) {
+        return new Artifact(artifact.getGroupId(), artifact.getArtifactId(), artifact.getVersion(),
+                artifact.getClassifier(), artifact.getExtension());
+    }
+
     public Artifact newVersion(String newVersion) {
         return new Artifact(groupId, artifactId, newVersion, classifier, packaging);
     }

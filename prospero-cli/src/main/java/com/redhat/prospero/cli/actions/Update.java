@@ -27,9 +27,10 @@ import java.util.Scanner;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-import com.redhat.prospero.ChannelMavenArtifactRepositoryManager;
+import com.redhat.prospero.galleon.ChannelMavenArtifactRepositoryManager;
 import com.redhat.prospero.api.Artifact;
 import com.redhat.prospero.api.ArtifactNotFoundException;
+import com.redhat.prospero.api.Channel;
 import com.redhat.prospero.api.Manifest;
 import com.redhat.prospero.api.PackageInstallationException;
 import com.redhat.prospero.api.Repository;
@@ -55,7 +56,7 @@ public class Update implements AutoCloseable {
     public Update(Path installDir) throws XmlException, IOException, ProvisioningException {
         this.localInstallation = new LocalInstallation(installDir);
         this.repository = new MavenRepository(localInstallation.getChannels());
-        this.maven = GalleonUtils.getChannelRepositoryManager(installDir.resolve("channels.json"), GalleonUtils.newRepositorySystem());
+        this.maven = GalleonUtils.getChannelRepositoryManager(readChannels(installDir.resolve("channels.json")), GalleonUtils.newRepositorySystem());
         this.provMgr = GalleonUtils.getProvisioningManager(installDir, maven);
     }
 
@@ -158,7 +159,7 @@ public class Update implements AutoCloseable {
     private Set<Artifact> applyFpUpdates(ProvisioningPlan updates, Path installDir) throws ProvisioningException, IOException {
         provMgr.apply(updates);
 
-        final Set<MavenArtifact> resolvedArtfacts = maven.getResolver().resolvedArtfacts();
+        final Set<MavenArtifact> resolvedArtfacts = maven.resolvedArtfacts();
 
         // filter out non-installed artefacts
         final Modules modules = new Modules(installDir);
@@ -202,13 +203,21 @@ public class Update implements AutoCloseable {
 
         final Artifact latestVersion = repository.findLatestVersionOf(artifact);
 
-        if (latestVersion.compareVersion(artifact) <= 0) {
+        if (latestVersion == null || latestVersion.compareVersion(artifact) <= 0) {
             return updates;
         }
 
         updates.add(new UpdateAction(artifact, (Artifact) latestVersion));
 
         return updates;
+    }
+
+    private static List<Channel> readChannels(Path channelFile) throws ProvisioningException {
+        try {
+            return Channel.readChannels(channelFile);
+        } catch (IOException e) {
+            throw new ProvisioningException(e);
+        }
     }
 
     class UpdateAction {
