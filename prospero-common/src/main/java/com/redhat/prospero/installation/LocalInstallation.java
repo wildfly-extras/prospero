@@ -32,10 +32,7 @@ import com.redhat.prospero.api.PackageInstallationException;
 import com.redhat.prospero.xml.ManifestXmlSupport;
 import com.redhat.prospero.xml.ModuleXmlSupport;
 import com.redhat.prospero.xml.XmlException;
-import net.lingala.zip4j.ZipFile;
-import net.lingala.zip4j.exception.ZipException;
 import org.apache.commons.io.FileUtils;
-import org.jboss.galleon.universe.maven.MavenArtifact;
 
 public class LocalInstallation implements Installation {
 
@@ -44,21 +41,11 @@ public class LocalInstallation implements Installation {
     private final Modules modules;
     private final List<Channel> channels;
 
-    public static LocalInstallation newInstallation(Path base, File basePackage) throws PackageInstallationException, XmlException, IOException {
-        installPackage(basePackage, base);
-        return new LocalInstallation(base);
-    }
-
     public LocalInstallation(Path base) throws XmlException, IOException {
         this.base = base;
         manifest = ManifestXmlSupport.parse(base.resolve("manifest.xml").toFile());
         modules = new Modules(base);
         this.channels = Channel.readChannels(base.resolve("channels.json"));
-    }
-
-    @Override
-    public void installPackage(File packageFile) throws PackageInstallationException {
-        installPackage(packageFile, base);
     }
 
     @Override
@@ -122,14 +109,6 @@ public class LocalInstallation implements Installation {
     public void registerUpdates(Set<Artifact> artifacts) {
         for (Artifact artifact : artifacts) {
             manifest.updateVersion(artifact);
-        }
-    }
-
-    private static void installPackage(File packageFile, Path base) throws PackageInstallationException {
-        try {
-            new ZipFile(packageFile).extractAll(base.toString());
-        } catch (ZipException e) {
-            throw new PackageInstallationException("Error when extracting package: " + packageFile, e);
         }
     }
 }

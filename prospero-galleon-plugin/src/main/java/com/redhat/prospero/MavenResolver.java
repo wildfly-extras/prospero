@@ -22,7 +22,6 @@ import java.util.stream.Collectors;
 
 import com.redhat.prospero.api.ArtifactNotFoundException;
 import com.redhat.prospero.api.Channel;
-import com.redhat.prospero.api.Gav;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.eclipse.aether.RepositorySystem;
@@ -65,15 +64,15 @@ public class MavenResolver {
         return repositories;
     }
 
-    public File resolve(Gav artifact) throws ArtifactNotFoundException {
+    public File resolve(com.redhat.prospero.api.Artifact artifact) throws ArtifactNotFoundException {
         return doResolve(artifact, repoSession, repositories);
     }
 
-    public File resolveFallback(Gav artifact) throws ArtifactNotFoundException {
+    public File resolveFallback(com.redhat.prospero.api.Artifact artifact) throws ArtifactNotFoundException {
         return doResolve(artifact, fallbackRepoSession, fallbackRepositories);
     }
 
-    public File doResolve(Gav artifact, RepositorySystemSession repoSession, List<RemoteRepository> repositories) throws ArtifactNotFoundException {
+    public File doResolve(com.redhat.prospero.api.Artifact artifact, RepositorySystemSession repoSession, List<RemoteRepository> repositories) throws ArtifactNotFoundException {
         if (artifact.getVersion() == null) {
             throw new RuntimeException("Version should be set when resol");
         }
@@ -95,15 +94,15 @@ public class MavenResolver {
         }
     }
 
-    public Gav findLatestVersionOf(Gav artifact, String range) {
+    public com.redhat.prospero.api.Artifact findLatestVersionOf(com.redhat.prospero.api.Artifact artifact, String range) {
         return findLatest(artifact, range, repoSession, repositories);
     }
 
-    public Gav findLatestFallBack(Gav artifact, String range) {
+    public com.redhat.prospero.api.Artifact findLatestFallBack(com.redhat.prospero.api.Artifact artifact, String range) {
         return findLatest(artifact, range, fallbackRepoSession, fallbackRepositories);
     }
 
-    private Gav findLatest(Gav artifact, String range, RepositorySystemSession repoSession, List<RemoteRepository> repositories) {
+    private com.redhat.prospero.api.Artifact findLatest(com.redhat.prospero.api.Artifact artifact, String range, RepositorySystemSession repoSession, List<RemoteRepository> repositories) {
         VersionRangeRequest req = new VersionRangeRequest();
 
         final DefaultArtifact artifact1 = new DefaultArtifact(artifact.getGroupId(), artifact.getArtifactId(), artifact.getPackaging(), range);

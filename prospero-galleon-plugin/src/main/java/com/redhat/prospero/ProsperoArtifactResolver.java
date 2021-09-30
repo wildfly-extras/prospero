@@ -21,12 +21,10 @@ import java.io.File;
 import java.io.IOException;
 import java.nio.file.Path;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 
 import com.redhat.prospero.api.ArtifactNotFoundException;
 import com.redhat.prospero.api.Channel;
-import com.redhat.prospero.api.Gav;
 import com.redhat.prospero.api.Manifest;
 import com.redhat.prospero.installation.Modules;
 import com.redhat.prospero.xml.ManifestXmlSupport;
@@ -86,7 +84,7 @@ public class ProsperoArtifactResolver {
         }
 
         try {
-            ManifestXmlSupport.write(new Manifest(artifacts, Collections.emptyList(), home.resolve("manifest.xml")));
+            ManifestXmlSupport.write(new Manifest(artifacts, home.resolve("manifest.xml")));
         } catch (XmlException e) {
             e.printStackTrace();
         }
@@ -120,7 +118,7 @@ public class ProsperoArtifactResolver {
             final com.redhat.prospero.api.Artifact prosperoArtifact = new com.redhat.prospero.api.Artifact(artifact.getGroupId(),
                     artifact.getArtifactId(), artifact.getVersion(), artifact.getClassifier(), artifact.getExtension());
             // First attempt to get the highest version from the channels
-            Gav gav = repository.findLatestVersionOf(prosperoArtifact, range);
+            com.redhat.prospero.api.Artifact gav = repository.findLatestVersionOf(prosperoArtifact, range);
             if (gav == null) {
                 log.info("The artifact {}:{} not found in channel, falling back", artifact.getGroupId(), artifact.getArtifactId());
                 if (artifact.getVersion() == null) {

@@ -17,21 +17,13 @@
 
 package com.redhat.prospero.api;
 
-import java.io.IOException;
-
-import net.lingala.zip4j.exception.ZipException;
-
 public class PackageInstallationException extends Exception {
 
-    public PackageInstallationException(String message, ZipException e) {
+    public PackageInstallationException(String message, Exception e) {
         super(message, e);
     }
 
     public PackageInstallationException(String message) {
         super(message);
-    }
-
-    public PackageInstallationException(String message, Throwable throwable) {
-        super(message, throwable);
     }
 }

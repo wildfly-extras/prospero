@@ -19,9 +19,7 @@ package com.redhat.prospero.api;
 
 import java.nio.file.Path;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 
 import com.redhat.prospero.xml.ManifestXmlSupport;
 import com.redhat.prospero.xml.XmlException;
@@ -30,11 +28,9 @@ public class Manifest {
 
     private final List<Artifact> artifacts;
     private final Path manifestFile;
-    private final List<Package> packages;
 
-    public Manifest(List<Artifact> artifacts, List<Package> packages, Path manifestFile) {
+    public Manifest(List<Artifact> artifacts, Path manifestFile) {
         this.artifacts = artifacts;
-        this.packages = packages;
         this.manifestFile = manifestFile;
     }
 
@@ -44,10 +40,6 @@ public class Manifest {
 
     public List<Artifact> getArtifacts() {
         return new ArrayList<>(artifacts);
-    }
-
-    public List<Package> getPackages() {
-        return packages;
     }
 
     public Path getManifestFile() {
@@ -72,7 +64,7 @@ public class Manifest {
         artifacts.add(newVersion);
     }
 
-    public Artifact find(Gav gav) {
+    public Artifact find(Artifact gav) {
         for (Artifact artifact : artifacts) {
             // TODO: move to Gav
             if (artifact.getGroupId().equals(gav.getGroupId()) && artifact.getArtifactId().equals(gav.getArtifactId()) && artifact.getClassifier().equals(gav.getClassifier())) {

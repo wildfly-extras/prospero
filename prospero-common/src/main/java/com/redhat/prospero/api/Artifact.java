@@ -17,16 +17,33 @@
 
 package com.redhat.prospero.api;
 
+import org.apache.maven.artifact.versioning.ComparableVersion;
 import org.jboss.galleon.universe.maven.MavenArtifact;
 
-public class Artifact extends Gav {
+import java.util.Objects;
+
+public class Artifact {
+
+    protected final String groupId;
+    protected final String artifactId;
+    protected final String version;
+    protected final String classifier;
+    protected final String packaging;
 
     public Artifact(String groupId, String artifactId, String version, String classifier) {
-        super(groupId, artifactId, version, classifier, "jar");
+        this.groupId = groupId;
+        this.artifactId = artifactId;
+        this.version = version;
+        this.classifier = classifier;
+        this.packaging = "jar";
     }
 
     public Artifact(String groupId, String artifactId, String version, String classifier, String packaging) {
-        super(groupId, artifactId, version, classifier, packaging);
+        this.groupId = groupId;
+        this.artifactId = artifactId;
+        this.version = version;
+        this.classifier = classifier;
+        this.packaging = packaging;
     }
 
     public static Artifact from(MavenArtifact mavenArtifact) {
@@ -34,8 +51,57 @@ public class Artifact extends Gav {
                 mavenArtifact.getClassifier(), mavenArtifact.getExtension());
     }
 
-    @Override
     public Artifact newVersion(String newVersion) {
         return new Artifact(groupId, artifactId, newVersion, classifier, packaging);
+    }
+
+    public String getGroupId() {
+        return groupId;
+    }
+
+    public String getArtifactId() {
+        return artifactId;
+    }
+
+    public String getVersion() {
+        return version;
+    }
+
+    public String getClassifier() {
+        return classifier;
+    }
+
+    public String getPackaging() {
+        return packaging;
+    }
+
+    public String getFileName() {
+        if (classifier == null || classifier.length() == 0) {
+            return String.format("%s-%s.%s", artifactId, version, packaging);
+        } else {
+            return String.format("%s-%s-%s.%s", artifactId, version, classifier, packaging);
+        }
+    }
+
+    public int compareVersion(Artifact other) {
+        return new ComparableVersion(this.getVersion()).compareTo(new ComparableVersion(other.getVersion()));
+    }
+
+    @Override
+    public String toString() {
+        return "Gav{" + "groupId='" + groupId + '\'' + ", artifactId='" + artifactId + '\'' + ", version='" + version + '\'' + ", classifier='" + classifier + '\'' + ", packaging='" + packaging + '\'' + '}';
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        Artifact gav = (Artifact) o;
+        return groupId.equals(gav.groupId) && artifactId.equals(gav.artifactId) && version.equals(gav.version) && classifier.equals(gav.classifier) && packaging.equals(gav.packaging);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(groupId, artifactId, version, classifier, packaging);
     }
 }

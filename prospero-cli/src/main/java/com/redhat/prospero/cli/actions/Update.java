@@ -22,7 +22,6 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Scanner;
 import java.util.Set;
@@ -30,9 +29,7 @@ import java.util.stream.Collectors;
 
 import com.redhat.prospero.ChannelMavenArtifactRepositoryManager;
 import com.redhat.prospero.api.Artifact;
-import com.redhat.prospero.api.ArtifactDependencies;
 import com.redhat.prospero.api.ArtifactNotFoundException;
-import com.redhat.prospero.api.Gav;
 import com.redhat.prospero.api.Manifest;
 import com.redhat.prospero.api.PackageInstallationException;
 import com.redhat.prospero.api.Repository;
@@ -195,8 +192,6 @@ public class Update implements AutoCloseable {
     public List<UpdateAction> findUpdates(String groupId, String artifactId) throws ArtifactNotFoundException, XmlException {
         List<UpdateAction> updates = new ArrayList<>();
 
-        Set<Gav> unresolved = new HashSet<>();
-
         final Manifest manifest = localInstallation.getManifest();
 
         final Artifact artifact = manifest.find(new Artifact(groupId, artifactId, "", ""));
@@ -205,53 +200,13 @@ public class Update implements AutoCloseable {
             throw new ArtifactNotFoundException(String.format("Artifact [%s:%s] not found", groupId, artifactId));
         }
 
-        final Gav latestVersion = repository.findLatestVersionOf(artifact);
+        final Artifact latestVersion = repository.findLatestVersionOf(artifact);
 
         if (latestVersion.compareVersion(artifact) <= 0) {
             return updates;
         }
 
         updates.add(new UpdateAction(artifact, (Artifact) latestVersion));
-
-        final ArtifactDependencies artifactDependencies = repository.resolveDescriptor(latestVersion);
-        if (artifactDependencies == null) {
-            return updates;
-        }
-
-        for (Artifact required : artifactDependencies.getDependencies()) {
-            unresolved.add(required);
-        }
-
-        for (Gav required : unresolved) {
-            // check if it is installed
-            final Artifact dep = manifest.find(required);
-            //   if not - throw ANFE
-            if (dep == null) {
-                throw new ArtifactNotFoundException(String.format("Artifact [%s:%s] not found", required.getGroupId(), required.getGroupId()));
-
-            }
-            // check if it's fulfills version
-            if (required.compareVersion(dep) <= 0) {
-                continue;
-            } else {
-                // can we resolve the required version?
-                final Gav depLatestVersion = repository.findLatestVersionOf(required);
-                if (depLatestVersion.compareVersion(required) < 0) {
-                    throw new ArtifactNotFoundException(String.format("Unable to find [%s, %s] in version >= %s", required.getGroupId(),
-                            required.getArtifactId(), required.getVersion()));
-                }
-                // add to updates
-                updates.add(new UpdateAction(dep, (Artifact) depLatestVersion));
-                // process dependencies
-
-                final ArtifactDependencies depDependencies = repository.resolveDescriptor(latestVersion);
-                if (artifactDependencies != null) {
-                    for (Artifact depReq : depDependencies.getDependencies()) {
-                        unresolved.add(depReq);
-                    }
-                }
-            }
-        }
 
         return updates;
     }

@@ -24,11 +24,8 @@ import java.io.PrintWriter;
 import java.nio.file.Files;
 import java.nio.file.StandardCopyOption;
 import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.Map;
 
 import com.redhat.prospero.api.Artifact;
-import com.redhat.prospero.api.Package;
 import com.redhat.prospero.api.Manifest;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
@@ -60,11 +57,6 @@ public class ManifestXmlSupport extends XmlSupport {
         try {
             final PrintWriter printWriter = new PrintWriter(manifestFile);
             printWriter.println("<manifest>");
-            // add packages
-            for (Package aPackage : manifest.getPackages()) {
-                printWriter.println(String.format("<package group=\"%s\" name=\"%s\" version=\"%s\"/>",
-                        aPackage.getGroupId(), aPackage.getArtifactId(), aPackage.getVersion()));
-            }
 
             // add artifacts
             for (Artifact artifact : manifest.getArtifacts()) {
@@ -89,8 +81,7 @@ public class ManifestXmlSupport extends XmlSupport {
         Document input = readDocument(manifestFile);
 
         final ArrayList<Artifact> entries = parseArtifacts(input);
-        final ArrayList<Package> packages = parsePackages(input);
-        final Manifest manifest = new Manifest(entries, packages, manifestFile.toPath());
+        final Manifest manifest = new Manifest(entries, manifestFile.toPath());
         return manifest;
     }
 
@@ -103,18 +94,6 @@ public class ManifestXmlSupport extends XmlSupport {
                     node.getAttribute("name"),
                     node.getAttribute("version"),
                     node.getAttribute("classifier")));
-        }
-        return entries;
-    }
-
-    private ArrayList<Package> parsePackages(Document input) throws XmlException {
-        NodeList nodes = nodesFromXPath(input, "//package");
-        final ArrayList<Package> entries = new ArrayList<>(nodes.getLength());
-        for (int i = 0; i < nodes.getLength(); i++) {
-            Element node = (Element) nodes.item(i);
-            entries.add(new Package(node.getAttribute("group"),
-                    node.getAttribute("name"),
-                    node.getAttribute("version")));
         }
         return entries;
     }

@@ -24,12 +24,10 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 
-import com.redhat.prospero.api.ArtifactDependencies;
+import com.redhat.prospero.api.Artifact;
 import com.redhat.prospero.api.ArtifactNotFoundException;
 import com.redhat.prospero.api.Channel;
-import com.redhat.prospero.api.Gav;
 import com.redhat.prospero.api.Repository;
-import com.redhat.prospero.xml.XmlException;
 import org.apache.maven.repository.internal.MavenRepositorySystemUtils;
 import org.eclipse.aether.DefaultRepositorySystemSession;
 import org.eclipse.aether.RepositorySystem;
@@ -50,7 +48,6 @@ import org.eclipse.aether.spi.connector.transport.TransporterFactory;
 import org.eclipse.aether.transport.file.FileTransporterFactory;
 import org.eclipse.aether.transport.http.HttpTransporterFactory;
 import org.eclipse.aether.version.Version;
-import org.jboss.galleon.universe.maven.MavenUniverseException;
 
 public class MavenRepository implements Repository {
 
@@ -80,7 +77,7 @@ public class MavenRepository implements Repository {
     }
 
     @Override
-    public File resolve(Gav artifact) throws ArtifactNotFoundException {
+    public File resolve(Artifact artifact) throws ArtifactNotFoundException {
         ArtifactRequest req = new ArtifactRequest();
         req.setArtifact(new DefaultArtifact(artifact.getGroupId(), artifact.getArtifactId(), artifact.getPackaging(), artifact.getVersion()));
         req.setRepositories(newRepositories());
@@ -99,7 +96,7 @@ public class MavenRepository implements Repository {
     }
 
     @Override
-    public Gav findLatestVersionOf(Gav artifact) {
+    public Artifact findLatestVersionOf(Artifact artifact) {
         VersionRangeRequest req = new VersionRangeRequest();
         final DefaultArtifact artifact1 = new DefaultArtifact(artifact.getGroupId(), artifact.getArtifactId(), artifact.getPackaging(), "[" + artifact.getVersion() + ",)");
         req.setArtifact(artifact1);
@@ -119,11 +116,6 @@ public class MavenRepository implements Repository {
             e.printStackTrace();
             return null;
         }
-    }
-
-    @Override
-    public ArtifactDependencies resolveDescriptor(Gav latestVersion) throws XmlException {
-        return null;
     }
 
     private static RepositorySystem newRepositorySystem() {
@@ -154,12 +146,6 @@ public class MavenRepository implements Repository {
 
         org.eclipse.aether.repository.LocalRepository localRepo = new LocalRepository(Files.createTempDirectory("mvn-repo").toString());
         session.setLocalRepositoryManager(system.newLocalRepositoryManager(session, localRepo));
-
-        //      session.setTransferListener( new ConsoleTransferListener() );
-        //      session.setRepositoryListener( new ConsoleRepositoryListener() );
-
-        // uncomment to generate dirty trees
-        // session.setDependencyGraphTransformer( null );
 
         return session;
     }
