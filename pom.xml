@@ -8,13 +8,114 @@
     <packaging>pom</packaging>
 
     <properties>
-        <mavenVersion>3.5.0</mavenVersion>
+        <version.org.apache.maven.resolver>1.6.2</version.org.apache.maven.resolver>
+        <version.org.apache.maven.resolver.provider>3.6.2</version.org.apache.maven.resolver.provider>
+        <version.org.apache.logging.log4j>2.14.1</version.org.apache.logging.log4j>
+        <version.commons.io>2.11.0</version.commons.io>
+        <version.org.jboss.galleon.plugin>4.2.9.Final-SNAPSHOT</version.org.jboss.galleon.plugin>
+        <version.org.wildfly.core>12.0.1.Final</version.org.wildfly.core>
+        <version.com.fasterxml.jackson>2.10.0</version.com.fasterxml.jackson>
+        <version.junit>4.13.2</version.junit>
+        <version.org.mockito>3.12.4</version.org.mockito>
     </properties>
 
     <modules>
       <module>prospero-common</module>
       <module>prospero-cli</module>
     </modules>
+
+    <dependencyManagement>
+        <dependencies>
+            <dependency>
+                <groupId>org.apache.maven.resolver</groupId>
+                <artifactId>maven-resolver-connector-basic</artifactId>
+                <version>${version.org.apache.maven.resolver}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.apache.maven.resolver</groupId>
+                <artifactId>maven-resolver-transport-file</artifactId>
+                <version>${version.org.apache.maven.resolver}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.apache.maven.resolver</groupId>
+                <artifactId>maven-resolver-transport-http</artifactId>
+                <version>${version.org.apache.maven.resolver}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.apache.maven</groupId>
+                <artifactId>maven-resolver-provider</artifactId>
+                <version>${version.org.apache.maven.resolver.provider}</version>
+            </dependency>
+
+            <dependency>
+                <groupId>org.apache.logging.log4j</groupId>
+                <artifactId>log4j-api</artifactId>
+                <version>${version.org.apache.logging.log4j}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.apache.logging.log4j</groupId>
+                <artifactId>log4j-core</artifactId>
+                <version>${version.org.apache.logging.log4j}</version>
+            </dependency>
+
+            <dependency>
+                <groupId>commons-io</groupId>
+                <artifactId>commons-io</artifactId>
+                <version>${version.commons.io}</version>
+            </dependency>
+
+            <dependency>
+                <groupId>org.jboss.galleon</groupId>
+                <artifactId>galleon-maven-plugin</artifactId>
+                <version>${version.org.jboss.galleon.plugin}</version>
+                <exclusions>
+                    <exclusion>
+                        <groupId>org.eclipse.aether</groupId>
+                        <artifactId>aether-api</artifactId>
+                    </exclusion>
+                    <exclusion>
+                        <groupId>org.eclipse.aether</groupId>
+                        <artifactId>aether-util</artifactId>
+                    </exclusion>
+                </exclusions>
+            </dependency>
+
+            <dependency>
+                <groupId>org.wildfly.core</groupId>
+                <artifactId>wildfly-embedded</artifactId>
+                <version>${version.org.wildfly.core}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.wildfly.core</groupId>
+                <artifactId>wildfly-launcher</artifactId>
+                <version>${version.org.wildfly.core}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.wildfly.core</groupId>
+                <artifactId>wildfly-cli</artifactId>
+                <version>${version.org.wildfly.core}</version>
+            </dependency>
+
+            <dependency>
+                <groupId>com.fasterxml.jackson.core</groupId>
+                <artifactId>jackson-databind</artifactId>
+                <version>${version.com.fasterxml.jackson}</version>
+            </dependency>
+
+            <dependency>
+                <groupId>junit</groupId>
+                <artifactId>junit</artifactId>
+                <version>${version.junit}</version>
+                <scope>test</scope>
+            </dependency>
+            <dependency>
+                <groupId>org.mockito</groupId>
+                <artifactId>mockito-core</artifactId>
+                <version>${version.org.mockito}</version>
+                <scope>test</scope>
+            </dependency>
+        </dependencies>
+    </dependencyManagement>
 
     <build>
         <plugins>
@@ -28,23 +129,7 @@
                 </configuration>
             </plugin>
 
-            <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-dependency-plugin</artifactId>
-                <version>3.1.2</version>
-                <executions>
-                    <execution>
-                        <id>copy-dependencies</id>
-                        <phase>package</phase>
-                        <goals>
-                            <goal>copy-dependencies</goal>
-                        </goals>
-                        <configuration>
-                            <!-- configure the plugin here -->
-                        </configuration>
-                    </execution>
-                </executions>
-            </plugin>
+
         </plugins>
     </build>
 </project>
