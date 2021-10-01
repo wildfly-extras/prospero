@@ -136,14 +136,13 @@ public class ChannelMavenArtifactRepositoryManager extends AbstractMavenArtifact
 
         try {
             final Artifact artifact = from(mavenArtifact);
-            Artifact gav = repository.findLatestVersionOf(artifact);
-            if (gav == null) {
+            Artifact resolved = repository.resolveLatestVersionOf(artifact);
+            if (resolved == null) {
                 throw new MavenUniverseException("Artifact is not found " + mavenArtifact.getGroupId() + ":" + mavenArtifact.getArtifactId());
             } else {
-                artifact.setVersion(gav.getVersion());
-                final File resolvedPath = repository.resolve(artifact);
-                mavenArtifact.setVersion(gav.getVersion());
-                mavenArtifact.setPath(resolvedPath.toPath());
+                artifact.setVersion(resolved.getVersion());
+                mavenArtifact.setVersion(resolved.getVersion());
+                mavenArtifact.setPath(resolved.getFile().toPath());
             }
             log.debug("LATEST: Found version {} for range {}", mavenArtifact.getVersion(), range);
         } catch (ArtifactNotFoundException ex) {

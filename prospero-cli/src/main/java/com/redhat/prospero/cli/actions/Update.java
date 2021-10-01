@@ -39,6 +39,7 @@ import com.redhat.prospero.impl.repository.MavenRepository;
 import com.redhat.prospero.installation.Modules;
 import com.redhat.prospero.xml.ManifestXmlSupport;
 import com.redhat.prospero.xml.XmlException;
+import org.eclipse.aether.RepositorySystem;
 import org.eclipse.aether.artifact.Artifact;
 import org.eclipse.aether.artifact.DefaultArtifact;
 import org.jboss.galleon.ProvisioningException;
@@ -57,8 +58,9 @@ public class Update implements AutoCloseable {
 
     public Update(Path installDir) throws XmlException, IOException, ProvisioningException {
         this.localInstallation = new LocalInstallation(installDir);
-        this.repository = new MavenRepository(localInstallation.getChannels());
-        this.maven = GalleonUtils.getChannelRepositoryManager(readChannels(installDir.resolve("channels.json")), GalleonUtils.newRepositorySystem());
+        final RepositorySystem repoSystem = GalleonUtils.newRepositorySystem();
+        this.repository = new MavenRepository(repoSystem, localInstallation.getChannels());
+        this.maven = GalleonUtils.getChannelRepositoryManager(readChannels(installDir.resolve("channels.json")), repoSystem);
         this.provMgr = GalleonUtils.getProvisioningManager(installDir, maven);
     }
 
@@ -140,7 +142,7 @@ public class Update implements AutoCloseable {
         for (UpdateAction update : updates) {
             artifact.equals(update.newVersion);
             if (!updated.contains(update.newVersion)) {
-                localInstallation.updateArtifact(update.oldVersion, update.newVersion, repository.resolve(update.newVersion));
+                localInstallation.updateArtifact(update.oldVersion, update.newVersion, update.newVersion.getFile());
             }
         }
 
@@ -184,7 +186,7 @@ public class Update implements AutoCloseable {
         for (UpdateAction update : updates) {
             System.out.print(update + "\t\t\t\t\t");
 
-            localInstallation.updateArtifact(update.oldVersion, update.newVersion, repository.resolve(update.newVersion));
+            localInstallation.updateArtifact(update.oldVersion, update.newVersion, update.newVersion.getFile());
 
             System.out.println("DONE");
         }
@@ -203,7 +205,7 @@ public class Update implements AutoCloseable {
             throw new ArtifactNotFoundException(String.format("Artifact [%s:%s] not found", groupId, artifactId));
         }
 
-        final Artifact latestVersion = repository.findLatestVersionOf(artifact);
+        final Artifact latestVersion = repository.resolveLatestVersionOf(artifact);
 
         if (latestVersion == null || ArtifactUtils.compareVersion(latestVersion, artifact) <= 0) {
             return updates;

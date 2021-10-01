@@ -50,11 +50,11 @@ public class FallbackMavenRepository implements Repository {
     }
 
     @Override
-    public Artifact findLatestVersionOf(Artifact artifact) {
-        Artifact found = primary.findLatestVersionOf(artifact);
+    public Artifact resolveLatestVersionOf(Artifact artifact) throws ArtifactNotFoundException {
+        Artifact found = primary.resolveLatestVersionOf(artifact);
         if (found == null) {
             log.info("The artifact {}:{} not found in channel, falling back", artifact.getGroupId(), artifact.getArtifactId());
-            found = fallback.findLatestVersionOf(artifact);
+            found = fallback.resolveLatestVersionOf(artifact);
         }
         return found;
     }

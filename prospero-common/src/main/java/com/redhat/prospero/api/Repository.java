@@ -8,7 +8,7 @@ import org.eclipse.aether.artifact.Artifact;
 public interface Repository {
 
     File resolve(Artifact artifact) throws ArtifactNotFoundException;
-    Artifact findLatestVersionOf(Artifact artifact);
+    Artifact resolveLatestVersionOf(Artifact artifact) throws ArtifactNotFoundException;
 
     VersionRangeResult getVersionRange(Artifact artifact) throws MavenUniverseException;
 }

@@ -14,7 +14,6 @@ import org.mockito.ArgumentCaptor;
 import org.mockito.Captor;
 import org.mockito.Mock;
 import org.mockito.Mockito;
-import org.mockito.Spy;
 import org.mockito.invocation.InvocationOnMock;
 import org.mockito.junit.MockitoJUnitRunner;
 import org.mockito.stubbing.Answer;
@@ -62,7 +61,7 @@ public class MavenResolverTest {
             }
         });
 
-        mavenResolver.findLatestVersionOf(new DefaultArtifact("group", "artifact", "", "jar", "1.0"));
+        mavenResolver.resolveLatestVersionOf(new DefaultArtifact("group", "artifact", "", "jar", "1.0"));
 
         Mockito.verify(repositorySystem).resolveVersionRange(Mockito.any(), rangeCaptor.capture());
         Assert.assertEquals("[1.0,)", rangeCaptor.getValue().getArtifact().getVersion());
