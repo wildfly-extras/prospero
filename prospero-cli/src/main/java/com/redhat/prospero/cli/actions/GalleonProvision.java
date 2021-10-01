@@ -29,16 +29,18 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
-import com.redhat.prospero.api.Artifact;
 import com.redhat.prospero.api.Channel;
 import com.redhat.prospero.api.Manifest;
 import com.redhat.prospero.installation.Modules;
 import com.redhat.prospero.xml.ManifestXmlSupport;
 import com.redhat.prospero.xml.XmlException;
+import org.eclipse.aether.artifact.Artifact;
 import org.jboss.galleon.ProvisioningException;
 import org.jboss.galleon.ProvisioningManager;
 import org.jboss.galleon.universe.FeaturePackLocation;
 import org.jboss.galleon.universe.maven.MavenArtifact;
+
+import static com.redhat.prospero.api.ArtifactUtils.from;
 
 public class GalleonProvision {
 
@@ -90,14 +92,13 @@ public class GalleonProvision {
         }
 
         private boolean containsArtifact(MavenArtifact resolvedArtifact, Modules modules) {
-            return !modules.find(new com.redhat.prospero.api.Artifact(resolvedArtifact.getGroupId(), resolvedArtifact.getArtifactId(), resolvedArtifact.getVersion(), resolvedArtifact.getClassifier(), resolvedArtifact.getExtension())).isEmpty();
+            return !modules.find(from(resolvedArtifact)).isEmpty();
         }
 
         private void writeManifestFile(Path home, Set<MavenArtifact> artifactSet, List<Channel> channels) throws ProvisioningException {
             List<Artifact> artifacts = new ArrayList<>();
             for (MavenArtifact artifact : artifactSet) {
-                artifacts.add(new com.redhat.prospero.api.Artifact(artifact.getGroupId(), artifact.getArtifactId(), artifact.getVersion(),
-                        artifact.getClassifier(), artifact.getExtension()));
+                artifacts.add(from(artifact));
             }
 
             try {

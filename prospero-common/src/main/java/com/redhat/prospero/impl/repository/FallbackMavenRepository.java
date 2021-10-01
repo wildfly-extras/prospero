@@ -17,9 +17,9 @@
 
 package com.redhat.prospero.impl.repository;
 
-import com.redhat.prospero.api.Artifact;
 import com.redhat.prospero.api.ArtifactNotFoundException;
 import com.redhat.prospero.api.Repository;
+import org.eclipse.aether.artifact.Artifact;
 import org.eclipse.aether.resolution.VersionRangeResult;
 import org.jboss.galleon.universe.maven.MavenUniverseException;
 
@@ -51,12 +51,12 @@ public class FallbackMavenRepository implements Repository {
 
     @Override
     public Artifact findLatestVersionOf(Artifact artifact) {
-        com.redhat.prospero.api.Artifact gav = primary.findLatestVersionOf(artifact);
-        if (gav == null) {
+        Artifact found = primary.findLatestVersionOf(artifact);
+        if (found == null) {
             log.info("The artifact {}:{} not found in channel, falling back", artifact.getGroupId(), artifact.getArtifactId());
-            gav = fallback.findLatestVersionOf(artifact);
+            found = fallback.findLatestVersionOf(artifact);
         }
-        return gav;
+        return found;
     }
 
     @Override

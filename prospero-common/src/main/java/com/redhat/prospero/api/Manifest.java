@@ -17,6 +17,7 @@
 
 package com.redhat.prospero.api;
 
+import org.eclipse.aether.artifact.Artifact;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
@@ -57,7 +58,7 @@ public class Manifest {
         }
 
         if (oldArtifact == null) {
-            throw new RuntimeException("Previous verison of " + newVersion.getFileName() + " not found.");
+            throw new RuntimeException("Previous verison of " + newVersion.toString() + " not found.");
         }
 
         artifacts.remove(oldArtifact);

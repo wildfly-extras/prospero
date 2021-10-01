@@ -27,8 +27,8 @@ import java.util.Scanner;
 import java.util.Set;
 import java.util.stream.Collectors;
 
+import com.redhat.prospero.api.ArtifactUtils;
 import com.redhat.prospero.galleon.ChannelMavenArtifactRepositoryManager;
-import com.redhat.prospero.api.Artifact;
 import com.redhat.prospero.api.ArtifactNotFoundException;
 import com.redhat.prospero.api.Channel;
 import com.redhat.prospero.api.Manifest;
@@ -39,6 +39,8 @@ import com.redhat.prospero.impl.repository.MavenRepository;
 import com.redhat.prospero.installation.Modules;
 import com.redhat.prospero.xml.ManifestXmlSupport;
 import com.redhat.prospero.xml.XmlException;
+import org.eclipse.aether.artifact.Artifact;
+import org.eclipse.aether.artifact.DefaultArtifact;
 import org.jboss.galleon.ProvisioningException;
 import org.jboss.galleon.ProvisioningManager;
 import org.jboss.galleon.layout.FeaturePackUpdatePlan;
@@ -164,7 +166,7 @@ public class Update implements AutoCloseable {
         // filter out non-installed artefacts
         final Modules modules = new Modules(installDir);
         final Set<Artifact> collected = resolvedArtfacts.stream()
-                .map(Artifact::from)
+                .map(a->new DefaultArtifact(a.getGroupId(), a.getArtifactId(), a.getClassifier(), a.getExtension(), a.getVersion()))
                 .filter(a -> !(modules.find(a)).isEmpty())
                 .collect(Collectors.toSet());
         localInstallation.registerUpdates(collected);
@@ -195,7 +197,7 @@ public class Update implements AutoCloseable {
 
         final Manifest manifest = localInstallation.getManifest();
 
-        final Artifact artifact = manifest.find(new Artifact(groupId, artifactId, "", ""));
+        final Artifact artifact = manifest.find(new DefaultArtifact(groupId, artifactId, "", ""));
 
         if (artifact == null) {
             throw new ArtifactNotFoundException(String.format("Artifact [%s:%s] not found", groupId, artifactId));
@@ -203,11 +205,11 @@ public class Update implements AutoCloseable {
 
         final Artifact latestVersion = repository.findLatestVersionOf(artifact);
 
-        if (latestVersion == null || latestVersion.compareVersion(artifact) <= 0) {
+        if (latestVersion == null || ArtifactUtils.compareVersion(latestVersion, artifact) <= 0) {
             return updates;
         }
 
-        updates.add(new UpdateAction(artifact, (Artifact) latestVersion));
+        updates.add(new UpdateAction(artifact, latestVersion));
 
         return updates;
     }

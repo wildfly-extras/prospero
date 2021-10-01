@@ -1,9 +1,9 @@
 package com.redhat.prospero.impl.repository;
 
-import com.redhat.prospero.api.Artifact;
 import com.redhat.prospero.api.Channel;
 import com.redhat.prospero.api.Repository;
 import org.eclipse.aether.RepositorySystem;
+import org.eclipse.aether.artifact.DefaultArtifact;
 import org.eclipse.aether.resolution.VersionRangeRequest;
 import org.eclipse.aether.resolution.VersionRangeResult;
 import org.junit.Assert;
@@ -62,7 +62,7 @@ public class MavenResolverTest {
             }
         });
 
-        mavenResolver.findLatestVersionOf(new Artifact("group", "artifact", "1.0", "", "jar"));
+        mavenResolver.findLatestVersionOf(new DefaultArtifact("group", "artifact", "", "jar", "1.0"));
 
         Mockito.verify(repositorySystem).resolveVersionRange(Mockito.any(), rangeCaptor.capture());
         Assert.assertEquals("[1.0,)", rangeCaptor.getValue().getArtifact().getVersion());

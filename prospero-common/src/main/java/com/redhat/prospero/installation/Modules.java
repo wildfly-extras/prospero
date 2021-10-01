@@ -33,10 +33,12 @@ import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-import com.redhat.prospero.api.Artifact;
+import org.eclipse.aether.artifact.Artifact;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.NodeList;
+
+import static com.redhat.prospero.api.ArtifactUtils.getFileName;
 
 public class Modules {
 
@@ -50,11 +52,11 @@ public class Modules {
     public Collection<Path> find(Artifact artifact) {
         try {
             final Stream<Path> modules = Files.walk(base.resolve("modules"));
-            if (moduleMapping.containsKey(artifact.getFileName())) {
-                return moduleMapping.get(artifact.getFileName());
+            if (moduleMapping.containsKey(getFileName(artifact))) {
+                return moduleMapping.get(getFileName(artifact));
             }
             List<Path> updates = modules.filter(p -> p.getFileName().toString().equals("module.xml"))
-                    .filter(p -> containsArtifact(p, artifact.getFileName())).collect(Collectors.toList());
+                    .filter(p -> containsArtifact(p, getFileName(artifact))).collect(Collectors.toList());
 
             return updates;
         } catch (IOException e) {

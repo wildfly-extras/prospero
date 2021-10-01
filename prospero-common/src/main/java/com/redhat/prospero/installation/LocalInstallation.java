@@ -24,7 +24,6 @@ import java.util.Collection;
 import java.util.List;
 import java.util.Set;
 
-import com.redhat.prospero.api.Artifact;
 import com.redhat.prospero.api.Channel;
 import com.redhat.prospero.api.Installation;
 import com.redhat.prospero.api.Manifest;
@@ -33,6 +32,9 @@ import com.redhat.prospero.xml.ManifestXmlSupport;
 import com.redhat.prospero.xml.ModuleXmlSupport;
 import com.redhat.prospero.xml.XmlException;
 import org.apache.commons.io.FileUtils;
+import org.eclipse.aether.artifact.Artifact;
+
+import static com.redhat.prospero.api.ArtifactUtils.getFileName;
 
 public class LocalInstallation implements Installation {
 
@@ -54,7 +56,7 @@ public class LocalInstallation implements Installation {
         Collection<Path> updates = modules.find(definition);
 
         if (updates.isEmpty()) {
-            throw new PackageInstallationException("Artifact " + definition.getFileName() + " not found");
+            throw new PackageInstallationException("Artifact " + getFileName(definition) + " not found");
         }
 
         //  drop jar into module folder
@@ -72,14 +74,14 @@ public class LocalInstallation implements Installation {
         Collection<Path> updates = modules.find(oldArtifact);
 
         if (updates.isEmpty()) {
-            throw new PackageInstallationException("Artifact " + oldArtifact.getFileName() + " not found");
+            throw new PackageInstallationException("Artifact " + getFileName(oldArtifact) + " not found");
         }
 
         for (Path module : updates) {
             // copy the new artifact
             Path target = module.getParent();
             try {
-                FileUtils.copyFile(artifactFile, target.resolve(newArtifact.getFileName()).toFile());
+                FileUtils.copyFile(artifactFile, target.resolve(getFileName(newArtifact)).toFile());
             } catch (IOException e) {
                 throw new PackageInstallationException("Unable to install package " + newArtifact, e);
             }

@@ -25,8 +25,9 @@ import java.nio.file.Files;
 import java.nio.file.StandardCopyOption;
 import java.util.ArrayList;
 
-import com.redhat.prospero.api.Artifact;
 import com.redhat.prospero.api.Manifest;
+import org.eclipse.aether.artifact.Artifact;
+import org.eclipse.aether.artifact.DefaultArtifact;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.NodeList;
@@ -90,10 +91,12 @@ public class ManifestXmlSupport extends XmlSupport {
         final ArrayList<Artifact> entries = new ArrayList<>(nodes.getLength());
         for (int i = 0; i < nodes.getLength(); i++) {
             Element node = (Element) nodes.item(i);
-            entries.add(new Artifact(node.getAttribute("package"),
+            entries.add(new DefaultArtifact(node.getAttribute("package"),
                     node.getAttribute("name"),
-                    node.getAttribute("version"),
-                    node.getAttribute("classifier")));
+                    node.getAttribute("classifier"),
+                    "jar",
+                    node.getAttribute("version")
+                    ));
         }
         return entries;
     }

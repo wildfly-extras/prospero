@@ -23,7 +23,6 @@ import java.nio.file.Files;
 import java.util.List;
 import java.util.stream.Collectors;
 
-import com.redhat.prospero.api.Artifact;
 import com.redhat.prospero.api.ArtifactNotFoundException;
 import com.redhat.prospero.api.Channel;
 import com.redhat.prospero.api.Repository;
@@ -31,6 +30,7 @@ import org.apache.maven.repository.internal.MavenRepositorySystemUtils;
 import org.eclipse.aether.DefaultRepositorySystemSession;
 import org.eclipse.aether.RepositorySystem;
 import org.eclipse.aether.RepositorySystemSession;
+import org.eclipse.aether.artifact.Artifact;
 import org.eclipse.aether.artifact.DefaultArtifact;
 import org.eclipse.aether.connector.basic.BasicRepositoryConnectorFactory;
 import org.eclipse.aether.impl.DefaultServiceLocator;
@@ -88,7 +88,7 @@ public class MavenRepository implements Repository {
     @Override
     public File resolve(Artifact artifact) throws ArtifactNotFoundException {
         ArtifactRequest req = new ArtifactRequest();
-        req.setArtifact(new DefaultArtifact(artifact.getGroupId(), artifact.getArtifactId(), artifact.getPackaging(), artifact.getVersion()));
+        req.setArtifact(new DefaultArtifact(artifact.getGroupId(), artifact.getArtifactId(), artifact.getExtension(), artifact.getVersion()));
         req.setRepositories(newRepositories());
         try {
             final ArtifactResult result = repoSystem.resolveArtifact(repoSession, req);
@@ -108,7 +108,8 @@ public class MavenRepository implements Repository {
     public Artifact findLatestVersionOf(Artifact artifact) {
         VersionRangeRequest req = new VersionRangeRequest();
         // TODO: if already a range do not change it
-        final DefaultArtifact artifact1 = new DefaultArtifact(artifact.getGroupId(), artifact.getArtifactId(), artifact.getPackaging(), "[" + artifact.getVersion() + ",)");
+        final DefaultArtifact artifact1 = new DefaultArtifact(artifact.getGroupId(), artifact.getArtifactId(),
+                artifact.getClassifier(), artifact.getExtension(), "[" + artifact.getVersion() + ",)");
         req.setArtifact(artifact1);
         req.setRepositories(newRepositories());
 
@@ -118,7 +119,7 @@ public class MavenRepository implements Repository {
             if (highestVersion == null) {
                 return null;
             } else {
-                return artifact.newVersion(highestVersion.toString());
+                return new DefaultArtifact(artifact.getGroupId(), artifact.getArtifactId(), artifact.getClassifier(), artifact.getExtension(), highestVersion.toString());
             }
         } catch (VersionRangeResolutionException e) {
             e.printStackTrace();
@@ -128,7 +129,7 @@ public class MavenRepository implements Repository {
 
     @Override
     public VersionRangeResult getVersionRange(Artifact artifact) throws MavenUniverseException {
-        final DefaultArtifact artifact1 = new DefaultArtifact(artifact.getGroupId(), artifact.getArtifactId(), artifact.getPackaging(), artifact.getVersion());
+        final DefaultArtifact artifact1 = new DefaultArtifact(artifact.getGroupId(), artifact.getArtifactId(), artifact.getExtension(), artifact.getVersion());
         VersionRangeRequest rangeRequest = new VersionRangeRequest();
         rangeRequest.setArtifact(artifact1);
         rangeRequest.setRepositories(newRepositories());

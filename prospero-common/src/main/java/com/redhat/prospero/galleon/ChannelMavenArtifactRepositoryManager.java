@@ -43,6 +43,8 @@ import org.jboss.galleon.universe.maven.MavenArtifact;
 import org.jboss.galleon.universe.maven.MavenUniverseException;
 import org.jboss.galleon.util.IoUtils;
 
+import static com.redhat.prospero.api.ArtifactUtils.from;
+
 public class ChannelMavenArtifactRepositoryManager extends AbstractMavenArtifactRepositoryManager implements AutoCloseable {
     private static final Logger log = LogManager.getLogger(ChannelMavenArtifactRepositoryManager.class);
 
@@ -77,8 +79,7 @@ public class ChannelMavenArtifactRepositoryManager extends AbstractMavenArtifact
 
     @Override
     protected VersionRangeResult getVersionRange(Artifact artifact) throws MavenUniverseException {
-        final com.redhat.prospero.api.Artifact prosperoArtefact = com.redhat.prospero.api.Artifact.from(artifact);
-        return repository.getVersionRange(prosperoArtefact);
+        return repository.getVersionRange(artifact);
     }
 
     @Override
@@ -101,10 +102,8 @@ public class ChannelMavenArtifactRepositoryManager extends AbstractMavenArtifact
             log.warn("WARNING: Version range is set for {}", artifact);
         }
 
-        final com.redhat.prospero.api.Artifact prosperoArtifact = new com.redhat.prospero.api.Artifact(artifact.getGroupId(),
-                artifact.getArtifactId(), artifact.getVersion(), artifact.getClassifier(), artifact.getExtension());
         try {
-            final File resolvedPath = repository.resolve(prosperoArtifact);
+            final File resolvedPath = repository.resolve(from(artifact));
             artifact.setPath(resolvedPath.toPath());
 
             log.info("RESOLVED: " + artifact);
@@ -117,41 +116,41 @@ public class ChannelMavenArtifactRepositoryManager extends AbstractMavenArtifact
     }
 
     @Override
-    public void resolveLatestVersion(MavenArtifact artifact) throws MavenUniverseException {
-        if (artifact.isResolved()) {
+    public void resolveLatestVersion(MavenArtifact mavenArtifact) throws MavenUniverseException {
+        if (mavenArtifact.isResolved()) {
             throw new MavenUniverseException("Artifact is already resolved");
         }
         // TODO: handle range below
         String range;
-        if (artifact.getVersionRange() == null) {
-            if (artifact.getVersion() == null) {
-                throw new MavenUniverseException("Can't compute range, version is not set for " + artifact);
+        if (mavenArtifact.getVersionRange() == null) {
+            if (mavenArtifact.getVersion() == null) {
+                throw new MavenUniverseException("Can't compute range, version is not set for " + mavenArtifact);
             }
-            range = "[" + artifact.getVersion() + ",)";
+            range = "[" + mavenArtifact.getVersion() + ",)";
         } else {
-            if (artifact.getVersion() != null) {
-                log.info("Version is set for {} although a range is provided {}. Using provided range." + artifact, artifact.getVersionRange());
+            if (mavenArtifact.getVersion() != null) {
+                log.info("Version is set for {} although a range is provided {}. Using provided range." + mavenArtifact, mavenArtifact.getVersionRange());
             }
-            range = artifact.getVersionRange();
+            range = mavenArtifact.getVersionRange();
         }
 
         try {
-            final com.redhat.prospero.api.Artifact prosperoArtifact = new com.redhat.prospero.api.Artifact(artifact.getGroupId(),
-                    artifact.getArtifactId(), artifact.getVersion(), artifact.getClassifier(), artifact.getExtension());
-            com.redhat.prospero.api.Artifact gav = repository.findLatestVersionOf(prosperoArtifact);
+            final Artifact artifact = from(mavenArtifact);
+            Artifact gav = repository.findLatestVersionOf(artifact);
             if (gav == null) {
-                throw new MavenUniverseException("Artifact is not found " + artifact.getGroupId() + ":" + artifact.getArtifactId());
+                throw new MavenUniverseException("Artifact is not found " + mavenArtifact.getGroupId() + ":" + mavenArtifact.getArtifactId());
             } else {
-                final File resolvedPath = repository.resolve(prosperoArtifact.newVersion(gav.getVersion()));
                 artifact.setVersion(gav.getVersion());
-                artifact.setPath(resolvedPath.toPath());
+                final File resolvedPath = repository.resolve(artifact);
+                mavenArtifact.setVersion(gav.getVersion());
+                mavenArtifact.setPath(resolvedPath.toPath());
             }
-            log.debug("LATEST: Found version {} for range {}", artifact.getVersion(), range);
+            log.debug("LATEST: Found version {} for range {}", mavenArtifact.getVersion(), range);
         } catch (ArtifactNotFoundException ex) {
             throw new MavenUniverseException(ex.getLocalizedMessage(), ex);
         }
-        if ("jar".equals(artifact.getExtension())) {
-            resolvedArtifacts.add(artifact);
+        if ("jar".equals(mavenArtifact.getExtension())) {
+            resolvedArtifacts.add(mavenArtifact);
         }
     }
 

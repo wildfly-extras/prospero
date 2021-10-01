@@ -30,10 +30,12 @@ import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
 
-import com.redhat.prospero.api.Artifact;
+import org.eclipse.aether.artifact.Artifact;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.NodeList;
+
+import static com.redhat.prospero.api.ArtifactUtils.getFileName;
 
 public class ModuleXmlSupport extends XmlSupport {
 
@@ -60,13 +62,13 @@ public class ModuleXmlSupport extends XmlSupport {
     public void updateVersionInModuleXml(Path module, Artifact oldVersion, Artifact newVersion) throws XmlException {
         Document input = readDocument(module.toFile());
 
-        String expr = String.format("//resources/resource-root[contains(@path, '%s')]", oldVersion.getFileName());
+        String expr = String.format("//resources/resource-root[contains(@path, '%s')]", getFileName(oldVersion));
         NodeList nodes = nodesFromXPath(input, expr);
 
         for (int i = 0; i < nodes.getLength(); i++) {
             Element oldNode = (Element) nodes.item(i);
 
-            oldNode.setAttribute("path", newVersion.getFileName());
+            oldNode.setAttribute("path", getFileName(newVersion));
         }
 
         transform(module, input);
