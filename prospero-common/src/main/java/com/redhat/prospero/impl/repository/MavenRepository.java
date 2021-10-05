@@ -38,7 +38,7 @@ import org.jboss.galleon.universe.maven.MavenUniverseException;
 
 public class MavenRepository implements Repository {
 
-    private final Resolver resolver;
+    protected final Resolver resolver;
     private final boolean strict;
 
     public MavenRepository(RepositorySystem repositorySystem, List<Channel> channels) {
@@ -49,6 +49,11 @@ public class MavenRepository implements Repository {
     public MavenRepository(List<RemoteRepository> repositories, RepositorySystem repositorySystem) {
         this.resolver = new DefaultResolver(repositories, repositorySystem);
         this.strict = true;
+    }
+
+    public MavenRepository(Resolver resolver, boolean strict) {
+        this.resolver = resolver;
+        this.strict = strict;
     }
 
     @Override
@@ -75,7 +80,7 @@ public class MavenRepository implements Repository {
 
         try {
             final VersionRangeResult versionRangeResult = resolver.getVersionRange(artifact1);
-            final Version highestVersion = versionRangeResult.getHighestVersion();
+            final Version highestVersion = getHighestVersion(versionRangeResult, artifact);
             if (highestVersion == null) {
                 return null;
             } else {
@@ -87,6 +92,10 @@ public class MavenRepository implements Repository {
             e.printStackTrace();
             return null;
         }
+    }
+
+    protected Version getHighestVersion(VersionRangeResult versionRangeResult, Artifact artifact) {
+        return versionRangeResult.getHighestVersion();
     }
 
     @Override

@@ -1,24 +1,12 @@
 package com.redhat.prospero.impl.repository;
 
-import com.redhat.prospero.api.Channel;
-import com.redhat.prospero.api.Repository;
-import org.eclipse.aether.RepositorySystem;
+import com.redhat.prospero.testing.util.MockResolver;
+import org.eclipse.aether.artifact.Artifact;
 import org.eclipse.aether.artifact.DefaultArtifact;
-import org.eclipse.aether.resolution.VersionRangeRequest;
-import org.eclipse.aether.resolution.VersionRangeResult;
 import org.junit.Assert;
-import org.junit.Before;
 import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.mockito.ArgumentCaptor;
-import org.mockito.Captor;
-import org.mockito.Mock;
-import org.mockito.Mockito;
-import org.mockito.invocation.InvocationOnMock;
-import org.mockito.junit.MockitoJUnitRunner;
-import org.mockito.stubbing.Answer;
 
-import java.util.Collections;
+import java.util.Arrays;
 
 /**
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -37,33 +25,15 @@ import java.util.Collections;
  * limitations under the License.
  */
 
-@RunWith(MockitoJUnitRunner.class)
 public class MavenResolverTest {
-
-    @Mock
-    private RepositorySystem repositorySystem;
-    @Captor
-    private ArgumentCaptor<VersionRangeRequest> rangeCaptor;
-    private Repository mavenResolver;
-
-    @Before
-    public void setUp() {
-        mavenResolver = new MavenRepository(repositorySystem, Collections.<Channel>emptyList());
-    }
 
     @Test
     public void findLatest_searchesRangeStartingWithVersion() throws Exception {
-        Mockito.when(repositorySystem.resolveVersionRange(Mockito.any(), Mockito.any())).then(new Answer<VersionRangeResult>() {
-            @Override
-            public VersionRangeResult answer(InvocationOnMock invocationOnMock) throws Throwable {
-                final VersionRangeRequest argument = invocationOnMock.getArgument(1, VersionRangeRequest.class);
-                return new VersionRangeResult(argument);
-            }
-        });
+        final MockResolver resolver = new MockResolver();
+        final MavenRepository repository = new MavenRepository(resolver, false);
+        resolver.setArtifactRange("foo:bar", Arrays.asList("1.0.1", "1.0.2", "1.0.3"));
 
-        mavenResolver.resolveLatestVersionOf(new DefaultArtifact("group", "artifact", "", "jar", "1.0"));
-
-        Mockito.verify(repositorySystem).resolveVersionRange(Mockito.any(), rangeCaptor.capture());
-        Assert.assertEquals("[1.0,)", rangeCaptor.getValue().getArtifact().getVersion());
+        final Artifact artifact = repository.resolveLatestVersionOf(new DefaultArtifact("foo:bar:1.0.2"));
+        Assert.assertEquals("1.0.3", artifact.getVersion());
     }
 }
