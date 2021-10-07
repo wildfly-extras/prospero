@@ -31,20 +31,20 @@ import static org.junit.Assert.assertEquals;
 public class CuratedMavenResolverTest {
 
     private MockResolver mockResolver;
-    private CuratedPolicies policies;
+    private ChannelDefinition channelDefinition;
     private CuratedMavenRepository repository;
 
     @Before
     public void setup() throws Exception {
         this.mockResolver = new MockResolver();
-        this.policies = new CuratedPolicies();
-        this.repository = new CuratedMavenRepository(mockResolver, policies);
+        this.channelDefinition = new ChannelDefinition();
+        this.repository = new CuratedMavenRepository(mockResolver, channelDefinition.getChannelRules());
     }
 
     @Test
     public void resolvesLatestMicroUpdate() throws Exception {
         mockResolver.setArtifactRange("foo:bar", Arrays.asList("1.1.1","1.1.2"));
-        allow("foo:bar", CuratedPolicies.Policy.MICRO);
+        allow("foo:bar", ChannelRules.Policy.MICRO);
 
         final Artifact found = repository.resolveLatestVersionOf(new DefaultArtifact("foo:bar:1.1.1"));
 
@@ -54,7 +54,7 @@ public class CuratedMavenResolverTest {
     @Test
     public void resolveLatestMicroUpdate_IgnoresMinorUpdates() throws Exception {
         mockResolver.setArtifactRange("foo:bar", Arrays.asList("1.1.1","1.1.2", "1.2.0"));
-        allow("foo:bar", CuratedPolicies.Policy.MICRO);
+        allow("foo:bar", ChannelRules.Policy.MICRO);
 
         final Artifact found = repository.resolveLatestVersionOf(new DefaultArtifact("foo:bar:1.1.1"));
 
@@ -64,7 +64,7 @@ public class CuratedMavenResolverTest {
     @Test
     public void getVersionRange_IgnoresMinorUpdates() throws Exception {
         mockResolver.setArtifactRange("foo:bar", Arrays.asList("1.1.1", "1.1.2", "1.2.0"));
-        allow("foo:bar", CuratedPolicies.Policy.MICRO);
+        allow("foo:bar", ChannelRules.Policy.MICRO);
 
         final VersionRangeResult versionRange = repository.getVersionRange(new DefaultArtifact("foo:bar:1.1.1"));
 
@@ -73,8 +73,8 @@ public class CuratedMavenResolverTest {
         assertEquals("1.1.2", versionRange.getVersions().get(1).toString());
     }
 
-    private CuratedPolicies allow(String ga, CuratedPolicies.Policy policy) {
-        policies.allow(ga, policy);
-        return policies;
+    private ChannelDefinition allow(String ga, ChannelRules.Policy policy) {
+        channelDefinition.getChannelRules().allow(ga, policy);
+        return channelDefinition;
     }
 }

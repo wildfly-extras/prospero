@@ -29,16 +29,16 @@ import java.util.stream.Collectors;
 
 public class CuratedMavenRepository extends MavenRepository {
 
-    private final CuratedPolicies policies;
+    private final ChannelRules channelRules;
 
-    public CuratedMavenRepository(Resolver resolver, CuratedPolicies policies) {
+    public CuratedMavenRepository(Resolver resolver, ChannelRules channelRules) {
         super(resolver, false);
-        this.policies = policies;
+        this.channelRules = channelRules;
     }
 
     protected Version getHighestVersion(VersionRangeResult versionRangeResult, Artifact artifact) {
         final String baseVersion = artifact.getVersion();
-        final CuratedPolicies.Policy policy = getUpdatesPolicy(artifact);
+        final ChannelRules.Policy policy = getUpdatesPolicy(artifact);
 
         return versionRangeResult.getVersions().stream()
                 .filter(policy.getFilter(baseVersion))
@@ -50,7 +50,7 @@ public class CuratedMavenRepository extends MavenRepository {
     public VersionRangeResult getVersionRange(Artifact artifact) throws MavenUniverseException {
         final VersionRangeResult versionRange = super.getVersionRange(artifact);
 
-        final CuratedPolicies.Policy policy = getUpdatesPolicy(artifact);
+        final ChannelRules.Policy policy = getUpdatesPolicy(artifact);
 
         final VersionRangeResult filtered = new VersionRangeResult(versionRange.getRequest());
         filtered.setVersions(
@@ -61,8 +61,9 @@ public class CuratedMavenRepository extends MavenRepository {
         return filtered;
     }
 
-    private CuratedPolicies.Policy getUpdatesPolicy(Artifact artifact) {
+    private ChannelRules.Policy getUpdatesPolicy(Artifact artifact) {
         String ga = artifact.getGroupId() + ":" + artifact.getArtifactId();
-        return policies.getPolicy(ga);
+        final ChannelRules.Policy policy = channelRules.getPolicy(ga);
+        return policy==null? ChannelRules.Policy.ANY:policy;
     }
 }

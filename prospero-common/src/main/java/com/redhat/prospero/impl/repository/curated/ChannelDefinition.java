@@ -19,36 +19,27 @@ package com.redhat.prospero.impl.repository.curated;
 
 import org.eclipse.aether.version.Version;
 
-import java.util.HashMap;
-import java.util.Map;
+import java.util.function.BiPredicate;
 import java.util.function.Predicate;
 
 import static java.lang.Integer.parseInt;
 
-public class CuratedPolicies {
-    public enum Policy {
-        MICRO;
+public class ChannelDefinition {
 
-        public Predicate<? super Version> getFilter(String baseVersion) {
-            return (v) -> {
-                final String[] mmm1 = baseVersion.split("[.\\-_]");
-                final String[] mmm2 = v.toString().split("[.\\-_]");
+    private String repositoryUrl;
 
-                if (parseInt(mmm1[0]) != parseInt(mmm2[0]) || parseInt(mmm1[1]) != parseInt(mmm2[1])) {
-                    return false;
-                } else {
-                    return true;
-                }
-            };
-        }
-    }
-    private Map<String, Policy> policies = new HashMap<>();
+    private ChannelRules channelRules = new ChannelRules();
 
-    public void allow(String ga, Policy policy) {
-        policies.put(ga, policy);
+
+    public void setRepositoryUrl(String repositoryUrl) {
+        this.repositoryUrl = repositoryUrl;
     }
 
-    public Policy getPolicy(String ga) {
-        return policies.get(ga);
+    public String getRepositoryUrl() {
+        return repositoryUrl;
+    }
+
+    public ChannelRules getChannelRules() {
+        return channelRules;
     }
 }

@@ -107,6 +107,10 @@ public class MavenRepository implements Repository {
         }
     }
 
+    public Resolver getResolver() {
+        return resolver;
+    }
+
     public List<RemoteRepository> repositoriesFromChannels(List<Channel> channels) {
         return channels.stream().map(c -> newRepository(c.getName(), c.getUrl())).collect(Collectors.toList());
     }
@@ -114,4 +118,5 @@ public class MavenRepository implements Repository {
     private RemoteRepository newRepository(String channel, String url) {
         return new RemoteRepository.Builder(channel, "default", url).build();
     }
+
 }

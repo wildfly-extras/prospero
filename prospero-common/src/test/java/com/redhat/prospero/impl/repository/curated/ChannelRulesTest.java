@@ -31,7 +31,7 @@ import java.util.stream.Stream;
 
 import static org.junit.Assert.assertEquals;
 
-public class CuratedPoliciesTest {
+public class ChannelRulesTest {
 
     private VersionScheme versionScheme = new GenericVersionScheme();
 
@@ -56,8 +56,16 @@ public class CuratedPoliciesTest {
         assertEquals("1.2.1", res.get(0).toString());
     }
 
+    @Test
+    public void noPolicySet_allowsAllUpdates() throws Exception {
+        ChannelRules channelRules = new ChannelRules();
+        channelRules.allow("foo:bar", ChannelRules.Policy.MICRO);
+
+        assertEquals(ChannelRules.Policy.ANY, channelRules.getPolicy("idont:exist"));
+    }
+
     private List<Version> filterVersions(Stream<Version> versions, String baseVersion) {
-        final Predicate<? super Version> filter = CuratedPolicies.Policy.MICRO.getFilter(baseVersion);
+        final Predicate<? super Version> filter = ChannelRules.Policy.MICRO.getFilter(baseVersion);
 
         return versions.filter(filter).collect(Collectors.toList());
     }
