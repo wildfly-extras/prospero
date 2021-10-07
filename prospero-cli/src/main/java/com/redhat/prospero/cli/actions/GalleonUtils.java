@@ -40,8 +40,7 @@ import java.util.List;
 
 public class GalleonUtils {
     public static ChannelMavenArtifactRepositoryManager getChannelRepositoryManager(List<Channel> channels, RepositorySystem repoSystem) throws ProvisioningException, IOException {
-        return new ChannelMavenArtifactRepositoryManager(repoSystem, MavenFallback.getDefaultRepositorySystemSession(repoSystem),
-        MavenFallback.buildRepositories(), channels, false, null);
+        return new ChannelMavenArtifactRepositoryManager(repoSystem, MavenFallback.getDefaultRepositorySystemSession(repoSystem), channels);
     }
 
     public static ProvisioningManager getProvisioningManager(Path installDir, ChannelMavenArtifactRepositoryManager maven) throws ProvisioningException {

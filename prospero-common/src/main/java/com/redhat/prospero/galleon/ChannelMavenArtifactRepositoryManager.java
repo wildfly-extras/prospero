@@ -18,12 +18,9 @@ package com.redhat.prospero.galleon;
 
 import java.io.File;
 import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Path;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
-import java.util.stream.Collectors;
 
 import com.redhat.prospero.api.ArtifactNotFoundException;
 import com.redhat.prospero.api.Channel;
@@ -41,7 +38,6 @@ import org.jboss.galleon.ProvisioningException;
 import org.jboss.galleon.maven.plugin.util.AbstractMavenArtifactRepositoryManager;
 import org.jboss.galleon.universe.maven.MavenArtifact;
 import org.jboss.galleon.universe.maven.MavenUniverseException;
-import org.jboss.galleon.util.IoUtils;
 
 import static com.redhat.prospero.api.ArtifactUtils.from;
 
@@ -50,37 +46,19 @@ public class ChannelMavenArtifactRepositoryManager extends AbstractMavenArtifact
 
     private final RepositorySystemSession session;
     private final Repository repository;
-    private boolean disableLatest;
-    private Path tmpLocalCache;
 
     private final Set<MavenArtifact> resolvedArtifacts = new HashSet<>();
 
-    public ChannelMavenArtifactRepositoryManager(final RepositorySystem repoSystem, final RepositorySystemSession fallbackRepoSession,
-                                                 final List<RemoteRepository> fallBackRepositories,
-                                                 final List<Channel> channels,
-                                                 boolean disableLatest, Path localCache) throws ProvisioningException {
+    public ChannelMavenArtifactRepositoryManager(final RepositorySystem repoSystem, final RepositorySystemSession repoSession,
+                                                 final List<Channel> channels) throws ProvisioningException {
         super(repoSystem);
-        this.disableLatest = disableLatest;
         try {
-            Path cache = localCache;
-            if (cache == null) {
-                tmpLocalCache = Files.createTempDirectory("wf-channels-repos-cache");
-                cache = tmpLocalCache;
-            }
 
             this.repository = new ChannelBuilder(repoSystem).buildChannelRepository(channels.get(0));
-            this.session = fallbackRepoSession;
+            this.session = repoSession;
         } catch (IOException ex) {
             throw new ProvisioningException(ex.getLocalizedMessage(), ex);
         }
-    }
-
-    public List<RemoteRepository> repositoriesFromChannels(List<Channel> channels) {
-        return channels.stream().map(c -> newRepository(c.getName(), c.getUrl())).collect(Collectors.toList());
-    }
-
-    private RemoteRepository newRepository(String channel, String url) {
-        return new RemoteRepository.Builder(channel, "default", url).build();
     }
 
     @Override
@@ -90,11 +68,7 @@ public class ChannelMavenArtifactRepositoryManager extends AbstractMavenArtifact
 
     @Override
     public void resolve(MavenArtifact artifact) throws MavenUniverseException {
-        if (disableLatest) {
-            doResolve(artifact);
-        } else {
-            resolveLatestVersion(artifact);
-        }
+        resolveLatestVersion(artifact);
     }
 
     private void doResolve(MavenArtifact artifact) throws MavenUniverseException {
@@ -171,10 +145,6 @@ public class ChannelMavenArtifactRepositoryManager extends AbstractMavenArtifact
 
     @Override
     public void close() throws MavenUniverseException {
-        if (tmpLocalCache != null) {
-            log.debug("Deleting local cache " + tmpLocalCache);
-            IoUtils.recursiveDelete(tmpLocalCache);
-        }
     }
 
     public Set<MavenArtifact> resolvedArtfacts() {
