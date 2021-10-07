@@ -32,6 +32,7 @@ import java.util.Set;
 import com.redhat.prospero.api.Channel;
 import com.redhat.prospero.api.Manifest;
 import com.redhat.prospero.installation.Modules;
+import com.redhat.prospero.maven.MavenUtils;
 import com.redhat.prospero.model.ManifestXmlSupport;
 import com.redhat.prospero.model.XmlException;
 import org.eclipse.aether.artifact.Artifact;
@@ -72,7 +73,7 @@ public class GalleonProvision {
             throw new ProvisioningException("Installation dir " + installDir + " already exists");
         }
         try (final ChannelMavenArtifactRepositoryManager maven
-                = GalleonUtils.getChannelRepositoryManager(readChannels(Paths.get(channelsFile)), GalleonUtils.newRepositorySystem())) {
+                = GalleonUtils.getChannelRepositoryManager(readChannels(Paths.get(channelsFile)), MavenUtils.defaultRepositorySystem())) {
             ProvisioningManager provMgr = GalleonUtils.getProvisioningManager(installDir, maven);
             FeaturePackLocation loc = FeaturePackLocation.fromString(fpl);
             provMgr.install(loc);
