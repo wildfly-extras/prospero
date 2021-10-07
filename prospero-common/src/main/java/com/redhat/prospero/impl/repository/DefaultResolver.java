@@ -42,14 +42,10 @@ public class DefaultResolver implements Resolver {
     private final RepositorySystemSession repoSession;
     private final List<RemoteRepository> repositories;
 
-    public DefaultResolver(List<RemoteRepository> repositories, RepositorySystem repositorySystem) {
+    public DefaultResolver(List<RemoteRepository> repositories, RepositorySystem repoSystem, RepositorySystemSession repoSession) {
         this.repositories = repositories;
-        this.repoSystem = repositorySystem;
-        try {
-            this.repoSession = newRepositorySystemSession(repoSystem);
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        }
+        this.repoSystem = repoSystem;
+        this.repoSession = repoSession;
     }
 
     @Override
@@ -70,12 +66,16 @@ public class DefaultResolver implements Resolver {
         return versionRangeResult;
     }
 
-    private static DefaultRepositorySystemSession newRepositorySystemSession(RepositorySystem system) throws IOException {
-        DefaultRepositorySystemSession session = MavenRepositorySystemUtils.newSession();
+    private static DefaultRepositorySystemSession defaultRepositorySystemSession(RepositorySystem system) {
+        try {
+            DefaultRepositorySystemSession session = MavenRepositorySystemUtils.newSession();
 
-        org.eclipse.aether.repository.LocalRepository localRepo = new LocalRepository(Files.createTempDirectory("mvn-repo").toString());
-        session.setLocalRepositoryManager(system.newLocalRepositoryManager(session, localRepo));
+            org.eclipse.aether.repository.LocalRepository localRepo = new LocalRepository(Files.createTempDirectory("mvn-repo").toString());
+            session.setLocalRepositoryManager(system.newLocalRepositoryManager(session, localRepo));
 
-        return session;
+            return session;
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
     }
 }

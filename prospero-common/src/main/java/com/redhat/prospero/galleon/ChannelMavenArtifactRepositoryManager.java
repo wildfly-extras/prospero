@@ -54,7 +54,7 @@ public class ChannelMavenArtifactRepositoryManager extends AbstractMavenArtifact
         super(repoSystem);
         try {
 
-            this.repository = new ChannelBuilder(repoSystem).buildChannelRepository(channels.get(0));
+            this.repository = new ChannelBuilder(repoSystem, repoSession).buildChannelRepository(channels.get(0));
             this.session = repoSession;
         } catch (IOException ex) {
             throw new ProvisioningException(ex.getLocalizedMessage(), ex);

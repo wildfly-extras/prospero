@@ -28,14 +28,15 @@ import java.util.Set;
 import java.util.stream.Collectors;
 
 import com.redhat.prospero.api.ArtifactUtils;
+import com.redhat.prospero.cli.MavenFallback;
 import com.redhat.prospero.galleon.ChannelMavenArtifactRepositoryManager;
 import com.redhat.prospero.api.ArtifactNotFoundException;
 import com.redhat.prospero.api.Channel;
 import com.redhat.prospero.api.Manifest;
 import com.redhat.prospero.api.PackageInstallationException;
 import com.redhat.prospero.api.Repository;
+import com.redhat.prospero.impl.repository.curated.ChannelBuilder;
 import com.redhat.prospero.installation.LocalInstallation;
-import com.redhat.prospero.impl.repository.MavenRepository;
 import com.redhat.prospero.installation.Modules;
 import com.redhat.prospero.model.ManifestXmlSupport;
 import com.redhat.prospero.model.XmlException;
@@ -59,7 +60,8 @@ public class Update implements AutoCloseable {
     public Update(Path installDir) throws XmlException, IOException, ProvisioningException {
         this.localInstallation = new LocalInstallation(installDir);
         final RepositorySystem repoSystem = GalleonUtils.newRepositorySystem();
-        this.repository = new MavenRepository(repoSystem, localInstallation.getChannels());
+        final ChannelBuilder channelBuilder = new ChannelBuilder(repoSystem, MavenFallback.getDefaultRepositorySystemSession(repoSystem));
+        this.repository = channelBuilder.buildChannelRepository(localInstallation.getChannels().get(0));
         this.maven = GalleonUtils.getChannelRepositoryManager(readChannels(installDir.resolve("channels.json")), repoSystem);
         this.provMgr = GalleonUtils.getProvisioningManager(installDir, maven);
     }

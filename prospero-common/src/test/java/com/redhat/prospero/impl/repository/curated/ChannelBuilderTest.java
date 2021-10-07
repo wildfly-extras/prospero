@@ -3,10 +3,12 @@ package com.redhat.prospero.impl.repository.curated;
 import com.redhat.prospero.api.Channel;
 import com.redhat.prospero.api.Repository;
 import org.apache.maven.repository.internal.MavenRepositorySystemUtils;
+import org.eclipse.aether.DefaultRepositorySystemSession;
 import org.eclipse.aether.RepositorySystem;
 import org.eclipse.aether.artifact.DefaultArtifact;
 import org.eclipse.aether.connector.basic.BasicRepositoryConnectorFactory;
 import org.eclipse.aether.impl.DefaultServiceLocator;
+import org.eclipse.aether.repository.LocalRepository;
 import org.eclipse.aether.spi.connector.RepositoryConnectorFactory;
 import org.eclipse.aether.spi.connector.transport.TransporterFactory;
 import org.eclipse.aether.transport.file.FileTransporterFactory;
@@ -15,6 +17,7 @@ import org.junit.Test;
 
 import java.io.File;
 import java.io.FileWriter;
+import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 
@@ -22,7 +25,8 @@ import static org.junit.Assert.*;
 
 public class ChannelBuilderTest {
 
-    private ChannelBuilder builder = new ChannelBuilder(defaultRepositorySystem());
+    RepositorySystem repositorySystem = defaultRepositorySystem();
+    private ChannelBuilder builder = new ChannelBuilder(repositorySystem, defaultRepositorySystemSession(repositorySystem));
 
     @Test
     public void policyFile_createsCuratedRepository() throws Exception {
@@ -78,5 +82,18 @@ public class ChannelBuilderTest {
         });
 
         return locator.getService(RepositorySystem.class);
+    }
+
+    private static DefaultRepositorySystemSession defaultRepositorySystemSession(RepositorySystem system) {
+        try {
+            DefaultRepositorySystemSession session = MavenRepositorySystemUtils.newSession();
+
+            org.eclipse.aether.repository.LocalRepository localRepo = new LocalRepository(Files.createTempDirectory("mvn-repo").toString());
+            session.setLocalRepositoryManager(system.newLocalRepositoryManager(session, localRepo));
+
+            return session;
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
     }
 }
