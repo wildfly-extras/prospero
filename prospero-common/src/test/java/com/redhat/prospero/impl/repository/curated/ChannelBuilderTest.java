@@ -1,16 +1,12 @@
-package com.redhat.prospero.api;
+package com.redhat.prospero.impl.repository.curated;
 
-import com.redhat.prospero.impl.repository.DefaultResolver;
-import com.redhat.prospero.impl.repository.MavenRepository;
-import com.redhat.prospero.impl.repository.curated.CuratedMavenRepository;
-import com.redhat.prospero.impl.repository.curated.ChannelDefinition;
-import com.redhat.prospero.impl.repository.curated.ChannelDefinitionParser;
+import com.redhat.prospero.api.Channel;
+import com.redhat.prospero.api.Repository;
 import org.apache.maven.repository.internal.MavenRepositorySystemUtils;
 import org.eclipse.aether.RepositorySystem;
 import org.eclipse.aether.artifact.DefaultArtifact;
 import org.eclipse.aether.connector.basic.BasicRepositoryConnectorFactory;
 import org.eclipse.aether.impl.DefaultServiceLocator;
-import org.eclipse.aether.repository.RemoteRepository;
 import org.eclipse.aether.spi.connector.RepositoryConnectorFactory;
 import org.eclipse.aether.spi.connector.transport.TransporterFactory;
 import org.eclipse.aether.transport.file.FileTransporterFactory;
@@ -19,16 +15,14 @@ import org.junit.Test;
 
 import java.io.File;
 import java.io.FileWriter;
-import java.io.IOException;
-import java.net.URL;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.Arrays;
-import java.util.List;
 
 import static org.junit.Assert.*;
 
 public class ChannelBuilderTest {
+
+    private ChannelBuilder builder = new ChannelBuilder(defaultRepositorySystem());
 
     @Test
     public void policyFile_createsCuratedRepository() throws Exception {
@@ -39,7 +33,7 @@ public class ChannelBuilderTest {
         }
         final Channel channel = new Channel("test", policyFile.toUri().toURL().toString());
 
-        Repository repository = buildChannelRepository(channel);
+        Repository repository = builder.buildChannelRepository(channel);
 
         assertTrue(repository instanceof CuratedMavenRepository);
     }
@@ -57,25 +51,13 @@ public class ChannelBuilderTest {
         }
         final Channel channel = new Channel("test", policyFile.toFile().toURI().toString());
 
-        MavenRepository repository = (MavenRepository) buildChannelRepository(channel);
+        Repository repository = builder.buildChannelRepository(channel);
 
         final File resolved = repository.resolve(new DefaultArtifact("foo:bar:1.1"));
         assertNotNull(resolved);
     }
 
-    private Repository buildChannelRepository(Channel channel) throws IOException {
-        final String channelDefinitionUrl = channel.getUrl();
-        final ChannelDefinition curatedPolicies = new ChannelDefinitionParser().parsePolicyFile(new URL(channelDefinitionUrl));
-        final List<RemoteRepository> repositories = Arrays.asList(newRepository(channel.getName(), curatedPolicies.getRepositoryUrl()));
-        final DefaultResolver resolver = new DefaultResolver(repositories, newRepositorySystem());
-        return new CuratedMavenRepository(resolver, curatedPolicies.getChannelRules());
-    }
-
-    private RemoteRepository newRepository(String channel, String url) {
-        return new RemoteRepository.Builder(channel, "default", url).build();
-    }
-
-    public static RepositorySystem newRepositorySystem() {
+    public static RepositorySystem defaultRepositorySystem() {
         /*
          * Aether's components implement org.eclipse.aether.spi.locator.Service to ease manual wiring and using the
          * prepopulated DefaultServiceLocator, we only need to register the repository connector and transporter

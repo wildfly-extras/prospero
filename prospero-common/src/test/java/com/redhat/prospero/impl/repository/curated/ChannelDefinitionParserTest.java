@@ -21,13 +21,15 @@ public class ChannelDefinitionParserTest {
     @Test
     public void microStreamPolicy_allowsMicroUpdates() throws Exception {
         final ChannelDefinition channelDefinition = parsePolicy(
-                "{" +
-                "  \"rules\": {" +
-                "    \"foo:bar\": {" +
-                "       \"STREAM\": \"MICRO\"" +
-                "    }" +
-                "  }" +
-                "}");
+                "{\n" +
+                        "  \"streams\" : [{\n" +
+                        "    \"groupId\" : \"foo\",\n" +
+                        "    \"artifactId\" : \"bar\",\n" +
+                        "    \"versionRule\" : {\n" +
+                        "      \"stream\" : \"MICRO\"\n" +
+                        "    }\n" +
+                        "  }]\n" +
+                        "}");
 
         assertEquals(ChannelRules.Policy.MICRO, channelDefinition.getChannelRules().getPolicy("foo:bar"));
     }

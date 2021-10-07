@@ -1,13 +1,13 @@
-package com.redhat.prospero.impl.repository.curated;
+package com.redhat.prospero.model;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 
-import java.util.Map;
+import java.util.List;
 
 public class ChannelDefinitionModel {
 
     @JsonProperty
-    private Map<String, Object> rules;
+    private List<StreamModel> streams;
     private String repositoryUrl;
 
     public ChannelDefinitionModel() {
@@ -18,7 +18,7 @@ public class ChannelDefinitionModel {
         return repositoryUrl;
     }
 
-    public Map<String, Object> getRules() {
-        return rules;
+    public List<StreamModel> getStreams() {
+        return streams;
     }
 }

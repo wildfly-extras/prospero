@@ -18,10 +18,8 @@ package com.redhat.prospero.galleon;
 
 import java.io.File;
 import java.io.IOException;
-import java.net.URL;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -30,10 +28,7 @@ import java.util.stream.Collectors;
 import com.redhat.prospero.api.ArtifactNotFoundException;
 import com.redhat.prospero.api.Channel;
 import com.redhat.prospero.api.Repository;
-import com.redhat.prospero.impl.repository.DefaultResolver;
-import com.redhat.prospero.impl.repository.curated.CuratedMavenRepository;
-import com.redhat.prospero.impl.repository.curated.ChannelDefinition;
-import com.redhat.prospero.impl.repository.curated.ChannelDefinitionParser;
+import com.redhat.prospero.impl.repository.curated.ChannelBuilder;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -73,14 +68,7 @@ public class ChannelMavenArtifactRepositoryManager extends AbstractMavenArtifact
                 cache = tmpLocalCache;
             }
 
-//            Repository prosperoRepository = new MavenRepository(repoSystem, channels);
-//            DefaultResolver resolver = new DefaultResolver(repositoriesFromChannels(channels), repoSystem);
-            ChannelDefinition channelDefinition = new ChannelDefinitionParser().parsePolicyFile(new URL(("file:/Users/spyrkob/workspaces/set/prospero/prospero/policy.json")));
-            DefaultResolver resolver = new DefaultResolver(Arrays.asList(newRepository("curated", channelDefinition.getRepositoryUrl())), repoSystem);
-            Repository curatedRepository = new CuratedMavenRepository(resolver, channelDefinition.getChannelRules());
-//            Repository fallbackRepository = new MavenRepository(fallBackRepositories, repoSystem);
-//            repository = new FallbackMavenRepository(prosperoRepository, fallbackRepository);
-            repository = curatedRepository;
+            this.repository = new ChannelBuilder(repoSystem).buildChannelRepository(channels.get(0));
             this.session = fallbackRepoSession;
         } catch (IOException ex) {
             throw new ProvisioningException(ex.getLocalizedMessage(), ex);

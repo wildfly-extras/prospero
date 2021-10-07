@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-package com.redhat.prospero.xml;
+package com.redhat.prospero.model;
 
 public class XmlException extends Exception {
 
