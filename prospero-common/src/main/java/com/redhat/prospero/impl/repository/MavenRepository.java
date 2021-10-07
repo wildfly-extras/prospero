@@ -94,7 +94,7 @@ public class MavenRepository implements Repository {
         }
     }
 
-    protected Version getHighestVersion(VersionRangeResult versionRangeResult, Artifact artifact) {
+    protected Version getHighestVersion(VersionRangeResult versionRangeResult, Artifact artifact) throws ArtifactNotFoundException {
         return versionRangeResult.getHighestVersion();
     }
 
