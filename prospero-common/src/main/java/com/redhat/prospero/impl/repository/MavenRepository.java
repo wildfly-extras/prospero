@@ -35,7 +35,6 @@ import org.eclipse.aether.resolution.ArtifactResult;
 import org.eclipse.aether.resolution.VersionRangeResolutionException;
 import org.eclipse.aether.resolution.VersionRangeResult;
 import org.eclipse.aether.version.Version;
-import org.jboss.galleon.universe.maven.MavenUniverseException;
 
 public class MavenRepository implements Repository {
 
@@ -95,11 +94,11 @@ public class MavenRepository implements Repository {
     }
 
     @Override
-    public VersionRangeResult getVersionRange(Artifact artifact) throws MavenUniverseException {
+    public VersionRangeResult getVersionRange(Artifact artifact) throws ArtifactNotFoundException {
         try {
             return resolver.getVersionRange(artifact);
         } catch (VersionRangeResolutionException ex) {
-            throw new MavenUniverseException(ex.getLocalizedMessage(), ex);
+            throw new ArtifactNotFoundException(ex.getLocalizedMessage(), ex);
         }
     }
 

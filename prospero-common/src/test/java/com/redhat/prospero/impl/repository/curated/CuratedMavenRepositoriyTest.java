@@ -28,7 +28,7 @@ import java.util.Arrays;
 
 import static org.junit.Assert.assertEquals;
 
-public class CuratedMavenResolverTest {
+public class CuratedMavenRepositoriyTest {
 
     private MockResolver mockResolver;
     private ChannelDefinition channelDefinition;

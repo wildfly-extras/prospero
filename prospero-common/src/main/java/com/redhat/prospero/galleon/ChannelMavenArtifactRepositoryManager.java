@@ -54,7 +54,7 @@ public class ChannelMavenArtifactRepositoryManager extends AbstractMavenArtifact
         super(repoSystem);
         try {
 
-            this.repository = new ChannelBuilder(repoSystem, repoSession).buildChannelRepository(channels.get(0));
+            this.repository = new ChannelBuilder(repoSystem, repoSession).buildChannelRepository(channels);
             this.session = repoSession;
         } catch (IOException ex) {
             throw new ProvisioningException(ex.getLocalizedMessage(), ex);
@@ -63,7 +63,16 @@ public class ChannelMavenArtifactRepositoryManager extends AbstractMavenArtifact
 
     @Override
     protected VersionRangeResult getVersionRange(Artifact artifact) throws MavenUniverseException {
-        return repository.getVersionRange(artifact);
+        try {
+            return repository.getVersionRange(artifact);
+        } catch (ArtifactNotFoundException e) {
+            if (e.getCause() instanceof MavenUniverseException) {
+                throw (MavenUniverseException)e.getCause();
+            } else {
+                // TODO: change galleon API to provide better exception
+                throw new RuntimeException("Unexpected exception", e);
+            }
+        }
     }
 
     @Override

@@ -10,5 +10,5 @@ public interface Repository {
     File resolve(Artifact artifact) throws ArtifactNotFoundException;
     Artifact resolveLatestVersionOf(Artifact artifact) throws ArtifactNotFoundException;
 
-    VersionRangeResult getVersionRange(Artifact artifact) throws MavenUniverseException;
+    VersionRangeResult getVersionRange(Artifact artifact) throws ArtifactNotFoundException;
 }

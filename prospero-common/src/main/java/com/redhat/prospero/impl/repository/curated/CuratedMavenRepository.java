@@ -20,20 +20,15 @@ package com.redhat.prospero.impl.repository.curated;
 import com.redhat.prospero.api.ArtifactNotFoundException;
 import com.redhat.prospero.api.Resolver;
 import com.redhat.prospero.impl.repository.MavenRepository;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
 import org.eclipse.aether.artifact.Artifact;
 import org.eclipse.aether.resolution.VersionRangeResult;
 import org.eclipse.aether.version.Version;
-import org.jboss.galleon.universe.maven.MavenUniverseException;
 
 import java.util.Comparator;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
 public class CuratedMavenRepository extends MavenRepository {
-
-    private static final Logger log = LogManager.getLogger(CuratedMavenRepository.class);
 
     private final ChannelRules channelRules;
 
@@ -50,13 +45,13 @@ public class CuratedMavenRepository extends MavenRepository {
                 .filter(policy.getFilter(baseVersion))
                 .max(Comparator.naturalOrder());
 
-        return highestVersion.orElseThrow(()->{
-            log.error("No versions found for {}:{}", artifact.getGroupId(), artifact.getArtifactId());
-            return new ArtifactNotFoundException("");});
+        return highestVersion.orElseThrow(()->
+            new ArtifactNotFoundException(String.format("No version found for %s:%s", artifact.getGroupId(), artifact.getArtifactId()))
+        );
     }
 
     @Override
-    public VersionRangeResult getVersionRange(Artifact artifact) throws MavenUniverseException {
+    public VersionRangeResult getVersionRange(Artifact artifact) throws ArtifactNotFoundException {
         final VersionRangeResult versionRange = super.getVersionRange(artifact);
 
         final ChannelRules.Policy policy = getUpdatesPolicy(artifact);

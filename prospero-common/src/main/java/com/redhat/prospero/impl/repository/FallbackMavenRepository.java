@@ -21,7 +21,6 @@ import com.redhat.prospero.api.ArtifactNotFoundException;
 import com.redhat.prospero.api.Repository;
 import org.eclipse.aether.artifact.Artifact;
 import org.eclipse.aether.resolution.VersionRangeResult;
-import org.jboss.galleon.universe.maven.MavenUniverseException;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -60,7 +59,7 @@ public class FallbackMavenRepository implements Repository {
     }
 
     @Override
-    public VersionRangeResult getVersionRange(Artifact artifact) throws MavenUniverseException {
+    public VersionRangeResult getVersionRange(Artifact artifact) throws ArtifactNotFoundException {
         VersionRangeResult res = primary.getVersionRange(artifact);
         if (res.getHighestVersion() == null) {
             res = fallback.getVersionRange(artifact);
