@@ -1,13 +1,3 @@
-package com.redhat.prospero.impl.repository;
-
-import com.redhat.prospero.testing.util.MockResolver;
-import org.eclipse.aether.artifact.Artifact;
-import org.eclipse.aether.artifact.DefaultArtifact;
-import org.junit.Assert;
-import org.junit.Test;
-
-import java.util.Arrays;
-
 /**
  * Licensed to the Apache Software Foundation (ASF) under one or more
  * contributor license agreements. See the NOTICE file distributed with
@@ -25,15 +15,34 @@ import java.util.Arrays;
  * limitations under the License.
  */
 
-public class MavenResolverTest {
+package com.redhat.prospero.model;
 
-    @Test
-    public void findLatest_searchesRangeStartingWithVersion() throws Exception {
-        final MockResolver resolver = new MockResolver();
-        final MavenRepository repository = new MavenRepository(resolver, false);
-        resolver.setArtifactRange("foo:bar", Arrays.asList("1.0.1", "1.0.2", "1.0.3"));
+public class StreamModel {
+    private String groupId;
+    private String artifactId;
+    private VersionRuleModel versionRule;
 
-        final Artifact artifact = repository.resolveLatestVersionOf(new DefaultArtifact("foo:bar:1.0.2"));
-        Assert.assertEquals("1.0.3", artifact.getVersion());
+    public String getGroupId() {
+        return groupId;
+    }
+
+    public void setGroupId(String groupId) {
+        this.groupId = groupId;
+    }
+
+    public String getArtifactId() {
+        return artifactId;
+    }
+
+    public void setArtifactId(String artifactId) {
+        this.artifactId = artifactId;
+    }
+
+    public VersionRuleModel getVersionRule() {
+        return versionRule;
+    }
+
+    public void setVersionRule(VersionRuleModel versionRule) {
+        this.versionRule = versionRule;
     }
 }

@@ -18,8 +18,6 @@ package com.redhat.prospero.galleon;
 
 import java.io.File;
 import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Path;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -27,8 +25,7 @@ import java.util.Set;
 import com.redhat.prospero.api.ArtifactNotFoundException;
 import com.redhat.prospero.api.Channel;
 import com.redhat.prospero.api.Repository;
-import com.redhat.prospero.impl.repository.FallbackMavenRepository;
-import com.redhat.prospero.impl.repository.MavenRepository;
+import com.redhat.prospero.impl.repository.curated.ChannelBuilder;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -41,7 +38,6 @@ import org.jboss.galleon.ProvisioningException;
 import org.jboss.galleon.maven.plugin.util.AbstractMavenArtifactRepositoryManager;
 import org.jboss.galleon.universe.maven.MavenArtifact;
 import org.jboss.galleon.universe.maven.MavenUniverseException;
-import org.jboss.galleon.util.IoUtils;
 
 import static com.redhat.prospero.api.ArtifactUtils.from;
 
@@ -50,28 +46,16 @@ public class ChannelMavenArtifactRepositoryManager extends AbstractMavenArtifact
 
     private final RepositorySystemSession session;
     private final Repository repository;
-    private boolean disableLatest;
-    private Path tmpLocalCache;
 
     private final Set<MavenArtifact> resolvedArtifacts = new HashSet<>();
 
-    public ChannelMavenArtifactRepositoryManager(final RepositorySystem repoSystem, final RepositorySystemSession fallbackRepoSession,
-                                                 final List<RemoteRepository> fallBackRepositories,
-                                                 final List<Channel> channels,
-                                                 boolean disableLatest, Path localCache) throws ProvisioningException {
+    public ChannelMavenArtifactRepositoryManager(final RepositorySystem repoSystem, final RepositorySystemSession repoSession,
+                                                 final List<Channel> channels) throws ProvisioningException {
         super(repoSystem);
-        this.disableLatest = disableLatest;
         try {
-            Path cache = localCache;
-            if (cache == null) {
-                tmpLocalCache = Files.createTempDirectory("wf-channels-repos-cache");
-                cache = tmpLocalCache;
-            }
 
-            Repository prosperoRepository = new MavenRepository(repoSystem, channels);
-            Repository fallbackRepository = new MavenRepository(fallBackRepositories, repoSystem);
-            repository = new FallbackMavenRepository(prosperoRepository, fallbackRepository);
-            this.session = fallbackRepoSession;
+            this.repository = new ChannelBuilder(repoSystem, repoSession).buildChannelRepository(channels);
+            this.session = repoSession;
         } catch (IOException ex) {
             throw new ProvisioningException(ex.getLocalizedMessage(), ex);
         }
@@ -79,16 +63,21 @@ public class ChannelMavenArtifactRepositoryManager extends AbstractMavenArtifact
 
     @Override
     protected VersionRangeResult getVersionRange(Artifact artifact) throws MavenUniverseException {
-        return repository.getVersionRange(artifact);
+        try {
+            return repository.getVersionRange(artifact);
+        } catch (ArtifactNotFoundException e) {
+            if (e.getCause() instanceof MavenUniverseException) {
+                throw (MavenUniverseException)e.getCause();
+            } else {
+                // TODO: change galleon API to provide better exception
+                throw new RuntimeException("Unexpected exception", e);
+            }
+        }
     }
 
     @Override
     public void resolve(MavenArtifact artifact) throws MavenUniverseException {
-        if (disableLatest) {
-            doResolve(artifact);
-        } else {
-            resolveLatestVersion(artifact);
-        }
+        resolveLatestVersion(artifact);
     }
 
     private void doResolve(MavenArtifact artifact) throws MavenUniverseException {
@@ -165,10 +154,6 @@ public class ChannelMavenArtifactRepositoryManager extends AbstractMavenArtifact
 
     @Override
     public void close() throws MavenUniverseException {
-        if (tmpLocalCache != null) {
-            log.debug("Deleting local cache " + tmpLocalCache);
-            IoUtils.recursiveDelete(tmpLocalCache);
-        }
     }
 
     public Set<MavenArtifact> resolvedArtfacts() {

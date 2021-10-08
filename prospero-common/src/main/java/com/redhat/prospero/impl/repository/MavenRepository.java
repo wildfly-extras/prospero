@@ -26,6 +26,7 @@ import com.redhat.prospero.api.Channel;
 import com.redhat.prospero.api.Repository;
 import com.redhat.prospero.api.Resolver;
 import org.eclipse.aether.RepositorySystem;
+import org.eclipse.aether.RepositorySystemSession;
 import org.eclipse.aether.artifact.Artifact;
 import org.eclipse.aether.artifact.DefaultArtifact;
 import org.eclipse.aether.repository.RemoteRepository;
@@ -34,21 +35,20 @@ import org.eclipse.aether.resolution.ArtifactResult;
 import org.eclipse.aether.resolution.VersionRangeResolutionException;
 import org.eclipse.aether.resolution.VersionRangeResult;
 import org.eclipse.aether.version.Version;
-import org.jboss.galleon.universe.maven.MavenUniverseException;
 
 public class MavenRepository implements Repository {
 
-    private final Resolver resolver;
+    protected final Resolver resolver;
     private final boolean strict;
 
-    public MavenRepository(RepositorySystem repositorySystem, List<Channel> channels) {
-        this.resolver = new DefaultResolver(repositoriesFromChannels(channels), repositorySystem);
+    public MavenRepository(RepositorySystem repositorySystem, RepositorySystemSession repositorySystemSession, List<Channel> channels) {
+        this.resolver = new DefaultResolver(repositoriesFromChannels(channels), repositorySystem, repositorySystemSession);
         this.strict = false;
     }
 
-    public MavenRepository(List<RemoteRepository> repositories, RepositorySystem repositorySystem) {
-        this.resolver = new DefaultResolver(repositories, repositorySystem);
-        this.strict = true;
+    public MavenRepository(Resolver resolver, boolean strict) {
+        this.resolver = resolver;
+        this.strict = strict;
     }
 
     @Override
@@ -75,7 +75,7 @@ public class MavenRepository implements Repository {
 
         try {
             final VersionRangeResult versionRangeResult = resolver.getVersionRange(artifact1);
-            final Version highestVersion = versionRangeResult.getHighestVersion();
+            final Version highestVersion = getHighestVersion(versionRangeResult, artifact);
             if (highestVersion == null) {
                 return null;
             } else {
@@ -89,12 +89,16 @@ public class MavenRepository implements Repository {
         }
     }
 
+    protected Version getHighestVersion(VersionRangeResult versionRangeResult, Artifact artifact) throws ArtifactNotFoundException {
+        return versionRangeResult.getHighestVersion();
+    }
+
     @Override
-    public VersionRangeResult getVersionRange(Artifact artifact) throws MavenUniverseException {
+    public VersionRangeResult getVersionRange(Artifact artifact) throws ArtifactNotFoundException {
         try {
             return resolver.getVersionRange(artifact);
         } catch (VersionRangeResolutionException ex) {
-            throw new MavenUniverseException(ex.getLocalizedMessage(), ex);
+            throw new ArtifactNotFoundException(ex.getLocalizedMessage(), ex);
         }
     }
 
@@ -105,4 +109,5 @@ public class MavenRepository implements Repository {
     private RemoteRepository newRepository(String channel, String url) {
         return new RemoteRepository.Builder(channel, "default", url).build();
     }
+
 }

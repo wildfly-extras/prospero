@@ -5,22 +5,13 @@
  */
 package com.redhat.prospero.cli;
 
-import java.io.File;
-import java.io.IOException;
-import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import org.apache.maven.repository.internal.MavenRepositorySystemUtils;
-import org.eclipse.aether.DefaultRepositorySystemSession;
-import org.eclipse.aether.RepositorySystem;
-import org.eclipse.aether.repository.LocalRepository;
 import org.eclipse.aether.repository.RemoteRepository;
 import org.eclipse.aether.repository.RepositoryPolicy;
-import org.jboss.galleon.util.PropertyUtils;
 
 /**
  * @author jdenise
@@ -72,24 +63,5 @@ public class MavenFallback {
             repositories.add(builder.build());
         }
         return repositories;
-    }
-
-    static Path getDefaultMavenRepositoryPath() {
-        String repoPath = PropertyUtils.getSystemProperty("maven.repo.path");
-        if (repoPath == null) {
-            repoPath = new StringBuilder(PropertyUtils.getSystemProperty("user.home")).append(File.separatorChar)
-                    .append(".m2").append(File.separatorChar)
-                    .append("repository")
-                    .toString();
-        }
-        return Paths.get(repoPath);
-    }
-
-    public static DefaultRepositorySystemSession getDefaultRepositorySystemSession(RepositorySystem system) throws IOException {
-        DefaultRepositorySystemSession session = MavenRepositorySystemUtils.newSession();
-
-        org.eclipse.aether.repository.LocalRepository localRepo = new LocalRepository(getDefaultMavenRepositoryPath().toFile());
-        session.setLocalRepositoryManager(system.newLocalRepositoryManager(session, localRepo));
-        return session;
     }
 }

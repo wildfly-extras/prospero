@@ -22,6 +22,7 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Scanner;
 import java.util.Set;
@@ -34,11 +35,12 @@ import com.redhat.prospero.api.Channel;
 import com.redhat.prospero.api.Manifest;
 import com.redhat.prospero.api.PackageInstallationException;
 import com.redhat.prospero.api.Repository;
+import com.redhat.prospero.impl.repository.curated.ChannelBuilder;
 import com.redhat.prospero.installation.LocalInstallation;
-import com.redhat.prospero.impl.repository.MavenRepository;
 import com.redhat.prospero.installation.Modules;
-import com.redhat.prospero.xml.ManifestXmlSupport;
-import com.redhat.prospero.xml.XmlException;
+import com.redhat.prospero.maven.MavenUtils;
+import com.redhat.prospero.model.ManifestXmlSupport;
+import com.redhat.prospero.model.XmlException;
 import org.eclipse.aether.RepositorySystem;
 import org.eclipse.aether.artifact.Artifact;
 import org.eclipse.aether.artifact.DefaultArtifact;
@@ -58,8 +60,9 @@ public class Update implements AutoCloseable {
 
     public Update(Path installDir) throws XmlException, IOException, ProvisioningException {
         this.localInstallation = new LocalInstallation(installDir);
-        final RepositorySystem repoSystem = GalleonUtils.newRepositorySystem();
-        this.repository = new MavenRepository(repoSystem, localInstallation.getChannels());
+        final RepositorySystem repoSystem = MavenUtils.defaultRepositorySystem();
+        final ChannelBuilder channelBuilder = new ChannelBuilder(repoSystem, MavenUtils.getDefaultRepositorySystemSession(repoSystem));
+        this.repository = channelBuilder.buildChannelRepository(localInstallation.getChannels());
         this.maven = GalleonUtils.getChannelRepositoryManager(readChannels(installDir.resolve("channels.json")), repoSystem);
         this.provMgr = GalleonUtils.getProvisioningManager(installDir, maven);
     }
@@ -131,17 +134,15 @@ public class Update implements AutoCloseable {
             }
         }
 
-        final Set<Artifact> updated;
+        // use gav as Artifact equalsTo uses file as well
+        final Set<String> updatedGAVs = new HashSet<>();
         if (!fpUpdates.isEmpty()) {
-            updated = applyFpUpdates(fpUpdates, installationDir);
-        } else {
-            updated = Collections.emptySet();
+            final Set<Artifact> updated = applyFpUpdates(fpUpdates, installationDir);
+            updated.stream().forEach(a->updatedGAVs.add(toGav(a)));
         }
 
-        final Artifact artifact = updated.stream().filter(a -> a.getArtifactId().equals("wildfly-cli")).findFirst().get();
         for (UpdateAction update : updates) {
-            artifact.equals(update.newVersion);
-            if (!updated.contains(update.newVersion)) {
+            if (!updatedGAVs.contains(toGav(update.newVersion))) {
                 localInstallation.updateArtifact(update.oldVersion, update.newVersion, update.newVersion.getFile());
             }
         }
@@ -149,6 +150,10 @@ public class Update implements AutoCloseable {
         ManifestXmlSupport.write(localInstallation.getManifest());
 
         System.out.println("Done");
+    }
+
+    private String toGav(Artifact a) {
+        return a.getGroupId() + ":" + a.getArtifactId() + ":" + a.getClassifier() + ":" + a.getVersion();
     }
 
     @Override

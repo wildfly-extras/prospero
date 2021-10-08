@@ -28,9 +28,9 @@ import com.redhat.prospero.api.Channel;
 import com.redhat.prospero.api.Installation;
 import com.redhat.prospero.api.Manifest;
 import com.redhat.prospero.api.PackageInstallationException;
-import com.redhat.prospero.xml.ManifestXmlSupport;
-import com.redhat.prospero.xml.ModuleXmlSupport;
-import com.redhat.prospero.xml.XmlException;
+import com.redhat.prospero.model.ManifestXmlSupport;
+import com.redhat.prospero.model.ModuleXmlSupport;
+import com.redhat.prospero.model.XmlException;
 import org.apache.commons.io.FileUtils;
 import org.eclipse.aether.artifact.Artifact;
 

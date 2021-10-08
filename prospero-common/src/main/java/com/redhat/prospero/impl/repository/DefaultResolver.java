@@ -18,12 +18,9 @@
 package com.redhat.prospero.impl.repository;
 
 import com.redhat.prospero.api.Resolver;
-import org.apache.maven.repository.internal.MavenRepositorySystemUtils;
-import org.eclipse.aether.DefaultRepositorySystemSession;
 import org.eclipse.aether.RepositorySystem;
 import org.eclipse.aether.RepositorySystemSession;
 import org.eclipse.aether.artifact.Artifact;
-import org.eclipse.aether.repository.LocalRepository;
 import org.eclipse.aether.repository.RemoteRepository;
 import org.eclipse.aether.resolution.ArtifactRequest;
 import org.eclipse.aether.resolution.ArtifactResolutionException;
@@ -32,8 +29,6 @@ import org.eclipse.aether.resolution.VersionRangeRequest;
 import org.eclipse.aether.resolution.VersionRangeResolutionException;
 import org.eclipse.aether.resolution.VersionRangeResult;
 
-import java.io.IOException;
-import java.nio.file.Files;
 import java.util.List;
 
 public class DefaultResolver implements Resolver {
@@ -42,14 +37,10 @@ public class DefaultResolver implements Resolver {
     private final RepositorySystemSession repoSession;
     private final List<RemoteRepository> repositories;
 
-    public DefaultResolver(List<RemoteRepository> repositories, RepositorySystem repositorySystem) {
+    public DefaultResolver(List<RemoteRepository> repositories, RepositorySystem repoSystem, RepositorySystemSession repoSession) {
         this.repositories = repositories;
-        this.repoSystem = repositorySystem;
-        try {
-            this.repoSession = newRepositorySystemSession(repoSystem);
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        }
+        this.repoSystem = repoSystem;
+        this.repoSession = repoSession;
     }
 
     @Override
@@ -68,14 +59,5 @@ public class DefaultResolver implements Resolver {
 
         final VersionRangeResult versionRangeResult = repoSystem.resolveVersionRange(repoSession, req);
         return versionRangeResult;
-    }
-
-    private static DefaultRepositorySystemSession newRepositorySystemSession(RepositorySystem system) throws IOException {
-        DefaultRepositorySystemSession session = MavenRepositorySystemUtils.newSession();
-
-        org.eclipse.aether.repository.LocalRepository localRepo = new LocalRepository(Files.createTempDirectory("mvn-repo").toString());
-        session.setLocalRepositoryManager(system.newLocalRepositoryManager(session, localRepo));
-
-        return session;
     }
 }
