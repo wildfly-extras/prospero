@@ -57,14 +57,18 @@ public class Update implements AutoCloseable {
     private final Repository repository;
     private final ChannelMavenArtifactRepositoryManager maven;
     private final ProvisioningManager provMgr;
+    private final Path installDir;
+    private final boolean quiet;
 
-    public Update(Path installDir) throws XmlException, IOException, ProvisioningException {
+    public Update(Path installDir, boolean quiet) throws XmlException, IOException, ProvisioningException {
         this.localInstallation = new LocalInstallation(installDir);
+        this.installDir = installDir;
         final RepositorySystem repoSystem = MavenUtils.defaultRepositorySystem();
         final ChannelBuilder channelBuilder = new ChannelBuilder(repoSystem, MavenUtils.getDefaultRepositorySystemSession(repoSystem));
         this.repository = channelBuilder.buildChannelRepository(localInstallation.getChannels());
         this.maven = GalleonUtils.getChannelRepositoryManager(readChannels(installDir.resolve("channels.json")), repoSystem);
         this.provMgr = GalleonUtils.getProvisioningManager(installDir, maven);
+        this.quiet = quiet;
     }
 
     public static void main(String[] args) throws Exception {
@@ -81,21 +85,21 @@ public class Update implements AutoCloseable {
             artifact = null;
         }
 
-        try(Update update = new Update(Paths.get(base))) {
+        try(Update update = new Update(Paths.get(base), false)) {
             if (artifact == null) {
-                update.doUpdateAll(Paths.get(base));
+                update.doUpdateAll();
             } else {
                 update.doUpdate(artifact.split(":")[0], artifact.split(":")[1]);
             }
         }
     }
 
-    public void doUpdateAll(Path installationDir) throws ArtifactNotFoundException, XmlException, PackageInstallationException, ProvisioningException, IOException {
+    public void doUpdateAll() throws ArtifactNotFoundException, XmlException, PackageInstallationException, ProvisioningException, IOException {
         final List<UpdateAction> updates = new ArrayList<>();
         for (Artifact artifact : localInstallation.getManifest().getArtifacts()) {
             updates.addAll(findUpdates(artifact.getGroupId(), artifact.getArtifactId()));
         }
-        final ProvisioningPlan fpUpdates = findFPUpdates(installationDir);
+        final ProvisioningPlan fpUpdates = findFPUpdates(installDir);
 
         if (updates.isEmpty() && fpUpdates.isEmpty()) {
             System.out.println("No updates to execute");
@@ -119,25 +123,27 @@ public class Update implements AutoCloseable {
             }
         }
 
-        System.out.print("Continue with update [y/n]: ");
-        Scanner sc = new Scanner(System.in);
-        while (true) {
-            String resp = sc.nextLine();
-            if (resp.equalsIgnoreCase("n")) {
-                System.out.println("Update cancelled");
-                return;
-            } else if (resp.equalsIgnoreCase("y")) {
-                System.out.println("Applying updates");
-                break;
-            } else {
-                System.out.print("Choose [y/n]: ");
+        if (!quiet) {
+            System.out.print("Continue with update [y/n]: ");
+            Scanner sc = new Scanner(System.in);
+            while (true) {
+                String resp = sc.nextLine();
+                if (resp.equalsIgnoreCase("n")) {
+                    System.out.println("Update cancelled");
+                    return;
+                } else if (resp.equalsIgnoreCase("y")) {
+                    System.out.println("Applying updates");
+                    break;
+                } else {
+                    System.out.print("Choose [y/n]: ");
+                }
             }
         }
 
         // use gav as Artifact equalsTo uses file as well
         final Set<String> updatedGAVs = new HashSet<>();
         if (!fpUpdates.isEmpty()) {
-            final Set<Artifact> updated = applyFpUpdates(fpUpdates, installationDir);
+            final Set<Artifact> updated = applyFpUpdates(fpUpdates, installDir);
             updated.stream().forEach(a->updatedGAVs.add(toGav(a)));
         }
 
