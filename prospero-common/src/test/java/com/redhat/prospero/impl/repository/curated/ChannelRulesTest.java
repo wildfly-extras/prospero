@@ -29,6 +29,7 @@ import java.util.function.Predicate;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import static com.redhat.prospero.impl.repository.curated.ChannelRules.REQUESTED_VERSION_POLICY;
 import static org.junit.Assert.assertEquals;
 
 public class ChannelRulesTest {
@@ -57,17 +58,28 @@ public class ChannelRulesTest {
     }
 
     @Test
-    public void noPolicySet_allowsAllUpdates() throws Exception {
+    public void gaWithoutPolicy_usesRequiredVersionPolicy() throws Exception {
         ChannelRules channelRules = new ChannelRules();
         channelRules.allow("foo:bar", ChannelRules.NamedPolicy.MICRO);
 
-        assertEquals(ChannelRules.NamedPolicy.ANY, channelRules.getPolicy("idont:exist"));
+        assertEquals(REQUESTED_VERSION_POLICY, channelRules.getPolicy("idont:exist"));
     }
 
     @Test
     public void versionPolicy_resolvesSpecificVersion() throws Exception {
         final Stream<Version> versions = asVersions("1.1.1", "1.1.2", "1.2.1");
         final Predicate<? super Version> filter = ChannelRules.version("1.1.2").getFilter(null);
+
+        final List<Version> res = versions.filter(filter).collect(Collectors.toList());
+
+        assertEquals(1, res.size());
+        assertEquals("1.1.2", res.get(0).toString());
+    }
+
+    @Test
+    public void requestedVersionPolicy_resolvedRequest() throws Exception {
+        final Stream<Version> versions = asVersions("1.1.1", "1.1.2", "1.2.1");
+        final Predicate<? super Version> filter = new ChannelRules.RequestedVersionPolicy().getFilter("1.1.2");
 
         final List<Version> res = versions.filter(filter).collect(Collectors.toList());
 

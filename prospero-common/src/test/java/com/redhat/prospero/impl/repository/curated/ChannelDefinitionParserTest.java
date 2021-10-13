@@ -12,10 +12,10 @@ import static org.junit.Assert.assertEquals;
 public class ChannelDefinitionParserTest {
 
     @Test
-    public void emptyPolicy_allowsAllUpdates() throws Exception {
+    public void noPolicyDefinition_defaultsToRequestedVersion() throws Exception {
         final ChannelDefinition channelDefinition = parsePolicy("");
         
-        assertEquals(ChannelRules.NamedPolicy.ANY, channelDefinition.getChannelRules().getPolicy("foo:bar"));
+        assertEquals(ChannelRules.REQUESTED_VERSION_POLICY, channelDefinition.getChannelRules().getPolicy("foo:bar"));
     }
 
     @Test

@@ -12,6 +12,8 @@ import static java.lang.Integer.parseInt;
 
 public class ChannelRules {
 
+    protected final static RequestedVersionPolicy REQUESTED_VERSION_POLICY = new RequestedVersionPolicy();
+
     private Map<String, Policy> policies = new HashMap<>();
 
     public static Policy version(String strictVersion) {
@@ -24,9 +26,11 @@ public class ChannelRules {
 
     public Policy getPolicy(String ga) {
         if (policies.isEmpty()) {
-            return NamedPolicy.ANY;
+            // TODO: add unit tests
+            return REQUESTED_VERSION_POLICY;
+//            return NamedPolicy.ANY;
         }
-        return policies.getOrDefault(ga, NamedPolicy.ANY);
+        return policies.getOrDefault(ga, REQUESTED_VERSION_POLICY);
     }
 
     public enum NamedPolicy implements Policy {
@@ -81,6 +85,15 @@ public class ChannelRules {
         @Override
         public int hashCode() {
             return Objects.hash(strictVersion);
+        }
+    }
+
+    // TODO: add unit tests
+    static class RequestedVersionPolicy implements Policy {
+
+        @Override
+        public Predicate<? super Version> getFilter(String baseVersion) {
+            return (v)->v.toString().equals(baseVersion);
         }
     }
 }
