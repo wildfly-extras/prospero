@@ -6,6 +6,7 @@ import java.io.FileWriter;
 import java.net.URL;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.Arrays;
 
 import static org.junit.Assert.assertEquals;
 
@@ -68,10 +69,12 @@ public class ChannelDefinitionParserTest {
     public void readRepositoryUrl() throws Exception {
         final ChannelDefinition channelDefinition = parsePolicy(
                 "{" +
-                            "\"repositoryUrl\":\"http://foo.bar\"" +
+                            "\"repositories\" : [{" +
+                                "\"url\" : \"http://foo.bar\"" +
+                            "}]" +
                         "}");
 
-        assertEquals("http://foo.bar", channelDefinition.getRepositoryUrl());
+        assertEquals(Arrays.asList("http://foo.bar"), channelDefinition.getRepositoryUrls());
     }
 
     private ChannelDefinition parsePolicy(String policyBody) throws Exception {

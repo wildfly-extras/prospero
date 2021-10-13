@@ -8,14 +8,15 @@ public class ChannelDefinitionModel {
 
     @JsonProperty
     private List<StreamModel> streams;
-    private String repositoryUrl;
+    @JsonProperty
+    private List<RepositoryModel> repositories;
 
     public ChannelDefinitionModel() {
 
     }
 
-    public String getRepositoryUrl() {
-        return repositoryUrl;
+    public List<RepositoryModel> getRepositories() {
+        return repositories;
     }
 
     public List<StreamModel> getStreams() {

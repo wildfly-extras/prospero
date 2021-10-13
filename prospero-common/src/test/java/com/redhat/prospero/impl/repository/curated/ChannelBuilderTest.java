@@ -46,7 +46,7 @@ public class ChannelBuilderTest {
         mockArtifact(testRepoDir, "foo:bar:1.1");
 
         try(FileWriter fw = new FileWriter(policyFile.toFile())) {
-            fw.write("{\"repositoryUrl\":\"" + testRepoDir.toFile().toURI() + "\"}");
+            fw.write("{\"repositories\":[{\"url\":\"" + testRepoDir.toFile().toURI() + "\"}]}");
         }
         final Channel channel = new Channel("test", policyFile.toFile().toURI().toString());
 
@@ -78,7 +78,7 @@ public class ChannelBuilderTest {
         final Path testRepoDir1 = Files.createTempDirectory("test-repo");
         final Path policyFile1 = testRepoDir1.resolve("policy.json");
         try (FileWriter fw = new FileWriter(policyFile1.toFile())) {
-            fw.write("{\"repositoryUrl\":\"" + testRepoDir1.toFile().toURI() + "\"}");
+            fw.write("{\"repositories\":[{\"url\":\"" + testRepoDir1.toFile().toURI() + "\"}]}");
         }
         return testRepoDir1;
     }

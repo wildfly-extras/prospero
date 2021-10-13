@@ -15,28 +15,17 @@
  * limitations under the License.
  */
 
-package com.redhat.prospero.impl.repository.curated;
+package com.redhat.prospero.model;
 
-import java.util.List;
+public class RepositoryModel {
 
-import static java.lang.Integer.parseInt;
+    private String url;
 
-public class ChannelDefinition {
-
-    private List<String> repositoryUrls;
-
-    private ChannelRules channelRules = new ChannelRules();
-
-
-    public void setRepositoryUrls(List<String> repositoryUrls) {
-        this.repositoryUrls = repositoryUrls;
+    public String getUrl() {
+        return url;
     }
 
-    public List<String> getRepositoryUrls() {
-        return repositoryUrls;
-    }
-
-    public ChannelRules getChannelRules() {
-        return channelRules;
+    public void setUrl(String url) {
+        this.url = url;
     }
 }

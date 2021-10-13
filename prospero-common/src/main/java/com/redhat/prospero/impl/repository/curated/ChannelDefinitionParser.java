@@ -7,6 +7,7 @@ import com.redhat.prospero.model.StreamModel;
 import java.io.IOException;
 import java.net.URL;
 import java.util.Locale;
+import java.util.stream.Collectors;
 
 public class ChannelDefinitionParser {
 
@@ -18,7 +19,9 @@ public class ChannelDefinitionParser {
         ChannelDefinitionModel data = mapper.readValue(policyFile, ChannelDefinitionModel.class);
 
         final ChannelDefinition curatedPolicies = new ChannelDefinition();
-        curatedPolicies.setRepositoryUrl(data.getRepositoryUrl());
+        if (data.getRepositories() != null) {
+            curatedPolicies.setRepositoryUrls(data.getRepositories().stream().map(r -> r.getUrl()).collect(Collectors.toList()));
+        }
 
         if (data.getStreams() != null) {
             for (StreamModel e : data.getStreams()) {
