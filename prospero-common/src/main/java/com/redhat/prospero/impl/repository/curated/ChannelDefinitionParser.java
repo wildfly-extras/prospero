@@ -22,21 +22,26 @@ public class ChannelDefinitionParser {
 
         if (data.getStreams() != null) {
             for (StreamModel e : data.getStreams()) {
+                e.validateStream();
+
                 String ga = e.getGroupId() + ":" + e.getArtifactId();
-                if (e.getVersionRule().getStream() != null){
+
+                if (e.getVersionRule() != null && e.getVersionRule().getStream() != null) {
                     String policyName = e.getVersionRule().getStream();
-                    ChannelRules.Policy policy;
+                    ChannelRules.NamedPolicy policy;
                     switch (policyName.toUpperCase(Locale.ROOT)) {
                         case "MICRO":
-                            policy = ChannelRules.Policy.MICRO;
+                            policy = ChannelRules.NamedPolicy.MICRO;
                             break;
                         case "ANY":
-                            policy = ChannelRules.Policy.ANY;
+                            policy = ChannelRules.NamedPolicy.ANY;
                             break;
                         default:
                             throw new IllegalArgumentException("Unknown stream policy: " + policyName);
                     }
                     curatedPolicies.getChannelRules().allow(ga, policy);
+                } else if (e.getVersion() != null) {
+                    curatedPolicies.getChannelRules().allow(ga, ChannelRules.version(e.getVersion()));
                 } else {
                     throw new IllegalArgumentException("Unknown policy type");
                 }
@@ -44,4 +49,5 @@ public class ChannelDefinitionParser {
         }
         return curatedPolicies;
     }
+
 }

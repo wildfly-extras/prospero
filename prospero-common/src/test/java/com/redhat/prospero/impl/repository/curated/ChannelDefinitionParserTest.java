@@ -15,7 +15,7 @@ public class ChannelDefinitionParserTest {
     public void emptyPolicy_allowsAllUpdates() throws Exception {
         final ChannelDefinition channelDefinition = parsePolicy("");
         
-        assertEquals(ChannelRules.Policy.ANY, channelDefinition.getChannelRules().getPolicy("foo:bar"));
+        assertEquals(ChannelRules.NamedPolicy.ANY, channelDefinition.getChannelRules().getPolicy("foo:bar"));
     }
 
     @Test
@@ -31,7 +31,37 @@ public class ChannelDefinitionParserTest {
                         "  }]\n" +
                         "}");
 
-        assertEquals(ChannelRules.Policy.MICRO, channelDefinition.getChannelRules().getPolicy("foo:bar"));
+        assertEquals(ChannelRules.NamedPolicy.MICRO, channelDefinition.getChannelRules().getPolicy("foo:bar"));
+    }
+
+    @Test
+    public void strictVersionPolicy_allowsUpdatesToOneVersionOnly() throws Exception {
+        final ChannelDefinition channelDefinition = parsePolicy(
+                "{\n" +
+                        "  \"streams\" : [{\n" +
+                        "    \"groupId\" : \"foo\",\n" +
+                        "    \"artifactId\" : \"bar\",\n" +
+                        "    \"version\" : \"1.2.3\"\n" +
+                        "  }]\n" +
+                        "}");
+
+        assertEquals(ChannelRules.version("1.2.3"), channelDefinition.getChannelRules().getPolicy("foo:bar"));
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void versionAndVersionRule_notAllowed() throws Exception {
+        parsePolicy(
+    "{\n" +
+            "  \"streams\" : [{\n" +
+            "    \"groupId\" : \"foo\",\n" +
+            "    \"artifactId\" : \"bar\",\n" +
+            "    \"version\" : \"1.2.3\",\n" +
+            "    \"versionRule\" : {\n" +
+            "      \"stream\" : \"MICRO\"\n" +
+            "    }\n" +
+            "  }]\n" +
+            "}");
+
     }
 
     @Test

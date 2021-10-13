@@ -44,7 +44,7 @@ public class CuratedMavenRepositoriyTest {
     @Test
     public void resolvesLatestMicroUpdate() throws Exception {
         mockResolver.setArtifactRange("foo:bar", Arrays.asList("1.1.1","1.1.2"));
-        allow("foo:bar", ChannelRules.Policy.MICRO);
+        allow("foo:bar", ChannelRules.NamedPolicy.MICRO);
 
         final Artifact found = repository.resolveLatestVersionOf(new DefaultArtifact("foo:bar:1.1.1"));
 
@@ -54,7 +54,7 @@ public class CuratedMavenRepositoriyTest {
     @Test
     public void resolveLatestMicroUpdate_IgnoresMinorUpdates() throws Exception {
         mockResolver.setArtifactRange("foo:bar", Arrays.asList("1.1.1","1.1.2", "1.2.0"));
-        allow("foo:bar", ChannelRules.Policy.MICRO);
+        allow("foo:bar", ChannelRules.NamedPolicy.MICRO);
 
         final Artifact found = repository.resolveLatestVersionOf(new DefaultArtifact("foo:bar:1.1.1"));
 
@@ -64,7 +64,7 @@ public class CuratedMavenRepositoriyTest {
     @Test
     public void getVersionRange_IgnoresMinorUpdates() throws Exception {
         mockResolver.setArtifactRange("foo:bar", Arrays.asList("1.1.1", "1.1.2", "1.2.0"));
-        allow("foo:bar", ChannelRules.Policy.MICRO);
+        allow("foo:bar", ChannelRules.NamedPolicy.MICRO);
 
         final VersionRangeResult versionRange = repository.getVersionRange(new DefaultArtifact("foo:bar:1.1.1"));
 
@@ -73,7 +73,7 @@ public class CuratedMavenRepositoriyTest {
         assertEquals("1.1.2", versionRange.getVersions().get(1).toString());
     }
 
-    private ChannelDefinition allow(String ga, ChannelRules.Policy policy) {
+    private ChannelDefinition allow(String ga, ChannelRules.NamedPolicy policy) {
         channelDefinition.getChannelRules().allow(ga, policy);
         return channelDefinition;
     }

@@ -68,6 +68,6 @@ public class CuratedMavenRepository extends MavenRepository {
     private ChannelRules.Policy getUpdatesPolicy(Artifact artifact) {
         String ga = artifact.getGroupId() + ":" + artifact.getArtifactId();
         final ChannelRules.Policy policy = channelRules.getPolicy(ga);
-        return policy==null? ChannelRules.Policy.ANY:policy;
+        return policy==null? ChannelRules.NamedPolicy.ANY:policy;
     }
 }

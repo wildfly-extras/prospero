@@ -59,13 +59,24 @@ public class ChannelRulesTest {
     @Test
     public void noPolicySet_allowsAllUpdates() throws Exception {
         ChannelRules channelRules = new ChannelRules();
-        channelRules.allow("foo:bar", ChannelRules.Policy.MICRO);
+        channelRules.allow("foo:bar", ChannelRules.NamedPolicy.MICRO);
 
-        assertEquals(ChannelRules.Policy.ANY, channelRules.getPolicy("idont:exist"));
+        assertEquals(ChannelRules.NamedPolicy.ANY, channelRules.getPolicy("idont:exist"));
+    }
+
+    @Test
+    public void versionPolicy_resolvesSpecificVersion() throws Exception {
+        final Stream<Version> versions = asVersions("1.1.1", "1.1.2", "1.2.1");
+        final Predicate<? super Version> filter = ChannelRules.version("1.1.2").getFilter(null);
+
+        final List<Version> res = versions.filter(filter).collect(Collectors.toList());
+
+        assertEquals(1, res.size());
+        assertEquals("1.1.2", res.get(0).toString());
     }
 
     private List<Version> filterVersions(Stream<Version> versions, String baseVersion) {
-        final Predicate<? super Version> filter = ChannelRules.Policy.MICRO.getFilter(baseVersion);
+        final Predicate<? super Version> filter = ChannelRules.NamedPolicy.MICRO.getFilter(baseVersion);
 
         return versions.filter(filter).collect(Collectors.toList());
     }

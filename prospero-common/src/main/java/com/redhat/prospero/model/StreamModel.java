@@ -21,6 +21,7 @@ public class StreamModel {
     private String groupId;
     private String artifactId;
     private VersionRuleModel versionRule;
+    private String version;
 
     public String getGroupId() {
         return groupId;
@@ -44,5 +45,19 @@ public class StreamModel {
 
     public void setVersionRule(VersionRuleModel versionRule) {
         this.versionRule = versionRule;
+    }
+
+    public String getVersion() {
+        return version;
+    }
+
+    public void setVersion(String version) {
+        this.version = version;
+    }
+
+    public void validateStream() {
+        if (getVersionRule() != null && getVersion() != null) {
+            throw new IllegalArgumentException("Channel definition cannot contain both versionRule and version");
+        }
     }
 }
