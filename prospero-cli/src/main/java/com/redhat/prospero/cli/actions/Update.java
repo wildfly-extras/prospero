@@ -21,7 +21,6 @@ import java.io.IOException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Scanner;
@@ -113,7 +112,6 @@ public class Update implements AutoCloseable {
                 final FeaturePackLocation newFp = update.getNewLocation();
                 System.out.println(newFp.getProducerName() + "   " + oldFp.getBuild() + "  ==>  " + newFp.getBuild());
             }
-
         }
 
         if (!updates.isEmpty()) {
@@ -142,16 +140,8 @@ public class Update implements AutoCloseable {
 
         // use gav as Artifact equalsTo uses file as well
         final Set<String> updatedGAVs = new HashSet<>();
-        if (!fpUpdates.isEmpty()) {
-            final Set<Artifact> updated = applyFpUpdates(fpUpdates, installDir);
-            updated.stream().forEach(a->updatedGAVs.add(toGav(a)));
-        }
-
-        for (UpdateAction update : updates) {
-            if (!updatedGAVs.contains(toGav(update.newVersion))) {
-                localInstallation.updateArtifact(update.oldVersion, update.newVersion, update.newVersion.getFile());
-            }
-        }
+        final Set<Artifact> updated = applyFpUpdates(fpUpdates, installDir);
+        updated.stream().forEach(a->updatedGAVs.add(toGav(a)));
 
         ManifestXmlSupport.write(localInstallation.getManifest());
 
