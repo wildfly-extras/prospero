@@ -1,0 +1,12 @@
+{
+  "repositories" : [
+    {"url": "http://localhost:8081/repository/updates"}
+  ],
+  "streams" : [{
+    "groupId" : "org.wildfly.core",
+    "artifactId" : "wildfly-cli",
+    "versionRule" : {
+      "stream" : "MICRO"
+    }
+  }]
+}

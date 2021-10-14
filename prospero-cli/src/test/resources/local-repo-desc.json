@@ -1,0 +1,28 @@
+{
+  "repositories" : [
+    {"url": "http://localhost:8081/repository/dev"}
+  ],
+  "streams" : [
+    {
+      "groupId": "org.wildfly.core",
+      "artifactId": "wildfly-core-galleon-pack",
+      "versionRule": {
+        "stream": "ANY"
+      }
+    },
+    {
+      "groupId" : "org.jboss.universe",
+      "artifactId" : "community-universe",
+      "versionRule" : {
+        "stream" : "ANY"
+      }
+    },
+    {
+      "groupId" : "org.jboss.universe.producer",
+      "artifactId" : "wildfly-producers",
+      "versionRule" : {
+        "stream" : "ANY"
+      }
+    }
+  ]
+}
