@@ -56,7 +56,10 @@ public class InstallationRestore {
         final RepositorySystem repositorySystem = MavenUtils.defaultRepositorySystem();
         final DefaultRepositorySystemSession mavenSession = MavenUtils.getDefaultRepositorySystemSession(repositorySystem);
         try {
-            final Repository repository = new ChannelBuilder(repositorySystem, mavenSession).buildRestoringChannelRepository(readChannels(channelsFile), Manifest.parseManifest(manifestFilePath));
+            final Repository repository = new ChannelBuilder(repositorySystem, mavenSession)
+                    .setChannels(readChannels(channelsFile))
+                    .setRestoringManifest(Manifest.parseManifest(manifestFilePath))
+                    .build();
             final ChannelMavenArtifactRepositoryManager repoManager = new ChannelMavenArtifactRepositoryManager(repositorySystem, mavenSession, repository);
             ProvisioningManager provMgr = GalleonUtils.getProvisioningManager(installDir, repoManager);
             FeaturePackLocation loc = FeaturePackLocation.fromString(fpl);

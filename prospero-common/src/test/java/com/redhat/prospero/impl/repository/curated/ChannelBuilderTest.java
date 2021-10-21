@@ -16,6 +16,7 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
 import static org.junit.Assert.*;
@@ -34,7 +35,7 @@ public class ChannelBuilderTest {
         }
         final Channel channel = new Channel("test", policyFile.toUri().toURL().toString());
 
-        Repository repository = builder.buildChannelRepository(channel);
+        Repository repository = builder.setChannels(Arrays.asList(channel)).build();
 
         assertTrue(repository instanceof CuratedMavenRepository);
     }
@@ -50,7 +51,7 @@ public class ChannelBuilderTest {
         }
         final Channel channel = new Channel("test", policyFile.toFile().toURI().toString());
 
-        Repository repository = builder.buildChannelRepository(channel);
+        Repository repository = builder.setChannels(Arrays.asList(channel)).build();
 
         final File resolved = repository.resolve(new DefaultArtifact("foo:bar:1.1"));
         assertNotNull(resolved);
@@ -68,7 +69,7 @@ public class ChannelBuilderTest {
         channels.add(new Channel("test1", testRepoDir1.resolve("policy.json").toFile().toURI().toString()));
         channels.add(new Channel("test2", testRepoDir2.resolve("policy.json").toFile().toURI().toString()));
 
-        Repository repository = builder.buildChannelRepository(channels);
+        Repository repository = builder.setChannels(channels).build();
 
         assertNotNull(repository.resolve(new DefaultArtifact("foo:bar:1.1")));
         assertNotNull(repository.resolve(new DefaultArtifact("foo2:bar2:1.1")));

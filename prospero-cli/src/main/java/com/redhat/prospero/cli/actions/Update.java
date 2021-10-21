@@ -66,7 +66,9 @@ public class Update implements AutoCloseable {
         final RepositorySystem repoSystem = MavenUtils.defaultRepositorySystem();
         final DefaultRepositorySystemSession session = MavenUtils.getDefaultRepositorySystemSession(repoSystem);
         final ChannelBuilder channelBuilder = new ChannelBuilder(repoSystem, session);
-        this.repository = channelBuilder.buildChannelRepository(localInstallation.getChannels());
+        this.repository = channelBuilder
+                .setChannels(localInstallation.getChannels())
+                .build();
         this.maven = new ChannelMavenArtifactRepositoryManager(repoSystem, session, readChannels(installDir.resolve("channels.json")));
         this.provMgr = GalleonUtils.getProvisioningManager(installDir, maven);
         this.quiet = quiet;
