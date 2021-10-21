@@ -28,16 +28,9 @@ import org.junit.Before;
 import org.junit.Test;
 
 import java.io.File;
-import java.io.FileWriter;
-import java.io.IOException;
-import java.net.URL;
-import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.Arrays;
-import java.util.List;
 import java.util.Optional;
-import java.util.stream.Collectors;
 
 import static org.junit.Assert.*;
 
@@ -68,7 +61,7 @@ public class SimpleInstallationTest {
 
     @Test
     public void installWildflyCore() throws Exception {
-        final Path channelFile = prepareChannelFile("local-repo-desc.json");
+        final Path channelFile = TestUtil.prepareChannelFile("local-repo-desc.json");
 
         new GalleonProvision().installFeaturePack("org.wildfly.core:wildfly-core-galleon-pack:17.0.0.Final", OUTPUT_PATH.toString(), channelFile.toString());
 
@@ -83,10 +76,10 @@ public class SimpleInstallationTest {
 
     @Test
     public void updateWildflyCore() throws Exception {
-        final Path channelFile = prepareChannelFile("local-repo-desc.json");
+        final Path channelFile = TestUtil.prepareChannelFile("local-repo-desc.json");
         new GalleonProvision().installFeaturePack("org.wildfly.core:wildfly-core-galleon-pack:17.0.0.Final", OUTPUT_PATH.toString(), channelFile.toString());
 
-        prepareChannelFile(OUTPUT_PATH.resolve("channels.json"), "local-repo-desc.json", "local-updates-repo-desc.json");
+        TestUtil.prepareChannelFile(OUTPUT_PATH.resolve("channels.json"), "local-repo-desc.json", "local-updates-repo-desc.json");
         new Update(OUTPUT_PATH, true).doUpdateAll();
 
         // verify manifest contains versions 17.0.1
@@ -101,27 +94,4 @@ public class SimpleInstallationTest {
                 .findFirst();
     }
 
-    private Path prepareChannelFile(String channelDescriptor) throws IOException {
-        final Path channelFile = Files.createTempFile("channels", "json");
-        channelFile.toFile().deleteOnExit();
-
-        return prepareChannelFile(channelFile, channelDescriptor);
-    }
-
-    private Path prepareChannelFile(Path channelFile, String... channelDescriptor) throws IOException {
-        List<URL> repoUrls = Arrays.stream(channelDescriptor).map(d->this.getClass().getClassLoader().getResource(d)).collect(Collectors.toList());
-        StringBuilder sb = new StringBuilder("[");
-        for (int i=0; i<repoUrls.size(); i++) {
-            sb.append(String.format("{\"name\":\"%s\",\"url\":\"%s\"}", "repo-"+i, repoUrls.get(i)));
-            if (i < (repoUrls.size()-1)) {
-                sb.append(",");
-            }
-        }
-        sb.append("]");
-
-        try (FileWriter fw = new FileWriter(channelFile.toFile())) {
-            fw.write(sb.toString());
-        }
-        return channelFile;
-    }
 }
