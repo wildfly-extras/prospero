@@ -15,7 +15,7 @@ then
     TARGET_SERVER="$(greadlink -f ${3})"
     echo "Installing into ${TARGET_SERVER}"
   fi
-  java -agentlib:jdwp=transport=dt_socket,server=y,suspend=y,address=5005 -cp "${CLASSPATH}" com.redhat.prospero.cli.actions.GalleonProvision "${2}" "${TARGET_SERVER}" "${4}"
+  java -agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=5005 -cp "${CLASSPATH}" com.redhat.prospero.cli.actions.GalleonProvision "${2}" "${TARGET_SERVER}" "${4}"
 elif [ "$1" == 'update' ];
 then
   if [ $# -lt 2 ];
@@ -34,9 +34,9 @@ then
   fi
   if [ -n "${3}" ];
   then
-    java -agentlib:jdwp=transport=dt_socket,server=y,suspend=y,address=5005 -cp "${CLASSPATH}" com.redhat.prospero.cli.actions.Update "${TARGET_SERVER}" "target/prospero-repo" "${3}"
+    java -agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=5005 -cp "${CLASSPATH}" com.redhat.prospero.cli.actions.Update "${TARGET_SERVER}" "target/prospero-repo" "${3}"
   else
-    java -agentlib:jdwp=transport=dt_socket,server=y,suspend=y,address=5005 -cp "${CLASSPATH}" com.redhat.prospero.cli.actions.Update "${TARGET_SERVER}"
+    java -agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=5005 -cp "${CLASSPATH}" com.redhat.prospero.cli.actions.Update "${TARGET_SERVER}"
   fi
 elif [ "$1" == 'deploy' ];
 then
