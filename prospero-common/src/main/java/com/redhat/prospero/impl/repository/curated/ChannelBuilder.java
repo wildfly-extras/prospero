@@ -1,9 +1,11 @@
 package com.redhat.prospero.impl.repository.curated;
 
 import com.redhat.prospero.api.Channel;
+import com.redhat.prospero.api.Manifest;
 import com.redhat.prospero.api.Repository;
 import com.redhat.prospero.impl.repository.DefaultResolver;
 import com.redhat.prospero.impl.repository.combined.CombinedMavenRepository;
+import com.redhat.prospero.impl.repository.restore.RestoringMavenRepository;
 import org.eclipse.aether.RepositorySystem;
 import org.eclipse.aether.RepositorySystemSession;
 import org.eclipse.aether.repository.RemoteRepository;
@@ -21,6 +23,29 @@ public class ChannelBuilder {
     public ChannelBuilder(RepositorySystem repoSystem, RepositorySystemSession repoSession) {
         this.repoSystem = repoSystem;
         this.repoSession = repoSession;
+    }
+
+    private Repository buildRestoringChannelRepository(Channel channel, Manifest manifest) throws IOException {
+        final String channelDefinitionUrl = channel.getUrl();
+        final ChannelDefinition curatedPolicies = new ChannelDefinitionParser().parsePolicyFile(new URL(channelDefinitionUrl));
+        final List<RemoteRepository> repositories = toRepositories(channel.getName(), curatedPolicies.getRepositoryUrls());
+        final DefaultResolver resolver = new DefaultResolver(repositories, repoSystem, repoSession);
+        return new RestoringMavenRepository(resolver, manifest);
+    }
+
+    public Repository buildRestoringChannelRepository(List<Channel> channels, Manifest manifest) throws IOException {
+        List<Repository> repos = new ArrayList<>();
+        for (Channel channel : channels) {
+            repos.add(buildRestoringChannelRepository(channel, manifest));
+        }
+
+        if (repos.size() == 1) {
+            return repos.get(0);
+        }
+
+        final CombinedMavenRepository combinedMavenRepository = new CombinedMavenRepository(repos.toArray(new Repository[]{}));
+
+        return combinedMavenRepository;
     }
 
     public Repository buildChannelRepository(Channel channel) throws IOException {
