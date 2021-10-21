@@ -40,6 +40,7 @@ import com.redhat.prospero.installation.Modules;
 import com.redhat.prospero.maven.MavenUtils;
 import com.redhat.prospero.model.ManifestXmlSupport;
 import com.redhat.prospero.model.XmlException;
+import org.eclipse.aether.DefaultRepositorySystemSession;
 import org.eclipse.aether.RepositorySystem;
 import org.eclipse.aether.artifact.Artifact;
 import org.eclipse.aether.artifact.DefaultArtifact;
@@ -63,9 +64,10 @@ public class Update implements AutoCloseable {
         this.localInstallation = new LocalInstallation(installDir);
         this.installDir = installDir;
         final RepositorySystem repoSystem = MavenUtils.defaultRepositorySystem();
-        final ChannelBuilder channelBuilder = new ChannelBuilder(repoSystem, MavenUtils.getDefaultRepositorySystemSession(repoSystem));
+        final DefaultRepositorySystemSession session = MavenUtils.getDefaultRepositorySystemSession(repoSystem);
+        final ChannelBuilder channelBuilder = new ChannelBuilder(repoSystem, session);
         this.repository = channelBuilder.buildChannelRepository(localInstallation.getChannels());
-        this.maven = GalleonUtils.getChannelRepositoryManager(readChannels(installDir.resolve("channels.json")), repoSystem);
+        this.maven = new ChannelMavenArtifactRepositoryManager(repoSystem, session, readChannels(installDir.resolve("channels.json")));
         this.provMgr = GalleonUtils.getProvisioningManager(installDir, maven);
         this.quiet = quiet;
     }
@@ -170,7 +172,7 @@ public class Update implements AutoCloseable {
         final Modules modules = new Modules(installDir);
         final Set<Artifact> collected = resolvedArtfacts.stream()
                 .map(a->new DefaultArtifact(a.getGroupId(), a.getArtifactId(), a.getClassifier(), a.getExtension(), a.getVersion()))
-                .filter(a -> !(modules.find(a)).isEmpty())
+                .filter(a->(!a.getArtifactId().equals("wildfly-producers") && !a.getArtifactId().equals("community-universe")))
                 .collect(Collectors.toSet());
         localInstallation.registerUpdates(collected);
         return collected;

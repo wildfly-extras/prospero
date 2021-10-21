@@ -82,12 +82,9 @@ public class GalleonProvision {
     }
 
     private void writeProsperoMetadata(Path home, ChannelMavenArtifactRepositoryManager maven, Path path) throws ProvisioningException {
-            final Modules modules = new Modules(home);
             Set<MavenArtifact> installed = new HashSet<>();
             for (MavenArtifact resolvedArtifact : maven.resolvedArtfacts()) {
-                if (containsArtifact(resolvedArtifact, modules)) {
-                    installed.add(resolvedArtifact);
-                }
+                installed.add(resolvedArtifact);
             }
             writeManifestFile(home, installed, readChannels(path));
         }

@@ -61,8 +61,8 @@ public class ManifestXmlSupport extends XmlSupport {
 
             // add artifacts
             for (Artifact artifact : manifest.getArtifacts()) {
-                printWriter.println(String.format("<artifact package=\"%s\" name=\"%s\" version=\"%s\" classifier=\"%s\"/>",
-                        artifact.getGroupId(), artifact.getArtifactId(), artifact.getVersion(), artifact.getClassifier()));
+                printWriter.println(String.format("<artifact package=\"%s\" name=\"%s\" version=\"%s\" classifier=\"%s\" extension=\"%s\"/>",
+                        artifact.getGroupId(), artifact.getArtifactId(), artifact.getVersion(), artifact.getClassifier(), artifact.getExtension()));
             }
 
             printWriter.println("</manifest>");
@@ -94,7 +94,7 @@ public class ManifestXmlSupport extends XmlSupport {
             entries.add(new DefaultArtifact(node.getAttribute("package"),
                     node.getAttribute("name"),
                     node.getAttribute("classifier"),
-                    "jar",
+                    node.getAttribute("extension"),
                     node.getAttribute("version")
                     ));
         }

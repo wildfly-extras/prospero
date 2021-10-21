@@ -61,6 +61,14 @@ public class ChannelMavenArtifactRepositoryManager extends AbstractMavenArtifact
         }
     }
 
+    public ChannelMavenArtifactRepositoryManager(final RepositorySystem repoSystem, final RepositorySystemSession repoSession,
+                                                 final Repository channelRepository) {
+        super(repoSystem);
+
+        this.repository = channelRepository;
+        this.session = repoSession;
+    }
+
     @Override
     protected VersionRangeResult getVersionRange(Artifact artifact) throws MavenUniverseException {
         try {
@@ -137,9 +145,8 @@ public class ChannelMavenArtifactRepositoryManager extends AbstractMavenArtifact
         } catch (ArtifactNotFoundException ex) {
             throw new MavenUniverseException(ex.getLocalizedMessage(), ex);
         }
-        if ("jar".equals(mavenArtifact.getExtension())) {
-            resolvedArtifacts.add(mavenArtifact);
-        }
+
+        resolvedArtifacts.add(mavenArtifact);
     }
 
     @Override
