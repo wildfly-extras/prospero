@@ -25,8 +25,6 @@ import com.redhat.prospero.api.ArtifactNotFoundException;
 import com.redhat.prospero.api.Channel;
 import com.redhat.prospero.api.Repository;
 import com.redhat.prospero.api.Resolver;
-import org.eclipse.aether.RepositorySystem;
-import org.eclipse.aether.RepositorySystemSession;
 import org.eclipse.aether.artifact.Artifact;
 import org.eclipse.aether.artifact.DefaultArtifact;
 import org.eclipse.aether.repository.RemoteRepository;
@@ -41,16 +39,12 @@ public class MavenRepository implements Repository {
     protected final Resolver resolver;
     private final boolean strict;
 
-    public MavenRepository(RepositorySystem repositorySystem, RepositorySystemSession repositorySystemSession, List<Channel> channels) {
-        this.resolver = new DefaultResolver(repositoriesFromChannels(channels), repositorySystem, repositorySystemSession);
-        this.strict = false;
-    }
-
     public MavenRepository(Resolver resolver, boolean strict) {
         this.resolver = resolver;
         this.strict = strict;
     }
 
+    // TODO: remove this from public API
     @Override
     public File resolve(Artifact artifact) throws ArtifactNotFoundException {
         try {
