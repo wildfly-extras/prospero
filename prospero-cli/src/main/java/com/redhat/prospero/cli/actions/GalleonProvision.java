@@ -81,6 +81,19 @@ public class GalleonProvision {
         }
     }
 
+    public void installFeaturePackFromFile(Path installationFile, String path, String channelsFile) throws ProvisioningException, IOException {
+        Path installDir = Paths.get(path);
+        if (Files.exists(installDir)) {
+            throw new ProvisioningException("Installation dir " + installDir + " already exists");
+        }
+        try (final ChannelMavenArtifactRepositoryManager maven
+                     = GalleonUtils.getChannelRepositoryManager(readChannels(Paths.get(channelsFile)), MavenUtils.defaultRepositorySystem())) {
+            ProvisioningManager provMgr = GalleonUtils.getProvisioningManager(installDir, maven);
+            provMgr.provision(installationFile);
+            writeProsperoMetadata(installDir, maven, Paths.get(channelsFile));
+        }
+    }
+
     private void writeProsperoMetadata(Path home, ChannelMavenArtifactRepositoryManager maven, Path path) throws ProvisioningException {
             Set<MavenArtifact> installed = new HashSet<>();
             for (MavenArtifact resolvedArtifact : maven.resolvedArtfacts()) {

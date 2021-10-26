@@ -27,27 +27,27 @@ import java.util.Set;
 import com.redhat.prospero.api.Channel;
 import com.redhat.prospero.api.Installation;
 import com.redhat.prospero.api.Manifest;
+import com.redhat.prospero.api.InstallationMetadata;
 import com.redhat.prospero.api.PackageInstallationException;
-import com.redhat.prospero.model.ManifestXmlSupport;
 import com.redhat.prospero.model.ModuleXmlSupport;
 import com.redhat.prospero.model.XmlException;
 import org.apache.commons.io.FileUtils;
 import org.eclipse.aether.artifact.Artifact;
+import org.jboss.galleon.ProvisioningException;
 
 import static com.redhat.prospero.api.ArtifactUtils.getFileName;
 
 public class LocalInstallation implements Installation {
 
-    private final Manifest manifest;
     private final Path base;
     private final Modules modules;
-    private final List<Channel> channels;
+    private final InstallationMetadata metadata;
 
-    public LocalInstallation(Path base) throws XmlException, IOException {
+    public LocalInstallation(Path base) throws XmlException, IOException, ProvisioningException {
         this.base = base;
-        manifest = ManifestXmlSupport.parse(base.resolve("manifest.xml").toFile());
         modules = new Modules(base);
-        this.channels = Channel.readChannels(base.resolve("channels.json"));
+
+        this.metadata =  new InstallationMetadata(base.resolve("manifest.xml"), base.resolve("channels.json"), base.resolve(".galleon").resolve("provisioning.xml"));
     }
 
     @Override
@@ -94,23 +94,35 @@ public class LocalInstallation implements Installation {
             }
 
             // update manifest.xml
-            manifest.updateVersion(newArtifact);
+            metadata.getManifest().updateVersion(newArtifact);
         }
     }
 
     @Override
     public Manifest getManifest() {
-        return manifest;
+        return metadata.getManifest();
     }
 
     @Override
     public List<Channel> getChannels() {
-        return channels;
+        return metadata.getChannels();
+    }
+
+    public InstallationMetadata getMetadata() {
+        return metadata;
     }
 
     public void registerUpdates(Set<Artifact> artifacts) {
         for (Artifact artifact : artifacts) {
-            manifest.updateVersion(artifact);
+            metadata.getManifest().updateVersion(artifact);
         }
+    }
+
+    public Path getChannelsFile() {
+        return this.base.resolve("channels.json");
+    }
+
+    public Path getProvisioningFile() {
+        return this.base.resolve(".galleon/provisioning.xml");
     }
 }

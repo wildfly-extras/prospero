@@ -25,6 +25,7 @@ import org.eclipse.aether.artifact.Artifact;
 import org.eclipse.aether.resolution.ArtifactResolutionException;
 import org.eclipse.aether.resolution.ArtifactResult;
 import org.eclipse.aether.resolution.VersionRangeRequest;
+import org.eclipse.aether.resolution.VersionRangeResolutionException;
 import org.eclipse.aether.resolution.VersionRangeResult;
 import org.eclipse.aether.util.version.GenericVersionScheme;
 import org.eclipse.aether.version.InvalidVersionSpecificationException;
@@ -63,6 +64,10 @@ public class RestoringMavenRepository implements Repository {
 
     @Override
     public Artifact resolveLatestVersionOf(Artifact artifact) throws ArtifactNotFoundException {
+        if (artifact.getArtifactId().equals("community-universe") || artifact.getArtifactId().equals("wildfly-producers")) {
+            return artifact.setFile(resolve(artifact));
+        }
+
         final Artifact artifactInManifest = manifest.find(artifact);
         if (artifactInManifest == null) {
             throw new ArtifactNotFoundException(String.format("Artifact %s not found in provided manifest", artifact));
@@ -73,6 +78,13 @@ public class RestoringMavenRepository implements Repository {
 
     @Override
     public VersionRangeResult getVersionRange(Artifact artifact) throws ArtifactNotFoundException {
+        if (artifact.getArtifactId().equals("community-universe") || artifact.getArtifactId().equals("wildfly-producers")) {
+            try {
+                return resolver.getVersionRange(artifact);
+            } catch (VersionRangeResolutionException e) {
+                throw new ArtifactNotFoundException("Failed to resolve " + artifact, e);
+            }
+        }
         final Artifact artifactInManifest = manifest.find(artifact);
         if (artifactInManifest == null) {
             throw new ArtifactNotFoundException(String.format("Artifact %s not found in provided manifest", artifact));

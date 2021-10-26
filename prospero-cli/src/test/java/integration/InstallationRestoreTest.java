@@ -17,6 +17,7 @@
 
 package integration;
 
+import com.redhat.prospero.cli.actions.InstallationExport;
 import com.redhat.prospero.cli.actions.InstallationRestore;
 import com.redhat.prospero.cli.actions.GalleonProvision;
 import com.redhat.prospero.model.ManifestXmlSupport;
@@ -28,14 +29,13 @@ import org.junit.Before;
 import org.junit.Test;
 
 import java.io.File;
-import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Optional;
 
 import static org.junit.Assert.assertEquals;
 
-public class RestoreInstallationTest {
+public class InstallationRestoreTest {
 
     private static final String FIRST_SERVER_DIR = "target/server";
     private static final Path FIRST_SERVER_PATH = Paths.get(FIRST_SERVER_DIR).toAbsolutePath();
@@ -56,35 +56,34 @@ public class RestoreInstallationTest {
         }
     }
 
-//    @After
-//    public void tearDown() throws Exception {
-//        if (FIRST_SERVER_PATH.toFile().exists()) {
-//            FileUtils.deleteDirectory(FIRST_SERVER_PATH.toFile());
-//            FIRST_SERVER_PATH.toFile().delete();
-//        }
-//
-//        if (RESTORED_SERVER_PATH.toFile().exists()) {
-//            FileUtils.deleteDirectory(RESTORED_SERVER_PATH.toFile());
-//            RESTORED_SERVER_PATH.toFile().delete();
-//        }
-//    }
+    @After
+    public void tearDown() throws Exception {
+        if (FIRST_SERVER_PATH.toFile().exists()) {
+            FileUtils.deleteDirectory(FIRST_SERVER_PATH.toFile());
+            FIRST_SERVER_PATH.toFile().delete();
+        }
+
+        if (RESTORED_SERVER_PATH.toFile().exists()) {
+            FileUtils.deleteDirectory(RESTORED_SERVER_PATH.toFile());
+            RESTORED_SERVER_PATH.toFile().delete();
+        }
+    }
 
     @Test
     public void restoreInstallation() throws Exception {
         final Path channelFile = TestUtil.prepareChannelFile("local-repo-desc.json");
+
         new GalleonProvision().installFeaturePack("org.wildfly.core:wildfly-core-galleon-pack:17.0.0.Final", FIRST_SERVER_PATH.toString(), channelFile.toString());
 
-        final Path manifestFilePath = FIRST_SERVER_PATH.resolve("manifest.xml");
-        final Path restoreChannelsFile = Files.createTempFile("channels", "json");
-        channelFile.toFile().deleteOnExit();
-        TestUtil.prepareChannelFile(restoreChannelsFile, "local-repo-desc.json", "local-updates-repo-desc.json");
-        new InstallationRestore().restore(manifestFilePath, restoreChannelsFile, RESTORED_SERVER_PATH, "org.wildfly.core:wildfly-core-galleon-pack:17.0.0.Final");
+        TestUtil.prepareChannelFile(FIRST_SERVER_PATH.resolve("channels.json"), "local-repo-desc.json", "local-updates-repo-desc.json");
+
+        new InstallationExport().export(FIRST_SERVER_PATH, "target/bundle.zip");
+
+        new InstallationRestore().restore(RESTORED_SERVER_PATH, Paths.get("target/bundle.zip"));
 
         final Optional<Artifact> wildflyCliArtifact = readArtifactFromManifest("org.wildfly.core", "wildfly-cli");
         assertEquals("17.0.0.Final", wildflyCliArtifact.get().getVersion());
     }
-
-    // TODO: need to provide the Galleon configuration as well
 
     private Optional<Artifact> readArtifactFromManifest(String groupId, String artifactId) throws XmlException {
         final File manifestFile = RESTORED_SERVER_PATH.resolve("manifest.xml").toFile();
