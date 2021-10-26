@@ -70,7 +70,8 @@ public class Update implements AutoCloseable {
         this.repository = channelBuilder
                 .setChannels(localInstallation.getChannels())
                 .build();
-        this.maven = new ChannelMavenArtifactRepositoryManager(repoSystem, session, readChannels(installDir.resolve(InstallationMetadata.CHANNELS_FILE_NAME)));
+        this.maven = new ChannelMavenArtifactRepositoryManager(
+                repoSystem, session, Channel.readChannels((installDir.resolve(InstallationMetadata.CHANNELS_FILE_NAME))));
         this.provMgr = GalleonUtils.getProvisioningManager(installDir, maven);
         this.quiet = quiet;
     }
@@ -220,14 +221,6 @@ public class Update implements AutoCloseable {
         updates.add(new UpdateAction(artifact, latestVersion));
 
         return updates;
-    }
-
-    private static List<Channel> readChannels(Path channelFile) throws ProvisioningException {
-        try {
-            return Channel.readChannels(channelFile);
-        } catch (IOException e) {
-            throw new ProvisioningException(e);
-        }
     }
 
     class UpdateAction {

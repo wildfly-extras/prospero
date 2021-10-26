@@ -17,7 +17,9 @@
 
 package com.redhat.prospero.api;
 
+import com.redhat.prospero.model.ManifestXmlSupport;
 import com.redhat.prospero.model.XmlException;
+import org.eclipse.aether.artifact.Artifact;
 import org.jboss.galleon.ProvisioningException;
 import org.jboss.galleon.config.ProvisioningConfig;
 import org.jboss.galleon.xml.ProvisioningXmlParser;
@@ -39,6 +41,7 @@ public class InstallationMetadata {
     public static final String MANIFEST_FILE_NAME = "manifest.xml";
     public static final String CHANNELS_FILE_NAME = "channels.json";
     public static final String PROVISIONING_FILE_NAME = "provisioning.xml";
+    public static final String GALLEON_INSTALLATION_DIR = ".galleon";
     private final Path manifestFile;
     private final Path channelsFile;
     private final Path provisioningFile;
@@ -46,13 +49,33 @@ public class InstallationMetadata {
     private final ProvisioningConfig provisioningConfig;
     private final List<Channel> channels;
 
-    public InstallationMetadata(Path manifestFile, Path channelsFile, Path provisioningFile) throws XmlException, ProvisioningException, IOException {
+    private InstallationMetadata(Path manifestFile, Path channelsFile, Path provisioningFile) throws XmlException, ProvisioningException, IOException {
         this.manifestFile = manifestFile;
         this.channelsFile = channelsFile;
         this.provisioningFile = provisioningFile;
 
         this.manifest = Manifest.parseManifest(manifestFile);
         this.channels = Channel.readChannels(channelsFile);
+        this.provisioningConfig = ProvisioningXmlParser.parse(provisioningFile);
+    }
+
+    public InstallationMetadata(Path base) throws XmlException, ProvisioningException, IOException {
+        this.manifestFile = base.resolve(InstallationMetadata.MANIFEST_FILE_NAME);
+        this.channelsFile = base.resolve(InstallationMetadata.CHANNELS_FILE_NAME);
+        this.provisioningFile = base.resolve(GALLEON_INSTALLATION_DIR).resolve(InstallationMetadata.PROVISIONING_FILE_NAME);
+
+        this.manifest = Manifest.parseManifest(manifestFile);
+        this.channels = Channel.readChannels(channelsFile);
+        this.provisioningConfig = ProvisioningXmlParser.parse(provisioningFile);
+    }
+
+    public InstallationMetadata(Path base, List<Artifact> artifacts, List<Channel> channels) throws ProvisioningException {
+        this.manifestFile = base.resolve(InstallationMetadata.MANIFEST_FILE_NAME);
+        this.channelsFile = base.resolve(InstallationMetadata.CHANNELS_FILE_NAME);
+        this.provisioningFile = base.resolve(GALLEON_INSTALLATION_DIR).resolve(InstallationMetadata.PROVISIONING_FILE_NAME);
+
+        this.manifest = new Manifest(artifacts, base.resolve(InstallationMetadata.MANIFEST_FILE_NAME));
+        this.channels = channels;
         this.provisioningConfig = ProvisioningXmlParser.parse(provisioningFile);
     }
 
@@ -141,5 +164,20 @@ public class InstallationMetadata {
 
     public ProvisioningConfig getProvisioningConfig() {
         return provisioningConfig;
+    }
+
+    public void writeFiles() {
+        try {
+            ManifestXmlSupport.write(this.manifest);
+        } catch (XmlException e) {
+            e.printStackTrace();
+        }
+
+        // write channels into installation
+        try {
+            Channel.writeChannels(this.channels, this.channelsFile.toFile());
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
     }
 }

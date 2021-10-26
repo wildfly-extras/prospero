@@ -39,7 +39,6 @@ import static com.redhat.prospero.api.ArtifactUtils.getFileName;
 
 public class LocalInstallation implements Installation {
 
-    public static final String GALLEON_INSTALLATION_DIR = ".galleon";
     private final Path base;
     private final Modules modules;
     private final InstallationMetadata metadata;
@@ -48,10 +47,7 @@ public class LocalInstallation implements Installation {
         this.base = base;
         modules = new Modules(base);
 
-        this.metadata =  new InstallationMetadata(
-                base.resolve(InstallationMetadata.MANIFEST_FILE_NAME),
-                base.resolve(InstallationMetadata.CHANNELS_FILE_NAME),
-                base.resolve(GALLEON_INSTALLATION_DIR).resolve(InstallationMetadata.PROVISIONING_FILE_NAME));
+        this.metadata =  new InstallationMetadata(base);
     }
 
     @Override

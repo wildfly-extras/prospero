@@ -18,14 +18,11 @@
 package com.redhat.prospero.cli.actions;
 
 import com.redhat.prospero.api.Channel;
-import com.redhat.prospero.api.Manifest;
 import com.redhat.prospero.api.InstallationMetadata;
 import com.redhat.prospero.api.Repository;
 import com.redhat.prospero.galleon.ChannelMavenArtifactRepositoryManager;
 import com.redhat.prospero.impl.repository.curated.ChannelBuilder;
-import com.redhat.prospero.installation.Modules;
 import com.redhat.prospero.maven.MavenUtils;
-import com.redhat.prospero.model.ManifestXmlSupport;
 import com.redhat.prospero.model.XmlException;
 import org.eclipse.aether.DefaultRepositorySystemSession;
 import org.eclipse.aether.RepositorySystem;
@@ -34,14 +31,11 @@ import org.jboss.galleon.ProvisioningException;
 import org.jboss.galleon.ProvisioningManager;
 import org.jboss.galleon.universe.maven.MavenArtifact;
 
-import java.io.File;
 import java.io.IOException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
-import java.util.HashSet;
 import java.util.List;
-import java.util.Set;
 
 import static com.redhat.prospero.api.ArtifactUtils.from;
 
@@ -75,39 +69,12 @@ public class InstallationRestore {
     }
 
     private void writeProsperoMetadata(Path home, ChannelMavenArtifactRepositoryManager maven, List<Channel> channels) throws ProvisioningException {
-        final Modules modules = new Modules(home);
-        Set<MavenArtifact> installed = new HashSet<>();
-        for (MavenArtifact resolvedArtifact : maven.resolvedArtfacts()) {
-            if (containsArtifact(resolvedArtifact, modules)) {
-                installed.add(resolvedArtifact);
-            }
-        }
-        writeManifestFile(home, installed, channels);
-    }
-
-    private boolean containsArtifact(MavenArtifact resolvedArtifact, Modules modules) {
-        return !modules.find(from(resolvedArtifact)).isEmpty();
-    }
-
-    private void writeManifestFile(Path home, Set<MavenArtifact> artifactSet, List<Channel> channels) throws ProvisioningException {
         List<Artifact> artifacts = new ArrayList<>();
-        for (MavenArtifact artifact : artifactSet) {
-            artifacts.add(from(artifact));
+        for (MavenArtifact resolvedArtifact : maven.resolvedArtfacts()) {
+            artifacts.add(from(resolvedArtifact));
         }
 
-        try {
-            ManifestXmlSupport.write(new Manifest(artifacts, home.resolve(InstallationMetadata.MANIFEST_FILE_NAME)));
-        } catch (XmlException e) {
-            e.printStackTrace();
-        }
-
-        // write channels into installation
-        final File channelsFile = home.resolve(InstallationMetadata.CHANNELS_FILE_NAME).toFile();
-        try {
-            com.redhat.prospero.api.Channel.writeChannels(channels, channelsFile);
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
+        new InstallationMetadata(home, artifacts, channels).writeFiles();
     }
 
 }

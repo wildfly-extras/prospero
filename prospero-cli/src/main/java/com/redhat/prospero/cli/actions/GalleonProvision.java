@@ -20,22 +20,15 @@ package com.redhat.prospero.cli.actions;
 import com.redhat.prospero.api.InstallationMetadata;
 import com.redhat.prospero.galleon.ChannelMavenArtifactRepositoryManager;
 
-import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
-import java.util.HashSet;
 import java.util.List;
-import java.util.Set;
 
 import com.redhat.prospero.api.Channel;
-import com.redhat.prospero.api.Manifest;
-import com.redhat.prospero.installation.Modules;
 import com.redhat.prospero.maven.MavenUtils;
-import com.redhat.prospero.model.ManifestXmlSupport;
-import com.redhat.prospero.model.XmlException;
 import org.eclipse.aether.artifact.Artifact;
 import org.jboss.galleon.ProvisioningException;
 import org.jboss.galleon.ProvisioningManager;
@@ -73,12 +66,13 @@ public class GalleonProvision {
         if (Files.exists(installDir)) {
             throw new ProvisioningException("Installation dir " + installDir + " already exists");
         }
+        final List<Channel> channels = Channel.readChannels(Paths.get(channelsFile));
         try (final ChannelMavenArtifactRepositoryManager maven
-                = GalleonUtils.getChannelRepositoryManager(readChannels(Paths.get(channelsFile)), MavenUtils.defaultRepositorySystem())) {
+                = GalleonUtils.getChannelRepositoryManager(channels, MavenUtils.defaultRepositorySystem())) {
             ProvisioningManager provMgr = GalleonUtils.getProvisioningManager(installDir, maven);
             FeaturePackLocation loc = FeaturePackLocation.fromString(fpl);
             provMgr.install(loc);
-            writeProsperoMetadata(installDir, maven, Paths.get(channelsFile));
+            writeProsperoMetadata(installDir, maven, channels);
         }
     }
 
@@ -87,52 +81,21 @@ public class GalleonProvision {
         if (Files.exists(installDir)) {
             throw new ProvisioningException("Installation dir " + installDir + " already exists");
         }
+        final List<Channel> channels = Channel.readChannels(Paths.get(channelsFile));
         try (final ChannelMavenArtifactRepositoryManager maven
-                     = GalleonUtils.getChannelRepositoryManager(readChannels(Paths.get(channelsFile)), MavenUtils.defaultRepositorySystem())) {
+                     = GalleonUtils.getChannelRepositoryManager(channels, MavenUtils.defaultRepositorySystem())) {
             ProvisioningManager provMgr = GalleonUtils.getProvisioningManager(installDir, maven);
             provMgr.provision(installationFile);
-            writeProsperoMetadata(installDir, maven, Paths.get(channelsFile));
+            writeProsperoMetadata(installDir, maven, channels);
         }
     }
 
-    private void writeProsperoMetadata(Path home, ChannelMavenArtifactRepositoryManager maven, Path path) throws ProvisioningException {
-            Set<MavenArtifact> installed = new HashSet<>();
-            for (MavenArtifact resolvedArtifact : maven.resolvedArtfacts()) {
-                installed.add(resolvedArtifact);
-            }
-            writeManifestFile(home, installed, readChannels(path));
+    private void writeProsperoMetadata(Path home, ChannelMavenArtifactRepositoryManager maven, List<Channel> channels) throws ProvisioningException {
+        List<Artifact> artifacts = new ArrayList<>();
+        for (MavenArtifact resolvedArtifact : maven.resolvedArtfacts()) {
+            artifacts.add(from(resolvedArtifact));
         }
 
-        private boolean containsArtifact(MavenArtifact resolvedArtifact, Modules modules) {
-            return !modules.find(from(resolvedArtifact)).isEmpty();
-        }
-
-        private void writeManifestFile(Path home, Set<MavenArtifact> artifactSet, List<Channel> channels) throws ProvisioningException {
-            List<Artifact> artifacts = new ArrayList<>();
-            for (MavenArtifact artifact : artifactSet) {
-                artifacts.add(from(artifact));
-            }
-
-            try {
-                ManifestXmlSupport.write(new Manifest(artifacts, home.resolve(InstallationMetadata.MANIFEST_FILE_NAME)));
-            } catch (XmlException e) {
-                e.printStackTrace();
-            }
-
-            // write channels into installation
-            final File channelsFile = home.resolve(InstallationMetadata.CHANNELS_FILE_NAME).toFile();
-            try {
-                com.redhat.prospero.api.Channel.writeChannels(channels, channelsFile);
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
-        }
-
-    private static List<Channel> readChannels(Path channelFile) throws ProvisioningException {
-        try {
-            return Channel.readChannels(channelFile);
-        } catch (IOException e) {
-            throw new ProvisioningException(e);
-        }
+        new InstallationMetadata(home, artifacts, channels).writeFiles();
     }
 }
