@@ -28,6 +28,7 @@ import java.util.Set;
 import java.util.stream.Collectors;
 
 import com.redhat.prospero.api.ArtifactUtils;
+import com.redhat.prospero.api.InstallationMetadata;
 import com.redhat.prospero.galleon.ChannelMavenArtifactRepositoryManager;
 import com.redhat.prospero.api.ArtifactNotFoundException;
 import com.redhat.prospero.api.Channel;
@@ -69,7 +70,7 @@ public class Update implements AutoCloseable {
         this.repository = channelBuilder
                 .setChannels(localInstallation.getChannels())
                 .build();
-        this.maven = new ChannelMavenArtifactRepositoryManager(repoSystem, session, readChannels(installDir.resolve("channels.json")));
+        this.maven = new ChannelMavenArtifactRepositoryManager(repoSystem, session, readChannels(installDir.resolve(InstallationMetadata.CHANNELS_FILE_NAME)));
         this.provMgr = GalleonUtils.getProvisioningManager(installDir, maven);
         this.quiet = quiet;
     }

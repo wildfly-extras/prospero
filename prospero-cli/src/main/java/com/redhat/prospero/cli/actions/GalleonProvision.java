@@ -17,6 +17,7 @@
 
 package com.redhat.prospero.cli.actions;
 
+import com.redhat.prospero.api.InstallationMetadata;
 import com.redhat.prospero.galleon.ChannelMavenArtifactRepositoryManager;
 
 import java.io.File;
@@ -113,13 +114,13 @@ public class GalleonProvision {
             }
 
             try {
-                ManifestXmlSupport.write(new Manifest(artifacts, home.resolve("manifest.xml")));
+                ManifestXmlSupport.write(new Manifest(artifacts, home.resolve(InstallationMetadata.MANIFEST_FILE_NAME)));
             } catch (XmlException e) {
                 e.printStackTrace();
             }
 
             // write channels into installation
-            final File channelsFile = home.resolve("channels.json").toFile();
+            final File channelsFile = home.resolve(InstallationMetadata.CHANNELS_FILE_NAME).toFile();
             try {
                 com.redhat.prospero.api.Channel.writeChannels(channels, channelsFile);
             } catch (IOException e) {

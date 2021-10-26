@@ -17,6 +17,7 @@
 
 package integration;
 
+import com.redhat.prospero.api.InstallationMetadata;
 import com.redhat.prospero.cli.actions.GalleonProvision;
 import com.redhat.prospero.cli.actions.Update;
 import com.redhat.prospero.model.ManifestXmlSupport;
@@ -66,7 +67,7 @@ public class SimpleInstallationTest {
         new GalleonProvision().installFeaturePack("org.wildfly.core:wildfly-core-galleon-pack:17.0.0.Final", OUTPUT_PATH.toString(), channelFile.toString());
 
         // verify installation with manifest file is present
-        assertTrue(OUTPUT_PATH.resolve("manifest.xml").toFile().exists());
+        assertTrue(OUTPUT_PATH.resolve(InstallationMetadata.MANIFEST_FILE_NAME).toFile().exists());
         // verify manifest contains versions 17.0.1
         final Optional<Artifact> wildflyCliArtifact = readArtifactFromManifest("org.wildfly.core", "wildfly-cli");
         assertEquals("17.0.0.Final", wildflyCliArtifact.get().getVersion());
@@ -79,7 +80,7 @@ public class SimpleInstallationTest {
         final Path channelFile = TestUtil.prepareChannelFile("local-repo-desc.json");
         new GalleonProvision().installFeaturePack("org.wildfly.core:wildfly-core-galleon-pack:17.0.0.Final", OUTPUT_PATH.toString(), channelFile.toString());
 
-        TestUtil.prepareChannelFile(OUTPUT_PATH.resolve("channels.json"), "local-repo-desc.json", "local-updates-repo-desc.json");
+        TestUtil.prepareChannelFile(OUTPUT_PATH.resolve(InstallationMetadata.CHANNELS_FILE_NAME), "local-repo-desc.json", "local-updates-repo-desc.json");
         new Update(OUTPUT_PATH, true).doUpdateAll();
 
         // verify manifest contains versions 17.0.1
@@ -99,7 +100,7 @@ public class SimpleInstallationTest {
     }
 
     private Optional<Artifact> readArtifactFromManifest(String groupId, String artifactId) throws XmlException {
-        final File manifestFile = OUTPUT_PATH.resolve("manifest.xml").toFile();
+        final File manifestFile = OUTPUT_PATH.resolve(InstallationMetadata.MANIFEST_FILE_NAME).toFile();
         return ManifestXmlSupport.parse(manifestFile).getArtifacts().stream()
                 .filter((a) -> a.getGroupId().equals(groupId) && a.getArtifactId().equals(artifactId))
                 .findFirst();

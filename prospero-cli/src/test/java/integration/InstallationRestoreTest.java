@@ -17,6 +17,7 @@
 
 package integration;
 
+import com.redhat.prospero.api.InstallationMetadata;
 import com.redhat.prospero.cli.actions.InstallationExport;
 import com.redhat.prospero.cli.actions.InstallationRestore;
 import com.redhat.prospero.cli.actions.GalleonProvision;
@@ -75,7 +76,7 @@ public class InstallationRestoreTest {
 
         new GalleonProvision().installFeaturePack("org.wildfly.core:wildfly-core-galleon-pack:17.0.0.Final", FIRST_SERVER_PATH.toString(), channelFile.toString());
 
-        TestUtil.prepareChannelFile(FIRST_SERVER_PATH.resolve("channels.json"), "local-repo-desc.json", "local-updates-repo-desc.json");
+        TestUtil.prepareChannelFile(FIRST_SERVER_PATH.resolve(InstallationMetadata.CHANNELS_FILE_NAME), "local-repo-desc.json", "local-updates-repo-desc.json");
 
         new InstallationExport().export(FIRST_SERVER_PATH, "target/bundle.zip");
 
@@ -86,7 +87,7 @@ public class InstallationRestoreTest {
     }
 
     private Optional<Artifact> readArtifactFromManifest(String groupId, String artifactId) throws XmlException {
-        final File manifestFile = RESTORED_SERVER_PATH.resolve("manifest.xml").toFile();
+        final File manifestFile = RESTORED_SERVER_PATH.resolve(InstallationMetadata.MANIFEST_FILE_NAME).toFile();
         return ManifestXmlSupport.parse(manifestFile).getArtifacts().stream()
                 .filter((a) -> a.getGroupId().equals(groupId) && a.getArtifactId().equals(artifactId))
                 .findFirst();

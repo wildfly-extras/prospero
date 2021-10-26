@@ -36,6 +36,9 @@ import java.util.zip.ZipOutputStream;
 
 public class InstallationMetadata {
 
+    public static final String MANIFEST_FILE_NAME = "manifest.xml";
+    public static final String CHANNELS_FILE_NAME = "channels.json";
+    public static final String PROVISIONING_FILE_NAME = "provisioning.xml";
     private final Path manifestFile;
     private final Path channelsFile;
     private final Path provisioningFile;
@@ -62,19 +65,19 @@ public class InstallationMetadata {
             ZipEntry entry = zis.getNextEntry();
             while (entry != null) {
 
-                if (entry.getName().equals("manifest.xml")) {
+                if (entry.getName().equals(MANIFEST_FILE_NAME)) {
                     manifestFile = Files.createTempFile("manifest", "xml");
                     Files.copy(zis, manifestFile, StandardCopyOption.REPLACE_EXISTING);
                     manifestFile.toFile().deleteOnExit();
                 }
 
-                if (entry.getName().equals("channels.json")) {
+                if (entry.getName().equals(CHANNELS_FILE_NAME)) {
                     channelsFile = Files.createTempFile("channels", "json");
                     Files.copy(zis, channelsFile, StandardCopyOption.REPLACE_EXISTING);
                     channelsFile.toFile().deleteOnExit();
                 }
 
-                if (entry.getName().equals("provisioning.xml")) {
+                if (entry.getName().equals(PROVISIONING_FILE_NAME)) {
                     provisioningFile = Files.createTempFile("provisioning", "xml");
                     Files.copy(zis, provisioningFile, StandardCopyOption.REPLACE_EXISTING);
                     provisioningFile.toFile().deleteOnExit();
@@ -95,7 +98,7 @@ public class InstallationMetadata {
         final File file = location.toFile();
 
         try (ZipOutputStream zos = new ZipOutputStream(new FileOutputStream(file))) {
-            zos.putNextEntry(new ZipEntry("manifest.xml"));
+            zos.putNextEntry(new ZipEntry(MANIFEST_FILE_NAME));
             try(FileInputStream fis = new FileInputStream(manifestFile.toFile())) {
                 byte[] buffer = new byte[1024];
                 int len;
@@ -105,7 +108,7 @@ public class InstallationMetadata {
             }
             zos.closeEntry();
 
-            zos.putNextEntry(new ZipEntry("channels.json"));
+            zos.putNextEntry(new ZipEntry(CHANNELS_FILE_NAME));
             try(FileInputStream fis = new FileInputStream(channelsFile.toFile())) {
                 byte[] buffer = new byte[1024];
                 int len;
@@ -115,7 +118,7 @@ public class InstallationMetadata {
             }
             zos.closeEntry();
 
-            zos.putNextEntry(new ZipEntry("provisioning.xml"));
+            zos.putNextEntry(new ZipEntry(PROVISIONING_FILE_NAME));
             try(FileInputStream fis = new FileInputStream(provisioningFile.toFile())) {
                 byte[] buffer = new byte[1024];
                 int len;
