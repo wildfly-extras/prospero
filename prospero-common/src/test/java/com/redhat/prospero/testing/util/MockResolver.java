@@ -30,9 +30,11 @@ import org.eclipse.aether.version.InvalidVersionSpecificationException;
 import org.eclipse.aether.version.Version;
 import org.eclipse.aether.version.VersionScheme;
 
+import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -59,14 +61,17 @@ public class MockResolver implements Resolver {
             final ArtifactResult artifactResult = new ArtifactResult(new ArtifactRequest());
             // mock tmp file
             try {
-                artifact = artifact.setFile(Files.createTempFile(tempDir, "artifact", "jar").toFile());
+                final File mockArtifactFile = Files.createTempFile(tempDir, "artifact", "jar").toFile();
+                mockArtifactFile.deleteOnExit();
+                artifact = artifact.setFile(mockArtifactFile);
             } catch (IOException e) {
                 throw new RuntimeException(e);
             }
             artifactResult.setArtifact(artifact);
             return artifactResult;
+        } else {
+            throw new ArtifactResolutionException(Collections.emptyList());
         }
-        return null;
     }
 
     @Override

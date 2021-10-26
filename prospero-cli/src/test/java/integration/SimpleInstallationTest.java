@@ -87,6 +87,17 @@ public class SimpleInstallationTest {
         assertEquals("17.0.1.Final", wildflyCliArtifact.get().getVersion());
     }
 
+    @Test
+    public void installWildflyCoreFromInstallationFile() throws Exception {
+        final Path channelFile = TestUtil.prepareChannelFile("local-repo-desc.json");
+        final File installationFile = new File(this.getClass().getClassLoader().getResource("provisioning.xml").toURI());
+
+        new GalleonProvision().installFeaturePackFromFile(installationFile.toPath(), OUTPUT_PATH.toString(), channelFile.toString());
+
+        final Optional<Artifact> wildflyCliArtifact = readArtifactFromManifest("org.wildfly.core", "wildfly-cli");
+        assertEquals("17.0.0.Final", wildflyCliArtifact.get().getVersion());
+    }
+
     private Optional<Artifact> readArtifactFromManifest(String groupId, String artifactId) throws XmlException {
         final File manifestFile = OUTPUT_PATH.resolve("manifest.xml").toFile();
         return ManifestXmlSupport.parse(manifestFile).getArtifacts().stream()
