@@ -17,6 +17,7 @@
 
 package com.redhat.prospero.api;
 
+import com.redhat.prospero.installation.GitStorage;
 import com.redhat.prospero.model.ManifestXmlSupport;
 import com.redhat.prospero.model.XmlException;
 import org.eclipse.aether.artifact.Artifact;
@@ -48,8 +49,12 @@ public class InstallationMetadata {
     private final Manifest manifest;
     private final ProvisioningConfig provisioningConfig;
     private final List<Channel> channels;
+    private final GitStorage gitStorage;
+    private Path base;
 
     private InstallationMetadata(Path manifestFile, Path channelsFile, Path provisioningFile) throws XmlException, ProvisioningException, IOException {
+        this.gitStorage = new GitStorage(manifestFile.getParent());
+        this.base = manifestFile.getParent();
         this.manifestFile = manifestFile;
         this.channelsFile = channelsFile;
         this.provisioningFile = provisioningFile;
@@ -60,6 +65,8 @@ public class InstallationMetadata {
     }
 
     public InstallationMetadata(Path base) throws XmlException, ProvisioningException, IOException {
+        this.gitStorage = new GitStorage(base);
+        this.base = base;
         this.manifestFile = base.resolve(InstallationMetadata.MANIFEST_FILE_NAME);
         this.channelsFile = base.resolve(InstallationMetadata.CHANNELS_FILE_NAME);
         this.provisioningFile = base.resolve(GALLEON_INSTALLATION_DIR).resolve(InstallationMetadata.PROVISIONING_FILE_NAME);
@@ -70,6 +77,8 @@ public class InstallationMetadata {
     }
 
     public InstallationMetadata(Path base, List<Artifact> artifacts, List<Channel> channels) throws ProvisioningException {
+        this.gitStorage = new GitStorage(base);
+        this.base = base;
         this.manifestFile = base.resolve(InstallationMetadata.MANIFEST_FILE_NAME);
         this.channelsFile = base.resolve(InstallationMetadata.CHANNELS_FILE_NAME);
         this.provisioningFile = base.resolve(GALLEON_INSTALLATION_DIR).resolve(InstallationMetadata.PROVISIONING_FILE_NAME);
@@ -179,5 +188,20 @@ public class InstallationMetadata {
         } catch (IOException e) {
             e.printStackTrace();
         }
+
+        gitStorage.record();
+    }
+
+    public List<SavedState> getRevisions() {
+        return gitStorage.getRevisions();
+    }
+
+    public InstallationMetadata rollback(SavedState savedState) throws XmlException, ProvisioningException, IOException {
+        // checkout previous version
+        // record as rollback operation
+        gitStorage.revert(savedState);
+
+        // re-parse metadata
+        return new InstallationMetadata(base);
     }
 }
