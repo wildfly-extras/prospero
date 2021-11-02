@@ -21,10 +21,13 @@ import com.redhat.prospero.api.InstallationMetadata;
 import com.redhat.prospero.api.Manifest;
 import com.redhat.prospero.api.SavedState;
 import com.redhat.prospero.model.ManifestXmlSupport;
+import com.redhat.prospero.model.XmlException;
 import org.eclipse.aether.artifact.DefaultArtifact;
+import org.jboss.galleon.ProvisioningException;
 import org.junit.Test;
 
 import java.io.FileWriter;
+import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Arrays;
@@ -36,21 +39,57 @@ public class LocalInstallationHistoryTest {
 
     @Test
     public void getHistoryOfInstallations() throws Exception {
-        //create installation folder with simple metadata
-        final Path installation = Files.createTempDirectory("installation");
-        installation.toFile().deleteOnExit();
-        try (FileWriter fw = new FileWriter(installation.resolve("channels.json").toFile())) {
-            fw.write("[]");
-        }
-        final Manifest manifest = new Manifest(Arrays.asList(new DefaultArtifact("foo:bar:1.1.1")), installation.resolve("manifest.xml"));
-        ManifestXmlSupport.write(manifest);
+        final InstallationMetadata metadata = mockInstallation();
 
-        LocalInstallation inst = new LocalInstallation(installation);
-        final InstallationMetadata metadata = inst.getMetadata();
-
-        metadata.writeFiles();
         List<SavedState> history = metadata.getRevisions();
 
         assertEquals(1, history.size());
+    }
+
+    @Test
+    public void revertToPreviousVersion() throws Exception {
+        final InstallationMetadata metadata = mockInstallation();
+
+        metadata.getManifest().updateVersion(new DefaultArtifact("foo:bar:1.1.2"));
+        metadata.writeFiles();
+
+        final SavedState previousState = metadata.getRevisions().get(1);
+
+        final InstallationMetadata reverted = metadata.rollback(previousState);
+        assertEquals("1.1.1", reverted.getManifest().find(new DefaultArtifact("foo:bar:1.1.0")).getVersion());
+
+    }
+
+    @Test
+    public void statusRepresentsAction() throws Exception {
+        final InstallationMetadata metadata = mockInstallation();
+
+        metadata.getManifest().updateVersion(new DefaultArtifact("foo:bar:1.1.2"));
+        metadata.writeFiles();
+
+        final SavedState previousState = metadata.getRevisions().get(1);
+
+        final InstallationMetadata reverted = metadata.rollback(previousState);
+
+        final List<SavedState> revisions = reverted.getRevisions();
+        revisions.forEach(s->System.out.println(s.getType()));
+        assertEquals(SavedState.Type.ROLLBACK, revisions.get(0).getType());
+        assertEquals(SavedState.Type.UPDATE, revisions.get(1).getType());
+        assertEquals(SavedState.Type.INSTALL, revisions.get(2).getType());
+    }
+
+    private InstallationMetadata mockInstallation() throws IOException, XmlException, ProvisioningException {
+        final Path installation = Files.createTempDirectory("installation");
+        installation.toFile().deleteOnExit();
+        try (FileWriter fw = new FileWriter(installation.resolve(InstallationMetadata.CHANNELS_FILE_NAME).toFile())) {
+            fw.write("[]");
+        }
+        final Manifest manifest = new Manifest(Arrays.asList(new DefaultArtifact("foo:bar:1.1.1")), installation.resolve(InstallationMetadata.MANIFEST_FILE_NAME));
+        ManifestXmlSupport.write(manifest);
+        LocalInstallation inst = new LocalInstallation(installation);
+
+        final InstallationMetadata metadata = inst.getMetadata();
+        metadata.writeFiles();
+        return metadata;
     }
 }

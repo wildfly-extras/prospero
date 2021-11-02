@@ -17,10 +17,12 @@
 
 package com.redhat.prospero.installation;
 
+import com.redhat.prospero.api.InstallationMetadata;
 import com.redhat.prospero.api.SavedState;
 import org.eclipse.jgit.api.Git;
 import org.eclipse.jgit.api.errors.GitAPIException;
 import org.eclipse.jgit.api.errors.NoFilepatternException;
+import org.eclipse.jgit.lib.Constants;
 import org.eclipse.jgit.lib.PersonIdent;
 import org.eclipse.jgit.revwalk.RevCommit;
 
@@ -29,9 +31,12 @@ import java.nio.file.Path;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Locale;
 
 public class GitStorage {
 
+    public static final String GIT_HISTORY_USER = "EAP Installer";
+    public static final PersonIdent GIT_HISTORY_COMMITTER = new PersonIdent(GIT_HISTORY_USER, "");
     private Path base;
 
     public GitStorage(Path base) {
@@ -47,7 +52,7 @@ public class GitStorage {
             for (RevCommit revCommit : call) {
                 history.add(new SavedState(revCommit.getName().substring(0,8),
                         Instant.ofEpochSecond(revCommit.getCommitTime()),
-                        SavedState.Type.UPDATE));
+                        SavedState.Type.valueOf(revCommit.getShortMessage().toUpperCase(Locale.ROOT))));
             }
 
             return history;
@@ -64,8 +69,13 @@ public class GitStorage {
     public void record() {
         try {
             Git git = getRepository();
-            git.add().addFilepattern("manifest.xml").call();
-            git.commit().setCommitter(new PersonIdent("EAP Installer", "")).setMessage("Update").call();
+            git.add().addFilepattern(InstallationMetadata.MANIFEST_FILE_NAME).call();
+
+            if (isRepositoryEmpty(git)) {
+                git.commit().setCommitter(GIT_HISTORY_COMMITTER).setMessage(SavedState.Type.INSTALL.name()).call();
+            } else {
+                git.commit().setCommitter(GIT_HISTORY_COMMITTER).setMessage(SavedState.Type.UPDATE.name()).call();
+            }
 
         } catch (IOException e) {
             e.printStackTrace();
@@ -76,6 +86,26 @@ public class GitStorage {
         }
     }
 
+    public void revert(SavedState savedState) {
+        try {
+            final Git git = getRepository();
+            git.checkout()
+                    .setStartPoint(savedState.getName())
+                    .addPath(InstallationMetadata.MANIFEST_FILE_NAME)
+                    .call();
+            git.add().addFilepattern(InstallationMetadata.MANIFEST_FILE_NAME).call();
+            git.commit().setCommitter(GIT_HISTORY_COMMITTER).setMessage(SavedState.Type.ROLLBACK.name()).call();
+        } catch (GitAPIException e) {
+            e.printStackTrace();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+
+    private boolean isRepositoryEmpty(Git git) throws IOException {
+        return git.getRepository().resolve(Constants.HEAD) == null;
+    }
+
     private Git getRepository() throws GitAPIException, IOException {
         Git git;
         if (!base.resolve(".git").toFile().exists()) {
@@ -84,21 +114,5 @@ public class GitStorage {
             git = Git.open(base.toFile());
         }
         return git;
-    }
-
-    public void revert(SavedState savedState) {
-        try {
-            final Git git = getRepository();
-            git.checkout()
-                    .setStartPoint(savedState.getName())
-                    .addPath("manifest.xml")
-                    .call();
-            git.add().addFilepattern("manifest.xml").call();
-            git.commit().setCommitter(new PersonIdent("EAP Installer", "")).setMessage("Rollback").call();
-        } catch (GitAPIException e) {
-            e.printStackTrace();
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
     }
 }

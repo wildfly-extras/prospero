@@ -56,6 +56,15 @@ elif [ "$1" == 'restore' ];
     fi
     TARGET_SERVER="$(greadlink -f ${2})"
     java -agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=5005 -cp "${CLASSPATH}" com.redhat.prospero.cli.actions.InstallationRestore "${TARGET_SERVER}" "${3}"
+elif [ "$1" == 'history' ];
+  then
+    if [ $# -lt 2 ];
+        then
+          echo "Usage: prospero history <TARGET_DIRECTORY>"
+          exit 1
+        fi
+    TARGET_SERVER="$(greadlink -f ${2})"
+    java -agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=5005 -cp "${CLASSPATH}" com.redhat.prospero.cli.actions.InstallationHistory "${TARGET_SERVER}" "${3}"
 elif [ "$1" == 'deploy' ];
 then
     java -cp "${CLASSPATH}" com.redhat.prospero.cli.actions.DeployerArtifact "${2}" "${3}" "${4}" "${5}" "target/prospero-repo" "${@:6}"

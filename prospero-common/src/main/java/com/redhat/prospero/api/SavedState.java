@@ -22,7 +22,7 @@ import java.util.Locale;
 
 public class SavedState {
 
-    public enum Type { UPDATE, INSTALL;}
+    public enum Type { UPDATE, INSTALL, ROLLBACK;}
 
     private String hash;
     private Instant timestamp;
@@ -32,6 +32,10 @@ public class SavedState {
         this.hash = hash;
         this.timestamp = timestamp;
         this.type = type;
+    }
+
+    public Type getType() {
+        return type;
     }
 
     public String getName() {
