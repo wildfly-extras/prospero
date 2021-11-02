@@ -38,11 +38,21 @@ import java.util.List;
 public class InstallationHistory {
 
     public static void main(String[] args) throws Exception {
-        final List<SavedState> history = new InstallationHistory().getRevisions(Paths.get(args[0]));
+        final Path installation = Paths.get(args[1]);
+        final String op = args[0];
 
-        for (SavedState savedState : history) {
-            System.out.println(savedState.shortDescription());
+        final InstallationHistory installationHistory = new InstallationHistory();
+        if (op.equals("list")) {
+            final List<SavedState> history = installationHistory.getRevisions(installation);
+
+            for (SavedState savedState : history) {
+                System.out.println(savedState.shortDescription());
+            }
+        } else if (op.equals("revert")) {
+            final String revision = args[2];
+            installationHistory.rollback(installation, new SavedState(revision));
         }
+
     }
 
     public List<SavedState> getRevisions(Path installation) throws XmlException, ProvisioningException, IOException {
@@ -57,7 +67,7 @@ public class InstallationHistory {
         final DefaultRepositorySystemSession mavenSession = MavenUtils.getDefaultRepositorySystemSession(repositorySystem);
         final Repository repository = new ChannelBuilder(repositorySystem, mavenSession)
                 .setChannels(metadata.getChannels())
-                .setRestoringManifest(savedState.getMetadata())
+                .setRestoringManifest(metadata.getManifest())
                 .build();
         final ChannelMavenArtifactRepositoryManager repoManager = new ChannelMavenArtifactRepositoryManager(repositorySystem, mavenSession, repository);
         ProvisioningManager provMgr = GalleonUtils.getProvisioningManager(installation, repoManager);

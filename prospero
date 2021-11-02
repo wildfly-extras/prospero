@@ -64,7 +64,16 @@ elif [ "$1" == 'history' ];
           exit 1
         fi
     TARGET_SERVER="$(greadlink -f ${2})"
-    java -agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=5005 -cp "${CLASSPATH}" com.redhat.prospero.cli.actions.InstallationHistory "${TARGET_SERVER}" "${3}"
+    java -agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=5005 -cp "${CLASSPATH}" com.redhat.prospero.cli.actions.InstallationHistory list "${TARGET_SERVER}"
+    elif [ "$1" == 'rollback' ];
+      then
+        if [ $# -lt 3 ];
+        then
+          echo "Usage: prospero rollback <TARGET_DIRECTORY> <REVISION>"
+          exit 1
+        fi
+        TARGET_SERVER="$(greadlink -f ${2})"
+        java -agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=5005 -cp "${CLASSPATH}" com.redhat.prospero.cli.actions.InstallationHistory revert "${TARGET_SERVER}" "${3}"
 elif [ "$1" == 'deploy' ];
 then
     java -cp "${CLASSPATH}" com.redhat.prospero.cli.actions.DeployerArtifact "${2}" "${3}" "${4}" "${5}" "target/prospero-repo" "${@:6}"

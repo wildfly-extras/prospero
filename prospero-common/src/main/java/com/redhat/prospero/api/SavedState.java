@@ -34,16 +34,18 @@ public class SavedState {
         this.type = type;
     }
 
+    public SavedState(String hash) {
+        this.hash = hash;
+        this.timestamp = null;
+        this.type = null;
+    }
+
     public Type getType() {
         return type;
     }
 
     public String getName() {
         return this.hash;
-    }
-
-    public Manifest getMetadata() {
-        return null;
     }
 
     public String shortDescription() {
