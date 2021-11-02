@@ -144,12 +144,9 @@ public class Update implements AutoCloseable {
             }
         }
 
-        // use gav as Artifact equalsTo uses file as well
-        final Set<String> updatedGAVs = new HashSet<>();
-        final Set<Artifact> updated = applyFpUpdates(fpUpdates, installDir);
-        updated.stream().forEach(a->updatedGAVs.add(toGav(a)));
+        applyFpUpdates(fpUpdates, installDir);
 
-        ManifestXmlSupport.write(localInstallation.getManifest());
+        localInstallation.getMetadata().writeFiles();
 
         System.out.println("Done");
     }
@@ -198,7 +195,7 @@ public class Update implements AutoCloseable {
             System.out.println("DONE");
         }
 
-        ManifestXmlSupport.write(localInstallation.getManifest());
+        localInstallation.getMetadata().writeFiles();
     }
 
     public List<UpdateAction> findUpdates(String groupId, String artifactId) throws ArtifactNotFoundException, XmlException {
