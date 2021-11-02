@@ -24,6 +24,9 @@ import java.io.PrintWriter;
 import java.nio.file.Files;
 import java.nio.file.StandardCopyOption;
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.List;
 
 import com.redhat.prospero.api.Manifest;
 import org.eclipse.aether.artifact.Artifact;
@@ -60,7 +63,7 @@ public class ManifestXmlSupport extends XmlSupport {
             printWriter.println("<manifest>");
 
             // add artifacts
-            for (Artifact artifact : manifest.getArtifacts()) {
+            for (Artifact artifact : sortArtifacts(manifest)) {
                 printWriter.println(String.format("<artifact package=\"%s\" name=\"%s\" version=\"%s\" classifier=\"%s\" extension=\"%s\"/>",
                         artifact.getGroupId(), artifact.getArtifactId(), artifact.getVersion(), artifact.getClassifier(), artifact.getExtension()));
             }
@@ -72,6 +75,26 @@ public class ManifestXmlSupport extends XmlSupport {
             throw new XmlException("Unable to write manifest", e);
         }
 
+    }
+
+    private static List<Artifact> sortArtifacts(Manifest manifest) {
+        List<Artifact> sorted = new ArrayList<>(manifest.getArtifacts());
+        Collections.sort(sorted, (a1, a2)-> {
+            if (!a1.getGroupId().equals(a2.getGroupId())) {
+                return a1.getGroupId().compareTo(a2.getGroupId());
+            }
+            if (!a1.getArtifactId().equals(a2.getArtifactId())) {
+                return a1.getArtifactId().compareTo(a2.getArtifactId());
+            }
+            if (!a1.getClassifier().equals(a2.getClassifier())) {
+                return a1.getClassifier().compareTo(a2.getClassifier());
+            }
+            if (!a1.getExtension().equals(a2.getExtension())) {
+                return a1.getExtension().compareTo(a2.getExtension());
+            }
+            return a1.getVersion().compareTo(a2.getVersion());
+        });
+        return sorted;
     }
 
     public static void write(Manifest manifest) throws XmlException {
