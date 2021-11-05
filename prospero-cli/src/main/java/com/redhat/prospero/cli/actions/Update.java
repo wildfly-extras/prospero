@@ -29,6 +29,7 @@ import java.util.stream.Collectors;
 import com.redhat.prospero.api.ArtifactUtils;
 import com.redhat.prospero.api.InstallationMetadata;
 import com.redhat.prospero.api.ArtifactChange;
+import com.redhat.prospero.api.MetadataException;
 import com.redhat.prospero.galleon.ChannelMavenArtifactRepositoryManager;
 import com.redhat.prospero.api.ArtifactNotFoundException;
 import com.redhat.prospero.api.Channel;
@@ -60,7 +61,7 @@ public class Update implements AutoCloseable {
     private final Path installDir;
     private final boolean quiet;
 
-    public Update(Path installDir, boolean quiet) throws XmlException, IOException, ProvisioningException {
+    public Update(Path installDir, boolean quiet) throws IOException, ProvisioningException, MetadataException {
         this.localInstallation = new LocalInstallation(installDir);
         this.installDir = installDir;
         final RepositorySystem repoSystem = MavenUtils.defaultRepositorySystem();
@@ -98,7 +99,7 @@ public class Update implements AutoCloseable {
         }
     }
 
-    public void doUpdateAll() throws ArtifactNotFoundException, XmlException, PackageInstallationException, ProvisioningException, IOException {
+    public void doUpdateAll() throws ArtifactNotFoundException, XmlException, ProvisioningException, IOException, MetadataException {
         final List<ArtifactChange> updates = new ArrayList<>();
         for (Artifact artifact : localInstallation.getManifest().getArtifacts()) {
             updates.addAll(findUpdates(artifact.getGroupId(), artifact.getArtifactId()));
@@ -178,7 +179,7 @@ public class Update implements AutoCloseable {
         return collected;
     }
 
-    public void doUpdate(String groupId, String artifactId) throws ArtifactNotFoundException, XmlException, PackageInstallationException {
+    public void doUpdate(String groupId, String artifactId) throws ArtifactNotFoundException, XmlException, PackageInstallationException, MetadataException {
         final List<ArtifactChange> updates = findUpdates(groupId, artifactId);
         if (updates.isEmpty()) {
             System.out.println("No updates to execute");

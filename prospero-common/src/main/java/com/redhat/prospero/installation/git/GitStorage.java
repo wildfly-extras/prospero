@@ -18,11 +18,11 @@
 package com.redhat.prospero.installation.git;
 
 import com.redhat.prospero.api.InstallationMetadata;
+import com.redhat.prospero.api.MetadataException;
 import com.redhat.prospero.api.SavedState;
 import com.redhat.prospero.api.ArtifactChange;
 import org.eclipse.jgit.api.Git;
 import org.eclipse.jgit.api.errors.GitAPIException;
-import org.eclipse.jgit.api.errors.NoFilepatternException;
 import org.eclipse.jgit.lib.Constants;
 import org.eclipse.jgit.lib.PersonIdent;
 import org.eclipse.jgit.revwalk.RevCommit;
@@ -34,20 +34,24 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
 
-public class GitStorage {
+public class GitStorage implements AutoCloseable {
 
     public static final String GIT_HISTORY_USER = "EAP Installer";
     public static final PersonIdent GIT_HISTORY_COMMITTER = new PersonIdent(GIT_HISTORY_USER, "");
+    private final Git git;
     private Path base;
 
-    public GitStorage(Path base) {
+    public GitStorage(Path base) throws MetadataException {
         this.base = base;
+        try {
+            git = initGit();
+        } catch (GitAPIException | IOException e) {
+            throw new MetadataException("Unable to open or create git repository for the installation", e);
+        }
     }
 
-    public List<SavedState> getRevisions() {
+    public List<SavedState> getRevisions() throws MetadataException {
         try {
-            Git git = getRepository();
-
             final Iterable<RevCommit> call = git.log().call();
             List<SavedState> history = new ArrayList<>();
             for (RevCommit revCommit : call) {
@@ -57,19 +61,13 @@ public class GitStorage {
             }
 
             return history;
-        } catch (IOException e) {
-            e.printStackTrace();
-        } catch (NoFilepatternException e) {
-            e.printStackTrace();
         } catch (GitAPIException e) {
-            e.printStackTrace();
+            throw new MetadataException("Unable to read history of installation", e);
         }
-        return null; // TODO: throw exception
     }
 
-    public void record() {
+    public void record() throws MetadataException {
         try {
-            Git git = getRepository();
             git.add().addFilepattern(InstallationMetadata.MANIFEST_FILE_NAME).call();
 
             if (isRepositoryEmpty(git)) {
@@ -78,18 +76,13 @@ public class GitStorage {
                 git.commit().setCommitter(GIT_HISTORY_COMMITTER).setMessage(SavedState.Type.UPDATE.name()).call();
             }
 
-        } catch (IOException e) {
-            e.printStackTrace();
-        } catch (NoFilepatternException e) {
-            e.printStackTrace();
-        } catch (GitAPIException e) {
-            e.printStackTrace();
+        } catch (IOException | GitAPIException e) {
+            throw new MetadataException("Unable to write history of installation", e);
         }
     }
 
-    public void revert(SavedState savedState) {
+    public void revert(SavedState savedState) throws MetadataException {
         try {
-            final Git git = getRepository();
             git.checkout()
                     .setStartPoint(savedState.getName())
                     .addPath(InstallationMetadata.MANIFEST_FILE_NAME)
@@ -97,27 +90,23 @@ public class GitStorage {
             git.add().addFilepattern(InstallationMetadata.MANIFEST_FILE_NAME).call();
             git.commit().setCommitter(GIT_HISTORY_COMMITTER).setMessage(SavedState.Type.ROLLBACK.name()).call();
         } catch (GitAPIException e) {
-            e.printStackTrace();
-        } catch (IOException e) {
-            e.printStackTrace();
+            throw new MetadataException("Unable to write history of installation", e);
         }
     }
 
-    public List<ArtifactChange> getChanges(SavedState savedState) throws IOException {
+    public List<ArtifactChange> getChanges(SavedState savedState) throws MetadataException {
         try {
-            return new GitDiffParser(getRepository()).getChanges(savedState.getName());
-        } catch (GitAPIException e) {
-            // TODO: throw Exception
-            e.printStackTrace();
+            return new GitDiffParser(git).getChanges(savedState.getName());
+        } catch (IOException e) {
+            throw new MetadataException("Unable to read history of installation", e);
         }
-        return null;
     }
 
     private boolean isRepositoryEmpty(Git git) throws IOException {
         return git.getRepository().resolve(Constants.HEAD) == null;
     }
 
-    private Git getRepository() throws GitAPIException, IOException {
+    private Git initGit() throws GitAPIException, IOException {
         Git git;
         if (!base.resolve(".git").toFile().exists()) {
             git = Git.init().setDirectory(base.toFile()).call();
@@ -125,5 +114,12 @@ public class GitStorage {
             git = Git.open(base.toFile());
         }
         return git;
+    }
+
+    @Override
+    public void close() throws Exception {
+        if (git != null) {
+            git.close();
+        }
     }
 }

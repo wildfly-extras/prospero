@@ -28,6 +28,7 @@ import com.redhat.prospero.api.Channel;
 import com.redhat.prospero.api.Installation;
 import com.redhat.prospero.api.Manifest;
 import com.redhat.prospero.api.InstallationMetadata;
+import com.redhat.prospero.api.MetadataException;
 import com.redhat.prospero.api.PackageInstallationException;
 import com.redhat.prospero.model.ModuleXmlSupport;
 import com.redhat.prospero.model.XmlException;
@@ -43,7 +44,7 @@ public class LocalInstallation implements Installation {
     private final Modules modules;
     private final InstallationMetadata metadata;
 
-    public LocalInstallation(Path base) throws XmlException, IOException, ProvisioningException {
+    public LocalInstallation(Path base) throws MetadataException {
         this.base = base;
         modules = new Modules(base);
 

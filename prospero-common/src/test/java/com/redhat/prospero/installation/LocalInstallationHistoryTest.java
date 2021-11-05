@@ -22,13 +22,10 @@ import com.redhat.prospero.api.InstallationMetadata;
 import com.redhat.prospero.api.Manifest;
 import com.redhat.prospero.api.SavedState;
 import com.redhat.prospero.model.ManifestXmlSupport;
-import com.redhat.prospero.model.XmlException;
 import org.eclipse.aether.artifact.DefaultArtifact;
-import org.jboss.galleon.ProvisioningException;
 import org.junit.Test;
 
 import java.io.FileWriter;
-import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Arrays;
@@ -108,7 +105,7 @@ public class LocalInstallationHistoryTest {
         assertEquals(0, changes.size());
     }
 
-    private InstallationMetadata mockInstallation() throws IOException, XmlException, ProvisioningException {
+    private InstallationMetadata mockInstallation() throws Exception {
         final Path installation = Files.createTempDirectory("installation");
         installation.toFile().deleteOnExit();
         try (FileWriter fw = new FileWriter(installation.resolve(InstallationMetadata.CHANNELS_FILE_NAME).toFile())) {

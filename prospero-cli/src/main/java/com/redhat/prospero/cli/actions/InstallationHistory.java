@@ -19,6 +19,7 @@ package com.redhat.prospero.cli.actions;
 
 import com.redhat.prospero.api.ArtifactChange;
 import com.redhat.prospero.api.InstallationMetadata;
+import com.redhat.prospero.api.MetadataException;
 import com.redhat.prospero.api.Repository;
 import com.redhat.prospero.api.SavedState;
 import com.redhat.prospero.galleon.ChannelMavenArtifactRepositoryManager;
@@ -68,12 +69,12 @@ public class InstallationHistory {
 
     }
 
-    public List<ArtifactChange> compare(Path installation, SavedState savedState) throws XmlException, ProvisioningException, IOException {
+    public List<ArtifactChange> compare(Path installation, SavedState savedState) throws XmlException, ProvisioningException, IOException, MetadataException {
         final LocalInstallation localInstallation = new LocalInstallation(installation);
         return localInstallation.getMetadata().getChangesSince(savedState);
     }
 
-    public List<SavedState> getRevisions(Path installation) throws XmlException, ProvisioningException, IOException {
+    public List<SavedState> getRevisions(Path installation) throws XmlException, ProvisioningException, IOException, MetadataException {
         final LocalInstallation localInstallation = new LocalInstallation(installation);
         return localInstallation.getMetadata().getRevisions();
     }

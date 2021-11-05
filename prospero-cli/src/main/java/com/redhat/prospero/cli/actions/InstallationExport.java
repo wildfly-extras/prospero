@@ -18,8 +18,8 @@
 package com.redhat.prospero.cli.actions;
 
 import com.redhat.prospero.api.InstallationMetadata;
+import com.redhat.prospero.api.MetadataException;
 import com.redhat.prospero.installation.LocalInstallation;
-import com.redhat.prospero.model.XmlException;
 import org.jboss.galleon.ProvisioningException;
 
 import java.io.IOException;
@@ -34,7 +34,7 @@ public class InstallationExport {
         new InstallationExport().export(Paths.get(installation), exportName);
     }
 
-    public void export(Path installationDir, String exportName) throws ProvisioningException, XmlException, IOException {
+    public void export(Path installationDir, String exportName) throws ProvisioningException, IOException, MetadataException {
         if (!installationDir.toFile().exists()) {
             throw new ProvisioningException("Installation dir " + installationDir + " doesn't exist");
         }
