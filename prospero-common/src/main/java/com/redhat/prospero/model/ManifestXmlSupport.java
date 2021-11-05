@@ -27,6 +27,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
+import java.util.StringTokenizer;
 
 import com.redhat.prospero.api.Manifest;
 import org.eclipse.aether.artifact.Artifact;
@@ -45,6 +46,35 @@ public class ManifestXmlSupport extends XmlSupport {
 
     public static Manifest parse(File manifestFile) throws XmlException {
         return INSTANCE.doParse(manifestFile);
+    }
+
+    public static Artifact parseLine(String line) {
+        line = line.replace("/>","").replace("<","");
+        StringTokenizer st = new StringTokenizer(line, " ");
+        String groupId = null;
+        String artifactId = null;
+        String version = null;
+        String classifier = null;
+        String extension = null;
+        while (st.hasMoreElements()) {
+            final String token = st.nextElement().toString();
+            if (token.startsWith("package")) {
+                groupId = token.split("=")[1].replaceAll("\"", "");
+            }
+            if (token.startsWith("name")) {
+                artifactId = token.split("=")[1].replaceAll("\"", "");
+            }
+            if (token.startsWith("version")) {
+                version = token.split("=")[1].replaceAll("\"", "");
+            }
+            if (token.startsWith("classifier")) {
+                classifier = token.split("=")[1].replaceAll("\"", "");
+            }
+            if (token.startsWith("extension")) {
+                extension = token.split("=")[1].replaceAll("\"", "");
+            }
+        }
+        return new DefaultArtifact(groupId, artifactId, classifier, extension, version);
     }
 
     public static void write(Manifest manifest, File manifestFile) throws XmlException {

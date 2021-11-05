@@ -15,10 +15,11 @@
  * limitations under the License.
  */
 
-package com.redhat.prospero.installation;
+package com.redhat.prospero.installation.git;
 
 import com.redhat.prospero.api.InstallationMetadata;
 import com.redhat.prospero.api.SavedState;
+import com.redhat.prospero.api.ArtifactChange;
 import org.eclipse.jgit.api.Git;
 import org.eclipse.jgit.api.errors.GitAPIException;
 import org.eclipse.jgit.api.errors.NoFilepatternException;
@@ -100,6 +101,16 @@ public class GitStorage {
         } catch (IOException e) {
             e.printStackTrace();
         }
+    }
+
+    public List<ArtifactChange> getChanges(SavedState savedState) throws IOException {
+        try {
+            return new GitDiffParser(getRepository()).getChanges(savedState.getName());
+        } catch (GitAPIException e) {
+            // TODO: throw Exception
+            e.printStackTrace();
+        }
+        return null;
     }
 
     private boolean isRepositoryEmpty(Git git) throws IOException {

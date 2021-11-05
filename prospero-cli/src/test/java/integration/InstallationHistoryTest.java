@@ -17,6 +17,7 @@
 
 package integration;
 
+import com.redhat.prospero.api.ArtifactChange;
 import com.redhat.prospero.api.InstallationMetadata;
 import com.redhat.prospero.cli.actions.GalleonProvision;
 import com.redhat.prospero.cli.actions.InstallationHistory;
@@ -26,14 +27,18 @@ import com.redhat.prospero.model.ManifestXmlSupport;
 import com.redhat.prospero.model.XmlException;
 import org.apache.commons.io.FileUtils;
 import org.eclipse.aether.artifact.Artifact;
+import org.eclipse.aether.artifact.DefaultArtifact;
 import org.junit.After;
+import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 
 import java.io.File;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 
 import static org.junit.Assert.assertEquals;
@@ -92,6 +97,38 @@ public class InstallationHistoryTest {
 
         final Optional<Artifact> wildflyCliArtifact = readArtifactFromManifest("org.wildfly.core", "wildfly-cli");
         assertEquals("17.0.0.Final", wildflyCliArtifact.get().getVersion());
+    }
+
+    @Test
+    public void displayChanges() throws Exception {
+        final Path channelFile = TestUtil.prepareChannelFile("local-repo-desc.json");
+        new GalleonProvision().installFeaturePack("org.wildfly.core:wildfly-core-galleon-pack:17.0.0.Final", OUTPUT_PATH.toString(), channelFile.toString());
+
+        TestUtil.prepareChannelFile(OUTPUT_PATH.resolve(InstallationMetadata.CHANNELS_FILE_NAME), "local-repo-desc.json", "local-updates-repo-desc.json");
+        new Update(OUTPUT_PATH, true).doUpdateAll();
+
+        final InstallationHistory installationHistory = new InstallationHistory();
+        final List<SavedState> revisions = installationHistory.getRevisions(OUTPUT_PATH);
+
+        final SavedState savedState = revisions.get(1);
+        final List<ArtifactChange> changes = installationHistory.compare(OUTPUT_PATH, savedState);
+
+        assertEquals(2, changes.size());
+        Map<Artifact, Artifact> expected = new HashMap<>();
+        expected.put(new DefaultArtifact("org.wildfly.core:wildfly-cli:17.0.0.Final"),
+                new DefaultArtifact("org.wildfly.core:wildfly-cli:17.0.1.Final"));
+        expected.put(new DefaultArtifact("org.wildfly.core:wildfly-cli:jar:client:17.0.0.Final"),
+                new DefaultArtifact("org.wildfly.core:wildfly-cli:jar:client:17.0.1.Final"));
+
+        for (ArtifactChange change : changes) {
+            if (expected.containsKey(change.getOldVersion())) {
+                assertEquals(expected.get(change.getOldVersion()), change.getNewVersion());
+                expected.remove(change.getOldVersion());
+            } else {
+                Assert.fail("Unexpected artifact in updates " + change);
+            }
+        }
+        assertEquals("Not all expected changes were listed", 0, expected.size());
     }
 
     private Optional<Artifact> readArtifactFromManifest(String groupId, String artifactId) throws XmlException {

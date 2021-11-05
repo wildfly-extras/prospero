@@ -17,6 +17,7 @@
 
 package com.redhat.prospero.cli.actions;
 
+import com.redhat.prospero.api.ArtifactChange;
 import com.redhat.prospero.api.InstallationMetadata;
 import com.redhat.prospero.api.Repository;
 import com.redhat.prospero.api.SavedState;
@@ -51,8 +52,25 @@ public class InstallationHistory {
         } else if (op.equals("revert")) {
             final String revision = args[2];
             installationHistory.rollback(installation, new SavedState(revision));
+        } else if (op.equals("compare")) {
+            final String revision = args[2];
+            final List<ArtifactChange> changes = installationHistory.compare(installation, new SavedState(revision));
+            if (changes.isEmpty()) {
+                System.out.println("No changes found");
+            } else {
+                changes.forEach((c-> System.out.println(c)));
+            }
+        } else {
+            System.out.println("Unknown operation " + op);
+            System.exit(-1);
         }
 
+
+    }
+
+    public List<ArtifactChange> compare(Path installation, SavedState savedState) throws XmlException, ProvisioningException, IOException {
+        final LocalInstallation localInstallation = new LocalInstallation(installation);
+        return localInstallation.getMetadata().getChangesSince(savedState);
     }
 
     public List<SavedState> getRevisions(Path installation) throws XmlException, ProvisioningException, IOException {

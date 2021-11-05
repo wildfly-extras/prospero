@@ -21,7 +21,6 @@ import java.io.IOException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Scanner;
 import java.util.Set;
@@ -29,6 +28,7 @@ import java.util.stream.Collectors;
 
 import com.redhat.prospero.api.ArtifactUtils;
 import com.redhat.prospero.api.InstallationMetadata;
+import com.redhat.prospero.api.ArtifactChange;
 import com.redhat.prospero.galleon.ChannelMavenArtifactRepositoryManager;
 import com.redhat.prospero.api.ArtifactNotFoundException;
 import com.redhat.prospero.api.Channel;
@@ -39,7 +39,6 @@ import com.redhat.prospero.impl.repository.curated.ChannelBuilder;
 import com.redhat.prospero.installation.LocalInstallation;
 import com.redhat.prospero.installation.Modules;
 import com.redhat.prospero.maven.MavenUtils;
-import com.redhat.prospero.model.ManifestXmlSupport;
 import com.redhat.prospero.model.XmlException;
 import org.eclipse.aether.DefaultRepositorySystemSession;
 import org.eclipse.aether.RepositorySystem;
@@ -100,7 +99,7 @@ public class Update implements AutoCloseable {
     }
 
     public void doUpdateAll() throws ArtifactNotFoundException, XmlException, PackageInstallationException, ProvisioningException, IOException {
-        final List<UpdateAction> updates = new ArrayList<>();
+        final List<ArtifactChange> updates = new ArrayList<>();
         for (Artifact artifact : localInstallation.getManifest().getArtifacts()) {
             updates.addAll(findUpdates(artifact.getGroupId(), artifact.getArtifactId()));
         }
@@ -122,7 +121,7 @@ public class Update implements AutoCloseable {
 
         if (!updates.isEmpty()) {
             System.out.println("Artefact updates found: ");
-            for (UpdateAction update : updates) {
+            for (ArtifactChange update : updates) {
                 System.out.println(update);
             }
         }
@@ -180,17 +179,17 @@ public class Update implements AutoCloseable {
     }
 
     public void doUpdate(String groupId, String artifactId) throws ArtifactNotFoundException, XmlException, PackageInstallationException {
-        final List<UpdateAction> updates = findUpdates(groupId, artifactId);
+        final List<ArtifactChange> updates = findUpdates(groupId, artifactId);
         if (updates.isEmpty()) {
             System.out.println("No updates to execute");
             return;
         }
 
         System.out.println("Updates found: ");
-        for (UpdateAction update : updates) {
+        for (ArtifactChange update : updates) {
             System.out.print(update + "\t\t\t\t\t");
 
-            localInstallation.updateArtifact(update.oldVersion, update.newVersion, update.newVersion.getFile());
+            localInstallation.updateArtifact(update.getOldVersion(), update.getNewVersion(), update.getNewVersion().getFile());
 
             System.out.println("DONE");
         }
@@ -198,8 +197,8 @@ public class Update implements AutoCloseable {
         localInstallation.getMetadata().writeFiles();
     }
 
-    public List<UpdateAction> findUpdates(String groupId, String artifactId) throws ArtifactNotFoundException, XmlException {
-        List<UpdateAction> updates = new ArrayList<>();
+    public List<ArtifactChange> findUpdates(String groupId, String artifactId) throws ArtifactNotFoundException, XmlException {
+        List<ArtifactChange> updates = new ArrayList<>();
 
         final Manifest manifest = localInstallation.getManifest();
 
@@ -215,32 +214,9 @@ public class Update implements AutoCloseable {
             return updates;
         }
 
-        updates.add(new UpdateAction(artifact, latestVersion));
+        updates.add(new ArtifactChange(artifact, latestVersion));
 
         return updates;
     }
 
-    class UpdateAction {
-        private Artifact oldVersion;
-        private Artifact newVersion;
-
-        public UpdateAction(Artifact oldVersion, Artifact newVersion) {
-            this.oldVersion = oldVersion;
-            this.newVersion = newVersion;
-        }
-
-        public Artifact getNewVersion() {
-            return newVersion;
-        }
-
-        public Artifact getOldVersion() {
-            return oldVersion;
-        }
-
-        @Override
-        public String toString() {
-            return String.format("Update [%s, %s]:\t\t %s ==> %s", oldVersion.getGroupId(), oldVersion.getArtifactId(),
-                    oldVersion.getVersion(), newVersion.getVersion());
-        }
-    }
 }

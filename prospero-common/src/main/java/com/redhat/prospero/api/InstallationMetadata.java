@@ -17,7 +17,7 @@
 
 package com.redhat.prospero.api;
 
-import com.redhat.prospero.installation.GitStorage;
+import com.redhat.prospero.installation.git.GitStorage;
 import com.redhat.prospero.model.ManifestXmlSupport;
 import com.redhat.prospero.model.XmlException;
 import org.eclipse.aether.artifact.Artifact;
@@ -203,5 +203,9 @@ public class InstallationMetadata {
 
         // re-parse metadata
         return new InstallationMetadata(base);
+    }
+
+    public List<ArtifactChange> getChangesSince(SavedState savedState) throws IOException {
+        return gitStorage.getChanges(savedState);
     }
 }

@@ -17,6 +17,7 @@
 
 package com.redhat.prospero.installation;
 
+import com.redhat.prospero.api.ArtifactChange;
 import com.redhat.prospero.api.InstallationMetadata;
 import com.redhat.prospero.api.Manifest;
 import com.redhat.prospero.api.SavedState;
@@ -72,10 +73,39 @@ public class LocalInstallationHistoryTest {
         final InstallationMetadata reverted = metadata.rollback(previousState);
 
         final List<SavedState> revisions = reverted.getRevisions();
-        revisions.forEach(s->System.out.println(s.getType()));
         assertEquals(SavedState.Type.ROLLBACK, revisions.get(0).getType());
         assertEquals(SavedState.Type.UPDATE, revisions.get(1).getType());
         assertEquals(SavedState.Type.INSTALL, revisions.get(2).getType());
+    }
+
+    @Test
+    public void showDifferences() throws Exception {
+        final InstallationMetadata metadata = mockInstallation();
+
+        metadata.getManifest().updateVersion(new DefaultArtifact("foo:bar:1.1.2"));
+        metadata.writeFiles();
+
+        final SavedState previousState = metadata.getRevisions().get(1);
+
+        final List<ArtifactChange> changes = metadata.getChangesSince(previousState);
+        assertEquals(1, changes.size());
+        assertEquals("foo", changes.get(0).getOldVersion().getGroupId());
+        assertEquals("bar", changes.get(0).getOldVersion().getArtifactId());
+        assertEquals("1.1.1", changes.get(0).getOldVersion().getVersion());
+        assertEquals("1.1.2", changes.get(0).getNewVersion().getVersion());
+    }
+
+    @Test
+    public void showDifferences_noChanges() throws Exception {
+        final InstallationMetadata metadata = mockInstallation();
+
+        metadata.getManifest().updateVersion(new DefaultArtifact("foo:bar:1.1.2"));
+        metadata.writeFiles();
+
+        final SavedState previousState = metadata.getRevisions().get(0);
+
+        final List<ArtifactChange> changes = metadata.getChangesSince(previousState);
+        assertEquals(0, changes.size());
     }
 
     private InstallationMetadata mockInstallation() throws IOException, XmlException, ProvisioningException {
