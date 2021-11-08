@@ -17,6 +17,7 @@
 
 package com.redhat.prospero.api;
 
+import com.redhat.prospero.installation.git.GitStorage;
 import com.redhat.prospero.model.ManifestXmlSupport;
 import com.redhat.prospero.model.XmlException;
 import org.eclipse.aether.artifact.Artifact;
@@ -48,38 +49,58 @@ public class InstallationMetadata {
     private final Manifest manifest;
     private final ProvisioningConfig provisioningConfig;
     private final List<Channel> channels;
+    private final GitStorage gitStorage;
+    private Path base;
 
-    private InstallationMetadata(Path manifestFile, Path channelsFile, Path provisioningFile) throws XmlException, ProvisioningException, IOException {
+    private InstallationMetadata(Path manifestFile, Path channelsFile, Path provisioningFile) throws MetadataException {
+        this.base = manifestFile.getParent();
+        this.gitStorage = null;
         this.manifestFile = manifestFile;
         this.channelsFile = channelsFile;
         this.provisioningFile = provisioningFile;
 
-        this.manifest = Manifest.parseManifest(manifestFile);
-        this.channels = Channel.readChannels(channelsFile);
-        this.provisioningConfig = ProvisioningXmlParser.parse(provisioningFile);
+        try {
+            this.manifest = Manifest.parseManifest(manifestFile);
+            this.channels = Channel.readChannels(channelsFile);
+            this.provisioningConfig = ProvisioningXmlParser.parse(provisioningFile);
+        } catch (XmlException | IOException | ProvisioningException e) {
+            throw new MetadataException("Error when parsing installation metadata", e);
+        }
     }
 
-    public InstallationMetadata(Path base) throws XmlException, ProvisioningException, IOException {
+    public InstallationMetadata(Path base) throws MetadataException {
+        this.base = base;
+        this.gitStorage = new GitStorage(base);
         this.manifestFile = base.resolve(InstallationMetadata.MANIFEST_FILE_NAME);
         this.channelsFile = base.resolve(InstallationMetadata.CHANNELS_FILE_NAME);
         this.provisioningFile = base.resolve(GALLEON_INSTALLATION_DIR).resolve(InstallationMetadata.PROVISIONING_FILE_NAME);
 
-        this.manifest = Manifest.parseManifest(manifestFile);
-        this.channels = Channel.readChannels(channelsFile);
-        this.provisioningConfig = ProvisioningXmlParser.parse(provisioningFile);
+        try {
+            this.manifest = Manifest.parseManifest(manifestFile);
+            this.channels = Channel.readChannels(channelsFile);
+            this.provisioningConfig = ProvisioningXmlParser.parse(provisioningFile);
+        } catch (XmlException | IOException | ProvisioningException e) {
+            throw new MetadataException("Error when parsing installation metadata", e);
+        }
     }
 
-    public InstallationMetadata(Path base, List<Artifact> artifacts, List<Channel> channels) throws ProvisioningException {
+    public InstallationMetadata(Path base, List<Artifact> artifacts, List<Channel> channels) throws MetadataException {
+        this.base = base;
+        this.gitStorage = new GitStorage(base);
         this.manifestFile = base.resolve(InstallationMetadata.MANIFEST_FILE_NAME);
         this.channelsFile = base.resolve(InstallationMetadata.CHANNELS_FILE_NAME);
         this.provisioningFile = base.resolve(GALLEON_INSTALLATION_DIR).resolve(InstallationMetadata.PROVISIONING_FILE_NAME);
 
         this.manifest = new Manifest(artifacts, base.resolve(InstallationMetadata.MANIFEST_FILE_NAME));
         this.channels = channels;
-        this.provisioningConfig = ProvisioningXmlParser.parse(provisioningFile);
+        try {
+            this.provisioningConfig = ProvisioningXmlParser.parse(provisioningFile);
+        } catch (ProvisioningException e) {
+            throw new MetadataException("Error when parsing installation metadata", e);
+        }
     }
 
-    public static InstallationMetadata importMetadata(Path location) throws IOException, XmlException, ProvisioningException {
+    public static InstallationMetadata importMetadata(Path location) throws IOException, MetadataException {
         Path manifestFile = null;
         Path channelsFile = null;
         Path provisioningFile = null;
@@ -166,18 +187,37 @@ public class InstallationMetadata {
         return provisioningConfig;
     }
 
-    public void writeFiles() {
+    public void writeFiles() throws MetadataException {
         try {
             ManifestXmlSupport.write(this.manifest);
         } catch (XmlException e) {
-            e.printStackTrace();
+            throw new MetadataException("Unable to save manifest in installation", e);
         }
 
         // write channels into installation
         try {
             Channel.writeChannels(this.channels, this.channelsFile.toFile());
         } catch (IOException e) {
-            e.printStackTrace();
+            throw new MetadataException("Unable to save channel list in installation", e);
         }
+
+        gitStorage.record();
+    }
+
+    public List<SavedState> getRevisions() throws MetadataException {
+        return gitStorage.getRevisions();
+    }
+
+    public InstallationMetadata rollback(SavedState savedState) throws MetadataException {
+        // checkout previous version
+        // record as rollback operation
+        gitStorage.revert(savedState);
+
+        // re-parse metadata
+        return new InstallationMetadata(base);
+    }
+
+    public List<ArtifactChange> getChangesSince(SavedState savedState) throws MetadataException {
+        return gitStorage.getChanges(savedState);
     }
 }

@@ -19,11 +19,11 @@ package com.redhat.prospero.cli.actions;
 
 import com.redhat.prospero.api.Channel;
 import com.redhat.prospero.api.InstallationMetadata;
+import com.redhat.prospero.api.MetadataException;
 import com.redhat.prospero.api.Repository;
 import com.redhat.prospero.galleon.ChannelMavenArtifactRepositoryManager;
 import com.redhat.prospero.impl.repository.curated.ChannelBuilder;
 import com.redhat.prospero.maven.MavenUtils;
-import com.redhat.prospero.model.XmlException;
 import org.eclipse.aether.DefaultRepositorySystemSession;
 import org.eclipse.aether.RepositorySystem;
 import org.eclipse.aether.artifact.Artifact;
@@ -49,7 +49,8 @@ public class InstallationRestore {
         new InstallationRestore().restore(Paths.get(targetDir), Paths.get(metadataBundle));
     }
 
-    public void restore(Path installDir, Path metadataBundleZip) throws ProvisioningException, XmlException, IOException {
+    public void restore(Path installDir, Path metadataBundleZip)
+            throws ProvisioningException, IOException, MetadataException {
         if (installDir.toFile().exists()) {
             throw new ProvisioningException("Installation dir " + installDir + " already exists");
         }
@@ -68,7 +69,8 @@ public class InstallationRestore {
         writeProsperoMetadata(installDir, repoManager, metadataBundle.getChannels());
     }
 
-    private void writeProsperoMetadata(Path home, ChannelMavenArtifactRepositoryManager maven, List<Channel> channels) throws ProvisioningException {
+    private void writeProsperoMetadata(Path home, ChannelMavenArtifactRepositoryManager maven, List<Channel> channels)
+            throws MetadataException {
         List<Artifact> artifacts = new ArrayList<>();
         for (MavenArtifact resolvedArtifact : maven.resolvedArtfacts()) {
             artifacts.add(from(resolvedArtifact));

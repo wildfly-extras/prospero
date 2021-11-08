@@ -18,6 +18,7 @@
 package com.redhat.prospero.cli.actions;
 
 import com.redhat.prospero.api.InstallationMetadata;
+import com.redhat.prospero.api.MetadataException;
 import com.redhat.prospero.galleon.ChannelMavenArtifactRepositoryManager;
 
 import java.io.IOException;
@@ -49,7 +50,7 @@ public class GalleonProvision {
         }
     }
 
-    public static void main(String[] args) throws ProvisioningException, IOException {
+    public static void main(String[] args) throws ProvisioningException, IOException, MetadataException {
         if (args.length < 3) {
             System.out.println("Not enough parameters. Need to provide FPL, output directory and channels file.");
             return;
@@ -61,7 +62,7 @@ public class GalleonProvision {
         new GalleonProvision().installFeaturePack(fpl, base, channelsFile);
     }
 
-    public void installFeaturePack(String fpl, String path, String channelsFile) throws ProvisioningException, IOException {
+    public void installFeaturePack(String fpl, String path, String channelsFile) throws ProvisioningException, IOException, MetadataException {
         Path installDir = Paths.get(path);
         if (Files.exists(installDir)) {
             throw new ProvisioningException("Installation dir " + installDir + " already exists");
@@ -76,7 +77,7 @@ public class GalleonProvision {
         }
     }
 
-    public void installFeaturePackFromFile(Path installationFile, String path, String channelsFile) throws ProvisioningException, IOException {
+    public void installFeaturePackFromFile(Path installationFile, String path, String channelsFile) throws ProvisioningException, IOException, MetadataException {
         Path installDir = Paths.get(path);
         if (Files.exists(installDir)) {
             throw new ProvisioningException("Installation dir " + installDir + " already exists");
@@ -90,7 +91,7 @@ public class GalleonProvision {
         }
     }
 
-    private void writeProsperoMetadata(Path home, ChannelMavenArtifactRepositoryManager maven, List<Channel> channels) throws ProvisioningException {
+    private void writeProsperoMetadata(Path home, ChannelMavenArtifactRepositoryManager maven, List<Channel> channels) throws MetadataException {
         List<Artifact> artifacts = new ArrayList<>();
         for (MavenArtifact resolvedArtifact : maven.resolvedArtfacts()) {
             artifacts.add(from(resolvedArtifact));
