@@ -33,6 +33,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
 import java.util.List;
+import java.util.Set;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
 import java.util.zip.ZipOutputStream;
@@ -173,6 +174,12 @@ public class InstallationMetadata {
             zos.closeEntry();
         }
         return file.toPath();
+    }
+
+    public void registerUpdates(Set<Artifact> artifacts) {
+        for (Artifact artifact : artifacts) {
+            manifest.updateVersion(artifact);
+        }
     }
 
     public Manifest getManifest() {

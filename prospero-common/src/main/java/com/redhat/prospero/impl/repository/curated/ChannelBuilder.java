@@ -68,14 +68,6 @@ public class ChannelBuilder {
         return this;
     }
 
-    public Repository buildChannelRepository(Channel channel) throws IOException {
-        final String channelDefinitionUrl = channel.getUrl();
-        final ChannelDefinition curatedPolicies = new ChannelDefinitionParser().parsePolicyFile(new URL(channelDefinitionUrl));
-        final List<RemoteRepository> repositories = toRepositories(channel.getName(), curatedPolicies.getRepositoryUrls());
-        final DefaultResolver resolver = new DefaultResolver(repositories, repoSystem, repoSession);
-        return new CuratedMavenRepository(resolver, curatedPolicies.getChannelRules());
-    }
-
     private List<RemoteRepository> toRepositories(String channel, List<String> urls) {
         List<RemoteRepository> list = new ArrayList<>();
         if (urls == null) {

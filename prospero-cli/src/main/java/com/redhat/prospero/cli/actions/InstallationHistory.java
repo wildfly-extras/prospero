@@ -24,15 +24,11 @@ import com.redhat.prospero.api.Repository;
 import com.redhat.prospero.api.SavedState;
 import com.redhat.prospero.galleon.ChannelMavenArtifactRepositoryManager;
 import com.redhat.prospero.impl.repository.curated.ChannelBuilder;
-import com.redhat.prospero.installation.LocalInstallation;
 import com.redhat.prospero.maven.MavenUtils;
-import com.redhat.prospero.model.XmlException;
 import org.eclipse.aether.DefaultRepositorySystemSession;
 import org.eclipse.aether.RepositorySystem;
-import org.jboss.galleon.ProvisioningException;
 import org.jboss.galleon.ProvisioningManager;
 
-import java.io.IOException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.List;
@@ -69,18 +65,18 @@ public class InstallationHistory {
 
     }
 
-    public List<ArtifactChange> compare(Path installation, SavedState savedState) throws XmlException, ProvisioningException, IOException, MetadataException {
-        final LocalInstallation localInstallation = new LocalInstallation(installation);
-        return localInstallation.getMetadata().getChangesSince(savedState);
+    public List<ArtifactChange> compare(Path installation, SavedState savedState) throws MetadataException {
+        final InstallationMetadata installationMetadata = new InstallationMetadata(installation);
+        return installationMetadata.getChangesSince(savedState);
     }
 
-    public List<SavedState> getRevisions(Path installation) throws XmlException, ProvisioningException, IOException, MetadataException {
-        final LocalInstallation localInstallation = new LocalInstallation(installation);
-        return localInstallation.getMetadata().getRevisions();
+    public List<SavedState> getRevisions(Path installation) throws MetadataException {
+        final InstallationMetadata installationMetadata = new InstallationMetadata(installation);
+        return installationMetadata.getRevisions();
     }
 
     public void rollback(Path installation, SavedState savedState) throws Exception {
-        InstallationMetadata metadata = new LocalInstallation(installation).getMetadata();
+        InstallationMetadata metadata = new InstallationMetadata(installation);
         metadata = metadata.rollback(savedState);
         final RepositorySystem repositorySystem = MavenUtils.defaultRepositorySystem();
         final DefaultRepositorySystemSession mavenSession = MavenUtils.getDefaultRepositorySystemSession(repositorySystem);

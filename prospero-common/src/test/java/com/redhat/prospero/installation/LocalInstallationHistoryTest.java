@@ -113,9 +113,8 @@ public class LocalInstallationHistoryTest {
         }
         final Manifest manifest = new Manifest(Arrays.asList(new DefaultArtifact("foo:bar:1.1.1")), installation.resolve(InstallationMetadata.MANIFEST_FILE_NAME));
         ManifestXmlSupport.write(manifest);
-        LocalInstallation inst = new LocalInstallation(installation);
 
-        final InstallationMetadata metadata = inst.getMetadata();
+        final InstallationMetadata metadata = new InstallationMetadata(installation);
         metadata.writeFiles();
         return metadata;
     }

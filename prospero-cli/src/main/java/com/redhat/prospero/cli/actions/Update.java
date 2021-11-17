@@ -34,11 +34,8 @@ import com.redhat.prospero.galleon.ChannelMavenArtifactRepositoryManager;
 import com.redhat.prospero.api.ArtifactNotFoundException;
 import com.redhat.prospero.api.Channel;
 import com.redhat.prospero.api.Manifest;
-import com.redhat.prospero.api.PackageInstallationException;
 import com.redhat.prospero.api.Repository;
 import com.redhat.prospero.impl.repository.curated.ChannelBuilder;
-import com.redhat.prospero.installation.LocalInstallation;
-import com.redhat.prospero.installation.Modules;
 import com.redhat.prospero.maven.MavenUtils;
 import com.redhat.prospero.model.XmlException;
 import org.eclipse.aether.DefaultRepositorySystemSession;
@@ -54,7 +51,7 @@ import org.jboss.galleon.universe.maven.MavenArtifact;
 
 public class Update implements AutoCloseable {
 
-    private final LocalInstallation localInstallation;
+    private final InstallationMetadata metadata;
     private final Repository repository;
     private final ChannelMavenArtifactRepositoryManager maven;
     private final ProvisioningManager provMgr;
@@ -62,13 +59,13 @@ public class Update implements AutoCloseable {
     private final boolean quiet;
 
     public Update(Path installDir, boolean quiet) throws IOException, ProvisioningException, MetadataException {
-        this.localInstallation = new LocalInstallation(installDir);
+        this.metadata = new InstallationMetadata(installDir);
         this.installDir = installDir;
         final RepositorySystem repoSystem = MavenUtils.defaultRepositorySystem();
         final DefaultRepositorySystemSession session = MavenUtils.getDefaultRepositorySystemSession(repoSystem);
         final ChannelBuilder channelBuilder = new ChannelBuilder(repoSystem, session);
         this.repository = channelBuilder
-                .setChannels(localInstallation.getChannels())
+                .setChannels(metadata.getChannels())
                 .build();
         this.maven = new ChannelMavenArtifactRepositoryManager(
                 repoSystem, session, Channel.readChannels((installDir.resolve(InstallationMetadata.CHANNELS_FILE_NAME))));
@@ -82,29 +79,22 @@ public class Update implements AutoCloseable {
             return;
         }
         final String base = args[0];
-        final String artifact;
         if (args.length == 3) {
-            // TODO: take multiple artifacts
-            artifact = args[2];
-        } else {
-            artifact = null;
+            throw new UnsupportedOperationException("Single artifact updates are not supported.");
         }
 
         try(Update update = new Update(Paths.get(base), false)) {
-            if (artifact == null) {
-                update.doUpdateAll();
-            } else {
-                update.doUpdate(artifact.split(":")[0], artifact.split(":")[1]);
-            }
+            update.doUpdateAll();
         }
     }
 
     public void doUpdateAll() throws ArtifactNotFoundException, XmlException, ProvisioningException, IOException, MetadataException {
         final List<ArtifactChange> updates = new ArrayList<>();
-        for (Artifact artifact : localInstallation.getManifest().getArtifacts()) {
+        final Manifest manifest = metadata.getManifest();
+        for (Artifact artifact : manifest.getArtifacts()) {
             updates.addAll(findUpdates(artifact.getGroupId(), artifact.getArtifactId()));
         }
-        final ProvisioningPlan fpUpdates = findFPUpdates(installDir);
+        final ProvisioningPlan fpUpdates = findFPUpdates();
 
         if (updates.isEmpty() && fpUpdates.isEmpty()) {
             System.out.println("No updates to execute");
@@ -144,15 +134,11 @@ public class Update implements AutoCloseable {
             }
         }
 
-        applyFpUpdates(fpUpdates, installDir);
+        applyFpUpdates(fpUpdates);
 
-        localInstallation.getMetadata().writeFiles();
+        metadata.writeFiles();
 
         System.out.println("Done");
-    }
-
-    private String toGav(Artifact a) {
-        return a.getGroupId() + ":" + a.getArtifactId() + ":" + a.getClassifier() + ":" + a.getVersion();
     }
 
     @Override
@@ -160,48 +146,28 @@ public class Update implements AutoCloseable {
         this.maven.close();
     }
 
-    private ProvisioningPlan findFPUpdates(Path installDir) throws ProvisioningException, IOException {
+    private ProvisioningPlan findFPUpdates() throws ProvisioningException, IOException {
         return provMgr.getUpdates(true);
     }
 
-    private Set<Artifact> applyFpUpdates(ProvisioningPlan updates, Path installDir) throws ProvisioningException, IOException {
+    private Set<Artifact> applyFpUpdates(ProvisioningPlan updates) throws ProvisioningException, IOException {
         provMgr.apply(updates);
 
         final Set<MavenArtifact> resolvedArtfacts = maven.resolvedArtfacts();
 
         // filter out non-installed artefacts
-        final Modules modules = new Modules(installDir);
         final Set<Artifact> collected = resolvedArtfacts.stream()
                 .map(a->new DefaultArtifact(a.getGroupId(), a.getArtifactId(), a.getClassifier(), a.getExtension(), a.getVersion()))
                 .filter(a->(!a.getArtifactId().equals("wildfly-producers") && !a.getArtifactId().equals("community-universe")))
                 .collect(Collectors.toSet());
-        localInstallation.registerUpdates(collected);
+        metadata.registerUpdates(collected);
         return collected;
-    }
-
-    public void doUpdate(String groupId, String artifactId) throws ArtifactNotFoundException, XmlException, PackageInstallationException, MetadataException {
-        final List<ArtifactChange> updates = findUpdates(groupId, artifactId);
-        if (updates.isEmpty()) {
-            System.out.println("No updates to execute");
-            return;
-        }
-
-        System.out.println("Updates found: ");
-        for (ArtifactChange update : updates) {
-            System.out.print(update + "\t\t\t\t\t");
-
-            localInstallation.updateArtifact(update.getOldVersion(), update.getNewVersion(), update.getNewVersion().getFile());
-
-            System.out.println("DONE");
-        }
-
-        localInstallation.getMetadata().writeFiles();
     }
 
     public List<ArtifactChange> findUpdates(String groupId, String artifactId) throws ArtifactNotFoundException, XmlException {
         List<ArtifactChange> updates = new ArrayList<>();
 
-        final Manifest manifest = localInstallation.getManifest();
+        final Manifest manifest = metadata.getManifest();
 
         final Artifact artifact = manifest.find(new DefaultArtifact(groupId, artifactId, "", ""));
 
