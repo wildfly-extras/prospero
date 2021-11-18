@@ -31,6 +31,7 @@ import org.eclipse.aether.transport.http.HttpTransporterFactory;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.Paths;
 
 public class MavenUtils {
 
@@ -40,7 +41,9 @@ public class MavenUtils {
         try {
             final Path tempRepo = Files.createTempDirectory("mvn-repo");
             tempRepo.toFile().deleteOnExit();
-            LocalRepository localRepo = new LocalRepository(tempRepo.toString());
+
+            Path mavenRepoPath = Paths.get(System.getProperty("user.home"), ".m2", "repository");
+            LocalRepository localRepo = new LocalRepository(mavenRepoPath.toFile());
             session.setLocalRepositoryManager(system.newLocalRepositoryManager(session, localRepo));
             return session;
         } catch (IOException e) {

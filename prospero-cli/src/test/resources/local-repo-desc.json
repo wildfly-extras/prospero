@@ -1,27 +1,26 @@
 {
   "repositories" : [
-    {"url": "http://localhost:8081/repository/dev"}
+    {"url": "https://repo1.maven.org/maven2"},
+    {"url": "https://repository.jboss.org/nexus/content/groups/public/"}
   ],
   "streams" : [
     {
       "groupId": "org.wildfly.core",
       "artifactId": "wildfly-core-galleon-pack",
-      "versionRule": {
-        "stream": "ANY"
-      }
+      "version" : "17.0.0.Final"
     },
     {
       "groupId" : "org.jboss.universe",
       "artifactId" : "community-universe",
       "versionRule" : {
-        "stream" : "ANY"
+        "stream" : "MICRO"
       }
     },
     {
       "groupId" : "org.jboss.universe.producer",
       "artifactId" : "wildfly-producers",
       "versionRule" : {
-        "stream" : "ANY"
+        "stream" : "MICRO"
       }
     }
   ]

@@ -62,7 +62,6 @@ public class ChannelDefinitionParserTest {
             "    }\n" +
             "  }]\n" +
             "}");
-
     }
 
     @Test

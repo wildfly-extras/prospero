@@ -1,12 +1,26 @@
 {
   "repositories" : [
-    {"url": "http://localhost:8081/repository/updates"}
+    {"url": "https://repo1.maven.org/maven2"},
+    {"url": "https://repository.jboss.org/nexus/content/groups/public/"}
   ],
   "streams" : [{
     "groupId" : "org.wildfly.core",
     "artifactId" : "wildfly-cli",
-    "versionRule" : {
-      "stream" : "MICRO"
+    "version": "17.0.1.Final"
+  },
+    {
+      "groupId" : "org.jboss.universe",
+      "artifactId" : "community-universe",
+      "versionRule" : {
+        "stream" : "MICRO"
+      }
+    },
+    {
+      "groupId" : "org.jboss.universe.producer",
+      "artifactId" : "wildfly-producers",
+      "versionRule" : {
+        "stream" : "MICRO"
+      }
     }
-  }]
+  ]
 }
