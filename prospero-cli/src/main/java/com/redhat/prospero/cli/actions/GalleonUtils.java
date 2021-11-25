@@ -17,26 +17,18 @@
 
 package com.redhat.prospero.cli.actions;
 
-import com.redhat.prospero.galleon.ChannelMavenArtifactRepositoryManager;
-import com.redhat.prospero.api.Channel;
 import com.redhat.prospero.cli.GalleonProgressCallback;
-import com.redhat.prospero.maven.MavenUtils;
-import org.eclipse.aether.RepositorySystem;
 import org.jboss.galleon.ProvisioningException;
 import org.jboss.galleon.ProvisioningManager;
 import org.jboss.galleon.layout.ProvisioningLayoutFactory;
 import org.jboss.galleon.universe.FeaturePackLocation;
+import org.jboss.galleon.universe.maven.repo.MavenRepoManager;
 
-import java.io.IOException;
 import java.nio.file.Path;
-import java.util.List;
 
 public class GalleonUtils {
-    public static ChannelMavenArtifactRepositoryManager getChannelRepositoryManager(List<Channel> channels, RepositorySystem repoSystem) throws ProvisioningException, IOException {
-        return new ChannelMavenArtifactRepositoryManager(repoSystem, MavenUtils.getDefaultRepositorySystemSession(repoSystem), channels);
-    }
 
-    public static ProvisioningManager getProvisioningManager(Path installDir, ChannelMavenArtifactRepositoryManager maven) throws ProvisioningException {
+    public static ProvisioningManager getProvisioningManager(Path installDir, MavenRepoManager maven) throws ProvisioningException {
         ProvisioningManager provMgr = ProvisioningManager.builder().addArtifactResolver(maven)
                 .setInstallationHome(installDir).build();
         addProgressCallbacks(provMgr.getLayoutFactory());

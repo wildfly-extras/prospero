@@ -29,11 +29,13 @@ import org.eclipse.aether.resolution.VersionRangeResolutionException;
 import org.eclipse.aether.resolution.VersionRangeResult;
 import org.eclipse.aether.util.version.GenericVersionScheme;
 import org.eclipse.aether.version.InvalidVersionSpecificationException;
+import org.eclipse.aether.version.Version;
 import org.eclipse.aether.version.VersionScheme;
 
 import java.io.File;
 import java.util.Arrays;
 
+// TODO: remove this once the tests are switched to use ChannelMavenArtifactRepositoryManager and ChannelSession
 public class RestoringMavenRepository implements Repository {
 
     private final Manifest manifest;
@@ -65,7 +67,15 @@ public class RestoringMavenRepository implements Repository {
     @Override
     public Artifact resolveLatestVersionOf(Artifact artifact) throws ArtifactNotFoundException {
         if (artifact.getArtifactId().equals("community-universe") || artifact.getArtifactId().equals("wildfly-producers")) {
-            return artifact.setFile(resolve(artifact));
+            try {
+                final VersionRangeResult versionRange = resolver.getVersionRange(artifact);
+                final Version highestVersion = versionRange.getHighestVersion();
+                Artifact res = artifact.setVersion(highestVersion.toString());
+
+                return res.setFile(resolve(res));
+            } catch (VersionRangeResolutionException e) {
+                e.printStackTrace();
+            }
         }
 
         final Artifact artifactInManifest = manifest.find(artifact);

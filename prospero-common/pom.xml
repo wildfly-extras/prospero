@@ -62,6 +62,12 @@
             <artifactId>org.eclipse.jgit</artifactId>
         </dependency>
 
+        <dependency>
+            <groupId>org.wildfly.channel</groupId>
+            <artifactId>channel-core</artifactId>
+            <version>1.0.0.Alpha9-SNAPSHOT</version>
+        </dependency>
+
 
         <dependency>
             <groupId>junit</groupId>

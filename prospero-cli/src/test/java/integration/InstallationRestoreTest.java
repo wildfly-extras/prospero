@@ -64,19 +64,19 @@ public class InstallationRestoreTest {
             FIRST_SERVER_PATH.toFile().delete();
         }
 
-        if (RESTORED_SERVER_PATH.toFile().exists()) {
-            FileUtils.deleteDirectory(RESTORED_SERVER_PATH.toFile());
-            RESTORED_SERVER_PATH.toFile().delete();
-        }
+//        if (RESTORED_SERVER_PATH.toFile().exists()) {
+//            FileUtils.deleteDirectory(RESTORED_SERVER_PATH.toFile());
+//            RESTORED_SERVER_PATH.toFile().delete();
+//        }
     }
 
     @Test
     public void restoreInstallation() throws Exception {
-        final Path channelFile = TestUtil.prepareChannelFile("local-repo-desc.json");
+        final Path channelFile = TestUtil.prepareChannelFile("local-repo-desc.yaml");
 
         new GalleonProvision().installFeaturePack("org.wildfly.core:wildfly-core-galleon-pack:17.0.0.Final", FIRST_SERVER_PATH.toString(), channelFile.toString());
 
-        TestUtil.prepareChannelFile(FIRST_SERVER_PATH.resolve(InstallationMetadata.CHANNELS_FILE_NAME), "local-repo-desc.json", "local-updates-repo-desc.json");
+        TestUtil.prepareChannelFile(FIRST_SERVER_PATH.resolve(InstallationMetadata.CHANNELS_FILE_NAME), "local-repo-desc.yaml", "local-updates-repo-desc.yaml");
 
         new InstallationExport().export(FIRST_SERVER_PATH, "target/bundle.zip");
 

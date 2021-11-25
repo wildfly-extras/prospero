@@ -16,6 +16,21 @@
 
     <dependencies>
         <dependency>
+            <groupId>com.fasterxml.jackson.dataformat</groupId>
+            <artifactId>jackson-dataformat-yaml</artifactId>
+            <version>${version.com.fasterxml.jackson}</version>
+        </dependency>
+        <dependency>
+            <groupId>com.fasterxml.jackson.core</groupId>
+            <artifactId>jackson-databind</artifactId>
+            <version>${version.com.fasterxml.jackson}</version>
+        </dependency>
+        <dependency>
+            <groupId>com.networknt</groupId>
+            <artifactId>json-schema-validator</artifactId>
+            <version>${version.com.networknt.json-schema-validator}</version>
+        </dependency>
+        <dependency>
             <groupId>com.redhat.prospero</groupId>
             <artifactId>prospero-common</artifactId>
             <version>${project.version}</version>
@@ -41,6 +56,12 @@
         <dependency>
             <groupId>org.apache.logging.log4j</groupId>
             <artifactId>log4j-core</artifactId>
+        </dependency>
+
+        <dependency>
+            <groupId>org.wildfly.channel</groupId>
+            <artifactId>channel-core</artifactId>
+            <version>1.0.0.Alpha9-SNAPSHOT</version>
         </dependency>
 
         <dependency>

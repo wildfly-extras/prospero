@@ -17,25 +17,28 @@
 
 package com.redhat.prospero.cli.actions;
 
-import com.redhat.prospero.api.Channel;
+import com.redhat.prospero.api.ChannelRef;
 import com.redhat.prospero.api.InstallationMetadata;
 import com.redhat.prospero.api.MetadataException;
-import com.redhat.prospero.api.Repository;
 import com.redhat.prospero.galleon.ChannelMavenArtifactRepositoryManager;
-import com.redhat.prospero.impl.repository.curated.ChannelBuilder;
-import com.redhat.prospero.maven.MavenUtils;
-import org.eclipse.aether.DefaultRepositorySystemSession;
-import org.eclipse.aether.RepositorySystem;
+import com.redhat.prospero.wfchannel.WfChannelMavenResolverFactory;
 import org.eclipse.aether.artifact.Artifact;
+import org.eclipse.aether.repository.RemoteRepository;
 import org.jboss.galleon.ProvisioningException;
 import org.jboss.galleon.ProvisioningManager;
 import org.jboss.galleon.universe.maven.MavenArtifact;
+import org.wildfly.channel.Channel;
+import org.wildfly.channel.ChannelMapper;
+import org.wildfly.channel.MavenRepository;
 
 import java.io.IOException;
+import java.net.MalformedURLException;
+import java.net.URL;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.stream.Collectors;
 
 import static com.redhat.prospero.api.ArtifactUtils.from;
 
@@ -57,26 +60,35 @@ public class InstallationRestore {
 
         final InstallationMetadata metadataBundle = InstallationMetadata.importMetadata(metadataBundleZip);
 
-        final RepositorySystem repositorySystem = MavenUtils.defaultRepositorySystem();
-        final DefaultRepositorySystemSession mavenSession = MavenUtils.getDefaultRepositorySystemSession(repositorySystem);
-        final Repository repository = new ChannelBuilder(repositorySystem, mavenSession)
-                .setChannels(metadataBundle.getChannels())
-                .setRestoringManifest(metadataBundle.getManifest())
-                .build();
-        final ChannelMavenArtifactRepositoryManager repoManager = new ChannelMavenArtifactRepositoryManager(repositorySystem, mavenSession, repository);
+        final List<ChannelRef> channelRefs = metadataBundle.getChannels();
+        final List<Channel> channels = channelRefs.stream().map(ref-> {
+            try {
+                return ChannelMapper.from(new URL(ref.getUrl()));
+            } catch (MalformedURLException e) {
+                throw new RuntimeException(e);
+            }
+        }).collect(Collectors.toList());
+
+        final WfChannelMavenResolverFactory factory = new WfChannelMavenResolverFactory();
+        final ChannelMavenArtifactRepositoryManager repoManager = new ChannelMavenArtifactRepositoryManager(channels, factory, metadataBundle.getManifest());
+
         ProvisioningManager provMgr = GalleonUtils.getProvisioningManager(installDir, repoManager);
         provMgr.provision(metadataBundle.getProvisioningConfig());
         writeProsperoMetadata(installDir, repoManager, metadataBundle.getChannels());
     }
 
-    private void writeProsperoMetadata(Path home, ChannelMavenArtifactRepositoryManager maven, List<Channel> channels)
+    private void writeProsperoMetadata(Path home, ChannelMavenArtifactRepositoryManager maven, List<ChannelRef> channelRefs)
             throws MetadataException {
         List<Artifact> artifacts = new ArrayList<>();
         for (MavenArtifact resolvedArtifact : maven.resolvedArtfacts()) {
             artifacts.add(from(resolvedArtifact));
         }
 
-        new InstallationMetadata(home, artifacts, channels).writeFiles();
+        new InstallationMetadata(home, artifacts, channelRefs).writeFiles();
+    }
+
+    private static RemoteRepository newRemoteRepository(MavenRepository mavenRepository) {
+        return new RemoteRepository.Builder(mavenRepository.getId(), "default", mavenRepository.getUrl().toExternalForm()).build();
     }
 
 }

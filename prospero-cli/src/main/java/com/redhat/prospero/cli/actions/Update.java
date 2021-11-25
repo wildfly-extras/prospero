@@ -18,6 +18,8 @@
 package com.redhat.prospero.cli.actions;
 
 import java.io.IOException;
+import java.net.MalformedURLException;
+import java.net.URL;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
@@ -32,14 +34,10 @@ import com.redhat.prospero.api.ArtifactChange;
 import com.redhat.prospero.api.MetadataException;
 import com.redhat.prospero.galleon.ChannelMavenArtifactRepositoryManager;
 import com.redhat.prospero.api.ArtifactNotFoundException;
-import com.redhat.prospero.api.Channel;
+import com.redhat.prospero.api.ChannelRef;
 import com.redhat.prospero.api.Manifest;
-import com.redhat.prospero.api.Repository;
-import com.redhat.prospero.impl.repository.curated.ChannelBuilder;
-import com.redhat.prospero.maven.MavenUtils;
 import com.redhat.prospero.model.XmlException;
-import org.eclipse.aether.DefaultRepositorySystemSession;
-import org.eclipse.aether.RepositorySystem;
+import com.redhat.prospero.wfchannel.WfChannelMavenResolverFactory;
 import org.eclipse.aether.artifact.Artifact;
 import org.eclipse.aether.artifact.DefaultArtifact;
 import org.jboss.galleon.ProvisioningException;
@@ -48,27 +46,35 @@ import org.jboss.galleon.layout.FeaturePackUpdatePlan;
 import org.jboss.galleon.layout.ProvisioningPlan;
 import org.jboss.galleon.universe.FeaturePackLocation;
 import org.jboss.galleon.universe.maven.MavenArtifact;
+import org.wildfly.channel.Channel;
+import org.wildfly.channel.ChannelMapper;
+import org.wildfly.channel.ChannelSession;
+import org.wildfly.channel.UnresolvedMavenArtifactException;
 
-public class Update implements AutoCloseable {
+public class Update {
 
     private final InstallationMetadata metadata;
-    private final Repository repository;
     private final ChannelMavenArtifactRepositoryManager maven;
     private final ProvisioningManager provMgr;
     private final Path installDir;
     private final boolean quiet;
+    private final ChannelSession channelSession;
 
     public Update(Path installDir, boolean quiet) throws IOException, ProvisioningException, MetadataException {
         this.metadata = new InstallationMetadata(installDir);
         this.installDir = installDir;
-        final RepositorySystem repoSystem = MavenUtils.defaultRepositorySystem();
-        final DefaultRepositorySystemSession session = MavenUtils.getDefaultRepositorySystemSession(repoSystem);
-        final ChannelBuilder channelBuilder = new ChannelBuilder(repoSystem, session);
-        this.repository = channelBuilder
-                .setChannels(metadata.getChannels())
-                .build();
-        this.maven = new ChannelMavenArtifactRepositoryManager(
-                repoSystem, session, Channel.readChannels((installDir.resolve(InstallationMetadata.CHANNELS_FILE_NAME))));
+        final List<ChannelRef> channelRefs = metadata.getChannels();
+        final List<Channel> channels = channelRefs.stream().map(ref-> {
+            try {
+                return ChannelMapper.from(new URL(ref.getUrl()));
+            } catch (MalformedURLException e) {
+                throw new RuntimeException(e);
+            }
+        }).collect(Collectors.toList());
+
+        final WfChannelMavenResolverFactory factory = new WfChannelMavenResolverFactory();
+        this.channelSession = new ChannelSession(channels, factory);
+        this.maven = new ChannelMavenArtifactRepositoryManager(channelSession);
         this.provMgr = GalleonUtils.getProvisioningManager(installDir, maven);
         this.quiet = quiet;
     }
@@ -83,12 +89,11 @@ public class Update implements AutoCloseable {
             throw new UnsupportedOperationException("Single artifact updates are not supported.");
         }
 
-        try(Update update = new Update(Paths.get(base), false)) {
-            update.doUpdateAll();
-        }
+        Update update = new Update(Paths.get(base), false);
+        update.doUpdateAll();
     }
 
-    public void doUpdateAll() throws ArtifactNotFoundException, XmlException, ProvisioningException, IOException, MetadataException {
+    public void doUpdateAll() throws ArtifactNotFoundException, XmlException, ProvisioningException, IOException, MetadataException, UnresolvedMavenArtifactException {
         final List<ArtifactChange> updates = new ArrayList<>();
         final Manifest manifest = metadata.getManifest();
         for (Artifact artifact : manifest.getArtifacts()) {
@@ -141,11 +146,6 @@ public class Update implements AutoCloseable {
         System.out.println("Done");
     }
 
-    @Override
-    public void close() throws Exception {
-        this.maven.close();
-    }
-
     private ProvisioningPlan findFPUpdates() throws ProvisioningException, IOException {
         return provMgr.getUpdates(true);
     }
@@ -164,7 +164,7 @@ public class Update implements AutoCloseable {
         return collected;
     }
 
-    public List<ArtifactChange> findUpdates(String groupId, String artifactId) throws ArtifactNotFoundException, XmlException {
+    public List<ArtifactChange> findUpdates(String groupId, String artifactId) throws ArtifactNotFoundException, XmlException, UnresolvedMavenArtifactException {
         List<ArtifactChange> updates = new ArrayList<>();
 
         final Manifest manifest = metadata.getManifest();
@@ -175,13 +175,15 @@ public class Update implements AutoCloseable {
             throw new ArtifactNotFoundException(String.format("Artifact [%s:%s] not found", groupId, artifactId));
         }
 
-        final Artifact latestVersion = repository.resolveLatestVersionOf(artifact);
+        final org.wildfly.channel.MavenArtifact latestVersion = channelSession.resolveLatestMavenArtifact(groupId, artifactId, artifact.getExtension(), artifact.getClassifier(), artifact.getVersion());
+        final Artifact latest = new DefaultArtifact(groupId, artifactId, latestVersion.getExtension(), latestVersion.getVersion());
 
-        if (latestVersion == null || ArtifactUtils.compareVersion(latestVersion, artifact) <= 0) {
+
+        if (latestVersion == null || ArtifactUtils.compareVersion(latest, artifact) <= 0) {
             return updates;
         }
 
-        updates.add(new ArtifactChange(artifact, latestVersion));
+        updates.add(new ArtifactChange(artifact, latest));
 
         return updates;
     }

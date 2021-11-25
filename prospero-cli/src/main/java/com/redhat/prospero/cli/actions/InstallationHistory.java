@@ -18,20 +18,22 @@
 package com.redhat.prospero.cli.actions;
 
 import com.redhat.prospero.api.ArtifactChange;
+import com.redhat.prospero.api.ChannelRef;
 import com.redhat.prospero.api.InstallationMetadata;
 import com.redhat.prospero.api.MetadataException;
-import com.redhat.prospero.api.Repository;
 import com.redhat.prospero.api.SavedState;
 import com.redhat.prospero.galleon.ChannelMavenArtifactRepositoryManager;
-import com.redhat.prospero.impl.repository.curated.ChannelBuilder;
-import com.redhat.prospero.maven.MavenUtils;
-import org.eclipse.aether.DefaultRepositorySystemSession;
-import org.eclipse.aether.RepositorySystem;
+import com.redhat.prospero.wfchannel.WfChannelMavenResolverFactory;
 import org.jboss.galleon.ProvisioningManager;
+import org.wildfly.channel.Channel;
+import org.wildfly.channel.ChannelMapper;
 
+import java.net.MalformedURLException;
+import java.net.URL;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.List;
+import java.util.stream.Collectors;
 
 public class InstallationHistory {
 
@@ -78,13 +80,18 @@ public class InstallationHistory {
     public void rollback(Path installation, SavedState savedState) throws Exception {
         InstallationMetadata metadata = new InstallationMetadata(installation);
         metadata = metadata.rollback(savedState);
-        final RepositorySystem repositorySystem = MavenUtils.defaultRepositorySystem();
-        final DefaultRepositorySystemSession mavenSession = MavenUtils.getDefaultRepositorySystemSession(repositorySystem);
-        final Repository repository = new ChannelBuilder(repositorySystem, mavenSession)
-                .setChannels(metadata.getChannels())
-                .setRestoringManifest(metadata.getManifest())
-                .build();
-        final ChannelMavenArtifactRepositoryManager repoManager = new ChannelMavenArtifactRepositoryManager(repositorySystem, mavenSession, repository);
+
+        final List<ChannelRef> channelRefs = metadata.getChannels();
+        final List<Channel> channels = channelRefs.stream().map(ref-> {
+            try {
+                return ChannelMapper.from(new URL(ref.getUrl()));
+            } catch (MalformedURLException e) {
+                throw new RuntimeException(e);
+            }
+        }).collect(Collectors.toList());
+
+        final WfChannelMavenResolverFactory factory = new WfChannelMavenResolverFactory();
+        final ChannelMavenArtifactRepositoryManager repoManager = new ChannelMavenArtifactRepositoryManager(channels, factory);
         ProvisioningManager provMgr = GalleonUtils.getProvisioningManager(installation, repoManager);
         provMgr.provision(metadata.getProvisioningConfig());
 

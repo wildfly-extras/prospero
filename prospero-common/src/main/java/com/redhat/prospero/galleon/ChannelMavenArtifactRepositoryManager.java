@@ -1,168 +1,140 @@
-/*
- * Copyright 2016-2021 Red Hat, Inc. and/or its affiliates
- * and other contributors as indicated by the @author tags.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *   http://www.apache.org/licenses/LICENSE-2.0
- *
+/**
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements. See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the "License"); you may not use this file except in compliance with
+ * the License. You may obtain a copy of the License at
+ * <p>
+ * http://www.apache.org/licenses/LICENSE-2.0
+ * <p>
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package com.redhat.prospero.galleon;
 
-import java.io.File;
-import java.io.IOException;
+import com.redhat.prospero.api.Manifest;
+import org.eclipse.aether.artifact.Artifact;
+import org.eclipse.aether.artifact.DefaultArtifact;
+import org.jboss.galleon.universe.maven.MavenArtifact;
+import org.jboss.galleon.universe.maven.MavenUniverseException;
+import org.jboss.galleon.universe.maven.repo.MavenRepoManager;
+import org.wildfly.channel.Channel;
+import org.wildfly.channel.ChannelSession;
+import org.wildfly.channel.UnresolvedMavenArtifactException;
+import org.wildfly.channel.spi.MavenVersionsResolver;
+
+import java.nio.file.Path;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+import java.util.regex.Pattern;
 
-import com.redhat.prospero.api.ArtifactNotFoundException;
-import com.redhat.prospero.api.Channel;
-import com.redhat.prospero.api.Repository;
-import com.redhat.prospero.impl.repository.curated.ChannelBuilder;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
+public class ChannelMavenArtifactRepositoryManager implements MavenRepoManager {
+    private ChannelSession channelSession;
+    private Set<MavenArtifact> resolvedArtifacts = new HashSet<>();
+    private Manifest manifest = null;
 
-import org.eclipse.aether.RepositorySystem;
-import org.eclipse.aether.RepositorySystemSession;
-import org.eclipse.aether.artifact.Artifact;
-import org.eclipse.aether.repository.RemoteRepository;
-import org.eclipse.aether.resolution.VersionRangeResult;
-import org.jboss.galleon.ProvisioningException;
-import org.jboss.galleon.maven.plugin.util.AbstractMavenArtifactRepositoryManager;
-import org.jboss.galleon.universe.maven.MavenArtifact;
-import org.jboss.galleon.universe.maven.MavenUniverseException;
-
-import static com.redhat.prospero.api.ArtifactUtils.from;
-
-public class ChannelMavenArtifactRepositoryManager extends AbstractMavenArtifactRepositoryManager implements AutoCloseable {
-    private static final Logger log = LogManager.getLogger(ChannelMavenArtifactRepositoryManager.class);
-
-    private final RepositorySystemSession session;
-    private final Repository repository;
-
-    private final Set<MavenArtifact> resolvedArtifacts = new HashSet<>();
-
-    public ChannelMavenArtifactRepositoryManager(final RepositorySystem repoSystem, final RepositorySystemSession repoSession,
-                                                 final List<Channel> channels) throws ProvisioningException {
-        super(repoSystem);
-        try {
-
-            this.repository = new ChannelBuilder(repoSystem, repoSession)
-                    .setChannels(channels)
-                    .build();
-            this.session = repoSession;
-        } catch (IOException ex) {
-            throw new ProvisioningException(ex.getLocalizedMessage(), ex);
-        }
+    public ChannelMavenArtifactRepositoryManager(List<Channel> channels, MavenVersionsResolver.Factory factory) {
+        channelSession = new ChannelSession(channels, factory);
     }
 
-    public ChannelMavenArtifactRepositoryManager(final RepositorySystem repoSystem, final RepositorySystemSession repoSession,
-                                                 final Repository channelRepository) {
-        super(repoSystem);
-
-        this.repository = channelRepository;
-        this.session = repoSession;
+    public ChannelMavenArtifactRepositoryManager(ChannelSession channelSession) {
+        this.channelSession = channelSession;
     }
 
-    @Override
-    protected VersionRangeResult getVersionRange(Artifact artifact) throws MavenUniverseException {
-        try {
-            return repository.getVersionRange(artifact);
-        } catch (ArtifactNotFoundException e) {
-            if (e.getCause() instanceof MavenUniverseException) {
-                throw (MavenUniverseException)e.getCause();
-            } else {
-                // TODO: change galleon API to provide better exception
-                throw new RuntimeException("Unexpected exception", e);
-            }
-        }
+    public ChannelMavenArtifactRepositoryManager(List<Channel> channels, MavenVersionsResolver.Factory factory, Manifest manifest) {
+        channelSession = new ChannelSession(channels, factory);
+        this.manifest = manifest;
     }
 
     @Override
     public void resolve(MavenArtifact artifact) throws MavenUniverseException {
-        resolveLatestVersion(artifact);
-    }
-
-    private void doResolve(MavenArtifact artifact) throws MavenUniverseException {
-        if (artifact.isResolved()) {
-            throw new MavenUniverseException("Artifact is already resolved");
-        }
-        if (artifact.getVersion() == null) {
-            throw new MavenUniverseException("Version is not set for " + artifact);
-        }
-        if (artifact.getVersionRange() != null) {
-            log.warn("WARNING: Version range is set for {}", artifact);
-        }
-
         try {
-            final File resolvedPath = repository.resolve(from(artifact));
-            artifact.setPath(resolvedPath.toPath());
-
-            log.info("RESOLVED: " + artifact);
-            if ("jar".equals(artifact.getExtension())) {
-                resolvedArtifacts.add(artifact);
+            final org.wildfly.channel.MavenArtifact result;
+            if (manifest == null) {
+                result = channelSession.resolveLatestMavenArtifact(artifact.getGroupId(), artifact.getArtifactId(), artifact.getExtension(),
+                        artifact.getClassifier(), artifact.getVersion());
+            } else {
+                final DefaultArtifact gav = new DefaultArtifact(artifact.getGroupId(), artifact.getArtifactId(), artifact.getClassifier(), artifact.getExtension(), artifact.getVersion() != null ? artifact.getVersion() : artifact.getVersionRange());
+                Artifact found = manifest.find(gav);
+                if (found != null) {
+                    result = channelSession.resolveExactMavenArtifact(artifact.getGroupId(), artifact.getArtifactId(), artifact.getExtension(),
+                            artifact.getClassifier(), found.getVersion());
+                } else if (artifact.getArtifactId().equals("community-universe") || artifact.getArtifactId().equals("wildfly-producers")) {
+                    result = channelSession.resolveLatestMavenArtifact(artifact.getGroupId(), artifact.getArtifactId(), artifact.getExtension(),
+                            artifact.getClassifier(), artifact.getVersion());
+                } else {
+                    throw new MavenUniverseException("Unable to resolve " + artifact);
+                }
             }
-        } catch (ArtifactNotFoundException e) {
+            artifact.setVersion(result.getVersion());
+            artifact.setPath(result.getFile().toPath());
+            resolvedArtifacts.add(artifact);
+        } catch (UnresolvedMavenArtifactException e) {
             throw new MavenUniverseException(e.getLocalizedMessage(), e);
         }
     }
 
     @Override
-    public void resolveLatestVersion(MavenArtifact mavenArtifact) throws MavenUniverseException {
-        if (mavenArtifact.isResolved()) {
-            throw new MavenUniverseException("Artifact is already resolved");
-        }
-        // TODO: handle range below
-        String range;
-        if (mavenArtifact.getVersionRange() == null) {
-            if (mavenArtifact.getVersion() == null) {
-                throw new MavenUniverseException("Can't compute range, version is not set for " + mavenArtifact);
-            }
-            range = "[" + mavenArtifact.getVersion() + ",)";
-        } else {
-            if (mavenArtifact.getVersion() != null) {
-                log.info("Version is set for {} although a range is provided {}. Using provided range." + mavenArtifact, mavenArtifact.getVersionRange());
-            }
-            range = mavenArtifact.getVersionRange();
-        }
+    public boolean isResolved(MavenArtifact artifact) throws MavenUniverseException {
+        throw new UnsupportedOperationException("Not yet implemented");
+    }
 
+    @Override
+    public boolean isLatestVersionResolved(MavenArtifact artifact, String lowestQualifier) throws MavenUniverseException {
+        throw new UnsupportedOperationException("Not yet implemented");
+    }
+
+    @Override
+    public void resolveLatestVersion(MavenArtifact artifact, String lowestQualifier, Pattern includeVersion, Pattern excludeVersion) throws MavenUniverseException {
+        throw new UnsupportedOperationException("Not yet implemented");
+    }
+
+    @Override
+    public void resolveLatestVersion(MavenArtifact artifact, String lowestQualifier, boolean locallyAvailable) throws MavenUniverseException {
+        // TODO: handle version ranges
+        resolve(artifact);
+    }
+
+    @Override
+    public String getLatestVersion(MavenArtifact artifact) throws MavenUniverseException {
+        throw new UnsupportedOperationException("Not yet implemented");
+    }
+
+    @Override
+    public String getLatestVersion(MavenArtifact artifact, String lowestQualifier) throws MavenUniverseException {
+        throw new UnsupportedOperationException("Not yet implemented");
+    }
+
+    @Override
+    public String getLatestVersion(MavenArtifact artifact, String lowestQualifier, Pattern includeVersion, Pattern excludeVersion) throws MavenUniverseException {
+        // TODO: handle version ranges
         try {
-            final Artifact artifact = from(mavenArtifact);
-            Artifact resolved = repository.resolveLatestVersionOf(artifact);
-            if (resolved == null) {
-                throw new MavenUniverseException("Artifact is not found " + mavenArtifact.getGroupId() + ":" + mavenArtifact.getArtifactId());
-            } else {
-                artifact.setVersion(resolved.getVersion());
-                mavenArtifact.setVersion(resolved.getVersion());
-                mavenArtifact.setPath(resolved.getFile().toPath());
-            }
-            log.debug("LATEST: Found version {} for range {}", mavenArtifact.getVersion(), range);
-        } catch (ArtifactNotFoundException ex) {
-            throw new MavenUniverseException(ex.getLocalizedMessage(), ex);
+            return channelSession.resolveLatestMavenArtifact(artifact.getGroupId(), artifact.getArtifactId(), artifact.getExtension(),
+                    artifact.getClassifier(), artifact.getVersion()).getVersion();
+        } catch (UnresolvedMavenArtifactException e) {
+            throw new MavenUniverseException("", e);
         }
-
-        resolvedArtifacts.add(mavenArtifact);
     }
 
     @Override
-    protected RepositorySystemSession getSession() throws MavenUniverseException {
-        return session;
+    public List<String> getAllVersions(MavenArtifact artifact) throws MavenUniverseException {
+        throw new UnsupportedOperationException("Not yet implemented");
     }
 
     @Override
-    protected List<RemoteRepository> getRepositories() throws MavenUniverseException {
-        throw new MavenUniverseException("getRepositories Shouldn't be called");
+    public List<String> getAllVersions(MavenArtifact artifact, Pattern includeVersion, Pattern excludeVersion) throws MavenUniverseException {
+        throw new UnsupportedOperationException("Not yet implemented");
     }
 
     @Override
-    public void close() throws MavenUniverseException {
+    public void install(MavenArtifact artifact, Path path) throws MavenUniverseException {
+        throw new UnsupportedOperationException("Not yet implemented");
     }
 
     public Set<MavenArtifact> resolvedArtfacts() {

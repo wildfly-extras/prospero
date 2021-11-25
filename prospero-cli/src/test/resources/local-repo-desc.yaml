@@ -1,0 +1,24 @@
+id: wildfly-core-17
+name: Channel for WildFly Core 17
+description: |-
+  This channel provides a stream of WildFly Core 17 Feature Packs.
+vendor:
+  name: WildFly
+  support: community
+repositories:
+  - id: maven-central
+    url: https://repo1.maven.org/maven2/
+  - id: nexus
+    url: https://repository.jboss.org/nexus/content/groups/public-jboss
+  - id: maven-redhat-ga
+    url: https://maven.repository.redhat.com/ga
+streams:
+  - groupId: org.wildfly.core
+    artifactId: wildfly-core-galleon-pack
+    version: 17.0.0.Final
+  - groupId: org.jboss.universe
+    artifactId: community-universe
+    version: 1.2.0.Final
+  - groupId: org.jboss.universe.producer
+    artifactId: wildfly-producers
+    version: 1.3.2.Final

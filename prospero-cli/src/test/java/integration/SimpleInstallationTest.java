@@ -62,7 +62,7 @@ public class SimpleInstallationTest {
 
     @Test
     public void installWildflyCore() throws Exception {
-        final Path channelFile = TestUtil.prepareChannelFile("local-repo-desc.json");
+        final Path channelFile = TestUtil.prepareChannelFile("local-repo-desc.yaml");
 
         new GalleonProvision().installFeaturePack("org.wildfly.core:wildfly-core-galleon-pack:17.0.0.Final", OUTPUT_PATH.toString(), channelFile.toString());
 
@@ -77,10 +77,10 @@ public class SimpleInstallationTest {
 
     @Test
     public void updateWildflyCore() throws Exception {
-        final Path channelFile = TestUtil.prepareChannelFile("local-repo-desc.json");
+        final Path channelFile = TestUtil.prepareChannelFile("local-repo-desc.yaml");
         new GalleonProvision().installFeaturePack("org.wildfly.core:wildfly-core-galleon-pack:17.0.0.Final", OUTPUT_PATH.toString(), channelFile.toString());
 
-        TestUtil.prepareChannelFile(OUTPUT_PATH.resolve(InstallationMetadata.CHANNELS_FILE_NAME), "local-repo-desc.json", "local-updates-repo-desc.json");
+        TestUtil.prepareChannelFile(OUTPUT_PATH.resolve(InstallationMetadata.CHANNELS_FILE_NAME), "local-repo-desc.yaml", "local-updates-repo-desc.yaml");
         new Update(OUTPUT_PATH, true).doUpdateAll();
 
         // verify manifest contains versions 17.0.1
@@ -90,7 +90,7 @@ public class SimpleInstallationTest {
 
     @Test
     public void installWildflyCoreFromInstallationFile() throws Exception {
-        final Path channelFile = TestUtil.prepareChannelFile("local-repo-desc.json");
+        final Path channelFile = TestUtil.prepareChannelFile("local-repo-desc.yaml");
         final File installationFile = new File(this.getClass().getClassLoader().getResource("provisioning.xml").toURI());
 
         new GalleonProvision().installFeaturePackFromFile(installationFile.toPath(), OUTPUT_PATH.toString(), channelFile.toString());

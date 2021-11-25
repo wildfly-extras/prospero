@@ -49,7 +49,7 @@ public class InstallationMetadata {
     private final Path provisioningFile;
     private final Manifest manifest;
     private final ProvisioningConfig provisioningConfig;
-    private final List<Channel> channels;
+    private final List<ChannelRef> channelRefs;
     private final GitStorage gitStorage;
     private Path base;
 
@@ -62,7 +62,7 @@ public class InstallationMetadata {
 
         try {
             this.manifest = Manifest.parseManifest(manifestFile);
-            this.channels = Channel.readChannels(channelsFile);
+            this.channelRefs = ChannelRef.readChannels(channelsFile);
             this.provisioningConfig = ProvisioningXmlParser.parse(provisioningFile);
         } catch (XmlException | IOException | ProvisioningException e) {
             throw new MetadataException("Error when parsing installation metadata", e);
@@ -78,14 +78,14 @@ public class InstallationMetadata {
 
         try {
             this.manifest = Manifest.parseManifest(manifestFile);
-            this.channels = Channel.readChannels(channelsFile);
+            this.channelRefs = ChannelRef.readChannels(channelsFile);
             this.provisioningConfig = ProvisioningXmlParser.parse(provisioningFile);
         } catch (XmlException | IOException | ProvisioningException e) {
             throw new MetadataException("Error when parsing installation metadata", e);
         }
     }
 
-    public InstallationMetadata(Path base, List<Artifact> artifacts, List<Channel> channels) throws MetadataException {
+    public InstallationMetadata(Path base, List<Artifact> artifacts, List<ChannelRef> channelRefs) throws MetadataException {
         this.base = base;
         this.gitStorage = new GitStorage(base);
         this.manifestFile = base.resolve(InstallationMetadata.MANIFEST_FILE_NAME);
@@ -93,7 +93,7 @@ public class InstallationMetadata {
         this.provisioningFile = base.resolve(GALLEON_INSTALLATION_DIR).resolve(InstallationMetadata.PROVISIONING_FILE_NAME);
 
         this.manifest = new Manifest(artifacts, base.resolve(InstallationMetadata.MANIFEST_FILE_NAME));
-        this.channels = channels;
+        this.channelRefs = channelRefs;
         try {
             this.provisioningConfig = ProvisioningXmlParser.parse(provisioningFile);
         } catch (ProvisioningException e) {
@@ -186,8 +186,8 @@ public class InstallationMetadata {
         return manifest;
     }
 
-    public List<Channel> getChannels() {
-        return channels;
+    public List<ChannelRef> getChannels() {
+        return channelRefs;
     }
 
     public ProvisioningConfig getProvisioningConfig() {
@@ -203,7 +203,7 @@ public class InstallationMetadata {
 
         // write channels into installation
         try {
-            Channel.writeChannels(this.channels, this.channelsFile.toFile());
+            ChannelRef.writeChannels(this.channelRefs, this.channelsFile.toFile());
         } catch (IOException e) {
             throw new MetadataException("Unable to save channel list in installation", e);
         }

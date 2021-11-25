@@ -25,28 +25,28 @@ import java.util.List;
 import com.fasterxml.jackson.databind.JavaType;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
-public class Channel {
+public class ChannelRef {
 
-    public static void writeChannels(List<Channel> channels, File channelsFile) throws IOException {
-        new ObjectMapper().writeValue(channelsFile, channels);
+    public static void writeChannels(List<ChannelRef> channelRefs, File channelsFile) throws IOException {
+        new ObjectMapper().writeValue(channelsFile, channelRefs);
     }
 
-    public static List<Channel> readChannels(Path path) throws IOException {
+    public static List<ChannelRef> readChannels(Path path) throws IOException {
         final ObjectMapper objectMapper = new ObjectMapper();
-        JavaType type = objectMapper.getTypeFactory().constructCollectionType(List.class, Channel.class);
-        final List<Channel> channels = objectMapper.readValue(path.toFile(), type);
+        JavaType type = objectMapper.getTypeFactory().constructCollectionType(List.class, ChannelRef.class);
+        final List<ChannelRef> channelRefs = objectMapper.readValue(path.toFile(), type);
 
-        return channels;
+        return channelRefs;
     }
 
     private String name;
     private String url;
 
-    public Channel() {
+    public ChannelRef() {
 
     }
 
-    public Channel(String name, String url) {
+    public ChannelRef(String name, String url) {
         this.name = name;
         this.url = url;
     }
