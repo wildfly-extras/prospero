@@ -56,10 +56,6 @@ public class GalleonProvision {
     }
 
     public static void main(String[] args) throws ProvisioningException, IOException, MetadataException {
-        ChannelMapper.from(Paths.get("/Users/spyrkob/workspaces/set/prospero/prospero/prospero-cli/src/test/resources/local-repo-desc.yaml").toUri().toURL());
-        if (true) {
-            return;
-        }
         if (args.length < 3) {
             System.out.println("Not enough parameters. Need to provide FPL, output directory and channels file.");
             return;
