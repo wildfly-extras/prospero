@@ -1,0 +1,9 @@
+id: universe
+repositories:
+  - id: central
+    url: https://repo1.maven.org/maven2/
+streams:
+  # needs to be resolved from central
+  - groupId: "org.wildfly.galleon-plugins"
+    artifactId: "wildfly-galleon-plugins"
+    version: "5.1.4.Final"

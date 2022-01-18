@@ -8,22 +8,13 @@ vendor:
 repositories:
   - id: brew-7.4
     url: http://download.eng.brq.redhat.com/brewroot/repos/jb-eap-7.4-maven-build/latest/maven/
+  - id: central
+    url: https://repo1.maven.org/maven2/
 streams:
-  - groupId: "org.jboss.eap"
-    artifactId: "wildfly-ee-galleon-pack"
-    versionPattern: ".*redhat-.*"
-
-  - groupId: "org.jboss.eap"
-    artifactId: "wildfly-galleon-pack"
-    versionPattern: ".*redhat-.*"
-
-  - groupId: "org.jboss.eap"
-    artifactId: "wildfly-servlet-galleon-pack"
-    versionPattern: ".*redhat-.*"
-
-  - groupId: "org.jboss.eap"
-    artifactId: "wildfly-galleon-pack"
-    versionPattern: ".*redhat-.*"
+  # needs to be resolved from central
+  - groupId: "org.wildfly.galleon-plugins"
+    artifactId: "wildfly-galleon-plugins"
+    version: "5.1.4.Final"
 
   # more recent 4.1.72.Final-redhat-00001 is not compatible
   - groupId: "io.netty"
@@ -37,68 +28,74 @@ streams:
   # improve version comparisment
   - groupId: "org.eclipse"
     artifactId: "yasson"
-    # version: "1.0.9.redhat-00001"
-    versionPattern: ".*redhat-.*"
+    version: "1.0.9.redhat-00001"
+    # versionPattern: ".*redhat-.*"
 
   ########################################
   ##### MORE RECENT VERSIONS IN BREW #####
   ########################################
 
-  # - groupId: "com.googlecode.javaewah"
-  #   artifactId: "JavaEWAH"
-  #   version: "1.1.7.redhat-00001"
-
-  # - groupId: "com.sun.xml.fastinfoset"
-  #   artifactId: "fastinfoset-project"
-  #   version: "1.2.13.redhat-1"
-
-  # - groupId: "com.sun.xml.fastinfoset"
-  #   artifactId: "FastInfoset"
-  #   version: "1.2.13.redhat-1"
-
-  # - groupId: "org.apache.logging.log4j"
-  #   artifactId: "log4j-api"
-  #   version: "2.14.0.redhat-00002"
-
-  # - groupId: "org.jboss"
-  #   artifactId: "jboss-vfs"
-  #   version: "3.2.15.Final-redhat-00001"
-
-  # - groupId: "org.slf4j"
-  #   artifactId: "slf4j-ext"
-  #   version: "1.7.22.redhat-2"
-
-  # - groupId: "org.slf4j"
-  #   artifactId: "slf4j-api"
-  #   version: "1.7.22.redhat-2"
-
   - groupId: "com.googlecode.javaewah"
     artifactId: "JavaEWAH"
-    versionPattern: ".*redhat-.*"
+    version: "1.1.7.redhat-00001"
+
+  - groupId: "com.sun.xml.fastinfoset"
+    artifactId: "fastinfoset-project"
+    version: "1.2.13.redhat-1"
 
   - groupId: "com.sun.xml.fastinfoset"
     artifactId: "FastInfoset"
-    versionPattern: ".*redhat-.*"
-
-  - groupId: "org.jboss"
-    artifactId: "jboss-transaction-spi"
-    versionPattern: ".*redhat-.*"
+    version: "1.2.13.redhat-1"
 
   - groupId: "org.apache.logging.log4j"
     artifactId: "log4j-api"
-    versionPattern: ".*redhat-.*"
+    version: "2.14.0.redhat-00002"
 
   - groupId: "org.jboss"
     artifactId: "jboss-vfs"
-    versionPattern: ".*redhat-.*"
+    version: "3.2.15.Final-redhat-00001"
 
   - groupId: "org.slf4j"
     artifactId: "slf4j-ext"
-    versionPattern: ".*redhat-.*"
+    version: "1.7.22.redhat-2"
 
   - groupId: "org.slf4j"
     artifactId: "slf4j-api"
-    versionPattern: ".*redhat-.*"
+    version: "1.7.22.redhat-2"
+
+  # - groupId: "com.googlecode.javaewah"
+  #   artifactId: "JavaEWAH"
+  #   versionPattern: ".*redhat-.*"
+
+  # - groupId: "com.sun.xml.fastinfoset"
+  #   artifactId: "fastinfoset-project"
+  #   versionPattern: ".*redhat-.*"
+
+  # - groupId: "com.sun.xml.fastinfoset"
+  #   artifactId: "FastInfoset"
+  #   versionPattern: ".*redhat-.*"
+
+  # - groupId: "org.jboss"
+  #   artifactId: "jboss-transaction-spi"
+  #   versionPattern: ".*redhat-.*"
+
+  # - groupId: "org.apache.logging.log4j"
+  #   artifactId: "log4j-api"
+  #   versionPattern: ".*redhat-.*"
+
+  # - groupId: "org.jboss"
+  #   artifactId: "jboss-vfs"
+  #   versionPattern: ".*redhat-.*"
+
+  # - groupId: "org.slf4j"
+  #   artifactId: "slf4j-ext"
+  #   versionPattern: ".*redhat-.*"
+  #   #versionPattern: "1\\.7\\..*redhat-.*"
+
+  # - groupId: "org.slf4j"
+  #   artifactId: "slf4j-api"
+  #   versionPattern: ".*redhat-.*"
+  #   #versionPattern: "1\\.7\\..*\\.redhat-.*"
 
   ########################################
   ## END - MORE RECENT VERSIONS IN BREW ##
@@ -125,10 +122,6 @@ streams:
     artifactId: "undertow-server-servlet"
     versionPattern: ".*\\.Final-redhat-.*"
 
-  - groupId: "org.wildfly.security.elytron-web"
-    artifactId: "undertow-server"
-    versionPattern: ".*\\.Final-redhat-.*"
-
   ########################################
   ###### END - MANUAL VERSION FIXES ######
   ########################################
@@ -138,9 +131,33 @@ streams:
     artifactId: "saaj-impl"
     versionPattern: ".*redhat-.*"
 
+  - groupId: "org.jboss.eap"
+    artifactId: "wildfly-ee-galleon-pack"
+    versionPattern: ".*-redhat-.*"
+
+  - groupId: "org.jboss"
+    artifactId: "jboss-parent"
+    versionPattern: ".*-redhat-.*"
+    # version: "37"
+
   - groupId: "org.apache.httpcomponents"
     artifactId: "httpcore-nio"
     versionPattern: ".*redhat-.*"
+
+  - groupId: "org.jboss"
+    artifactId: "jboss-parent"
+    # version: "34"
+    versionPattern: ".*-redhat-.*"
+
+  - groupId: "org.jboss"
+    artifactId: "jboss-parent"
+    # version: "36"
+    versionPattern: ".*-redhat-.*"
+
+  - groupId: "org.jboss"
+    artifactId: "jboss-parent"
+    # version: "35"
+    versionPattern: ".*-redhat-.*"
 
   - groupId: "com.fasterxml.jackson.core"
     artifactId: "jackson-core"
@@ -148,6 +165,10 @@ streams:
 
   - groupId: "com.h2database"
     artifactId: "h2"
+    versionPattern: ".*redhat-.*"
+
+  - groupId: "com.sun.xml.bind.mvn"
+    artifactId: "jaxb-runtime-parent"
     versionPattern: ".*redhat-.*"
 
   - groupId: "org.jboss.eap"
@@ -166,8 +187,20 @@ streams:
     artifactId: "wildfly-elytron-sasl-entity"
     versionPattern: ".*redhat-.*"
 
+  - groupId: "org.infinispan"
+    artifactId: "infinispan-parent"
+    versionPattern: ".*redhat-.*"
+
+  - groupId: "org.apache.james"
+    artifactId: "james-project"
+    versionPattern: ".*redhat-.*"
+
   - groupId: "org.opensaml"
     artifactId: "opensaml-xacml-impl"
+    versionPattern: ".*redhat-.*"
+
+  - groupId: "com.sun.faces"
+    artifactId: "jsf-project"
     versionPattern: ".*redhat-.*"
 
   - groupId: "org.jboss.eap"
@@ -214,12 +247,24 @@ streams:
     artifactId: "restat-util"
     versionPattern: ".*redhat-.*"
 
+  - groupId: "org.hibernate.validator"
+    artifactId: "hibernate-validator-parent"
+    versionPattern: ".*redhat-.*"
+
   - groupId: "org.jboss.security"
     artifactId: "jboss-negotiation-common"
     versionPattern: ".*redhat-.*"
 
+  - groupId: "com.sun.xml.bind"
+    artifactId: "jaxb-bom-ext"
+    versionPattern: ".*redhat-.*"
+
   - groupId: "jakarta.persistence"
     artifactId: "jakarta.persistence-api"
+    versionPattern: ".*redhat-.*"
+
+  - groupId: "com.sun.mail"
+    artifactId: "all"
     versionPattern: ".*redhat-.*"
 
   - groupId: "org.apache.cxf"
@@ -242,8 +287,16 @@ streams:
     artifactId: "hornetq-jms-client"
     versionPattern: ".*redhat-.*"
 
+  - groupId: "org.apache.taglibs"
+    artifactId: "taglibs-parent"
+    versionPattern: ".*redhat-.*"
+
   - groupId: "org.jboss.eap"
     artifactId: "jipijapa-hibernate4-3"
+    versionPattern: ".*redhat-.*"
+
+  - groupId: "org.jboss.eap"
+    artifactId: "wildfly-clustering-infinispan"
     versionPattern: ".*redhat-.*"
 
   - groupId: "org.jboss.xnio"
@@ -258,6 +311,10 @@ streams:
     artifactId: "wildfly-naming-client"
     versionPattern: ".*redhat-.*"
 
+  - groupId: "com.github.spullara.mustache.java"
+    artifactId: "mustache.java"
+    versionPattern: ".*redhat-.*"
+
   - groupId: "commons-beanutils"
     artifactId: "commons-beanutils"
     versionPattern: ".*redhat-.*"
@@ -268,6 +325,10 @@ streams:
 
   - groupId: "org.jboss.eap"
     artifactId: "wildfly-weld-transactions"
+    versionPattern: ".*redhat-.*"
+
+  - groupId: "org.apache.activemq"
+    artifactId: "artemis-protocols"
     versionPattern: ".*redhat-.*"
 
   - groupId: "org.apache.taglibs"
@@ -362,6 +423,10 @@ streams:
     artifactId: "jboss-server-migration-eap7.3-to-eap7.4"
     versionPattern: ".*redhat-.*"
 
+  - groupId: "org.jboss.mod_cluster"
+    artifactId: "mod_cluster-parent"
+    versionPattern: ".*redhat-.*"
+
   - groupId: "org.jboss.migration"
     artifactId: "jboss-server-migration-wildfly15.0-server"
     versionPattern: ".*redhat-.*"
@@ -374,8 +439,8 @@ streams:
     artifactId: "jbossws-common-tools"
     versionPattern: ".*redhat-.*"
 
-  - groupId: "org.jboss"
-    artifactId: "jboss-transaction-spi"
+  - groupId: "com.fasterxml.jackson.jaxrs"
+    artifactId: "jackson-jaxrs-providers"
     versionPattern: ".*redhat-.*"
 
   - groupId: "org.wildfly.wildfly-http-client"
@@ -390,6 +455,11 @@ streams:
     artifactId: "json-patch"
     versionPattern: ".*redhat-.*"
 
+  - groupId: "org.jboss"
+    artifactId: "jboss-parent"
+    # version: "19"
+    versionPattern: ".*-redhat-.*"
+
   - groupId: "org.jboss.migration"
     artifactId: "jboss-server-migration-eap7.2-to-eap7.4"
     versionPattern: ".*redhat-.*"
@@ -400,6 +470,15 @@ streams:
 
   - groupId: "org.infinispan"
     artifactId: "infinispan-hibernate-cache-v51"
+    versionPattern: ".*redhat-.*"
+
+  - groupId: "org.jboss"
+    artifactId: "jboss-parent"
+    # version: "21"
+    versionPattern: ".*-redhat-.*"
+
+  - groupId: "org.apache.httpcomponents"
+    artifactId: "httpcomponents-client"
     versionPattern: ".*redhat-.*"
 
   - groupId: "org.jboss.eap"
@@ -422,8 +501,17 @@ streams:
     artifactId: "wildfly-elytron-realm-jdbc"
     versionPattern: ".*redhat-.*"
 
+  - groupId: "org.jboss"
+    artifactId: "jboss-parent"
+    # version: "24"
+    versionPattern: ".*-redhat-.*"
+
   - groupId: "org.jboss.eap"
     artifactId: "wildfly-security"
+    versionPattern: ".*redhat-.*"
+
+  - groupId: "org.jboss.eap"
+    artifactId: "wildfly-servlet-feature-pack-galleon-common"
     versionPattern: ".*redhat-.*"
 
   - groupId: "org.jboss.ws"
@@ -446,6 +534,10 @@ streams:
     artifactId: "jboss-servlet-api_4.0_spec"
     versionPattern: ".*redhat-.*"
 
+  - groupId: "org.eclipse.jgit"
+    artifactId: "org.eclipse.jgit-parent"
+    versionPattern: ".*redhat-.*"
+
   - groupId: "org.jboss.eap"
     artifactId: "wildfly-clustering-web-infinispan"
     versionPattern: ".*redhat-.*"
@@ -454,8 +546,12 @@ streams:
     artifactId: "wildfly-embedded"
     versionPattern: ".*redhat-.*"
 
-  - groupId: "org.ow2.asm"
-    artifactId: "asm-util"
+  - groupId: "org.infinispan"
+    artifactId: "infinispan-commons-parent"
+    versionPattern: ".*redhat-.*"
+
+  - groupId: "org.wildfly.core"
+    artifactId: "wildfly-remoting-parent"
     versionPattern: ".*redhat-.*"
 
   - groupId: "org.wildfly.security"
@@ -464,6 +560,10 @@ streams:
 
   - groupId: "org.eclipse.jdt.core.compiler"
     artifactId: "ecj"
+    versionPattern: ".*redhat-.*"
+
+  - groupId: "org.jboss.eap"
+    artifactId: "wildfly-ee-feature-pack-ee-8-api"
     versionPattern: ".*redhat-.*"
 
   - groupId: "org.opensaml"
@@ -527,11 +627,19 @@ streams:
     versionPattern: ".*redhat-.*"
 
   - groupId: "org.jboss.eap"
+    artifactId: "wildfly-jpa-parent"
+    versionPattern: ".*redhat-.*"
+
+  - groupId: "org.jboss.eap"
     artifactId: "wildfly-clustering-marshalling-api"
     versionPattern: ".*redhat-.*"
 
   - groupId: "org.jboss.spec.javax.xml.bind"
     artifactId: "jboss-jaxb-api_2.3_spec"
+    versionPattern: ".*redhat-.*"
+
+  - groupId: "org.aesh"
+    artifactId: "readline-all"
     versionPattern: ".*redhat-.*"
 
   - groupId: "org.apache.cxf"
@@ -562,6 +670,10 @@ streams:
     artifactId: "picketbox-commons"
     versionPattern: ".*redhat-.*"
 
+  - groupId: "org.wildfly.core"
+    artifactId: "wildfly-domain-http"
+    versionPattern: ".*redhat-.*"
+
   - groupId: "org.jboss.ironjacamar"
     artifactId: "ironjacamar-deployers-common"
     versionPattern: ".*redhat-.*"
@@ -570,12 +682,32 @@ streams:
     artifactId: "jcip-annotations"
     versionPattern: ".*redhat-.*"
 
+  - groupId: "org.jboss.narayana"
+    artifactId: "narayana-all"
+    versionPattern: ".*redhat-.*"
+
   - groupId: "org.jboss.narayana.jts"
     artifactId: "narayana-jts-idlj"
     versionPattern: ".*redhat-.*"
 
+  - groupId: "org.jboss.metadata"
+    artifactId: "jboss-as-parent-metadata"
+    versionPattern: ".*redhat-.*"
+
   - groupId: "net.shibboleth.utilities"
     artifactId: "java-support"
+    versionPattern: ".*redhat-.*"
+
+  - groupId: "com.fasterxml.jackson"
+    artifactId: "jackson-base"
+    versionPattern: ".*redhat-.*"
+
+  - groupId: "org.jboss.narayana.rts"
+    artifactId: "rest-tx"
+    versionPattern: ".*redhat-.*"
+
+  - groupId: "org.jboss.hal"
+    artifactId: "hal-parent-with-dependencies"
     versionPattern: ".*redhat-.*"
 
   - groupId: "org.jboss.xnio"
@@ -610,6 +742,18 @@ streams:
     artifactId: "picketbox"
     versionPattern: ".*redhat-.*"
 
+  - groupId: "org.wildfly.core"
+    artifactId: "wildfly-core-feature-pack-parent"
+    versionPattern: ".*redhat-.*"
+
+  - groupId: "io.netty"
+    artifactId: "netty-parent"
+    versionPattern: ".*redhat-.*"
+
+  - groupId: "org.jboss.eap"
+    artifactId: "wildfly-clustering-ee"
+    versionPattern: ".*redhat-.*"
+
   - groupId: "org.jboss.marshalling"
     artifactId: "jboss-marshalling"
     versionPattern: ".*redhat-.*"
@@ -618,8 +762,16 @@ streams:
     artifactId: "xercesImpl"
     versionPattern: ".*redhat-.*"
 
+  - groupId: "org.wildfly.core"
+    artifactId: "wildfly-core-feature-pack-ee-8-api"
+    versionPattern: ".*redhat-.*"
+
   - groupId: "org.wildfly.security"
     artifactId: "wildfly-elytron-auth-server-deprecated"
+    versionPattern: ".*redhat-.*"
+
+  - groupId: "org.bouncycastle"
+    artifactId: "bouncycastle-project"
     versionPattern: ".*redhat-.*"
 
   - groupId: "org.jboss.eap"
@@ -636,6 +788,10 @@ streams:
 
   - groupId: "org.jboss.migration"
     artifactId: "jboss-server-migration-core"
+    versionPattern: ".*redhat-.*"
+
+  - groupId: "org.jboss.hal"
+    artifactId: "hal-parent"
     versionPattern: ".*redhat-.*"
 
   - groupId: "org.jboss.ironjacamar"
@@ -662,6 +818,26 @@ streams:
     artifactId: "istack-commons-tools"
     versionPattern: ".*redhat-.*"
 
+  - groupId: "io.undertow"
+    artifactId: "undertow-parent"
+    versionPattern: ".*redhat-.*"
+
+  - groupId: "org.projectodd.vdx"
+    artifactId: "vdx-parent"
+    versionPattern: ".*redhat-.*"
+
+  - groupId: "org.jboss.ws"
+    artifactId: "jbossws-parent"
+    versionPattern: ".*redhat-.*"
+
+  - groupId: "org.apache.ws.xmlschema"
+    artifactId: "xmlschema"
+    versionPattern: ".*redhat-.*"
+
+  - groupId: "org.apache"
+    artifactId: "apache"
+    versionPattern: ".*redhat-.*"
+
   - groupId: "org.jboss.spec.javax.enterprise.concurrent"
     artifactId: "jboss-concurrency-api_1.0_spec"
     versionPattern: ".*redhat-.*"
@@ -678,12 +854,24 @@ streams:
     artifactId: "weld-spi"
     versionPattern: ".*redhat-.*"
 
+  - groupId: "org.wildfly.core"
+    artifactId: "wildfly-core-parent"
+    versionPattern: ".*redhat-.*"
+
+  - groupId: "org.apache.avro"
+    artifactId: "avro-toplevel"
+    versionPattern: ".*redhat-.*"
+
   - groupId: "org.infinispan"
     artifactId: "infinispan-component-annotations"
     versionPattern: ".*redhat-.*"
 
   - groupId: "io.agroal"
     artifactId: "agroal-narayana"
+    versionPattern: ".*redhat-.*"
+
+  - groupId: "org.wildfly.wildfly-http-client"
+    artifactId: "wildfly-http-client-parent"
     versionPattern: ".*redhat-.*"
 
   - groupId: "org.jboss.spec.javax.interceptor"
@@ -718,6 +906,10 @@ streams:
     artifactId: "restat-api"
     versionPattern: ".*redhat-.*"
 
+  - groupId: "org.wildfly.galleon-plugins"
+    artifactId: "wildfly-config-gen"
+    version: "5.1.5.Final-SNAPSHOT"
+
   - groupId: "org.jboss.mod_cluster"
     artifactId: "mod_cluster-container-spi"
     versionPattern: ".*redhat-.*"
@@ -730,6 +922,10 @@ streams:
     artifactId: "wildfly-elytron-tool"
     versionPattern: ".*redhat-.*"
 
+  - groupId: "org.jboss"
+    artifactId: "jboss-ejb-client-parent"
+    versionPattern: ".*redhat-.*"
+
   - groupId: "org.jboss.threads"
     artifactId: "jboss-threads"
     versionPattern: ".*redhat-.*"
@@ -740,6 +936,10 @@ streams:
 
   - groupId: "org.wildfly.security"
     artifactId: "wildfly-elytron-auth-server-http"
+    versionPattern: ".*redhat-.*"
+
+  - groupId: "com.fasterxml.jackson"
+    artifactId: "jackson-bom"
     versionPattern: ".*redhat-.*"
 
   - groupId: "com.fasterxml.jackson.core"
@@ -806,6 +1006,10 @@ streams:
     artifactId: "resteasy-spring"
     versionPattern: ".*redhat-.*"
 
+  - groupId: "org.jboss.weld.probe"
+    artifactId: "weld-probe-parent"
+    versionPattern: ".*redhat-.*"
+
   - groupId: "org.jboss.migration"
     artifactId: "jboss-server-migration-wildfly8.2"
     versionPattern: ".*redhat-.*"
@@ -820,6 +1024,14 @@ streams:
 
   - groupId: "org.jboss"
     artifactId: "staxmapper"
+    versionPattern: ".*redhat-.*"
+
+  - groupId: "org.apache.commons"
+    artifactId: "commons-parent"
+    versionPattern: ".*redhat-.*"
+
+  - groupId: "org.jboss.weld"
+    artifactId: "weld-api-parent"
     versionPattern: ".*redhat-.*"
 
   - groupId: "com.fasterxml.jackson.datatype"
@@ -846,6 +1058,10 @@ streams:
     artifactId: "xom"
     versionPattern: ".*redhat-.*"
 
+  - groupId: "org.jboss.spec.javax.xml.bind"
+    artifactId: "jboss-jaxb-api_2.3_spec-parent"
+    versionPattern: ".*redhat-.*"
+
   - groupId: "org.wildfly.security"
     artifactId: "wildfly-elytron-asn1"
     versionPattern: ".*redhat-.*"
@@ -860,6 +1076,10 @@ streams:
 
   - groupId: "org.apache.velocity"
     artifactId: "velocity-engine-core"
+    versionPattern: ".*redhat-.*"
+
+  - groupId: "org.jboss.eap"
+    artifactId: "wildfly-ee-feature-pack-common"
     versionPattern: ".*redhat-.*"
 
   - groupId: "org.jboss.eap"
@@ -898,8 +1118,24 @@ streams:
     artifactId: "sshd-common"
     versionPattern: ".*redhat-.*"
 
+  - groupId: "org.jboss.mod_cluster"
+    artifactId: "mod_cluster-container"
+    versionPattern: ".*redhat-.*"
+
+  - groupId: "org.jboss.ironjacamar"
+    artifactId: "ironjacamar-deployers-parent"
+    versionPattern: ".*redhat-.*"
+
+  - groupId: "org.wildfly.core"
+    artifactId: "wildfly-io-bom"
+    versionPattern: ".*redhat-.*"
+
   - groupId: "org.jboss"
     artifactId: "jboss-iiop-client"
+    versionPattern: ".*redhat-.*"
+
+  - groupId: "com.fasterxml.jackson.module"
+    artifactId: "jackson-modules-base"
     versionPattern: ".*redhat-.*"
 
   - groupId: "org.jboss.modules"
@@ -922,6 +1158,10 @@ streams:
     artifactId: "jboss-server-migration-wildfly12.0"
     versionPattern: ".*redhat-.*"
 
+  - groupId: "org.apache.cxf.xjc-utils"
+    artifactId: "xjc-utils"
+    versionPattern: ".*redhat-.*"
+
   - groupId: "org.wildfly.core"
     artifactId: "wildfly-deployment-repository"
     versionPattern: ".*redhat-.*"
@@ -940,6 +1180,10 @@ streams:
 
   - groupId: "org.wildfly.core"
     artifactId: "wildfly-core-management-client"
+    versionPattern: ".*redhat-.*"
+
+  - groupId: "org.jboss.narayana.jts"
+    artifactId: "narayana-jts-all"
     versionPattern: ".*redhat-.*"
 
   - groupId: "org.wildfly.core"
@@ -962,6 +1206,10 @@ streams:
     artifactId: "jbossws-cxf-client"
     versionPattern: ".*redhat-.*"
 
+  - groupId: "org.jboss.eap"
+    artifactId: "wildfly-mod_cluster"
+    versionPattern: ".*redhat-.*"
+
   - groupId: "org.codehaus.jackson"
     artifactId: "jackson-jaxrs"
     versionPattern: ".*redhat-.*"
@@ -982,6 +1230,18 @@ streams:
     artifactId: "wildfly-remoting"
     versionPattern: ".*redhat-.*"
 
+  - groupId: "org.hibernate"
+    artifactId: "hibernate-search-parent"
+    versionPattern: ".*redhat-.*"
+
+  - groupId: "org.wildfly.openssl"
+    artifactId: "wildfly-openssl-natives-parent"
+    versionPattern: ".*redhat-.*"
+
+  - groupId: "org.jboss.eap"
+    artifactId: "jboss-eap-parent"
+    versionPattern: ".*redhat-.*"
+
   - groupId: "org.jboss.ironjacamar"
     artifactId: "ironjacamar-jdbc"
     versionPattern: ".*redhat-.*"
@@ -990,8 +1250,24 @@ streams:
     artifactId: "jctools-core"
     versionPattern: ".*redhat-.*"
 
+  - groupId: "org.jboss.ws"
+    artifactId: "jbossws-parent"
+    versionPattern: ".*redhat-.*"
+
+  - groupId: "org.jboss.eap"
+    artifactId: "wildfly-servlet-feature-pack-ee-8-api"
+    versionPattern: ".*redhat-.*"
+
   - groupId: "com.google.guava"
     artifactId: "guava"
+    versionPattern: ".*redhat-.*"
+
+  - groupId: "org.apache.wss4j"
+    artifactId: "wss4j-parent"
+    versionPattern: ".*redhat-.*"
+
+  - groupId: "org.hornetq"
+    artifactId: "hornetq-pom"
     versionPattern: ".*redhat-.*"
 
   - groupId: "org.jboss.eap"
@@ -1018,12 +1294,24 @@ streams:
     artifactId: "wildfly-elytron-sasl-plain"
     versionPattern: ".*redhat-.*"
 
+  - groupId: "org.aesh"
+    artifactId: "aesh-all"
+    versionPattern: ".*redhat-.*"
+
   - groupId: "org.apache.wss4j"
     artifactId: "wss4j-ws-security-stax"
     versionPattern: ".*redhat-.*"
 
   - groupId: "org.wildfly.security"
     artifactId: "wildfly-elytron-util"
+    versionPattern: ".*redhat-.*"
+
+  - groupId: "org.sonatype.oss"
+    artifactId: "oss-parent"
+    versionPattern: ".*redhat-.*"
+
+  - groupId: "com.google.guava"
+    artifactId: "guava-parent"
     versionPattern: ".*redhat-.*"
 
   - groupId: "org.apache.wss4j"
@@ -1038,6 +1326,10 @@ streams:
     artifactId: "wildfly-elytron-auth-server"
     versionPattern: ".*redhat-.*"
 
+  - groupId: "org.apache.logging.log4j"
+    artifactId: "log4j"
+    versionPattern: ".*redhat-.*"
+
   - groupId: "org.jboss.migration"
     artifactId: "jboss-server-migration-eap7.0"
     versionPattern: ".*redhat-.*"
@@ -1048,6 +1340,10 @@ streams:
 
   - groupId: "org.glassfish.jaxb"
     artifactId: "txw2"
+    versionPattern: ".*redhat-.*"
+
+  - groupId: "org.wildfly.security"
+    artifactId: "wildfly-elytron-parent"
     versionPattern: ".*redhat-.*"
 
   - groupId: "org.infinispan"
@@ -1066,6 +1362,10 @@ streams:
     artifactId: "cxf-rt-bindings-coloc"
     versionPattern: ".*redhat-.*"
 
+  - groupId: "org.fusesource.jansi"
+    artifactId: "jansi-project"
+    versionPattern: ".*redhat-.*"
+
   - groupId: "org.jboss.eap"
     artifactId: "wildfly-clustering-spi"
     versionPattern: ".*redhat-.*"
@@ -1074,12 +1374,20 @@ streams:
     artifactId: "jboss-metadata-ejb"
     versionPattern: ".*redhat-.*"
 
+  - groupId: "com.sun.xml.bind.mvn"
+    artifactId: "jaxb-parent"
+    versionPattern: ".*redhat-.*"
+
   - groupId: "org.wildfly.core"
     artifactId: "wildfly-io"
     versionPattern: ".*redhat-.*"
 
   - groupId: "org.apache.httpcomponents"
     artifactId: "httpcore"
+    versionPattern: ".*redhat-.*"
+
+  - groupId: "org.fusesource"
+    artifactId: "fusesource-pom"
     versionPattern: ".*redhat-.*"
 
   - groupId: "org.wildfly.core"
@@ -1142,6 +1450,10 @@ streams:
     artifactId: "jipijapa-openjpa"
     versionPattern: ".*redhat-.*"
 
+  - groupId: "org.apache.logging"
+    artifactId: "logging-parent"
+    versionPattern: ".*redhat-.*"
+
   - groupId: "org.opensaml"
     artifactId: "opensaml-xacml-saml-api"
     versionPattern: ".*redhat-.*"
@@ -1152,6 +1464,10 @@ streams:
 
   - groupId: "org.jboss.remotingjmx"
     artifactId: "remoting-jmx"
+    versionPattern: ".*redhat-.*"
+
+  - groupId: "org.glassfish.jaxb"
+    artifactId: "jaxb-bom"
     versionPattern: ".*redhat-.*"
 
   - groupId: "org.jboss.eap"
@@ -1190,12 +1506,36 @@ streams:
     artifactId: "jboss-server-migration-eap6.4-to-eap7.4"
     versionPattern: ".*redhat-.*"
 
+  - groupId: "com.sun.xml.bind.mvn"
+    artifactId: "jaxb-external-parent"
+    versionPattern: ".*redhat-.*"
+
   - groupId: "org.jboss.migration"
     artifactId: "jboss-server-migration-eap7.1"
     versionPattern: ".*redhat-.*"
 
   - groupId: "org.wildfly.wildfly-http-client"
     artifactId: "wildfly-http-transaction-client"
+    versionPattern: ".*redhat-.*"
+
+  - groupId: "org.jboss.migration"
+    artifactId: "jboss-server-migration-eap7.4-galleon-content"
+    versionPattern: ".*redhat-.*"
+
+  - groupId: "org.jboss.eap"
+    artifactId: "wildfly-servlet-feature-pack-common"
+    versionPattern: ".*redhat-.*"
+
+  - groupId: "org.jboss.genericjms"
+    artifactId: "generic-jms-ra-pom"
+    versionPattern: ".*redhat-.*"
+
+  - groupId: "org.aesh"
+    artifactId: "extensions-all"
+    versionPattern: ".*redhat-.*"
+
+  - groupId: "org.slf4j"
+    artifactId: "slf4j-parent"
     versionPattern: ".*redhat-.*"
 
   - groupId: "com.sun.xml.bind.external"
@@ -1210,8 +1550,20 @@ streams:
     artifactId: "wildfly-clustering-infinispan-spi"
     versionPattern: ".*redhat-.*"
 
+  - groupId: "com.fasterxml"
+    artifactId: "oss-parent"
+    versionPattern: ".*redhat-.*"
+
+  - groupId: "org.apache.wss4j"
+    artifactId: "wss4j"
+    versionPattern: ".*redhat-.*"
+
   - groupId: "org.wildfly.core"
     artifactId: "wildfly-domain-http-error-context"
+    versionPattern: ".*redhat-.*"
+
+  - groupId: "org.apache.httpcomponents"
+    artifactId: "httpcomponents-parent"
     versionPattern: ".*redhat-.*"
 
   - groupId: "org.jboss.eap"
@@ -1238,12 +1590,32 @@ streams:
     artifactId: "artemis-journal"
     versionPattern: ".*redhat-.*"
 
+  - groupId: "org.apache.avro"
+    artifactId: "avro-parent"
+    versionPattern: ".*redhat-.*"
+
   - groupId: "org.apache.activemq"
     artifactId: "artemis-cli"
     versionPattern: ".*redhat-.*"
 
+  - groupId: "org.apache.commons"
+    artifactId: "commons-parent"
+    versionPattern: ".*redhat-.*"
+
+  - groupId: "org.jboss.xnio"
+    artifactId: "xnio-all"
+    versionPattern: ".*redhat-.*"
+
+  - groupId: "com.sun.xml.bind.mvn"
+    artifactId: "jaxb-txw-parent"
+    versionPattern: ".*redhat-.*"
+
   - groupId: "org.jboss.spec.javax.jms"
     artifactId: "jboss-jms-api_2.0_spec"
+    versionPattern: ".*redhat-.*"
+
+  - groupId: "org.jgroups.azure"
+    artifactId: "jgroups-azure-parent"
     versionPattern: ".*redhat-.*"
 
   - groupId: "org.jboss.spec.javax.xml.ws"
@@ -1262,6 +1634,10 @@ streams:
     artifactId: "jboss-negotiation-ntlm"
     versionPattern: ".*redhat-.*"
 
+  - groupId: "org.apache.velocity"
+    artifactId: "velocity-master"
+    versionPattern: ".*redhat-.*"
+
   - groupId: "org.wildfly.security"
     artifactId: "wildfly-elytron-auth-server-sasl"
     versionPattern: ".*redhat-.*"
@@ -1278,6 +1654,10 @@ streams:
     artifactId: "cxf-services-sts-core"
     versionPattern: ".*redhat-.*"
 
+  - groupId: "com.fasterxml"
+    artifactId: "oss-parent"
+    versionPattern: ".*redhat-.*"
+
   - groupId: "org.apache.james"
     artifactId: "apache-mime4j"
     versionPattern: ".*redhat-.*"
@@ -1286,12 +1666,20 @@ streams:
     artifactId: "jose-jwt"
     versionPattern: ".*redhat-.*"
 
+  - groupId: "org.apache.sshd"
+    artifactId: "sshd"
+    versionPattern: ".*redhat-.*"
+
   - groupId: "org.apache.activemq"
     artifactId: "libartemis-native-linux-x86_64"
     versionPattern: ".*redhat-.*"
 
   - groupId: "org.wildfly.core"
     artifactId: "wildfly-core-security-api"
+    versionPattern: ".*redhat-.*"
+
+  - groupId: "org.jctools"
+    artifactId: "jctools-parent"
     versionPattern: ".*redhat-.*"
 
   - groupId: "com.fasterxml.jackson.datatype"
@@ -1334,12 +1722,20 @@ streams:
     artifactId: "cryptacular"
     versionPattern: ".*redhat-.*"
 
+  - groupId: "org.glassfish.soteria"
+    artifactId: "parent"
+    versionPattern: ".*redhat-.*"
+
   - groupId: "commons-codec"
     artifactId: "commons-codec"
     versionPattern: ".*redhat-.*"
 
   - groupId: "org.wildfly.openssl"
     artifactId: "wildfly-openssl-linux-rhel7-x86_64"
+    versionPattern: ".*redhat-.*"
+
+  - groupId: "org.jboss.security"
+    artifactId: "jboss-xacml-project"
     versionPattern: ".*redhat-.*"
 
   - groupId: "org.jboss.eap"
@@ -1382,6 +1778,10 @@ streams:
     artifactId: "artemis-jms-client"
     versionPattern: ".*redhat-.*"
 
+  - groupId: "org.wildfly.core"
+    artifactId: "wildfly-core-feature-pack-galleon-common"
+    versionPattern: ".*redhat-.*"
+
   - groupId: "org.apache.activemq"
     artifactId: "artemis-core-client"
     versionPattern: ".*redhat-.*"
@@ -1406,8 +1806,24 @@ streams:
     artifactId: "jboss-jaspi-api_1.1_spec"
     versionPattern: ".*redhat-.*"
 
+  - groupId: "org.apache"
+    artifactId: "apache"
+    versionPattern: ".*redhat-.*"
+
+  - groupId: "org.apache"
+    artifactId: "apache"
+    versionPattern: ".*redhat-.*"
+
   - groupId: "org.jboss.ejb3"
     artifactId: "jboss-ejb3-ext-api"
+    versionPattern: ".*redhat-.*"
+
+  - groupId: "org.wildfly.core"
+    artifactId: "wildfly-core-feature-pack-common"
+    versionPattern: ".*redhat-.*"
+
+  - groupId: "com.fasterxml"
+    artifactId: "oss-parent"
     versionPattern: ".*redhat-.*"
 
   - groupId: "org.wildfly.security"
@@ -1474,12 +1890,20 @@ streams:
     artifactId: "wildfly-elytron-http-basic"
     versionPattern: ".*redhat-.*"
 
+  - groupId: "org.jboss.eap"
+    artifactId: "wildfly-clustering-singleton"
+    versionPattern: ".*redhat-.*"
+
   - groupId: "io.undertow.js"
     artifactId: "undertow-js"
     versionPattern: ".*redhat-.*"
 
   - groupId: "org.apache.cxf"
     artifactId: "cxf-tools-wsdlto-core"
+    versionPattern: ".*redhat-.*"
+
+  - groupId: "org.jboss.ws"
+    artifactId: "jbossws-parent"
     versionPattern: ".*redhat-.*"
 
   - groupId: "org.jboss.eap"
@@ -1492,6 +1916,10 @@ streams:
 
   - groupId: "org.jboss.migration"
     artifactId: "jboss-server-migration-wildfly10.1"
+    versionPattern: ".*redhat-.*"
+
+  - groupId: "org.picketbox"
+    artifactId: "picketbox-parent"
     versionPattern: ".*redhat-.*"
 
   - groupId: "org.apache.cxf"
@@ -1510,8 +1938,16 @@ streams:
     artifactId: "wildfly-clustering-web-spi"
     versionPattern: ".*redhat-.*"
 
+  - groupId: "org.jboss.ironjacamar"
+    artifactId: "ironjacamar-core-parent"
+    versionPattern: ".*redhat-.*"
+
   - groupId: "org.hibernate"
     artifactId: "hibernate-search-serialization-avro"
+    versionPattern: ".*redhat-.*"
+
+  - groupId: "org.jboss.eap"
+    artifactId: "wildfly-ee-feature-pack-galleon-common"
     versionPattern: ".*redhat-.*"
 
   - groupId: "org.wildfly.security"
@@ -1526,6 +1962,14 @@ streams:
     artifactId: "wildfly-naming"
     versionPattern: ".*redhat-.*"
 
+  - groupId: "org.apache.httpcomponents"
+    artifactId: "httpcomponents-asyncclient"
+    versionPattern: ".*redhat-.*"
+
+  - groupId: "org.apache.commons"
+    artifactId: "commons-parent"
+    versionPattern: ".*redhat-.*"
+
   - groupId: "org.hornetq"
     artifactId: "hornetq-commons"
     versionPattern: ".*redhat-.*"
@@ -1536,6 +1980,10 @@ streams:
 
   - groupId: "org.codehaus.jackson"
     artifactId: "jackson-mapper-asl"
+    versionPattern: ".*redhat-.*"
+
+  - groupId: "org.apache.taglibs"
+    artifactId: "taglibs-standard"
     versionPattern: ".*redhat-.*"
 
   - groupId: "org.apache.cxf"
@@ -1550,8 +1998,20 @@ streams:
     artifactId: "wildfly-openssl-linux-ppc64le"
     versionPattern: ".*redhat-.*"
 
+  - groupId: "org.jboss"
+    artifactId: "jboss-parent"
+    versionPattern: ".*redhat-.*"
+
   - groupId: "org.apache.commons"
     artifactId: "commons-lang3"
+    versionPattern: ".*redhat-.*"
+
+  - groupId: "org.jboss.weld"
+    artifactId: "weld-core-parent"
+    versionPattern: ".*redhat-.*"
+
+  - groupId: "org.picketlink"
+    artifactId: "picketlink-idm-parent"
     versionPattern: ".*redhat-.*"
 
   - groupId: "org.wildfly.core"
@@ -1562,8 +2022,16 @@ streams:
     artifactId: "hibernate-search-engine"
     versionPattern: ".*redhat-.*"
 
+  - groupId: "org.apache.cxf"
+    artifactId: "cxf-parent"
+    versionPattern: ".*redhat-.*"
+
   - groupId: "org.jboss.eap"
     artifactId: "wildfly-clustering-infinispan-extension"
+    versionPattern: ".*redhat-.*"
+
+  - groupId: "org.jboss.eap"
+    artifactId: "wildfly-webservices"
     versionPattern: ".*redhat-.*"
 
   - groupId: "org.jboss.logging"
@@ -1572,6 +2040,10 @@ streams:
 
   - groupId: "org.jboss.migration"
     artifactId: "jboss-server-migration-cli"
+    versionPattern: ".*redhat-.*"
+
+  - groupId: "com.sun.xml.bind.mvn"
+    artifactId: "jaxb-codemodel-parent"
     versionPattern: ".*redhat-.*"
 
   - groupId: "org.apache.neethi"
@@ -1584,6 +2056,10 @@ streams:
 
   - groupId: "jboss.jaxbintros"
     artifactId: "jboss-jaxb-intros"
+    versionPattern: ".*redhat-.*"
+
+  - groupId: "org.jboss.eap"
+    artifactId: "wildfly-security-parent"
     versionPattern: ".*redhat-.*"
 
   - groupId: "org.jboss.eap"
@@ -1606,6 +2082,10 @@ streams:
     artifactId: "wildfly-transaction-client"
     versionPattern: ".*redhat-.*"
 
+  - groupId: "org.wildfly.security.elytron-web"
+    artifactId: "undertow-server"
+    versionPattern: ".*Final-redhat-.*"
+
   - groupId: "org.jboss.eap"
     artifactId: "wildfly-appclient"
     versionPattern: ".*redhat-.*"
@@ -1614,8 +2094,20 @@ streams:
     artifactId: "jboss-metadata-common"
     versionPattern: ".*redhat-.*"
 
+  - groupId: "org.apache"
+    artifactId: "apache"
+    versionPattern: ".*redhat-.*"
+
   - groupId: "org.wildfly.security"
     artifactId: "wildfly-elytron-sasl-deprecated"
+    versionPattern: ".*redhat-.*"
+
+  - groupId: "org.apache"
+    artifactId: "apache"
+    versionPattern: ".*redhat-.*"
+
+  - groupId: "org.picketlink"
+    artifactId: "picketlink-parent"
     versionPattern: ".*redhat-.*"
 
   - groupId: "org.jboss.resteasy"
@@ -1630,6 +2122,14 @@ streams:
     artifactId: "jbossxacml"
     versionPattern: ".*redhat-.*"
 
+  - groupId: "org.jboss.marshalling"
+    artifactId: "jboss-marshalling-parent"
+    versionPattern: ".*redhat-.*"
+
+  - groupId: "org.apache.activemq"
+    artifactId: "artemis-pom"
+    versionPattern: ".*redhat-.*"
+
   - groupId: "org.infinispan"
     artifactId: "infinispan-client-hotrod"
     versionPattern: ".*redhat-.*"
@@ -1642,12 +2142,28 @@ streams:
     artifactId: "ironjacamar-common-spi"
     versionPattern: ".*redhat-.*"
 
+  - groupId: "com.fasterxml"
+    artifactId: "oss-parent"
+    versionPattern: ".*redhat-.*"
+
   - groupId: "org.glassfish.jaxb"
     artifactId: "jaxb-runtime"
     versionPattern: ".*redhat-.*"
 
+  - groupId: "org.jboss.eap"
+    artifactId: "wildfly-clustering-web"
+    versionPattern: ".*redhat-.*"
+
   - groupId: "org.apache.cxf"
     artifactId: "cxf-rt-features-logging"
+    versionPattern: ".*redhat-.*"
+
+  - groupId: "org.apache.velocity"
+    artifactId: "velocity-engine-parent"
+    versionPattern: ".*redhat-.*"
+
+  - groupId: "org.jboss.eap"
+    artifactId: "wildfly-jsf-parent"
     versionPattern: ".*redhat-.*"
 
   - groupId: "org.jboss.migration"
@@ -1690,6 +2206,14 @@ streams:
     artifactId: "wildfly-elytron-sasl-oauth2"
     versionPattern: ".*redhat-.*"
 
+  - groupId: "net.java"
+    artifactId: "jvnet-parent"
+    versionPattern: ".*redhat-.*"
+
+  - groupId: "org.jboss.eap"
+    artifactId: "wildfly-ee-feature-pack-pruned"
+    versionPattern: ".*redhat-.*"
+
   - groupId: "org.opensaml"
     artifactId: "opensaml-saml-impl"
     versionPattern: ".*redhat-.*"
@@ -1700,6 +2224,14 @@ streams:
 
   - groupId: "org.jboss.narayana.xts"
     artifactId: "jbossxts"
+    versionPattern: ".*redhat-.*"
+
+  - groupId: "org.glassfish"
+    artifactId: "json"
+    versionPattern: ".*redhat-.*"
+
+  - groupId: "org.infinispan"
+    artifactId: "infinispan-hibernate-parent"
     versionPattern: ".*redhat-.*"
 
   - groupId: "org.picketlink"
@@ -1718,8 +2250,16 @@ streams:
     artifactId: "xmlschema-core"
     versionPattern: ".*redhat-.*"
 
+  - groupId: "org.opensaml"
+    artifactId: "opensaml-parent"
+    versionPattern: ".*redhat-.*"
+
   - groupId: "org.wildfly.core"
     artifactId: "wildfly-core-security"
+    versionPattern: ".*redhat-.*"
+
+  - groupId: "org.jboss.ironjacamar"
+    artifactId: "ironjacamar-validator-parent"
     versionPattern: ".*redhat-.*"
 
   - groupId: "antlr"
@@ -1782,12 +2322,24 @@ streams:
     artifactId: "jakarta.enterprise.concurrent"
     versionPattern: ".*redhat-.*"
 
+  - groupId: "org.jboss.eap"
+    artifactId: "wildfly-clustering-jgroups"
+    versionPattern: ".*redhat-.*"
+
   - groupId: "org.jboss.spec.javax.transaction"
     artifactId: "jboss-transaction-api_1.3_spec"
     versionPattern: ".*redhat-.*"
 
   - groupId: "com.github.fge"
     artifactId: "msg-simple"
+    versionPattern: ".*redhat-.*"
+
+  - groupId: "org.jboss.ironjacamar"
+    artifactId: "ironjacamar-common-parent"
+    versionPattern: ".*redhat-.*"
+
+  - groupId: "org.wildfly.core"
+    artifactId: "wildfly-core-management"
     versionPattern: ".*redhat-.*"
 
   - groupId: "org.jboss.ironjacamar"
@@ -1822,12 +2374,20 @@ streams:
     artifactId: "wildfly-process-controller"
     versionPattern: ".*redhat-.*"
 
+  - groupId: "org.jboss"
+    artifactId: "jboss-parent"
+    versionPattern: ".*redhat-.*"
+
   - groupId: "org.picketbox"
     artifactId: "picketbox-infinispan"
     versionPattern: ".*redhat-.*"
 
   - groupId: "org.jboss.ws.cxf"
     artifactId: "jbossws-cxf-transports-udp"
+    versionPattern: ".*redhat-.*"
+
+  - groupId: "ch.qos.cal10n"
+    artifactId: "cal10n-parent"
     versionPattern: ".*redhat-.*"
 
   - groupId: "org.jboss.eap"
@@ -1842,13 +2402,33 @@ streams:
     artifactId: "wildfly-clustering-ejb-spi"
     versionPattern: ".*redhat-.*"
 
+  - groupId: "org.jboss.hal"
+    artifactId: "hal-parent-with-gwt"
+    versionPattern: ".*redhat-.*"
+
   - groupId: "org.apache.cxf"
     artifactId: "cxf-rt-databinding-jaxb"
+    versionPattern: ".*redhat-.*"
+
+  - groupId: "org.apache.httpcomponents"
+    artifactId: "project"
+    versionPattern: ".*redhat-.*"
+
+  - groupId: "org.jboss.eap"
+    artifactId: "wildfly-clustering-ejb"
     versionPattern: ".*redhat-.*"
 
   - groupId: "io.reactivex.rxjava2"
     artifactId: "rxjava"
     versionPattern: ".*redhat-.*"
+
+  - groupId: "org.jboss.resteasy"
+    artifactId: "resteasy-jaxrs-all"
+    versionPattern: ".*redhat-.*"
+
+  - groupId: "org.wildfly.galleon-plugins"
+    artifactId: "wildfly-provisioning-parent"
+    version: "5.1.5.Final-SNAPSHOT"
 
   - groupId: "org.wildfly.security"
     artifactId: "wildfly-elytron-keystore"
@@ -1906,6 +2486,10 @@ streams:
     artifactId: "lucene-analyzers-common"
     versionPattern: ".*redhat-.*"
 
+  - groupId: "com.google.code.gson"
+    artifactId: "gson-parent"
+    versionPattern: ".*redhat-.*"
+
   - groupId: "org.wildfly.security"
     artifactId: "wildfly-elytron-base"
     versionPattern: ".*redhat-.*"
@@ -1914,20 +2498,48 @@ streams:
     artifactId: "jboss-classfilewriter"
     versionPattern: ".*redhat-.*"
 
+  - groupId: "org.apache.cxf"
+    artifactId: "cxf"
+    versionPattern: ".*redhat-.*"
+
   - groupId: "org.jboss.activemq.artemis.integration"
     artifactId: "artemis-wildfly-integration"
     versionPattern: ".*redhat-.*"
 
-  - groupId: "org.ow2.asm"
-    artifactId: "asm"
+  - groupId: "org.jboss.eap"
+    artifactId: "wildfly-servlet-feature-pack-galleon-legacy"
+    versionPattern: ".*redhat-.*"
+
+  - groupId: "org.apache.commons"
+    artifactId: "commons-parent"
+    versionPattern: ".*redhat-.*"
+
+  - groupId: "org.sonatype.oss"
+    artifactId: "oss-parent"
+    versionPattern: ".*redhat-.*"
+
+  - groupId: "org.sonatype.oss"
+    artifactId: "oss-parent"
     versionPattern: ".*redhat-.*"
 
   - groupId: "org.wildfly.security"
     artifactId: "wildfly-elytron-client"
     versionPattern: ".*redhat-.*"
 
+  - groupId: "org.apache.lucene"
+    artifactId: "lucene-parent"
+    versionPattern: ".*redhat-.*"
+
   - groupId: "org.apache.cxf"
     artifactId: "cxf-rt-ws-mex"
+    versionPattern: ".*redhat-.*"
+
+  - groupId: "org.jboss.narayana.rts"
+    artifactId: "restat"
+    versionPattern: ".*redhat-.*"
+
+  - groupId: "org.apache.james"
+    artifactId: "james-parent"
     versionPattern: ".*redhat-.*"
 
   - groupId: "org.hibernate"
@@ -1966,12 +2578,24 @@ streams:
     artifactId: "wildfly-discovery-client"
     versionPattern: ".*redhat-.*"
 
+  - groupId: "org.jboss.weld"
+    artifactId: "weld-parent"
+    versionPattern: ".*redhat-.*"
+
+  - groupId: "org.jboss.eap"
+    artifactId: "wildfly-ee-feature-pack-parent"
+    versionPattern: ".*redhat-.*"
+
   - groupId: "org.jboss.resteasy"
     artifactId: "resteasy-jackson2-provider"
     versionPattern: ".*redhat-.*"
 
   - groupId: "org.jboss.invocation"
     artifactId: "jboss-invocation"
+    versionPattern: ".*redhat-.*"
+
+  - groupId: "org.jboss"
+    artifactId: "jboss-parent"
     versionPattern: ".*redhat-.*"
 
   - groupId: "org.apache.cxf"
@@ -1994,6 +2618,10 @@ streams:
     artifactId: "avro"
     versionPattern: ".*redhat-.*"
 
+  - groupId: "org.jboss.spec.javax.security.auth.message"
+    artifactId: "jboss-jaspi-api-parent"
+    versionPattern: ".*redhat-.*"
+
   - groupId: "com.google.code.gson"
     artifactId: "gson"
     versionPattern: ".*redhat-.*"
@@ -2002,8 +2630,16 @@ streams:
     artifactId: "jbossws-cxf-resources"
     versionPattern: ".*redhat-.*"
 
+  - groupId: "xalan"
+    artifactId: "xalan-parent"
+    versionPattern: ".*redhat-.*"
+
   - groupId: "org.wildfly.wildfly-http-client"
     artifactId: "wildfly-http-naming-client"
+    versionPattern: ".*redhat-.*"
+
+  - groupId: "io.agroal"
+    artifactId: "agroal-parent"
     versionPattern: ".*redhat-.*"
 
   - groupId: "io.undertow"
@@ -2034,6 +2670,18 @@ streams:
     artifactId: "wildfly-controller"
     versionPattern: ".*redhat-.*"
 
+  - groupId: "org.jboss"
+    artifactId: "jboss-parent"
+    versionPattern: ".*redhat-.*"
+
+  - groupId: "com.sun.istack"
+    artifactId: "istack-commons"
+    versionPattern: ".*redhat-.*"
+
+  - groupId: "org.jboss.eap"
+    artifactId: "wildfly-weld-parent"
+    versionPattern: ".*redhat-.*"
+
   - groupId: "com.sun.mail"
     artifactId: "jakarta.mail"
     versionPattern: ".*redhat-.*"
@@ -2044,6 +2692,14 @@ streams:
 
   - groupId: "com.fasterxml"
     artifactId: "classmate"
+    versionPattern: ".*redhat-.*"
+
+  - groupId: "org.apache.lucene"
+    artifactId: "lucene-solr-grandparent"
+    versionPattern: ".*redhat-.*"
+
+  - groupId: "org.jboss.eap"
+    artifactId: "wildfly-servlet-feature-pack-parent"
     versionPattern: ".*redhat-.*"
 
   - groupId: "org.jboss.eap"
@@ -2102,6 +2758,14 @@ streams:
     artifactId: "jboss-server-migration-wildfly19.0-server"
     versionPattern: ".*redhat-.*"
 
+  - groupId: "org.infinispan.protostream"
+    artifactId: "parent"
+    versionPattern: ".*redhat-.*"
+
+  - groupId: "org.jboss"
+    artifactId: "jboss-parent"
+    versionPattern: ".*redhat-.*"
+
   - groupId: "org.hibernate.validator"
     artifactId: "hibernate-validator-cdi"
     versionPattern: ".*redhat-.*"
@@ -2122,6 +2786,10 @@ streams:
     artifactId: "artemis-tools"
     versionPattern: ".*redhat-.*"
 
+  - groupId: "org.apache.commons"
+    artifactId: "commons-parent"
+    versionPattern: ".*redhat-.*"
+
   - groupId: "org.jboss.spec.javax.xml.soap"
     artifactId: "jboss-saaj-api_1.3_spec"
     versionPattern: ".*redhat-.*"
@@ -2132,6 +2800,14 @@ streams:
 
   - groupId: "org.jboss.eap"
     artifactId: "wildfly-security-integration"
+    versionPattern: ".*redhat-.*"
+
+  - groupId: "org.jboss.eap"
+    artifactId: "jdr"
+    versionPattern: ".*redhat-.*"
+
+  - groupId: "org.jboss.ironjacamar"
+    artifactId: "ironjacamar-parent"
     versionPattern: ".*redhat-.*"
 
   - groupId: "org.jvnet.staxex"
@@ -2152,6 +2828,10 @@ streams:
 
   - groupId: "org.wildfly.security"
     artifactId: "wildfly-elytron-http"
+    versionPattern: ".*redhat-.*"
+
+  - groupId: "org.jboss.eap"
+    artifactId: "wildfly-ee-feature-pack-galleon-content"
     versionPattern: ".*redhat-.*"
 
   - groupId: "org.jboss.narayana.xts"
@@ -2182,6 +2862,10 @@ streams:
     artifactId: "jackson-module-jaxb-annotations"
     versionPattern: ".*redhat-.*"
 
+  - groupId: "org.jberet"
+    artifactId: "jberet-parent"
+    versionPattern: ".*redhat-.*"
+
   - groupId: "org.jboss.spec.javax.ws.rs"
     artifactId: "jboss-jaxrs-api_2.1_spec"
     versionPattern: ".*redhat-.*"
@@ -2206,6 +2890,10 @@ streams:
     artifactId: "wildfly-host-controller"
     versionPattern: ".*redhat-.*"
 
+  - groupId: "org.infinispan"
+    artifactId: "infinispan-persistence-parent"
+    versionPattern: ".*redhat-.*"
+
   - groupId: "org.jboss.migration"
     artifactId: "jboss-server-migration-eap7.1-to-eap7.4"
     versionPattern: ".*redhat-.*"
@@ -2216,6 +2904,10 @@ streams:
 
   - groupId: "org.jboss.eap"
     artifactId: "wildfly-client-all"
+    versionPattern: ".*redhat-.*"
+
+  - groupId: "com.sun.activation"
+    artifactId: "all"
     versionPattern: ".*redhat-.*"
 
   - groupId: "org.wildfly.security"
@@ -2234,12 +2926,20 @@ streams:
     artifactId: "wildfly-elytron-x500-principal"
     versionPattern: ".*redhat-.*"
 
+  - groupId: "org.jboss"
+    artifactId: "jboss-parent"
+    versionPattern: ".*redhat-.*"
+
   - groupId: "org.wildfly.core"
     artifactId: "wildfly-patching"
     versionPattern: ".*redhat-.*"
 
   - groupId: "org.jboss.weld.module"
     artifactId: "weld-ejb"
+    versionPattern: ".*redhat-.*"
+
+  - groupId: "net.java"
+    artifactId: "jvnet-parent"
     versionPattern: ".*redhat-.*"
 
   - groupId: "org.jboss.migration"
@@ -2258,12 +2958,28 @@ streams:
     artifactId: "wildfly-elytron-password-impl"
     versionPattern: ".*redhat-.*"
 
+  - groupId: "net.shibboleth"
+    artifactId: "parent-v3"
+    versionPattern: ".*redhat-.*"
+
+  - groupId: "org.jboss.migration"
+    artifactId: "jboss-server-migration-parent"
+    versionPattern: ".*redhat-.*"
+
   - groupId: "org.jboss.eap"
     artifactId: "wildfly-bean-validation"
     versionPattern: ".*redhat-.*"
 
   - groupId: "org.wildfly.security"
     artifactId: "wildfly-elytron-x500"
+    versionPattern: ".*redhat-.*"
+
+  - groupId: "org.jboss"
+    artifactId: "jboss-parent"
+    versionPattern: ".*redhat-.*"
+
+  - groupId: "org.jboss.ws.cxf"
+    artifactId: "jbossws-cxf-addons"
     versionPattern: ".*redhat-.*"
 
   - groupId: "org.jboss.resteasy"
@@ -2274,12 +2990,24 @@ streams:
     artifactId: "ironjacamar-common-api"
     versionPattern: ".*redhat-.*"
 
+  - groupId: "org.jboss.seam.integration"
+    artifactId: "jboss-seam-int"
+    versionPattern: ".*redhat-.*"
+
+  - groupId: "org.wildfly.core"
+    artifactId: "wildfly-core-feature-pack-galleon-pruned"
+    versionPattern: ".*redhat-.*"
+
   - groupId: "org.wildfly.security"
     artifactId: "wildfly-elytron-mechanism-gssapi"
     versionPattern: ".*redhat-.*"
 
   - groupId: "org.wildfly.wildfly-http-client"
     artifactId: "wildfly-http-client-common"
+    versionPattern: ".*redhat-.*"
+
+  - groupId: "com.fasterxml.jackson"
+    artifactId: "jackson-parent"
     versionPattern: ".*redhat-.*"
 
   - groupId: "org.jboss.spec.javax.security.jacc"
@@ -2292,6 +3020,10 @@ streams:
 
   - groupId: "org.jboss.ws.cxf"
     artifactId: "jbossws-cxf-factories"
+    versionPattern: ".*redhat-.*"
+
+  - groupId: "org.apache"
+    artifactId: "apache"
     versionPattern: ".*redhat-.*"
 
   - groupId: "org.apache.cxf"
@@ -2338,6 +3070,10 @@ streams:
     artifactId: "wildfly-elytron-mechanism-scram"
     versionPattern: ".*redhat-.*"
 
+  - groupId: "org.apache.httpcomponents"
+    artifactId: "httpcomponents-core"
+    versionPattern: ".*redhat-.*"
+
   - groupId: "org.jboss.migration"
     artifactId: "jboss-server-migration-wildfly21.0-server"
     versionPattern: ".*redhat-.*"
@@ -2362,6 +3098,10 @@ streams:
     artifactId: "javassist"
     versionPattern: ".*redhat-.*"
 
+  - groupId: "org.jboss.ws.cxf"
+    artifactId: "jbossws-cxf"
+    versionPattern: ".*redhat-.*"
+
   - groupId: "io.agroal"
     artifactId: "agroal-api"
     versionPattern: ".*redhat-.*"
@@ -2372,6 +3112,10 @@ streams:
 
   - groupId: "org.jboss.eap"
     artifactId: "wildfly-weld-common"
+    versionPattern: ".*redhat-.*"
+
+  - groupId: "org.infinispan"
+    artifactId: "infinispan-build-configuration-parent"
     versionPattern: ".*redhat-.*"
 
   - groupId: "org.wildfly.security"
@@ -2394,12 +3138,24 @@ streams:
     artifactId: "wildfly-elytron-mechanism-digest"
     versionPattern: ".*redhat-.*"
 
+  - groupId: "org.jboss.spec.javax.websocket"
+    artifactId: "jakarta.websocket-all"
+    versionPattern: ".*redhat-.*"
+
   - groupId: "org.apache.cxf.xjc-utils"
     artifactId: "cxf-xjc-runtime"
     versionPattern: ".*redhat-.*"
 
+  - groupId: "org.picketlink"
+    artifactId: "picketlink-bindings-parent"
+    versionPattern: ".*redhat-.*"
+
   - groupId: "org.apache.lucene"
     artifactId: "lucene-backward-codecs"
+    versionPattern: ".*redhat-.*"
+
+  - groupId: "org.wildfly.openssl"
+    artifactId: "wildfly-openssl-parent"
     versionPattern: ".*redhat-.*"
 
   - groupId: "org.apache.activemq"
@@ -2410,8 +3166,20 @@ streams:
     artifactId: "jboss-el-api_3.0_spec"
     versionPattern: ".*redhat-.*"
 
+  - groupId: "org.jboss.eap"
+    artifactId: "wildfly-clustering-marshalling"
+    versionPattern: ".*redhat-.*"
+
   - groupId: "org.yaml"
     artifactId: "snakeyaml"
+    versionPattern: ".*redhat-.*"
+
+  - groupId: "org.wildfly.core"
+    artifactId: "wildfly-core-security-parent"
+    versionPattern: ".*redhat-.*"
+
+  - groupId: "net.bytebuddy"
+    artifactId: "byte-buddy-parent"
     versionPattern: ".*redhat-.*"
 
   - groupId: "org.jboss.weld.module"
@@ -2426,12 +3194,44 @@ streams:
     artifactId: "byte-buddy"
     versionPattern: ".*redhat-.*"
 
+  - groupId: "org.jboss.narayana.xts"
+    artifactId: "xts-all"
+    versionPattern: ".*redhat-.*"
+
+  - groupId: "org.jboss.weld"
+    artifactId: "weld-parent"
+    versionPattern: ".*redhat-.*"
+
   - groupId: "org.jboss.eap"
     artifactId: "wildfly-jpa"
     versionPattern: ".*redhat-.*"
 
   - groupId: "io.undertow.jastow"
     artifactId: "jastow"
+    versionPattern: ".*redhat-.*"
+
+  - groupId: "org.jboss"
+    artifactId: "jboss-parent"
+    versionPattern: ".*redhat-.*"
+
+  - groupId: "org.picketlink"
+    artifactId: "picketlink-base-parent"
+    versionPattern: ".*redhat-.*"
+
+  - groupId: "org.jboss"
+    artifactId: "jboss-parent"
+    versionPattern: ".*redhat-.*"
+
+  - groupId: "org.jboss"
+    artifactId: "jboss-parent"
+    versionPattern: ".*redhat-.*"
+
+  - groupId: "org.infinispan"
+    artifactId: "infinispan-bom"
+    versionPattern: ".*redhat-.*"
+
+  - groupId: "org.jboss.spec.javax.security.jacc"
+    artifactId: "jacc-parent"
     versionPattern: ".*redhat-.*"
 
   - groupId: "org.projectodd.vdx"
@@ -2466,6 +3266,10 @@ streams:
     artifactId: "wildfly-elytron-sasl-auth-util"
     versionPattern: ".*redhat-.*"
 
+  - groupId: "com.fasterxml.jackson.module"
+    artifactId: "jackson-modules-java8"
+    versionPattern: ".*redhat-.*"
+
   - groupId: "org.wildfly.security"
     artifactId: "wildfly-elytron-http-util"
     versionPattern: ".*redhat-.*"
@@ -2480,6 +3284,10 @@ streams:
 
   - groupId: "jakarta.enterprise"
     artifactId: "jakarta.enterprise.cdi-api"
+    versionPattern: ".*redhat-.*"
+
+  - groupId: "org.jboss.spec.javax.management.j2ee"
+    artifactId: "jboss-j2eemgmt-api_1.1_spec-parent"
     versionPattern: ".*redhat-.*"
 
   - groupId: "org.jboss.eap"
@@ -2522,6 +3330,18 @@ streams:
     artifactId: "restat-bridge"
     versionPattern: ".*redhat-.*"
 
+  - groupId: "org.wildfly.security.elytron-web"
+    artifactId: "elytron-web-parent"
+    versionPattern: ".*redhat-.*"
+
+  - groupId: "org.jboss.security"
+    artifactId: "jboss-negotiation-project"
+    versionPattern: ".*redhat-.*"
+
+  - groupId: "org.jboss.eap"
+    artifactId: "wildfly-clustering"
+    versionPattern: ".*redhat-.*"
+
   - groupId: "org.jboss.spec.javax.resource"
     artifactId: "jboss-connector-api_1.7_spec"
     versionPattern: ".*redhat-.*"
@@ -2550,8 +3370,16 @@ streams:
     artifactId: "wildfly-controller-client"
     versionPattern: ".*redhat-.*"
 
+  - groupId: "org.wildfly.galleon-plugins"
+    artifactId: "wildfly-galleon-plugins"
+    version: "5.1.5.Final-SNAPSHOT"
+
   - groupId: "com.fasterxml.jackson.core"
     artifactId: "jackson-databind"
+    versionPattern: ".*redhat-.*"
+
+  - groupId: "org.apache"
+    artifactId: "apache"
     versionPattern: ".*redhat-.*"
 
   - groupId: "org.jboss.eap"
@@ -2585,3 +3413,4 @@ streams:
   - groupId: "org.jboss.ws"
     artifactId: "jbossws-common"
     versionPattern: ".*redhat-.*"
+

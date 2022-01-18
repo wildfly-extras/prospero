@@ -1,0 +1,11 @@
+id: universe
+resolveWithLocalCache: true
+streams:
+  # need to productize those
+  - groupId: "org.jboss.universe"
+    artifactId: "product-universe"
+    version: "1.0.0.Final"
+
+  - groupId: "org.jboss.universe.producer"
+    artifactId: "jboss-eap-producers"
+    version: "1.0.0.Final"
