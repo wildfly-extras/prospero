@@ -92,7 +92,7 @@ public class ChannelMavenArtifactRepositoryManager implements MavenRepoManager {
 
     @Override
     public void resolveLatestVersion(MavenArtifact artifact, String lowestQualifier, Pattern includeVersion, Pattern excludeVersion) throws MavenUniverseException {
-        throw new UnsupportedOperationException("Not yet implemented");
+        resolve(artifact);
     }
 
     @Override
@@ -103,12 +103,12 @@ public class ChannelMavenArtifactRepositoryManager implements MavenRepoManager {
 
     @Override
     public String getLatestVersion(MavenArtifact artifact) throws MavenUniverseException {
-        throw new UnsupportedOperationException("Not yet implemented");
+        return getLatestVersion(artifact, null, null, null);
     }
 
     @Override
     public String getLatestVersion(MavenArtifact artifact, String lowestQualifier) throws MavenUniverseException {
-        throw new UnsupportedOperationException("Not yet implemented");
+        return getLatestVersion(artifact, lowestQualifier, null, null);
     }
 
     @Override

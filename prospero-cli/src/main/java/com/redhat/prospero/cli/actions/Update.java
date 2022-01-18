@@ -97,7 +97,7 @@ public class Update {
         final List<ArtifactChange> updates = new ArrayList<>();
         final Manifest manifest = metadata.getManifest();
         for (Artifact artifact : manifest.getArtifacts()) {
-            updates.addAll(findUpdates(artifact.getGroupId(), artifact.getArtifactId()));
+            updates.addAll(findUpdates(artifact));
         }
         final ProvisioningPlan fpUpdates = findFPUpdates();
 
@@ -164,19 +164,15 @@ public class Update {
         return collected;
     }
 
-    public List<ArtifactChange> findUpdates(String groupId, String artifactId) throws ArtifactNotFoundException, XmlException, UnresolvedMavenArtifactException {
+    public List<ArtifactChange> findUpdates(Artifact artifact) throws ArtifactNotFoundException, UnresolvedMavenArtifactException {
         List<ArtifactChange> updates = new ArrayList<>();
 
-        final Manifest manifest = metadata.getManifest();
-
-        final Artifact artifact = manifest.find(new DefaultArtifact(groupId, artifactId, "", ""));
-
         if (artifact == null) {
-            throw new ArtifactNotFoundException(String.format("Artifact [%s:%s] not found", groupId, artifactId));
+            throw new ArtifactNotFoundException(String.format("Artifact [%s:%s] not found", artifact.getGroupId(), artifact.getArtifactId()));
         }
 
-        final org.wildfly.channel.MavenArtifact latestVersion = channelSession.resolveLatestMavenArtifact(groupId, artifactId, artifact.getExtension(), artifact.getClassifier(), artifact.getVersion());
-        final Artifact latest = new DefaultArtifact(groupId, artifactId, latestVersion.getExtension(), latestVersion.getVersion());
+        final org.wildfly.channel.MavenArtifact latestVersion = channelSession.resolveLatestMavenArtifact(artifact.getGroupId(), artifact.getArtifactId(), artifact.getExtension(), artifact.getClassifier(), artifact.getVersion());
+        final Artifact latest = new DefaultArtifact(artifact.getGroupId(), artifact.getArtifactId(), latestVersion.getExtension(), latestVersion.getVersion());
 
 
         if (latestVersion == null || ArtifactUtils.compareVersion(latest, artifact) <= 0) {
