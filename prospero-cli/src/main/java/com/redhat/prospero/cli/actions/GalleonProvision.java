@@ -23,6 +23,7 @@ import com.redhat.prospero.galleon.ChannelMavenArtifactRepositoryManager;
 
 import java.io.IOException;
 import java.net.MalformedURLException;
+import java.net.URI;
 import java.net.URL;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -64,15 +65,15 @@ public class GalleonProvision {
         final String base = args[1];
         final String channelsFile = args[2];
 
-        new GalleonProvision().installFeaturePack(fpl, base, channelsFile);
+        new GalleonProvision().installFeaturePack(fpl, base, Paths.get(channelsFile).toUri().toURL());
     }
 
-    public void installFeaturePack(String fpl, String path, String channelsFile) throws ProvisioningException, IOException, MetadataException {
+    public void installFeaturePack(String fpl, String path, URL channelsFile) throws ProvisioningException, IOException, MetadataException {
         Path installDir = Paths.get(path);
         if (Files.exists(installDir)) {
             throw new ProvisioningException("Installation dir " + installDir + " already exists");
         }
-        final List<ChannelRef> channelRefs = ChannelRef.readChannels(Paths.get(channelsFile));
+        final List<ChannelRef> channelRefs = ChannelRef.readChannels(channelsFile);
         final List<Channel> channels = channelRefs.stream().map(ref-> {
             try {
                 return ChannelMapper.from(new URL(ref.getUrl()));

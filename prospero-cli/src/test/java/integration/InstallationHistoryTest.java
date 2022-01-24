@@ -34,6 +34,7 @@ import org.junit.Before;
 import org.junit.Test;
 
 import java.io.File;
+import java.net.URL;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.HashMap;
@@ -67,8 +68,8 @@ public class InstallationHistoryTest {
     @Test
     public void listUpdates() throws Exception {
         // installCore
-        final Path channelFile = TestUtil.prepareChannelFile("local-repo-desc.yaml");
-        new GalleonProvision().installFeaturePack("org.wildfly.core:wildfly-core-galleon-pack:17.0.0.Final", OUTPUT_PATH.toString(), channelFile.toString());
+        final URL channelFile = TestUtil.prepareChannelFile("local-repo-desc.yaml");
+        new GalleonProvision().installFeaturePack("org.wildfly.core:wildfly-core-galleon-pack:17.0.0.Final", OUTPUT_PATH.toString(), channelFile);
 
         // updateCore
         TestUtil.prepareChannelFile(OUTPUT_PATH.resolve(InstallationMetadata.CHANNELS_FILE_NAME), "local-repo-desc.yaml", "local-updates-repo-desc.yaml");
@@ -83,8 +84,8 @@ public class InstallationHistoryTest {
 
     @Test
     public void rollbackChanges() throws Exception {
-        final Path channelFile = TestUtil.prepareChannelFile("local-repo-desc.yaml");
-        new GalleonProvision().installFeaturePack("org.wildfly.core:wildfly-core-galleon-pack:17.0.0.Final", OUTPUT_PATH.toString(), channelFile.toString());
+        final URL channelFile = TestUtil.prepareChannelFile("local-repo-desc.yaml");
+        new GalleonProvision().installFeaturePack("org.wildfly.core:wildfly-core-galleon-pack:17.0.0.Final", OUTPUT_PATH.toString(), channelFile);
 
         TestUtil.prepareChannelFile(OUTPUT_PATH.resolve(InstallationMetadata.CHANNELS_FILE_NAME), "local-repo-desc.yaml", "local-updates-repo-desc.yaml");
         new Update(OUTPUT_PATH, true).doUpdateAll();
@@ -101,8 +102,8 @@ public class InstallationHistoryTest {
 
     @Test
     public void displayChanges() throws Exception {
-        final Path channelFile = TestUtil.prepareChannelFile("local-repo-desc.yaml");
-        new GalleonProvision().installFeaturePack("org.wildfly.core:wildfly-core-galleon-pack:17.0.0.Final", OUTPUT_PATH.toString(), channelFile.toString());
+        final URL channelFile = TestUtil.prepareChannelFile("local-repo-desc.yaml");
+        new GalleonProvision().installFeaturePack("org.wildfly.core:wildfly-core-galleon-pack:17.0.0.Final", OUTPUT_PATH.toString(), channelFile);
 
         TestUtil.prepareChannelFile(OUTPUT_PATH.resolve(InstallationMetadata.CHANNELS_FILE_NAME), "local-repo-desc.yaml", "local-updates-repo-desc.yaml");
         new Update(OUTPUT_PATH, true).doUpdateAll();

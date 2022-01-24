@@ -27,11 +27,11 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 public class TestUtil {
-    static public Path prepareChannelFile(String channelDescriptor) throws IOException {
+    static public URL prepareChannelFile(String channelDescriptor) throws IOException {
         final Path channelFile = Files.createTempFile("channels", "json");
         channelFile.toFile().deleteOnExit();
 
-        return prepareChannelFile(channelFile, channelDescriptor);
+        return prepareChannelFile(channelFile, channelDescriptor).toUri().toURL();
     }
 
     static public Path prepareChannelFile(Path channelFile, String... channelDescriptor) throws IOException {

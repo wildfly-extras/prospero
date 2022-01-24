@@ -1,6 +1,9 @@
 id: universe
 resolveWithLocalCache: true
 streams:
+  - groupId: "org.jboss.eap"
+    artifactId: "wildfly-ee-galleon-pack"
+    versionPattern: "7.4.3.GA-redhat-SNAPSHOT"
   # need to productize those
   - groupId: "org.jboss.universe"
     artifactId: "product-universe"

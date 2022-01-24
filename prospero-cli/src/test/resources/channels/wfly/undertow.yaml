@@ -1,0 +1,26 @@
+---
+name: Dev channel for Undertow 2.2
+description: |-
+  This channel provides dev builds of Undertow 2.2
+vendor:
+  name: WildFly
+  support: community
+resolveWithLocalCache: true
+streams:
+  - groupId: "io.undertow"
+    artifactId: "undertow-websockets-jsr"
+    versionPattern: "2.2.*.Final"
+  - groupId: "io.undertow"
+    artifactId: "undertow-servlet"
+    versionPattern: "2.2.*.Final"
+  - groupId: "io.undertow"
+    artifactId: "undertow-core"
+    versionPattern: "2.2.*.Final"
+
+#    version: "2.2.9.Final"
+#  - groupId: "io.undertow"
+#    artifactId: "undertow-servlet"
+#    version: "2.2.9.Final"
+#  - groupId: "io.undertow"
+#    artifactId: "undertow-core"
+#    version: "2.2.9.Final"

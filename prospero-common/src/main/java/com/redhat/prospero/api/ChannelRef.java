@@ -19,6 +19,7 @@ package com.redhat.prospero.api;
 
 import java.io.File;
 import java.io.IOException;
+import java.net.URL;
 import java.nio.file.Path;
 import java.util.List;
 
@@ -31,6 +32,14 @@ public class ChannelRef {
         new ObjectMapper().writeValue(channelsFile, channelRefs);
     }
 
+    public static List<ChannelRef> readChannels(URL url) throws IOException {
+        final ObjectMapper objectMapper = new ObjectMapper();
+        JavaType type = objectMapper.getTypeFactory().constructCollectionType(List.class, ChannelRef.class);
+        final List<ChannelRef> channelRefs = objectMapper.readValue(url, type);
+
+        return channelRefs;
+    }
+
     public static List<ChannelRef> readChannels(Path path) throws IOException {
         final ObjectMapper objectMapper = new ObjectMapper();
         JavaType type = objectMapper.getTypeFactory().constructCollectionType(List.class, ChannelRef.class);
@@ -40,6 +49,7 @@ public class ChannelRef {
     }
 
     private String name;
+
     private String url;
 
     public ChannelRef() {

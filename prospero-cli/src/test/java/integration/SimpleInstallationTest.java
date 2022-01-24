@@ -29,6 +29,7 @@ import org.junit.Before;
 import org.junit.Test;
 
 import java.io.File;
+import java.net.URL;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Optional;
@@ -62,9 +63,9 @@ public class SimpleInstallationTest {
 
     @Test
     public void installWildflyCore() throws Exception {
-        final Path channelFile = TestUtil.prepareChannelFile("local-repo-desc.yaml");
+        final URL channelFile = TestUtil.prepareChannelFile("local-repo-desc.yaml");
 
-        new GalleonProvision().installFeaturePack("org.wildfly.core:wildfly-core-galleon-pack:17.0.0.Final", OUTPUT_PATH.toString(), channelFile.toString());
+        new GalleonProvision().installFeaturePack("org.wildfly.core:wildfly-core-galleon-pack:17.0.0.Final", OUTPUT_PATH.toString(), channelFile);
 
         // verify installation with manifest file is present
         assertTrue(OUTPUT_PATH.resolve(InstallationMetadata.MANIFEST_FILE_NAME).toFile().exists());
@@ -77,8 +78,8 @@ public class SimpleInstallationTest {
 
     @Test
     public void updateWildflyCore() throws Exception {
-        final Path channelFile = TestUtil.prepareChannelFile("local-repo-desc.yaml");
-        new GalleonProvision().installFeaturePack("org.wildfly.core:wildfly-core-galleon-pack:17.0.0.Final", OUTPUT_PATH.toString(), channelFile.toString());
+        final URL channelFile = TestUtil.prepareChannelFile("local-repo-desc.yaml");
+        new GalleonProvision().installFeaturePack("org.wildfly.core:wildfly-core-galleon-pack:17.0.0.Final", OUTPUT_PATH.toString(), channelFile);
 
         TestUtil.prepareChannelFile(OUTPUT_PATH.resolve(InstallationMetadata.CHANNELS_FILE_NAME), "local-repo-desc.yaml", "local-updates-repo-desc.yaml");
         new Update(OUTPUT_PATH, true).doUpdateAll();
@@ -90,7 +91,7 @@ public class SimpleInstallationTest {
 
     @Test
     public void installWildflyCoreFromInstallationFile() throws Exception {
-        final Path channelFile = TestUtil.prepareChannelFile("local-repo-desc.yaml");
+        final URL channelFile = TestUtil.prepareChannelFile("local-repo-desc.yaml");
         final File installationFile = new File(this.getClass().getClassLoader().getResource("provisioning.xml").toURI());
 
         new GalleonProvision().installFeaturePackFromFile(installationFile.toPath(), OUTPUT_PATH.toString(), channelFile.toString());

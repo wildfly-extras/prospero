@@ -30,6 +30,7 @@ import org.junit.Before;
 import org.junit.Test;
 
 import java.io.File;
+import java.net.URL;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Optional;
@@ -72,9 +73,9 @@ public class InstallationRestoreTest {
 
     @Test
     public void restoreInstallation() throws Exception {
-        final Path channelFile = TestUtil.prepareChannelFile("local-repo-desc.yaml");
+        final URL channelFile = TestUtil.prepareChannelFile("local-repo-desc.yaml");
 
-        new GalleonProvision().installFeaturePack("org.wildfly.core:wildfly-core-galleon-pack:17.0.0.Final", FIRST_SERVER_PATH.toString(), channelFile.toString());
+        new GalleonProvision().installFeaturePack("org.wildfly.core:wildfly-core-galleon-pack:17.0.0.Final", FIRST_SERVER_PATH.toString(), channelFile);
 
         TestUtil.prepareChannelFile(FIRST_SERVER_PATH.resolve(InstallationMetadata.CHANNELS_FILE_NAME), "local-repo-desc.yaml", "local-updates-repo-desc.yaml");
 

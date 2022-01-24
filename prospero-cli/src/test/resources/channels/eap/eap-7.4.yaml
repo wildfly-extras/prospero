@@ -9,9 +9,9 @@ repositories:
   - id: brew-7.4
     url: http://download.eng.brq.redhat.com/brewroot/repos/jb-eap-7.4-maven-build/latest/maven/
 streams:
-  - groupId: "org.jboss.eap"
-    artifactId: "wildfly-ee-galleon-pack"
-    versionPattern: ".*redhat-.*"
+#  - groupId: "org.jboss.eap"
+#    artifactId: "wildfly-ee-galleon-pack"
+#    versionPattern: ".*redhat-.*"
 
   - groupId: "org.jboss.eap"
     artifactId: "wildfly-galleon-pack"
