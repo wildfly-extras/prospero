@@ -19,6 +19,7 @@ package com.redhat.prospero.cli.actions;
 
 import com.redhat.prospero.api.InstallationMetadata;
 import com.redhat.prospero.api.MetadataException;
+import com.redhat.prospero.cli.FeaturePackLocationParser;
 import com.redhat.prospero.galleon.ChannelMavenArtifactRepositoryManager;
 
 import java.io.IOException;
@@ -85,7 +86,7 @@ public class GalleonProvision {
         final WfChannelMavenResolverFactory factory = new WfChannelMavenResolverFactory();
         final ChannelMavenArtifactRepositoryManager repoManager = new ChannelMavenArtifactRepositoryManager(channels, factory);
         ProvisioningManager provMgr = GalleonUtils.getProvisioningManager(installDir, repoManager);
-        FeaturePackLocation loc = FeaturePackLocation.fromString(fpl);
+        FeaturePackLocation loc = new FeaturePackLocationParser(repoManager).resolveFpl(fpl);
         provMgr.install(loc);
 
         writeProsperoMetadata(installDir, repoManager, channelRefs);
