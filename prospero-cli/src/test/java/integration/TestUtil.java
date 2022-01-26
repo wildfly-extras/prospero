@@ -31,7 +31,8 @@ public class TestUtil {
         final Path channelFile = Files.createTempFile("channels", "json");
         channelFile.toFile().deleteOnExit();
 
-        return prepareChannelFile(channelFile, channelDescriptor).toUri().toURL();
+        final Path path = prepareChannelFile(channelFile, channelDescriptor);
+        return path.toUri().toURL();
     }
 
     static public Path prepareChannelFile(Path channelFile, String... channelDescriptor) throws IOException {

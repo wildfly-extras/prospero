@@ -94,7 +94,7 @@ public class SimpleInstallationTest {
         final URL channelFile = TestUtil.prepareChannelFile("local-repo-desc.yaml");
         final File installationFile = new File(this.getClass().getClassLoader().getResource("provisioning.xml").toURI());
 
-        new GalleonProvision().installFeaturePackFromFile(installationFile.toPath(), OUTPUT_PATH.toString(), channelFile.toString());
+        new GalleonProvision().installFeaturePackFromFile(installationFile.toPath(), OUTPUT_PATH.toString(), channelFile);
 
         final Optional<Artifact> wildflyCliArtifact = readArtifactFromManifest("org.wildfly.core", "wildfly-cli");
         assertEquals("17.0.0.Final", wildflyCliArtifact.get().getVersion());

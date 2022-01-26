@@ -28,7 +28,7 @@ public class FeaturePackLocationParserTest {
 
     @Before
     public void setUp() throws IOException {
-        final Path channelsFile = Paths.get("/Users/spyrkob/workspaces/set/prospero/prospero/examples/eap/channels-eap74.json");
+        final URL channelsFile = FeaturePackLocationParserTest.class.getResource("/channels/eap/channels-eap74.json");
 
         final List<ChannelRef> channelRefs = ChannelRef.readChannels(channelsFile);
         final List<Channel> channels = channelRefs.stream().map(ref-> {
@@ -47,7 +47,7 @@ public class FeaturePackLocationParserTest {
     @Test
     public void findLatestFeaturePackInPartialGav() throws Exception {
         final FeaturePackLocation resolvedFpl = resolveFplVersion("org.jboss.eap:wildfly-ee-galleon-pack");
-        assertEquals("7.4.3.GA-redhat-00002", resolvedFpl.getBuild());
+        assertEquals("7.4.3.GA-redhat-SNAPSHOT", resolvedFpl.getBuild());
         assertEquals("org.jboss.eap:wildfly-ee-galleon-pack::zip", resolvedFpl.getProducerName());
     }
 

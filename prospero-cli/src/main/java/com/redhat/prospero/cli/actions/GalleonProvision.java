@@ -77,6 +77,7 @@ public class GalleonProvision {
         final List<ChannelRef> channelRefs = ChannelRef.readChannels(channelsFile);
         final List<Channel> channels = channelRefs.stream().map(ref-> {
             try {
+                System.out.println("!!!!! ref: " + ref);
                 return ChannelMapper.from(new URL(ref.getUrl()));
             } catch (MalformedURLException e) {
                 throw new RuntimeException(e);
@@ -92,12 +93,12 @@ public class GalleonProvision {
         writeProsperoMetadata(installDir, repoManager, channelRefs);
     }
 
-    public void installFeaturePackFromFile(Path installationFile, String path, String channelsFile) throws ProvisioningException, IOException, MetadataException {
+    public void installFeaturePackFromFile(Path installationFile, String path, URL channelsFile) throws ProvisioningException, IOException, MetadataException {
         Path installDir = Paths.get(path);
         if (Files.exists(installDir)) {
             throw new ProvisioningException("Installation dir " + installDir + " already exists");
         }
-        final List<ChannelRef> channelRefs = ChannelRef.readChannels(Paths.get(channelsFile));
+        final List<ChannelRef> channelRefs = ChannelRef.readChannels(channelsFile);
         final List<Channel> channels = channelRefs.stream().map(ref-> {
             try {
                 return ChannelMapper.from(new URL(ref.getUrl()));
