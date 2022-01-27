@@ -20,11 +20,11 @@ package com.redhat.prospero.cli.actions;
 import com.redhat.prospero.api.InstallationMetadata;
 import com.redhat.prospero.api.MetadataException;
 import com.redhat.prospero.cli.FeaturePackLocationParser;
+import com.redhat.prospero.cli.Server;
 import com.redhat.prospero.galleon.ChannelMavenArtifactRepositoryManager;
 
 import java.io.IOException;
 import java.net.MalformedURLException;
-import java.net.URI;
 import java.net.URL;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -36,6 +36,8 @@ import java.util.stream.Collectors;
 import com.redhat.prospero.api.ChannelRef;
 import com.redhat.prospero.wfchannel.WfChannelMavenResolverFactory;
 import org.eclipse.aether.artifact.Artifact;
+import org.eclipse.aether.resolution.ArtifactResolutionException;
+import org.eclipse.aether.resolution.VersionRangeResolutionException;
 import org.jboss.galleon.ProvisioningException;
 import org.jboss.galleon.ProvisioningManager;
 import org.jboss.galleon.universe.FeaturePackLocation;
@@ -57,16 +59,22 @@ public class GalleonProvision {
         }
     }
 
-    public static void main(String[] args) throws ProvisioningException, IOException, MetadataException {
-        if (args.length < 3) {
+    public static void main(String[] args) throws ProvisioningException, IOException, MetadataException, ArtifactResolutionException, VersionRangeResolutionException {
+        if (args.length < 2) {
             System.out.println("Not enough parameters. Need to provide FPL, output directory and channels file.");
             return;
         }
-        final String fpl = args[0];
-        final String base = args[1];
-        final String channelsFile = args[2];
+        final Server server;
+        if (args[0].equalsIgnoreCase("eap")) {
+            server = Server.EAP;
+        } else if (args[0].equalsIgnoreCase("wildfly")) {
+            server = Server.WILFDFLY;
+        } else {
+            throw new IllegalArgumentException("Unsupported server choice: " + args[0]);
+        }
+        final Path base = Paths.get(args[1]);
 
-        new GalleonProvision().installFeaturePack(fpl, base, Paths.get(channelsFile).toUri().toURL());
+        new GalleonProvision().provision(server.getFpl(), base, server.getChannelRefs());
     }
 
     public void installFeaturePack(String fpl, String path, URL channelsFile) throws ProvisioningException, IOException, MetadataException {
@@ -75,9 +83,15 @@ public class GalleonProvision {
             throw new ProvisioningException("Installation dir " + installDir + " already exists");
         }
         final List<ChannelRef> channelRefs = ChannelRef.readChannels(channelsFile);
+
+        provision(fpl, installDir, channelRefs);
+    }
+
+    public void provision(String fpl,
+                           Path installDir,
+                           List<ChannelRef> channelRefs) throws ProvisioningException, MetadataException {
         final List<Channel> channels = channelRefs.stream().map(ref-> {
             try {
-                System.out.println("!!!!! ref: " + ref);
                 return ChannelMapper.from(new URL(ref.getUrl()));
             } catch (MalformedURLException e) {
                 throw new RuntimeException(e);
