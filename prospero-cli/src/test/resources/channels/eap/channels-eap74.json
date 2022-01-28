@@ -1,3 +1,3 @@
-[{"name":"dev","url":"file:///Users/spyrkob/workspaces/set/prospero/prospero/prospero-cli/src/test/resources/channels/eap/eap-7.4.yaml"},
-{"name":"universe","url":"file:///Users/spyrkob/workspaces/set/prospero/prospero/prospero-cli/src/test/resources/channels/eap/universe.yaml"},
-{"name":"galleon","url":"file:///Users/spyrkob/workspaces/set/prospero/prospero/prospero-cli/src/test/resources/channels/eap/galleon.yaml"}]
+[{"name":"dev","url":"file://${project.basedir}/src/test/resources/channels/eap/eap-7.4.yaml"},
+{"name":"universe","url":"file://${project.basedir}/src/test/resources/channels/eap/universe.yaml"},
+{"name":"galleon","url":"file://${project.basedir}/src/test/resources/channels/eap/galleon.yaml"}]

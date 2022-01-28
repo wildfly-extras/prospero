@@ -72,7 +72,7 @@ public class GalleonProvision {
         } else {
             throw new IllegalArgumentException("Unsupported server choice: " + args[0]);
         }
-        final Path base = Paths.get(args[1]);
+        final Path base = Paths.get(args[1]).toAbsolutePath();
 
         new GalleonProvision().provision(server.getFpl(), base, server.getChannelRefs());
     }
