@@ -17,10 +17,11 @@
 
 package integration;
 
+import com.redhat.prospero.api.ChannelRef;
 import com.redhat.prospero.api.InstallationMetadata;
 import com.redhat.prospero.cli.actions.InstallationExport;
 import com.redhat.prospero.cli.actions.InstallationRestore;
-import com.redhat.prospero.cli.actions.GalleonProvision;
+import com.redhat.prospero.cli.actions.Installation;
 import com.redhat.prospero.model.ManifestXmlSupport;
 import com.redhat.prospero.model.XmlException;
 import org.apache.commons.io.FileUtils;
@@ -33,64 +34,64 @@ import java.io.File;
 import java.net.URL;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.List;
 import java.util.Optional;
 
 import static org.junit.Assert.assertEquals;
 
 public class InstallationRestoreTest {
+   private static final String FIRST_SERVER_DIR = "target/server";
+   private static final Path FIRST_SERVER_PATH = Paths.get(FIRST_SERVER_DIR).toAbsolutePath();
 
-    private static final String FIRST_SERVER_DIR = "target/server";
-    private static final Path FIRST_SERVER_PATH = Paths.get(FIRST_SERVER_DIR).toAbsolutePath();
+   private static final String RESTORED_SERVER_DIR = "target/restored";
+   private static final Path RESTORED_SERVER_PATH = Paths.get(RESTORED_SERVER_DIR).toAbsolutePath();
 
-    private static final String RESTORED_SERVER_DIR = "target/restored";
-    private static final Path RESTORED_SERVER_PATH = Paths.get(RESTORED_SERVER_DIR).toAbsolutePath();
+   @Before
+   public void setUp() throws Exception {
+      if (FIRST_SERVER_PATH.toFile().exists()) {
+         FileUtils.deleteDirectory(FIRST_SERVER_PATH.toFile());
+         FIRST_SERVER_PATH.toFile().delete();
+      }
 
-    @Before
-    public void setUp() throws Exception {
-        if (FIRST_SERVER_PATH.toFile().exists()) {
-            FileUtils.deleteDirectory(FIRST_SERVER_PATH.toFile());
-            FIRST_SERVER_PATH.toFile().delete();
-        }
+      if (RESTORED_SERVER_PATH.toFile().exists()) {
+         FileUtils.deleteDirectory(RESTORED_SERVER_PATH.toFile());
+         RESTORED_SERVER_PATH.toFile().delete();
+      }
+   }
 
-        if (RESTORED_SERVER_PATH.toFile().exists()) {
-            FileUtils.deleteDirectory(RESTORED_SERVER_PATH.toFile());
-            RESTORED_SERVER_PATH.toFile().delete();
-        }
-    }
+   @After
+   public void tearDown() throws Exception {
+      if (FIRST_SERVER_PATH.toFile().exists()) {
+         FileUtils.deleteDirectory(FIRST_SERVER_PATH.toFile());
+         FIRST_SERVER_PATH.toFile().delete();
+      }
 
-    @After
-    public void tearDown() throws Exception {
-        if (FIRST_SERVER_PATH.toFile().exists()) {
-            FileUtils.deleteDirectory(FIRST_SERVER_PATH.toFile());
-            FIRST_SERVER_PATH.toFile().delete();
-        }
+      if (RESTORED_SERVER_PATH.toFile().exists()) {
+         FileUtils.deleteDirectory(RESTORED_SERVER_PATH.toFile());
+         RESTORED_SERVER_PATH.toFile().delete();
+      }
+   }
 
-//        if (RESTORED_SERVER_PATH.toFile().exists()) {
-//            FileUtils.deleteDirectory(RESTORED_SERVER_PATH.toFile());
-//            RESTORED_SERVER_PATH.toFile().delete();
-//        }
-    }
+   @Test
+   public void restoreInstallation() throws Exception {
+      final URL channelFile = TestUtil.prepareChannelFile("local-repo-desc.yaml");
 
-    @Test
-    public void restoreInstallation() throws Exception {
-        final URL channelFile = TestUtil.prepareChannelFile("local-repo-desc.yaml");
+      final List<ChannelRef> channelRefs = ChannelRef.readChannels(channelFile);
 
-        new GalleonProvision().installFeaturePack("org.wildfly.core:wildfly-core-galleon-pack:17.0.0.Final", FIRST_SERVER_PATH.toString(), channelFile);
+      new Installation(FIRST_SERVER_PATH).provision("org.wildfly.core:wildfly-core-galleon-pack:17.0.0.Final", channelRefs);
 
-        TestUtil.prepareChannelFile(FIRST_SERVER_PATH.resolve(InstallationMetadata.CHANNELS_FILE_NAME), "local-repo-desc.yaml", "local-updates-repo-desc.yaml");
+      TestUtil.prepareChannelFile(FIRST_SERVER_PATH.resolve(InstallationMetadata.CHANNELS_FILE_NAME), "local-repo-desc.yaml", "local-updates-repo-desc.yaml");
 
-        new InstallationExport().export(FIRST_SERVER_PATH, "target/bundle.zip");
+      new InstallationExport(FIRST_SERVER_PATH).export("target/bundle.zip");
 
-        new InstallationRestore().restore(RESTORED_SERVER_PATH, Paths.get("target/bundle.zip"));
+      new InstallationRestore(RESTORED_SERVER_PATH).restore(Paths.get("target/bundle.zip"));
 
-        final Optional<Artifact> wildflyCliArtifact = readArtifactFromManifest("org.wildfly.core", "wildfly-cli");
-        assertEquals("17.0.0.Final", wildflyCliArtifact.get().getVersion());
-    }
+      final Optional<Artifact> wildflyCliArtifact = readArtifactFromManifest("org.wildfly.core", "wildfly-cli");
+      assertEquals("17.0.0.Final", wildflyCliArtifact.get().getVersion());
+   }
 
-    private Optional<Artifact> readArtifactFromManifest(String groupId, String artifactId) throws XmlException {
-        final File manifestFile = RESTORED_SERVER_PATH.resolve(InstallationMetadata.MANIFEST_FILE_NAME).toFile();
-        return ManifestXmlSupport.parse(manifestFile).getArtifacts().stream()
-                .filter((a) -> a.getGroupId().equals(groupId) && a.getArtifactId().equals(artifactId))
-                .findFirst();
-    }
+   private Optional<Artifact> readArtifactFromManifest(String groupId, String artifactId) throws XmlException {
+      final File manifestFile = RESTORED_SERVER_PATH.resolve(InstallationMetadata.MANIFEST_FILE_NAME).toFile();
+      return ManifestXmlSupport.parse(manifestFile).getArtifacts().stream().filter((a) -> a.getGroupId().equals(groupId) && a.getArtifactId().equals(artifactId)).findFirst();
+   }
 }

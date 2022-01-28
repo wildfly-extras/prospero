@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-package com.redhat.prospero.cli;
+package com.redhat.prospero.galleon;
 
 import org.jboss.galleon.progresstracking.ProgressCallback;
 import org.jboss.galleon.progresstracking.ProgressTracker;

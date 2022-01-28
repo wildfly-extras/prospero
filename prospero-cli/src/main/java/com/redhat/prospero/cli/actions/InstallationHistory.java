@@ -22,6 +22,7 @@ import com.redhat.prospero.api.ChannelRef;
 import com.redhat.prospero.api.InstallationMetadata;
 import com.redhat.prospero.api.MetadataException;
 import com.redhat.prospero.api.SavedState;
+import com.redhat.prospero.galleon.GalleonUtils;
 import com.redhat.prospero.galleon.ChannelMavenArtifactRepositoryManager;
 import com.redhat.prospero.wfchannel.WfChannelMavenResolverFactory;
 import org.jboss.galleon.ProvisioningManager;
@@ -37,23 +38,29 @@ import java.util.stream.Collectors;
 
 public class InstallationHistory {
 
+    private final Path installation;
+
+    public InstallationHistory(Path installation) {
+        this.installation = installation;
+    }
+
     public static void main(String[] args) throws Exception {
         final Path installation = Paths.get(args[1]);
         final String op = args[0];
 
-        final InstallationHistory installationHistory = new InstallationHistory();
+        final InstallationHistory installationHistory = new InstallationHistory(installation);
         if (op.equals("list")) {
-            final List<SavedState> history = installationHistory.getRevisions(installation);
+            final List<SavedState> history = installationHistory.getRevisions();
 
             for (SavedState savedState : history) {
                 System.out.println(savedState.shortDescription());
             }
         } else if (op.equals("revert")) {
             final String revision = args[2];
-            installationHistory.rollback(installation, new SavedState(revision));
+            installationHistory.rollback(new SavedState(revision));
         } else if (op.equals("compare")) {
             final String revision = args[2];
-            final List<ArtifactChange> changes = installationHistory.compare(installation, new SavedState(revision));
+            final List<ArtifactChange> changes = installationHistory.compare(new SavedState(revision));
             if (changes.isEmpty()) {
                 System.out.println("No changes found");
             } else {
@@ -67,17 +74,17 @@ public class InstallationHistory {
 
     }
 
-    public List<ArtifactChange> compare(Path installation, SavedState savedState) throws MetadataException {
+    public List<ArtifactChange> compare(SavedState savedState) throws MetadataException {
         final InstallationMetadata installationMetadata = new InstallationMetadata(installation);
         return installationMetadata.getChangesSince(savedState);
     }
 
-    public List<SavedState> getRevisions(Path installation) throws MetadataException {
+    public List<SavedState> getRevisions() throws MetadataException {
         final InstallationMetadata installationMetadata = new InstallationMetadata(installation);
         return installationMetadata.getRevisions();
     }
 
-    public void rollback(Path installation, SavedState savedState) throws Exception {
+    public void rollback(SavedState savedState) throws Exception {
         InstallationMetadata metadata = new InstallationMetadata(installation);
         metadata = metadata.rollback(savedState);
 

@@ -19,8 +19,9 @@ package com.redhat.prospero.cli.actions;
 
 import com.redhat.prospero.api.InstallationMetadata;
 import com.redhat.prospero.api.MetadataException;
-import com.redhat.prospero.cli.FeaturePackLocationParser;
+import com.redhat.prospero.galleon.FeaturePackLocationParser;
 import com.redhat.prospero.api.Server;
+import com.redhat.prospero.galleon.GalleonUtils;
 import com.redhat.prospero.galleon.ChannelMavenArtifactRepositoryManager;
 
 import java.io.IOException;
@@ -47,7 +48,13 @@ import org.wildfly.channel.ChannelMapper;
 
 import static com.redhat.prospero.api.ArtifactUtils.from;
 
-public class GalleonProvision {
+public class Installation {
+
+    private Path installDir;
+
+    public Installation(Path installDir) {
+        this.installDir = installDir;
+    }
 
     static {
         enableJBossLogManager();
@@ -74,58 +81,66 @@ public class GalleonProvision {
         }
         final Path base = Paths.get(args[1]).toAbsolutePath();
 
-        new GalleonProvision().provision(server.getFpl(), base, server.getChannelRefs());
+        new Installation(base).provision(server.getFpl(), server.getChannelRefs());
     }
 
-    public void installFeaturePack(String fpl, String path, URL channelsFile) throws ProvisioningException, IOException, MetadataException {
-        Path installDir = Paths.get(path);
-        if (Files.exists(installDir)) {
-            throw new ProvisioningException("Installation dir " + installDir + " already exists");
-        }
-        final List<ChannelRef> channelRefs = ChannelRef.readChannels(channelsFile);
+    /**
+     * Installs feature pack defined by {@code fpl} in {@code installDir}. If {@code fpl} doesn't include version,
+     * the newest available version will be used.
+     *
+     * @param fpl
+     * @param channelRefs
+     * @throws ProvisioningException
+     * @throws MetadataException
+     */
+    public void provision(String fpl, List<ChannelRef> channelRefs) throws ProvisioningException, MetadataException {
+        final List<Channel> channels = getChannels(channelRefs);
 
-        provision(fpl, installDir, channelRefs);
-    }
-
-    public void provision(String fpl,
-                           Path installDir,
-                           List<ChannelRef> channelRefs) throws ProvisioningException, MetadataException {
-        final List<Channel> channels = channelRefs.stream().map(ref-> {
-            try {
-                return ChannelMapper.from(new URL(ref.getUrl()));
-            } catch (MalformedURLException e) {
-                throw new RuntimeException(e);
-            }
-        }).collect(Collectors.toList());
-
-        final WfChannelMavenResolverFactory factory = new WfChannelMavenResolverFactory();
-        final ChannelMavenArtifactRepositoryManager repoManager = new ChannelMavenArtifactRepositoryManager(channels, factory);
+        final ChannelMavenArtifactRepositoryManager repoManager = createRepositoryManager(channels);
         ProvisioningManager provMgr = GalleonUtils.getProvisioningManager(installDir, repoManager);
         FeaturePackLocation loc = new FeaturePackLocationParser(repoManager).resolveFpl(fpl);
+
         provMgr.install(loc);
 
         writeProsperoMetadata(installDir, repoManager, channelRefs);
     }
 
-    public void installFeaturePackFromFile(Path installationFile, String path, URL channelsFile) throws ProvisioningException, IOException, MetadataException {
-        Path installDir = Paths.get(path);
+    /**
+     * Installs feature pack based on Galleon installation file
+     *
+     * @param installationFile
+     * @param channelRefs
+     * @throws ProvisioningException
+     * @throws IOException
+     * @throws MetadataException
+     */
+    public void provision(Path installationFile, List<ChannelRef> channelRefs) throws ProvisioningException, MetadataException {
         if (Files.exists(installDir)) {
             throw new ProvisioningException("Installation dir " + installDir + " already exists");
         }
-        final List<ChannelRef> channelRefs = ChannelRef.readChannels(channelsFile);
-        final List<Channel> channels = channelRefs.stream().map(ref-> {
+        final List<Channel> channels = getChannels(channelRefs);
+
+        final ChannelMavenArtifactRepositoryManager repoManager = createRepositoryManager(channels);
+        ProvisioningManager provMgr = GalleonUtils.getProvisioningManager(installDir, repoManager);
+
+        provMgr.provision(installationFile);
+
+        writeProsperoMetadata(installDir, repoManager, channelRefs);
+    }
+
+    private ChannelMavenArtifactRepositoryManager createRepositoryManager(List<Channel> channels) {
+        final WfChannelMavenResolverFactory factory = new WfChannelMavenResolverFactory();
+        return new ChannelMavenArtifactRepositoryManager(channels, factory);
+    }
+
+    private List<Channel> getChannels(List<ChannelRef> channelRefs) {
+        return channelRefs.stream().map(ref -> {
             try {
                 return ChannelMapper.from(new URL(ref.getUrl()));
             } catch (MalformedURLException e) {
                 throw new RuntimeException(e);
             }
         }).collect(Collectors.toList());
-
-        final WfChannelMavenResolverFactory factory = new WfChannelMavenResolverFactory();
-        final ChannelMavenArtifactRepositoryManager repoManager = new ChannelMavenArtifactRepositoryManager(channels, factory);
-        ProvisioningManager provMgr = GalleonUtils.getProvisioningManager(installDir, repoManager);
-        provMgr.provision(installationFile);
-        writeProsperoMetadata(installDir, repoManager, channelRefs);
     }
 
     private void writeProsperoMetadata(Path home, ChannelMavenArtifactRepositoryManager maven, List<ChannelRef> channelRefs) throws MetadataException {

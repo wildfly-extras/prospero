@@ -32,6 +32,7 @@ import com.redhat.prospero.api.ArtifactUtils;
 import com.redhat.prospero.api.InstallationMetadata;
 import com.redhat.prospero.api.ArtifactChange;
 import com.redhat.prospero.api.MetadataException;
+import com.redhat.prospero.galleon.GalleonUtils;
 import com.redhat.prospero.galleon.ChannelMavenArtifactRepositoryManager;
 import com.redhat.prospero.api.ArtifactNotFoundException;
 import com.redhat.prospero.api.ChannelRef;
@@ -56,13 +57,11 @@ public class Update {
     private final InstallationMetadata metadata;
     private final ChannelMavenArtifactRepositoryManager maven;
     private final ProvisioningManager provMgr;
-    private final Path installDir;
     private final boolean quiet;
     private final ChannelSession channelSession;
 
-    public Update(Path installDir, boolean quiet) throws IOException, ProvisioningException, MetadataException {
+    public Update(Path installDir, boolean quiet) throws ProvisioningException, MetadataException {
         this.metadata = new InstallationMetadata(installDir);
-        this.installDir = installDir;
         final List<ChannelRef> channelRefs = metadata.getChannels();
         final List<Channel> channels = channelRefs.stream().map(ref-> {
             try {
@@ -146,24 +145,6 @@ public class Update {
         System.out.println("Done");
     }
 
-    private ProvisioningPlan findFPUpdates() throws ProvisioningException, IOException {
-        return provMgr.getUpdates(true);
-    }
-
-    private Set<Artifact> applyFpUpdates(ProvisioningPlan updates) throws ProvisioningException, IOException {
-        provMgr.apply(updates);
-
-        final Set<MavenArtifact> resolvedArtfacts = maven.resolvedArtfacts();
-
-        // filter out non-installed artefacts
-        final Set<Artifact> collected = resolvedArtfacts.stream()
-                .map(a->new DefaultArtifact(a.getGroupId(), a.getArtifactId(), a.getClassifier(), a.getExtension(), a.getVersion()))
-                .filter(a->(!a.getArtifactId().equals("wildfly-producers") && !a.getArtifactId().equals("community-universe")))
-                .collect(Collectors.toSet());
-        metadata.registerUpdates(collected);
-        return collected;
-    }
-
     public List<ArtifactChange> findUpdates(Artifact artifact) throws ArtifactNotFoundException, UnresolvedMavenArtifactException {
         List<ArtifactChange> updates = new ArrayList<>();
 
@@ -182,6 +163,24 @@ public class Update {
         updates.add(new ArtifactChange(artifact, latest));
 
         return updates;
+    }
+
+    private ProvisioningPlan findFPUpdates() throws ProvisioningException, IOException {
+        return provMgr.getUpdates(true);
+    }
+
+    private Set<Artifact> applyFpUpdates(ProvisioningPlan updates) throws ProvisioningException, IOException {
+        provMgr.apply(updates);
+
+        final Set<MavenArtifact> resolvedArtfacts = maven.resolvedArtfacts();
+
+        // filter out non-installed artefacts
+        final Set<Artifact> collected = resolvedArtfacts.stream()
+                .map(a->new DefaultArtifact(a.getGroupId(), a.getArtifactId(), a.getClassifier(), a.getExtension(), a.getVersion()))
+                .filter(a->(!a.getArtifactId().equals("wildfly-producers") && !a.getArtifactId().equals("community-universe")))
+                .collect(Collectors.toSet());
+        metadata.registerUpdates(collected);
+        return collected;
     }
 
 }

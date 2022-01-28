@@ -1,7 +1,7 @@
 package com.redhat.prospero.cli;
 
 import com.redhat.prospero.api.ChannelRef;
-import com.redhat.prospero.cli.FeaturePackLocationParser;
+import com.redhat.prospero.galleon.FeaturePackLocationParser;
 import com.redhat.prospero.galleon.ChannelMavenArtifactRepositoryManager;
 import com.redhat.prospero.wfchannel.WfChannelMavenResolverFactory;
 import org.jboss.galleon.universe.FeaturePackLocation;
@@ -14,8 +14,6 @@ import org.wildfly.channel.ChannelMapper;
 import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.URL;
-import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.util.List;
 import java.util.stream.Collectors;
 

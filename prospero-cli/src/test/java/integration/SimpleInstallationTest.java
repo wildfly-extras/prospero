@@ -17,8 +17,9 @@
 
 package integration;
 
+import com.redhat.prospero.api.ChannelRef;
 import com.redhat.prospero.api.InstallationMetadata;
-import com.redhat.prospero.cli.actions.GalleonProvision;
+import com.redhat.prospero.cli.actions.Installation;
 import com.redhat.prospero.cli.actions.Update;
 import com.redhat.prospero.model.ManifestXmlSupport;
 import com.redhat.prospero.model.XmlException;
@@ -33,6 +34,7 @@ import java.io.File;
 import java.net.URL;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.List;
 import java.util.Optional;
 
 import static org.junit.Assert.*;
@@ -45,6 +47,7 @@ public class SimpleInstallationTest {
 
     private static final String OUTPUT_DIR = "target/server";
     private static final Path OUTPUT_PATH = Paths.get(OUTPUT_DIR).toAbsolutePath();
+    private final Installation installation = new Installation(OUTPUT_PATH);
 
     @Before
     public void setUp() throws Exception {
@@ -66,8 +69,9 @@ public class SimpleInstallationTest {
     @Ignore
     public void installWildflyCore() throws Exception {
         final URL channelFile = TestUtil.prepareChannelFile("local-repo-desc.yaml");
+        final List<ChannelRef> channelRefs = ChannelRef.readChannels(channelFile);
 
-        new GalleonProvision().installFeaturePack("org.wildfly.core:wildfly-core-galleon-pack:17.0.0.Final", OUTPUT_PATH.toString(), channelFile);
+        installation.provision("org.wildfly.core:wildfly-core-galleon-pack:17.0.0.Final", channelRefs);
 
         // verify installation with manifest file is present
         assertTrue(OUTPUT_PATH.resolve(InstallationMetadata.MANIFEST_FILE_NAME).toFile().exists());
@@ -81,7 +85,9 @@ public class SimpleInstallationTest {
     @Test
     public void updateWildflyCore() throws Exception {
         final URL channelFile = TestUtil.prepareChannelFile("local-repo-desc.yaml");
-        new GalleonProvision().installFeaturePack("org.wildfly.core:wildfly-core-galleon-pack:17.0.0.Final", OUTPUT_PATH.toString(), channelFile);
+        final List<ChannelRef> channelRefs = ChannelRef.readChannels(channelFile);
+
+        installation.provision("org.wildfly.core:wildfly-core-galleon-pack:17.0.0.Final", channelRefs);
 
         TestUtil.prepareChannelFile(OUTPUT_PATH.resolve(InstallationMetadata.CHANNELS_FILE_NAME), "local-repo-desc.yaml", "local-updates-repo-desc.yaml");
         new Update(OUTPUT_PATH, true).doUpdateAll();
@@ -95,8 +101,9 @@ public class SimpleInstallationTest {
     public void installWildflyCoreFromInstallationFile() throws Exception {
         final URL channelFile = TestUtil.prepareChannelFile("local-repo-desc.yaml");
         final File installationFile = new File(this.getClass().getClassLoader().getResource("provisioning.xml").toURI());
+        final List<ChannelRef> channelRefs = ChannelRef.readChannels(channelFile);
 
-        new GalleonProvision().installFeaturePackFromFile(installationFile.toPath(), OUTPUT_PATH.toString(), channelFile);
+        installation.provision(installationFile.toPath(), channelRefs);
 
         final Optional<Artifact> wildflyCliArtifact = readArtifactFromManifest("org.wildfly.core", "wildfly-cli");
         assertEquals("17.0.0.Final", wildflyCliArtifact.get().getVersion());

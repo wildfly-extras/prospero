@@ -15,9 +15,8 @@
  * limitations under the License.
  */
 
-package com.redhat.prospero.cli.actions;
+package com.redhat.prospero.galleon;
 
-import com.redhat.prospero.cli.GalleonProgressCallback;
 import org.jboss.galleon.ProvisioningException;
 import org.jboss.galleon.ProvisioningManager;
 import org.jboss.galleon.layout.ProvisioningLayoutFactory;

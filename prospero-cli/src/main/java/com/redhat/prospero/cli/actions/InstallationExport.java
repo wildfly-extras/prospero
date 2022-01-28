@@ -26,14 +26,21 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 
 public class InstallationExport {
+
+    private final Path installationDir;
+
+    public InstallationExport(Path installationDir) {
+        this.installationDir = installationDir;
+    }
+
     public static void main(String[] args) throws Exception {
         String installation = args[0];
         String exportName = args[1];
 
-        new InstallationExport().export(Paths.get(installation), exportName);
+        new InstallationExport(Paths.get(installation)).export(exportName);
     }
 
-    public void export(Path installationDir, String exportName) throws ProvisioningException, IOException, MetadataException {
+    public void export(String exportName) throws ProvisioningException, IOException, MetadataException {
         if (!installationDir.toFile().exists()) {
             throw new ProvisioningException("Installation dir " + installationDir + " doesn't exist");
         }

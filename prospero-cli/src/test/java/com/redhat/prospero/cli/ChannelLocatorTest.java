@@ -23,20 +23,21 @@ import java.util.List;
 
 import com.redhat.prospero.api.ChannelRef;
 import com.redhat.prospero.api.Server;
-import com.redhat.prospero.cli.actions.GalleonProvision;
+import com.redhat.prospero.cli.actions.Installation;
 import org.junit.Test;
 
 public class ChannelLocatorTest {
 
    private static final String EAP_DIR = "target/server-eap";
    private static final Path EAP_PATH = Paths.get(EAP_DIR).toAbsolutePath();
+   private final Installation installation = new Installation(EAP_PATH);
 
    @Test
    public void findLatestEapChannelDefinition() throws Exception {
       final List<ChannelRef> channelRefs = Server.EAP.getChannelRefs();
 
       final String fpl = Server.EAP.getFpl();
-      new GalleonProvision().provision(fpl, EAP_PATH, channelRefs);
+      installation.provision(fpl, channelRefs);
    }
 
    @Test
@@ -44,6 +45,6 @@ public class ChannelLocatorTest {
       final List<ChannelRef> channelRefs = Server.WILFDFLY.getChannelRefs();
 
       final String fpl = Server.WILFDFLY.getFpl();
-      new GalleonProvision().provision(fpl, EAP_PATH, channelRefs);
+      installation.provision(fpl, channelRefs);
    }
 }

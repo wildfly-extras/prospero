@@ -2,10 +2,11 @@ package integration;
 
 import com.redhat.prospero.api.ChannelRef;
 import com.redhat.prospero.api.InstallationMetadata;
-import com.redhat.prospero.cli.actions.GalleonProvision;
+import com.redhat.prospero.cli.actions.Installation;
 import com.redhat.prospero.cli.actions.Update;
 import com.redhat.prospero.galleon.ChannelMavenArtifactRepositoryManager;
 import com.redhat.prospero.wfchannel.WfChannelMavenResolverFactory;
+import org.jboss.galleon.ProvisioningException;
 import org.jboss.galleon.universe.FeaturePackLocation;
 import org.jboss.galleon.universe.Producer;
 import org.jboss.galleon.universe.UniverseResolver;
@@ -19,6 +20,7 @@ import org.wildfly.channel.Stream;
 
 import java.net.MalformedURLException;
 import java.net.URL;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.List;
@@ -64,8 +66,12 @@ public class ChannelUpdaterTest {
     public void installEap74() throws Exception {
         final URL channelFile = ChannelUpdaterTest.class.getResource("/channels/eap/channels-eap74.json");
 
-//        new GalleonProvision().installFeaturePack("eap@maven(org.jboss.universe:product-universe):7.4", EAP_PATH.toString(), channelFile.toString());
-        new GalleonProvision().installFeaturePack("org.jboss.eap:wildfly-ee-galleon-pack", EAP_PATH.toString(), channelFile);
+        if (Files.exists(EAP_PATH)) {
+            throw new ProvisioningException("Installation dir " + EAP_PATH + " already exists");
+        }
+        final List<ChannelRef> channelRefs = ChannelRef.readChannels(channelFile);
+
+        new Installation(EAP_PATH).provision("org.jboss.eap:wildfly-ee-galleon-pack", channelRefs);
 
         // verify installation with manifest file is present
         assertTrue(EAP_PATH.resolve(InstallationMetadata.MANIFEST_FILE_NAME).toFile().exists());
@@ -99,7 +105,12 @@ public class ChannelUpdaterTest {
     public void installWildfly() throws Exception {
         final URL channelFile = ChannelUpdaterTest.class.getResource("/channels/wfly/channels-wfly24.json");
 
-        new GalleonProvision().installFeaturePack("org.wildfly:wildfly-ee-galleon-pack:24.0.0.Final", OUTPUT_PATH.toString(), channelFile);
+        if (Files.exists(OUTPUT_PATH)) {
+            throw new ProvisioningException("Installation dir " + OUTPUT_DIR + " already exists");
+        }
+        final List<ChannelRef> channelRefs = ChannelRef.readChannels(channelFile);
+
+        new Installation(OUTPUT_PATH).provision("org.wildfly:wildfly-ee-galleon-pack:24.0.0.Final", channelRefs);
 
         // verify installation with manifest file is present
         assertTrue(OUTPUT_PATH.resolve(InstallationMetadata.MANIFEST_FILE_NAME).toFile().exists());
