@@ -40,6 +40,7 @@ import java.util.zip.ZipOutputStream;
 
 public class InstallationMetadata {
 
+    public static final String METADATA_DIR = ".installation";
     public static final String MANIFEST_FILE_NAME = "manifest.xml";
     public static final String CHANNELS_FILE_NAME = "channels.json";
     public static final String PROVISIONING_FILE_NAME = "provisioning.xml";
@@ -72,8 +73,8 @@ public class InstallationMetadata {
     public InstallationMetadata(Path base) throws MetadataException {
         this.base = base;
         this.gitStorage = new GitStorage(base);
-        this.manifestFile = base.resolve(InstallationMetadata.MANIFEST_FILE_NAME);
-        this.channelsFile = base.resolve(InstallationMetadata.CHANNELS_FILE_NAME);
+        this.manifestFile = base.resolve(METADATA_DIR).resolve(InstallationMetadata.MANIFEST_FILE_NAME);
+        this.channelsFile = base.resolve(METADATA_DIR).resolve(InstallationMetadata.CHANNELS_FILE_NAME);
         this.provisioningFile = base.resolve(GALLEON_INSTALLATION_DIR).resolve(InstallationMetadata.PROVISIONING_FILE_NAME);
 
         try {
@@ -88,11 +89,11 @@ public class InstallationMetadata {
     public InstallationMetadata(Path base, List<Artifact> artifacts, List<ChannelRef> channelRefs) throws MetadataException {
         this.base = base;
         this.gitStorage = new GitStorage(base);
-        this.manifestFile = base.resolve(InstallationMetadata.MANIFEST_FILE_NAME);
-        this.channelsFile = base.resolve(InstallationMetadata.CHANNELS_FILE_NAME);
+        this.manifestFile = base.resolve(METADATA_DIR).resolve(InstallationMetadata.MANIFEST_FILE_NAME);
+        this.channelsFile = base.resolve(METADATA_DIR).resolve(InstallationMetadata.CHANNELS_FILE_NAME);
         this.provisioningFile = base.resolve(GALLEON_INSTALLATION_DIR).resolve(InstallationMetadata.PROVISIONING_FILE_NAME);
 
-        this.manifest = new Manifest(artifacts, base.resolve(InstallationMetadata.MANIFEST_FILE_NAME));
+        this.manifest = new Manifest(artifacts, manifestFile);
         this.channelRefs = channelRefs;
         try {
             this.provisioningConfig = ProvisioningXmlParser.parse(provisioningFile);

@@ -22,7 +22,9 @@ import com.redhat.prospero.api.InstallationMetadata;
 import com.redhat.prospero.api.Manifest;
 import com.redhat.prospero.api.SavedState;
 import com.redhat.prospero.model.ManifestXmlSupport;
+import org.apache.commons.io.FileUtils;
 import org.eclipse.aether.artifact.DefaultArtifact;
+import org.junit.After;
 import org.junit.Test;
 
 import java.io.FileWriter;
@@ -34,6 +36,15 @@ import java.util.List;
 import static org.junit.Assert.assertEquals;
 
 public class LocalInstallationHistoryTest {
+
+    private Path installation;
+
+    @After
+    public void tearDown() throws Exception {
+        if (Files.exists(installation)) {
+            FileUtils.deleteDirectory(installation.toFile());
+        }
+    }
 
     @Test
     public void getHistoryOfInstallations() throws Exception {
@@ -106,12 +117,13 @@ public class LocalInstallationHistoryTest {
     }
 
     private InstallationMetadata mockInstallation() throws Exception {
-        final Path installation = Files.createTempDirectory("installation");
+        installation = Files.createTempDirectory("installation");
         installation.toFile().deleteOnExit();
-        try (FileWriter fw = new FileWriter(installation.resolve(InstallationMetadata.CHANNELS_FILE_NAME).toFile())) {
+        Files.createDirectories(installation.resolve(InstallationMetadata.METADATA_DIR));
+        try (FileWriter fw = new FileWriter(installation.resolve(InstallationMetadata.METADATA_DIR).resolve(InstallationMetadata.CHANNELS_FILE_NAME).toFile())) {
             fw.write("[]");
         }
-        final Manifest manifest = new Manifest(Arrays.asList(new DefaultArtifact("foo:bar:1.1.1")), installation.resolve(InstallationMetadata.MANIFEST_FILE_NAME));
+        final Manifest manifest = new Manifest(Arrays.asList(new DefaultArtifact("foo:bar:1.1.1")), installation.resolve(InstallationMetadata.METADATA_DIR).resolve(InstallationMetadata.MANIFEST_FILE_NAME));
         ManifestXmlSupport.write(manifest);
 
         final InstallationMetadata metadata = new InstallationMetadata(installation);

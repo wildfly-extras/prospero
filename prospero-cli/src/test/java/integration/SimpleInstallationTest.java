@@ -27,7 +27,6 @@ import org.apache.commons.io.FileUtils;
 import org.eclipse.aether.artifact.Artifact;
 import org.junit.After;
 import org.junit.Before;
-import org.junit.Ignore;
 import org.junit.Test;
 
 import java.io.File;
@@ -47,6 +46,7 @@ public class SimpleInstallationTest {
 
     private static final String OUTPUT_DIR = "target/server";
     private static final Path OUTPUT_PATH = Paths.get(OUTPUT_DIR).toAbsolutePath();
+    private final Path manifestPath = OUTPUT_PATH.resolve(InstallationMetadata.METADATA_DIR).resolve(InstallationMetadata.MANIFEST_FILE_NAME);
     private final Installation installation = new Installation(OUTPUT_PATH);
 
     @Before
@@ -66,7 +66,6 @@ public class SimpleInstallationTest {
     }
 
     @Test
-    @Ignore
     public void installWildflyCore() throws Exception {
         final URL channelFile = TestUtil.prepareChannelFile("local-repo-desc.yaml");
         final List<ChannelRef> channelRefs = ChannelRef.readChannels(channelFile);
@@ -74,7 +73,7 @@ public class SimpleInstallationTest {
         installation.provision("org.wildfly.core:wildfly-core-galleon-pack:17.0.0.Final", channelRefs);
 
         // verify installation with manifest file is present
-        assertTrue(OUTPUT_PATH.resolve(InstallationMetadata.MANIFEST_FILE_NAME).toFile().exists());
+        assertTrue(manifestPath.toFile().exists());
         // verify manifest contains versions 17.0.1
         final Optional<Artifact> wildflyCliArtifact = readArtifactFromManifest("org.wildfly.core", "wildfly-cli");
         assertEquals("17.0.0.Final", wildflyCliArtifact.get().getVersion());
@@ -89,7 +88,7 @@ public class SimpleInstallationTest {
 
         installation.provision("org.wildfly.core:wildfly-core-galleon-pack:17.0.0.Final", channelRefs);
 
-        TestUtil.prepareChannelFile(OUTPUT_PATH.resolve(InstallationMetadata.CHANNELS_FILE_NAME), "local-repo-desc.yaml", "local-updates-repo-desc.yaml");
+        TestUtil.prepareChannelFile(OUTPUT_PATH.resolve(InstallationMetadata.METADATA_DIR).resolve(InstallationMetadata.CHANNELS_FILE_NAME), "local-repo-desc.yaml", "local-updates-repo-desc.yaml");
         new Update(OUTPUT_PATH, true).doUpdateAll();
 
         // verify manifest contains versions 17.0.1
@@ -110,7 +109,7 @@ public class SimpleInstallationTest {
     }
 
     private Optional<Artifact> readArtifactFromManifest(String groupId, String artifactId) throws XmlException {
-        final File manifestFile = OUTPUT_PATH.resolve(InstallationMetadata.MANIFEST_FILE_NAME).toFile();
+        final File manifestFile = manifestPath.toFile();
         return ManifestXmlSupport.parse(manifestFile).getArtifacts().stream()
                 .filter((a) -> a.getGroupId().equals(groupId) && a.getArtifactId().equals(artifactId))
                 .findFirst();

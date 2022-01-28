@@ -52,6 +52,7 @@ public class InstallationHistoryTest {
     private static final String OUTPUT_DIR = "target/server";
     private static final Path OUTPUT_PATH = Paths.get(OUTPUT_DIR).toAbsolutePath();
    private final Installation installation = new Installation(OUTPUT_PATH);
+   private URL channelFile;
 
    @Before
     public void setUp() throws Exception {
@@ -67,12 +68,15 @@ public class InstallationHistoryTest {
             FileUtils.deleteDirectory(OUTPUT_PATH.toFile());
             OUTPUT_PATH.toFile().delete();
         }
+        if (Files.exists(Paths.get(channelFile.toURI()))) {
+           Files.delete(Paths.get(channelFile.toURI()));
+        }
     }
 
     @Test
     public void listUpdates() throws Exception {
         // installCore
-        final URL channelFile = TestUtil.prepareChannelFile("local-repo-desc.yaml");
+       channelFile = TestUtil.prepareChannelFile("local-repo-desc.yaml");
        Path installDir = Paths.get(OUTPUT_PATH.toString());
        if (Files.exists(installDir)) {
            throw new ProvisioningException("Installation dir " + installDir + " already exists");
@@ -94,7 +98,7 @@ public class InstallationHistoryTest {
 
     @Test
     public void rollbackChanges() throws Exception {
-        final URL channelFile = TestUtil.prepareChannelFile("local-repo-desc.yaml");
+       channelFile = TestUtil.prepareChannelFile("local-repo-desc.yaml");
        Path installDir = Paths.get(OUTPUT_PATH.toString());
        if (Files.exists(installDir)) {
            throw new ProvisioningException("Installation dir " + installDir + " already exists");
@@ -118,7 +122,7 @@ public class InstallationHistoryTest {
 
     @Test
     public void displayChanges() throws Exception {
-        final URL channelFile = TestUtil.prepareChannelFile("local-repo-desc.yaml");
+       channelFile = TestUtil.prepareChannelFile("local-repo-desc.yaml");
        Path installDir = Paths.get(OUTPUT_PATH.toString());
        if (Files.exists(installDir)) {
            throw new ProvisioningException("Installation dir " + installDir + " already exists");
