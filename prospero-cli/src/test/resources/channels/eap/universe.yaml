@@ -1,5 +1,7 @@
 id: universe
-resolveWithLocalCache: true
+repositories:
+  - id: lacrosse
+    url: http://lacrosse.corp.redhat.com/~bspyrkos/tmp-repo/
 streams:
   - groupId: "org.jboss.eap"
     artifactId: "wildfly-ee-galleon-pack"

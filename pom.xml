@@ -154,4 +154,11 @@
 
         </plugins>
     </build>
+
+    <repositories>
+        <repository>
+            <id>lacrosse</id>
+            <url>http://lacrosse.corp.redhat.com/~bspyrkos/tmp-repo/</url>
+        </repository>
+    </repositories>
 </project>
