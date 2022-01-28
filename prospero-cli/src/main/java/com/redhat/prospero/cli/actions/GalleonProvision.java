@@ -20,7 +20,7 @@ package com.redhat.prospero.cli.actions;
 import com.redhat.prospero.api.InstallationMetadata;
 import com.redhat.prospero.api.MetadataException;
 import com.redhat.prospero.cli.FeaturePackLocationParser;
-import com.redhat.prospero.cli.Server;
+import com.redhat.prospero.api.Server;
 import com.redhat.prospero.galleon.ChannelMavenArtifactRepositoryManager;
 
 import java.io.IOException;

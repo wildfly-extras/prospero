@@ -15,13 +15,12 @@
  * limitations under the License.
  */
 
-package com.redhat.prospero.cli;
+package com.redhat.prospero.api;
 
 import java.net.MalformedURLException;
 import java.util.Arrays;
 import java.util.List;
 
-import com.redhat.prospero.api.ChannelRef;
 import org.apache.maven.repository.internal.MavenRepositorySystemUtils;
 import org.eclipse.aether.DefaultRepositorySystemSession;
 import org.eclipse.aether.RepositorySystem;
@@ -54,33 +53,43 @@ public enum Server {
 
    public List<ChannelRef> getChannelRefs() throws VersionRangeResolutionException, MalformedURLException, ArtifactResolutionException {
       final DefaultArtifact artifact;
-      final List<RemoteRepository> repos;
+      final RemoteRepository repo;
+      final String repoUrl;
       if (this == EAP) {
          artifact = new DefaultArtifact("org.wildfly.channels", "eap-74", "channel", "yaml", "[7.4,)");
-         repos = Arrays.asList(new RemoteRepository.Builder("mrrc", "default", "https://maven.repository.redhat.com/ga/").build());
+         repoUrl = "https://maven.repository.redhat.com/ga/";
+         repo = new RemoteRepository.Builder("mrrc", "default", repoUrl).build();
       } else {
          artifact = new DefaultArtifact("org.wildfly.channels", "wildfly", "channel", "yaml", "[26.1.0,)");
-         repos = Arrays.asList(new RemoteRepository.Builder("central", "default", "https://repo1.maven.org/maven2/").build());
+         repoUrl = "https://repo1.maven.org/maven2/";
+         repo = new RemoteRepository.Builder("central", "default", repoUrl).build();
       }
 
-      final RepositorySystem repositorySystem = newRepositorySystem();
-      final DefaultRepositorySystemSession repositorySession = newRepositorySystemSession(repositorySystem);
-
-      final VersionRangeRequest request = new VersionRangeRequest();
-      request.setArtifact(artifact);
-      request.setRepositories(repos);
-      final VersionRangeResult versionRangeResult = repositorySystem.resolveVersionRange(repositorySession, request);
-      // TODO: pick latest version using Comparator
-      final Artifact latestArtifact = artifact.setVersion(versionRangeResult.getHighestVersion().toString());
-
-      final ArtifactRequest artifactRequest = new ArtifactRequest(latestArtifact, null, null);
-      //      final Channel eapChannel = ChannelMapper.from(repositorySystem.resolveArtifact(repositorySession, artifactRequest).getArtifact().getFile().toURI().toURL());
-      ChannelRef channelRef = new ChannelRef("eap", repositorySystem.resolveArtifact(repositorySession, artifactRequest).getArtifact().getFile().toURI().toURL().toString());
+      final Artifact resolvedArtifact = resolveChannelFile(artifact, repo);
+      final String resolvedChannelFileUrl = resolvedArtifact.getFile().toURI().toURL().toString();
+      String gav = resolvedArtifact.getGroupId() + ":" + resolvedArtifact.getArtifactId() + ":" + resolvedArtifact.getVersion();
+      ChannelRef channelRef = new ChannelRef("eap", repoUrl, gav, resolvedChannelFileUrl);
       ChannelRef localRef = new ChannelRef("local", loadFile("universe.yaml"));
       ChannelRef universeRef = new ChannelRef("universe", loadFile("galleon.yaml"));
 
       final List<ChannelRef> channelRefs = Arrays.asList(channelRef, localRef, universeRef);
       return channelRefs;
+   }
+
+   public static Artifact resolveChannelFile(DefaultArtifact artifact,
+                            RemoteRepository repo) throws VersionRangeResolutionException, MalformedURLException, ArtifactResolutionException {
+      final RepositorySystem repositorySystem = newRepositorySystem();
+      final DefaultRepositorySystemSession repositorySession = newRepositorySystemSession(repositorySystem);
+
+      final VersionRangeRequest request = new VersionRangeRequest();
+      request.setArtifact(artifact);
+      request.setRepositories(Arrays.asList(repo));
+      final VersionRangeResult versionRangeResult = repositorySystem.resolveVersionRange(repositorySession, request);
+      // TODO: pick latest version using Comparator
+      final Artifact latestArtifact = artifact.setVersion(versionRangeResult.getHighestVersion().toString());
+
+      final ArtifactRequest artifactRequest = new ArtifactRequest(latestArtifact, null, null);
+      return repositorySystem.resolveArtifact(repositorySession, artifactRequest).getArtifact();
    }
 
    private String loadFile(String name) {
