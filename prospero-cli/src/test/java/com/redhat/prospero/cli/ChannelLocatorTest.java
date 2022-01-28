@@ -22,6 +22,7 @@ import java.nio.file.Paths;
 import java.util.List;
 
 import com.redhat.prospero.api.ChannelRef;
+import com.redhat.prospero.api.Server;
 import com.redhat.prospero.cli.actions.GalleonProvision;
 import org.junit.Test;
 
