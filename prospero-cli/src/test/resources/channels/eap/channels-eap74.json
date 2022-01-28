@@ -1,3 +1,3 @@
 [{"name":"dev","url":"file://${project.basedir}/src/test/resources/channels/eap/eap-7.4.yaml"},
-{"name":"universe","url":"file://${project.basedir}/src/test/resources/channels/eap/universe.yaml"},
-{"name":"galleon","url":"file://${project.basedir}/src/test/resources/channels/eap/galleon.yaml"}]
+{"name":"universe","url":"file://${project.basedir}/src/main/resources/channels/eap/universe.yaml"},
+{"name":"galleon","url":"file://${project.basedir}/src/main/resources/channels/eap/galleon.yaml"}]

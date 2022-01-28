@@ -26,6 +26,7 @@ import org.apache.commons.io.FileUtils;
 import org.eclipse.aether.artifact.Artifact;
 import org.junit.After;
 import org.junit.Before;
+import org.junit.Ignore;
 import org.junit.Test;
 
 import java.io.File;
@@ -62,6 +63,7 @@ public class SimpleInstallationTest {
     }
 
     @Test
+    @Ignore
     public void installWildflyCore() throws Exception {
         final URL channelFile = TestUtil.prepareChannelFile("local-repo-desc.yaml");
 
