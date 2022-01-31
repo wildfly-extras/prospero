@@ -18,7 +18,6 @@
 package integration;
 
 import com.redhat.prospero.api.ChannelRef;
-import com.redhat.prospero.api.InstallationMetadata;
 import com.redhat.prospero.cli.actions.Installation;
 import com.redhat.prospero.cli.actions.Update;
 import com.redhat.prospero.model.ManifestXmlSupport;
@@ -45,9 +44,9 @@ import static org.junit.Assert.*;
 public class SimpleInstallationTest {
 
     private static final String OUTPUT_DIR = "target/server";
-    private static final Path OUTPUT_PATH = Paths.get(OUTPUT_DIR).toAbsolutePath();
-    private final Path manifestPath = OUTPUT_PATH.resolve(InstallationMetadata.METADATA_DIR).resolve(InstallationMetadata.MANIFEST_FILE_NAME);
-    private final Installation installation = new Installation(OUTPUT_PATH);
+    private Path OUTPUT_PATH = Paths.get(OUTPUT_DIR).toAbsolutePath();
+    private Path manifestPath = OUTPUT_PATH.resolve(TestUtil.MANIFEST_FILE_PATH);
+    private Installation installation = new Installation(OUTPUT_PATH);
 
     @Before
     public void setUp() throws Exception {
@@ -88,7 +87,7 @@ public class SimpleInstallationTest {
 
         installation.provision("org.wildfly.core:wildfly-core-galleon-pack:17.0.0.Final", channelRefs);
 
-        TestUtil.prepareChannelFile(OUTPUT_PATH.resolve(InstallationMetadata.METADATA_DIR).resolve(InstallationMetadata.CHANNELS_FILE_NAME), "local-repo-desc.yaml", "local-updates-repo-desc.yaml");
+        TestUtil.prepareChannelFile(OUTPUT_PATH.resolve(TestUtil.CHANNELS_FILE_PATH), "local-repo-desc.yaml", "local-updates-repo-desc.yaml");
         new Update(OUTPUT_PATH, true).doUpdateAll();
 
         // verify manifest contains versions 17.0.1

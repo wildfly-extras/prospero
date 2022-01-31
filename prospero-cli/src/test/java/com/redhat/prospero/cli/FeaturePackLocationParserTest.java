@@ -7,6 +7,7 @@ import com.redhat.prospero.wfchannel.WfChannelMavenResolverFactory;
 import org.jboss.galleon.universe.FeaturePackLocation;
 import org.jboss.galleon.universe.maven.MavenUniverseException;
 import org.junit.Before;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.wildfly.channel.Channel;
 import org.wildfly.channel.ChannelMapper;
@@ -19,12 +20,13 @@ import java.util.stream.Collectors;
 
 import static org.junit.Assert.*;
 
+@Ignore
 public class FeaturePackLocationParserTest {
 
     private ChannelMavenArtifactRepositoryManager repoManager;
     private FeaturePackLocationParser parser;
 
-    @Before
+//    @Before
     public void setUp() throws IOException {
         final URL channelsFile = FeaturePackLocationParserTest.class.getResource("/channels/eap/channels-eap74.json");
 

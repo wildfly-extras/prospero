@@ -27,6 +27,7 @@ import java.util.List;
 
 import com.fasterxml.jackson.databind.JavaType;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
 import org.eclipse.aether.artifact.DefaultArtifact;
 import org.eclipse.aether.repository.RemoteRepository;
 import org.eclipse.aether.resolution.ArtifactResolutionException;
@@ -43,11 +44,11 @@ public class ChannelRef {
                 copy.add(new ChannelRef(channelRef.name, channelRef.url));
             }
         }
-        new ObjectMapper().writeValue(channelsFile, copy);
+        new ObjectMapper(new YAMLFactory()).writeValue(channelsFile, copy);
     }
 
     public static List<ChannelRef> readChannels(URL url) throws IOException {
-        final ObjectMapper objectMapper = new ObjectMapper();
+        final ObjectMapper objectMapper = new ObjectMapper(new YAMLFactory());
         JavaType type = objectMapper.getTypeFactory().constructCollectionType(List.class, ChannelRef.class);
         final List<ChannelRef> channelRefs = objectMapper.readValue(url, type);
         for (ChannelRef channelRef : channelRefs) {

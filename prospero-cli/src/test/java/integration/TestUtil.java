@@ -22,11 +22,18 @@ import java.io.IOException;
 import java.net.URL;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
 
+import com.redhat.prospero.api.InstallationMetadata;
+
 public class TestUtil {
+
+    public static final Path MANIFEST_FILE_PATH = Paths.get(InstallationMetadata.METADATA_DIR, InstallationMetadata.MANIFEST_FILE_NAME);
+    public static final Path CHANNELS_FILE_PATH = Paths.get(InstallationMetadata.METADATA_DIR, InstallationMetadata.CHANNELS_FILE_NAME);
+
     static public URL prepareChannelFile(String channelDescriptor) throws IOException {
         final Path channelFile = Files.createTempFile("channels", "json");
         channelFile.toFile().deleteOnExit();

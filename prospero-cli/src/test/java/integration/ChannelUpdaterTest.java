@@ -74,7 +74,7 @@ public class ChannelUpdaterTest {
         new Installation(EAP_PATH).provision("org.jboss.eap:wildfly-ee-galleon-pack", channelRefs);
 
         // verify installation with manifest file is present
-        assertTrue(EAP_PATH.resolve(InstallationMetadata.MANIFEST_FILE_NAME).toFile().exists());
+        assertTrue(EAP_PATH.resolve(TestUtil.MANIFEST_FILE_PATH).toFile().exists());
     }
 
     @Test
@@ -113,7 +113,7 @@ public class ChannelUpdaterTest {
         new Installation(OUTPUT_PATH).provision("org.wildfly:wildfly-ee-galleon-pack:24.0.0.Final", channelRefs);
 
         // verify installation with manifest file is present
-        assertTrue(OUTPUT_PATH.resolve(InstallationMetadata.MANIFEST_FILE_NAME).toFile().exists());
+        assertTrue(OUTPUT_PATH.resolve(TestUtil.MANIFEST_FILE_PATH).toFile().exists());
     }
 
 //    @Test

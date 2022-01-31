@@ -86,7 +86,7 @@ public class InstallationHistoryTest {
        installation.provision("org.wildfly.core:wildfly-core-galleon-pack:17.0.0.Final", channelRefs);
 
        // updateCore
-        TestUtil.prepareChannelFile(OUTPUT_PATH.resolve(InstallationMetadata.CHANNELS_FILE_NAME), "local-repo-desc.yaml", "local-updates-repo-desc.yaml");
+        TestUtil.prepareChannelFile(OUTPUT_PATH.resolve(TestUtil.CHANNELS_FILE_PATH), "local-repo-desc.yaml", "local-updates-repo-desc.yaml");
         new Update(OUTPUT_PATH, true).doUpdateAll();
 
         // get history
@@ -107,7 +107,7 @@ public class InstallationHistoryTest {
 
        installation.provision("org.wildfly.core:wildfly-core-galleon-pack:17.0.0.Final", channelRefs);
 
-       TestUtil.prepareChannelFile(OUTPUT_PATH.resolve(InstallationMetadata.CHANNELS_FILE_NAME), "local-repo-desc.yaml", "local-updates-repo-desc.yaml");
+       TestUtil.prepareChannelFile(OUTPUT_PATH.resolve(TestUtil.CHANNELS_FILE_PATH), "local-repo-desc.yaml", "local-updates-repo-desc.yaml");
         new Update(OUTPUT_PATH, true).doUpdateAll();
 
         final InstallationHistory installationHistory = new InstallationHistory(OUTPUT_PATH);
@@ -131,7 +131,7 @@ public class InstallationHistoryTest {
 
        installation.provision("org.wildfly.core:wildfly-core-galleon-pack:17.0.0.Final", channelRefs);
 
-       TestUtil.prepareChannelFile(OUTPUT_PATH.resolve(InstallationMetadata.CHANNELS_FILE_NAME), "local-repo-desc.yaml", "local-updates-repo-desc.yaml");
+       TestUtil.prepareChannelFile(OUTPUT_PATH.resolve(TestUtil.CHANNELS_FILE_PATH), "local-repo-desc.yaml", "local-updates-repo-desc.yaml");
         new Update(OUTPUT_PATH, true).doUpdateAll();
 
         final InstallationHistory installationHistory = new InstallationHistory(OUTPUT_PATH);
@@ -159,7 +159,7 @@ public class InstallationHistoryTest {
     }
 
     private Optional<Artifact> readArtifactFromManifest(String groupId, String artifactId) throws XmlException {
-        final File manifestFile = OUTPUT_PATH.resolve(InstallationMetadata.MANIFEST_FILE_NAME).toFile();
+        final File manifestFile = OUTPUT_PATH.resolve(TestUtil.MANIFEST_FILE_PATH).toFile();
         return ManifestXmlSupport.parse(manifestFile).getArtifacts().stream()
                 .filter((a) -> a.getGroupId().equals(groupId) && a.getArtifactId().equals(artifactId))
                 .findFirst();

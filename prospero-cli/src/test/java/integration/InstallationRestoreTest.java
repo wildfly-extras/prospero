@@ -80,7 +80,7 @@ public class InstallationRestoreTest {
 
       new Installation(FIRST_SERVER_PATH).provision("org.wildfly.core:wildfly-core-galleon-pack:17.0.0.Final", channelRefs);
 
-      TestUtil.prepareChannelFile(FIRST_SERVER_PATH.resolve(InstallationMetadata.CHANNELS_FILE_NAME), "local-repo-desc.yaml", "local-updates-repo-desc.yaml");
+      TestUtil.prepareChannelFile(FIRST_SERVER_PATH.resolve(TestUtil.CHANNELS_FILE_PATH), "local-repo-desc.yaml", "local-updates-repo-desc.yaml");
 
       new InstallationExport(FIRST_SERVER_PATH).export("target/bundle.zip");
 
@@ -91,7 +91,7 @@ public class InstallationRestoreTest {
    }
 
    private Optional<Artifact> readArtifactFromManifest(String groupId, String artifactId) throws XmlException {
-      final File manifestFile = RESTORED_SERVER_PATH.resolve(InstallationMetadata.MANIFEST_FILE_NAME).toFile();
+      final File manifestFile = RESTORED_SERVER_PATH.resolve(TestUtil.MANIFEST_FILE_PATH).toFile();
       return ManifestXmlSupport.parse(manifestFile).getArtifacts().stream().filter((a) -> a.getGroupId().equals(groupId) && a.getArtifactId().equals(artifactId)).findFirst();
    }
 }
