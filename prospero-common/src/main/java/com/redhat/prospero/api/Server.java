@@ -17,7 +17,9 @@
 
 package com.redhat.prospero.api;
 
+import java.io.IOException;
 import java.net.MalformedURLException;
+import java.nio.file.Path;
 import java.util.Arrays;
 import java.util.List;
 
@@ -40,40 +42,46 @@ import org.eclipse.aether.spi.connector.transport.TransporterFactory;
 import org.eclipse.aether.transport.http.HttpTransporterFactory;
 import org.wildfly.channel.MavenRepository;
 
-public enum Server {
-   EAP, WILFDFLY;
+public class Server {
 
-   public String getFpl() {
-      if (this == EAP) {
-         return "org.jboss.eap:wildfly-ee-galleon-pack";
+   private final String fpl;
+   private final List<ChannelRef> channels;
+
+   public Server(String fpl, Path channelsFile) throws IOException {
+      if (fpl.equals("eap")) {
+         this.fpl = "org.jboss.eap:wildfly-ee-galleon-pack";
+
+         if (channelsFile == null) {
+            final DefaultArtifact artifact = new DefaultArtifact("org.wildfly.channels", "eap-74", "channel", "yaml", "[7.4,)");
+            final String repoUrl = "https://maven.repository.redhat.com/ga/";
+            final RemoteRepository repo = new RemoteRepository.Builder("mrrc", "default", repoUrl).build();
+            this.channels = readLatestChannelFromMaven(artifact, repoUrl, repo);
+         } else {
+            this.channels = ChannelRef.readChannels(channelsFile);
+         }
+      } else if (fpl.equals("wildfly")) {
+         this.fpl = "org.wildfly:wildfly-ee-galleon-pack";
+
+         if (channelsFile == null) {
+            final DefaultArtifact artifact = new DefaultArtifact("org.wildfly.channels", "wildfly", "channel", "yaml", "[26.1.0,)");
+            final String repoUrl = "https://repo1.maven.org/maven2/";
+            final RemoteRepository repo = new RemoteRepository.Builder("central", "default", repoUrl).build();
+            this.channels = readLatestChannelFromMaven(artifact, repoUrl, repo);
+         } else {
+            this.channels = ChannelRef.readChannels(channelsFile);
+         }
       } else {
-         return "org.wildfly:wildfly-ee-galleon-pack";
+         this.fpl = fpl;
+         this.channels = ChannelRef.readChannels(channelsFile);
       }
    }
 
-   public List<ChannelRef> getChannelRefs() throws VersionRangeResolutionException, MalformedURLException, ArtifactResolutionException {
-      final DefaultArtifact artifact;
-      final RemoteRepository repo;
-      final String repoUrl;
-      if (this == EAP) {
-         artifact = new DefaultArtifact("org.wildfly.channels", "eap-74", "channel", "yaml", "[7.4,)");
-         repoUrl = "https://maven.repository.redhat.com/ga/";
-         repo = new RemoteRepository.Builder("mrrc", "default", repoUrl).build();
-      } else {
-         artifact = new DefaultArtifact("org.wildfly.channels", "wildfly", "channel", "yaml", "[26.1.0,)");
-         repoUrl = "https://repo1.maven.org/maven2/";
-         repo = new RemoteRepository.Builder("central", "default", repoUrl).build();
-      }
+   public String getFpl() {
+      return fpl;
+   }
 
-      final Artifact resolvedArtifact = resolveChannelFile(artifact, repo);
-      final String resolvedChannelFileUrl = resolvedArtifact.getFile().toURI().toURL().toString();
-      String gav = resolvedArtifact.getGroupId() + ":" + resolvedArtifact.getArtifactId() + ":" + resolvedArtifact.getVersion();
-      ChannelRef channelRef = new ChannelRef("eap", repoUrl, gav, resolvedChannelFileUrl);
-      ChannelRef localRef = new ChannelRef("local", loadFile("universe.yaml"));
-      ChannelRef universeRef = new ChannelRef("universe", loadFile("galleon.yaml"));
-
-      final List<ChannelRef> channelRefs = Arrays.asList(channelRef, localRef, universeRef);
-      return channelRefs;
+   public List<ChannelRef> getChannelRefs() throws IOException {
+      return channels;
    }
 
    public static Artifact resolveChannelFile(DefaultArtifact artifact,
@@ -92,11 +100,28 @@ public enum Server {
       return repositorySystem.resolveArtifact(repositorySession, artifactRequest).getArtifact();
    }
 
-   private String loadFile(String name) {
+   protected List<ChannelRef> readLatestChannelFromMaven(DefaultArtifact artifact,
+                                                         String repoUrl,
+                                                         RemoteRepository repo) throws IOException {
+      try {
+         final Artifact resolvedArtifact = resolveChannelFile(artifact, repo);
+         final String resolvedChannelFileUrl = resolvedArtifact.getFile().toURI().toURL().toString();
+         String gav = resolvedArtifact.getGroupId() + ":" + resolvedArtifact.getArtifactId() + ":" + resolvedArtifact.getVersion();
+         ChannelRef channelRef = new ChannelRef("eap", repoUrl, gav, resolvedChannelFileUrl);
+         ChannelRef localRef = new ChannelRef("local", this.loadFile("universe.yaml"));
+         ChannelRef universeRef = new ChannelRef("universe", loadFile("galleon.yaml"));
+
+         return Arrays.asList(channelRef, localRef, universeRef);
+      } catch (MalformedURLException | VersionRangeResolutionException | ArtifactResolutionException e) {
+         throw new IOException(e);
+      }
+   }
+
+   protected String loadFile(String name) {
       return Server.class.getResource("/channels/eap/" + name).toString();
    }
 
-   private static RepositorySystem newRepositorySystem() {
+   protected static RepositorySystem newRepositorySystem() {
       DefaultServiceLocator locator = MavenRepositorySystemUtils.newServiceLocator();
       locator.addService(RepositoryConnectorFactory.class, BasicRepositoryConnectorFactory.class);
       locator.addService(TransporterFactory.class, HttpTransporterFactory.class);
@@ -116,9 +141,5 @@ public enum Server {
       LocalRepository localRepo = new LocalRepository(location);
       session.setLocalRepositoryManager(system.newLocalRepositoryManager(session, localRepo));
       return session;
-   }
-
-   private static RemoteRepository newRemoteRepository(MavenRepository mavenRepository) {
-      return new RemoteRepository.Builder(mavenRepository.getId(), "default", mavenRepository.getUrl().toExternalForm()).build();
    }
 }

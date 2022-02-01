@@ -36,17 +36,17 @@ public class ChannelLocatorTest {
 
    @Test
    public void findLatestEapChannelDefinition() throws Exception {
-      final List<ChannelRef> channelRefs = Server.EAP.getChannelRefs();
+      final List<ChannelRef> channelRefs = new Server("eap", null).getChannelRefs();
 
-      final String fpl = Server.EAP.getFpl();
+      final String fpl = new Server("eap", null).getFpl();
       installation.provision(fpl, channelRefs);
    }
 
    @Test
    public void findLatestWildflyChannelDefinition() throws Exception {
-      final List<ChannelRef> channelRefs = Server.WILFDFLY.getChannelRefs();
+      final List<ChannelRef> channelRefs = new Server("wildfly", null).getChannelRefs();
 
-      final String fpl = Server.WILFDFLY.getFpl();
+      final String fpl = new Server("wildfly", null).getFpl();
       installation.provision(fpl, channelRefs);
    }
 }

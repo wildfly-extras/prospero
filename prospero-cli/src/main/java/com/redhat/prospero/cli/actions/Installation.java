@@ -71,14 +71,7 @@ public class Installation {
             System.out.println("Not enough parameters. Need to provide FPL, output directory and channels file.");
             return;
         }
-        final Server server;
-        if (args[0].equalsIgnoreCase("eap")) {
-            server = Server.EAP;
-        } else if (args[0].equalsIgnoreCase("wildfly")) {
-            server = Server.WILFDFLY;
-        } else {
-            throw new IllegalArgumentException("Unsupported server choice: " + args[0]);
-        }
+        final Server server = new Server(args[0], null);
         final Path base = Paths.get(args[1]).toAbsolutePath();
 
         new Installation(base).provision(server.getFpl(), server.getChannelRefs());
