@@ -1,12 +1,9 @@
-package com.redhat.prospero.cli;
+package com.redhat.prospero.galleon;
 
 import com.redhat.prospero.api.ChannelRef;
-import com.redhat.prospero.galleon.FeaturePackLocationParser;
-import com.redhat.prospero.galleon.ChannelMavenArtifactRepositoryManager;
 import com.redhat.prospero.wfchannel.WfChannelMavenResolverFactory;
 import org.jboss.galleon.universe.FeaturePackLocation;
 import org.jboss.galleon.universe.maven.MavenUniverseException;
-import org.junit.Before;
 import org.junit.Ignore;
 import org.junit.Test;
 import org.wildfly.channel.Channel;
