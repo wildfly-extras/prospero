@@ -23,7 +23,7 @@ import java.util.List;
 
 import com.redhat.prospero.api.ChannelRef;
 import com.redhat.prospero.api.Server;
-import com.redhat.prospero.cli.actions.Installation;
+import com.redhat.prospero.actions.Installation;
 import org.junit.Ignore;
 import org.junit.Test;
 

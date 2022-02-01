@@ -15,10 +15,9 @@
  * limitations under the License.
  */
 
-package com.redhat.prospero.cli.actions;
+package com.redhat.prospero.cli;
 
 import java.io.IOException;
-import java.net.MalformedURLException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Arrays;
@@ -28,11 +27,10 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import com.redhat.prospero.actions.Installation;
 import com.redhat.prospero.api.ChannelRef;
 import com.redhat.prospero.api.MetadataException;
 import com.redhat.prospero.api.Server;
-import org.eclipse.aether.resolution.ArtifactResolutionException;
-import org.eclipse.aether.resolution.VersionRangeResolutionException;
 import org.jboss.galleon.ProvisioningException;
 
 public class CliMain {

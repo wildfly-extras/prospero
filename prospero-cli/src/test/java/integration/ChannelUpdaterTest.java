@@ -1,9 +1,8 @@
 package integration;
 
 import com.redhat.prospero.api.ChannelRef;
-import com.redhat.prospero.api.InstallationMetadata;
-import com.redhat.prospero.cli.actions.Installation;
-import com.redhat.prospero.cli.actions.Update;
+import com.redhat.prospero.actions.Installation;
+import com.redhat.prospero.actions.Update;
 import com.redhat.prospero.galleon.ChannelMavenArtifactRepositoryManager;
 import com.redhat.prospero.wfchannel.WfChannelMavenResolverFactory;
 import org.jboss.galleon.ProvisioningException;

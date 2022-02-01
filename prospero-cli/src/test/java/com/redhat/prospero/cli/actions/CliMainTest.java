@@ -1,11 +1,11 @@
 package com.redhat.prospero.cli.actions;
 
-import java.net.URL;
 import java.nio.file.Paths;
 import java.util.List;
 
+import com.redhat.prospero.actions.Installation;
 import com.redhat.prospero.api.ChannelRef;
-import integration.TestUtil;
+import com.redhat.prospero.cli.CliMain;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.ArgumentMatcher;

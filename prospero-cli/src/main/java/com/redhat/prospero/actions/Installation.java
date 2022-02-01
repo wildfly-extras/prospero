@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-package com.redhat.prospero.cli.actions;
+package com.redhat.prospero.actions;
 
 import com.redhat.prospero.api.InstallationMetadata;
 import com.redhat.prospero.api.MetadataException;

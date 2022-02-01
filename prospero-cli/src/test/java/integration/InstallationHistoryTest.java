@@ -19,11 +19,10 @@ package integration;
 
 import com.redhat.prospero.api.ArtifactChange;
 import com.redhat.prospero.api.ChannelRef;
-import com.redhat.prospero.api.InstallationMetadata;
-import com.redhat.prospero.cli.actions.Installation;
-import com.redhat.prospero.cli.actions.InstallationHistory;
+import com.redhat.prospero.actions.Installation;
+import com.redhat.prospero.actions.InstallationHistory;
 import com.redhat.prospero.api.SavedState;
-import com.redhat.prospero.cli.actions.Update;
+import com.redhat.prospero.actions.Update;
 import com.redhat.prospero.model.ManifestXmlSupport;
 import com.redhat.prospero.model.XmlException;
 import org.apache.commons.io.FileUtils;

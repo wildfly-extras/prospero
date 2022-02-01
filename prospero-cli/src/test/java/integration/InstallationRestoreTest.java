@@ -18,10 +18,9 @@
 package integration;
 
 import com.redhat.prospero.api.ChannelRef;
-import com.redhat.prospero.api.InstallationMetadata;
-import com.redhat.prospero.cli.actions.InstallationExport;
-import com.redhat.prospero.cli.actions.InstallationRestore;
-import com.redhat.prospero.cli.actions.Installation;
+import com.redhat.prospero.actions.InstallationExport;
+import com.redhat.prospero.actions.InstallationRestore;
+import com.redhat.prospero.actions.Installation;
 import com.redhat.prospero.model.ManifestXmlSupport;
 import com.redhat.prospero.model.XmlException;
 import org.apache.commons.io.FileUtils;
