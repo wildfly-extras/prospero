@@ -28,28 +28,28 @@ import com.redhat.prospero.api.MetadataException;
 import com.redhat.prospero.api.Server;
 import org.jboss.galleon.ProvisioningException;
 
-class Install {
+class InstallArgs {
    private final CliMain.ActionFactory actionFactory;
 
-   Install(CliMain.ActionFactory actionFactory) {
+   InstallArgs(CliMain.ActionFactory actionFactory) {
       this.actionFactory = actionFactory;
    }
 
-   void handleArgs(Map<String, String> parsedArgs) throws CliMain.ArgumentParsingException {
+   void handleArgs(Map<String, String> parsedArgs) throws ArgumentParsingException {
       String dir = parsedArgs.get("dir");
       String fpl = parsedArgs.get("fpl");
       String channelFile = parsedArgs.get("channel-file");
 
       if (dir == null || dir.isEmpty()) {
-         throw new CliMain.ArgumentParsingException("Target dir argument (--dir) need to be set on install command");
+         throw new ArgumentParsingException("Target dir argument (--dir) need to be set on install command");
       }
       if (fpl == null || fpl.isEmpty()) {
-         throw new CliMain.ArgumentParsingException("Feature pack name argument (--fpl) need to be set on install command");
+         throw new ArgumentParsingException("Feature pack name argument (--fpl) need to be set on install command");
       }
 
 
       if (!fpl.equals("eap") && !fpl.equals("wildfly") && (channelFile == null || channelFile.isEmpty())) {
-         throw new CliMain.ArgumentParsingException("Channel file argument (--channel-file) need to be set when using custom fpl");
+         throw new ArgumentParsingException("Channel file argument (--channel-file) need to be set when using custom fpl");
       }
 
       try {

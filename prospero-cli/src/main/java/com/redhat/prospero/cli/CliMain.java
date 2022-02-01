@@ -25,6 +25,9 @@ import java.util.Map;
 import java.util.Set;
 
 import com.redhat.prospero.actions.Installation;
+import com.redhat.prospero.actions.Update;
+import com.redhat.prospero.api.MetadataException;
+import org.jboss.galleon.ProvisioningException;
 
 public class CliMain {
 
@@ -52,13 +55,22 @@ public class CliMain {
 
       Map<String, String> parsedArgs = parseArguments(args);
 
-      if ("install".equals(operation)) {
-         doInstall(parsedArgs);
+      switch (operation) {
+         case "install":
+            doInstall(parsedArgs);
+            break;
+         case "update":
+            doUpdate(parsedArgs);
+            break;
       }
    }
 
+   private void doUpdate(Map<String, String> parsedArgs) throws ArgumentParsingException {
+      new UpdateArgs(actionFactory).handleArgs(parsedArgs);
+   }
+
    private void doInstall(Map<String, String> parsedArgs) throws ArgumentParsingException {
-      new Install(actionFactory).handleArgs(parsedArgs);
+      new InstallArgs(actionFactory).handleArgs(parsedArgs);
    }
 
    private Map<String, String> parseArguments(String[] args) throws ArgumentParsingException {
@@ -90,23 +102,13 @@ public class CliMain {
       return parsedArgs;
    }
 
-   public static class ActionFactory {
+   static class ActionFactory {
       public Installation install(Path targetPath) {
          return new Installation(targetPath);
       }
-   }
 
-   public static class ArgumentParsingException extends Exception {
-      public ArgumentParsingException(String msg, Exception e) {
-         super(msg, e);
-      }
-
-      public ArgumentParsingException(String msg) {
-         super(msg);
-      }
-
-      public ArgumentParsingException(String msg, String... args) {
-         super(String.format(msg, args));
+      public Update update(Path targetPath) throws ProvisioningException, MetadataException {
+         return new Update(targetPath, false);
       }
    }
 

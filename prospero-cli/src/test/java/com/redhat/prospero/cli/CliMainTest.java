@@ -18,7 +18,7 @@ public class CliMainTest {
       try {
          new CliMain(actionFactory).handleArgs(new String[]{"install", "dir=test"});
          fail("Should have failed");
-      } catch (CliMain.ArgumentParsingException e) {
+      } catch (ArgumentParsingException e) {
          assertEquals("Argument [dir=test] not recognized", e.getMessage());
       }
    }
@@ -28,7 +28,7 @@ public class CliMainTest {
       try {
          new CliMain(actionFactory).handleArgs(new String[]{"install", "--dir"});
          fail("Should have failed");
-      } catch (CliMain.ArgumentParsingException e) {
+      } catch (ArgumentParsingException e) {
          assertEquals("Argument value cannot be empty", e.getMessage());
       }
    }
@@ -38,7 +38,7 @@ public class CliMainTest {
       try {
          new CliMain(actionFactory).handleArgs(new String[]{"install", "--foo=bar"});
          fail("Should have failed");
-      } catch (CliMain.ArgumentParsingException e) {
+      } catch (ArgumentParsingException e) {
          assertEquals("Argument name [--foo] not recognized", e.getMessage());
       }
    }
@@ -48,7 +48,7 @@ public class CliMainTest {
       try {
          new CliMain(actionFactory).handleArgs(new String[]{"foo"});
          fail("Should have failed");
-      } catch (CliMain.ArgumentParsingException e) {
+      } catch (ArgumentParsingException e) {
          assertEquals("Unknown operation foo", e.getMessage());
       }
    }

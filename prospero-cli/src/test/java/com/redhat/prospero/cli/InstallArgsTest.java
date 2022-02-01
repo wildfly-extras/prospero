@@ -39,7 +39,7 @@ import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.when;
 
 @RunWith(MockitoJUnitRunner.class)
-public class InstallTest {
+public class InstallArgsTest {
 
    @Mock
    private Installation installation;
@@ -51,9 +51,9 @@ public class InstallTest {
    public void errorIfTargetPathIsNotPresent() throws Exception {
       try {
          Map<String, String> args = new HashMap<>();
-         new Install(actionFactory).handleArgs(args);
+         new InstallArgs(actionFactory).handleArgs(args);
          fail("Should have failed");
-      } catch (CliMain.ArgumentParsingException e) {
+      } catch (ArgumentParsingException e) {
          assertEquals("Target dir argument (--dir) need to be set on install command", e.getMessage());
       }
    }
@@ -63,9 +63,9 @@ public class InstallTest {
       try {
          Map<String, String> args = new HashMap<>();
          args.put("dir", "test");
-         new Install(actionFactory).handleArgs(args);
+         new InstallArgs(actionFactory).handleArgs(args);
          fail("Should have failed");
-      } catch (CliMain.ArgumentParsingException e) {
+      } catch (ArgumentParsingException e) {
          assertEquals("Feature pack name argument (--fpl) need to be set on install command", e.getMessage());
       }
    }
@@ -76,9 +76,9 @@ public class InstallTest {
          Map<String, String> args = new HashMap<>();
          args.put("dir", "test");
          args.put("fpl", "foo:bar");
-         new Install(actionFactory).handleArgs(args);
+         new InstallArgs(actionFactory).handleArgs(args);
          fail("Should have failed");
-      } catch (CliMain.ArgumentParsingException e) {
+      } catch (ArgumentParsingException e) {
          assertEquals("Channel file argument (--channel-file) need to be set when using custom fpl", e.getMessage());
       }
    }
@@ -92,7 +92,7 @@ public class InstallTest {
       args.put("dir", "test");
       args.put("fpl", "org.jboss.eap:wildfly-ee-galleon-pack");
       args.put("channel-file", channels);
-      new Install(actionFactory).handleArgs(args);
+      new InstallArgs(actionFactory).handleArgs(args);
 
       Mockito.verify(actionFactory).install(eq(Paths.get("test").toAbsolutePath()));
       Mockito.verify(installation).provision(eq("org.jboss.eap:wildfly-ee-galleon-pack"), any(List.class));
@@ -105,7 +105,7 @@ public class InstallTest {
       Map<String, String> args = new HashMap<>();
       args.put("dir", "test");
       args.put("fpl", "eap");
-      new Install(actionFactory).handleArgs(args);
+      new InstallArgs(actionFactory).handleArgs(args);
 
       Mockito.verify(actionFactory).install(eq(Paths.get("test").toAbsolutePath()));
       Mockito.verify(installation).provision(eq("org.jboss.eap:wildfly-ee-galleon-pack"), any(List.class));
@@ -120,7 +120,7 @@ public class InstallTest {
       args.put("dir", "test");
       args.put("fpl", "eap");
       args.put("channel-file", channels);
-      new Install(actionFactory).handleArgs(args);
+      new InstallArgs(actionFactory).handleArgs(args);
 
       Mockito.verify(actionFactory).install(eq(Paths.get("test").toAbsolutePath()));
       ArgumentMatcher<List<ChannelRef>> matcher = channelRefs -> {
