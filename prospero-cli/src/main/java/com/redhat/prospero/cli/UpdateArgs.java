@@ -37,9 +37,9 @@ class UpdateArgs {
    }
 
    public void handleArgs(Map<String, String> parsedArgs) throws ArgumentParsingException {
-      String dir = parsedArgs.get("dir");
+      String dir = parsedArgs.get(CliMain.TARGET_PATH_ARG);
       if (dir == null || dir.isEmpty()) {
-         throw new ArgumentParsingException("Target dir argument (--dir) need to be set on update command");
+         throw new ArgumentParsingException("Target dir argument (--%s) need to be set on update command", CliMain.TARGET_PATH_ARG);
       }
 
       final Path targetPath = Paths.get(dir).toAbsolutePath();

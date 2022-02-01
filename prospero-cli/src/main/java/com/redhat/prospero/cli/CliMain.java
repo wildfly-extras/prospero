@@ -31,7 +31,10 @@ import org.jboss.galleon.ProvisioningException;
 
 public class CliMain {
 
-   private static final Set<String> ALLOWED_ARGUMENTS = new HashSet<>(Arrays.asList("dir", "fpl", "channel-file"));
+   public static final String TARGET_PATH_ARG = "dir";
+   public static final String FPL_ARG = "fpl";
+   public static final String CHANNEL_FILE_ARG = "channel-file";
+   private static final Set<String> ALLOWED_ARGUMENTS = new HashSet<>(Arrays.asList(TARGET_PATH_ARG, FPL_ARG, CHANNEL_FILE_ARG));
    private ActionFactory actionFactory;
 
    public CliMain(ActionFactory actionFactory) {

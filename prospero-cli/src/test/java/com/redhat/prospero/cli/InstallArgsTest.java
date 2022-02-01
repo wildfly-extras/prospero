@@ -62,7 +62,7 @@ public class InstallArgsTest {
    public void errorIfFplIsNotPresent() throws Exception {
       try {
          Map<String, String> args = new HashMap<>();
-         args.put("dir", "test");
+         args.put(CliMain.TARGET_PATH_ARG, "test");
          new InstallArgs(actionFactory).handleArgs(args);
          fail("Should have failed");
       } catch (ArgumentParsingException e) {
@@ -74,8 +74,8 @@ public class InstallArgsTest {
    public void errorIfChannelsIsNotPresentAndUsingCustomFplOnInstall() throws Exception {
       try {
          Map<String, String> args = new HashMap<>();
-         args.put("dir", "test");
-         args.put("fpl", "foo:bar");
+         args.put(CliMain.TARGET_PATH_ARG, "test");
+         args.put(CliMain.FPL_ARG, "foo:bar");
          new InstallArgs(actionFactory).handleArgs(args);
          fail("Should have failed");
       } catch (ArgumentParsingException e) {
@@ -89,9 +89,9 @@ public class InstallArgsTest {
       String channels = Paths.get(CliMainTest.class.getResource("/channels.json").toURI()).toString();
 
       Map<String, String> args = new HashMap<>();
-      args.put("dir", "test");
-      args.put("fpl", "org.jboss.eap:wildfly-ee-galleon-pack");
-      args.put("channel-file", channels);
+      args.put(CliMain.TARGET_PATH_ARG, "test");
+      args.put(CliMain.FPL_ARG, "org.jboss.eap:wildfly-ee-galleon-pack");
+      args.put(CliMain.CHANNEL_FILE_ARG, channels);
       new InstallArgs(actionFactory).handleArgs(args);
 
       Mockito.verify(actionFactory).install(eq(Paths.get("test").toAbsolutePath()));
@@ -103,8 +103,8 @@ public class InstallArgsTest {
       when(actionFactory.install(any())).thenReturn(installation);
 
       Map<String, String> args = new HashMap<>();
-      args.put("dir", "test");
-      args.put("fpl", "eap");
+      args.put(CliMain.TARGET_PATH_ARG, "test");
+      args.put(CliMain.FPL_ARG, "eap");
       new InstallArgs(actionFactory).handleArgs(args);
 
       Mockito.verify(actionFactory).install(eq(Paths.get("test").toAbsolutePath()));
@@ -117,9 +117,9 @@ public class InstallArgsTest {
       String channels = Paths.get(CliMainTest.class.getResource("/channels.json").toURI()).toString();
 
       Map<String, String> args = new HashMap<>();
-      args.put("dir", "test");
-      args.put("fpl", "eap");
-      args.put("channel-file", channels);
+      args.put(CliMain.TARGET_PATH_ARG, "test");
+      args.put(CliMain.FPL_ARG, "eap");
+      args.put(CliMain.CHANNEL_FILE_ARG, channels);
       new InstallArgs(actionFactory).handleArgs(args);
 
       Mockito.verify(actionFactory).install(eq(Paths.get("test").toAbsolutePath()));

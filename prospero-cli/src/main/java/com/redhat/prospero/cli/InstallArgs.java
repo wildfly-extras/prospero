@@ -36,20 +36,20 @@ class InstallArgs {
    }
 
    void handleArgs(Map<String, String> parsedArgs) throws ArgumentParsingException {
-      String dir = parsedArgs.get("dir");
-      String fpl = parsedArgs.get("fpl");
-      String channelFile = parsedArgs.get("channel-file");
+      String dir = parsedArgs.get(CliMain.TARGET_PATH_ARG);
+      String fpl = parsedArgs.get(CliMain.FPL_ARG);
+      String channelFile = parsedArgs.get(CliMain.CHANNEL_FILE_ARG);
 
       if (dir == null || dir.isEmpty()) {
-         throw new ArgumentParsingException("Target dir argument (--dir) need to be set on install command");
+         throw new ArgumentParsingException("Target dir argument (--%s) need to be set on install command", CliMain.TARGET_PATH_ARG);
       }
       if (fpl == null || fpl.isEmpty()) {
-         throw new ArgumentParsingException("Feature pack name argument (--fpl) need to be set on install command");
+         throw new ArgumentParsingException("Feature pack name argument (--%s) need to be set on install command", CliMain.FPL_ARG);
       }
 
 
       if (!fpl.equals("eap") && !fpl.equals("wildfly") && (channelFile == null || channelFile.isEmpty())) {
-         throw new ArgumentParsingException("Channel file argument (--channel-file) need to be set when using custom fpl");
+         throw new ArgumentParsingException("Channel file argument (--%s) need to be set when using custom fpl", CliMain.CHANNEL_FILE_ARG);
       }
 
       try {

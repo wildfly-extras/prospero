@@ -19,7 +19,6 @@ package com.redhat.prospero.cli;
 
 import java.nio.file.Paths;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 
 import com.redhat.prospero.actions.Update;
@@ -60,7 +59,7 @@ public class UpdateArgsTest {
       when(actionFactory.update(any())).thenReturn(update);
 
       Map<String, String> args = new HashMap<>();
-      args.put("dir", "test");
+      args.put(CliMain.TARGET_PATH_ARG, "test");
       new UpdateArgs(actionFactory).handleArgs(args);
 
       Mockito.verify(actionFactory).update(eq(Paths.get("test").toAbsolutePath()));
