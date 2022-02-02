@@ -25,7 +25,7 @@ import java.nio.file.Paths;
 import java.util.List;
 import java.util.stream.Collectors;
 
-import static org.codehaus.groovy.runtime.InvokerHelper.asList;
+import static java.util.Arrays.asList;
 import static org.junit.Assert.assertTrue;
 
 @Ignore

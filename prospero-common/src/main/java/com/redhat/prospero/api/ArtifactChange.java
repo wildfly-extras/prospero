@@ -17,7 +17,6 @@
 
 package com.redhat.prospero.api;
 
-import org.apache.commons.lang.StringUtils;
 import org.eclipse.aether.artifact.Artifact;
 
 public class ArtifactChange {
@@ -40,7 +39,7 @@ public class ArtifactChange {
     @Override
     public String toString() {
         final String gac;
-        if (StringUtils.isEmpty(oldVersion.getClassifier())) {
+        if (oldVersion.getClassifier() == null || oldVersion.getClassifier().isEmpty()) {
             gac = String.format("%s:%s", oldVersion.getGroupId(), oldVersion.getArtifactId());
         } else {
             gac = String.format("%s:%s:%s", oldVersion.getGroupId(), oldVersion.getArtifactId(), oldVersion.getClassifier());

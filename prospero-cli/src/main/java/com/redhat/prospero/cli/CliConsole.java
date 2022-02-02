@@ -22,7 +22,6 @@ import java.util.List;
 import java.util.Scanner;
 
 import com.redhat.prospero.api.ArtifactChange;
-import org.apache.commons.lang.StringUtils;
 import org.eclipse.aether.artifact.Artifact;
 import org.jboss.galleon.layout.FeaturePackUpdatePlan;
 import org.jboss.galleon.progresstracking.ProgressCallback;
@@ -138,7 +137,7 @@ public class CliConsole implements Console {
             final Artifact newArtifact = artifactUpdate.getNewVersion();
             final Artifact oldArtifact = artifactUpdate.getOldVersion();
             final String artifactName;
-            if (StringUtils.isEmpty(oldArtifact.getClassifier())) {
+            if (oldArtifact.getClassifier() == null || oldArtifact.getClassifier().isEmpty()) {
                artifactName = String.format("%s:%s", oldArtifact.getGroupId(), oldArtifact.getArtifactId());
             } else {
                artifactName = String.format("%s:%s:%s", oldArtifact.getGroupId(), oldArtifact.getArtifactId(), oldArtifact.getClassifier());

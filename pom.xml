@@ -12,15 +12,17 @@
         <version.org.apache.maven.resolver.provider>3.6.2</version.org.apache.maven.resolver.provider>
         <version.org.apache.logging.log4j>2.14.1</version.org.apache.logging.log4j>
         <version.commons.io>2.11.0</version.commons.io>
-        <version.org.jboss.galleon.plugin>4.2.9.Final-SNAPSHOT</version.org.jboss.galleon.plugin>
-        <version.org.wildfly.core>12.0.1.Final</version.org.wildfly.core>
+        <version.org.jboss.galleon>4.2.9.Final-SNAPSHOT</version.org.jboss.galleon>
         <version.com.fasterxml.jackson>2.10.0</version.com.fasterxml.jackson>
-        <version.junit>4.13.2</version.junit>
-        <version.org.mockito>3.12.4</version.org.mockito>
-        <version.org.commonjava.maven>4.5</version.org.commonjava.maven>
         <version.org.eclipse.jgit>5.13.0.202109080827-r</version.org.eclipse.jgit>
         <version.com.fasterxml.jackson>2.13.0</version.com.fasterxml.jackson>
         <version.com.networknt.json-schema-validator>1.0.61</version.com.networknt.json-schema-validator>
+        <version.org.jboss.logging>3.3.1.Final</version.org.jboss.logging>
+        <version.org.jboss.logmanager>2.0.6.Final</version.org.jboss.logmanager>
+        <version.org.jboss.logging.slf4j-jboss-logging>1.1.0.Final</version.org.jboss.logging.slf4j-jboss-logging>
+
+        <version.org.mockito>3.12.4</version.org.mockito>
+        <version.junit>4.13.2</version.junit>
         <version.maven-shade-plugin>2.3</version.maven-shade-plugin>
     </properties>
 
@@ -53,39 +55,24 @@
             </dependency>
 
             <dependency>
-                <groupId>org.apache.logging.log4j</groupId>
-                <artifactId>log4j-api</artifactId>
-                <version>${version.org.apache.logging.log4j}</version>
-            </dependency>
-            <dependency>
-                <groupId>org.apache.logging.log4j</groupId>
-                <artifactId>log4j-core</artifactId>
-                <version>${version.org.apache.logging.log4j}</version>
-            </dependency>
-
-            <dependency>
                 <groupId>commons-io</groupId>
                 <artifactId>commons-io</artifactId>
                 <version>${version.commons.io}</version>
             </dependency>
-            <dependency>
-                <groupId>org.commonjava.maven.ext</groupId>
-                <artifactId>pom-manipulation-core</artifactId>
-                <version>${version.org.commonjava.maven}</version>
-                <exclusions>
-                    <exclusion>
-                        <groupId>ch.qos.logback</groupId>
-                        <artifactId>logback-classic</artifactId>
-                    </exclusion>
-                </exclusions>
-            </dependency>
-
 
             <dependency>
                 <groupId>org.jboss.galleon</groupId>
-                <artifactId>galleon-maven-plugin</artifactId>
-                <version>${version.org.jboss.galleon.plugin}</version>
+                <artifactId>galleon-maven-universe</artifactId>
+                <version>${version.org.jboss.galleon}</version>
                 <exclusions>
+                    <exclusion>
+                        <groupId>org.apache.maven.shared</groupId>
+                        <artifactId>maven-artifact-transfer</artifactId>
+                    </exclusion>
+                    <exclusion>
+                        <groupId>org.apache.maven</groupId>
+                        <artifactId>maven-artifact</artifactId>
+                    </exclusion>
                     <exclusion>
                         <groupId>org.eclipse.aether</groupId>
                         <artifactId>aether-api</artifactId>
@@ -98,19 +85,19 @@
             </dependency>
 
             <dependency>
-                <groupId>org.wildfly.core</groupId>
-                <artifactId>wildfly-embedded</artifactId>
-                <version>${version.org.wildfly.core}</version>
-            </dependency>
-            <dependency>
-                <groupId>org.wildfly.core</groupId>
-                <artifactId>wildfly-launcher</artifactId>
-                <version>${version.org.wildfly.core}</version>
-            </dependency>
-            <dependency>
-                <groupId>org.wildfly.core</groupId>
-                <artifactId>wildfly-cli</artifactId>
-                <version>${version.org.wildfly.core}</version>
+                <groupId>org.jboss.galleon</groupId>
+                <artifactId>galleon-maven-universe</artifactId>
+                <version>${version.org.jboss.galleon.plugin}</version>
+                <exclusions>
+                    <exclusion>
+                        <groupId>org.apache.maven.shared</groupId>
+                        <artifactId>maven-artifact-transfer</artifactId>
+                    </exclusion>
+                    <exclusion>
+                        <groupId>org.apache.maven</groupId>
+                        <artifactId>maven-artifact</artifactId>
+                    </exclusion>
+                </exclusions>
             </dependency>
 
             <dependency>
@@ -123,6 +110,24 @@
                 <groupId>org.eclipse.jgit</groupId>
                 <artifactId>org.eclipse.jgit</artifactId>
                 <version>${version.org.eclipse.jgit}</version>
+            </dependency>
+
+            <dependency>
+                <groupId>org.jboss.logging</groupId>
+                <artifactId>jboss-logging</artifactId>
+                <version>${version.org.jboss.logging}</version>
+            </dependency>
+
+            <dependency>
+                <groupId>org.jboss.logmanager</groupId>
+                <artifactId>jboss-logmanager</artifactId>
+                <version>${version.org.jboss.logmanager}</version>
+            </dependency>
+
+            <dependency>
+                <groupId>org.jboss.slf4j</groupId>
+                <artifactId>slf4j-jboss-logging</artifactId>
+                <version>${version.org.jboss.logging.slf4j-jboss-logging}</version>
             </dependency>
 
             <dependency>
