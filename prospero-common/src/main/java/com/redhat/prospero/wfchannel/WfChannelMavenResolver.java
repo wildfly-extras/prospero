@@ -36,6 +36,8 @@ import org.eclipse.aether.spi.connector.RepositoryConnectorFactory;
 import org.eclipse.aether.spi.connector.transport.TransporterFactory;
 import org.eclipse.aether.transport.http.HttpTransporterFactory;
 import org.eclipse.aether.version.Version;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.wildfly.channel.MavenRepository;
 import org.wildfly.channel.UnresolvedMavenArtifactException;
 import org.wildfly.channel.spi.MavenVersionsResolver;
@@ -50,6 +52,8 @@ import static java.util.Objects.requireNonNull;
 
 public class WfChannelMavenResolver implements MavenVersionsResolver {
     static String LOCAL_MAVEN_REPO = System.getProperty("user.home") + "/.m2/repository";
+
+    public static final Logger logger = LoggerFactory.getLogger(WfChannelMavenResolver.class);
 
     private final RepositorySystem system;
     private final DefaultRepositorySystemSession session;
@@ -66,8 +70,8 @@ public class WfChannelMavenResolver implements MavenVersionsResolver {
     public Set<String> getAllVersions(String groupId, String artifactId, String extension, String classifier) {
         requireNonNull(groupId);
         requireNonNull(artifactId);
-        System.out.println(String.format("Resolving the latest version of %s:%s in repositories: %s",
-                groupId, artifactId, remoteRepositories.stream().map(r -> r.getUrl()).collect(Collectors.joining(","))));
+        logger.trace("Resolving the latest version of %s:%s in repositories: %s",
+                     groupId, artifactId, remoteRepositories.stream().map(r -> r.getUrl()).collect(Collectors.joining(",")));
 
         Artifact artifact = new DefaultArtifact(groupId, artifactId, classifier, extension, "[0,)");
         VersionRangeRequest versionRangeRequest = new VersionRangeRequest();
@@ -77,7 +81,7 @@ public class WfChannelMavenResolver implements MavenVersionsResolver {
         try {
             VersionRangeResult versionRangeResult = system.resolveVersionRange(session, versionRangeRequest);
             Set<String> versions = versionRangeResult.getVersions().stream().map(Version::toString).collect(Collectors.toSet());
-            System.out.println("All versions in the repositories: " + versions);
+            logger.trace("All versions in the repositories: %s", versions);
             return versions;
         } catch (VersionRangeResolutionException e) {
             return emptySet();

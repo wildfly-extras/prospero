@@ -3,6 +3,7 @@ package integration;
 import com.redhat.prospero.api.ChannelRef;
 import com.redhat.prospero.actions.Installation;
 import com.redhat.prospero.actions.Update;
+import com.redhat.prospero.cli.CliConsole;
 import com.redhat.prospero.galleon.ChannelMavenArtifactRepositoryManager;
 import com.redhat.prospero.wfchannel.WfChannelMavenResolverFactory;
 import org.jboss.galleon.ProvisioningException;
@@ -15,7 +16,6 @@ import org.wildfly.channel.Channel;
 import org.wildfly.channel.ChannelMapper;
 import org.wildfly.channel.ChannelSession;
 import org.wildfly.channel.MavenArtifact;
-import org.wildfly.channel.Stream;
 
 import java.net.MalformedURLException;
 import java.net.URL;
@@ -23,7 +23,6 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.List;
-import java.util.Optional;
 import java.util.stream.Collectors;
 
 import static org.codehaus.groovy.runtime.InvokerHelper.asList;
@@ -70,7 +69,7 @@ public class ChannelUpdaterTest {
         }
         final List<ChannelRef> channelRefs = ChannelRef.readChannels(channelFile);
 
-        new Installation(EAP_PATH).provision("org.jboss.eap:wildfly-ee-galleon-pack", channelRefs);
+        new Installation(EAP_PATH, new CliConsole()).provision("org.jboss.eap:wildfly-ee-galleon-pack", channelRefs);
 
         // verify installation with manifest file is present
         assertTrue(EAP_PATH.resolve(TestUtil.MANIFEST_FILE_PATH).toFile().exists());
@@ -78,12 +77,12 @@ public class ChannelUpdaterTest {
 
     @Test
     public void updateEAP() throws Exception {
-        new Update(EAP_PATH, true).doUpdateAll();
+        new Update(EAP_PATH, new AcceptingConsole()).doUpdateAll();
     }
 
     @Test
     public void updateWfly() throws Exception {
-        new Update(OUTPUT_PATH, true).doUpdateAll();
+        new Update(OUTPUT_PATH, new AcceptingConsole()).doUpdateAll();
     }
 
     @Test
@@ -109,39 +108,9 @@ public class ChannelUpdaterTest {
         }
         final List<ChannelRef> channelRefs = ChannelRef.readChannels(channelFile);
 
-        new Installation(OUTPUT_PATH).provision("org.wildfly:wildfly-ee-galleon-pack:24.0.0.Final", channelRefs);
+        new Installation(OUTPUT_PATH, new CliConsole()).provision("org.wildfly:wildfly-ee-galleon-pack:24.0.0.Final", channelRefs);
 
         // verify installation with manifest file is present
         assertTrue(OUTPUT_PATH.resolve(TestUtil.MANIFEST_FILE_PATH).toFile().exists());
-    }
-
-//    @Test
-    public void testMe() throws Exception {
-
-        final WfChannelMavenResolverFactory factory = new WfChannelMavenResolverFactory();
-
-        final URL wlflUrl = new URL("file:///Users/spyrkob/workspaces/set/prospero/prospero/examples/wfly/wfly-24.yaml");
-        Channel primaryChannel = ChannelMapper.from(wlflUrl);
-
-        final URL undertowUrl = new URL("file:///Users/spyrkob/workspaces/set/prospero/prospero/examples/wfly/undertow.yaml");
-        Channel compChannel = ChannelMapper.from(undertowUrl);
-
-        ChannelSession session = new ChannelSession(asList(compChannel), factory);
-
-        final MavenArtifact resolved = session.resolveLatestMavenArtifact("io.undertow", "undertow-core", "jar", null, null);
-
-        System.out.println(resolved.getVersion());
-
-        if (true) {
-            return;
-        }
-
-        final Optional<Stream> first = primaryChannel.getStreams().stream().filter(s -> s.getArtifactId().equals("undertow-core")).findFirst();
-        if (first.isPresent()) {
-            primaryChannel.getStreams().remove(first.get());
-            primaryChannel.getStreams().add(new Stream("io.undertow", "undertow-core", "2.2.9.Final", null));
-        }
-
-        System.out.println(ChannelMapper.toYaml(primaryChannel));
     }
 }

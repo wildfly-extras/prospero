@@ -5,9 +5,9 @@
  * The ASF licenses this file to You under the Apache License, Version 2.0
  * (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
- * <p>
+ *
  * http://www.apache.org/licenses/LICENSE-2.0
- * <p>
+ *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -15,19 +15,14 @@
  * limitations under the License.
  */
 
-package com.redhat.prospero.galleon;
+package integration;
 
-import org.jboss.galleon.ProvisioningException;
-import org.jboss.galleon.ProvisioningManager;
-import org.jboss.galleon.universe.maven.repo.MavenRepoManager;
+import com.redhat.prospero.cli.CliConsole;
 
-import java.nio.file.Path;
+public class AcceptingConsole extends CliConsole {
 
-public class GalleonUtils {
-
-    public static ProvisioningManager getProvisioningManager(Path installDir, MavenRepoManager maven) throws ProvisioningException {
-        ProvisioningManager provMgr = ProvisioningManager.builder().addArtifactResolver(maven)
-                .setInstallationHome(installDir).build();
-        return provMgr;
-    }
+   @Override
+   public boolean confirmUpdates() {
+      return true;
+   }
 }

@@ -20,6 +20,7 @@ package integration;
 import com.redhat.prospero.api.ChannelRef;
 import com.redhat.prospero.actions.Installation;
 import com.redhat.prospero.actions.Update;
+import com.redhat.prospero.cli.CliConsole;
 import com.redhat.prospero.model.ManifestXmlSupport;
 import com.redhat.prospero.model.XmlException;
 import org.apache.commons.io.FileUtils;
@@ -46,7 +47,7 @@ public class SimpleInstallationTest {
     private static final String OUTPUT_DIR = "target/server";
     private Path OUTPUT_PATH = Paths.get(OUTPUT_DIR).toAbsolutePath();
     private Path manifestPath = OUTPUT_PATH.resolve(TestUtil.MANIFEST_FILE_PATH);
-    private Installation installation = new Installation(OUTPUT_PATH);
+    private Installation installation = new Installation(OUTPUT_PATH, new CliConsole());
 
     @Before
     public void setUp() throws Exception {
@@ -88,7 +89,7 @@ public class SimpleInstallationTest {
         installation.provision("org.wildfly.core:wildfly-core-galleon-pack:17.0.0.Final", channelRefs);
 
         TestUtil.prepareChannelFile(OUTPUT_PATH.resolve(TestUtil.CHANNELS_FILE_PATH), "local-repo-desc.yaml", "local-updates-repo-desc.yaml");
-        new Update(OUTPUT_PATH, true).doUpdateAll();
+        new Update(OUTPUT_PATH, new AcceptingConsole()).doUpdateAll();
 
         // verify manifest contains versions 17.0.1
         final Optional<Artifact> wildflyCliArtifact = readArtifactFromManifest("org.wildfly.core", "wildfly-cli");

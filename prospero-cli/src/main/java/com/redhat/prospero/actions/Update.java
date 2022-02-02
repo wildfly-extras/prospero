@@ -21,10 +21,8 @@ import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Scanner;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -32,6 +30,8 @@ import com.redhat.prospero.api.ArtifactUtils;
 import com.redhat.prospero.api.InstallationMetadata;
 import com.redhat.prospero.api.ArtifactChange;
 import com.redhat.prospero.api.MetadataException;
+import com.redhat.prospero.cli.CliConsole;
+import com.redhat.prospero.cli.Console;
 import com.redhat.prospero.galleon.GalleonUtils;
 import com.redhat.prospero.galleon.ChannelMavenArtifactRepositoryManager;
 import com.redhat.prospero.api.ArtifactNotFoundException;
@@ -43,9 +43,7 @@ import org.eclipse.aether.artifact.Artifact;
 import org.eclipse.aether.artifact.DefaultArtifact;
 import org.jboss.galleon.ProvisioningException;
 import org.jboss.galleon.ProvisioningManager;
-import org.jboss.galleon.layout.FeaturePackUpdatePlan;
 import org.jboss.galleon.layout.ProvisioningPlan;
-import org.jboss.galleon.universe.FeaturePackLocation;
 import org.jboss.galleon.universe.maven.MavenArtifact;
 import org.wildfly.channel.Channel;
 import org.wildfly.channel.ChannelMapper;
@@ -57,10 +55,11 @@ public class Update {
     private final InstallationMetadata metadata;
     private final ChannelMavenArtifactRepositoryManager maven;
     private final ProvisioningManager provMgr;
-    private final boolean quiet;
     private final ChannelSession channelSession;
 
-    public Update(Path installDir, boolean quiet) throws ProvisioningException, MetadataException {
+    private final Console console;
+
+    public Update(Path installDir, Console console) throws ProvisioningException, MetadataException {
         this.metadata = new InstallationMetadata(installDir);
         final List<ChannelRef> channelRefs = metadata.getChannels();
         final List<Channel> channels = channelRefs.stream().map(ref-> {
@@ -75,21 +74,7 @@ public class Update {
         this.channelSession = new ChannelSession(channels, factory);
         this.maven = new ChannelMavenArtifactRepositoryManager(channelSession);
         this.provMgr = GalleonUtils.getProvisioningManager(installDir, maven);
-        this.quiet = quiet;
-    }
-
-    public static void main(String[] args) throws Exception {
-        if (args.length < 1) {
-            System.out.println("Not enough parameters. Need to provide WFLY installation.");
-            return;
-        }
-        final String base = args[0];
-        if (args.length == 3) {
-            throw new UnsupportedOperationException("Single artifact updates are not supported.");
-        }
-
-        Update update = new Update(Paths.get(base), false);
-        update.doUpdateAll();
+        this.console = console;
     }
 
     public void doUpdateAll() throws ArtifactNotFoundException, XmlException, ProvisioningException, IOException, MetadataException, UnresolvedMavenArtifactException {
@@ -100,49 +85,20 @@ public class Update {
         }
         final ProvisioningPlan fpUpdates = findFPUpdates();
 
+        console.updatesFound(fpUpdates.getUpdates(), updates);
         if (updates.isEmpty() && fpUpdates.isEmpty()) {
-            System.out.println("No updates to execute");
             return;
         }
 
-        if (!fpUpdates.isEmpty()) {
-            System.out.println("Feature pack updates:");
-            for (FeaturePackUpdatePlan update : fpUpdates.getUpdates()) {
-                final FeaturePackLocation oldFp = update.getInstalledLocation();
-                final FeaturePackLocation newFp = update.getNewLocation();
-                System.out.println(newFp.getProducerName() + "   " + oldFp.getBuild() + "  ==>  " + newFp.getBuild());
-            }
-        }
-
-        if (!updates.isEmpty()) {
-            System.out.println("Artefact updates found: ");
-            for (ArtifactChange update : updates) {
-                System.out.println(update);
-            }
-        }
-
-        if (!quiet) {
-            System.out.print("Continue with update [y/n]: ");
-            Scanner sc = new Scanner(System.in);
-            while (true) {
-                String resp = sc.nextLine();
-                if (resp.equalsIgnoreCase("n")) {
-                    System.out.println("Update cancelled");
-                    return;
-                } else if (resp.equalsIgnoreCase("y")) {
-                    System.out.println("Applying updates");
-                    break;
-                } else {
-                    System.out.print("Choose [y/n]: ");
-                }
-            }
+        if (!console.confirmUpdates()) {
+            return;
         }
 
         applyFpUpdates(fpUpdates);
 
         metadata.writeFiles();
 
-        System.out.println("Done");
+        console.updatesComplete();
     }
 
     public List<ArtifactChange> findUpdates(Artifact artifact) throws ArtifactNotFoundException, UnresolvedMavenArtifactException {

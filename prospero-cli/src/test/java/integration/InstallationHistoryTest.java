@@ -23,6 +23,7 @@ import com.redhat.prospero.actions.Installation;
 import com.redhat.prospero.actions.InstallationHistory;
 import com.redhat.prospero.api.SavedState;
 import com.redhat.prospero.actions.Update;
+import com.redhat.prospero.cli.CliConsole;
 import com.redhat.prospero.model.ManifestXmlSupport;
 import com.redhat.prospero.model.XmlException;
 import org.apache.commons.io.FileUtils;
@@ -50,7 +51,7 @@ public class InstallationHistoryTest {
 
     private static final String OUTPUT_DIR = "target/server";
     private static final Path OUTPUT_PATH = Paths.get(OUTPUT_DIR).toAbsolutePath();
-   private final Installation installation = new Installation(OUTPUT_PATH);
+   private final Installation installation = new Installation(OUTPUT_PATH, new CliConsole());
    private URL channelFile;
 
    @Before
@@ -86,7 +87,7 @@ public class InstallationHistoryTest {
 
        // updateCore
         TestUtil.prepareChannelFile(OUTPUT_PATH.resolve(TestUtil.CHANNELS_FILE_PATH), "local-repo-desc.yaml", "local-updates-repo-desc.yaml");
-        new Update(OUTPUT_PATH, true).doUpdateAll();
+        new Update(OUTPUT_PATH, new AcceptingConsole()).doUpdateAll();
 
         // get history
         List<SavedState> states = new InstallationHistory(OUTPUT_PATH).getRevisions();
@@ -107,7 +108,7 @@ public class InstallationHistoryTest {
        installation.provision("org.wildfly.core:wildfly-core-galleon-pack:17.0.0.Final", channelRefs);
 
        TestUtil.prepareChannelFile(OUTPUT_PATH.resolve(TestUtil.CHANNELS_FILE_PATH), "local-repo-desc.yaml", "local-updates-repo-desc.yaml");
-        new Update(OUTPUT_PATH, true).doUpdateAll();
+        new Update(OUTPUT_PATH, new AcceptingConsole()).doUpdateAll();
 
         final InstallationHistory installationHistory = new InstallationHistory(OUTPUT_PATH);
         final List<SavedState> revisions = installationHistory.getRevisions();
@@ -131,7 +132,7 @@ public class InstallationHistoryTest {
        installation.provision("org.wildfly.core:wildfly-core-galleon-pack:17.0.0.Final", channelRefs);
 
        TestUtil.prepareChannelFile(OUTPUT_PATH.resolve(TestUtil.CHANNELS_FILE_PATH), "local-repo-desc.yaml", "local-updates-repo-desc.yaml");
-        new Update(OUTPUT_PATH, true).doUpdateAll();
+        new Update(OUTPUT_PATH, new AcceptingConsole()).doUpdateAll();
 
         final InstallationHistory installationHistory = new InstallationHistory(OUTPUT_PATH);
         final List<SavedState> revisions = installationHistory.getRevisions();

@@ -19,8 +19,9 @@ package com.redhat.prospero.actions;
 
 import com.redhat.prospero.api.InstallationMetadata;
 import com.redhat.prospero.api.MetadataException;
+import com.redhat.prospero.cli.CliConsole;
+import com.redhat.prospero.cli.Console;
 import com.redhat.prospero.galleon.FeaturePackLocationParser;
-import com.redhat.prospero.api.Server;
 import com.redhat.prospero.galleon.GalleonUtils;
 import com.redhat.prospero.galleon.ChannelMavenArtifactRepositoryManager;
 
@@ -29,7 +30,6 @@ import java.net.MalformedURLException;
 import java.net.URL;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -37,10 +37,9 @@ import java.util.stream.Collectors;
 import com.redhat.prospero.api.ChannelRef;
 import com.redhat.prospero.wfchannel.WfChannelMavenResolverFactory;
 import org.eclipse.aether.artifact.Artifact;
-import org.eclipse.aether.resolution.ArtifactResolutionException;
-import org.eclipse.aether.resolution.VersionRangeResolutionException;
 import org.jboss.galleon.ProvisioningException;
 import org.jboss.galleon.ProvisioningManager;
+import org.jboss.galleon.layout.ProvisioningLayoutFactory;
 import org.jboss.galleon.universe.FeaturePackLocation;
 import org.jboss.galleon.universe.maven.MavenArtifact;
 import org.wildfly.channel.Channel;
@@ -51,9 +50,11 @@ import static com.redhat.prospero.api.ArtifactUtils.from;
 public class Installation {
 
     private Path installDir;
+    private Console console;
 
-    public Installation(Path installDir) {
+    public Installation(Path installDir, Console console) {
         this.installDir = installDir;
+        this.console = console;
     }
 
     static {
@@ -64,17 +65,6 @@ public class Installation {
         if (System.getProperty("java.util.logging.manager") == null) {
             System.setProperty("java.util.logging.manager", "org.jboss.logmanager.LogManager");
         }
-    }
-
-    public static void main(String[] args) throws ProvisioningException, IOException, MetadataException, ArtifactResolutionException, VersionRangeResolutionException {
-        if (args.length < 2) {
-            System.out.println("Not enough parameters. Need to provide FPL, output directory and channels file.");
-            return;
-        }
-        final Server server = new Server(args[0], null);
-        final Path base = Paths.get(args[1]).toAbsolutePath();
-
-        new Installation(base).provision(server.getFpl(), server.getChannelRefs());
     }
 
     /**
@@ -91,7 +81,15 @@ public class Installation {
 
         final ChannelMavenArtifactRepositoryManager repoManager = createRepositoryManager(channels);
         ProvisioningManager provMgr = GalleonUtils.getProvisioningManager(installDir, repoManager);
+        final ProvisioningLayoutFactory layoutFactory = provMgr.getLayoutFactory();
+
+        layoutFactory.setProgressCallback("LAYOUT_BUILD", console.getProgressCallback("LAYOUT_BUILD"));
+        layoutFactory.setProgressCallback("PACKAGES", console.getProgressCallback("PACKAGES"));
+        layoutFactory.setProgressCallback("CONFIGS", console.getProgressCallback("CONFIGS"));
+        layoutFactory.setProgressCallback("JBMODULES", console.getProgressCallback("JBMODULES"));
         FeaturePackLocation loc = new FeaturePackLocationParser(repoManager).resolveFpl(fpl);
+
+        console.println("Installing " + loc.toString());
 
         provMgr.install(loc);
 

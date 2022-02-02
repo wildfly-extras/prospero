@@ -107,11 +107,11 @@ public class CliMain {
 
    static class ActionFactory {
       public Installation install(Path targetPath) {
-         return new Installation(targetPath);
+         return new Installation(targetPath, new CliConsole());
       }
 
       public Update update(Path targetPath) throws ProvisioningException, MetadataException {
-         return new Update(targetPath, false);
+         return new Update(targetPath, new CliConsole());
       }
    }
 

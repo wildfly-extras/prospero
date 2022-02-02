@@ -32,7 +32,7 @@ public class ChannelLocatorTest {
 
    private static final String EAP_DIR = "target/server-eap";
    private static final Path EAP_PATH = Paths.get(EAP_DIR).toAbsolutePath();
-   private final Installation installation = new Installation(EAP_PATH);
+   private final Installation installation = new Installation(EAP_PATH, new CliConsole());
 
    @Test
    public void findLatestEapChannelDefinition() throws Exception {

@@ -21,6 +21,7 @@ import com.redhat.prospero.api.ChannelRef;
 import com.redhat.prospero.actions.InstallationExport;
 import com.redhat.prospero.actions.InstallationRestore;
 import com.redhat.prospero.actions.Installation;
+import com.redhat.prospero.cli.CliConsole;
 import com.redhat.prospero.model.ManifestXmlSupport;
 import com.redhat.prospero.model.XmlException;
 import org.apache.commons.io.FileUtils;
@@ -77,7 +78,7 @@ public class InstallationRestoreTest {
 
       final List<ChannelRef> channelRefs = ChannelRef.readChannels(channelFile);
 
-      new Installation(FIRST_SERVER_PATH).provision("org.wildfly.core:wildfly-core-galleon-pack:17.0.0.Final", channelRefs);
+      new Installation(FIRST_SERVER_PATH, new CliConsole()).provision("org.wildfly.core:wildfly-core-galleon-pack:17.0.0.Final", channelRefs);
 
       TestUtil.prepareChannelFile(FIRST_SERVER_PATH.resolve(TestUtil.CHANNELS_FILE_PATH), "local-repo-desc.yaml", "local-updates-repo-desc.yaml");
 
