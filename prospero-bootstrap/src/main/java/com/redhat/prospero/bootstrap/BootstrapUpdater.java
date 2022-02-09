@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-package com.redhat.prospero.actions;
+package com.redhat.prospero.bootstrap;
 
 import java.io.IOException;
 import java.net.MalformedURLException;
@@ -64,7 +64,6 @@ public class BootstrapUpdater {
                final MavenArtifact artifact = channelSession.resolveLatestMavenArtifact(groupId, artifactId, extension, null, null);
                final Path targetPath = installerLib.resolve(artifact.getFile().getName());
                if (!targetPath.toFile().exists()) {
-                  System.out.println("Copying to " + targetPath + " " + targetPath.toFile().exists());
                   Files.copy(artifact.getFile().toPath(), targetPath);
                   // find if there is previous version
                   Optional<Path> prev = findPreviousVersion(artifact, installerLib);

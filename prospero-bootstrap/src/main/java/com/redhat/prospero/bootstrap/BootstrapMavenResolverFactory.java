@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-package com.redhat.prospero.actions;
+package com.redhat.prospero.bootstrap;
 
 import java.io.File;
 import java.util.List;

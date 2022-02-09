@@ -79,7 +79,7 @@
                 <configuration>
                     <archive>
                         <manifest>
-                            <mainClass>com.redhat.prospero.actions.Launcher</mainClass>
+                            <mainClass>com.redhat.prospero.launcher.Launcher</mainClass>
                         </manifest>
                     </archive>
                 </configuration>

@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-package com.redhat.prospero.actions;
+package com.redhat.prospero.launcher;
 
 import java.io.BufferedReader;
 import java.io.File;
@@ -100,7 +100,7 @@ public class Launcher {
                                  List<URL> jars) throws ClassNotFoundException, InstantiationException, IllegalAccessException, NoSuchMethodException, InvocationTargetException, IOException {
       URLClassLoader tempCl = new URLClassLoader(jars.toArray(new URL[]{}));
       Thread.currentThread().setContextClassLoader(tempCl);
-      Class c = Class.forName("com.redhat.prospero.actions.BootstrapUpdater", true, tempCl);
+      Class c = Class.forName("com.redhat.prospero.bootstrap.BootstrapUpdater", true, tempCl);
       final Object o = c.newInstance();
       final Method handleArgs = c.getMethod("update");
       final List<Path> res = (List<Path>) handleArgs.invoke(o);
