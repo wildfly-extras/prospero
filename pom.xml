@@ -29,6 +29,8 @@
     <modules>
       <module>prospero-common</module>
       <module>prospero-cli</module>
+      <module>prospero-launcher</module>
+      <module>prospero-bootstrap</module>
     </modules>
 
     <dependencyManagement>
@@ -80,22 +82,6 @@
                     <exclusion>
                         <groupId>org.eclipse.aether</groupId>
                         <artifactId>aether-util</artifactId>
-                    </exclusion>
-                </exclusions>
-            </dependency>
-
-            <dependency>
-                <groupId>org.jboss.galleon</groupId>
-                <artifactId>galleon-maven-universe</artifactId>
-                <version>${version.org.jboss.galleon.plugin}</version>
-                <exclusions>
-                    <exclusion>
-                        <groupId>org.apache.maven.shared</groupId>
-                        <artifactId>maven-artifact-transfer</artifactId>
-                    </exclusion>
-                    <exclusion>
-                        <groupId>org.apache.maven</groupId>
-                        <artifactId>maven-artifact</artifactId>
                     </exclusion>
                 </exclusions>
             </dependency>

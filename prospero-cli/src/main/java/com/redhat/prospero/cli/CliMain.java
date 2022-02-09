@@ -37,6 +37,10 @@ public class CliMain {
    private static final Set<String> ALLOWED_ARGUMENTS = new HashSet<>(Arrays.asList(TARGET_PATH_ARG, FPL_ARG, CHANNEL_FILE_ARG));
    private ActionFactory actionFactory;
 
+   public CliMain() {
+      this.actionFactory = new ActionFactory();
+   }
+
    public CliMain(ActionFactory actionFactory) {
       this.actionFactory = actionFactory;
    }

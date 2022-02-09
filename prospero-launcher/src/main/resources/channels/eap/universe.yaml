@@ -1,0 +1,8 @@
+id: universe
+repositories:
+  - id: lacrosse
+    url: http://lacrosse.corp.redhat.com/~bspyrkos/tmp-repo/
+streams:
+  - groupId: "org.jboss.eap"
+    artifactId: "wildfly-ee-galleon-pack"
+    versionPattern: "7.4.3.GA-redhat-SNAPSHOT"
