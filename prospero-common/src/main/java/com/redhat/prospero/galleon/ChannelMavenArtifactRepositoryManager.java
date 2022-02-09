@@ -29,9 +29,13 @@ import org.wildfly.channel.UnresolvedMavenArtifactException;
 import org.wildfly.channel.spi.MavenVersionsResolver;
 
 import java.nio.file.Path;
+import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 import java.util.regex.Pattern;
 
 public class ChannelMavenArtifactRepositoryManager implements MavenRepoManager {
@@ -78,6 +82,28 @@ public class ChannelMavenArtifactRepositoryManager implements MavenRepoManager {
         } catch (UnresolvedMavenArtifactException e) {
             throw new MavenUniverseException(e.getLocalizedMessage(), e);
         }
+    }
+
+    @Override
+    public void resolveAll(List<MavenArtifact> artifacts) throws MavenUniverseException {
+        final ExecutorService executorService = Executors.newWorkStealingPool(30);
+        List<CompletableFuture<Void>> allPackages = new ArrayList<>();
+
+        for (MavenArtifact artifact : artifacts) {
+            final CompletableFuture<Void> cf = new CompletableFuture<>();
+            executorService.submit(()->{
+                try {
+                    resolve(artifact);
+                    cf.complete(null);
+                } catch (MavenUniverseException e) {
+                    cf.completeExceptionally(e);
+                }
+            });
+            allPackages.add(cf);
+        }
+
+        CompletableFuture.allOf(allPackages.toArray(new CompletableFuture[]{})).join();
+        executorService.shutdown();
     }
 
     @Override
