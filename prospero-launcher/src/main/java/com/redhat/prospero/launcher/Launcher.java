@@ -19,6 +19,7 @@ package com.redhat.prospero.launcher;
 
 import java.io.BufferedReader;
 import java.io.File;
+import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.IOException;
 import java.io.PrintWriter;
@@ -43,7 +44,7 @@ import java.util.List;
 
 public class Launcher {
 
-   public static void main(String[] args) throws Exception {
+   public static void main(String[] args) throws LauncherException, IOException {
       final Path userHome = Paths.get(System.getProperty("user.home"));
       final Path installerLib = userHome.resolve(".jboss-installer").resolve("lib");
 
@@ -51,14 +52,18 @@ public class Launcher {
 
       if (Files.exists(installerLib)) {
          // do clean-up
-         removeOldVersions(installerLib);
+         try {
+            removeOldVersions(installerLib);
+         } catch (IOException e) {
+            throw new LauncherException("Unable to remove old versions of installer dependencies", e);
+         }
 
          // update installer
          System.out.println("Checking for installer updates");
          for (File file : installerLib.toFile().listFiles((d) -> d.getName().endsWith(".jar"))) {
             jars.add(file.toURI().toURL());
+            update(installerLib, jars);
          }
-         update(installerLib, jars);
 
          // perform installation
          System.out.println("Starting installer");
@@ -78,34 +83,42 @@ public class Launcher {
       }
    }
 
-   private static List<URL> unzipInitialDeps(Path tempLib) throws URISyntaxException, IOException {
-      List<URL> jars = new ArrayList<>();
-      URI resource = Launcher.class.getResource("").toURI();
-      final FileSystem fileSystem = FileSystems.newFileSystem(resource, Collections.emptyMap());
-      final Path jarLibs = fileSystem.getPath("lib");
-      Files.walkFileTree(jarLibs, new SimpleFileVisitor<Path>() {
-         @Override
-         public FileVisitResult visitFile(Path file, BasicFileAttributes attrs) throws IOException {
-            final Path targetPath = tempLib.resolve(file.getFileName().toString());
-            Files.copy(file, targetPath);
-            targetPath.toFile().deleteOnExit();
-            jars.add(targetPath.toUri().toURL());
-            return FileVisitResult.CONTINUE;
-         }
-      });
-      return jars;
+   private static List<URL> unzipInitialDeps(Path tempLib) throws LauncherException {
+      try {
+         List<URL> jars = new ArrayList<>();
+         URI resource = Launcher.class.getResource("").toURI();
+         final FileSystem fileSystem = FileSystems.newFileSystem(resource, Collections.emptyMap());
+         final Path jarLibs = fileSystem.getPath("lib");
+         Files.walkFileTree(jarLibs, new SimpleFileVisitor<Path>() {
+            @Override
+            public FileVisitResult visitFile(Path file, BasicFileAttributes attrs) throws IOException {
+               final Path targetPath = tempLib.resolve(file.getFileName().toString());
+               Files.copy(file, targetPath);
+               targetPath.toFile().deleteOnExit();
+               jars.add(targetPath.toUri().toURL());
+               return FileVisitResult.CONTINUE;
+            }
+         });
+         return jars;
+      } catch (URISyntaxException | IOException e) {
+         throw new LauncherException("Unable to extract installer dependencies", e);
+      }
    }
 
-   private static void update(Path installerLib,
-                                 List<URL> jars) throws ClassNotFoundException, InstantiationException, IllegalAccessException, NoSuchMethodException, InvocationTargetException, IOException {
+   private static void update(Path installerLib, List<URL> jars) throws LauncherException {
       URLClassLoader tempCl = new URLClassLoader(jars.toArray(new URL[]{}));
       Thread.currentThread().setContextClassLoader(tempCl);
-      Class c = Class.forName("com.redhat.prospero.bootstrap.BootstrapUpdater", true, tempCl);
-      final Object o = c.newInstance();
-      final Method handleArgs = c.getMethod("update");
-      final List<Path> res = (List<Path>) handleArgs.invoke(o);
+      final List<Path> res;
+      try {
+         Class c = Class.forName("com.redhat.prospero.bootstrap.BootstrapUpdater", true, tempCl);
+         final Object o = c.newInstance();
+         final Method handleArgs = c.getMethod("update");
+         res = (List<Path>) handleArgs.invoke(o);
 
-      tempCl.close();
+         tempCl.close();
+      } catch (ClassNotFoundException | InvocationTargetException | InstantiationException | IllegalAccessException | NoSuchMethodException | IOException e) {
+         throw new LauncherException("Failed to update installer dependencies", e);
+      }
 
       try(PrintWriter fw = new PrintWriter(installerLib.resolve(".obsolete-lib.txt").toFile())) {
          for (Path lib : res) {
@@ -115,36 +128,41 @@ public class Launcher {
                fw.println(lib.getFileName().toString());
             }
          }
+      } catch (FileNotFoundException e) {
+         throw new LauncherException("Failed to save list of updated dependencies", e);
       }
    }
 
    private static void removeOldVersions(Path installerLib) throws IOException {
       if (Files.exists(installerLib.resolve(".obsolete-lib.txt"))) {
          try (BufferedReader br = new BufferedReader(new FileReader(installerLib.resolve(".obsolete-lib.txt").toFile()))) {
-            br.lines().forEach((fileName)-> {
-               try {
-                  Files.deleteIfExists(installerLib.resolve(fileName));
-               } catch (IOException e) {
-                  System.out.println("Unable to delete outdated lib at " + installerLib.resolve(fileName).toAbsolutePath());
-               }
-            });
+            String line;
+            while ((line=br.readLine())!=null) {
+               Files.deleteIfExists(installerLib.resolve(line));
+            }
          }
          Files.delete(installerLib.resolve(".obsolete-lib.txt"));
       }
    }
 
    private static void startInstaller(String[] args,
-                                 Path installerLib) throws MalformedURLException, ClassNotFoundException, InstantiationException, IllegalAccessException, NoSuchMethodException, InvocationTargetException {
-      ArrayList<URL> jars = new ArrayList<>();
-      for (File file : installerLib.toFile().listFiles((d) -> d.getName().endsWith(".jar"))) {
-         jars.add(file.toURI().toURL());
-      }
-      final URLClassLoader cl = new URLClassLoader(jars.toArray(new URL[]{}));
-      Thread.currentThread().setContextClassLoader(cl);
+                                 Path installerLib) throws LauncherException {
+      try {
+         ArrayList<URL> jars = new ArrayList<>();
+         for (File file : installerLib.toFile().listFiles((d) -> d.getName().endsWith(".jar"))) {
+            jars.add(file.toURI().toURL());
+         }
+         final URLClassLoader cl = new URLClassLoader(jars.toArray(new URL[]{}));
+         Thread.currentThread().setContextClassLoader(cl);
 
-      Class c = Class.forName("com.redhat.prospero.cli.CliMain", true, cl);
-      final Object o = c.newInstance();
-      final Method handleArgs = c.getMethod("handleArgs", String[].class);
-      handleArgs.invoke(o, new Object[]{args});
+         Class c = Class.forName("com.redhat.prospero.cli.CliMain", true, cl);
+         final Object o = c.newInstance();
+         final Method handleArgs = c.getMethod("handleArgs", String[].class);
+         handleArgs.invoke(o, new Object[]{args});
+      } catch (ClassNotFoundException | InstantiationException | IllegalAccessException | NoSuchMethodException | IOException e) {
+         throw new LauncherException("Failed to start installer", e);
+      } catch (InvocationTargetException e) {
+         throw new LauncherException("Error when performing installation", e.getCause());
+      }
    }
 }

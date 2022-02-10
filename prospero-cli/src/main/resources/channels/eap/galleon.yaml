@@ -2,7 +2,7 @@ id: universe
 resolveWithLocalCache: true
 repositories:
   - id: central
-    url: https://repo1.maven.org/maven2/
+    url: http://lacrosse.corp.redhat.com/~bspyrkos/tmp-repo
 streams:
   # needs to be resolved from central
   - groupId: "org.wildfly.galleon-plugins"

@@ -53,7 +53,8 @@ public class Server {
 
          if (channelsFile == null) {
             final DefaultArtifact artifact = new DefaultArtifact("org.wildfly.channels", "eap-74", "channel", "yaml", "[7.4,)");
-            final String repoUrl = "https://maven.repository.redhat.com/ga/";
+//            final String repoUrl = "https://maven.repository.redhat.com/ga/";
+            final String repoUrl = "http://lacrosse.corp.redhat.com/~bspyrkos/tmp-repo";
             final RemoteRepository repo = new RemoteRepository.Builder("mrrc", "default", repoUrl).build();
             this.channels = readLatestChannelFromMaven(artifact, repoUrl, repo);
          } else {
@@ -64,7 +65,8 @@ public class Server {
 
          if (channelsFile == null) {
             final DefaultArtifact artifact = new DefaultArtifact("org.wildfly.channels", "wildfly", "channel", "yaml", "[26.1.0,)");
-            final String repoUrl = "https://repo1.maven.org/maven2/";
+//            final String repoUrl = "http://lacrosse.corp.redhat.com/~bspyrkos/tmp-repo";
+            final String repoUrl = "http://lacrosse.corp.redhat.com/~bspyrkos/tmp-repo";
             final RemoteRepository repo = new RemoteRepository.Builder("central", "default", repoUrl).build();
             this.channels = readLatestChannelFromMaven(artifact, repoUrl, repo);
          } else {
@@ -94,9 +96,18 @@ public class Server {
       request.setRepositories(Arrays.asList(repo));
       final VersionRangeResult versionRangeResult = repositorySystem.resolveVersionRange(repositorySession, request);
       // TODO: pick latest version using Comparator
+      if (versionRangeResult == null) {
+         System.out.println("No version found for " + artifact);
+      }
+      if (artifact == null) {
+         System.out.println("No artifact found for " + artifact);
+      }
+      if (versionRangeResult.getHighestVersion() == null) {
+         System.out.println("No highest version found for " + artifact);
+      }
       final Artifact latestArtifact = artifact.setVersion(versionRangeResult.getHighestVersion().toString());
 
-      final ArtifactRequest artifactRequest = new ArtifactRequest(latestArtifact, null, null);
+      final ArtifactRequest artifactRequest = new ArtifactRequest(latestArtifact, Arrays.asList(repo), null);
       return repositorySystem.resolveArtifact(repositorySession, artifactRequest).getArtifact();
    }
 

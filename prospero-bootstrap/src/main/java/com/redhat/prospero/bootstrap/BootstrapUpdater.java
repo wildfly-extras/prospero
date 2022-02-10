@@ -28,28 +28,41 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 
+import org.eclipse.aether.repository.RemoteRepository;
 import org.wildfly.channel.Channel;
 import org.wildfly.channel.ChannelMapper;
 import org.wildfly.channel.ChannelSession;
 import org.wildfly.channel.MavenArtifact;
 import org.wildfly.channel.Stream;
 import org.wildfly.channel.UnresolvedMavenArtifactException;
+import org.wildfly.channel.spi.MavenVersionsResolver;
+import org.wildfly.channel.version.VersionMatcher;
 
 public class BootstrapUpdater {
 
-   public List<Path> update() {
+   public List<Path> update() throws BootstrapException {
       final Path userHome = Paths.get(System.getProperty("user.home"));
       final Path installerLib = userHome.resolve(".jboss-installer").resolve("lib");
 
       return downloadAllDeps(installerLib);
    }
 
-   private List<Path> downloadAllDeps(Path installerLib) {
+   private List<Path> downloadAllDeps(Path installerLib) throws BootstrapException {
       try {
          final BootstrapMavenResolverFactory factory = new BootstrapMavenResolverFactory();
-         // TODO: get latest channel from maven repo
-         URL url = new URL("http://lacrosse.corp.redhat.com/~bspyrkos/installer.yaml");
+
+         //            final String repoUrl = "https://maven.repository.redhat.com/ga/";
+         final String repoUrl = "http://lacrosse.corp.redhat.com/~bspyrkos/tmp-repo";
+         final RemoteRepository repo = new RemoteRepository.Builder("mrrc", "default", repoUrl).build();
+         final MavenVersionsResolver mavenResolver = factory.getMavenResolver(Arrays.asList(repo), true);
+         final Set<String> allVersions = mavenResolver.getAllVersions("org.wildfly.channels", "installer", "yaml", "channel");
+         final String latestVersion = allVersions.stream().sorted(VersionMatcher.COMPARATOR.reversed()).findFirst().get();
+         URL url = mavenResolver
+            .resolveArtifact("org.wildfly.channels", "installer", "yaml", "channel", latestVersion)
+            .toURI().toURL();
+
          final Channel channel = ChannelMapper.from(url);
 
          final ChannelSession session = new ChannelSession(Arrays.asList(channel), factory);
@@ -57,30 +70,23 @@ public class BootstrapUpdater {
 
          List<Path> previousVersions = new ArrayList<>();
          for (Stream stream : channel.getStreams()) {
-            try {
-               final String groupId = stream.getGroupId();
-               final String artifactId = stream.getArtifactId();
-               final String extension = "jar";
-               final MavenArtifact artifact = channelSession.resolveLatestMavenArtifact(groupId, artifactId, extension, null, null);
-               final Path targetPath = installerLib.resolve(artifact.getFile().getName());
-               if (!targetPath.toFile().exists()) {
-                  Files.copy(artifact.getFile().toPath(), targetPath);
-                  // find if there is previous version
-                  Optional<Path> prev = findPreviousVersion(artifact, installerLib);
-                  prev.ifPresent(previousVersions::add);
-               }
-            } catch (IOException e) {
-               e.printStackTrace();
-            } catch (UnresolvedMavenArtifactException e) {
-               e.printStackTrace();
+            final String groupId = stream.getGroupId();
+            final String artifactId = stream.getArtifactId();
+            final String extension = "jar";
+            final MavenArtifact artifact = channelSession.resolveLatestMavenArtifact(groupId, artifactId, extension, null, null);
+            final Path targetPath = installerLib.resolve(artifact.getFile().getName());
+            if (!targetPath.toFile().exists()) {
+               Files.copy(artifact.getFile().toPath(), targetPath);
+               // find if there is previous version
+               Optional<Path> prev = findPreviousVersion(artifact, installerLib);
+               prev.ifPresent(previousVersions::add);
             }
          }
 
          return previousVersions;
-      } catch (MalformedURLException e) {
-         e.printStackTrace();
+      } catch (UnresolvedMavenArtifactException | IOException e) {
+         throw new BootstrapException(e);
       }
-      return Collections.emptyList();
    }
 
    private Optional<Path> findPreviousVersion(MavenArtifact artifact, Path installerLib) {

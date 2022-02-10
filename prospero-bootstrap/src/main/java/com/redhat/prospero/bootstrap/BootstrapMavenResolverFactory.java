@@ -34,12 +34,19 @@ import org.eclipse.aether.repository.RemoteRepository;
 import org.eclipse.aether.resolution.ArtifactRequest;
 import org.eclipse.aether.resolution.ArtifactResolutionException;
 import org.eclipse.aether.resolution.ArtifactResult;
+import org.eclipse.aether.resolution.VersionRangeRequest;
+import org.eclipse.aether.resolution.VersionRangeResolutionException;
+import org.eclipse.aether.resolution.VersionRangeResult;
 import org.eclipse.aether.spi.connector.RepositoryConnectorFactory;
 import org.eclipse.aether.spi.connector.transport.TransporterFactory;
 import org.eclipse.aether.transport.http.HttpTransporterFactory;
+import org.eclipse.aether.version.Version;
 import org.wildfly.channel.MavenRepository;
 import org.wildfly.channel.UnresolvedMavenArtifactException;
 import org.wildfly.channel.spi.MavenVersionsResolver;
+
+import static java.util.Collections.emptySet;
+import static java.util.Objects.requireNonNull;
 
 public class BootstrapMavenResolverFactory implements MavenVersionsResolver.Factory {
 
@@ -48,39 +55,16 @@ public class BootstrapMavenResolverFactory implements MavenVersionsResolver.Fact
    @Override
    public MavenVersionsResolver create(List<MavenRepository> mavenRepositories, boolean resolveLocalCache) {
       final List<RemoteRepository> remoteRepositories = mavenRepositories.stream().map(BootstrapMavenResolverFactory::newRemoteRepository).collect(Collectors.toList());
-      final RepositorySystem system = newRepositorySystem();
-      final DefaultRepositorySystemSession session = newRepositorySystemSession(system, true);
-      return new MavenVersionsResolver() {
-
-         @Override
-         public Set<String> getAllVersions(String groupId, String artifactId, String extension, String classifier) {
-            return null;
-         }
-
-         @Override
-         public File resolveArtifact(String groupId,
-                                     String artifactId,
-                                     String extension,
-                                     String classifier,
-                                     String version) throws UnresolvedMavenArtifactException {
-            Artifact artifact = new DefaultArtifact(groupId, artifactId, classifier, extension, version);
-
-            ArtifactRequest request = new ArtifactRequest();
-            request.setArtifact(artifact);
-            request.setRepositories(remoteRepositories);
-            try {
-               ArtifactResult result = system.resolveArtifact(session, request);
-               return result.getArtifact().getFile();
-            } catch (ArtifactResolutionException e) {
-               UnresolvedMavenArtifactException umae = new UnresolvedMavenArtifactException();
-               umae.initCause(e);
-               throw umae;
-            }
-         }
-      };
+      return getMavenResolver(remoteRepositories, resolveLocalCache);
    }
 
-   public static RepositorySystem newRepositorySystem() {
+   public MavenVersionsResolver getMavenResolver(List<RemoteRepository> remoteRepositories, boolean resolveLocalCache) {
+      final RepositorySystem system = newRepositorySystem();
+      final DefaultRepositorySystemSession session = newRepositorySystemSession(system, true);
+      return new BootstrapMavenVersionsResolver(remoteRepositories, system, session);
+   }
+
+   private static RepositorySystem newRepositorySystem() {
       DefaultServiceLocator locator = MavenRepositorySystemUtils.newServiceLocator();
       locator.addService(RepositoryConnectorFactory.class, BasicRepositoryConnectorFactory.class);
       locator.addService(TransporterFactory.class, HttpTransporterFactory.class);
@@ -93,7 +77,7 @@ public class BootstrapMavenResolverFactory implements MavenVersionsResolver.Fact
       return locator.getService(RepositorySystem.class);
    }
 
-   public static DefaultRepositorySystemSession newRepositorySystemSession(RepositorySystem system, boolean resolveLocalCache) {
+   private static DefaultRepositorySystemSession newRepositorySystemSession(RepositorySystem system, boolean resolveLocalCache) {
       DefaultRepositorySystemSession session = MavenRepositorySystemUtils.newSession();
 
       String location;
@@ -109,5 +93,60 @@ public class BootstrapMavenResolverFactory implements MavenVersionsResolver.Fact
 
    private static RemoteRepository newRemoteRepository(MavenRepository mavenRepository) {
       return new RemoteRepository.Builder(mavenRepository.getId(), "default", mavenRepository.getUrl().toExternalForm()).build();
+   }
+
+   private static class BootstrapMavenVersionsResolver implements MavenVersionsResolver {
+
+      private final List<RemoteRepository> remoteRepositories;
+      private final RepositorySystem system;
+      private final DefaultRepositorySystemSession session;
+
+      public BootstrapMavenVersionsResolver(List<RemoteRepository> remoteRepositories,
+                                            RepositorySystem system,
+                                            DefaultRepositorySystemSession session) {
+         this.remoteRepositories = remoteRepositories;
+         this.system = system;
+         this.session = session;
+      }
+
+      @Override
+      public Set<String> getAllVersions(String groupId, String artifactId, String extension, String classifier) {
+         requireNonNull(groupId);
+         requireNonNull(artifactId);
+
+         Artifact artifact = new DefaultArtifact(groupId, artifactId, classifier, extension, "[0,)");
+         VersionRangeRequest versionRangeRequest = new VersionRangeRequest();
+         versionRangeRequest.setArtifact(artifact);
+         versionRangeRequest.setRepositories(remoteRepositories);
+
+         try {
+            VersionRangeResult versionRangeResult = system.resolveVersionRange(session, versionRangeRequest);
+            Set<String> versions = versionRangeResult.getVersions().stream().map(Version::toString).collect(Collectors.toSet());
+            return versions;
+         } catch (VersionRangeResolutionException e) {
+            return emptySet();
+         }
+      }
+
+      @Override
+      public File resolveArtifact(String groupId,
+                                  String artifactId,
+                                  String extension,
+                                  String classifier,
+                                  String version) throws UnresolvedMavenArtifactException {
+         Artifact artifact = new DefaultArtifact(groupId, artifactId, classifier, extension, version);
+
+         ArtifactRequest request = new ArtifactRequest();
+         request.setArtifact(artifact);
+         request.setRepositories(remoteRepositories);
+         try {
+            ArtifactResult result = system.resolveArtifact(session, request);
+            return result.getArtifact().getFile();
+         } catch (ArtifactResolutionException e) {
+            UnresolvedMavenArtifactException umae = new UnresolvedMavenArtifactException();
+            umae.initCause(e);
+            throw umae;
+         }
+      }
    }
 }
