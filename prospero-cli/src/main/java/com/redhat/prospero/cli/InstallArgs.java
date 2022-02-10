@@ -20,8 +20,10 @@ package com.redhat.prospero.cli;
 import java.io.IOException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 
 import com.redhat.prospero.api.ChannelRef;
 import com.redhat.prospero.api.MetadataException;
@@ -39,6 +41,8 @@ class InstallArgs {
       String dir = parsedArgs.get(CliMain.TARGET_PATH_ARG);
       String fpl = parsedArgs.get(CliMain.FPL_ARG);
       String channelFile = parsedArgs.get(CliMain.CHANNEL_FILE_ARG);
+      String channelRepo = parsedArgs.get(CliMain.CHANNEL_REPO);
+      Map<String, String> channelUrls = new HashMap<>();
 
       if (dir == null || dir.isEmpty()) {
          throw new ArgumentParsingException("Target dir argument (--%s) need to be set on install command", CliMain.TARGET_PATH_ARG);
@@ -54,7 +58,7 @@ class InstallArgs {
 
       try {
          final Path installationDir = Paths.get(dir).toAbsolutePath();
-         final Server server = new Server(fpl, channelFile==null?null:Paths.get(channelFile).toAbsolutePath());
+         final Server server = new Server(fpl, channelFile==null?null:Paths.get(channelFile).toAbsolutePath(), Optional.ofNullable(channelRepo));
          final List<ChannelRef> channels = server.getChannelRefs();
          fpl = server.getFpl();
 

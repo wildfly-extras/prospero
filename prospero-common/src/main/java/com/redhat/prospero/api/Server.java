@@ -21,7 +21,10 @@ import java.io.IOException;
 import java.net.MalformedURLException;
 import java.nio.file.Path;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.Optional;
 
 import org.apache.maven.repository.internal.MavenRepositorySystemUtils;
 import org.eclipse.aether.DefaultRepositorySystemSession;
@@ -40,21 +43,25 @@ import org.eclipse.aether.resolution.VersionRangeResult;
 import org.eclipse.aether.spi.connector.RepositoryConnectorFactory;
 import org.eclipse.aether.spi.connector.transport.TransporterFactory;
 import org.eclipse.aether.transport.http.HttpTransporterFactory;
-import org.wildfly.channel.MavenRepository;
 
 public class Server {
 
    private final String fpl;
    private final List<ChannelRef> channels;
+   private static final Map<String, String> CHANNEL_URLS = new HashMap<>();
+   static {
+      CHANNEL_URLS.put("mrrc", "https://maven.repository.redhat.com/ga/");
+      CHANNEL_URLS.put("central", "https://repo1.maven.org/maven2/");
+   }
 
-   public Server(String fpl, Path channelsFile) throws IOException {
+
+   public Server(String fpl, Path channelsFile, Optional<String> channelRepo) throws IOException {
       if (fpl.equals("eap")) {
          this.fpl = "org.jboss.eap:wildfly-ee-galleon-pack";
 
          if (channelsFile == null) {
             final DefaultArtifact artifact = new DefaultArtifact("org.wildfly.channels", "eap-74", "channel", "yaml", "[7.4,)");
-//            final String repoUrl = "https://maven.repository.redhat.com/ga/";
-            final String repoUrl = "http://lacrosse.corp.redhat.com/~bspyrkos/tmp-repo";
+            final String repoUrl = channelRepo.orElse(CHANNEL_URLS.get("mrrc"));
             final RemoteRepository repo = new RemoteRepository.Builder("mrrc", "default", repoUrl).build();
             this.channels = readLatestChannelFromMaven(artifact, repoUrl, repo);
          } else {
@@ -65,8 +72,7 @@ public class Server {
 
          if (channelsFile == null) {
             final DefaultArtifact artifact = new DefaultArtifact("org.wildfly.channels", "wildfly", "channel", "yaml", "[26.1.0,)");
-//            final String repoUrl = "http://lacrosse.corp.redhat.com/~bspyrkos/tmp-repo";
-            final String repoUrl = "http://lacrosse.corp.redhat.com/~bspyrkos/tmp-repo";
+            final String repoUrl = channelRepo.orElse(CHANNEL_URLS.get("central"));
             final RemoteRepository repo = new RemoteRepository.Builder("central", "default", repoUrl).build();
             this.channels = readLatestChannelFromMaven(artifact, repoUrl, repo);
          } else {

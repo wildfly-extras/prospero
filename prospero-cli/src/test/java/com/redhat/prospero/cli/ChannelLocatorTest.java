@@ -20,6 +20,7 @@ package com.redhat.prospero.cli;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.List;
+import java.util.Optional;
 
 import com.redhat.prospero.api.ChannelRef;
 import com.redhat.prospero.api.Server;
@@ -36,17 +37,17 @@ public class ChannelLocatorTest {
 
    @Test
    public void findLatestEapChannelDefinition() throws Exception {
-      final List<ChannelRef> channelRefs = new Server("eap", null).getChannelRefs();
+      final List<ChannelRef> channelRefs = new Server("eap", null, Optional.empty()).getChannelRefs();
 
-      final String fpl = new Server("eap", null).getFpl();
+      final String fpl = new Server("eap", null, Optional.empty()).getFpl();
       installation.provision(fpl, channelRefs);
    }
 
    @Test
    public void findLatestWildflyChannelDefinition() throws Exception {
-      final List<ChannelRef> channelRefs = new Server("wildfly", null).getChannelRefs();
+      final List<ChannelRef> channelRefs = new Server("wildfly", null, Optional.empty()).getChannelRefs();
 
-      final String fpl = new Server("wildfly", null).getFpl();
+      final String fpl = new Server("wildfly", null, Optional.empty()).getFpl();
       installation.provision(fpl, channelRefs);
    }
 }

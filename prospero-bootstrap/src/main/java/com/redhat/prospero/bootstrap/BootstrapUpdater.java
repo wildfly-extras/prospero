@@ -18,14 +18,12 @@
 package com.redhat.prospero.bootstrap;
 
 import java.io.IOException;
-import java.net.MalformedURLException;
 import java.net.URL;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
@@ -42,22 +40,31 @@ import org.wildfly.channel.version.VersionMatcher;
 
 public class BootstrapUpdater {
 
-   public List<Path> update() throws BootstrapException {
+   public List<Path> update(String[] args) throws BootstrapException {
       final Path userHome = Paths.get(System.getProperty("user.home"));
       final Path installerLib = userHome.resolve(".jboss-installer").resolve("lib");
 
-      return downloadAllDeps(installerLib);
+      Optional<String> channelRepo = Optional.empty();
+      for (String arg: args) {
+         if (!arg.startsWith("--channel-repo=")) {
+            continue;
+         }
+         channelRepo = Optional.of(arg.substring("--channel-repo=".length()));
+      }
+
+      return downloadAllDeps(installerLib, channelRepo);
    }
 
-   private List<Path> downloadAllDeps(Path installerLib) throws BootstrapException {
+   private List<Path> downloadAllDeps(Path installerLib, Optional<String> channelRepo) throws BootstrapException {
       try {
          final BootstrapMavenResolverFactory factory = new BootstrapMavenResolverFactory();
 
-         //            final String repoUrl = "https://maven.repository.redhat.com/ga/";
-         final String repoUrl = "http://lacrosse.corp.redhat.com/~bspyrkos/tmp-repo";
-         final RemoteRepository repo = new RemoteRepository.Builder("mrrc", "default", repoUrl).build();
+         final RemoteRepository repo = new RemoteRepository.Builder("mrrc", "default", channelRepo.orElse("https://maven.repository.redhat.com/ga/")).build();
          final MavenVersionsResolver mavenResolver = factory.getMavenResolver(Arrays.asList(repo), true);
          final Set<String> allVersions = mavenResolver.getAllVersions("org.wildfly.channels", "installer", "yaml", "channel");
+         if (allVersions.isEmpty()) {
+            throw new BootstrapException("Unable to find installer channel definition");
+         }
          final String latestVersion = allVersions.stream().sorted(VersionMatcher.COMPARATOR.reversed()).findFirst().get();
          URL url = mavenResolver
             .resolveArtifact("org.wildfly.channels", "installer", "yaml", "channel", latestVersion)

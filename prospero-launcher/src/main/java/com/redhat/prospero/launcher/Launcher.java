@@ -62,8 +62,8 @@ public class Launcher {
          System.out.println("Checking for installer updates");
          for (File file : installerLib.toFile().listFiles((d) -> d.getName().endsWith(".jar"))) {
             jars.add(file.toURI().toURL());
-            update(installerLib, jars);
          }
+         update(installerLib, jars, args);
 
          // perform installation
          System.out.println("Starting installer");
@@ -77,7 +77,7 @@ public class Launcher {
 
          jars = unzipInitialDeps(tempLib);
 
-         update(tempLib, jars);
+         update(tempLib, jars, args);
          System.out.println("Starting installer");
          startInstaller(args, installerLib);
       }
@@ -105,15 +105,15 @@ public class Launcher {
       }
    }
 
-   private static void update(Path installerLib, List<URL> jars) throws LauncherException {
+   private static void update(Path installerLib, List<URL> jars, String[] args) throws LauncherException {
       URLClassLoader tempCl = new URLClassLoader(jars.toArray(new URL[]{}));
       Thread.currentThread().setContextClassLoader(tempCl);
       final List<Path> res;
       try {
          Class c = Class.forName("com.redhat.prospero.bootstrap.BootstrapUpdater", true, tempCl);
          final Object o = c.newInstance();
-         final Method handleArgs = c.getMethod("update");
-         res = (List<Path>) handleArgs.invoke(o);
+         final Method handleArgs = c.getMethod("update", String[].class);
+         res = (List<Path>) handleArgs.invoke(o, new Object[]{args});
 
          tempCl.close();
       } catch (ClassNotFoundException | InvocationTargetException | InstantiationException | IllegalAccessException | NoSuchMethodException | IOException e) {

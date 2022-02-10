@@ -34,7 +34,8 @@ public class CliMain {
    public static final String TARGET_PATH_ARG = "dir";
    public static final String FPL_ARG = "fpl";
    public static final String CHANNEL_FILE_ARG = "channel-file";
-   private static final Set<String> ALLOWED_ARGUMENTS = new HashSet<>(Arrays.asList(TARGET_PATH_ARG, FPL_ARG, CHANNEL_FILE_ARG));
+   public static final String CHANNEL_REPO = "channel-repo";
+   private static final Set<String> ALLOWED_ARGUMENTS = new HashSet<>(Arrays.asList(TARGET_PATH_ARG, FPL_ARG, CHANNEL_FILE_ARG, CHANNEL_REPO));
    private ActionFactory actionFactory;
 
    public CliMain() {

@@ -22,4 +22,8 @@ public class BootstrapException extends Throwable {
    public BootstrapException(Exception e) {
       super(e);
    }
+
+   public BootstrapException(String msg) {
+      super(msg);
+   }
 }
