@@ -1,8 +1,8 @@
-id: universe
+id: galleon
 resolveWithLocalCache: true
 repositories:
   - id: central
-    url: http://lacrosse.corp.redhat.com/~bspyrkos/tmp-repo
+    url: https://eapdev-jenkins-csb-jbossset.apps.ocp4.prod.psi.redhat.com/job/installer.next/job/galleon-plugins/lastSuccessfulBuild/artifact/mvn-repo/ 
 streams:
   # needs to be resolved from central
   - groupId: "org.wildfly.galleon-plugins"
