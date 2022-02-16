@@ -30,7 +30,6 @@ import com.redhat.prospero.api.ArtifactUtils;
 import com.redhat.prospero.api.InstallationMetadata;
 import com.redhat.prospero.api.ArtifactChange;
 import com.redhat.prospero.api.MetadataException;
-import com.redhat.prospero.cli.CliConsole;
 import com.redhat.prospero.cli.Console;
 import com.redhat.prospero.galleon.GalleonUtils;
 import com.redhat.prospero.galleon.ChannelMavenArtifactRepositoryManager;
@@ -58,6 +57,7 @@ public class Update {
     private final ChannelSession channelSession;
 
     private final Console console;
+    private final WfChannelMavenResolverFactory factory;
 
     public Update(Path installDir, Console console) throws ProvisioningException, MetadataException {
         this.metadata = new InstallationMetadata(installDir);
@@ -70,7 +70,7 @@ public class Update {
             }
         }).collect(Collectors.toList());
 
-        final WfChannelMavenResolverFactory factory = new WfChannelMavenResolverFactory();
+        this.factory = new WfChannelMavenResolverFactory();
         this.channelSession = new ChannelSession(channels, factory);
         this.maven = new ChannelMavenArtifactRepositoryManager(channelSession);
         this.provMgr = GalleonUtils.getProvisioningManager(installDir, maven);
@@ -126,7 +126,7 @@ public class Update {
     }
 
     private Set<Artifact> applyFpUpdates(ProvisioningPlan updates) throws ProvisioningException, IOException {
-        provMgr.apply(updates);
+        provMgr.apply(updates, GalleonUtils.defaultOptions(factory));
 
         final Set<MavenArtifact> resolvedArtfacts = maven.resolvedArtfacts();
 

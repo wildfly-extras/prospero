@@ -17,11 +17,14 @@
 
 package com.redhat.prospero.galleon;
 
+import com.redhat.prospero.wfchannel.WfChannelMavenResolverFactory;
 import org.jboss.galleon.ProvisioningException;
 import org.jboss.galleon.ProvisioningManager;
 import org.jboss.galleon.universe.maven.repo.MavenRepoManager;
 
 import java.nio.file.Path;
+import java.util.HashMap;
+import java.util.Map;
 
 public class GalleonUtils {
 
@@ -30,4 +33,10 @@ public class GalleonUtils {
                 .setInstallationHome(installDir).build();
         return provMgr;
     }
+
+   public static Map<String, String> defaultOptions(WfChannelMavenResolverFactory factory) {
+       Map<String, String> options = new HashMap<>();
+       options.put("jboss-maven-repo", factory.getProvisioningRepo().toAbsolutePath().toString());
+       return options;
+   }
 }

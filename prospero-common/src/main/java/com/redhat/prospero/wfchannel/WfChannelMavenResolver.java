@@ -43,6 +43,7 @@ import org.wildfly.channel.UnresolvedMavenArtifactException;
 import org.wildfly.channel.spi.MavenVersionsResolver;
 
 import java.io.File;
+import java.nio.file.Path;
 import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -60,10 +61,10 @@ public class WfChannelMavenResolver implements MavenVersionsResolver {
 
     private final List<RemoteRepository> remoteRepositories;
 
-    WfChannelMavenResolver(List<MavenRepository> mavenRepositories, boolean resolveLocalCache) {
+    WfChannelMavenResolver(List<MavenRepository> mavenRepositories, boolean resolveLocalCache, Path provisioningRepo) {
         remoteRepositories = mavenRepositories.stream().map(r -> newRemoteRepository(r)).collect(Collectors.toList());
         system = newRepositorySystem();
-        session = newRepositorySystemSession(system, resolveLocalCache);
+        session = newRepositorySystemSession(system, resolveLocalCache, provisioningRepo);
     }
 
     @Override
@@ -118,14 +119,16 @@ public class WfChannelMavenResolver implements MavenVersionsResolver {
         return locator.getService(RepositorySystem.class);
     }
 
-    public static DefaultRepositorySystemSession newRepositorySystemSession(RepositorySystem system, boolean resolveLocalCache) {
+    public static DefaultRepositorySystemSession newRepositorySystemSession(RepositorySystem system,
+                                                                            boolean resolveLocalCache,
+                                                                            Path provisioningRepo) {
         DefaultRepositorySystemSession session = MavenRepositorySystemUtils.newSession();
 
         String location;
         if (resolveLocalCache) {
             location = LOCAL_MAVEN_REPO;
         } else {
-            location = "target/local-repo" ;
+            location = provisioningRepo.toAbsolutePath().toString();
         }
         LocalRepository localRepo = new LocalRepository(location);
         session.setLocalRepositoryManager(system.newLocalRepositoryManager(session, localRepo));

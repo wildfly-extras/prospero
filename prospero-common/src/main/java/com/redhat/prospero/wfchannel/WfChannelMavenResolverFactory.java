@@ -17,15 +17,34 @@
 
 package com.redhat.prospero.wfchannel;
 
+import org.jboss.galleon.ProvisioningException;
 import org.wildfly.channel.MavenRepository;
 import org.wildfly.channel.spi.MavenVersionsResolver;
 
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.List;
 
 public class WfChannelMavenResolverFactory implements MavenVersionsResolver.Factory {
 
+    private final Path provisioningRepo;
+
+    public WfChannelMavenResolverFactory() throws ProvisioningException {
+        try {
+            provisioningRepo = Files.createTempDirectory("provisioning-repo");
+            provisioningRepo.toFile().deleteOnExit();
+        } catch (IOException e) {
+            throw new ProvisioningException(e);
+        }
+    }
+
     @Override
     public MavenVersionsResolver create(List<MavenRepository> mavenRepositories, boolean resolveLocalCache) {
-        return new WfChannelMavenResolver(mavenRepositories, resolveLocalCache);
+        return new WfChannelMavenResolver(mavenRepositories, resolveLocalCache, provisioningRepo);
+    }
+
+    public Path getProvisioningRepo() {
+        return provisioningRepo;
     }
 }

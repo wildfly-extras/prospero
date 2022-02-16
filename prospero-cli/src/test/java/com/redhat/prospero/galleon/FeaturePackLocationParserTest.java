@@ -9,7 +9,6 @@ import org.junit.Test;
 import org.wildfly.channel.Channel;
 import org.wildfly.channel.ChannelMapper;
 
-import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.List;
@@ -24,7 +23,7 @@ public class FeaturePackLocationParserTest {
     private FeaturePackLocationParser parser;
 
 //    @Before
-    public void setUp() throws IOException {
+    public void setUp() throws Exception {
         final URL channelsFile = FeaturePackLocationParserTest.class.getResource("/channels/eap/channels-eap74.json");
 
         final List<ChannelRef> channelRefs = ChannelRef.readChannels(channelsFile);

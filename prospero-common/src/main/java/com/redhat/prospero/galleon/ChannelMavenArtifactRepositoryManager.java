@@ -18,6 +18,7 @@
 package com.redhat.prospero.galleon;
 
 import com.redhat.prospero.api.Manifest;
+import com.redhat.prospero.wfchannel.WfChannelMavenResolverFactory;
 import org.eclipse.aether.artifact.Artifact;
 import org.eclipse.aether.artifact.DefaultArtifact;
 import org.jboss.galleon.universe.maven.MavenArtifact;
@@ -26,7 +27,6 @@ import org.jboss.galleon.universe.maven.repo.MavenRepoManager;
 import org.wildfly.channel.Channel;
 import org.wildfly.channel.ChannelSession;
 import org.wildfly.channel.UnresolvedMavenArtifactException;
-import org.wildfly.channel.spi.MavenVersionsResolver;
 
 import java.nio.file.Path;
 import java.util.ArrayList;
@@ -43,7 +43,7 @@ public class ChannelMavenArtifactRepositoryManager implements MavenRepoManager {
     private Set<MavenArtifact> resolvedArtifacts = new HashSet<>();
     private Manifest manifest = null;
 
-    public ChannelMavenArtifactRepositoryManager(List<Channel> channels, MavenVersionsResolver.Factory factory) {
+    public ChannelMavenArtifactRepositoryManager(List<Channel> channels, WfChannelMavenResolverFactory factory) {
         channelSession = new ChannelSession(channels, factory);
     }
 
@@ -51,7 +51,7 @@ public class ChannelMavenArtifactRepositoryManager implements MavenRepoManager {
         this.channelSession = channelSession;
     }
 
-    public ChannelMavenArtifactRepositoryManager(List<Channel> channels, MavenVersionsResolver.Factory factory, Manifest manifest) {
+    public ChannelMavenArtifactRepositoryManager(List<Channel> channels, WfChannelMavenResolverFactory factory, Manifest manifest) {
         channelSession = new ChannelSession(channels, factory);
         this.manifest = manifest;
     }

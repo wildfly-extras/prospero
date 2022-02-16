@@ -78,7 +78,8 @@ public class InstallationRestore {
         final ChannelMavenArtifactRepositoryManager repoManager = new ChannelMavenArtifactRepositoryManager(channels, factory, metadataBundle.getManifest());
 
         ProvisioningManager provMgr = GalleonUtils.getProvisioningManager(installDir, repoManager);
-        provMgr.provision(metadataBundle.getProvisioningConfig());
+
+        provMgr.provision(metadataBundle.getProvisioningConfig(), GalleonUtils.defaultOptions(factory));
         writeProsperoMetadata(repoManager, metadataBundle.getChannels());
     }
 

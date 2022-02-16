@@ -19,7 +19,6 @@ package com.redhat.prospero.actions;
 
 import com.redhat.prospero.api.InstallationMetadata;
 import com.redhat.prospero.api.MetadataException;
-import com.redhat.prospero.cli.CliConsole;
 import com.redhat.prospero.cli.Console;
 import com.redhat.prospero.galleon.FeaturePackLocationParser;
 import com.redhat.prospero.galleon.GalleonUtils;
@@ -39,6 +38,7 @@ import com.redhat.prospero.wfchannel.WfChannelMavenResolverFactory;
 import org.eclipse.aether.artifact.Artifact;
 import org.jboss.galleon.ProvisioningException;
 import org.jboss.galleon.ProvisioningManager;
+import org.jboss.galleon.config.FeaturePackConfig;
 import org.jboss.galleon.layout.ProvisioningLayoutFactory;
 import org.jboss.galleon.universe.FeaturePackLocation;
 import org.jboss.galleon.universe.maven.MavenArtifact;
@@ -79,7 +79,8 @@ public class Installation {
     public void provision(String fpl, List<ChannelRef> channelRefs) throws ProvisioningException, MetadataException {
         final List<Channel> channels = getChannels(channelRefs);
 
-        final ChannelMavenArtifactRepositoryManager repoManager = createRepositoryManager(channels);
+        final WfChannelMavenResolverFactory factory = new WfChannelMavenResolverFactory();
+        final ChannelMavenArtifactRepositoryManager repoManager = new ChannelMavenArtifactRepositoryManager(channels, factory);
         ProvisioningManager provMgr = GalleonUtils.getProvisioningManager(installDir, repoManager);
         final ProvisioningLayoutFactory layoutFactory = provMgr.getLayoutFactory();
 
@@ -91,7 +92,7 @@ public class Installation {
 
         console.println("Installing " + loc.toString());
 
-        provMgr.install(loc);
+        provMgr.install(loc, GalleonUtils.defaultOptions(factory));
 
         writeProsperoMetadata(installDir, repoManager, channelRefs);
     }
@@ -111,17 +112,13 @@ public class Installation {
         }
         final List<Channel> channels = getChannels(channelRefs);
 
-        final ChannelMavenArtifactRepositoryManager repoManager = createRepositoryManager(channels);
+        final WfChannelMavenResolverFactory factory = new WfChannelMavenResolverFactory();
+        final ChannelMavenArtifactRepositoryManager repoManager = new ChannelMavenArtifactRepositoryManager(channels, factory);
         ProvisioningManager provMgr = GalleonUtils.getProvisioningManager(installDir, repoManager);
 
-        provMgr.provision(installationFile);
+        provMgr.provision(installationFile, GalleonUtils.defaultOptions(factory));
 
         writeProsperoMetadata(installDir, repoManager, channelRefs);
-    }
-
-    private ChannelMavenArtifactRepositoryManager createRepositoryManager(List<Channel> channels) {
-        final WfChannelMavenResolverFactory factory = new WfChannelMavenResolverFactory();
-        return new ChannelMavenArtifactRepositoryManager(channels, factory);
     }
 
     private List<Channel> getChannels(List<ChannelRef> channelRefs) {

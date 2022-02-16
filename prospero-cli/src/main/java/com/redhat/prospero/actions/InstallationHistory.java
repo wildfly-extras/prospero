@@ -34,6 +34,7 @@ import java.net.URL;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 public class InstallationHistory {
@@ -100,8 +101,10 @@ public class InstallationHistory {
         final WfChannelMavenResolverFactory factory = new WfChannelMavenResolverFactory();
         final ChannelMavenArtifactRepositoryManager repoManager = new ChannelMavenArtifactRepositoryManager(channels, factory);
         ProvisioningManager provMgr = GalleonUtils.getProvisioningManager(installation, repoManager);
-        provMgr.provision(metadata.getProvisioningConfig());
+
+        provMgr.provision(metadata.getProvisioningConfig(), GalleonUtils.defaultOptions(factory));
 
         // TODO: handle errors - write final state? revert rollback?
     }
+
 }
