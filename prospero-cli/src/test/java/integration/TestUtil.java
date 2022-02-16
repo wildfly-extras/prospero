@@ -34,15 +34,22 @@ public class TestUtil {
     public static final Path MANIFEST_FILE_PATH = Paths.get(InstallationMetadata.METADATA_DIR, InstallationMetadata.MANIFEST_FILE_NAME);
     public static final Path CHANNELS_FILE_PATH = Paths.get(InstallationMetadata.METADATA_DIR, InstallationMetadata.CHANNELS_FILE_NAME);
 
-    static public URL prepareChannelFile(String channelDescriptor) throws IOException {
+    static public URL prepareChannelFileAsUrl(String channelDescriptor) throws IOException {
         final Path channelFile = Files.createTempFile("channels", "json");
         channelFile.toFile().deleteOnExit();
 
-        final Path path = prepareChannelFile(channelFile, channelDescriptor);
+        final Path path = prepareChannelFileAsUrl(channelFile, channelDescriptor);
         return path.toUri().toURL();
     }
 
-    static public Path prepareChannelFile(Path channelFile, String... channelDescriptor) throws IOException {
+    static public Path prepareChannelFile(String channelDescriptor) throws IOException {
+        final Path channelFile = Files.createTempFile("channels", "json");
+        channelFile.toFile().deleteOnExit();
+
+        return prepareChannelFileAsUrl(channelFile, channelDescriptor);
+    }
+
+    static public Path prepareChannelFileAsUrl(Path channelFile, String... channelDescriptor) throws IOException {
         List<URL> repoUrls = Arrays.stream(channelDescriptor).map(d->TestUtil.class.getClassLoader().getResource(d)).collect(Collectors.toList());
         StringBuilder sb = new StringBuilder("[");
         for (int i=0; i<repoUrls.size(); i++) {

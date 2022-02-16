@@ -18,11 +18,11 @@
 package integration;
 
 import com.redhat.prospero.api.ArtifactChange;
-import com.redhat.prospero.api.ChannelRef;
 import com.redhat.prospero.actions.Installation;
 import com.redhat.prospero.actions.InstallationHistory;
 import com.redhat.prospero.api.SavedState;
 import com.redhat.prospero.actions.Update;
+import com.redhat.prospero.api.ProvisioningDefinition;
 import com.redhat.prospero.cli.CliConsole;
 import com.redhat.prospero.model.ManifestXmlSupport;
 import com.redhat.prospero.model.XmlException;
@@ -36,7 +36,6 @@ import org.junit.Before;
 import org.junit.Test;
 
 import java.io.File;
-import java.net.URL;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -52,7 +51,7 @@ public class InstallationHistoryTest {
     private static final String OUTPUT_DIR = "target/server";
     private static final Path OUTPUT_PATH = Paths.get(OUTPUT_DIR).toAbsolutePath();
    private final Installation installation = new Installation(OUTPUT_PATH, new CliConsole());
-   private URL channelFile;
+   private Path channelFile;
 
    @Before
     public void setUp() throws Exception {
@@ -68,8 +67,8 @@ public class InstallationHistoryTest {
             FileUtils.deleteDirectory(OUTPUT_PATH.toFile());
             OUTPUT_PATH.toFile().delete();
         }
-        if (Files.exists(Paths.get(channelFile.toURI()))) {
-           Files.delete(Paths.get(channelFile.toURI()));
+        if (Files.exists(channelFile)) {
+           Files.delete(channelFile);
         }
     }
 
@@ -81,12 +80,15 @@ public class InstallationHistoryTest {
        if (Files.exists(installDir)) {
            throw new ProvisioningException("Installation dir " + installDir + " already exists");
        }
-       final List<ChannelRef> channelRefs = ChannelRef.readChannels(channelFile);
 
-       installation.provision("org.wildfly.core:wildfly-core-galleon-pack:17.0.0.Final", channelRefs);
+       final ProvisioningDefinition provisioningDefinition = ProvisioningDefinition.builder()
+          .setFpl("org.wildfly.core:wildfly-core-galleon-pack:17.0.0.Final")
+          .setChannelsFile(channelFile)
+          .build();
+       installation.provision(provisioningDefinition);
 
        // updateCore
-        TestUtil.prepareChannelFile(OUTPUT_PATH.resolve(TestUtil.CHANNELS_FILE_PATH), "local-repo-desc.yaml", "local-updates-repo-desc.yaml");
+        TestUtil.prepareChannelFileAsUrl(OUTPUT_PATH.resolve(TestUtil.CHANNELS_FILE_PATH), "local-repo-desc.yaml", "local-updates-repo-desc.yaml");
         new Update(OUTPUT_PATH, new AcceptingConsole()).doUpdateAll();
 
         // get history
@@ -103,21 +105,24 @@ public class InstallationHistoryTest {
        if (Files.exists(installDir)) {
            throw new ProvisioningException("Installation dir " + installDir + " already exists");
        }
-       final List<ChannelRef> channelRefs = ChannelRef.readChannels(channelFile);
 
-       installation.provision("org.wildfly.core:wildfly-core-galleon-pack:17.0.0.Final", channelRefs);
+       final ProvisioningDefinition provisioningDefinition = ProvisioningDefinition.builder()
+          .setFpl("org.wildfly.core:wildfly-core-galleon-pack:17.0.0.Final")
+          .setChannelsFile(channelFile)
+          .build();
+       installation.provision(provisioningDefinition);
 
-       TestUtil.prepareChannelFile(OUTPUT_PATH.resolve(TestUtil.CHANNELS_FILE_PATH), "local-repo-desc.yaml", "local-updates-repo-desc.yaml");
-        new Update(OUTPUT_PATH, new AcceptingConsole()).doUpdateAll();
+       TestUtil.prepareChannelFileAsUrl(OUTPUT_PATH.resolve(TestUtil.CHANNELS_FILE_PATH), "local-repo-desc.yaml", "local-updates-repo-desc.yaml");
+       new Update(OUTPUT_PATH, new AcceptingConsole()).doUpdateAll();
 
-        final InstallationHistory installationHistory = new InstallationHistory(OUTPUT_PATH);
-        final List<SavedState> revisions = installationHistory.getRevisions();
+       final InstallationHistory installationHistory = new InstallationHistory(OUTPUT_PATH);
+       final List<SavedState> revisions = installationHistory.getRevisions();
 
-        final SavedState savedState = revisions.get(1);
-        installationHistory.rollback(savedState);
+       final SavedState savedState = revisions.get(1);
+       installationHistory.rollback(savedState);
 
-        final Optional<Artifact> wildflyCliArtifact = readArtifactFromManifest("org.wildfly.core", "wildfly-cli");
-        assertEquals("17.0.0.Final", wildflyCliArtifact.get().getVersion());
+       final Optional<Artifact> wildflyCliArtifact = readArtifactFromManifest("org.wildfly.core", "wildfly-cli");
+       assertEquals("17.0.0.Final", wildflyCliArtifact.get().getVersion());
     }
 
     @Test
@@ -127,11 +132,14 @@ public class InstallationHistoryTest {
        if (Files.exists(installDir)) {
            throw new ProvisioningException("Installation dir " + installDir + " already exists");
        }
-       final List<ChannelRef> channelRefs = ChannelRef.readChannels(channelFile);
 
-       installation.provision("org.wildfly.core:wildfly-core-galleon-pack:17.0.0.Final", channelRefs);
+       final ProvisioningDefinition provisioningDefinition = ProvisioningDefinition.builder()
+          .setFpl("org.wildfly.core:wildfly-core-galleon-pack:17.0.0.Final")
+          .setChannelsFile(channelFile)
+          .build();
+       installation.provision(provisioningDefinition);
 
-       TestUtil.prepareChannelFile(OUTPUT_PATH.resolve(TestUtil.CHANNELS_FILE_PATH), "local-repo-desc.yaml", "local-updates-repo-desc.yaml");
+       TestUtil.prepareChannelFileAsUrl(OUTPUT_PATH.resolve(TestUtil.CHANNELS_FILE_PATH), "local-repo-desc.yaml", "local-updates-repo-desc.yaml");
         new Update(OUTPUT_PATH, new AcceptingConsole()).doUpdateAll();
 
         final InstallationHistory installationHistory = new InstallationHistory(OUTPUT_PATH);

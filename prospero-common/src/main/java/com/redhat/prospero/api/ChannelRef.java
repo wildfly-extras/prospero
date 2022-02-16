@@ -22,7 +22,6 @@ import java.io.IOException;
 import java.net.URL;
 import java.nio.file.Path;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 
 import com.fasterxml.jackson.databind.JavaType;
@@ -58,8 +57,8 @@ public class ChannelRef {
                 String artifactId = channelRef.gav.split(":")[1];
                 String version = channelRef.gav.split(":")[2];
                 try {
-                    final String fileUrl = Server.resolveChannelFile(new DefaultArtifact(groupId, artifactId, "channel", "yaml", "[" + version + ",)"),
-                                                                     new RemoteRepository.Builder(channelRef.getName(), "default", channelRef.getRepoUrl()).build())
+                    final String fileUrl = ProvisioningDefinition.resolveChannelFile(new DefaultArtifact(groupId, artifactId, "channel", "yaml", "[" + version + ",)"),
+                                                                                     new RemoteRepository.Builder(channelRef.getName(), "default", channelRef.getRepoUrl()).build())
                        .getFile().toURI().toURL().toString();
                     channelRef.setUrl(fileUrl);
                 } catch (VersionRangeResolutionException | ArtifactResolutionException e) {

@@ -20,6 +20,7 @@ package integration;
 import com.redhat.prospero.api.ChannelRef;
 import com.redhat.prospero.actions.Installation;
 import com.redhat.prospero.actions.Update;
+import com.redhat.prospero.api.ProvisioningDefinition;
 import com.redhat.prospero.cli.CliConsole;
 import com.redhat.prospero.model.ManifestXmlSupport;
 import com.redhat.prospero.model.XmlException;
@@ -67,10 +68,13 @@ public class SimpleInstallationTest {
 
     @Test
     public void installWildflyCore() throws Exception {
-        final URL channelFile = TestUtil.prepareChannelFile("local-repo-desc.yaml");
-        final List<ChannelRef> channelRefs = ChannelRef.readChannels(channelFile);
+        final Path channelFile = TestUtil.prepareChannelFile("local-repo-desc.yaml");
 
-        installation.provision("org.wildfly.core:wildfly-core-galleon-pack:17.0.0.Final", channelRefs);
+        final ProvisioningDefinition provisioningDefinition = ProvisioningDefinition.builder()
+           .setFpl("org.wildfly.core:wildfly-core-galleon-pack:17.0.0.Final")
+           .setChannelsFile(channelFile)
+           .build();
+        installation.provision(provisioningDefinition);
 
         // verify installation with manifest file is present
         assertTrue(manifestPath.toFile().exists());
@@ -83,12 +87,15 @@ public class SimpleInstallationTest {
 
     @Test
     public void updateWildflyCore() throws Exception {
-        final URL channelFile = TestUtil.prepareChannelFile("local-repo-desc.yaml");
-        final List<ChannelRef> channelRefs = ChannelRef.readChannels(channelFile);
+        final Path channelFile = TestUtil.prepareChannelFile("local-repo-desc.yaml");
 
-        installation.provision("org.wildfly.core:wildfly-core-galleon-pack:17.0.0.Final", channelRefs);
+        final ProvisioningDefinition provisioningDefinition = ProvisioningDefinition.builder()
+           .setFpl("org.wildfly.core:wildfly-core-galleon-pack:17.0.0.Final")
+           .setChannelsFile(channelFile)
+           .build();
+        installation.provision(provisioningDefinition);
 
-        TestUtil.prepareChannelFile(OUTPUT_PATH.resolve(TestUtil.CHANNELS_FILE_PATH), "local-repo-desc.yaml", "local-updates-repo-desc.yaml");
+        TestUtil.prepareChannelFileAsUrl(OUTPUT_PATH.resolve(TestUtil.CHANNELS_FILE_PATH), "local-repo-desc.yaml", "local-updates-repo-desc.yaml");
         new Update(OUTPUT_PATH, new AcceptingConsole()).doUpdateAll();
 
         // verify manifest contains versions 17.0.1
@@ -98,7 +105,7 @@ public class SimpleInstallationTest {
 
     @Test
     public void installWildflyCoreFromInstallationFile() throws Exception {
-        final URL channelFile = TestUtil.prepareChannelFile("local-repo-desc.yaml");
+        final URL channelFile = TestUtil.prepareChannelFileAsUrl("local-repo-desc.yaml");
         final File installationFile = new File(this.getClass().getClassLoader().getResource("provisioning.xml").toURI());
         final List<ChannelRef> channelRefs = ChannelRef.readChannels(channelFile);
 

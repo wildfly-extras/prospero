@@ -40,6 +40,7 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 import static com.redhat.prospero.api.ArtifactUtils.from;
+import static com.redhat.prospero.galleon.GalleonUtils.MAVEN_REPO_LOCAL;
 
 public class InstallationRestore {
 
@@ -79,7 +80,12 @@ public class InstallationRestore {
 
         ProvisioningManager provMgr = GalleonUtils.getProvisioningManager(installDir, repoManager);
 
-        provMgr.provision(metadataBundle.getProvisioningConfig(), GalleonUtils.defaultOptions(factory));
+        try {
+            System.setProperty(MAVEN_REPO_LOCAL, factory.getProvisioningRepo().toAbsolutePath().toString());
+            provMgr.provision(metadataBundle.getProvisioningConfig());
+        } finally {
+            System.clearProperty(MAVEN_REPO_LOCAL);
+        }
         writeProsperoMetadata(repoManager, metadataBundle.getChannels());
     }
 

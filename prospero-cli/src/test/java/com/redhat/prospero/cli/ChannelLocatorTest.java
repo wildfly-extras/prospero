@@ -19,11 +19,8 @@ package com.redhat.prospero.cli;
 
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.List;
-import java.util.Optional;
 
-import com.redhat.prospero.api.ChannelRef;
-import com.redhat.prospero.api.Server;
+import com.redhat.prospero.api.ProvisioningDefinition;
 import com.redhat.prospero.actions.Installation;
 import org.junit.Ignore;
 import org.junit.Test;
@@ -37,17 +34,13 @@ public class ChannelLocatorTest {
 
    @Test
    public void findLatestEapChannelDefinition() throws Exception {
-      final List<ChannelRef> channelRefs = new Server("eap", null, Optional.empty()).getChannelRefs();
-
-      final String fpl = new Server("eap", null, Optional.empty()).getFpl();
-      installation.provision(fpl, channelRefs);
+      final ProvisioningDefinition provisioningDefinition = ProvisioningDefinition.builder().setFpl("eap").build();
+      installation.provision(provisioningDefinition);
    }
 
    @Test
    public void findLatestWildflyChannelDefinition() throws Exception {
-      final List<ChannelRef> channelRefs = new Server("wildfly", null, Optional.empty()).getChannelRefs();
-
-      final String fpl = new Server("wildfly", null, Optional.empty()).getFpl();
-      installation.provision(fpl, channelRefs);
+      final ProvisioningDefinition provisioningDefinition = ProvisioningDefinition.builder().setFpl("wildfly").build();
+      installation.provision(provisioningDefinition);
    }
 }

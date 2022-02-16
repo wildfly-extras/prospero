@@ -21,13 +21,11 @@ import java.io.IOException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
-import com.redhat.prospero.api.ChannelRef;
 import com.redhat.prospero.api.MetadataException;
-import com.redhat.prospero.api.Server;
+import com.redhat.prospero.api.ProvisioningDefinition;
 import org.jboss.galleon.ProvisioningException;
 
 class InstallArgs {
@@ -58,11 +56,13 @@ class InstallArgs {
 
       try {
          final Path installationDir = Paths.get(dir).toAbsolutePath();
-         final Server server = new Server(fpl, channelFile==null?null:Paths.get(channelFile).toAbsolutePath(), Optional.ofNullable(channelRepo));
-         final List<ChannelRef> channels = server.getChannelRefs();
-         fpl = server.getFpl();
+         final ProvisioningDefinition provisioningDefinition = ProvisioningDefinition.builder()
+            .setFpl(fpl)
+            .setChannelsFile(channelFile==null?null:Paths.get(channelFile).toAbsolutePath())
+            .setChannelRepo(channelRepo)
+            .build();
 
-         actionFactory.install(installationDir).provision(fpl, channels);
+         actionFactory.install(installationDir).provision(provisioningDefinition);
       } catch (IOException e) {
          e.printStackTrace();
       } catch (ProvisioningException | MetadataException e) {

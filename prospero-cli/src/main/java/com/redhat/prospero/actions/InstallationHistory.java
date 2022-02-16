@@ -37,6 +37,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
+import static com.redhat.prospero.galleon.GalleonUtils.MAVEN_REPO_LOCAL;
+
 public class InstallationHistory {
 
     private final Path installation;
@@ -102,7 +104,12 @@ public class InstallationHistory {
         final ChannelMavenArtifactRepositoryManager repoManager = new ChannelMavenArtifactRepositoryManager(channels, factory);
         ProvisioningManager provMgr = GalleonUtils.getProvisioningManager(installation, repoManager);
 
-        provMgr.provision(metadata.getProvisioningConfig(), GalleonUtils.defaultOptions(factory));
+        try {
+            System.setProperty(MAVEN_REPO_LOCAL, factory.getProvisioningRepo().toAbsolutePath().toString());
+            provMgr.provision(metadata.getProvisioningConfig());
+        } finally {
+            System.clearProperty(MAVEN_REPO_LOCAL);
+        }
 
         // TODO: handle errors - write final state? revert rollback?
     }

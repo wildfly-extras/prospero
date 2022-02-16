@@ -17,10 +17,10 @@
 
 package integration;
 
-import com.redhat.prospero.api.ChannelRef;
 import com.redhat.prospero.actions.InstallationExport;
 import com.redhat.prospero.actions.InstallationRestore;
 import com.redhat.prospero.actions.Installation;
+import com.redhat.prospero.api.ProvisioningDefinition;
 import com.redhat.prospero.cli.CliConsole;
 import com.redhat.prospero.model.ManifestXmlSupport;
 import com.redhat.prospero.model.XmlException;
@@ -31,10 +31,8 @@ import org.junit.Before;
 import org.junit.Test;
 
 import java.io.File;
-import java.net.URL;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.List;
 import java.util.Optional;
 
 import static org.junit.Assert.assertEquals;
@@ -74,13 +72,15 @@ public class InstallationRestoreTest {
 
    @Test
    public void restoreInstallation() throws Exception {
-      final URL channelFile = TestUtil.prepareChannelFile("local-repo-desc.yaml");
+      final Path channelFile = TestUtil.prepareChannelFile("local-repo-desc.yaml");
 
-      final List<ChannelRef> channelRefs = ChannelRef.readChannels(channelFile);
+      final ProvisioningDefinition provisioningDefinition = ProvisioningDefinition.builder()
+         .setFpl("org.wildfly.core:wildfly-core-galleon-pack:17.0.0.Final")
+         .setChannelsFile(channelFile)
+         .build();
+      new Installation(FIRST_SERVER_PATH, new CliConsole()).provision(provisioningDefinition);
 
-      new Installation(FIRST_SERVER_PATH, new CliConsole()).provision("org.wildfly.core:wildfly-core-galleon-pack:17.0.0.Final", channelRefs);
-
-      TestUtil.prepareChannelFile(FIRST_SERVER_PATH.resolve(TestUtil.CHANNELS_FILE_PATH), "local-repo-desc.yaml", "local-updates-repo-desc.yaml");
+      TestUtil.prepareChannelFileAsUrl(FIRST_SERVER_PATH.resolve(TestUtil.CHANNELS_FILE_PATH), "local-repo-desc.yaml", "local-updates-repo-desc.yaml");
 
       new InstallationExport(FIRST_SERVER_PATH).export("target/bundle.zip");
 

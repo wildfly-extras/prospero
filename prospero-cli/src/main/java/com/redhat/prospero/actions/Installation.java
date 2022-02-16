@@ -19,6 +19,7 @@ package com.redhat.prospero.actions;
 
 import com.redhat.prospero.api.InstallationMetadata;
 import com.redhat.prospero.api.MetadataException;
+import com.redhat.prospero.api.ProvisioningDefinition;
 import com.redhat.prospero.cli.Console;
 import com.redhat.prospero.galleon.FeaturePackLocationParser;
 import com.redhat.prospero.galleon.GalleonUtils;
@@ -46,6 +47,7 @@ import org.wildfly.channel.Channel;
 import org.wildfly.channel.ChannelMapper;
 
 import static com.redhat.prospero.api.ArtifactUtils.from;
+import static com.redhat.prospero.galleon.GalleonUtils.MAVEN_REPO_LOCAL;
 
 public class Installation {
 
@@ -76,8 +78,8 @@ public class Installation {
      * @throws ProvisioningException
      * @throws MetadataException
      */
-    public void provision(String fpl, List<ChannelRef> channelRefs) throws ProvisioningException, MetadataException {
-        final List<Channel> channels = getChannels(channelRefs);
+    public void provision(ProvisioningDefinition provisioningDefinition) throws ProvisioningException, MetadataException {
+        final List<Channel> channels = getChannels(provisioningDefinition.getChannelRefs());
 
         final WfChannelMavenResolverFactory factory = new WfChannelMavenResolverFactory();
         final ChannelMavenArtifactRepositoryManager repoManager = new ChannelMavenArtifactRepositoryManager(channels, factory);
@@ -88,13 +90,24 @@ public class Installation {
         layoutFactory.setProgressCallback("PACKAGES", console.getProgressCallback("PACKAGES"));
         layoutFactory.setProgressCallback("CONFIGS", console.getProgressCallback("CONFIGS"));
         layoutFactory.setProgressCallback("JBMODULES", console.getProgressCallback("JBMODULES"));
-        FeaturePackLocation loc = new FeaturePackLocationParser(repoManager).resolveFpl(fpl);
+        FeaturePackLocation loc = new FeaturePackLocationParser(repoManager).resolveFpl(provisioningDefinition.getFpl());
 
         console.println("Installing " + loc.toString());
 
-        provMgr.install(loc, GalleonUtils.defaultOptions(factory));
+        final FeaturePackConfig.Builder configBuilder = FeaturePackConfig.builder(loc);
+        for (String includedPackage : provisioningDefinition.getIncludedPackages()) {
+            configBuilder.includePackage(includedPackage);
+        }
+        final FeaturePackConfig config = configBuilder.build();
 
-        writeProsperoMetadata(installDir, repoManager, channelRefs);
+        try {
+            System.setProperty(MAVEN_REPO_LOCAL, factory.getProvisioningRepo().toAbsolutePath().toString());
+            provMgr.install(config);
+        } finally {
+            System.clearProperty(MAVEN_REPO_LOCAL);
+        }
+
+        writeProsperoMetadata(installDir, repoManager, provisioningDefinition.getChannelRefs());
     }
 
     /**
@@ -116,7 +129,12 @@ public class Installation {
         final ChannelMavenArtifactRepositoryManager repoManager = new ChannelMavenArtifactRepositoryManager(channels, factory);
         ProvisioningManager provMgr = GalleonUtils.getProvisioningManager(installDir, repoManager);
 
-        provMgr.provision(installationFile, GalleonUtils.defaultOptions(factory));
+        try {
+            System.setProperty(MAVEN_REPO_LOCAL, factory.getProvisioningRepo().toAbsolutePath().toString());
+            provMgr.provision(installationFile);
+        }finally {
+            System.clearProperty(MAVEN_REPO_LOCAL);
+        }
 
         writeProsperoMetadata(installDir, repoManager, channelRefs);
     }

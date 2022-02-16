@@ -17,26 +17,19 @@
 
 package com.redhat.prospero.galleon;
 
-import com.redhat.prospero.wfchannel.WfChannelMavenResolverFactory;
 import org.jboss.galleon.ProvisioningException;
 import org.jboss.galleon.ProvisioningManager;
 import org.jboss.galleon.universe.maven.repo.MavenRepoManager;
 
 import java.nio.file.Path;
-import java.util.HashMap;
-import java.util.Map;
 
 public class GalleonUtils {
+
+   public static final String MAVEN_REPO_LOCAL = "maven.repo.local";
 
     public static ProvisioningManager getProvisioningManager(Path installDir, MavenRepoManager maven) throws ProvisioningException {
         ProvisioningManager provMgr = ProvisioningManager.builder().addArtifactResolver(maven)
                 .setInstallationHome(installDir).build();
         return provMgr;
     }
-
-   public static Map<String, String> defaultOptions(WfChannelMavenResolverFactory factory) {
-       Map<String, String> options = new HashMap<>();
-       options.put("jboss-maven-repo", factory.getProvisioningRepo().toAbsolutePath().toString());
-       return options;
-   }
 }

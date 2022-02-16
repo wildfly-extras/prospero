@@ -49,6 +49,8 @@ import org.wildfly.channel.ChannelMapper;
 import org.wildfly.channel.ChannelSession;
 import org.wildfly.channel.UnresolvedMavenArtifactException;
 
+import static com.redhat.prospero.galleon.GalleonUtils.MAVEN_REPO_LOCAL;
+
 public class Update {
 
     private final InstallationMetadata metadata;
@@ -80,6 +82,7 @@ public class Update {
     public void doUpdateAll() throws ArtifactNotFoundException, XmlException, ProvisioningException, IOException, MetadataException, UnresolvedMavenArtifactException {
         final List<ArtifactChange> updates = new ArrayList<>();
         final Manifest manifest = metadata.getManifest();
+        System.out.println("Looking for updates");
         for (Artifact artifact : manifest.getArtifacts()) {
             updates.addAll(findUpdates(artifact));
         }
@@ -126,7 +129,12 @@ public class Update {
     }
 
     private Set<Artifact> applyFpUpdates(ProvisioningPlan updates) throws ProvisioningException, IOException {
-        provMgr.apply(updates, GalleonUtils.defaultOptions(factory));
+        try {
+            System.setProperty(MAVEN_REPO_LOCAL, factory.getProvisioningRepo().toAbsolutePath().toString());
+            provMgr.apply(updates);
+        } finally {
+            System.clearProperty(MAVEN_REPO_LOCAL);
+        }
 
         final Set<MavenArtifact> resolvedArtfacts = maven.resolvedArtfacts();
 

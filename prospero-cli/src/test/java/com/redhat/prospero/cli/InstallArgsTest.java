@@ -24,9 +24,12 @@ import java.util.Map;
 
 import com.redhat.prospero.actions.Installation;
 import com.redhat.prospero.api.ChannelRef;
+import com.redhat.prospero.api.ProvisioningDefinition;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import org.mockito.ArgumentCaptor;
 import org.mockito.ArgumentMatcher;
+import org.mockito.Captor;
 import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.junit.MockitoJUnitRunner;
@@ -34,7 +37,6 @@ import org.mockito.junit.MockitoJUnitRunner;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.fail;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.argThat;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.when;
 
@@ -46,6 +48,9 @@ public class InstallArgsTest {
 
    @Mock
    private CliMain.ActionFactory actionFactory;
+
+   @Captor
+   private ArgumentCaptor<ProvisioningDefinition> serverDefiniton;
 
    @Test
    public void errorIfTargetPathIsNotPresent() throws Exception {
@@ -95,7 +100,8 @@ public class InstallArgsTest {
       new InstallArgs(actionFactory).handleArgs(args);
 
       Mockito.verify(actionFactory).install(eq(Paths.get("test").toAbsolutePath()));
-      Mockito.verify(installation).provision(eq("org.jboss.eap:wildfly-ee-galleon-pack"), any(List.class));
+      Mockito.verify(installation).provision(serverDefiniton.capture());
+      assertEquals("org.jboss.eap:wildfly-ee-galleon-pack", serverDefiniton.getValue().getFpl());
    }
 
    @Test
@@ -109,7 +115,8 @@ public class InstallArgsTest {
       new InstallArgs(actionFactory).handleArgs(args);
 
       Mockito.verify(actionFactory).install(eq(Paths.get("test").toAbsolutePath()));
-      Mockito.verify(installation).provision(eq("org.jboss.eap:wildfly-ee-galleon-pack"), any(List.class));
+      Mockito.verify(installation).provision(serverDefiniton.capture());
+      assertEquals("org.jboss.eap:wildfly-ee-galleon-pack", serverDefiniton.getValue().getFpl());
    }
 
    @Test
@@ -128,7 +135,8 @@ public class InstallArgsTest {
          if (channelRefs.size() != 1) return false;
          return  channelRefs.get(0).getName().equals("dev");
       };
-      Mockito.verify(installation).provision(eq("org.jboss.eap:wildfly-ee-galleon-pack"), argThat(matcher));
+      Mockito.verify(installation).provision(serverDefiniton.capture());
+      assertEquals("org.jboss.eap:wildfly-ee-galleon-pack", serverDefiniton.getValue().getFpl());
    }
 
 }
