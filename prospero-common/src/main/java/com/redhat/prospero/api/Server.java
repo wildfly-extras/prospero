@@ -125,17 +125,11 @@ public class Server {
          final String resolvedChannelFileUrl = resolvedArtifact.getFile().toURI().toURL().toString();
          String gav = resolvedArtifact.getGroupId() + ":" + resolvedArtifact.getArtifactId() + ":" + resolvedArtifact.getVersion();
          ChannelRef channelRef = new ChannelRef("eap", repoUrl, gav, resolvedChannelFileUrl);
-         ChannelRef localRef = new ChannelRef("local", this.loadFile("universe.yaml"));
-         ChannelRef universeRef = new ChannelRef("universe", loadFile("galleon.yaml"));
 
-         return Arrays.asList(channelRef, localRef, universeRef);
+         return Arrays.asList(channelRef);
       } catch (MalformedURLException | VersionRangeResolutionException | ArtifactResolutionException e) {
          throw new IOException(e);
       }
-   }
-
-   protected String loadFile(String name) {
-      return Server.class.getResource("/channels/eap/" + name).toString();
    }
 
    protected static RepositorySystem newRepositorySystem() {
