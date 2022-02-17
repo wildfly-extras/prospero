@@ -28,6 +28,7 @@ import com.redhat.prospero.actions.Installation;
 import com.redhat.prospero.actions.Update;
 import com.redhat.prospero.api.MetadataException;
 import com.redhat.prospero.api.ProvisioningRuntimeException;
+import com.redhat.prospero.api.exceptions.OperationException;
 import org.jboss.galleon.ProvisioningException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;

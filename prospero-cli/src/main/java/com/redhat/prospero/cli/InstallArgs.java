@@ -17,15 +17,14 @@
 
 package com.redhat.prospero.cli;
 
-import java.io.IOException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.Optional;
 
 import com.redhat.prospero.api.MetadataException;
 import com.redhat.prospero.api.ProvisioningDefinition;
+import com.redhat.prospero.api.exceptions.OperationException;
 import org.jboss.galleon.ProvisioningException;
 
 class InstallArgs {

@@ -28,6 +28,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 
+import com.redhat.prospero.api.exceptions.ArtifactResolutionException;
 import com.redhat.prospero.wfchannel.WfChannelMavenResolver;
 import org.eclipse.aether.DefaultRepositorySystemSession;
 import org.eclipse.aether.RepositorySystem;
@@ -35,12 +36,9 @@ import org.eclipse.aether.artifact.Artifact;
 import org.eclipse.aether.artifact.DefaultArtifact;
 import org.eclipse.aether.repository.RemoteRepository;
 import org.eclipse.aether.resolution.ArtifactRequest;
-import org.eclipse.aether.resolution.ArtifactResolutionException;
 import org.eclipse.aether.resolution.VersionRangeRequest;
 import org.eclipse.aether.resolution.VersionRangeResolutionException;
 import org.eclipse.aether.resolution.VersionRangeResult;
-import org.jboss.galleon.ProvisioningException;
-import org.wildfly.channel.UnresolvedMavenArtifactException;
 
 public class ProvisioningDefinition {
 
@@ -53,7 +51,7 @@ public class ProvisioningDefinition {
       CHANNEL_URLS.put("central", "https://repo1.maven.org/maven2/");
    }
 
-   private ProvisioningDefinition(Builder builder) throws ProvisioningException {
+   private ProvisioningDefinition(Builder builder) throws ArtifactResolutionException {
       final String fpl = builder.fpl;
       final Optional<String> channelRepo = Optional.ofNullable(builder.channelRepo);
       final Optional<Path> channelsFile = Optional.ofNullable(builder.channelsFile);
@@ -89,8 +87,8 @@ public class ProvisioningDefinition {
             this.fpl = fpl;
             this.channels = ChannelRef.readChannels(channelsFile.get());
          }
-      } catch (IOException | UnresolvedMavenArtifactException e) {
-         throw new ProvisioningException("Unable to resolve channel definition", e);
+      } catch (IOException e) {
+         throw new ArtifactResolutionException("Unable to resolve channel definition", e);
       }
    }
 
@@ -111,7 +109,7 @@ public class ProvisioningDefinition {
    }
 
    public static Artifact resolveChannelFile(DefaultArtifact artifact,
-                            RemoteRepository repo) throws UnresolvedMavenArtifactException {
+                            RemoteRepository repo) throws ArtifactResolutionException {
       final RepositorySystem repositorySystem = WfChannelMavenResolver.newRepositorySystem();
       final DefaultRepositorySystemSession repositorySession = WfChannelMavenResolver.newRepositorySystemSession(repositorySystem, true, null);
 
@@ -122,11 +120,11 @@ public class ProvisioningDefinition {
       try {
          versionRangeResult = repositorySystem.resolveVersionRange(repositorySession, request);
       } catch (VersionRangeResolutionException e) {
-         throw new UnresolvedMavenArtifactException("Unable to resolve versions for " + artifact, e);
+         throw new ArtifactResolutionException("Unable to resolve versions for " + artifact, e);
       }
       // TODO: pick latest version using Comparator
       if (versionRangeResult.getHighestVersion() == null && versionRangeResult.getVersions().isEmpty()) {
-         throw new UnresolvedMavenArtifactException(
+         throw new ArtifactResolutionException(
             String.format("Unable to resolve versions of %s in repository [%s: %s]", artifact, repo.getId(), repo.getUrl()));
       }
       final Artifact latestArtifact = artifact.setVersion(versionRangeResult.getHighestVersion().toString());
@@ -134,14 +132,14 @@ public class ProvisioningDefinition {
       final ArtifactRequest artifactRequest = new ArtifactRequest(latestArtifact, Arrays.asList(repo), null);
       try {
          return repositorySystem.resolveArtifact(repositorySession, artifactRequest).getArtifact();
-      } catch (ArtifactResolutionException e) {
-         throw new UnresolvedMavenArtifactException("Unable to resolve " + artifact, e);
+      } catch (org.eclipse.aether.resolution.ArtifactResolutionException e) {
+         throw new ArtifactResolutionException("Unable to resolve " + artifact, e);
       }
    }
 
    protected List<ChannelRef> readLatestChannelFromMaven(DefaultArtifact artifact,
                                                          String repoUrl,
-                                                         RemoteRepository repo) throws ProvisioningException {
+                                                         RemoteRepository repo) throws ArtifactResolutionException {
       try {
          final Artifact resolvedArtifact = resolveChannelFile(artifact, repo);
          final String resolvedChannelFileUrl = resolvedArtifact.getFile().toURI().toURL().toString();
@@ -149,8 +147,8 @@ public class ProvisioningDefinition {
          ChannelRef channelRef = new ChannelRef("eap", repoUrl, gav, resolvedChannelFileUrl);
 
          return Arrays.asList(channelRef);
-      } catch (IOException | UnresolvedMavenArtifactException e) {
-         throw new ProvisioningException(e);
+      } catch (IOException e) {
+         throw new ArtifactResolutionException(e);
       }
    }
 
@@ -160,7 +158,7 @@ public class ProvisioningDefinition {
       private String channelRepo;
       private Set<String> includedPackages;
 
-      public ProvisioningDefinition build() throws ProvisioningException {
+      public ProvisioningDefinition build() throws ArtifactResolutionException {
          return new ProvisioningDefinition(this);
       }
 

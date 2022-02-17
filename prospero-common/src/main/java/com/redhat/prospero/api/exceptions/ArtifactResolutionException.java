@@ -15,11 +15,19 @@
  * limitations under the License.
  */
 
-package com.redhat.prospero.cli;
+package com.redhat.prospero.api.exceptions;
 
-public class OperationException extends Exception {
+public class ArtifactResolutionException extends OperationException {
 
-   public OperationException(String msg, Throwable e) {
+   public ArtifactResolutionException(String msg, Throwable e) {
       super(msg, e);
+   }
+
+   public ArtifactResolutionException(String msg) {
+      super(msg);
+   }
+
+   public ArtifactResolutionException(Throwable e) {
+      super(e);
    }
 }

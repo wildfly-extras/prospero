@@ -22,8 +22,8 @@ import java.nio.file.Paths;
 import java.util.Map;
 
 import com.redhat.prospero.api.MetadataException;
+import com.redhat.prospero.api.exceptions.OperationException;
 import org.jboss.galleon.ProvisioningException;
-import org.wildfly.channel.UnresolvedMavenArtifactException;
 
 class UpdateArgs {
 
@@ -42,7 +42,7 @@ class UpdateArgs {
       final Path targetPath = Paths.get(dir).toAbsolutePath();
       try {
          actionFactory.update(targetPath).doUpdateAll();
-      } catch (UnresolvedMavenArtifactException | MetadataException | ProvisioningException e) {
+      } catch (MetadataException | ProvisioningException e) {
          throw new OperationException("Error while executing update: " + e.getMessage(),  e);
       }
    }

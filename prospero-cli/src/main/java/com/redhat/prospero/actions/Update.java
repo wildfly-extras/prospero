@@ -29,6 +29,7 @@ import com.redhat.prospero.api.ArtifactUtils;
 import com.redhat.prospero.api.InstallationMetadata;
 import com.redhat.prospero.api.ArtifactChange;
 import com.redhat.prospero.api.MetadataException;
+import com.redhat.prospero.api.exceptions.ArtifactResolutionException;
 import com.redhat.prospero.cli.Console;
 import com.redhat.prospero.galleon.GalleonUtils;
 import com.redhat.prospero.galleon.ChannelMavenArtifactRepositoryManager;
@@ -79,7 +80,7 @@ public class Update {
         } return channels;
     }
 
-    public void doUpdateAll() throws ProvisioningException, MetadataException, UnresolvedMavenArtifactException {
+    public void doUpdateAll() throws ProvisioningException, MetadataException, ArtifactResolutionException {
         final List<ArtifactChange> updates = new ArrayList<>();
         final Manifest manifest = metadata.getManifest();
         System.out.println("Looking for updates");
@@ -104,14 +105,19 @@ public class Update {
         console.updatesComplete();
     }
 
-    public List<ArtifactChange> findUpdates(Artifact artifact) throws UnresolvedMavenArtifactException {
+    public List<ArtifactChange> findUpdates(Artifact artifact) throws ArtifactResolutionException {
         List<ArtifactChange> updates = new ArrayList<>();
 
         if (artifact == null) {
-            throw new UnresolvedMavenArtifactException(String.format("Artifact [%s:%s] not found", artifact.getGroupId(), artifact.getArtifactId()));
+            throw new ArtifactResolutionException(String.format("Artifact [%s:%s] not found", artifact.getGroupId(), artifact.getArtifactId()));
         }
 
-        final org.wildfly.channel.MavenArtifact latestVersion = channelSession.resolveLatestMavenArtifact(artifact.getGroupId(), artifact.getArtifactId(), artifact.getExtension(), artifact.getClassifier(), artifact.getVersion());
+        final org.wildfly.channel.MavenArtifact latestVersion;
+        try {
+            latestVersion = channelSession.resolveLatestMavenArtifact(artifact.getGroupId(), artifact.getArtifactId(), artifact.getExtension(), artifact.getClassifier(), artifact.getVersion());
+        } catch (UnresolvedMavenArtifactException e) {
+            throw new ArtifactResolutionException(String.format("Artifact [%s:%s] not found", artifact.getGroupId(), artifact.getArtifactId()), e);
+        }
         final Artifact latest = new DefaultArtifact(artifact.getGroupId(), artifact.getArtifactId(), latestVersion.getExtension(), latestVersion.getVersion());
 
 

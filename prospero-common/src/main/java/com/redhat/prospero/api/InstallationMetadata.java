@@ -17,6 +17,7 @@
 
 package com.redhat.prospero.api;
 
+import com.redhat.prospero.api.exceptions.ArtifactResolutionException;
 import com.redhat.prospero.installation.git.GitStorage;
 import com.redhat.prospero.model.ManifestXmlSupport;
 import com.redhat.prospero.model.XmlException;
@@ -24,7 +25,6 @@ import org.eclipse.aether.artifact.Artifact;
 import org.jboss.galleon.ProvisioningException;
 import org.jboss.galleon.config.ProvisioningConfig;
 import org.jboss.galleon.xml.ProvisioningXmlParser;
-import org.wildfly.channel.UnresolvedMavenArtifactException;
 
 import java.io.File;
 import java.io.FileInputStream;
@@ -66,7 +66,7 @@ public class InstallationMetadata {
             this.manifest = Manifest.parseManifest(manifestFile);
             this.channelRefs = ChannelRef.readChannels(channelsFile);
             this.provisioningConfig = ProvisioningXmlParser.parse(provisioningFile);
-        } catch (XmlException | IOException | ProvisioningException | UnresolvedMavenArtifactException e) {
+        } catch (XmlException | IOException | ProvisioningException | ArtifactResolutionException e) {
             throw new MetadataException("Error when parsing installation metadata", e);
         }
     }
@@ -82,7 +82,7 @@ public class InstallationMetadata {
             this.manifest = Manifest.parseManifest(manifestFile);
             this.channelRefs = ChannelRef.readChannels(channelsFile);
             this.provisioningConfig = ProvisioningXmlParser.parse(provisioningFile);
-        } catch (XmlException | IOException | ProvisioningException | UnresolvedMavenArtifactException e) {
+        } catch (XmlException | IOException | ProvisioningException | ArtifactResolutionException e) {
             throw new MetadataException("Error when parsing installation metadata", e);
         }
     }
