@@ -74,7 +74,7 @@ public class RestoringMavenRepository implements Repository {
 
                 return res.setFile(resolve(res));
             } catch (VersionRangeResolutionException e) {
-                e.printStackTrace();
+                throw new UnresolvedMavenArtifactException("Unable to resolve versions of " + artifact, e);
             }
         }
 

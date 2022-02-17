@@ -28,23 +28,17 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 
-import org.apache.maven.repository.internal.MavenRepositorySystemUtils;
+import com.redhat.prospero.wfchannel.WfChannelMavenResolver;
 import org.eclipse.aether.DefaultRepositorySystemSession;
 import org.eclipse.aether.RepositorySystem;
 import org.eclipse.aether.artifact.Artifact;
 import org.eclipse.aether.artifact.DefaultArtifact;
-import org.eclipse.aether.connector.basic.BasicRepositoryConnectorFactory;
-import org.eclipse.aether.impl.DefaultServiceLocator;
-import org.eclipse.aether.repository.LocalRepository;
 import org.eclipse.aether.repository.RemoteRepository;
 import org.eclipse.aether.resolution.ArtifactRequest;
 import org.eclipse.aether.resolution.ArtifactResolutionException;
 import org.eclipse.aether.resolution.VersionRangeRequest;
 import org.eclipse.aether.resolution.VersionRangeResolutionException;
 import org.eclipse.aether.resolution.VersionRangeResult;
-import org.eclipse.aether.spi.connector.RepositoryConnectorFactory;
-import org.eclipse.aether.spi.connector.transport.TransporterFactory;
-import org.eclipse.aether.transport.http.HttpTransporterFactory;
 import org.jboss.galleon.ProvisioningException;
 import org.wildfly.channel.UnresolvedMavenArtifactException;
 
@@ -118,8 +112,8 @@ public class ProvisioningDefinition {
 
    public static Artifact resolveChannelFile(DefaultArtifact artifact,
                             RemoteRepository repo) throws UnresolvedMavenArtifactException {
-      final RepositorySystem repositorySystem = newRepositorySystem();
-      final DefaultRepositorySystemSession repositorySession = newRepositorySystemSession(repositorySystem);
+      final RepositorySystem repositorySystem = WfChannelMavenResolver.newRepositorySystem();
+      final DefaultRepositorySystemSession repositorySession = WfChannelMavenResolver.newRepositorySystemSession(repositorySystem, true, null);
 
       final VersionRangeRequest request = new VersionRangeRequest();
       request.setArtifact(artifact);
@@ -163,28 +157,6 @@ public class ProvisioningDefinition {
       } catch (IOException | UnresolvedMavenArtifactException e) {
          throw new ProvisioningException(e);
       }
-   }
-
-   protected static RepositorySystem newRepositorySystem() {
-      DefaultServiceLocator locator = MavenRepositorySystemUtils.newServiceLocator();
-      locator.addService(RepositoryConnectorFactory.class, BasicRepositoryConnectorFactory.class);
-      locator.addService(TransporterFactory.class, HttpTransporterFactory.class);
-      locator.setErrorHandler(new DefaultServiceLocator.ErrorHandler() {
-         @Override
-         public void serviceCreationFailed(Class<?> type, Class<?> impl, Throwable exception) {
-            exception.printStackTrace();
-         }
-      });
-      return locator.getService(RepositorySystem.class);
-   }
-
-   private static DefaultRepositorySystemSession newRepositorySystemSession(RepositorySystem system) {
-      DefaultRepositorySystemSession session = MavenRepositorySystemUtils.newSession();
-
-      String location = System.getProperty("user.home") + "/.m2/repository/";
-      LocalRepository localRepo = new LocalRepository(location);
-      session.setLocalRepositoryManager(system.newLocalRepositoryManager(session, localRepo));
-      return session;
    }
 
    public static class Builder {

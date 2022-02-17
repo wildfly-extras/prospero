@@ -68,12 +68,6 @@ public class BootstrapMavenResolverFactory implements MavenVersionsResolver.Fact
       DefaultServiceLocator locator = MavenRepositorySystemUtils.newServiceLocator();
       locator.addService(RepositoryConnectorFactory.class, BasicRepositoryConnectorFactory.class);
       locator.addService(TransporterFactory.class, HttpTransporterFactory.class);
-      locator.setErrorHandler(new DefaultServiceLocator.ErrorHandler() {
-         @Override
-         public void serviceCreationFailed(Class<?> type, Class<?> impl, Throwable exception) {
-            exception.printStackTrace();
-         }
-      });
       return locator.getService(RepositorySystem.class);
    }
 
@@ -143,9 +137,8 @@ public class BootstrapMavenResolverFactory implements MavenVersionsResolver.Fact
             ArtifactResult result = system.resolveArtifact(session, request);
             return result.getArtifact().getFile();
          } catch (ArtifactResolutionException e) {
-            UnresolvedMavenArtifactException umae = new UnresolvedMavenArtifactException();
-            umae.initCause(e);
-            throw umae;
+            throw new UnresolvedMavenArtifactException("Unable to resolve artifact: " + artifact, e);
+
          }
       }
    }

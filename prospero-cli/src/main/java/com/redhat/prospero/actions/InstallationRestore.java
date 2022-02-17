@@ -37,7 +37,6 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.stream.Collectors;
 
 import static com.redhat.prospero.api.ArtifactUtils.from;
 import static com.redhat.prospero.galleon.GalleonUtils.MAVEN_REPO_LOCAL;
@@ -65,15 +64,7 @@ public class InstallationRestore {
         }
 
         final InstallationMetadata metadataBundle = InstallationMetadata.importMetadata(metadataBundleZip);
-
-        final List<ChannelRef> channelRefs = metadataBundle.getChannels();
-        final List<Channel> channels = channelRefs.stream().map(ref-> {
-            try {
-                return ChannelMapper.from(new URL(ref.getUrl()));
-            } catch (MalformedURLException e) {
-                throw new RuntimeException(e);
-            }
-        }).collect(Collectors.toList());
+        final List<Channel> channels = mapToChannels(metadataBundle.getChannels());
 
         final WfChannelMavenResolverFactory factory = new WfChannelMavenResolverFactory();
         final ChannelMavenArtifactRepositoryManager repoManager = new ChannelMavenArtifactRepositoryManager(channels, factory, metadataBundle.getManifest());
@@ -97,5 +88,16 @@ public class InstallationRestore {
         }
 
         new InstallationMetadata(installDir, artifacts, channelRefs).writeFiles();
+    }
+
+    private List<Channel> mapToChannels(List<ChannelRef> channelRefs) throws MetadataException {
+        final List<Channel> channels = new ArrayList<>();
+        for (ChannelRef ref : channelRefs) {
+            try {
+                channels.add(ChannelMapper.from(new URL(ref.getUrl())));
+            } catch (MalformedURLException e) {
+                throw new MetadataException("Unable to resolve channel configuration", e);
+            }
+        } return channels;
     }
 }

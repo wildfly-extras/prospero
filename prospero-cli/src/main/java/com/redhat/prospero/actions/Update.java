@@ -60,20 +60,23 @@ public class Update {
 
     public Update(Path installDir, Console console) throws ProvisioningException, MetadataException {
         this.metadata = new InstallationMetadata(installDir);
-        final List<ChannelRef> channelRefs = metadata.getChannels();
-        final List<Channel> channels = channelRefs.stream().map(ref-> {
-            try {
-                return ChannelMapper.from(new URL(ref.getUrl()));
-            } catch (MalformedURLException e) {
-                throw new RuntimeException(e);
-            }
-        }).collect(Collectors.toList());
-
+        final List<Channel> channels = mapToChannels(metadata.getChannels());
         this.factory = new WfChannelMavenResolverFactory();
         this.channelSession = new ChannelSession(channels, factory);
         this.maven = new ChannelMavenArtifactRepositoryManager(channelSession);
         this.provMgr = GalleonUtils.getProvisioningManager(installDir, maven);
         this.console = console;
+    }
+
+    private List<Channel> mapToChannels(List<ChannelRef> channelRefs) throws MetadataException {
+        final List<Channel> channels = new ArrayList<>();
+        for (ChannelRef ref : channelRefs) {
+            try {
+                channels.add(ChannelMapper.from(new URL(ref.getUrl())));
+            } catch (MalformedURLException e) {
+                throw new MetadataException("Unable to resolve channel configuration", e);
+            }
+        } return channels;
     }
 
     public void doUpdateAll() throws ProvisioningException, MetadataException, UnresolvedMavenArtifactException {

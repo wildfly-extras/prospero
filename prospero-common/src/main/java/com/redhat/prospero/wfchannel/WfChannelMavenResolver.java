@@ -17,6 +17,7 @@
 
 package com.redhat.prospero.wfchannel;
 
+import com.redhat.prospero.api.ProvisioningRuntimeException;
 import org.apache.maven.repository.internal.MavenRepositorySystemUtils;
 import org.eclipse.aether.DefaultRepositorySystemSession;
 import org.eclipse.aether.RepositorySystem;
@@ -100,20 +101,18 @@ public class WfChannelMavenResolver implements MavenVersionsResolver {
             ArtifactResult result = system.resolveArtifact(session, request);
             return result.getArtifact().getFile();
         } catch (ArtifactResolutionException e) {
-            UnresolvedMavenArtifactException umae = new UnresolvedMavenArtifactException();
-            umae.initCause(e);
-            throw umae;
+            throw new UnresolvedMavenArtifactException("Unable to resolve artifact " + artifact, e);
         }
     }
 
     public static RepositorySystem newRepositorySystem() {
-        DefaultServiceLocator locator = MavenRepositorySystemUtils.newServiceLocator();
+        final DefaultServiceLocator locator = MavenRepositorySystemUtils.newServiceLocator();
         locator.addService(RepositoryConnectorFactory.class, BasicRepositoryConnectorFactory.class);
         locator.addService(TransporterFactory.class, HttpTransporterFactory.class);
         locator.setErrorHandler(new DefaultServiceLocator.ErrorHandler() {
             @Override
             public void serviceCreationFailed(Class<?> type, Class<?> impl, Throwable exception) {
-                exception.printStackTrace();
+                throw new ProvisioningRuntimeException("Failed to initiate maven repository system");
             }
         });
         return locator.getService(RepositorySystem.class);

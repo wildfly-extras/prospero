@@ -27,6 +27,7 @@ import java.util.Set;
 import com.redhat.prospero.actions.Installation;
 import com.redhat.prospero.actions.Update;
 import com.redhat.prospero.api.MetadataException;
+import com.redhat.prospero.api.ProvisioningRuntimeException;
 import org.jboss.galleon.ProvisioningException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -60,6 +61,10 @@ public class CliMain {
       } catch (OperationException e) {
          System.err.println(e.getMessage());
          logger.error("Operation error", e);
+         System.exit(1);
+      } catch (ProvisioningRuntimeException e) {
+         System.err.println(e.getMessage());
+         logger.error("Runtime error", e);
          System.exit(1);
       }
    }

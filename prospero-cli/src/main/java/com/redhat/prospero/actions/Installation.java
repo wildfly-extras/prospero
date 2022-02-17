@@ -73,13 +73,12 @@ public class Installation {
      * Installs feature pack defined by {@code fpl} in {@code installDir}. If {@code fpl} doesn't include version,
      * the newest available version will be used.
      *
-     * @param fpl
-     * @param channelRefs
+     * @param provisioningDefinition
      * @throws ProvisioningException
      * @throws MetadataException
      */
     public void provision(ProvisioningDefinition provisioningDefinition) throws ProvisioningException, MetadataException {
-        final List<Channel> channels = getChannels(provisioningDefinition.getChannelRefs());
+        final List<Channel> channels = mapToChannels(provisioningDefinition.getChannelRefs());
 
         final WfChannelMavenResolverFactory factory = new WfChannelMavenResolverFactory();
         final ChannelMavenArtifactRepositoryManager repoManager = new ChannelMavenArtifactRepositoryManager(channels, factory);
@@ -123,7 +122,7 @@ public class Installation {
         if (Files.exists(installDir)) {
             throw new ProvisioningException("Installation dir " + installDir + " already exists");
         }
-        final List<Channel> channels = getChannels(channelRefs);
+        final List<Channel> channels = mapToChannels(channelRefs);
 
         final WfChannelMavenResolverFactory factory = new WfChannelMavenResolverFactory();
         final ChannelMavenArtifactRepositoryManager repoManager = new ChannelMavenArtifactRepositoryManager(channels, factory);
@@ -139,14 +138,15 @@ public class Installation {
         writeProsperoMetadata(installDir, repoManager, channelRefs);
     }
 
-    private List<Channel> getChannels(List<ChannelRef> channelRefs) {
-        return channelRefs.stream().map(ref -> {
+    private List<Channel> mapToChannels(List<ChannelRef> channelRefs) throws MetadataException {
+        final List<Channel> channels = new ArrayList<>();
+        for (ChannelRef ref : channelRefs) {
             try {
-                return ChannelMapper.from(new URL(ref.getUrl()));
+                channels.add(ChannelMapper.from(new URL(ref.getUrl())));
             } catch (MalformedURLException e) {
-                throw new RuntimeException(e);
+                throw new MetadataException("Unable to resolve channel configuration", e);
             }
-        }).collect(Collectors.toList());
+        } return channels;
     }
 
     private void writeProsperoMetadata(Path home, ChannelMavenArtifactRepositoryManager maven, List<ChannelRef> channelRefs) throws MetadataException {
