@@ -28,8 +28,12 @@ import com.redhat.prospero.actions.Installation;
 import com.redhat.prospero.actions.Update;
 import com.redhat.prospero.api.MetadataException;
 import org.jboss.galleon.ProvisioningException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class CliMain {
+
+   private static final Logger logger = LoggerFactory.getLogger(CliMain.class);
 
    public static final String TARGET_PATH_ARG = "dir";
    public static final String FPL_ARG = "fpl";
@@ -50,12 +54,17 @@ public class CliMain {
       try {
          new CliMain(new ActionFactory()).handleArgs(args);
       } catch (ArgumentParsingException e) {
-         System.out.println(e.getMessage());
+         System.err.println(e.getMessage());
+         logger.error("Argument parsing error", e);
+         System.exit(1);
+      } catch (OperationException e) {
+         System.err.println(e.getMessage());
+         logger.error("Operation error", e);
          System.exit(1);
       }
    }
 
-   public void handleArgs(String[] args) throws ArgumentParsingException {
+   public void handleArgs(String[] args) throws ArgumentParsingException, OperationException {
       final String operation = args[0];
       if (!("install".equals(operation) || "update".equals(operation))) {
          throw new ArgumentParsingException("Unknown operation " + operation);
@@ -73,11 +82,11 @@ public class CliMain {
       }
    }
 
-   private void doUpdate(Map<String, String> parsedArgs) throws ArgumentParsingException {
+   private void doUpdate(Map<String, String> parsedArgs) throws ArgumentParsingException, OperationException {
       new UpdateArgs(actionFactory).handleArgs(parsedArgs);
    }
 
-   private void doInstall(Map<String, String> parsedArgs) throws ArgumentParsingException {
+   private void doInstall(Map<String, String> parsedArgs) throws ArgumentParsingException, OperationException {
       new InstallArgs(actionFactory).handleArgs(parsedArgs);
    }
 

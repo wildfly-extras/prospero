@@ -105,7 +105,7 @@ public class SimpleInstallationTest {
 
     @Test
     public void installWildflyCoreFromInstallationFile() throws Exception {
-        final URL channelFile = TestUtil.prepareChannelFileAsUrl("local-repo-desc.yaml");
+        final Path channelFile = TestUtil.prepareChannelFile("local-repo-desc.yaml");
         final File installationFile = new File(this.getClass().getClassLoader().getResource("provisioning.xml").toURI());
         final List<ChannelRef> channelRefs = ChannelRef.readChannels(channelFile);
 

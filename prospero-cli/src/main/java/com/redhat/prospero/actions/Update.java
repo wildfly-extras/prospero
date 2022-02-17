@@ -17,7 +17,6 @@
 
 package com.redhat.prospero.actions;
 
-import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.nio.file.Path;
@@ -33,10 +32,8 @@ import com.redhat.prospero.api.MetadataException;
 import com.redhat.prospero.cli.Console;
 import com.redhat.prospero.galleon.GalleonUtils;
 import com.redhat.prospero.galleon.ChannelMavenArtifactRepositoryManager;
-import com.redhat.prospero.api.ArtifactNotFoundException;
 import com.redhat.prospero.api.ChannelRef;
 import com.redhat.prospero.api.Manifest;
-import com.redhat.prospero.model.XmlException;
 import com.redhat.prospero.wfchannel.WfChannelMavenResolverFactory;
 import org.eclipse.aether.artifact.Artifact;
 import org.eclipse.aether.artifact.DefaultArtifact;
@@ -79,7 +76,7 @@ public class Update {
         this.console = console;
     }
 
-    public void doUpdateAll() throws ArtifactNotFoundException, XmlException, ProvisioningException, IOException, MetadataException, UnresolvedMavenArtifactException {
+    public void doUpdateAll() throws ProvisioningException, MetadataException, UnresolvedMavenArtifactException {
         final List<ArtifactChange> updates = new ArrayList<>();
         final Manifest manifest = metadata.getManifest();
         System.out.println("Looking for updates");
@@ -104,11 +101,11 @@ public class Update {
         console.updatesComplete();
     }
 
-    public List<ArtifactChange> findUpdates(Artifact artifact) throws ArtifactNotFoundException, UnresolvedMavenArtifactException {
+    public List<ArtifactChange> findUpdates(Artifact artifact) throws UnresolvedMavenArtifactException {
         List<ArtifactChange> updates = new ArrayList<>();
 
         if (artifact == null) {
-            throw new ArtifactNotFoundException(String.format("Artifact [%s:%s] not found", artifact.getGroupId(), artifact.getArtifactId()));
+            throw new UnresolvedMavenArtifactException(String.format("Artifact [%s:%s] not found", artifact.getGroupId(), artifact.getArtifactId()));
         }
 
         final org.wildfly.channel.MavenArtifact latestVersion = channelSession.resolveLatestMavenArtifact(artifact.getGroupId(), artifact.getArtifactId(), artifact.getExtension(), artifact.getClassifier(), artifact.getVersion());
@@ -124,11 +121,11 @@ public class Update {
         return updates;
     }
 
-    private ProvisioningPlan findFPUpdates() throws ProvisioningException, IOException {
+    private ProvisioningPlan findFPUpdates() throws ProvisioningException {
         return provMgr.getUpdates(true);
     }
 
-    private Set<Artifact> applyFpUpdates(ProvisioningPlan updates) throws ProvisioningException, IOException {
+    private Set<Artifact> applyFpUpdates(ProvisioningPlan updates) throws ProvisioningException {
         try {
             System.setProperty(MAVEN_REPO_LOCAL, factory.getProvisioningRepo().toAbsolutePath().toString());
             provMgr.apply(updates);

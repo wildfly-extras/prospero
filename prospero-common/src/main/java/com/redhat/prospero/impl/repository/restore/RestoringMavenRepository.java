@@ -17,7 +17,6 @@
 
 package com.redhat.prospero.impl.repository.restore;
 
-import com.redhat.prospero.api.ArtifactNotFoundException;
 import com.redhat.prospero.api.Manifest;
 import com.redhat.prospero.api.Repository;
 import com.redhat.prospero.api.Resolver;
@@ -31,6 +30,7 @@ import org.eclipse.aether.util.version.GenericVersionScheme;
 import org.eclipse.aether.version.InvalidVersionSpecificationException;
 import org.eclipse.aether.version.Version;
 import org.eclipse.aether.version.VersionScheme;
+import org.wildfly.channel.UnresolvedMavenArtifactException;
 
 import java.io.File;
 import java.util.Arrays;
@@ -48,24 +48,24 @@ public class RestoringMavenRepository implements Repository {
     }
 
     @Override
-    public File resolve(Artifact artifact) throws ArtifactNotFoundException {
+    public File resolve(Artifact artifact) throws UnresolvedMavenArtifactException {
         try {
             final ArtifactResult result = resolver.resolve(artifact);
 
             if (!result.isResolved()) {
-                throw new ArtifactNotFoundException("Failed to resolve " + artifact);
+                throw new UnresolvedMavenArtifactException("Failed to resolve " + artifact);
             }
             if (result.isMissing()) {
-                throw new ArtifactNotFoundException("Repository is missing artifact " + artifact);
+                throw new UnresolvedMavenArtifactException("Repository is missing artifact " + artifact);
             }
             return result.getArtifact().getFile();
         } catch (ArtifactResolutionException e) {
-            throw new ArtifactNotFoundException(String.format("Unable to resolve artifact %s in configured maven repositories.", artifact), e);
+            throw new UnresolvedMavenArtifactException(String.format("Unable to resolve artifact %s in configured maven repositories.", artifact), e);
         }
     }
 
     @Override
-    public Artifact resolveLatestVersionOf(Artifact artifact) throws ArtifactNotFoundException {
+    public Artifact resolveLatestVersionOf(Artifact artifact) throws UnresolvedMavenArtifactException {
         if (artifact.getArtifactId().equals("community-universe") || artifact.getArtifactId().equals("wildfly-producers")) {
             try {
                 final VersionRangeResult versionRange = resolver.getVersionRange(artifact);
@@ -80,24 +80,24 @@ public class RestoringMavenRepository implements Repository {
 
         final Artifact artifactInManifest = manifest.find(artifact);
         if (artifactInManifest == null) {
-            throw new ArtifactNotFoundException(String.format("Artifact %s not found in provided manifest", artifact));
+            throw new UnresolvedMavenArtifactException(String.format("Artifact %s not found in provided manifest", artifact));
         }
 
         return artifactInManifest.setFile(resolve(artifactInManifest));
     }
 
     @Override
-    public VersionRangeResult getVersionRange(Artifact artifact) throws ArtifactNotFoundException {
+    public VersionRangeResult getVersionRange(Artifact artifact) throws UnresolvedMavenArtifactException {
         if (artifact.getArtifactId().equals("community-universe") || artifact.getArtifactId().equals("wildfly-producers")) {
             try {
                 return resolver.getVersionRange(artifact);
             } catch (VersionRangeResolutionException e) {
-                throw new ArtifactNotFoundException("Failed to resolve " + artifact, e);
+                throw new UnresolvedMavenArtifactException("Failed to resolve " + artifact, e);
             }
         }
         final Artifact artifactInManifest = manifest.find(artifact);
         if (artifactInManifest == null) {
-            throw new ArtifactNotFoundException(String.format("Artifact %s not found in provided manifest", artifact));
+            throw new UnresolvedMavenArtifactException(String.format("Artifact %s not found in provided manifest", artifact));
         }
 
         // check it exist in the repositories

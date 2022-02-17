@@ -18,7 +18,6 @@
 package com.redhat.prospero.api;
 
 import java.io.IOException;
-import java.net.MalformedURLException;
 import java.nio.file.Path;
 import java.util.Arrays;
 import java.util.Collections;
@@ -46,6 +45,8 @@ import org.eclipse.aether.resolution.VersionRangeResult;
 import org.eclipse.aether.spi.connector.RepositoryConnectorFactory;
 import org.eclipse.aether.spi.connector.transport.TransporterFactory;
 import org.eclipse.aether.transport.http.HttpTransporterFactory;
+import org.jboss.galleon.ProvisioningException;
+import org.wildfly.channel.UnresolvedMavenArtifactException;
 
 public class ProvisioningDefinition {
 
@@ -58,7 +59,7 @@ public class ProvisioningDefinition {
       CHANNEL_URLS.put("central", "https://repo1.maven.org/maven2/");
    }
 
-   private ProvisioningDefinition(Builder builder) throws IOException {
+   private ProvisioningDefinition(Builder builder) throws ProvisioningException {
       final String fpl = builder.fpl;
       final Optional<String> channelRepo = Optional.ofNullable(builder.channelRepo);
       final Optional<Path> channelsFile = Optional.ofNullable(builder.channelsFile);
@@ -66,32 +67,36 @@ public class ProvisioningDefinition {
 
       this.includedPackages.addAll(includedPackages.orElse(Collections.emptySet()));
 
-      if (fpl.equals("eap")) {
-         this.fpl = "org.jboss.eap:wildfly-ee-galleon-pack";
-         this.includedPackages.add("docs.examples.configs");
+      try {
+         if (fpl.equals("eap")) {
+            this.fpl = "org.jboss.eap:wildfly-ee-galleon-pack";
+            this.includedPackages.add("docs.examples.configs");
 
-         if (!channelsFile.isPresent()) {
-            final DefaultArtifact artifact = new DefaultArtifact("org.wildfly.channels", "eap-74", "channel", "yaml", "[7.4,)");
-            final String repoUrl = channelRepo.orElse(CHANNEL_URLS.get("mrrc"));
-            final RemoteRepository repo = new RemoteRepository.Builder("mrrc", "default", repoUrl).build();
-            this.channels = readLatestChannelFromMaven(artifact, repoUrl, repo);
+            if (!channelsFile.isPresent()) {
+               final DefaultArtifact artifact = new DefaultArtifact("org.wildfly.channels", "eap-74", "channel", "yaml", "[7.4,)");
+               final String repoUrl = channelRepo.orElse(CHANNEL_URLS.get("mrrc"));
+               final RemoteRepository repo = new RemoteRepository.Builder("mrrc", "default", repoUrl).build();
+               this.channels = readLatestChannelFromMaven(artifact, repoUrl, repo);
+            } else {
+               this.channels = ChannelRef.readChannels(channelsFile.get());
+            }
+         } else if (fpl.equals("wildfly")) {
+            this.fpl = "org.wildfly:wildfly-ee-galleon-pack";
+
+            if (!channelsFile.isPresent()) {
+               final DefaultArtifact artifact = new DefaultArtifact("org.wildfly.channels", "wildfly", "channel", "yaml", "[26.1.0,)");
+               final String repoUrl = channelRepo.orElse(CHANNEL_URLS.get("central"));
+               final RemoteRepository repo = new RemoteRepository.Builder("central", "default", repoUrl).build();
+               this.channels = readLatestChannelFromMaven(artifact, repoUrl, repo);
+            } else {
+               this.channels = ChannelRef.readChannels(channelsFile.get());
+            }
          } else {
+            this.fpl = fpl;
             this.channels = ChannelRef.readChannels(channelsFile.get());
          }
-      } else if (fpl.equals("wildfly")) {
-         this.fpl = "org.wildfly:wildfly-ee-galleon-pack";
-
-         if (!channelsFile.isPresent()) {
-            final DefaultArtifact artifact = new DefaultArtifact("org.wildfly.channels", "wildfly", "channel", "yaml", "[26.1.0,)");
-            final String repoUrl = channelRepo.orElse(CHANNEL_URLS.get("central"));
-            final RemoteRepository repo = new RemoteRepository.Builder("central", "default", repoUrl).build();
-            this.channels = readLatestChannelFromMaven(artifact, repoUrl, repo);
-         } else {
-            this.channels = ChannelRef.readChannels(channelsFile.get());
-         }
-      } else {
-         this.fpl = fpl;
-         this.channels = ChannelRef.readChannels(channelsFile.get());
+      } catch (IOException | UnresolvedMavenArtifactException e) {
+         throw new ProvisioningException("Unable to resolve channel definition", e);
       }
    }
 
@@ -112,14 +117,19 @@ public class ProvisioningDefinition {
    }
 
    public static Artifact resolveChannelFile(DefaultArtifact artifact,
-                            RemoteRepository repo) throws VersionRangeResolutionException, MalformedURLException, ArtifactResolutionException {
+                            RemoteRepository repo) throws UnresolvedMavenArtifactException {
       final RepositorySystem repositorySystem = newRepositorySystem();
       final DefaultRepositorySystemSession repositorySession = newRepositorySystemSession(repositorySystem);
 
       final VersionRangeRequest request = new VersionRangeRequest();
       request.setArtifact(artifact);
       request.setRepositories(Arrays.asList(repo));
-      final VersionRangeResult versionRangeResult = repositorySystem.resolveVersionRange(repositorySession, request);
+      final VersionRangeResult versionRangeResult;
+      try {
+         versionRangeResult = repositorySystem.resolveVersionRange(repositorySession, request);
+      } catch (VersionRangeResolutionException e) {
+         throw new UnresolvedMavenArtifactException("Unable to resolve versions for " + artifact, e);
+      }
       // TODO: pick latest version using Comparator
       if (versionRangeResult == null) {
          System.out.println("No version found for " + artifact);
@@ -133,12 +143,16 @@ public class ProvisioningDefinition {
       final Artifact latestArtifact = artifact.setVersion(versionRangeResult.getHighestVersion().toString());
 
       final ArtifactRequest artifactRequest = new ArtifactRequest(latestArtifact, Arrays.asList(repo), null);
-      return repositorySystem.resolveArtifact(repositorySession, artifactRequest).getArtifact();
+      try {
+         return repositorySystem.resolveArtifact(repositorySession, artifactRequest).getArtifact();
+      } catch (ArtifactResolutionException e) {
+         throw new UnresolvedMavenArtifactException("Unable to resolve " + artifact, e);
+      }
    }
 
    protected List<ChannelRef> readLatestChannelFromMaven(DefaultArtifact artifact,
                                                          String repoUrl,
-                                                         RemoteRepository repo) throws IOException {
+                                                         RemoteRepository repo) throws ProvisioningException {
       try {
          final Artifact resolvedArtifact = resolveChannelFile(artifact, repo);
          final String resolvedChannelFileUrl = resolvedArtifact.getFile().toURI().toURL().toString();
@@ -146,8 +160,8 @@ public class ProvisioningDefinition {
          ChannelRef channelRef = new ChannelRef("eap", repoUrl, gav, resolvedChannelFileUrl);
 
          return Arrays.asList(channelRef);
-      } catch (MalformedURLException | VersionRangeResolutionException | ArtifactResolutionException e) {
-         throw new IOException(e);
+      } catch (IOException | UnresolvedMavenArtifactException e) {
+         throw new ProvisioningException(e);
       }
    }
 
@@ -179,7 +193,7 @@ public class ProvisioningDefinition {
       private String channelRepo;
       private Set<String> includedPackages;
 
-      public ProvisioningDefinition build() throws IOException {
+      public ProvisioningDefinition build() throws ProvisioningException {
          return new ProvisioningDefinition(this);
       }
 

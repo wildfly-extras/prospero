@@ -11,6 +11,8 @@ import org.wildfly.channel.ChannelMapper;
 
 import java.net.MalformedURLException;
 import java.net.URL;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -24,7 +26,7 @@ public class FeaturePackLocationParserTest {
 
 //    @Before
     public void setUp() throws Exception {
-        final URL channelsFile = FeaturePackLocationParserTest.class.getResource("/channels/eap/channels-eap74.json");
+        final Path channelsFile = Paths.get(FeaturePackLocationParserTest.class.getResource("/channels/eap/channels-eap74.json").toURI());
 
         final List<ChannelRef> channelRefs = ChannelRef.readChannels(channelsFile);
         final List<Channel> channels = channelRefs.stream().map(ref-> {

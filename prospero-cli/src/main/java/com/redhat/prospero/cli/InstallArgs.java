@@ -35,7 +35,7 @@ class InstallArgs {
       this.actionFactory = actionFactory;
    }
 
-   void handleArgs(Map<String, String> parsedArgs) throws ArgumentParsingException {
+   void handleArgs(Map<String, String> parsedArgs) throws ArgumentParsingException, OperationException {
       String dir = parsedArgs.get(CliMain.TARGET_PATH_ARG);
       String fpl = parsedArgs.get(CliMain.FPL_ARG);
       String channelFile = parsedArgs.get(CliMain.CHANNEL_FILE_ARG);
@@ -63,10 +63,8 @@ class InstallArgs {
             .build();
 
          actionFactory.install(installationDir).provision(provisioningDefinition);
-      } catch (IOException e) {
-         e.printStackTrace();
       } catch (ProvisioningException | MetadataException e) {
-         e.printStackTrace();
+         throw new OperationException("Error while executing installation: " + e.getMessage(),  e);
       }
    }
 }

@@ -35,7 +35,7 @@ public class WfChannelMavenResolverFactory implements MavenVersionsResolver.Fact
             provisioningRepo = Files.createTempDirectory("provisioning-repo");
             provisioningRepo.toFile().deleteOnExit();
         } catch (IOException e) {
-            throw new ProvisioningException(e);
+            throw new ProvisioningException("Unable to create provisioning repository folder.", e);
         }
     }
 

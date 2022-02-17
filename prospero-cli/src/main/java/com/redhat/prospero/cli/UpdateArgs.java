@@ -17,14 +17,11 @@
 
 package com.redhat.prospero.cli;
 
-import java.io.IOException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Map;
 
-import com.redhat.prospero.api.ArtifactNotFoundException;
 import com.redhat.prospero.api.MetadataException;
-import com.redhat.prospero.model.XmlException;
 import org.jboss.galleon.ProvisioningException;
 import org.wildfly.channel.UnresolvedMavenArtifactException;
 
@@ -36,7 +33,7 @@ class UpdateArgs {
       this.actionFactory = actionFactory;
    }
 
-   public void handleArgs(Map<String, String> parsedArgs) throws ArgumentParsingException {
+   public void handleArgs(Map<String, String> parsedArgs) throws ArgumentParsingException, OperationException {
       String dir = parsedArgs.get(CliMain.TARGET_PATH_ARG);
       if (dir == null || dir.isEmpty()) {
          throw new ArgumentParsingException("Target dir argument (--%s) need to be set on update command", CliMain.TARGET_PATH_ARG);
@@ -45,8 +42,8 @@ class UpdateArgs {
       final Path targetPath = Paths.get(dir).toAbsolutePath();
       try {
          actionFactory.update(targetPath).doUpdateAll();
-      } catch (ArtifactNotFoundException | UnresolvedMavenArtifactException | MetadataException | IOException | ProvisioningException | XmlException e) {
-         e.printStackTrace();
+      } catch (UnresolvedMavenArtifactException | MetadataException | ProvisioningException e) {
+         throw new OperationException("Error while executing update: " + e.getMessage(),  e);
       }
    }
 }

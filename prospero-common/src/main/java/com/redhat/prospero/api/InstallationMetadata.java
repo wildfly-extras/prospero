@@ -24,6 +24,7 @@ import org.eclipse.aether.artifact.Artifact;
 import org.jboss.galleon.ProvisioningException;
 import org.jboss.galleon.config.ProvisioningConfig;
 import org.jboss.galleon.xml.ProvisioningXmlParser;
+import org.wildfly.channel.UnresolvedMavenArtifactException;
 
 import java.io.File;
 import java.io.FileInputStream;
@@ -65,7 +66,7 @@ public class InstallationMetadata {
             this.manifest = Manifest.parseManifest(manifestFile);
             this.channelRefs = ChannelRef.readChannels(channelsFile);
             this.provisioningConfig = ProvisioningXmlParser.parse(provisioningFile);
-        } catch (XmlException | IOException | ProvisioningException e) {
+        } catch (XmlException | IOException | ProvisioningException | UnresolvedMavenArtifactException e) {
             throw new MetadataException("Error when parsing installation metadata", e);
         }
     }
@@ -81,7 +82,7 @@ public class InstallationMetadata {
             this.manifest = Manifest.parseManifest(manifestFile);
             this.channelRefs = ChannelRef.readChannels(channelsFile);
             this.provisioningConfig = ProvisioningXmlParser.parse(provisioningFile);
-        } catch (XmlException | IOException | ProvisioningException e) {
+        } catch (XmlException | IOException | ProvisioningException | UnresolvedMavenArtifactException e) {
             throw new MetadataException("Error when parsing installation metadata", e);
         }
     }

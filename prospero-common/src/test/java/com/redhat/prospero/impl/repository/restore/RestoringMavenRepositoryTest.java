@@ -17,7 +17,6 @@
 
 package com.redhat.prospero.impl.repository.restore;
 
-import com.redhat.prospero.api.ArtifactNotFoundException;
 import com.redhat.prospero.api.Manifest;
 import com.redhat.prospero.testing.util.MockResolver;
 import org.eclipse.aether.artifact.Artifact;
@@ -27,6 +26,7 @@ import org.eclipse.aether.util.version.GenericVersionScheme;
 import org.eclipse.aether.version.VersionScheme;
 import org.junit.Before;
 import org.junit.Test;
+import org.wildfly.channel.UnresolvedMavenArtifactException;
 
 import java.util.Arrays;
 import java.util.Collections;
@@ -62,7 +62,7 @@ public class RestoringMavenRepositoryTest {
     }
 
 
-    @Test(expected = ArtifactNotFoundException.class)
+    @Test(expected = UnresolvedMavenArtifactException.class)
     public void resolveLatesVersion_throwsExceptionIfRequestedArtifactNotInManifest() throws Exception {
         List<Artifact> artifacts = Collections.emptyList();
         final RestoringMavenRepository repo = new RestoringMavenRepository(mockResolver, new Manifest(artifacts, null));
@@ -71,7 +71,7 @@ public class RestoringMavenRepositoryTest {
         repo.resolveLatestVersionOf(new DefaultArtifact("foo:bar:1.2.2.Final"));
     }
 
-    @Test(expected = ArtifactNotFoundException.class)
+    @Test(expected = UnresolvedMavenArtifactException.class)
     public void resolveLatestVersion_throwsExceptionIfArtifactVersionInManifestCannotBeFoundInResolver() throws Exception {
         final DefaultArtifact expected = new DefaultArtifact("foo:bar:1.2.5.Final");
         List<Artifact> artifacts = Arrays.asList(expected);
@@ -93,7 +93,7 @@ public class RestoringMavenRepositoryTest {
         assertEquals(Arrays.asList(versionScheme.parseVersion("1.2.3.Final")), versionRange.getVersions());
     }
 
-    @Test(expected = ArtifactNotFoundException.class)
+    @Test(expected = UnresolvedMavenArtifactException.class)
     public void getVersion_throwsExceptionIfArtifactVersionInManifestCannotBeFoundInResolver() throws Exception {
         final DefaultArtifact expected = new DefaultArtifact("foo:bar:1.2.5.Final");
         List<Artifact> artifacts = Arrays.asList(expected);
@@ -103,7 +103,7 @@ public class RestoringMavenRepositoryTest {
         repo.getVersionRange(new DefaultArtifact("foo:bar:1.2.2.Final"));
     }
 
-    @Test(expected = ArtifactNotFoundException.class)
+    @Test(expected = UnresolvedMavenArtifactException.class)
     public void getVersion_throwsExceptionIfRequestedArtifactNotInManifest() throws Exception {
         List<Artifact> artifacts = Collections.emptyList();
         final RestoringMavenRepository repo = new RestoringMavenRepository(mockResolver, new Manifest(artifacts, null));
