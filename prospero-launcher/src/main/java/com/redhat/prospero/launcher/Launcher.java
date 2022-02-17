@@ -25,7 +25,6 @@ import java.io.IOException;
 import java.io.PrintWriter;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
-import java.net.MalformedURLException;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URL;
@@ -42,9 +41,22 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 public class Launcher {
 
-   public static void main(String[] args) throws LauncherException, IOException {
+   private static final Logger logger = LoggerFactory.getLogger(Launcher.class);
+   public static void main(String[] args) {
+      try {
+         executeCommand(args);
+      } catch (LauncherException | IOException e) {
+         System.err.println("Failed to launch installer: " + e.getMessage());
+         logger.error("Failed to launch installer", e);
+      }
+   }
+
+   private static void executeCommand(String[] args) throws LauncherException, IOException {
       final Path userHome = Paths.get(System.getProperty("user.home"));
       final Path installerLib = userHome.resolve(".jboss-installer").resolve("lib");
 
