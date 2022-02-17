@@ -125,14 +125,9 @@ public class ProvisioningDefinition {
          throw new UnresolvedMavenArtifactException("Unable to resolve versions for " + artifact, e);
       }
       // TODO: pick latest version using Comparator
-      if (versionRangeResult == null) {
-         System.out.println("No version found for " + artifact);
-      }
-      if (artifact == null) {
-         System.out.println("No artifact found for " + artifact);
-      }
-      if (versionRangeResult.getHighestVersion() == null) {
-         System.out.println("No highest version found for " + artifact);
+      if (versionRangeResult.getHighestVersion() == null && versionRangeResult.getVersions().isEmpty()) {
+         throw new UnresolvedMavenArtifactException(
+            String.format("Unable to resolve versions of %s in repository [%s: %s]", artifact, repo.getId(), repo.getUrl()));
       }
       final Artifact latestArtifact = artifact.setVersion(versionRangeResult.getHighestVersion().toString());
 
