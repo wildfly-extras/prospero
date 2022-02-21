@@ -17,6 +17,7 @@
 
 package integration;
 
+import com.redhat.prospero.api.ArtifactChange;
 import com.redhat.prospero.api.ChannelRef;
 import com.redhat.prospero.actions.Installation;
 import com.redhat.prospero.actions.Update;
@@ -26,6 +27,7 @@ import com.redhat.prospero.model.ManifestXmlSupport;
 import com.redhat.prospero.model.XmlException;
 import org.apache.commons.io.FileUtils;
 import org.eclipse.aether.artifact.Artifact;
+import org.jboss.galleon.layout.FeaturePackUpdatePlan;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -34,8 +36,13 @@ import java.io.File;
 import java.net.URL;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 import static org.junit.Assert.*;
 
@@ -101,6 +108,34 @@ public class SimpleInstallationTest {
         // verify manifest contains versions 17.0.1
         final Optional<Artifact> wildflyCliArtifact = readArtifactFromManifest("org.wildfly.core", "wildfly-cli");
         assertEquals("17.0.1.Final", wildflyCliArtifact.get().getVersion());
+    }
+
+    @Test
+    public void updateWildflyCoreDryRun() throws Exception {
+        final Path channelFile = TestUtil.prepareChannelFile("local-repo-desc.yaml");
+
+        final ProvisioningDefinition provisioningDefinition = ProvisioningDefinition.builder()
+           .setFpl("org.wildfly.core:wildfly-core-galleon-pack:17.0.0.Final")
+           .setChannelsFile(channelFile)
+           .build();
+        installation.provision(provisioningDefinition);
+
+        TestUtil.prepareChannelFileAsUrl(OUTPUT_PATH.resolve(TestUtil.CHANNELS_FILE_PATH), "local-repo-desc.yaml", "local-updates-repo-desc.yaml");
+        final Set<String> updates = new HashSet<>();
+        new Update(OUTPUT_PATH, new AcceptingConsole() {
+            @Override
+            public void updatesFound(Collection<FeaturePackUpdatePlan> fpUpdates,
+                                     List<ArtifactChange> artifactUpdates) {
+                updates.addAll(artifactUpdates.stream().map(ac->ac.getOldVersion().getArtifactId()).collect(Collectors.toSet()));
+                super.updatesFound(fpUpdates, artifactUpdates);
+            }
+        }).listUpdates();
+
+        // verify manifest contains versions 17.0.1
+        final Optional<Artifact> wildflyCliArtifact = readArtifactFromManifest("org.wildfly.core", "wildfly-cli");
+        assertEquals("17.0.0.Final", wildflyCliArtifact.get().getVersion());
+        assertEquals(1, updates.size());
+        assertEquals("wildfly-cli", updates.stream().findFirst().get());
     }
 
     @Test

@@ -41,7 +41,9 @@ public class CliMain {
    public static final String FPL_ARG = "fpl";
    public static final String CHANNEL_FILE_ARG = "channel-file";
    public static final String CHANNEL_REPO = "channel-repo";
-   private static final Set<String> ALLOWED_ARGUMENTS = new HashSet<>(Arrays.asList(TARGET_PATH_ARG, FPL_ARG, CHANNEL_FILE_ARG, CHANNEL_REPO));
+   public static final String DRY_RUN = "dry-run";
+   private static final Set<String> ALLOWED_ARGUMENTS = new HashSet<>(Arrays.asList(TARGET_PATH_ARG, FPL_ARG, CHANNEL_FILE_ARG,
+                                                                                    CHANNEL_REPO, DRY_RUN));
    private ActionFactory actionFactory;
 
    public CliMain() {
