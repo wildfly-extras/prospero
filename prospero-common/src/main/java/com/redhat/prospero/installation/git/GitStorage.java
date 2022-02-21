@@ -42,7 +42,7 @@ public class GitStorage implements AutoCloseable {
     private Path base;
 
     public GitStorage(Path base) throws MetadataException {
-        this.base = base;
+        this.base = base.resolve(InstallationMetadata.METADATA_DIR);
         try {
             git = initGit();
         } catch (GitAPIException | IOException e) {
@@ -68,7 +68,7 @@ public class GitStorage implements AutoCloseable {
 
     public void record() throws MetadataException {
         try {
-            git.add().addFilepattern(InstallationMetadata.METADATA_DIR + "/" + InstallationMetadata.MANIFEST_FILE_NAME).call();
+            git.add().addFilepattern(InstallationMetadata.MANIFEST_FILE_NAME).call();
 
             if (isRepositoryEmpty(git)) {
                 git.commit().setCommitter(GIT_HISTORY_COMMITTER).setMessage(SavedState.Type.INSTALL.name()).call();
@@ -85,9 +85,9 @@ public class GitStorage implements AutoCloseable {
         try {
             git.checkout()
                     .setStartPoint(savedState.getName())
-                    .addPath(InstallationMetadata.METADATA_DIR + "/" + InstallationMetadata.MANIFEST_FILE_NAME)
+                    .addPath(InstallationMetadata.MANIFEST_FILE_NAME)
                     .call();
-            git.add().addFilepattern(InstallationMetadata.METADATA_DIR + "/" + InstallationMetadata.MANIFEST_FILE_NAME).call();
+            git.add().addFilepattern(InstallationMetadata.MANIFEST_FILE_NAME).call();
             git.commit().setCommitter(GIT_HISTORY_COMMITTER).setMessage(SavedState.Type.ROLLBACK.name()).call();
         } catch (GitAPIException e) {
             throw new MetadataException("Unable to write history of installation", e);
