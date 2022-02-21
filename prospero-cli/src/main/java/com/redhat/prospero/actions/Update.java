@@ -23,6 +23,11 @@ import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CompletionException;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 import java.util.stream.Collectors;
 
 import com.redhat.prospero.api.ArtifactUtils;
@@ -108,8 +113,39 @@ public class Update {
    private UpdateSet findupdates() throws ArtifactResolutionException, ProvisioningException {
       final List<ArtifactChange> updates = new ArrayList<>();
       final Manifest manifest = metadata.getManifest();
+      // use parallel executor to speed up the artifact resolution
+      final ExecutorService executorService = Executors.newWorkStealingPool(30);
+      List<CompletableFuture<List<ArtifactChange>>> allPackages = new ArrayList<>();
       for (Artifact artifact : manifest.getArtifacts()) {
-         updates.addAll(findUpdates(artifact));
+         final CompletableFuture<List<ArtifactChange>> cf = new CompletableFuture<>();
+         executorService.submit(()-> {
+            try {
+               final List<ArtifactChange> found = findUpdates(artifact);
+               cf.complete(found);
+            } catch (ArtifactResolutionException e) {
+               cf.completeExceptionally(e);
+            }
+         });
+         allPackages.add(cf);
+      }
+
+      try {
+         CompletableFuture.allOf(allPackages.toArray(new CompletableFuture[]{})).join();
+      } catch (CompletionException e) {
+         if (e.getCause() instanceof ArtifactResolutionException) {
+            throw (ArtifactResolutionException) e.getCause();
+         } else {
+            throw e;
+         }
+      }
+
+      executorService.shutdown();
+      for (CompletableFuture<List<ArtifactChange>> future : allPackages) {
+         try {
+            updates.addAll(future.get());
+         } catch (InterruptedException | ExecutionException e) {
+            // ignore - the future is complete at this point
+         }
       }
       final ProvisioningPlan fpUpdates = findFPUpdates();
       return new UpdateSet(fpUpdates, updates);
