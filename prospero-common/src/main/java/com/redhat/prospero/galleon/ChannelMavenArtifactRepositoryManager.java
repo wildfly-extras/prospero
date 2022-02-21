@@ -144,7 +144,7 @@ public class ChannelMavenArtifactRepositoryManager implements MavenRepoManager {
             return channelSession.resolveLatestMavenArtifact(artifact.getGroupId(), artifact.getArtifactId(), artifact.getExtension(),
                     artifact.getClassifier(), artifact.getVersion()).getVersion();
         } catch (UnresolvedMavenArtifactException e) {
-            throw new MavenUniverseException("", e);
+            throw new MavenUniverseException(e.getMessage(), e);
         }
     }
 
