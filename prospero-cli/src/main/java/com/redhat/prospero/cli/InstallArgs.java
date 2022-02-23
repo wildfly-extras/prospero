@@ -40,6 +40,8 @@ class InstallArgs {
       String fpl = parsedArgs.get(CliMain.FPL_ARG);
       String channelFile = parsedArgs.get(CliMain.CHANNEL_FILE_ARG);
       String channelRepo = parsedArgs.get(CliMain.CHANNEL_REPO);
+      String localRepo = parsedArgs.get(CliMain.LOCAL_REPO);
+      boolean offline = parsedArgs.containsKey(CliMain.OFFLINE)?Boolean.parseBoolean(parsedArgs.get(CliMain.OFFLINE)):false;
       Map<String, String> channelUrls = new HashMap<>();
 
       if (dir == null || dir.isEmpty()) {
@@ -56,8 +58,14 @@ class InstallArgs {
 
       try {
          final Path installationDir = Paths.get(dir).toAbsolutePath();
-         // TODO: get provisioningRepo path
-         final MavenSessionManager mavenSessionManager = new MavenSessionManager();
+         final MavenSessionManager mavenSessionManager;
+         if (localRepo == null) {
+            mavenSessionManager = new MavenSessionManager();
+         } else {
+            mavenSessionManager = new MavenSessionManager(Paths.get(localRepo).toAbsolutePath());
+         }
+         mavenSessionManager.setOffline(offline);
+
          final ProvisioningDefinition provisioningDefinition = ProvisioningDefinition.builder()
             .setFpl(fpl)
             .setChannelsFile(channelFile==null?null:Paths.get(channelFile).toAbsolutePath())

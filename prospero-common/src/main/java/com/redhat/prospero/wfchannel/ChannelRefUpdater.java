@@ -69,7 +69,7 @@ public class ChannelRefUpdater {
    private Artifact resolveChannelFile(DefaultArtifact artifact,
                                               RemoteRepository repo) throws ArtifactResolutionException {
       final RepositorySystem repositorySystem = mavenSessionManager.newRepositorySystem();
-      final DefaultRepositorySystemSession repositorySession = mavenSessionManager.newRepositorySystemSession(repositorySystem, true);
+      final DefaultRepositorySystemSession repositorySession = mavenSessionManager.newRepositorySystemSession(repositorySystem, false);
 
       final VersionRangeRequest request = new VersionRangeRequest();
       request.setArtifact(artifact);

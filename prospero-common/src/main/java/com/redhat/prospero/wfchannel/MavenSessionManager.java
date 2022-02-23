@@ -36,6 +36,7 @@ import org.jboss.galleon.ProvisioningException;
 public class MavenSessionManager {
    private static String LOCAL_MAVEN_REPO = System.getProperty("user.home") + "/.m2/repository";
    private final Path provisioningRepo;
+   private boolean offline;
 
    public MavenSessionManager(Path provisioningRepo) {
       this.provisioningRepo = provisioningRepo;
@@ -75,11 +76,15 @@ public class MavenSessionManager {
       }
       LocalRepository localRepo = new LocalRepository(location);
       session.setLocalRepositoryManager(system.newLocalRepositoryManager(session, localRepo));
-//      session.setOffline(true);
+      session.setOffline(offline);
       return session;
    }
 
    public Path getProvisioningRepo() {
       return provisioningRepo;
+   }
+
+   public void setOffline(boolean offline) {
+      this.offline = offline;
    }
 }

@@ -26,9 +26,7 @@ import java.util.Set;
 
 import com.redhat.prospero.actions.Installation;
 import com.redhat.prospero.actions.Update;
-import com.redhat.prospero.api.MetadataException;
 import com.redhat.prospero.api.ProvisioningRuntimeException;
-import com.redhat.prospero.api.exceptions.ArtifactResolutionException;
 import com.redhat.prospero.api.exceptions.OperationException;
 import com.redhat.prospero.wfchannel.MavenSessionManager;
 import org.jboss.galleon.ProvisioningException;
@@ -44,8 +42,10 @@ public class CliMain {
    public static final String CHANNEL_FILE_ARG = "channel-file";
    public static final String CHANNEL_REPO = "channel-repo";
    public static final String DRY_RUN = "dry-run";
+   public static final String LOCAL_REPO = "local-repo";
+   public static final String OFFLINE = "offline";
    private static final Set<String> ALLOWED_ARGUMENTS = new HashSet<>(Arrays.asList(TARGET_PATH_ARG, FPL_ARG, CHANNEL_FILE_ARG,
-                                                                                    CHANNEL_REPO, DRY_RUN));
+                                                                                    CHANNEL_REPO, DRY_RUN, LOCAL_REPO, OFFLINE));
    private ActionFactory actionFactory;
 
    public CliMain() {
