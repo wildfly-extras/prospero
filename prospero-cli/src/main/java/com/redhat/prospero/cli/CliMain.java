@@ -28,6 +28,7 @@ import com.redhat.prospero.actions.Installation;
 import com.redhat.prospero.actions.Update;
 import com.redhat.prospero.api.MetadataException;
 import com.redhat.prospero.api.ProvisioningRuntimeException;
+import com.redhat.prospero.api.exceptions.ArtifactResolutionException;
 import com.redhat.prospero.api.exceptions.OperationException;
 import com.redhat.prospero.wfchannel.MavenSessionManager;
 import org.jboss.galleon.ProvisioningException;
@@ -133,7 +134,7 @@ public class CliMain {
          return new Installation(targetPath, mavenSessionManager, new CliConsole());
       }
 
-      public Update update(Path targetPath, MavenSessionManager mavenSessionManager) throws ProvisioningException, MetadataException {
+      public Update update(Path targetPath, MavenSessionManager mavenSessionManager) throws OperationException, ProvisioningException {
          return new Update(targetPath, mavenSessionManager, new CliConsole());
       }
    }

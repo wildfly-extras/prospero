@@ -20,6 +20,7 @@ package com.redhat.prospero.actions;
 import com.redhat.prospero.api.InstallationMetadata;
 import com.redhat.prospero.api.MetadataException;
 import com.redhat.prospero.api.ProvisioningDefinition;
+import com.redhat.prospero.api.exceptions.OperationException;
 import com.redhat.prospero.cli.Console;
 import com.redhat.prospero.galleon.FeaturePackLocationParser;
 import com.redhat.prospero.galleon.GalleonUtils;
@@ -34,6 +35,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import com.redhat.prospero.api.ChannelRef;
+import com.redhat.prospero.wfchannel.ChannelRefUpdater;
 import com.redhat.prospero.wfchannel.MavenSessionManager;
 import com.redhat.prospero.wfchannel.WfChannelMavenResolverFactory;
 import org.eclipse.aether.artifact.Artifact;
@@ -79,8 +81,9 @@ public class Installation {
      * @throws ProvisioningException
      * @throws MetadataException
      */
-    public void provision(ProvisioningDefinition provisioningDefinition) throws ProvisioningException, MetadataException {
-        final List<Channel> channels = mapToChannels(provisioningDefinition.getChannelRefs());
+    public void provision(ProvisioningDefinition provisioningDefinition) throws ProvisioningException, OperationException {
+        final List<ChannelRef> updatedRefs = new ChannelRefUpdater(mavenSessionManager).resolveLatest(provisioningDefinition.getChannelRefs());
+        final List<Channel> channels = mapToChannels(updatedRefs);
 
         final WfChannelMavenResolverFactory factory = new WfChannelMavenResolverFactory(mavenSessionManager);
         final ChannelMavenArtifactRepositoryManager repoManager = new ChannelMavenArtifactRepositoryManager(channels, factory);
@@ -108,7 +111,7 @@ public class Installation {
             System.clearProperty(MAVEN_REPO_LOCAL);
         }
 
-        writeProsperoMetadata(installDir, repoManager, provisioningDefinition.getChannelRefs());
+        writeProsperoMetadata(installDir, repoManager, updatedRefs);
     }
 
     /**
