@@ -24,6 +24,7 @@ import com.redhat.prospero.api.ProvisioningDefinition;
 import com.redhat.prospero.cli.CliConsole;
 import com.redhat.prospero.model.ManifestXmlSupport;
 import com.redhat.prospero.model.XmlException;
+import com.redhat.prospero.wfchannel.MavenSessionManager;
 import org.apache.commons.io.FileUtils;
 import org.eclipse.aether.artifact.Artifact;
 import org.junit.After;
@@ -43,6 +44,11 @@ public class InstallationRestoreTest {
 
    private static final String RESTORED_SERVER_DIR = "target/restored";
    private static final Path RESTORED_SERVER_PATH = Paths.get(RESTORED_SERVER_DIR).toAbsolutePath();
+
+   private MavenSessionManager mavenSessionManager = new MavenSessionManager();
+
+   public InstallationRestoreTest() throws Exception {
+   }
 
    @Before
    public void setUp() throws Exception {
@@ -78,7 +84,7 @@ public class InstallationRestoreTest {
          .setFpl("org.wildfly.core:wildfly-core-galleon-pack:17.0.0.Final")
          .setChannelsFile(channelFile)
          .build();
-      new Installation(FIRST_SERVER_PATH, new CliConsole()).provision(provisioningDefinition);
+      new Installation(FIRST_SERVER_PATH, mavenSessionManager, new CliConsole()).provision(provisioningDefinition);
 
       TestUtil.prepareChannelFileAsUrl(FIRST_SERVER_PATH.resolve(TestUtil.CHANNELS_FILE_PATH), "local-repo-desc.yaml", "local-updates-repo-desc.yaml");
 

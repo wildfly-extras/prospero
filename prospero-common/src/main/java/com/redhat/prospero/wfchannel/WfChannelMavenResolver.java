@@ -17,15 +17,10 @@
 
 package com.redhat.prospero.wfchannel;
 
-import com.redhat.prospero.api.ProvisioningRuntimeException;
-import org.apache.maven.repository.internal.MavenRepositorySystemUtils;
 import org.eclipse.aether.DefaultRepositorySystemSession;
 import org.eclipse.aether.RepositorySystem;
 import org.eclipse.aether.artifact.Artifact;
 import org.eclipse.aether.artifact.DefaultArtifact;
-import org.eclipse.aether.connector.basic.BasicRepositoryConnectorFactory;
-import org.eclipse.aether.impl.DefaultServiceLocator;
-import org.eclipse.aether.repository.LocalRepository;
 import org.eclipse.aether.repository.RemoteRepository;
 import org.eclipse.aether.resolution.ArtifactRequest;
 import org.eclipse.aether.resolution.ArtifactResolutionException;
@@ -33,9 +28,6 @@ import org.eclipse.aether.resolution.ArtifactResult;
 import org.eclipse.aether.resolution.VersionRangeRequest;
 import org.eclipse.aether.resolution.VersionRangeResolutionException;
 import org.eclipse.aether.resolution.VersionRangeResult;
-import org.eclipse.aether.spi.connector.RepositoryConnectorFactory;
-import org.eclipse.aether.spi.connector.transport.TransporterFactory;
-import org.eclipse.aether.transport.http.HttpTransporterFactory;
 import org.eclipse.aether.version.Version;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -44,7 +36,6 @@ import org.wildfly.channel.UnresolvedMavenArtifactException;
 import org.wildfly.channel.spi.MavenVersionsResolver;
 
 import java.io.File;
-import java.nio.file.Path;
 import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -53,7 +44,6 @@ import static java.util.Collections.emptySet;
 import static java.util.Objects.requireNonNull;
 
 public class WfChannelMavenResolver implements MavenVersionsResolver {
-    static String LOCAL_MAVEN_REPO = System.getProperty("user.home") + "/.m2/repository";
 
     public static final Logger logger = LoggerFactory.getLogger(WfChannelMavenResolver.class);
 
@@ -62,10 +52,13 @@ public class WfChannelMavenResolver implements MavenVersionsResolver {
 
     private final List<RemoteRepository> remoteRepositories;
 
-    WfChannelMavenResolver(List<MavenRepository> mavenRepositories, boolean resolveLocalCache, Path provisioningRepo) {
+    private final MavenSessionManager mavenSessionManager;
+
+    WfChannelMavenResolver(List<MavenRepository> mavenRepositories, boolean resolveLocalCache, MavenSessionManager mavenSessionManager) {
+        this.mavenSessionManager = mavenSessionManager;
         remoteRepositories = mavenRepositories.stream().map(r -> newRemoteRepository(r)).collect(Collectors.toList());
-        system = newRepositorySystem();
-        session = newRepositorySystemSession(system, resolveLocalCache, provisioningRepo);
+        system = mavenSessionManager.newRepositorySystem();
+        session = mavenSessionManager.newRepositorySystemSession(system, resolveLocalCache);
     }
 
     @Override
@@ -103,35 +96,6 @@ public class WfChannelMavenResolver implements MavenVersionsResolver {
         } catch (ArtifactResolutionException e) {
             throw new UnresolvedMavenArtifactException("Unable to resolve artifact " + artifact, e);
         }
-    }
-
-    public static RepositorySystem newRepositorySystem() {
-        final DefaultServiceLocator locator = MavenRepositorySystemUtils.newServiceLocator();
-        locator.addService(RepositoryConnectorFactory.class, BasicRepositoryConnectorFactory.class);
-        locator.addService(TransporterFactory.class, HttpTransporterFactory.class);
-        locator.setErrorHandler(new DefaultServiceLocator.ErrorHandler() {
-            @Override
-            public void serviceCreationFailed(Class<?> type, Class<?> impl, Throwable exception) {
-                throw new ProvisioningRuntimeException("Failed to initiate maven repository system");
-            }
-        });
-        return locator.getService(RepositorySystem.class);
-    }
-
-    public static DefaultRepositorySystemSession newRepositorySystemSession(RepositorySystem system,
-                                                                            boolean resolveLocalCache,
-                                                                            Path provisioningRepo) {
-        DefaultRepositorySystemSession session = MavenRepositorySystemUtils.newSession();
-
-        String location;
-        if (resolveLocalCache) {
-            location = LOCAL_MAVEN_REPO;
-        } else {
-            location = provisioningRepo.toAbsolutePath().toString();
-        }
-        LocalRepository localRepo = new LocalRepository(location);
-        session.setLocalRepositoryManager(system.newLocalRepositoryManager(session, localRepo));
-        return session;
     }
 
     private static RemoteRepository newRemoteRepository(MavenRepository mavenRepository) {

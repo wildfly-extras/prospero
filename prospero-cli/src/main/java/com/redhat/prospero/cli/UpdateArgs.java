@@ -23,6 +23,7 @@ import java.util.Map;
 
 import com.redhat.prospero.api.MetadataException;
 import com.redhat.prospero.api.exceptions.OperationException;
+import com.redhat.prospero.wfchannel.MavenSessionManager;
 import org.jboss.galleon.ProvisioningException;
 
 class UpdateArgs {
@@ -40,12 +41,15 @@ class UpdateArgs {
          throw new ArgumentParsingException("Target dir argument (--%s) need to be set on update command", CliMain.TARGET_PATH_ARG);
       }
 
+
       final Path targetPath = Paths.get(dir).toAbsolutePath();
       try {
+         // TODO: get provisioningRepo path
+         final MavenSessionManager mavenSessionManager = new MavenSessionManager();
          if (!dryRun) {
-            actionFactory.update(targetPath).doUpdateAll();
+            actionFactory.update(targetPath, mavenSessionManager).doUpdateAll();
          } else {
-            actionFactory.update(targetPath).listUpdates();
+            actionFactory.update(targetPath, mavenSessionManager).listUpdates();
          }
       } catch (MetadataException | ProvisioningException e) {
          throw new OperationException("Error while executing update: " + e.getMessage(),  e);

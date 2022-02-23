@@ -22,6 +22,7 @@ import java.nio.file.Paths;
 
 import com.redhat.prospero.api.ProvisioningDefinition;
 import com.redhat.prospero.actions.Installation;
+import com.redhat.prospero.wfchannel.MavenSessionManager;
 import org.junit.Ignore;
 import org.junit.Test;
 
@@ -30,7 +31,11 @@ public class ChannelLocatorTest {
 
    private static final String EAP_DIR = "target/server-eap";
    private static final Path EAP_PATH = Paths.get(EAP_DIR).toAbsolutePath();
-   private final Installation installation = new Installation(EAP_PATH, new CliConsole());
+   private MavenSessionManager mavenSessionManager = new MavenSessionManager();
+   private final Installation installation = new Installation(EAP_PATH, mavenSessionManager, new CliConsole());
+
+   public ChannelLocatorTest() throws Exception {
+   }
 
    @Test
    public void findLatestEapChannelDefinition() throws Exception {

@@ -25,6 +25,7 @@ import com.redhat.prospero.api.ProvisioningDefinition;
 import com.redhat.prospero.cli.CliConsole;
 import com.redhat.prospero.model.ManifestXmlSupport;
 import com.redhat.prospero.model.XmlException;
+import com.redhat.prospero.wfchannel.MavenSessionManager;
 import org.apache.commons.io.FileUtils;
 import org.eclipse.aether.artifact.Artifact;
 import org.jboss.galleon.layout.FeaturePackUpdatePlan;
@@ -33,10 +34,8 @@ import org.junit.Before;
 import org.junit.Test;
 
 import java.io.File;
-import java.net.URL;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.List;
@@ -55,7 +54,11 @@ public class SimpleInstallationTest {
     private static final String OUTPUT_DIR = "target/server";
     private Path OUTPUT_PATH = Paths.get(OUTPUT_DIR).toAbsolutePath();
     private Path manifestPath = OUTPUT_PATH.resolve(TestUtil.MANIFEST_FILE_PATH);
-    private Installation installation = new Installation(OUTPUT_PATH, new CliConsole());
+    private MavenSessionManager mavenSessionManager = new MavenSessionManager();
+    private Installation installation = new Installation(OUTPUT_PATH, mavenSessionManager, new CliConsole());
+
+    public SimpleInstallationTest() throws Exception {
+    }
 
     @Before
     public void setUp() throws Exception {
@@ -103,7 +106,7 @@ public class SimpleInstallationTest {
         installation.provision(provisioningDefinition);
 
         TestUtil.prepareChannelFileAsUrl(OUTPUT_PATH.resolve(TestUtil.CHANNELS_FILE_PATH), "local-repo-desc.yaml", "local-updates-repo-desc.yaml");
-        new Update(OUTPUT_PATH, new AcceptingConsole()).doUpdateAll();
+        new Update(OUTPUT_PATH, mavenSessionManager, new AcceptingConsole()).doUpdateAll();
 
         // verify manifest contains versions 17.0.1
         final Optional<Artifact> wildflyCliArtifact = readArtifactFromManifest("org.wildfly.core", "wildfly-cli");
@@ -122,7 +125,7 @@ public class SimpleInstallationTest {
 
         TestUtil.prepareChannelFileAsUrl(OUTPUT_PATH.resolve(TestUtil.CHANNELS_FILE_PATH), "local-repo-desc.yaml", "local-updates-repo-desc.yaml");
         final Set<String> updates = new HashSet<>();
-        new Update(OUTPUT_PATH, new AcceptingConsole() {
+        new Update(OUTPUT_PATH, mavenSessionManager, new AcceptingConsole() {
             @Override
             public void updatesFound(Collection<FeaturePackUpdatePlan> fpUpdates,
                                      List<ArtifactChange> artifactUpdates) {

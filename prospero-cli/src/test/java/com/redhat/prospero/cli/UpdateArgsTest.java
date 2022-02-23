@@ -56,13 +56,13 @@ public class UpdateArgsTest {
 
    @Test
    public void callUpdate() throws Exception {
-      when(actionFactory.update(any())).thenReturn(update);
+      when(actionFactory.update(any(), any())).thenReturn(update);
 
       Map<String, String> args = new HashMap<>();
       args.put(CliMain.TARGET_PATH_ARG, "test");
       new UpdateArgs(actionFactory).handleArgs(args);
 
-      Mockito.verify(actionFactory).update(eq(Paths.get("test").toAbsolutePath()));
+      Mockito.verify(actionFactory).update(eq(Paths.get("test").toAbsolutePath()), any());
       Mockito.verify(update).doUpdateAll();
    }
 }

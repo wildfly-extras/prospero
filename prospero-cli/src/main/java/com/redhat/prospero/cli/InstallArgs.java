@@ -25,6 +25,7 @@ import java.util.Map;
 import com.redhat.prospero.api.MetadataException;
 import com.redhat.prospero.api.ProvisioningDefinition;
 import com.redhat.prospero.api.exceptions.OperationException;
+import com.redhat.prospero.wfchannel.MavenSessionManager;
 import org.jboss.galleon.ProvisioningException;
 
 class InstallArgs {
@@ -55,13 +56,15 @@ class InstallArgs {
 
       try {
          final Path installationDir = Paths.get(dir).toAbsolutePath();
+         // TODO: get provisioningRepo path
+         final MavenSessionManager mavenSessionManager = new MavenSessionManager();
          final ProvisioningDefinition provisioningDefinition = ProvisioningDefinition.builder()
             .setFpl(fpl)
             .setChannelsFile(channelFile==null?null:Paths.get(channelFile).toAbsolutePath())
             .setChannelRepo(channelRepo)
             .build();
 
-         actionFactory.install(installationDir).provision(provisioningDefinition);
+         actionFactory.install(installationDir, mavenSessionManager).provision(provisioningDefinition);
       } catch (ProvisioningException | MetadataException e) {
          throw new OperationException("Error while executing installation: " + e.getMessage(),  e);
       }

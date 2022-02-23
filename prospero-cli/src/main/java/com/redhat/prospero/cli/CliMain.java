@@ -29,6 +29,7 @@ import com.redhat.prospero.actions.Update;
 import com.redhat.prospero.api.MetadataException;
 import com.redhat.prospero.api.ProvisioningRuntimeException;
 import com.redhat.prospero.api.exceptions.OperationException;
+import com.redhat.prospero.wfchannel.MavenSessionManager;
 import org.jboss.galleon.ProvisioningException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -128,12 +129,12 @@ public class CliMain {
    }
 
    static class ActionFactory {
-      public Installation install(Path targetPath) {
-         return new Installation(targetPath, new CliConsole());
+      public Installation install(Path targetPath, MavenSessionManager mavenSessionManager) {
+         return new Installation(targetPath, mavenSessionManager, new CliConsole());
       }
 
-      public Update update(Path targetPath) throws ProvisioningException, MetadataException {
-         return new Update(targetPath, new CliConsole());
+      public Update update(Path targetPath, MavenSessionManager mavenSessionManager) throws ProvisioningException, MetadataException {
+         return new Update(targetPath, mavenSessionManager, new CliConsole());
       }
    }
 

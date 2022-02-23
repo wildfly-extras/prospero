@@ -27,7 +27,7 @@ import com.fasterxml.jackson.databind.JavaType;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
 import com.redhat.prospero.api.exceptions.ArtifactResolutionException;
-import com.redhat.prospero.wfchannel.WfChannelMavenResolver;
+import com.redhat.prospero.wfchannel.MavenSessionManager;
 import org.eclipse.aether.DefaultRepositorySystemSession;
 import org.eclipse.aether.RepositorySystem;
 import org.eclipse.aether.artifact.Artifact;
@@ -37,6 +37,7 @@ import org.eclipse.aether.resolution.ArtifactRequest;
 import org.eclipse.aether.resolution.VersionRangeRequest;
 import org.eclipse.aether.resolution.VersionRangeResolutionException;
 import org.eclipse.aether.resolution.VersionRangeResult;
+import org.jboss.galleon.ProvisioningException;
 
 public class ChannelRef {
 
@@ -66,8 +67,15 @@ public class ChannelRef {
 
     private static Artifact resolveChannelFile(DefaultArtifact artifact,
                                               RemoteRepository repo) throws ArtifactResolutionException {
-        final RepositorySystem repositorySystem = WfChannelMavenResolver.newRepositorySystem();
-        final DefaultRepositorySystemSession repositorySession = WfChannelMavenResolver.newRepositorySystemSession(repositorySystem, true, null);
+        final MavenSessionManager mavenSessionManager;
+        try {
+            mavenSessionManager = new MavenSessionManager();
+        } catch (ProvisioningException e) {
+            // TODO: the constructor will be moved out of here, for now just ignore error
+            throw new RuntimeException(e);
+        }
+        final RepositorySystem repositorySystem = mavenSessionManager.newRepositorySystem();
+        final DefaultRepositorySystemSession repositorySession = mavenSessionManager.newRepositorySystemSession(repositorySystem, true);
 
         final VersionRangeRequest request = new VersionRangeRequest();
         request.setArtifact(artifact);

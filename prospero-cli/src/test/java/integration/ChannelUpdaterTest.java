@@ -6,6 +6,7 @@ import com.redhat.prospero.actions.Update;
 import com.redhat.prospero.api.ProvisioningDefinition;
 import com.redhat.prospero.cli.CliConsole;
 import com.redhat.prospero.galleon.ChannelMavenArtifactRepositoryManager;
+import com.redhat.prospero.wfchannel.MavenSessionManager;
 import com.redhat.prospero.wfchannel.WfChannelMavenResolverFactory;
 import org.jboss.galleon.ProvisioningException;
 import org.jboss.galleon.universe.FeaturePackLocation;
@@ -24,7 +25,6 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.List;
-import java.util.Optional;
 import java.util.stream.Collectors;
 
 import static java.util.Arrays.asList;
@@ -39,6 +39,11 @@ public class ChannelUpdaterTest {
     private static final String EAP_DIR = "target/server-eap";
     private static final Path EAP_PATH = Paths.get(EAP_DIR).toAbsolutePath();
 
+    private MavenSessionManager mavenSessionManager = new MavenSessionManager();
+
+    public ChannelUpdaterTest() throws Exception {
+    }
+
     @Test
     public void findLatestEap() throws Exception {
         final Path channelFile = Paths.get("/Users/spyrkob/workspaces/set/prospero/prospero/examples/eap/channels-eap74.json");
@@ -50,7 +55,8 @@ public class ChannelUpdaterTest {
                 throw new RuntimeException(e);
             }
         }).collect(Collectors.toList());
-        final WfChannelMavenResolverFactory factory = new WfChannelMavenResolverFactory();
+
+        final WfChannelMavenResolverFactory factory = new WfChannelMavenResolverFactory(mavenSessionManager);
         final ChannelMavenArtifactRepositoryManager repoManager = new ChannelMavenArtifactRepositoryManager(channels, factory);
 
 
@@ -73,7 +79,7 @@ public class ChannelUpdaterTest {
         final ProvisioningDefinition provisioningDefinition = ProvisioningDefinition.builder()
            .setFpl("org.jboss.eap:wildfly-ee-galleon-pack")
            .build();
-        new Installation(EAP_PATH, new CliConsole()).provision(provisioningDefinition);
+        new Installation(EAP_PATH, mavenSessionManager, new CliConsole()).provision(provisioningDefinition);
 
         // verify installation with manifest file is present
         assertTrue(EAP_PATH.resolve(TestUtil.MANIFEST_FILE_PATH).toFile().exists());
@@ -81,17 +87,17 @@ public class ChannelUpdaterTest {
 
     @Test
     public void updateEAP() throws Exception {
-        new Update(EAP_PATH, new AcceptingConsole()).doUpdateAll();
+        new Update(EAP_PATH, mavenSessionManager, new AcceptingConsole()).doUpdateAll();
     }
 
     @Test
     public void updateWfly() throws Exception {
-        new Update(OUTPUT_PATH, new AcceptingConsole()).doUpdateAll();
+        new Update(OUTPUT_PATH, mavenSessionManager, new AcceptingConsole()).doUpdateAll();
     }
 
     @Test
     public void eap74() throws Exception {
-        final WfChannelMavenResolverFactory factory = new WfChannelMavenResolverFactory();
+        final WfChannelMavenResolverFactory factory = new WfChannelMavenResolverFactory(mavenSessionManager);
 
         final URL wlflUrl = new URL("file:///Users/spyrkob/workspaces/set/prospero/prospero/examples/eap/wildfly-ee-galleon-pack-7.4.3.GA-redhat-SNAPSHOT-channel.yaml");
         Channel primaryChannel = ChannelMapper.from(wlflUrl);
@@ -112,7 +118,7 @@ public class ChannelUpdaterTest {
         final ProvisioningDefinition provisioningDefinition = ProvisioningDefinition.builder()
            .setFpl("org.wildfly:wildfly-ee-galleon-pack:24.0.0.Final")
            .build();
-        new Installation(OUTPUT_PATH, new CliConsole()).provision(provisioningDefinition);
+        new Installation(OUTPUT_PATH, mavenSessionManager, new CliConsole()).provision(provisioningDefinition);
 
         // verify installation with manifest file is present
         assertTrue(OUTPUT_PATH.resolve(TestUtil.MANIFEST_FILE_PATH).toFile().exists());

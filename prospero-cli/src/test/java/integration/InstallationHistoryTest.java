@@ -26,6 +26,7 @@ import com.redhat.prospero.api.ProvisioningDefinition;
 import com.redhat.prospero.cli.CliConsole;
 import com.redhat.prospero.model.ManifestXmlSupport;
 import com.redhat.prospero.model.XmlException;
+import com.redhat.prospero.wfchannel.MavenSessionManager;
 import org.apache.commons.io.FileUtils;
 import org.eclipse.aether.artifact.Artifact;
 import org.eclipse.aether.artifact.DefaultArtifact;
@@ -50,8 +51,12 @@ public class InstallationHistoryTest {
 
     private static final String OUTPUT_DIR = "target/server";
     private static final Path OUTPUT_PATH = Paths.get(OUTPUT_DIR).toAbsolutePath();
-   private final Installation installation = new Installation(OUTPUT_PATH, new CliConsole());
+   private MavenSessionManager mavenSessionManager = new MavenSessionManager();
+   private final Installation installation = new Installation(OUTPUT_PATH, mavenSessionManager, new CliConsole());
    private Path channelFile;
+
+   public InstallationHistoryTest() throws Exception {
+   }
 
    @Before
     public void setUp() throws Exception {
@@ -89,7 +94,7 @@ public class InstallationHistoryTest {
 
        // updateCore
         TestUtil.prepareChannelFileAsUrl(OUTPUT_PATH.resolve(TestUtil.CHANNELS_FILE_PATH), "local-repo-desc.yaml", "local-updates-repo-desc.yaml");
-        new Update(OUTPUT_PATH, new AcceptingConsole()).doUpdateAll();
+        new Update(OUTPUT_PATH, mavenSessionManager, new AcceptingConsole()).doUpdateAll();
 
         // get history
         List<SavedState> states = new InstallationHistory(OUTPUT_PATH).getRevisions();
@@ -113,7 +118,7 @@ public class InstallationHistoryTest {
        installation.provision(provisioningDefinition);
 
        TestUtil.prepareChannelFileAsUrl(OUTPUT_PATH.resolve(TestUtil.CHANNELS_FILE_PATH), "local-repo-desc.yaml", "local-updates-repo-desc.yaml");
-       new Update(OUTPUT_PATH, new AcceptingConsole()).doUpdateAll();
+       new Update(OUTPUT_PATH, mavenSessionManager, new AcceptingConsole()).doUpdateAll();
 
        final InstallationHistory installationHistory = new InstallationHistory(OUTPUT_PATH);
        final List<SavedState> revisions = installationHistory.getRevisions();
@@ -140,7 +145,7 @@ public class InstallationHistoryTest {
        installation.provision(provisioningDefinition);
 
        TestUtil.prepareChannelFileAsUrl(OUTPUT_PATH.resolve(TestUtil.CHANNELS_FILE_PATH), "local-repo-desc.yaml", "local-updates-repo-desc.yaml");
-        new Update(OUTPUT_PATH, new AcceptingConsole()).doUpdateAll();
+        new Update(OUTPUT_PATH, mavenSessionManager, new AcceptingConsole()).doUpdateAll();
 
         final InstallationHistory installationHistory = new InstallationHistory(OUTPUT_PATH);
         final List<SavedState> revisions = installationHistory.getRevisions();
