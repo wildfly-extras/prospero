@@ -20,15 +20,14 @@ import com.redhat.prospero.api.exceptions.ArtifactResolutionException;
 import org.eclipse.aether.artifact.DefaultArtifact;
 import org.eclipse.aether.repository.RemoteRepository;
 import org.junit.Test;
-import org.wildfly.channel.UnresolvedMavenArtifactException;
 
-public class ProvisioningDefinitionTest {
+public class ChanelRefTest {
 
    @Test(expected = ArtifactResolutionException.class)
    public void resolveChannelFileThrowsExceptionIfNoVersionsFound() throws Exception {
       final DefaultArtifact defaultArtifact = new DefaultArtifact("org.test", "artifactId", "channel", "yaml", "[" + 1.0 + ",)");
       final RemoteRepository repository = new RemoteRepository.Builder("test", "default", this.getClass().getResource("/").toString()).build();
 
-      ProvisioningDefinition.resolveChannelFile(defaultArtifact, repository);
+      new ChannelRef("test", this.getClass().getResource("/").toString(), "org.test:test:1.0");
    }
 }
