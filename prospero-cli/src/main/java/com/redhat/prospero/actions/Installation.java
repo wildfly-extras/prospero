@@ -63,16 +63,6 @@ public class Installation {
         this.mavenSessionManager = mavenSessionManager;
     }
 
-    static {
-        enableJBossLogManager();
-    }
-
-    private static void enableJBossLogManager() {
-        if (System.getProperty("java.util.logging.manager") == null) {
-            System.setProperty("java.util.logging.manager", "org.jboss.logmanager.LogManager");
-        }
-    }
-
     /**
      * Installs feature pack defined by {@code fpl} in {@code installDir}. If {@code fpl} doesn't include version,
      * the newest available version will be used.

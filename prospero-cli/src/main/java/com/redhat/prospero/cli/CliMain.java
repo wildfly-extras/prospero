@@ -35,6 +35,16 @@ import org.slf4j.LoggerFactory;
 
 public class CliMain {
 
+    static {
+        enableJBossLogManager();
+    }
+
+    private static void enableJBossLogManager() {
+        if (System.getProperty("java.util.logging.manager") == null) {
+            System.setProperty("java.util.logging.manager", "org.jboss.logmanager.LogManager");
+        }
+    }
+
     private static final Logger logger = LoggerFactory.getLogger(CliMain.class);
 
     public static final String TARGET_PATH_ARG = "dir";
