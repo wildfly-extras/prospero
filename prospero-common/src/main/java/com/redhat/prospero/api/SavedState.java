@@ -19,6 +19,7 @@ package com.redhat.prospero.api;
 
 import java.time.Instant;
 import java.util.Locale;
+import java.util.Objects;
 
 public class SavedState {
 
@@ -50,5 +51,18 @@ public class SavedState {
 
     public String shortDescription() {
         return String.format("[%s] %s - %s", hash, timestamp.toString(), type.toString().toLowerCase(Locale.ROOT));
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        SavedState that = (SavedState) o;
+        return Objects.equals(hash, that.hash) && Objects.equals(timestamp, that.timestamp) && type == that.type;
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(hash, timestamp, type);
     }
 }

@@ -18,20 +18,16 @@
 package com.redhat.prospero.cli;
 
 import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
 import com.redhat.prospero.actions.Installation;
 import com.redhat.prospero.actions.InstallationHistory;
 import com.redhat.prospero.actions.Update;
-import com.redhat.prospero.api.ArtifactChange;
 import com.redhat.prospero.api.ProvisioningRuntimeException;
-import com.redhat.prospero.api.SavedState;
 import com.redhat.prospero.api.exceptions.OperationException;
 import com.redhat.prospero.wfchannel.MavenSessionManager;
 import org.jboss.galleon.ProvisioningException;
@@ -63,6 +59,7 @@ public class CliMain {
     private static final Set<String> ALLOWED_ARGUMENTS = new HashSet<>(Arrays.asList(TARGET_PATH_ARG, FPL_ARG, CHANNEL_FILE_ARG,
             CHANNEL_REPO, DRY_RUN, LOCAL_REPO, OFFLINE, REVISION));
     private ActionFactory actionFactory;
+    private final Console console = new CliConsole();
 
     public CliMain() {
         this.actionFactory = new ActionFactory();
@@ -123,54 +120,11 @@ public class CliMain {
     }
 
     private void displayHistory(Map<String, String> parsedArgs) throws ArgumentParsingException, OperationException {
-        String dir = parsedArgs.get(CliMain.TARGET_PATH_ARG);
-        String rev = parsedArgs.get(CliMain.REVISION);
-        if (dir == null || dir.isEmpty()) {
-            throw new ArgumentParsingException("Target dir argument (--%s) need to be set on history command", CliMain.TARGET_PATH_ARG);
-        }
-
-        final CliConsole cliConsole = new CliConsole();
-        if (rev == null || rev.isEmpty()) {
-            final List<SavedState> revisions = actionFactory.history(Paths.get(dir).toAbsolutePath()).getRevisions();
-            for (SavedState savedState : revisions) {
-                cliConsole.println(savedState.shortDescription());
-            }
-        } else {
-            final List<ArtifactChange> changes = actionFactory.history(Paths.get(dir).toAbsolutePath()).compare(new SavedState(rev));
-            if (changes.isEmpty()) {
-                System.out.println("No changes found");
-            } else {
-                changes.forEach((c-> System.out.println(c)));
-            }
-        }
+        new HistoryCommand(actionFactory, console).display(parsedArgs);
     }
 
     private void revertToState(Map<String, String> parsedArgs) throws ArgumentParsingException, OperationException {
-        String dir = parsedArgs.get(CliMain.TARGET_PATH_ARG);
-        String rev = parsedArgs.get(CliMain.REVISION);
-        String localRepo = parsedArgs.get(CliMain.LOCAL_REPO);
-        boolean offline = parsedArgs.containsKey(CliMain.OFFLINE) ? Boolean.parseBoolean(parsedArgs.get(CliMain.OFFLINE)) : false;
-        if (dir == null || dir.isEmpty()) {
-            throw new ArgumentParsingException("Target dir argument (--%s) need to be set on history command", CliMain.TARGET_PATH_ARG);
-        }
-
-        if (rev == null || rev.isEmpty()) {
-            throw new ArgumentParsingException("Revision argument (--%s) need to be set on revert command", CliMain.REVISION);
-        }
-
-        final CliConsole cliConsole = new CliConsole();
-        try {
-            final MavenSessionManager mavenSessionManager;
-            if (localRepo == null) {
-                mavenSessionManager = new MavenSessionManager();
-            } else {
-                mavenSessionManager = new MavenSessionManager(Paths.get(localRepo).toAbsolutePath());
-            }
-            mavenSessionManager.setOffline(offline);
-            actionFactory.history(Paths.get(dir).toAbsolutePath()).rollback(new SavedState(rev), mavenSessionManager);
-        } catch (ProvisioningException e) {
-            throw new OperationException("Error while executing update: " + e.getMessage(), e);
-        }
+        new RevertCommand(actionFactory).revert(parsedArgs);
     }
 
     private Map<String, String> parseArguments(String[] args) throws ArgumentParsingException {

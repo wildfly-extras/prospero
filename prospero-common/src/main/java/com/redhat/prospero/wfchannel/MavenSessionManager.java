@@ -87,4 +87,8 @@ public class MavenSessionManager {
     public void setOffline(boolean offline) {
         this.offline = offline;
     }
+
+    public boolean isOffline() {
+        return offline;
+    }
 }
