@@ -66,7 +66,7 @@ public class InstallationMetadata {
             this.manifest = Manifest.parseManifest(manifestFile);
             this.channelRefs = ChannelRef.readChannels(channelsFile);
             this.provisioningConfig = ProvisioningXmlParser.parse(provisioningFile);
-        } catch (XmlException | IOException | ProvisioningException | ArtifactResolutionException e) {
+        } catch (XmlException | IOException | ProvisioningException e) {
             throw new MetadataException("Error when parsing installation metadata", e);
         }
     }
@@ -82,7 +82,7 @@ public class InstallationMetadata {
             this.manifest = Manifest.parseManifest(manifestFile);
             this.channelRefs = ChannelRef.readChannels(channelsFile);
             this.provisioningConfig = ProvisioningXmlParser.parse(provisioningFile);
-        } catch (XmlException | IOException | ProvisioningException | ArtifactResolutionException e) {
+        } catch (XmlException | IOException | ProvisioningException e) {
             throw new MetadataException("Error when parsing installation metadata", e);
         }
     }

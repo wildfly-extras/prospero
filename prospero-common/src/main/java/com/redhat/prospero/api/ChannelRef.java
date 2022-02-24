@@ -25,7 +25,6 @@ import java.util.List;
 import com.fasterxml.jackson.databind.JavaType;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
-import com.redhat.prospero.api.exceptions.ArtifactResolutionException;
 
 public class ChannelRef {
 
@@ -33,7 +32,7 @@ public class ChannelRef {
         new ObjectMapper(new YAMLFactory()).writeValue(channelsFile, channelRefs);
     }
 
-    public static List<ChannelRef> readChannels(Path path) throws IOException, ArtifactResolutionException {
+    public static List<ChannelRef> readChannels(Path path) throws IOException {
         final ObjectMapper objectMapper = new ObjectMapper(new YAMLFactory());
         JavaType type = objectMapper.getTypeFactory().constructCollectionType(List.class, ChannelRef.class);
         final List<ChannelRef> channelRefs = objectMapper.readValue(path.toUri().toURL(), type);
@@ -53,7 +52,7 @@ public class ChannelRef {
 
     }
 
-    public ChannelRef(String name, String repoUrl, String gav, String fileUrl) throws ArtifactResolutionException {
+    public ChannelRef(String name, String repoUrl, String gav, String fileUrl) {
         this.name = name;
         this.repoUrl = repoUrl;
         this.gav = gav;
