@@ -39,65 +39,65 @@ import java.util.Optional;
 import static org.junit.Assert.assertEquals;
 
 public class InstallationRestoreTest {
-   private static final String FIRST_SERVER_DIR = "target/server";
-   private static final Path FIRST_SERVER_PATH = Paths.get(FIRST_SERVER_DIR).toAbsolutePath();
+    private static final String FIRST_SERVER_DIR = "target/server";
+    private static final Path FIRST_SERVER_PATH = Paths.get(FIRST_SERVER_DIR).toAbsolutePath();
 
-   private static final String RESTORED_SERVER_DIR = "target/restored";
-   private static final Path RESTORED_SERVER_PATH = Paths.get(RESTORED_SERVER_DIR).toAbsolutePath();
+    private static final String RESTORED_SERVER_DIR = "target/restored";
+    private static final Path RESTORED_SERVER_PATH = Paths.get(RESTORED_SERVER_DIR).toAbsolutePath();
 
-   private MavenSessionManager mavenSessionManager = new MavenSessionManager();
+    private MavenSessionManager mavenSessionManager = new MavenSessionManager();
 
-   public InstallationRestoreTest() throws Exception {
-   }
+    public InstallationRestoreTest() throws Exception {
+    }
 
-   @Before
-   public void setUp() throws Exception {
-      if (FIRST_SERVER_PATH.toFile().exists()) {
-         FileUtils.deleteDirectory(FIRST_SERVER_PATH.toFile());
-         FIRST_SERVER_PATH.toFile().delete();
-      }
+    @Before
+    public void setUp() throws Exception {
+        if (FIRST_SERVER_PATH.toFile().exists()) {
+            FileUtils.deleteDirectory(FIRST_SERVER_PATH.toFile());
+            FIRST_SERVER_PATH.toFile().delete();
+        }
 
-      if (RESTORED_SERVER_PATH.toFile().exists()) {
-         FileUtils.deleteDirectory(RESTORED_SERVER_PATH.toFile());
-         RESTORED_SERVER_PATH.toFile().delete();
-      }
-   }
+        if (RESTORED_SERVER_PATH.toFile().exists()) {
+            FileUtils.deleteDirectory(RESTORED_SERVER_PATH.toFile());
+            RESTORED_SERVER_PATH.toFile().delete();
+        }
+    }
 
-   @After
-   public void tearDown() throws Exception {
-      if (FIRST_SERVER_PATH.toFile().exists()) {
-         FileUtils.deleteDirectory(FIRST_SERVER_PATH.toFile());
-         FIRST_SERVER_PATH.toFile().delete();
-      }
+    @After
+    public void tearDown() throws Exception {
+        if (FIRST_SERVER_PATH.toFile().exists()) {
+            FileUtils.deleteDirectory(FIRST_SERVER_PATH.toFile());
+            FIRST_SERVER_PATH.toFile().delete();
+        }
 
-      if (RESTORED_SERVER_PATH.toFile().exists()) {
-         FileUtils.deleteDirectory(RESTORED_SERVER_PATH.toFile());
-         RESTORED_SERVER_PATH.toFile().delete();
-      }
-   }
+        if (RESTORED_SERVER_PATH.toFile().exists()) {
+            FileUtils.deleteDirectory(RESTORED_SERVER_PATH.toFile());
+            RESTORED_SERVER_PATH.toFile().delete();
+        }
+    }
 
-   @Test
-   public void restoreInstallation() throws Exception {
-      final Path channelFile = TestUtil.prepareChannelFile("local-repo-desc.yaml");
+    @Test
+    public void restoreInstallation() throws Exception {
+        final Path channelFile = TestUtil.prepareChannelFile("local-repo-desc.yaml");
 
-      final ProvisioningDefinition provisioningDefinition = ProvisioningDefinition.builder()
-         .setFpl("org.wildfly.core:wildfly-core-galleon-pack:17.0.0.Final")
-         .setChannelsFile(channelFile)
-         .build();
-      new Installation(FIRST_SERVER_PATH, mavenSessionManager, new CliConsole()).provision(provisioningDefinition);
+        final ProvisioningDefinition provisioningDefinition = ProvisioningDefinition.builder()
+                .setFpl("org.wildfly.core:wildfly-core-galleon-pack:17.0.0.Final")
+                .setChannelsFile(channelFile)
+                .build();
+        new Installation(FIRST_SERVER_PATH, mavenSessionManager, new CliConsole()).provision(provisioningDefinition);
 
-      TestUtil.prepareChannelFileAsUrl(FIRST_SERVER_PATH.resolve(TestUtil.CHANNELS_FILE_PATH), "local-repo-desc.yaml", "local-updates-repo-desc.yaml");
+        TestUtil.prepareChannelFileAsUrl(FIRST_SERVER_PATH.resolve(TestUtil.CHANNELS_FILE_PATH), "local-repo-desc.yaml", "local-updates-repo-desc.yaml");
 
-      new InstallationExport(FIRST_SERVER_PATH).export("target/bundle.zip");
+        new InstallationExport(FIRST_SERVER_PATH).export("target/bundle.zip");
 
-      new InstallationRestore(RESTORED_SERVER_PATH).restore(Paths.get("target/bundle.zip"));
+        new InstallationRestore(RESTORED_SERVER_PATH).restore(Paths.get("target/bundle.zip"));
 
-      final Optional<Artifact> wildflyCliArtifact = readArtifactFromManifest("org.wildfly.core", "wildfly-cli");
-      assertEquals("17.0.0.Final", wildflyCliArtifact.get().getVersion());
-   }
+        final Optional<Artifact> wildflyCliArtifact = readArtifactFromManifest("org.wildfly.core", "wildfly-cli");
+        assertEquals("17.0.0.Final", wildflyCliArtifact.get().getVersion());
+    }
 
-   private Optional<Artifact> readArtifactFromManifest(String groupId, String artifactId) throws XmlException {
-      final File manifestFile = RESTORED_SERVER_PATH.resolve(TestUtil.MANIFEST_FILE_PATH).toFile();
-      return ManifestXmlSupport.parse(manifestFile).getArtifacts().stream().filter((a) -> a.getGroupId().equals(groupId) && a.getArtifactId().equals(artifactId)).findFirst();
-   }
+    private Optional<Artifact> readArtifactFromManifest(String groupId, String artifactId) throws XmlException {
+        final File manifestFile = RESTORED_SERVER_PATH.resolve(TestUtil.MANIFEST_FILE_PATH).toFile();
+        return ManifestXmlSupport.parse(manifestFile).getArtifacts().stream().filter((a) -> a.getGroupId().equals(groupId) && a.getArtifactId().equals(artifactId)).findFirst();
+    }
 }

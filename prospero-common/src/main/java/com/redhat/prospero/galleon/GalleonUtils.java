@@ -25,7 +25,7 @@ import java.nio.file.Path;
 
 public class GalleonUtils {
 
-   public static final String MAVEN_REPO_LOCAL = "maven.repo.local";
+    public static final String MAVEN_REPO_LOCAL = "maven.repo.local";
 
     public static ProvisioningManager getProvisioningManager(Path installDir, MavenRepoManager maven) throws ProvisioningException {
         ProvisioningManager provMgr = ProvisioningManager.builder().addArtifactResolver(maven)

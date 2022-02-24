@@ -27,10 +27,10 @@
     </properties>
 
     <modules>
-      <module>prospero-common</module>
-      <module>prospero-cli</module>
-      <module>prospero-launcher</module>
-      <module>prospero-bootstrap</module>
+        <module>prospero-common</module>
+        <module>prospero-cli</module>
+        <module>prospero-launcher</module>
+        <module>prospero-bootstrap</module>
     </modules>
 
     <dependencyManagement>

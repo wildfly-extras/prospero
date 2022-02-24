@@ -88,13 +88,14 @@ public class Update {
             } catch (MalformedURLException e) {
                 throw new MetadataException("Unable to resolve channel configuration", e);
             }
-        } return channels;
+        }
+        return channels;
     }
 
     public void doUpdateAll() throws ProvisioningException, MetadataException, ArtifactResolutionException {
-       final UpdateSet updateSet = findupdates();
+        final UpdateSet updateSet = findupdates();
 
-       console.updatesFound(updateSet.fpUpdates.getUpdates(), updateSet.artifactUpdates);
+        console.updatesFound(updateSet.fpUpdates.getUpdates(), updateSet.artifactUpdates);
         if (updateSet.isEmpty()) {
             return;
         }
@@ -111,53 +112,53 @@ public class Update {
     }
 
     public void listUpdates() throws ArtifactResolutionException, ProvisioningException {
-       final UpdateSet updateSet = findupdates();
+        final UpdateSet updateSet = findupdates();
 
-       console.updatesFound(updateSet.fpUpdates.getUpdates(), updateSet.artifactUpdates);
+        console.updatesFound(updateSet.fpUpdates.getUpdates(), updateSet.artifactUpdates);
     }
 
-   private UpdateSet findupdates() throws ArtifactResolutionException, ProvisioningException {
-      final List<ArtifactChange> updates = new ArrayList<>();
-      final Manifest manifest = metadata.getManifest();
-      // use parallel executor to speed up the artifact resolution
-      final ExecutorService executorService = Executors.newWorkStealingPool(30);
-      List<CompletableFuture<List<ArtifactChange>>> allPackages = new ArrayList<>();
-      for (Artifact artifact : manifest.getArtifacts()) {
-         final CompletableFuture<List<ArtifactChange>> cf = new CompletableFuture<>();
-         executorService.submit(()-> {
-            try {
-               final List<ArtifactChange> found = findUpdates(artifact);
-               cf.complete(found);
-            } catch (ArtifactResolutionException e) {
-               cf.completeExceptionally(e);
+    private UpdateSet findupdates() throws ArtifactResolutionException, ProvisioningException {
+        final List<ArtifactChange> updates = new ArrayList<>();
+        final Manifest manifest = metadata.getManifest();
+        // use parallel executor to speed up the artifact resolution
+        final ExecutorService executorService = Executors.newWorkStealingPool(30);
+        List<CompletableFuture<List<ArtifactChange>>> allPackages = new ArrayList<>();
+        for (Artifact artifact : manifest.getArtifacts()) {
+            final CompletableFuture<List<ArtifactChange>> cf = new CompletableFuture<>();
+            executorService.submit(() -> {
+                try {
+                    final List<ArtifactChange> found = findUpdates(artifact);
+                    cf.complete(found);
+                } catch (ArtifactResolutionException e) {
+                    cf.completeExceptionally(e);
+                }
+            });
+            allPackages.add(cf);
+        }
+
+        try {
+            CompletableFuture.allOf(allPackages.toArray(new CompletableFuture[]{})).join();
+        } catch (CompletionException e) {
+            if (e.getCause() instanceof ArtifactResolutionException) {
+                throw (ArtifactResolutionException) e.getCause();
+            } else {
+                throw e;
             }
-         });
-         allPackages.add(cf);
-      }
+        }
 
-      try {
-         CompletableFuture.allOf(allPackages.toArray(new CompletableFuture[]{})).join();
-      } catch (CompletionException e) {
-         if (e.getCause() instanceof ArtifactResolutionException) {
-            throw (ArtifactResolutionException) e.getCause();
-         } else {
-            throw e;
-         }
-      }
+        executorService.shutdown();
+        for (CompletableFuture<List<ArtifactChange>> future : allPackages) {
+            try {
+                updates.addAll(future.get());
+            } catch (InterruptedException | ExecutionException e) {
+                // ignore - the future is complete at this point
+            }
+        }
+        final ProvisioningPlan fpUpdates = findFPUpdates();
+        return new UpdateSet(fpUpdates, updates);
+    }
 
-      executorService.shutdown();
-      for (CompletableFuture<List<ArtifactChange>> future : allPackages) {
-         try {
-            updates.addAll(future.get());
-         } catch (InterruptedException | ExecutionException e) {
-            // ignore - the future is complete at this point
-         }
-      }
-      final ProvisioningPlan fpUpdates = findFPUpdates();
-      return new UpdateSet(fpUpdates, updates);
-   }
-
-   private List<ArtifactChange> findUpdates(Artifact artifact) throws ArtifactResolutionException {
+    private List<ArtifactChange> findUpdates(Artifact artifact) throws ArtifactResolutionException {
         List<ArtifactChange> updates = new ArrayList<>();
 
         if (artifact == null) {
@@ -198,25 +199,25 @@ public class Update {
 
         // filter out non-installed artefacts
         final Set<Artifact> collected = resolvedArtfacts.stream()
-                .map(a->new DefaultArtifact(a.getGroupId(), a.getArtifactId(), a.getClassifier(), a.getExtension(), a.getVersion()))
-                .filter(a->(!a.getArtifactId().equals("wildfly-producers") && !a.getArtifactId().equals("community-universe")))
+                .map(a -> new DefaultArtifact(a.getGroupId(), a.getArtifactId(), a.getClassifier(), a.getExtension(), a.getVersion()))
+                .filter(a -> (!a.getArtifactId().equals("wildfly-producers") && !a.getArtifactId().equals("community-universe")))
                 .collect(Collectors.toSet());
         metadata.registerUpdates(collected);
         return collected;
     }
 
-   private class UpdateSet {
+    private class UpdateSet {
 
-      private final ProvisioningPlan fpUpdates;
-      private final List<ArtifactChange> artifactUpdates;
+        private final ProvisioningPlan fpUpdates;
+        private final List<ArtifactChange> artifactUpdates;
 
-      public UpdateSet(ProvisioningPlan fpUpdates, List<ArtifactChange> updates) {
-         this.fpUpdates = fpUpdates;
-         this.artifactUpdates = updates;
-      }
+        public UpdateSet(ProvisioningPlan fpUpdates, List<ArtifactChange> updates) {
+            this.fpUpdates = fpUpdates;
+            this.artifactUpdates = updates;
+        }
 
-      public boolean isEmpty() {
-         return fpUpdates.getUpdates().isEmpty() && artifactUpdates.isEmpty();
-      }
-   }
+        public boolean isEmpty() {
+            return fpUpdates.getUpdates().isEmpty() && artifactUpdates.isEmpty();
+        }
+    }
 }

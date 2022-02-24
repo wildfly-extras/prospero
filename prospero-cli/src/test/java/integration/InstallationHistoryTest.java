@@ -51,14 +51,14 @@ public class InstallationHistoryTest {
 
     private static final String OUTPUT_DIR = "target/server";
     private static final Path OUTPUT_PATH = Paths.get(OUTPUT_DIR).toAbsolutePath();
-   private MavenSessionManager mavenSessionManager = new MavenSessionManager();
-   private final Installation installation = new Installation(OUTPUT_PATH, mavenSessionManager, new CliConsole());
-   private Path channelFile;
+    private MavenSessionManager mavenSessionManager = new MavenSessionManager();
+    private final Installation installation = new Installation(OUTPUT_PATH, mavenSessionManager, new CliConsole());
+    private Path channelFile;
 
-   public InstallationHistoryTest() throws Exception {
-   }
+    public InstallationHistoryTest() throws Exception {
+    }
 
-   @Before
+    @Before
     public void setUp() throws Exception {
         if (OUTPUT_PATH.toFile().exists()) {
             FileUtils.deleteDirectory(OUTPUT_PATH.toFile());
@@ -73,26 +73,26 @@ public class InstallationHistoryTest {
             OUTPUT_PATH.toFile().delete();
         }
         if (Files.exists(channelFile)) {
-           Files.delete(channelFile);
+            Files.delete(channelFile);
         }
     }
 
     @Test
     public void listUpdates() throws Exception {
         // installCore
-       channelFile = TestUtil.prepareChannelFile("local-repo-desc.yaml");
-       Path installDir = Paths.get(OUTPUT_PATH.toString());
-       if (Files.exists(installDir)) {
-           throw new ProvisioningException("Installation dir " + installDir + " already exists");
-       }
+        channelFile = TestUtil.prepareChannelFile("local-repo-desc.yaml");
+        Path installDir = Paths.get(OUTPUT_PATH.toString());
+        if (Files.exists(installDir)) {
+            throw new ProvisioningException("Installation dir " + installDir + " already exists");
+        }
 
-       final ProvisioningDefinition provisioningDefinition = ProvisioningDefinition.builder()
-          .setFpl("org.wildfly.core:wildfly-core-galleon-pack:17.0.0.Final")
-          .setChannelsFile(channelFile)
-          .build();
-       installation.provision(provisioningDefinition);
+        final ProvisioningDefinition provisioningDefinition = ProvisioningDefinition.builder()
+                .setFpl("org.wildfly.core:wildfly-core-galleon-pack:17.0.0.Final")
+                .setChannelsFile(channelFile)
+                .build();
+        installation.provision(provisioningDefinition);
 
-       // updateCore
+        // updateCore
         TestUtil.prepareChannelFileAsUrl(OUTPUT_PATH.resolve(TestUtil.CHANNELS_FILE_PATH), "local-repo-desc.yaml", "local-updates-repo-desc.yaml");
         new Update(OUTPUT_PATH, mavenSessionManager, new AcceptingConsole()).doUpdateAll();
 
@@ -105,46 +105,46 @@ public class InstallationHistoryTest {
 
     @Test
     public void rollbackChanges() throws Exception {
-       channelFile = TestUtil.prepareChannelFile("local-repo-desc.yaml");
-       Path installDir = Paths.get(OUTPUT_PATH.toString());
-       if (Files.exists(installDir)) {
-           throw new ProvisioningException("Installation dir " + installDir + " already exists");
-       }
+        channelFile = TestUtil.prepareChannelFile("local-repo-desc.yaml");
+        Path installDir = Paths.get(OUTPUT_PATH.toString());
+        if (Files.exists(installDir)) {
+            throw new ProvisioningException("Installation dir " + installDir + " already exists");
+        }
 
-       final ProvisioningDefinition provisioningDefinition = ProvisioningDefinition.builder()
-          .setFpl("org.wildfly.core:wildfly-core-galleon-pack:17.0.0.Final")
-          .setChannelsFile(channelFile)
-          .build();
-       installation.provision(provisioningDefinition);
+        final ProvisioningDefinition provisioningDefinition = ProvisioningDefinition.builder()
+                .setFpl("org.wildfly.core:wildfly-core-galleon-pack:17.0.0.Final")
+                .setChannelsFile(channelFile)
+                .build();
+        installation.provision(provisioningDefinition);
 
-       TestUtil.prepareChannelFileAsUrl(OUTPUT_PATH.resolve(TestUtil.CHANNELS_FILE_PATH), "local-repo-desc.yaml", "local-updates-repo-desc.yaml");
-       new Update(OUTPUT_PATH, mavenSessionManager, new AcceptingConsole()).doUpdateAll();
+        TestUtil.prepareChannelFileAsUrl(OUTPUT_PATH.resolve(TestUtil.CHANNELS_FILE_PATH), "local-repo-desc.yaml", "local-updates-repo-desc.yaml");
+        new Update(OUTPUT_PATH, mavenSessionManager, new AcceptingConsole()).doUpdateAll();
 
-       final InstallationHistory installationHistory = new InstallationHistory(OUTPUT_PATH);
-       final List<SavedState> revisions = installationHistory.getRevisions();
+        final InstallationHistory installationHistory = new InstallationHistory(OUTPUT_PATH);
+        final List<SavedState> revisions = installationHistory.getRevisions();
 
-       final SavedState savedState = revisions.get(1);
-       installationHistory.rollback(savedState);
+        final SavedState savedState = revisions.get(1);
+        installationHistory.rollback(savedState);
 
-       final Optional<Artifact> wildflyCliArtifact = readArtifactFromManifest("org.wildfly.core", "wildfly-cli");
-       assertEquals("17.0.0.Final", wildflyCliArtifact.get().getVersion());
+        final Optional<Artifact> wildflyCliArtifact = readArtifactFromManifest("org.wildfly.core", "wildfly-cli");
+        assertEquals("17.0.0.Final", wildflyCliArtifact.get().getVersion());
     }
 
     @Test
     public void displayChanges() throws Exception {
-       channelFile = TestUtil.prepareChannelFile("local-repo-desc.yaml");
-       Path installDir = Paths.get(OUTPUT_PATH.toString());
-       if (Files.exists(installDir)) {
-           throw new ProvisioningException("Installation dir " + installDir + " already exists");
-       }
+        channelFile = TestUtil.prepareChannelFile("local-repo-desc.yaml");
+        Path installDir = Paths.get(OUTPUT_PATH.toString());
+        if (Files.exists(installDir)) {
+            throw new ProvisioningException("Installation dir " + installDir + " already exists");
+        }
 
-       final ProvisioningDefinition provisioningDefinition = ProvisioningDefinition.builder()
-          .setFpl("org.wildfly.core:wildfly-core-galleon-pack:17.0.0.Final")
-          .setChannelsFile(channelFile)
-          .build();
-       installation.provision(provisioningDefinition);
+        final ProvisioningDefinition provisioningDefinition = ProvisioningDefinition.builder()
+                .setFpl("org.wildfly.core:wildfly-core-galleon-pack:17.0.0.Final")
+                .setChannelsFile(channelFile)
+                .build();
+        installation.provision(provisioningDefinition);
 
-       TestUtil.prepareChannelFileAsUrl(OUTPUT_PATH.resolve(TestUtil.CHANNELS_FILE_PATH), "local-repo-desc.yaml", "local-updates-repo-desc.yaml");
+        TestUtil.prepareChannelFileAsUrl(OUTPUT_PATH.resolve(TestUtil.CHANNELS_FILE_PATH), "local-repo-desc.yaml", "local-updates-repo-desc.yaml");
         new Update(OUTPUT_PATH, mavenSessionManager, new AcceptingConsole()).doUpdateAll();
 
         final InstallationHistory installationHistory = new InstallationHistory(OUTPUT_PATH);

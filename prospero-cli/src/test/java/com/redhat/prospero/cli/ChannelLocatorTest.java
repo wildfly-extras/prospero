@@ -5,9 +5,9 @@
  * The ASF licenses this file to You under the Apache License, Version 2.0
  * (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
- *
+ * <p>
  * http://www.apache.org/licenses/LICENSE-2.0
- *
+ * <p>
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -29,23 +29,23 @@ import org.junit.Test;
 @Ignore
 public class ChannelLocatorTest {
 
-   private static final String EAP_DIR = "target/server-eap";
-   private static final Path EAP_PATH = Paths.get(EAP_DIR).toAbsolutePath();
-   private MavenSessionManager mavenSessionManager = new MavenSessionManager();
-   private final Installation installation = new Installation(EAP_PATH, mavenSessionManager, new CliConsole());
+    private static final String EAP_DIR = "target/server-eap";
+    private static final Path EAP_PATH = Paths.get(EAP_DIR).toAbsolutePath();
+    private MavenSessionManager mavenSessionManager = new MavenSessionManager();
+    private final Installation installation = new Installation(EAP_PATH, mavenSessionManager, new CliConsole());
 
-   public ChannelLocatorTest() throws Exception {
-   }
+    public ChannelLocatorTest() throws Exception {
+    }
 
-   @Test
-   public void findLatestEapChannelDefinition() throws Exception {
-      final ProvisioningDefinition provisioningDefinition = ProvisioningDefinition.builder().setFpl("eap").build();
-      installation.provision(provisioningDefinition);
-   }
+    @Test
+    public void findLatestEapChannelDefinition() throws Exception {
+        final ProvisioningDefinition provisioningDefinition = ProvisioningDefinition.builder().setFpl("eap").build();
+        installation.provision(provisioningDefinition);
+    }
 
-   @Test
-   public void findLatestWildflyChannelDefinition() throws Exception {
-      final ProvisioningDefinition provisioningDefinition = ProvisioningDefinition.builder().setFpl("wildfly").build();
-      installation.provision(provisioningDefinition);
-   }
+    @Test
+    public void findLatestWildflyChannelDefinition() throws Exception {
+        final ProvisioningDefinition provisioningDefinition = ProvisioningDefinition.builder().setFpl("wildfly").build();
+        installation.provision(provisioningDefinition);
+    }
 }

@@ -23,9 +23,9 @@ import org.junit.Test;
 
 public class ChanelRefUpdaterTest {
 
-   @Test(expected = ArtifactResolutionException.class)
-   public void resolveChannelFileThrowsExceptionIfNoVersionsFound() throws Exception {
-      final ChannelRef channels = new ChannelRef("test", this.getClass().getResource("/").toString(), "org.test:test:1.0", null);
-      new ChannelRefUpdater(new MavenSessionManager()).resolveLatest(channels);
-   }
+    @Test(expected = ArtifactResolutionException.class)
+    public void resolveChannelFileThrowsExceptionIfNoVersionsFound() throws Exception {
+        final ChannelRef channels = new ChannelRef("test", this.getClass().getResource("/").toString(), "org.test:test:1.0", null);
+        new ChannelRefUpdater(new MavenSessionManager()).resolveLatest(channels);
+    }
 }
