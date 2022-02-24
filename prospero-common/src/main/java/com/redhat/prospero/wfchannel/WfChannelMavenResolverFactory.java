@@ -21,30 +21,17 @@ import org.jboss.galleon.ProvisioningException;
 import org.wildfly.channel.MavenRepository;
 import org.wildfly.channel.spi.MavenVersionsResolver;
 
-import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Path;
 import java.util.List;
 
 public class WfChannelMavenResolverFactory implements MavenVersionsResolver.Factory {
+    private final MavenSessionManager mavenSessionManager;
 
-    private final Path provisioningRepo;
-
-    public WfChannelMavenResolverFactory() throws ProvisioningException {
-        try {
-            provisioningRepo = Files.createTempDirectory("provisioning-repo");
-            provisioningRepo.toFile().deleteOnExit();
-        } catch (IOException e) {
-            throw new ProvisioningException("Unable to create provisioning repository folder.", e);
-        }
+    public WfChannelMavenResolverFactory(MavenSessionManager mavenSessionManager) throws ProvisioningException {
+        this.mavenSessionManager = mavenSessionManager;
     }
 
     @Override
     public MavenVersionsResolver create(List<MavenRepository> mavenRepositories, boolean resolveLocalCache) {
-        return new WfChannelMavenResolver(mavenRepositories, resolveLocalCache, provisioningRepo);
-    }
-
-    public Path getProvisioningRepo() {
-        return provisioningRepo;
+        return new WfChannelMavenResolver(mavenRepositories, resolveLocalCache, mavenSessionManager);
     }
 }

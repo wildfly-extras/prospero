@@ -20,6 +20,7 @@ package com.redhat.prospero.actions;
 import com.redhat.prospero.api.InstallationMetadata;
 import com.redhat.prospero.api.MetadataException;
 import com.redhat.prospero.api.ProvisioningDefinition;
+import com.redhat.prospero.api.exceptions.OperationException;
 import com.redhat.prospero.cli.Console;
 import com.redhat.prospero.galleon.FeaturePackLocationParser;
 import com.redhat.prospero.galleon.GalleonUtils;
@@ -34,6 +35,8 @@ import java.util.ArrayList;
 import java.util.List;
 
 import com.redhat.prospero.api.ChannelRef;
+import com.redhat.prospero.wfchannel.ChannelRefUpdater;
+import com.redhat.prospero.wfchannel.MavenSessionManager;
 import com.redhat.prospero.wfchannel.WfChannelMavenResolverFactory;
 import org.eclipse.aether.artifact.Artifact;
 import org.jboss.galleon.ProvisioningException;
@@ -50,12 +53,14 @@ import static com.redhat.prospero.galleon.GalleonUtils.MAVEN_REPO_LOCAL;
 
 public class Installation {
 
+    private final MavenSessionManager mavenSessionManager;
     private Path installDir;
     private Console console;
 
-    public Installation(Path installDir, Console console) {
+    public Installation(Path installDir, MavenSessionManager mavenSessionManager, Console console) {
         this.installDir = installDir;
         this.console = console;
+        this.mavenSessionManager = mavenSessionManager;
     }
 
     static {
@@ -76,10 +81,11 @@ public class Installation {
      * @throws ProvisioningException
      * @throws MetadataException
      */
-    public void provision(ProvisioningDefinition provisioningDefinition) throws ProvisioningException, MetadataException {
-        final List<Channel> channels = mapToChannels(provisioningDefinition.getChannelRefs());
+    public void provision(ProvisioningDefinition provisioningDefinition) throws ProvisioningException, OperationException {
+        final List<ChannelRef> updatedRefs = new ChannelRefUpdater(mavenSessionManager).resolveLatest(provisioningDefinition.getChannelRefs());
+        final List<Channel> channels = mapToChannels(updatedRefs);
 
-        final WfChannelMavenResolverFactory factory = new WfChannelMavenResolverFactory();
+        final WfChannelMavenResolverFactory factory = new WfChannelMavenResolverFactory(mavenSessionManager);
         final ChannelMavenArtifactRepositoryManager repoManager = new ChannelMavenArtifactRepositoryManager(channels, factory);
         ProvisioningManager provMgr = GalleonUtils.getProvisioningManager(installDir, repoManager);
         final ProvisioningLayoutFactory layoutFactory = provMgr.getLayoutFactory();
@@ -99,13 +105,13 @@ public class Installation {
         final FeaturePackConfig config = configBuilder.build();
 
         try {
-            System.setProperty(MAVEN_REPO_LOCAL, factory.getProvisioningRepo().toAbsolutePath().toString());
+            System.setProperty(MAVEN_REPO_LOCAL, mavenSessionManager.getProvisioningRepo().toAbsolutePath().toString());
             provMgr.install(config);
         } finally {
             System.clearProperty(MAVEN_REPO_LOCAL);
         }
 
-        writeProsperoMetadata(installDir, repoManager, provisioningDefinition.getChannelRefs());
+        writeProsperoMetadata(installDir, repoManager, updatedRefs);
     }
 
     /**
@@ -123,12 +129,12 @@ public class Installation {
         }
         final List<Channel> channels = mapToChannels(channelRefs);
 
-        final WfChannelMavenResolverFactory factory = new WfChannelMavenResolverFactory();
+        final WfChannelMavenResolverFactory factory = new WfChannelMavenResolverFactory(mavenSessionManager);
         final ChannelMavenArtifactRepositoryManager repoManager = new ChannelMavenArtifactRepositoryManager(channels, factory);
         ProvisioningManager provMgr = GalleonUtils.getProvisioningManager(installDir, repoManager);
 
         try {
-            System.setProperty(MAVEN_REPO_LOCAL, factory.getProvisioningRepo().toAbsolutePath().toString());
+            System.setProperty(MAVEN_REPO_LOCAL, mavenSessionManager.getProvisioningRepo().toAbsolutePath().toString());
             provMgr.provision(installationFile);
         }finally {
             System.clearProperty(MAVEN_REPO_LOCAL);

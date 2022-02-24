@@ -17,10 +17,12 @@
 
 package com.redhat.prospero.api;
 
+import com.redhat.prospero.api.exceptions.OperationException;
+
 /**
  * Represents metadata read/write operations exceptions
  */
-public class MetadataException extends Exception {
+public class MetadataException extends OperationException {
     public MetadataException(String msg, Exception e) {
         super(msg, e);
     }

@@ -29,7 +29,6 @@ import java.util.Optional;
 import java.util.Set;
 
 import com.redhat.prospero.api.exceptions.ArtifactResolutionException;
-import org.eclipse.aether.artifact.DefaultArtifact;
 
 public class ProvisioningDefinition {
 
@@ -56,9 +55,8 @@ public class ProvisioningDefinition {
             this.includedPackages.add("docs.examples.configs");
 
             if (!channelsFile.isPresent()) {
-               final DefaultArtifact artifact = new DefaultArtifact("org.wildfly.channels", "eap-74", "channel", "yaml", "7.4");
                final String repoUrl = channelRepo.orElse(CHANNEL_URLS.get("mrrc"));
-               this.channels = readLatestChannelFromMaven(artifact, repoUrl);
+               this.channels = Arrays.asList(new ChannelRef("mrrc", repoUrl, "org.wildfly.channels:eap-74:7.4", null));
             } else {
                this.channels = ChannelRef.readChannels(channelsFile.get());
             }
@@ -66,9 +64,8 @@ public class ProvisioningDefinition {
             this.fpl = "org.wildfly:wildfly-ee-galleon-pack";
 
             if (!channelsFile.isPresent()) {
-               final DefaultArtifact artifact = new DefaultArtifact("org.wildfly.channels", "wildfly", "channel", "yaml", "[26.1.0,)");
                final String repoUrl = channelRepo.orElse(CHANNEL_URLS.get("central"));
-               this.channels = readLatestChannelFromMaven(artifact, repoUrl);
+               this.channels = Arrays.asList(new ChannelRef("central", repoUrl, "org.wildfly.channels:wildfly:26.1.0", null));
             } else {
                this.channels = ChannelRef.readChannels(channelsFile.get());
             }
@@ -95,14 +92,6 @@ public class ProvisioningDefinition {
 
    public List<ChannelRef> getChannelRefs() {
       return channels;
-   }
-
-
-
-   protected List<ChannelRef> readLatestChannelFromMaven(DefaultArtifact artifact,
-                                                         String repoUrl) throws ArtifactResolutionException {
-      ChannelRef channelRef = new ChannelRef("eap", repoUrl, artifact.getGroupId() + ":" + artifact.getArtifactId() + ":" + artifact.getVersion());
-      return Arrays.asList(channelRef);
    }
 
    public static class Builder {

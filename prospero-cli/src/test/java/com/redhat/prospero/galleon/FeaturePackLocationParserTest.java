@@ -1,6 +1,7 @@
 package com.redhat.prospero.galleon;
 
 import com.redhat.prospero.api.ChannelRef;
+import com.redhat.prospero.wfchannel.MavenSessionManager;
 import com.redhat.prospero.wfchannel.WfChannelMavenResolverFactory;
 import org.jboss.galleon.universe.FeaturePackLocation;
 import org.jboss.galleon.universe.maven.MavenUniverseException;
@@ -37,7 +38,16 @@ public class FeaturePackLocationParserTest {
             }
         }).collect(Collectors.toList());
 
-        final WfChannelMavenResolverFactory factory = new WfChannelMavenResolverFactory();
+        //        try {
+        //            provisioningRepo = Files.createTempDirectory("provisioning-repo");
+        //            provisioningRepo.toFile().deleteOnExit();
+        //        } catch (IOException e) {
+        //            throw new ProvisioningException("Unable to create provisioning repository folder.", e);
+        //        }
+        Path provisioningRepo = Paths.get("/Users/spyrkob/workspaces/set/prospero/debug/provision-repo/");
+        final MavenSessionManager mavenSessionManager = new MavenSessionManager(provisioningRepo);
+
+        final WfChannelMavenResolverFactory factory = new WfChannelMavenResolverFactory(mavenSessionManager);
         repoManager = new ChannelMavenArtifactRepositoryManager(channels, factory);
         parser = new FeaturePackLocationParser(repoManager);
     }

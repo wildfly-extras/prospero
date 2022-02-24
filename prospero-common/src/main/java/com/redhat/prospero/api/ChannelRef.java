@@ -20,23 +20,12 @@ package com.redhat.prospero.api;
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Path;
-import java.util.Arrays;
 import java.util.List;
 
 import com.fasterxml.jackson.databind.JavaType;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
 import com.redhat.prospero.api.exceptions.ArtifactResolutionException;
-import com.redhat.prospero.wfchannel.WfChannelMavenResolver;
-import org.eclipse.aether.DefaultRepositorySystemSession;
-import org.eclipse.aether.RepositorySystem;
-import org.eclipse.aether.artifact.Artifact;
-import org.eclipse.aether.artifact.DefaultArtifact;
-import org.eclipse.aether.repository.RemoteRepository;
-import org.eclipse.aether.resolution.ArtifactRequest;
-import org.eclipse.aether.resolution.VersionRangeRequest;
-import org.eclipse.aether.resolution.VersionRangeResolutionException;
-import org.eclipse.aether.resolution.VersionRangeResult;
 
 public class ChannelRef {
 
@@ -48,49 +37,8 @@ public class ChannelRef {
         final ObjectMapper objectMapper = new ObjectMapper(new YAMLFactory());
         JavaType type = objectMapper.getTypeFactory().constructCollectionType(List.class, ChannelRef.class);
         final List<ChannelRef> channelRefs = objectMapper.readValue(path.toUri().toURL(), type);
-        for (ChannelRef channelRef : channelRefs) {
-            if (channelRef.gav != null && channelRef.repoUrl != null) {
-                // resolve new version
-                String groupId = channelRef.gav.split(":")[0];
-                String artifactId = channelRef.gav.split(":")[1];
-                String version = channelRef.gav.split(":")[2];
-                final String fileUrl = resolveChannelFile(new DefaultArtifact(groupId, artifactId, "channel", "yaml", "[" + version + ",)"),
-                                                                                 new RemoteRepository.Builder(channelRef.getName(), "default", channelRef.getRepoUrl()).build())
-                   .getFile().toURI().toURL().toString();
-                channelRef.setUrl(fileUrl);
-            }
-        }
 
         return channelRefs;
-    }
-
-    private static Artifact resolveChannelFile(DefaultArtifact artifact,
-                                              RemoteRepository repo) throws ArtifactResolutionException {
-        final RepositorySystem repositorySystem = WfChannelMavenResolver.newRepositorySystem();
-        final DefaultRepositorySystemSession repositorySession = WfChannelMavenResolver.newRepositorySystemSession(repositorySystem, true, null);
-
-        final VersionRangeRequest request = new VersionRangeRequest();
-        request.setArtifact(artifact);
-        request.setRepositories(Arrays.asList(repo));
-        final VersionRangeResult versionRangeResult;
-        try {
-            versionRangeResult = repositorySystem.resolveVersionRange(repositorySession, request);
-        } catch (VersionRangeResolutionException e) {
-            throw new ArtifactResolutionException("Unable to resolve versions for " + artifact, e);
-        }
-        // TODO: pick latest version using Comparator
-        if (versionRangeResult.getHighestVersion() == null && versionRangeResult.getVersions().isEmpty()) {
-            throw new ArtifactResolutionException(
-               String.format("Unable to resolve versions of %s in repository [%s: %s]", artifact, repo.getId(), repo.getUrl()));
-        }
-        final Artifact latestArtifact = artifact.setVersion(versionRangeResult.getHighestVersion().toString());
-
-        final ArtifactRequest artifactRequest = new ArtifactRequest(latestArtifact, Arrays.asList(repo), null);
-        try {
-            return repositorySystem.resolveArtifact(repositorySession, artifactRequest).getArtifact();
-        } catch (org.eclipse.aether.resolution.ArtifactResolutionException e) {
-            throw new ArtifactResolutionException("Unable to resolve " + artifact, e);
-        }
     }
 
     private String name;
@@ -105,26 +53,11 @@ public class ChannelRef {
 
     }
 
-    public ChannelRef(String name, String url) {
-        this.name = name;
-        this.url = url;
-    }
-
-    public ChannelRef(String name, String repoUrl, String gav) throws ArtifactResolutionException {
+    public ChannelRef(String name, String repoUrl, String gav, String fileUrl) throws ArtifactResolutionException {
         this.name = name;
         this.repoUrl = repoUrl;
         this.gav = gav;
-        // get latest version of gav
-        this.url = resolveUrlFromGav(gav, repoUrl);
-    }
-
-    private static String resolveUrlFromGav(String gav, String repoUrl) throws ArtifactResolutionException {
-        String groupId = gav.split(":")[0];
-        String artifactId = gav.split(":")[1];
-        String version = gav.split(":")[2];
-        final Artifact channelArtifact = resolveChannelFile(new DefaultArtifact(groupId, artifactId, "channel", "yaml", "[" + version + ",)"),
-                                                  new RemoteRepository.Builder("channel-repo", "default", repoUrl).build());
-        return channelArtifact.getFile().toURI().toString();
+        this.url = fileUrl;
     }
 
     public String getName() {

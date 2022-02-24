@@ -23,6 +23,7 @@ import java.util.Map;
 
 import com.redhat.prospero.api.MetadataException;
 import com.redhat.prospero.api.exceptions.OperationException;
+import com.redhat.prospero.wfchannel.MavenSessionManager;
 import org.jboss.galleon.ProvisioningException;
 
 class UpdateArgs {
@@ -36,16 +37,26 @@ class UpdateArgs {
    public void handleArgs(Map<String, String> parsedArgs) throws ArgumentParsingException, OperationException {
       String dir = parsedArgs.get(CliMain.TARGET_PATH_ARG);
       Boolean dryRun = parsedArgs.containsKey(CliMain.DRY_RUN)?Boolean.parseBoolean(parsedArgs.get(CliMain.DRY_RUN)):false;
+      String localRepo = parsedArgs.get(CliMain.LOCAL_REPO);
+      boolean offline = parsedArgs.containsKey(CliMain.OFFLINE)?Boolean.parseBoolean(parsedArgs.get(CliMain.OFFLINE)):false;
       if (dir == null || dir.isEmpty()) {
          throw new ArgumentParsingException("Target dir argument (--%s) need to be set on update command", CliMain.TARGET_PATH_ARG);
       }
 
       final Path targetPath = Paths.get(dir).toAbsolutePath();
       try {
-         if (!dryRun) {
-            actionFactory.update(targetPath).doUpdateAll();
+         final MavenSessionManager mavenSessionManager;
+         if (localRepo == null) {
+            mavenSessionManager = new MavenSessionManager();
          } else {
-            actionFactory.update(targetPath).listUpdates();
+            mavenSessionManager = new MavenSessionManager(Paths.get(localRepo).toAbsolutePath());
+         }
+         mavenSessionManager.setOffline(offline);
+
+         if (!dryRun) {
+            actionFactory.update(targetPath, mavenSessionManager).doUpdateAll();
+         } else {
+            actionFactory.update(targetPath, mavenSessionManager).listUpdates();
          }
       } catch (MetadataException | ProvisioningException e) {
          throw new OperationException("Error while executing update: " + e.getMessage(),  e);

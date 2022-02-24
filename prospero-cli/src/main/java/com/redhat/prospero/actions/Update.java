@@ -35,11 +35,14 @@ import com.redhat.prospero.api.InstallationMetadata;
 import com.redhat.prospero.api.ArtifactChange;
 import com.redhat.prospero.api.MetadataException;
 import com.redhat.prospero.api.exceptions.ArtifactResolutionException;
+import com.redhat.prospero.api.exceptions.OperationException;
 import com.redhat.prospero.cli.Console;
 import com.redhat.prospero.galleon.GalleonUtils;
 import com.redhat.prospero.galleon.ChannelMavenArtifactRepositoryManager;
 import com.redhat.prospero.api.ChannelRef;
 import com.redhat.prospero.api.Manifest;
+import com.redhat.prospero.wfchannel.ChannelRefUpdater;
+import com.redhat.prospero.wfchannel.MavenSessionManager;
 import com.redhat.prospero.wfchannel.WfChannelMavenResolverFactory;
 import org.eclipse.aether.artifact.Artifact;
 import org.eclipse.aether.artifact.DefaultArtifact;
@@ -63,11 +66,14 @@ public class Update {
 
     private final Console console;
     private final WfChannelMavenResolverFactory factory;
+    private final MavenSessionManager mavenSessionManager;
 
-    public Update(Path installDir, Console console) throws ProvisioningException, MetadataException {
+    public Update(Path installDir, MavenSessionManager mavenSessionManager, Console console) throws ProvisioningException, OperationException {
         this.metadata = new InstallationMetadata(installDir);
-        final List<Channel> channels = mapToChannels(metadata.getChannels());
-        this.factory = new WfChannelMavenResolverFactory();
+
+        this.mavenSessionManager = mavenSessionManager;
+        final List<Channel> channels = mapToChannels(new ChannelRefUpdater(this.mavenSessionManager).resolveLatest(metadata.getChannels()));
+        this.factory = new WfChannelMavenResolverFactory(mavenSessionManager);
         this.channelSession = new ChannelSession(channels, factory);
         this.maven = new ChannelMavenArtifactRepositoryManager(channelSession);
         this.provMgr = GalleonUtils.getProvisioningManager(installDir, maven);
@@ -182,7 +188,7 @@ public class Update {
 
     private Set<Artifact> applyFpUpdates(ProvisioningPlan updates) throws ProvisioningException {
         try {
-            System.setProperty(MAVEN_REPO_LOCAL, factory.getProvisioningRepo().toAbsolutePath().toString());
+            System.setProperty(MAVEN_REPO_LOCAL, mavenSessionManager.getProvisioningRepo().toAbsolutePath().toString());
             provMgr.apply(updates);
         } finally {
             System.clearProperty(MAVEN_REPO_LOCAL);

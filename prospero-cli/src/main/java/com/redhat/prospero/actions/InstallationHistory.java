@@ -24,6 +24,7 @@ import com.redhat.prospero.api.MetadataException;
 import com.redhat.prospero.api.SavedState;
 import com.redhat.prospero.galleon.GalleonUtils;
 import com.redhat.prospero.galleon.ChannelMavenArtifactRepositoryManager;
+import com.redhat.prospero.wfchannel.MavenSessionManager;
 import com.redhat.prospero.wfchannel.WfChannelMavenResolverFactory;
 import org.jboss.galleon.ProvisioningManager;
 import org.wildfly.channel.Channel;
@@ -92,12 +93,13 @@ public class InstallationHistory {
 
         final List<Channel> channels = mapToChannels(metadata.getChannels());
 
-        final WfChannelMavenResolverFactory factory = new WfChannelMavenResolverFactory();
+        final MavenSessionManager mavenSessionManager = new MavenSessionManager();
+        final WfChannelMavenResolverFactory factory = new WfChannelMavenResolverFactory(mavenSessionManager);
         final ChannelMavenArtifactRepositoryManager repoManager = new ChannelMavenArtifactRepositoryManager(channels, factory);
         ProvisioningManager provMgr = GalleonUtils.getProvisioningManager(installation, repoManager);
 
         try {
-            System.setProperty(MAVEN_REPO_LOCAL, factory.getProvisioningRepo().toAbsolutePath().toString());
+            System.setProperty(MAVEN_REPO_LOCAL, mavenSessionManager.getProvisioningRepo().toAbsolutePath().toString());
             provMgr.provision(metadata.getProvisioningConfig());
         } finally {
             System.clearProperty(MAVEN_REPO_LOCAL);

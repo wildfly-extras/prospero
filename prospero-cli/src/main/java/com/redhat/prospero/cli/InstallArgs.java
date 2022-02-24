@@ -25,6 +25,7 @@ import java.util.Map;
 import com.redhat.prospero.api.MetadataException;
 import com.redhat.prospero.api.ProvisioningDefinition;
 import com.redhat.prospero.api.exceptions.OperationException;
+import com.redhat.prospero.wfchannel.MavenSessionManager;
 import org.jboss.galleon.ProvisioningException;
 
 class InstallArgs {
@@ -39,6 +40,8 @@ class InstallArgs {
       String fpl = parsedArgs.get(CliMain.FPL_ARG);
       String channelFile = parsedArgs.get(CliMain.CHANNEL_FILE_ARG);
       String channelRepo = parsedArgs.get(CliMain.CHANNEL_REPO);
+      String localRepo = parsedArgs.get(CliMain.LOCAL_REPO);
+      boolean offline = parsedArgs.containsKey(CliMain.OFFLINE)?Boolean.parseBoolean(parsedArgs.get(CliMain.OFFLINE)):false;
       Map<String, String> channelUrls = new HashMap<>();
 
       if (dir == null || dir.isEmpty()) {
@@ -55,13 +58,21 @@ class InstallArgs {
 
       try {
          final Path installationDir = Paths.get(dir).toAbsolutePath();
+         final MavenSessionManager mavenSessionManager;
+         if (localRepo == null) {
+            mavenSessionManager = new MavenSessionManager();
+         } else {
+            mavenSessionManager = new MavenSessionManager(Paths.get(localRepo).toAbsolutePath());
+         }
+         mavenSessionManager.setOffline(offline);
+
          final ProvisioningDefinition provisioningDefinition = ProvisioningDefinition.builder()
             .setFpl(fpl)
             .setChannelsFile(channelFile==null?null:Paths.get(channelFile).toAbsolutePath())
             .setChannelRepo(channelRepo)
             .build();
 
-         actionFactory.install(installationDir).provision(provisioningDefinition);
+         actionFactory.install(installationDir, mavenSessionManager).provision(provisioningDefinition);
       } catch (ProvisioningException | MetadataException e) {
          throw new OperationException("Error while executing installation: " + e.getMessage(),  e);
       }

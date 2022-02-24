@@ -25,6 +25,7 @@ import java.util.Map;
 import com.redhat.prospero.actions.Installation;
 import com.redhat.prospero.api.ChannelRef;
 import com.redhat.prospero.api.ProvisioningDefinition;
+import com.redhat.prospero.wfchannel.MavenSessionManager;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.ArgumentCaptor;
@@ -90,8 +91,8 @@ public class InstallArgsTest {
 
    @Test
    public void callProvisionOnInstallCommandWithCustomFpl() throws Exception {
-      when(actionFactory.install(any())).thenReturn(installation);
-      String channels = Paths.get(CliMainTest.class.getResource("/channels.json").toURI()).toString();
+      when(actionFactory.install(any(), any())).thenReturn(installation);
+      String channels = Paths.get(InstallArgsTest.class.getResource("/channels.json").toURI()).toString();
 
       Map<String, String> args = new HashMap<>();
       args.put(CliMain.TARGET_PATH_ARG, "test");
@@ -99,14 +100,14 @@ public class InstallArgsTest {
       args.put(CliMain.CHANNEL_FILE_ARG, channels);
       new InstallArgs(actionFactory).handleArgs(args);
 
-      Mockito.verify(actionFactory).install(eq(Paths.get("test").toAbsolutePath()));
+      Mockito.verify(actionFactory).install(eq(Paths.get("test").toAbsolutePath()), any(MavenSessionManager.class));
       Mockito.verify(installation).provision(serverDefiniton.capture());
       assertEquals("org.jboss.eap:wildfly-ee-galleon-pack", serverDefiniton.getValue().getFpl());
    }
 
    @Test
    public void callProvisionOnInstallEapCommand() throws Exception {
-      when(actionFactory.install(any())).thenReturn(installation);
+      when(actionFactory.install(any(), any(MavenSessionManager.class))).thenReturn(installation);
 
       Map<String, String> args = new HashMap<>();
       args.put(CliMain.TARGET_PATH_ARG, "test");
@@ -114,15 +115,15 @@ public class InstallArgsTest {
       args.put(CliMain.CHANNEL_REPO, "http://lacrosse.corp.redhat.com/~bspyrkos/tmp-repo/");
       new InstallArgs(actionFactory).handleArgs(args);
 
-      Mockito.verify(actionFactory).install(eq(Paths.get("test").toAbsolutePath()));
+      Mockito.verify(actionFactory).install(eq(Paths.get("test").toAbsolutePath()), any(MavenSessionManager.class));
       Mockito.verify(installation).provision(serverDefiniton.capture());
       assertEquals("org.jboss.eap:wildfly-ee-galleon-pack", serverDefiniton.getValue().getFpl());
    }
 
    @Test
    public void callProvisionOnInstallEapOverrideChannelsCommand() throws Exception {
-      when(actionFactory.install(any())).thenReturn(installation);
-      String channels = Paths.get(CliMainTest.class.getResource("/channels.json").toURI()).toString();
+      when(actionFactory.install(any(), any(MavenSessionManager.class))).thenReturn(installation);
+      String channels = Paths.get(InstallArgsTest.class.getResource("/channels.json").toURI()).toString();
 
       Map<String, String> args = new HashMap<>();
       args.put(CliMain.TARGET_PATH_ARG, "test");
@@ -130,7 +131,7 @@ public class InstallArgsTest {
       args.put(CliMain.CHANNEL_FILE_ARG, channels);
       new InstallArgs(actionFactory).handleArgs(args);
 
-      Mockito.verify(actionFactory).install(eq(Paths.get("test").toAbsolutePath()));
+      Mockito.verify(actionFactory).install(eq(Paths.get("test").toAbsolutePath()), any(MavenSessionManager.class));
       ArgumentMatcher<List<ChannelRef>> matcher = channelRefs -> {
          if (channelRefs.size() != 1) return false;
          return  channelRefs.get(0).getName().equals("dev");
