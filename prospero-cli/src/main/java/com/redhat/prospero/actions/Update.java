@@ -48,6 +48,7 @@ import org.eclipse.aether.artifact.Artifact;
 import org.eclipse.aether.artifact.DefaultArtifact;
 import org.jboss.galleon.ProvisioningException;
 import org.jboss.galleon.ProvisioningManager;
+import org.jboss.galleon.layout.ProvisioningLayoutFactory;
 import org.jboss.galleon.layout.ProvisioningPlan;
 import org.jboss.galleon.universe.maven.MavenArtifact;
 import org.wildfly.channel.Channel;
@@ -77,6 +78,12 @@ public class Update {
         this.channelSession = new ChannelSession(channels, factory);
         this.maven = new ChannelMavenArtifactRepositoryManager(channelSession);
         this.provMgr = GalleonUtils.getProvisioningManager(installDir, maven);
+        final ProvisioningLayoutFactory layoutFactory = provMgr.getLayoutFactory();
+
+        layoutFactory.setProgressCallback("LAYOUT_BUILD", console.getProgressCallback("LAYOUT_BUILD"));
+        layoutFactory.setProgressCallback("PACKAGES", console.getProgressCallback("PACKAGES"));
+        layoutFactory.setProgressCallback("CONFIGS", console.getProgressCallback("CONFIGS"));
+        layoutFactory.setProgressCallback("JBMODULES", console.getProgressCallback("JBMODULES"));
         this.console = console;
     }
 

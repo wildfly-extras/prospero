@@ -98,7 +98,7 @@ public class InstallationHistoryTest {
         new Update(OUTPUT_PATH, mavenSessionManager, new AcceptingConsole()).doUpdateAll();
 
         // get history
-        List<SavedState> states = new InstallationHistory(OUTPUT_PATH).getRevisions();
+        List<SavedState> states = new InstallationHistory(OUTPUT_PATH, new AcceptingConsole()).getRevisions();
 
         // assert two entries
         assertEquals(2, states.size());
@@ -126,7 +126,7 @@ public class InstallationHistoryTest {
         assertEquals("17.0.1.Final", wildflyCliArtifact.get().getVersion());
         assertTrue("Updated jar should be present in module", wildflyCliModulePath.resolve("wildfly-cli-17.0.1.Final.jar").toFile().exists());
 
-        final InstallationHistory installationHistory = new InstallationHistory(OUTPUT_PATH);
+        final InstallationHistory installationHistory = new InstallationHistory(OUTPUT_PATH, new AcceptingConsole());
         final List<SavedState> revisions = installationHistory.getRevisions();
 
         final SavedState savedState = revisions.get(1);
@@ -154,7 +154,7 @@ public class InstallationHistoryTest {
         TestUtil.prepareChannelFileAsUrl(OUTPUT_PATH.resolve(TestUtil.CHANNELS_FILE_PATH), "local-repo-desc.yaml", "local-updates-repo-desc.yaml");
         new Update(OUTPUT_PATH, mavenSessionManager, new AcceptingConsole()).doUpdateAll();
 
-        final InstallationHistory installationHistory = new InstallationHistory(OUTPUT_PATH);
+        final InstallationHistory installationHistory = new InstallationHistory(OUTPUT_PATH, new AcceptingConsole());
         final List<SavedState> revisions = installationHistory.getRevisions();
 
         final SavedState savedState = revisions.get(1);

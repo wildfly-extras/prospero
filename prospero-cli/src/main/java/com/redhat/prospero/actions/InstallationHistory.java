@@ -22,19 +22,20 @@ import com.redhat.prospero.api.ChannelRef;
 import com.redhat.prospero.api.InstallationMetadata;
 import com.redhat.prospero.api.MetadataException;
 import com.redhat.prospero.api.SavedState;
+import com.redhat.prospero.cli.Console;
 import com.redhat.prospero.galleon.GalleonUtils;
 import com.redhat.prospero.galleon.ChannelMavenArtifactRepositoryManager;
 import com.redhat.prospero.wfchannel.MavenSessionManager;
 import com.redhat.prospero.wfchannel.WfChannelMavenResolverFactory;
 import org.jboss.galleon.ProvisioningException;
 import org.jboss.galleon.ProvisioningManager;
+import org.jboss.galleon.layout.ProvisioningLayoutFactory;
 import org.wildfly.channel.Channel;
 import org.wildfly.channel.ChannelMapper;
 
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -43,39 +44,11 @@ import static com.redhat.prospero.galleon.GalleonUtils.MAVEN_REPO_LOCAL;
 public class InstallationHistory {
 
     private final Path installation;
+    private final Console console;
 
-    public InstallationHistory(Path installation) {
+    public InstallationHistory(Path installation, Console console) {
         this.installation = installation;
-    }
-
-    public static void main(String[] args) throws Exception {
-        final Path installation = Paths.get(args[1]);
-        final String op = args[0];
-
-        final InstallationHistory installationHistory = new InstallationHistory(installation);
-        if (op.equals("list")) {
-            final List<SavedState> history = installationHistory.getRevisions();
-
-            for (SavedState savedState : history) {
-                System.out.println(savedState.shortDescription());
-            }
-        } else if (op.equals("revert")) {
-            final String revision = args[2];
-            installationHistory.rollback(new SavedState(revision), new MavenSessionManager());
-        } else if (op.equals("compare")) {
-            final String revision = args[2];
-            final List<ArtifactChange> changes = installationHistory.compare(new SavedState(revision));
-            if (changes.isEmpty()) {
-                System.out.println("No changes found");
-            } else {
-                changes.forEach((c-> System.out.println(c)));
-            }
-        } else {
-            System.out.println("Unknown operation " + op);
-            System.exit(-1);
-        }
-
-
+        this.console = console;
     }
 
     public List<ArtifactChange> compare(SavedState savedState) throws MetadataException {
@@ -97,6 +70,12 @@ public class InstallationHistory {
         final WfChannelMavenResolverFactory factory = new WfChannelMavenResolverFactory(mavenSessionManager);
         final ChannelMavenArtifactRepositoryManager repoManager = new ChannelMavenArtifactRepositoryManager(channels, factory, metadata.getManifest());
         ProvisioningManager provMgr = GalleonUtils.getProvisioningManager(installation, repoManager);
+        final ProvisioningLayoutFactory layoutFactory = provMgr.getLayoutFactory();
+
+        layoutFactory.setProgressCallback("LAYOUT_BUILD", console.getProgressCallback("LAYOUT_BUILD"));
+        layoutFactory.setProgressCallback("PACKAGES", console.getProgressCallback("PACKAGES"));
+        layoutFactory.setProgressCallback("CONFIGS", console.getProgressCallback("CONFIGS"));
+        layoutFactory.setProgressCallback("JBMODULES", console.getProgressCallback("JBMODULES"));
 
         try {
             System.setProperty(MAVEN_REPO_LOCAL, mavenSessionManager.getProvisioningRepo().toAbsolutePath().toString());
