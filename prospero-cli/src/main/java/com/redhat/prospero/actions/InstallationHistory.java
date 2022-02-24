@@ -26,6 +26,7 @@ import com.redhat.prospero.galleon.GalleonUtils;
 import com.redhat.prospero.galleon.ChannelMavenArtifactRepositoryManager;
 import com.redhat.prospero.wfchannel.MavenSessionManager;
 import com.redhat.prospero.wfchannel.WfChannelMavenResolverFactory;
+import org.jboss.galleon.ProvisioningException;
 import org.jboss.galleon.ProvisioningManager;
 import org.wildfly.channel.Channel;
 import org.wildfly.channel.ChannelMapper;
@@ -60,7 +61,7 @@ public class InstallationHistory {
             }
         } else if (op.equals("revert")) {
             final String revision = args[2];
-            installationHistory.rollback(new SavedState(revision));
+            installationHistory.rollback(new SavedState(revision), new MavenSessionManager());
         } else if (op.equals("compare")) {
             final String revision = args[2];
             final List<ArtifactChange> changes = installationHistory.compare(new SavedState(revision));
@@ -87,15 +88,14 @@ public class InstallationHistory {
         return installationMetadata.getRevisions();
     }
 
-    public void rollback(SavedState savedState) throws Exception {
+    public void rollback(SavedState savedState, MavenSessionManager mavenSessionManager) throws MetadataException, ProvisioningException {
         InstallationMetadata metadata = new InstallationMetadata(installation);
         metadata = metadata.rollback(savedState);
 
         final List<Channel> channels = mapToChannels(metadata.getChannels());
 
-        final MavenSessionManager mavenSessionManager = new MavenSessionManager();
         final WfChannelMavenResolverFactory factory = new WfChannelMavenResolverFactory(mavenSessionManager);
-        final ChannelMavenArtifactRepositoryManager repoManager = new ChannelMavenArtifactRepositoryManager(channels, factory);
+        final ChannelMavenArtifactRepositoryManager repoManager = new ChannelMavenArtifactRepositoryManager(channels, factory, metadata.getManifest());
         ProvisioningManager provMgr = GalleonUtils.getProvisioningManager(installation, repoManager);
 
         try {

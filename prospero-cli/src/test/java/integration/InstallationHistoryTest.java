@@ -46,6 +46,7 @@ import java.util.Map;
 import java.util.Optional;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 
 public class InstallationHistoryTest {
 
@@ -106,9 +107,11 @@ public class InstallationHistoryTest {
     @Test
     public void rollbackChanges() throws Exception {
         channelFile = TestUtil.prepareChannelFile("local-repo-desc.yaml");
-        Path installDir = Paths.get(OUTPUT_PATH.toString());
-        if (Files.exists(installDir)) {
-            throw new ProvisioningException("Installation dir " + installDir + " already exists");
+        final Path modulesPaths = OUTPUT_PATH.resolve(Paths.get("modules", "system", "layers", "base"));
+        final Path wildflyCliModulePath = modulesPaths.resolve(Paths.get("org", "jboss", "as", "cli", "main"));
+
+        if (Files.exists(OUTPUT_PATH)) {
+            throw new ProvisioningException("Installation dir " + OUTPUT_PATH + " already exists");
         }
 
         final ProvisioningDefinition provisioningDefinition = ProvisioningDefinition.builder()
@@ -119,15 +122,19 @@ public class InstallationHistoryTest {
 
         TestUtil.prepareChannelFileAsUrl(OUTPUT_PATH.resolve(TestUtil.CHANNELS_FILE_PATH), "local-repo-desc.yaml", "local-updates-repo-desc.yaml");
         new Update(OUTPUT_PATH, mavenSessionManager, new AcceptingConsole()).doUpdateAll();
+        Optional<Artifact> wildflyCliArtifact = readArtifactFromManifest("org.wildfly.core", "wildfly-cli");
+        assertEquals("17.0.1.Final", wildflyCliArtifact.get().getVersion());
+        assertTrue("Updated jar should be present in module", wildflyCliModulePath.resolve("wildfly-cli-17.0.1.Final.jar").toFile().exists());
 
         final InstallationHistory installationHistory = new InstallationHistory(OUTPUT_PATH);
         final List<SavedState> revisions = installationHistory.getRevisions();
 
         final SavedState savedState = revisions.get(1);
-        installationHistory.rollback(savedState);
+        installationHistory.rollback(savedState, new MavenSessionManager());
 
-        final Optional<Artifact> wildflyCliArtifact = readArtifactFromManifest("org.wildfly.core", "wildfly-cli");
+        wildflyCliArtifact = readArtifactFromManifest("org.wildfly.core", "wildfly-cli");
         assertEquals("17.0.0.Final", wildflyCliArtifact.get().getVersion());
+        assertTrue("Reverted jar should be present in module", wildflyCliModulePath.resolve("wildfly-cli-17.0.0.Final.jar").toFile().exists());
     }
 
     @Test
