@@ -35,7 +35,7 @@ public class TestUtil {
     public static final Path CHANNELS_FILE_PATH = Paths.get(InstallationMetadata.METADATA_DIR, InstallationMetadata.CHANNELS_FILE_NAME);
 
     static public URL prepareChannelFileAsUrl(String channelDescriptor) throws IOException {
-        final Path channelFile = Files.createTempFile("channels", "json");
+        final Path channelFile = Files.createTempFile("channels", "yaml");
         channelFile.toFile().deleteOnExit();
 
         final Path path = prepareChannelFileAsUrl(channelFile, channelDescriptor);
@@ -43,7 +43,7 @@ public class TestUtil {
     }
 
     static public Path prepareChannelFile(String channelDescriptor) throws IOException {
-        final Path channelFile = Files.createTempFile("channels", "json");
+        final Path channelFile = Files.createTempFile("channels", "yaml");
         channelFile.toFile().deleteOnExit();
 
         return prepareChannelFileAsUrl(channelFile, channelDescriptor);

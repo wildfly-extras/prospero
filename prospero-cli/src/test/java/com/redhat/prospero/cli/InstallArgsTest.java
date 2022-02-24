@@ -92,7 +92,7 @@ public class InstallArgsTest {
     @Test
     public void callProvisionOnInstallCommandWithCustomFpl() throws Exception {
         when(actionFactory.install(any(), any())).thenReturn(installation);
-        String channels = Paths.get(InstallArgsTest.class.getResource("/channels.json").toURI()).toString();
+        String channels = Paths.get(InstallArgsTest.class.getResource("/channels.yaml").toURI()).toString();
 
         Map<String, String> args = new HashMap<>();
         args.put(CliMain.TARGET_PATH_ARG, "test");
@@ -123,7 +123,7 @@ public class InstallArgsTest {
     @Test
     public void callProvisionOnInstallEapOverrideChannelsCommand() throws Exception {
         when(actionFactory.install(any(), any(MavenSessionManager.class))).thenReturn(installation);
-        String channels = Paths.get(InstallArgsTest.class.getResource("/channels.json").toURI()).toString();
+        String channels = Paths.get(InstallArgsTest.class.getResource("/channels.yaml").toURI()).toString();
 
         Map<String, String> args = new HashMap<>();
         args.put(CliMain.TARGET_PATH_ARG, "test");

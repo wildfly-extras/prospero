@@ -43,7 +43,7 @@ public class InstallationMetadata {
 
     public static final String METADATA_DIR = ".installation";
     public static final String MANIFEST_FILE_NAME = "manifest.xml";
-    public static final String CHANNELS_FILE_NAME = "channels.json";
+    public static final String CHANNELS_FILE_NAME = "channels.yaml";
     public static final String PROVISIONING_FILE_NAME = "provisioning.xml";
     public static final String GALLEON_INSTALLATION_DIR = ".galleon";
     private final Path manifestFile;
@@ -119,7 +119,7 @@ public class InstallationMetadata {
                 }
 
                 if (entry.getName().equals(CHANNELS_FILE_NAME)) {
-                    channelsFile = Files.createTempFile("channels", "json");
+                    channelsFile = Files.createTempFile("channels", "yaml");
                     Files.copy(zis, channelsFile, StandardCopyOption.REPLACE_EXISTING);
                     channelsFile.toFile().deleteOnExit();
                 }

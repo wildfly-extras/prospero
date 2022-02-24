@@ -27,7 +27,7 @@ public class FeaturePackLocationParserTest {
 
 //    @Before
     public void setUp() throws Exception {
-        final Path channelsFile = Paths.get(FeaturePackLocationParserTest.class.getResource("/channels/eap/channels-eap74.json").toURI());
+        final Path channelsFile = Paths.get(FeaturePackLocationParserTest.class.getResource("/channels/eap/channels-eap74.yaml").toURI());
 
         final List<ChannelRef> channelRefs = ChannelRef.readChannels(channelsFile);
         final List<Channel> channels = channelRefs.stream().map(ref-> {
