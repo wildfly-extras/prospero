@@ -99,7 +99,7 @@ public class Update {
     }
 
     public void doUpdateAll() throws ProvisioningException, MetadataException, ArtifactResolutionException {
-        final UpdateSet updateSet = findupdates();
+        final UpdateSet updateSet = findUpdates();
 
         console.updatesFound(updateSet.fpUpdates.getUpdates(), updateSet.artifactUpdates);
         if (updateSet.isEmpty()) {
@@ -118,12 +118,12 @@ public class Update {
     }
 
     public void listUpdates() throws ArtifactResolutionException, ProvisioningException {
-        final UpdateSet updateSet = findupdates();
+        final UpdateSet updateSet = findUpdates();
 
         console.updatesFound(updateSet.fpUpdates.getUpdates(), updateSet.artifactUpdates);
     }
 
-    private UpdateSet findupdates() throws ArtifactResolutionException, ProvisioningException {
+    private UpdateSet findUpdates() throws ArtifactResolutionException, ProvisioningException {
         final List<ArtifactChange> updates = new ArrayList<>();
         final Manifest manifest = metadata.getManifest();
         // use parallel executor to speed up the artifact resolution
