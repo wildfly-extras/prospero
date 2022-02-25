@@ -28,6 +28,7 @@ import org.eclipse.aether.RepositorySystem;
 import org.eclipse.aether.artifact.Artifact;
 import org.eclipse.aether.artifact.DefaultArtifact;
 import org.eclipse.aether.repository.RemoteRepository;
+import org.eclipse.aether.repository.RepositoryPolicy;
 import org.eclipse.aether.resolution.ArtifactRequest;
 import org.eclipse.aether.resolution.VersionRangeRequest;
 import org.eclipse.aether.resolution.VersionRangeResolutionException;
@@ -48,7 +49,9 @@ public class ChannelRefUpdater {
             String artifactId = channelRef.getGav().split(":")[1];
             String version = channelRef.getGav().split(":")[2];
             final String fileUrl = resolveChannelFile(new DefaultArtifact(groupId, artifactId, "channel", "yaml", "[" + version + ",)"),
-                    new RemoteRepository.Builder(channelRef.getName(), "default", channelRef.getRepoUrl()).build())
+                    new RemoteRepository.Builder(channelRef.getName(), "default", channelRef.getRepoUrl())
+                            .setPolicy(new RepositoryPolicy(true, RepositoryPolicy.UPDATE_POLICY_ALWAYS, RepositoryPolicy.CHECKSUM_POLICY_IGNORE))
+                            .build())
                     .getFile().toURI().toString();
 
             return new ChannelRef(channelRef.getName(), channelRef.getRepoUrl(), channelRef.getGav(), fileUrl);
