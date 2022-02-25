@@ -19,22 +19,36 @@ package com.redhat.prospero.cli;
 
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.Arrays;
+import java.util.HashSet;
 import java.util.Map;
+import java.util.Set;
 
 import com.redhat.prospero.api.MetadataException;
 import com.redhat.prospero.api.exceptions.OperationException;
 import com.redhat.prospero.wfchannel.MavenSessionManager;
 import org.jboss.galleon.ProvisioningException;
 
-class UpdateArgs {
+class UpdateCommand implements Command {
 
     private final CliMain.ActionFactory actionFactory;
 
-    public UpdateArgs(CliMain.ActionFactory actionFactory) {
+    public UpdateCommand(CliMain.ActionFactory actionFactory) {
         this.actionFactory = actionFactory;
     }
 
-    public void handleArgs(Map<String, String> parsedArgs) throws ArgumentParsingException, OperationException {
+    @Override
+    public String getOperationName() {
+        return "update";
+    }
+
+    @Override
+    public Set<String> getSupportedArguments() {
+        return new HashSet<>(Arrays.asList(CliMain.TARGET_PATH_ARG, CliMain.DRY_RUN, CliMain.LOCAL_REPO, CliMain.OFFLINE));
+    }
+
+    @Override
+    public void execute(Map<String, String> parsedArgs) throws ArgumentParsingException, OperationException {
         String dir = parsedArgs.get(CliMain.TARGET_PATH_ARG);
         Boolean dryRun = parsedArgs.containsKey(CliMain.DRY_RUN) ? Boolean.parseBoolean(parsedArgs.get(CliMain.DRY_RUN)) : false;
         String localRepo = parsedArgs.get(CliMain.LOCAL_REPO);

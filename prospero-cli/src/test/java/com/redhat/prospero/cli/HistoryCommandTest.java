@@ -45,7 +45,7 @@ public class HistoryCommandTest {
     @Test(expected = ArgumentParsingException.class)
     public void requireDirFolder() throws Exception {
         Map<String, String> args = new HashMap<>();
-        historyCommand.display(args);
+        historyCommand.execute(args);
         fail("Should have failed");
     }
 
@@ -56,7 +56,7 @@ public class HistoryCommandTest {
 
         when(actionFactory.history(any())).thenReturn(historyAction);
         when(historyAction.getRevisions()).thenReturn(Arrays.asList(new SavedState("abcd", Instant.ofEpochSecond(System.currentTimeMillis()), SavedState.Type.INSTALL)));
-        historyCommand.display(args);
+        historyCommand.execute(args);
 
         verify(actionFactory).history(eq(Paths.get("test").toAbsolutePath()));
         verify(historyAction).getRevisions();
@@ -71,7 +71,7 @@ public class HistoryCommandTest {
 
         when(actionFactory.history(any())).thenReturn(historyAction);
         when(historyAction.compare(any())).thenReturn(Arrays.asList(new ArtifactChange(new DefaultArtifact("foo", "bar", "jar", "1.1"), new DefaultArtifact("foo", "bar", "jar", "1.2"))));
-        historyCommand.display(args);
+        historyCommand.execute(args);
 
         verify(actionFactory).history(eq(Paths.get("test").toAbsolutePath()));
         verify(historyAction).compare(eq(new SavedState("abcd")));

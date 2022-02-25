@@ -22,10 +22,13 @@ import com.redhat.prospero.api.MetadataException;
 import com.redhat.prospero.api.SavedState;
 
 import java.nio.file.Paths;
+import java.util.Arrays;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
-public class HistoryCommand {
+public class HistoryCommand implements Command {
 
     private final CliMain.ActionFactory actionFactory;
     private final Console console;
@@ -35,7 +38,18 @@ public class HistoryCommand {
         this.console = console;
     }
 
-    public void display(Map<String, String> parsedArgs) throws ArgumentParsingException, MetadataException {
+    @Override
+    public String getOperationName() {
+        return "history";
+    }
+
+    @Override
+    public Set<String> getSupportedArguments() {
+        return new HashSet<>(Arrays.asList(CliMain.TARGET_PATH_ARG, CliMain.REVISION));
+    }
+
+    @Override
+    public void execute(Map<String, String> parsedArgs) throws ArgumentParsingException, MetadataException {
         String dir = parsedArgs.get(CliMain.TARGET_PATH_ARG);
         String rev = parsedArgs.get(CliMain.REVISION);
         if (dir == null || dir.isEmpty()) {

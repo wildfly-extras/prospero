@@ -12,14 +12,11 @@ import org.mockito.Mock;
 import org.mockito.junit.MockitoJUnitRunner;
 
 import java.nio.file.Paths;
-import java.time.Instant;
-import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
 
 import static org.junit.Assert.*;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.contains;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -46,7 +43,7 @@ public class RevertCommandTest {
     @Test(expected = ArgumentParsingException.class)
     public void requireDirArgument() throws Exception {
         Map<String, String> args = new HashMap<>();
-        revertCommand.revert(args);
+        revertCommand.execute(args);
         fail("Should have failed");
     }
 
@@ -54,7 +51,7 @@ public class RevertCommandTest {
     public void requireRevisionArgument() throws Exception {
         Map<String, String> args = new HashMap<>();
         args.put(CliMain.TARGET_PATH_ARG, "test");
-        revertCommand.revert(args);
+        revertCommand.execute(args);
         fail("Should have failed");
     }
 
@@ -65,7 +62,7 @@ public class RevertCommandTest {
         args.put(CliMain.REVISION, "abcd");
 
         when(actionFactory.history(any())).thenReturn(historyAction);
-        revertCommand.revert(args);
+        revertCommand.execute(args);
 
         verify(actionFactory).history(eq(Paths.get("test").toAbsolutePath()));
         verify(historyAction).rollback(eq(new SavedState("abcd")), any());
@@ -79,7 +76,7 @@ public class RevertCommandTest {
         args.put(CliMain.OFFLINE, "true");
 
         when(actionFactory.history(any())).thenReturn(historyAction);
-        revertCommand.revert(args);
+        revertCommand.execute(args);
 
         verify(actionFactory).history(eq(Paths.get("test").toAbsolutePath()));
         verify(historyAction).rollback(eq(new SavedState("abcd")), mavenSessionManager.capture());
@@ -94,7 +91,7 @@ public class RevertCommandTest {
         args.put(CliMain.LOCAL_REPO, "local-repo");
 
         when(actionFactory.history(any())).thenReturn(historyAction);
-        revertCommand.revert(args);
+        revertCommand.execute(args);
 
         verify(actionFactory).history(eq(Paths.get("test").toAbsolutePath()));
         verify(historyAction).rollback(eq(new SavedState("abcd")), mavenSessionManager.capture());

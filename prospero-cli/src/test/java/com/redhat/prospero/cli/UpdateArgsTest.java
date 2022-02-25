@@ -47,7 +47,7 @@ public class UpdateArgsTest {
     public void errorIfTargetPathNotPresent() throws Exception {
         try {
             Map<String, String> args = new HashMap<>();
-            new UpdateArgs(actionFactory).handleArgs(args);
+            new UpdateCommand(actionFactory).execute(args);
             fail("Should have failed");
         } catch (ArgumentParsingException e) {
             assertEquals("Target dir argument (--dir) need to be set on update command", e.getMessage());
@@ -60,7 +60,7 @@ public class UpdateArgsTest {
 
         Map<String, String> args = new HashMap<>();
         args.put(CliMain.TARGET_PATH_ARG, "test");
-        new UpdateArgs(actionFactory).handleArgs(args);
+        new UpdateCommand(actionFactory).execute(args);
 
         Mockito.verify(actionFactory).update(eq(Paths.get("test").toAbsolutePath()), any());
         Mockito.verify(update).doUpdateAll();

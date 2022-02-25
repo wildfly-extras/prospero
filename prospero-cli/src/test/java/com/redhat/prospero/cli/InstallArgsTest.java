@@ -57,7 +57,7 @@ public class InstallArgsTest {
     public void errorIfTargetPathIsNotPresent() throws Exception {
         try {
             Map<String, String> args = new HashMap<>();
-            new InstallArgs(actionFactory).handleArgs(args);
+            new InstallCommand(actionFactory).execute(args);
             fail("Should have failed");
         } catch (ArgumentParsingException e) {
             assertEquals("Target dir argument (--dir) need to be set on install command", e.getMessage());
@@ -69,7 +69,7 @@ public class InstallArgsTest {
         try {
             Map<String, String> args = new HashMap<>();
             args.put(CliMain.TARGET_PATH_ARG, "test");
-            new InstallArgs(actionFactory).handleArgs(args);
+            new InstallCommand(actionFactory).execute(args);
             fail("Should have failed");
         } catch (ArgumentParsingException e) {
             assertEquals("Feature pack name argument (--fpl) need to be set on install command", e.getMessage());
@@ -82,7 +82,7 @@ public class InstallArgsTest {
             Map<String, String> args = new HashMap<>();
             args.put(CliMain.TARGET_PATH_ARG, "test");
             args.put(CliMain.FPL_ARG, "foo:bar");
-            new InstallArgs(actionFactory).handleArgs(args);
+            new InstallCommand(actionFactory).execute(args);
             fail("Should have failed");
         } catch (ArgumentParsingException e) {
             assertEquals("Channel file argument (--channel-file) need to be set when using custom fpl", e.getMessage());
@@ -98,7 +98,7 @@ public class InstallArgsTest {
         args.put(CliMain.TARGET_PATH_ARG, "test");
         args.put(CliMain.FPL_ARG, "org.jboss.eap:wildfly-ee-galleon-pack");
         args.put(CliMain.CHANNEL_FILE_ARG, channels);
-        new InstallArgs(actionFactory).handleArgs(args);
+        new InstallCommand(actionFactory).execute(args);
 
         Mockito.verify(actionFactory).install(eq(Paths.get("test").toAbsolutePath()), any(MavenSessionManager.class));
         Mockito.verify(installation).provision(serverDefiniton.capture());
@@ -113,7 +113,7 @@ public class InstallArgsTest {
         args.put(CliMain.TARGET_PATH_ARG, "test");
         args.put(CliMain.FPL_ARG, "eap");
         args.put(CliMain.CHANNEL_REPO, "http://lacrosse.corp.redhat.com/~bspyrkos/tmp-repo/");
-        new InstallArgs(actionFactory).handleArgs(args);
+        new InstallCommand(actionFactory).execute(args);
 
         Mockito.verify(actionFactory).install(eq(Paths.get("test").toAbsolutePath()), any(MavenSessionManager.class));
         Mockito.verify(installation).provision(serverDefiniton.capture());
@@ -129,7 +129,7 @@ public class InstallArgsTest {
         args.put(CliMain.TARGET_PATH_ARG, "test");
         args.put(CliMain.FPL_ARG, "eap");
         args.put(CliMain.CHANNEL_FILE_ARG, channels);
-        new InstallArgs(actionFactory).handleArgs(args);
+        new InstallCommand(actionFactory).execute(args);
 
         Mockito.verify(actionFactory).install(eq(Paths.get("test").toAbsolutePath()), any(MavenSessionManager.class));
         ArgumentMatcher<List<ChannelRef>> matcher = channelRefs -> {

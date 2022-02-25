@@ -17,24 +17,36 @@
 
 package com.redhat.prospero.cli;
 
-import com.redhat.prospero.api.MetadataException;
 import com.redhat.prospero.api.SavedState;
 import com.redhat.prospero.api.exceptions.OperationException;
 import com.redhat.prospero.wfchannel.MavenSessionManager;
 import org.jboss.galleon.ProvisioningException;
 
 import java.nio.file.Paths;
+import java.util.Arrays;
+import java.util.HashSet;
 import java.util.Map;
+import java.util.Set;
 
-public class RevertCommand {
+public class RevertCommand implements Command {
     private CliMain.ActionFactory actionFactory;
 
     public RevertCommand(CliMain.ActionFactory actionFactory) {
         this.actionFactory = actionFactory;
     }
 
+    @Override
+    public String getOperationName() {
+        return "revert";
+    }
 
-    public void revert(Map<String, String> parsedArgs) throws ArgumentParsingException, OperationException {
+    @Override
+    public Set<String> getSupportedArguments() {
+        return new HashSet<>(Arrays.asList(CliMain.TARGET_PATH_ARG, CliMain.REVISION, CliMain.LOCAL_REPO, CliMain.OFFLINE));
+    }
+
+    @Override
+    public void execute(Map<String, String> parsedArgs) throws ArgumentParsingException, OperationException {
         String dir = parsedArgs.get(CliMain.TARGET_PATH_ARG);
         String rev = parsedArgs.get(CliMain.REVISION);
         String localRepo = parsedArgs.get(CliMain.LOCAL_REPO);

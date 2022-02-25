@@ -18,11 +18,8 @@
 package com.redhat.prospero.cli;
 
 import java.nio.file.Path;
-import java.util.Arrays;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.Map;
-import java.util.Set;
 
 import com.redhat.prospero.actions.Installation;
 import com.redhat.prospero.actions.InstallationHistory;
@@ -40,6 +37,7 @@ public class CliMain {
         enableJBossLogManager();
     }
 
+
     private static void enableJBossLogManager() {
         if (System.getProperty("java.util.logging.manager") == null) {
             System.setProperty("java.util.logging.manager", "org.jboss.logmanager.LogManager");
@@ -56,17 +54,14 @@ public class CliMain {
     public static final String LOCAL_REPO = "local-repo";
     public static final String OFFLINE = "offline";
     public static final String REVISION = "revision";
-    private static final Set<String> ALLOWED_ARGUMENTS = new HashSet<>(Arrays.asList(TARGET_PATH_ARG, FPL_ARG, CHANNEL_FILE_ARG,
-            CHANNEL_REPO, DRY_RUN, LOCAL_REPO, OFFLINE, REVISION));
-    private ActionFactory actionFactory;
-    private final Console console = new CliConsole();
 
-    public CliMain() {
-        this.actionFactory = new ActionFactory();
-    }
+    private final ActionFactory actionFactory;
+    private final Console console = new CliConsole();
+    private final Map<String, Command> operations;
 
     public CliMain(ActionFactory actionFactory) {
         this.actionFactory = actionFactory;
+        this.operations = loadCommands();
     }
 
     public static void main(String[] args) {
@@ -89,45 +84,31 @@ public class CliMain {
 
     public void handleArgs(String[] args) throws ArgumentParsingException, OperationException {
         final String operation = args[0];
-        if (!("install".equals(operation) || "update".equals(operation) || "history".equals(operation) || "revert".equals(operation))) {
+        if (!operations.containsKey(operation)) {
             throw new ArgumentParsingException("Unknown operation " + operation);
         }
 
-        Map<String, String> parsedArgs = parseArguments(args);
+        final Command command = operations.get(operation);
 
-        switch (operation) {
-            case "install":
-                doInstall(parsedArgs);
-                break;
-            case "update":
-                doUpdate(parsedArgs);
-                break;
-            case "history":
-                displayHistory(parsedArgs);
-                break;
-            case "revert":
-                revertToState(parsedArgs);
-                break;
-        }
+        Map<String, String> parsedArgs = parseArguments(args, command);
+
+        command.execute(parsedArgs);
     }
 
-    private void doUpdate(Map<String, String> parsedArgs) throws ArgumentParsingException, OperationException {
-        new UpdateArgs(actionFactory).handleArgs(parsedArgs);
+    private Map<String, Command> loadCommands() {
+        Map<String, Command> operations = new HashMap<>();
+        Command command = new HistoryCommand(actionFactory, console);
+        operations.put(command.getOperationName(), command);
+        command = new RevertCommand(actionFactory);
+        operations.put(command.getOperationName(), command);
+        command = new InstallCommand(actionFactory);
+        operations.put(command.getOperationName(), command);
+        command = new UpdateCommand(actionFactory);
+        operations.put(command.getOperationName(), command);
+        return operations;
     }
 
-    private void doInstall(Map<String, String> parsedArgs) throws ArgumentParsingException, OperationException {
-        new InstallArgs(actionFactory).handleArgs(parsedArgs);
-    }
-
-    private void displayHistory(Map<String, String> parsedArgs) throws ArgumentParsingException, OperationException {
-        new HistoryCommand(actionFactory, console).display(parsedArgs);
-    }
-
-    private void revertToState(Map<String, String> parsedArgs) throws ArgumentParsingException, OperationException {
-        new RevertCommand(actionFactory).revert(parsedArgs);
-    }
-
-    private Map<String, String> parseArguments(String[] args) throws ArgumentParsingException {
+    private Map<String, String> parseArguments(String[] args, Command command) throws ArgumentParsingException {
         Map<String, String> parsedArgs = new HashMap<>();
         for (int i = 1; i < args.length; i++) {
             final int nameEndIndex = args[i].indexOf('=');
@@ -143,7 +124,7 @@ public class CliMain {
             final String name = (nameEndIndex > 0) ? args[i].substring(2, nameEndIndex) : args[i];
             final String value = args[i].substring(nameEndIndex + 1);
 
-            if (!ALLOWED_ARGUMENTS.contains(name)) {
+            if (!command.getSupportedArguments().contains(name)) {
                 throw new ArgumentParsingException("Argument name [--%s] not recognized", name);
             }
 
