@@ -112,7 +112,6 @@ public class InstallArgsTest {
         Map<String, String> args = new HashMap<>();
         args.put(CliMain.TARGET_PATH_ARG, "test");
         args.put(CliMain.FPL_ARG, "eap");
-        args.put(CliMain.CHANNEL_REPO, "http://lacrosse.corp.redhat.com/~bspyrkos/tmp-repo/");
         new InstallCommand(actionFactory).execute(args);
 
         Mockito.verify(actionFactory).install(eq(Paths.get("test").toAbsolutePath()), any(MavenSessionManager.class));
