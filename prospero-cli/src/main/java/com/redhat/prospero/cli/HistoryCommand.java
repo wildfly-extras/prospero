@@ -17,6 +17,7 @@
 
 package com.redhat.prospero.cli;
 
+import com.redhat.prospero.actions.Console;
 import com.redhat.prospero.api.ArtifactChange;
 import com.redhat.prospero.api.MetadataException;
 import com.redhat.prospero.api.SavedState;

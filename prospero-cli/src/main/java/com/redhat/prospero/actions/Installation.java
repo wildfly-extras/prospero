@@ -21,7 +21,6 @@ import com.redhat.prospero.api.InstallationMetadata;
 import com.redhat.prospero.api.MetadataException;
 import com.redhat.prospero.api.ProvisioningDefinition;
 import com.redhat.prospero.api.exceptions.OperationException;
-import com.redhat.prospero.cli.Console;
 import com.redhat.prospero.galleon.FeaturePackLocationParser;
 import com.redhat.prospero.galleon.GalleonUtils;
 import com.redhat.prospero.galleon.ChannelMavenArtifactRepositoryManager;

@@ -1,4 +1,4 @@
-package com.redhat.prospero.cli;
+package com.redhat.prospero.actions;
 
 import java.util.Collection;
 import java.util.List;

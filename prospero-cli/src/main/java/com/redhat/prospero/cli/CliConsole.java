@@ -21,6 +21,7 @@ import java.util.Collection;
 import java.util.List;
 import java.util.Scanner;
 
+import com.redhat.prospero.actions.Console;
 import com.redhat.prospero.api.ArtifactChange;
 import org.eclipse.aether.artifact.Artifact;
 import org.jboss.galleon.layout.FeaturePackUpdatePlan;

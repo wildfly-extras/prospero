@@ -1,5 +1,6 @@
 package com.redhat.prospero.cli;
 
+import com.redhat.prospero.actions.Console;
 import com.redhat.prospero.actions.InstallationHistory;
 import com.redhat.prospero.api.ArtifactChange;
 import com.redhat.prospero.api.SavedState;

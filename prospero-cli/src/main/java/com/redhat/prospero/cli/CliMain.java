@@ -21,6 +21,7 @@ import java.nio.file.Path;
 import java.util.HashMap;
 import java.util.Map;
 
+import com.redhat.prospero.actions.Console;
 import com.redhat.prospero.actions.Installation;
 import com.redhat.prospero.actions.InstallationHistory;
 import com.redhat.prospero.actions.Update;
