@@ -59,6 +59,7 @@ import static com.redhat.prospero.galleon.GalleonUtils.MAVEN_REPO_LOCAL;
 
 public class Update {
 
+    public static final int UPDATES_SEARCH_PARALLELISM = 10;
     private final InstallationMetadata metadata;
     private final ChannelMavenArtifactRepositoryManager maven;
     private final ProvisioningManager provMgr;
@@ -127,7 +128,7 @@ public class Update {
         final List<ArtifactChange> updates = new ArrayList<>();
         final Manifest manifest = metadata.getManifest();
         // use parallel executor to speed up the artifact resolution
-        final ExecutorService executorService = Executors.newWorkStealingPool(30);
+        final ExecutorService executorService = Executors.newWorkStealingPool(UPDATES_SEARCH_PARALLELISM);
         List<CompletableFuture<List<ArtifactChange>>> allPackages = new ArrayList<>();
         for (Artifact artifact : manifest.getArtifacts()) {
             final CompletableFuture<List<ArtifactChange>> cf = new CompletableFuture<>();
@@ -171,13 +172,13 @@ public class Update {
             throw new ArtifactResolutionException(String.format("Artifact [%s:%s] not found", artifact.getGroupId(), artifact.getArtifactId()));
         }
 
-        final org.wildfly.channel.MavenArtifact latestVersion;
+        final String latestVersion;
         try {
-            latestVersion = channelSession.resolveLatestMavenArtifact(artifact.getGroupId(), artifact.getArtifactId(), artifact.getExtension(), artifact.getClassifier(), artifact.getVersion());
+            latestVersion = channelSession.findLatestMavenArtifactVersion(artifact.getGroupId(), artifact.getArtifactId(), artifact.getExtension(), artifact.getClassifier(), artifact.getVersion());
         } catch (UnresolvedMavenArtifactException e) {
             throw new ArtifactResolutionException(String.format("Artifact [%s:%s] not found", artifact.getGroupId(), artifact.getArtifactId()), e);
         }
-        final Artifact latest = new DefaultArtifact(artifact.getGroupId(), artifact.getArtifactId(), latestVersion.getExtension(), latestVersion.getVersion());
+        final Artifact latest = new DefaultArtifact(artifact.getGroupId(), artifact.getArtifactId(), artifact.getExtension(), latestVersion);
 
 
         if (latestVersion == null || ArtifactUtils.compareVersion(latest, artifact) <= 0) {
