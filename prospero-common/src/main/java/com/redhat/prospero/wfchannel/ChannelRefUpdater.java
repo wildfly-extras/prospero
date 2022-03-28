@@ -48,13 +48,14 @@ public class ChannelRefUpdater {
             String groupId = channelRef.getGav().split(":")[0];
             String artifactId = channelRef.getGav().split(":")[1];
             String version = channelRef.getGav().split(":")[2];
-            final String fileUrl = resolveChannelFile(new DefaultArtifact(groupId, artifactId, "channel", "yaml", "[" + version + ",)"),
+            final Artifact resolvedChannelArtifact = resolveChannelFile(new DefaultArtifact(groupId, artifactId, "channel", "yaml", "[" + version + ",)"),
                     new RemoteRepository.Builder(channelRef.getName(), "default", channelRef.getRepoUrl())
                             .setPolicy(new RepositoryPolicy(true, RepositoryPolicy.UPDATE_POLICY_ALWAYS, RepositoryPolicy.CHECKSUM_POLICY_IGNORE))
-                            .build())
-                    .getFile().toURI().toString();
+                            .build());
+            final String fileUrl = resolvedChannelArtifact.getFile().toURI().toString();
 
-            return new ChannelRef(channelRef.getName(), channelRef.getRepoUrl(), channelRef.getGav(), fileUrl);
+            String newGav = String.format("%s:%s:%s", resolvedChannelArtifact.getGroupId(), resolvedChannelArtifact.getArtifactId(), resolvedChannelArtifact.getVersion());
+            return new ChannelRef(channelRef.getName(), channelRef.getRepoUrl(), newGav, fileUrl);
         } else {
             return channelRef;
         }
