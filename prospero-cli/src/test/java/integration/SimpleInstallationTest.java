@@ -23,8 +23,7 @@ import com.redhat.prospero.actions.Installation;
 import com.redhat.prospero.actions.Update;
 import com.redhat.prospero.api.ProvisioningDefinition;
 import com.redhat.prospero.cli.CliConsole;
-import com.redhat.prospero.model.ManifestXmlSupport;
-import com.redhat.prospero.model.XmlException;
+import com.redhat.prospero.model.ManifestYamlSupport;
 import com.redhat.prospero.wfchannel.MavenSessionManager;
 import org.apache.commons.io.FileUtils;
 import org.eclipse.aether.artifact.Artifact;
@@ -34,6 +33,7 @@ import org.junit.Before;
 import org.junit.Test;
 
 import java.io.File;
+import java.io.IOException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Collection;
@@ -153,9 +153,12 @@ public class SimpleInstallationTest {
         assertEquals("17.0.0.Final", wildflyCliArtifact.get().getVersion());
     }
 
-    private Optional<Artifact> readArtifactFromManifest(String groupId, String artifactId) throws XmlException {
+    private Optional<Artifact> readArtifactFromManifest(String groupId, String artifactId) throws IOException {
         final File manifestFile = manifestPath.toFile();
-        return ManifestXmlSupport.parse(manifestFile).getArtifacts().stream()
+//        return ManifestXmlSupport.parse(manifestFile).getArtifacts().stream()
+//                .filter((a) -> a.getGroupId().equals(groupId) && a.getArtifactId().equals(artifactId))
+//                .findFirst();
+        return ManifestYamlSupport.parse(manifestFile).getArtifacts().stream()
                 .filter((a) -> a.getGroupId().equals(groupId) && a.getArtifactId().equals(artifactId))
                 .findFirst();
     }

@@ -21,7 +21,7 @@ import com.redhat.prospero.api.ArtifactChange;
 import com.redhat.prospero.api.InstallationMetadata;
 import com.redhat.prospero.api.Manifest;
 import com.redhat.prospero.api.SavedState;
-import com.redhat.prospero.model.ManifestXmlSupport;
+import com.redhat.prospero.model.ManifestYamlSupport;
 import org.apache.commons.io.FileUtils;
 import org.eclipse.aether.artifact.DefaultArtifact;
 import org.junit.After;
@@ -124,7 +124,7 @@ public class LocalInstallationHistoryTest {
             fw.write("[]");
         }
         final Manifest manifest = new Manifest(Arrays.asList(new DefaultArtifact("foo:bar:1.1.1")), installation.resolve(InstallationMetadata.METADATA_DIR).resolve(InstallationMetadata.MANIFEST_FILE_NAME));
-        ManifestXmlSupport.write(manifest);
+        ManifestYamlSupport.write(manifest);
 
         final InstallationMetadata metadata = new InstallationMetadata(installation);
         metadata.writeFiles();

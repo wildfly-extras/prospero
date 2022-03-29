@@ -17,10 +17,8 @@
 
 package com.redhat.prospero.api;
 
-import com.redhat.prospero.api.exceptions.ArtifactResolutionException;
 import com.redhat.prospero.installation.git.GitStorage;
-import com.redhat.prospero.model.ManifestXmlSupport;
-import com.redhat.prospero.model.XmlException;
+import com.redhat.prospero.model.ManifestYamlSupport;
 import org.eclipse.aether.artifact.Artifact;
 import org.jboss.galleon.ProvisioningException;
 import org.jboss.galleon.config.ProvisioningConfig;
@@ -42,7 +40,7 @@ import java.util.zip.ZipOutputStream;
 public class InstallationMetadata {
 
     public static final String METADATA_DIR = ".installation";
-    public static final String MANIFEST_FILE_NAME = "manifest.xml";
+    public static final String MANIFEST_FILE_NAME = "manifest.yaml";
     public static final String CHANNELS_FILE_NAME = "channels.yaml";
     public static final String PROVISIONING_FILE_NAME = "provisioning.xml";
     public static final String GALLEON_INSTALLATION_DIR = ".galleon";
@@ -66,7 +64,7 @@ public class InstallationMetadata {
             this.manifest = Manifest.parseManifest(manifestFile);
             this.channelRefs = ChannelRef.readChannels(channelsFile);
             this.provisioningConfig = ProvisioningXmlParser.parse(provisioningFile);
-        } catch (XmlException | IOException | ProvisioningException e) {
+        } catch (IOException | ProvisioningException e) {
             throw new MetadataException("Error when parsing installation metadata", e);
         }
     }
@@ -82,7 +80,7 @@ public class InstallationMetadata {
             this.manifest = Manifest.parseManifest(manifestFile);
             this.channelRefs = ChannelRef.readChannels(channelsFile);
             this.provisioningConfig = ProvisioningXmlParser.parse(provisioningFile);
-        } catch (XmlException | IOException | ProvisioningException e) {
+        } catch (IOException | ProvisioningException e) {
             throw new MetadataException("Error when parsing installation metadata", e);
         }
     }
@@ -198,8 +196,8 @@ public class InstallationMetadata {
 
     public void writeFiles() throws MetadataException {
         try {
-            ManifestXmlSupport.write(this.manifest);
-        } catch (XmlException e) {
+            ManifestYamlSupport.write(this.manifest);
+        } catch (IOException e) {
             throw new MetadataException("Unable to save manifest in installation", e);
         }
 

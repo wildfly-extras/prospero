@@ -18,9 +18,13 @@
 package com.redhat.prospero.installation.git;
 
 import com.redhat.prospero.api.InstallationMetadata;
+import com.redhat.prospero.api.Manifest;
 import com.redhat.prospero.api.MetadataException;
 import com.redhat.prospero.api.SavedState;
 import com.redhat.prospero.api.ArtifactChange;
+import com.redhat.prospero.model.ManifestYamlSupport;
+import org.apache.commons.io.FileUtils;
+import org.eclipse.aether.artifact.Artifact;
 import org.eclipse.jgit.api.Git;
 import org.eclipse.jgit.api.errors.GitAPIException;
 import org.eclipse.jgit.lib.Constants;
@@ -28,11 +32,15 @@ import org.eclipse.jgit.lib.PersonIdent;
 import org.eclipse.jgit.revwalk.RevCommit;
 
 import java.io.IOException;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.time.Instant;
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
 
 public class GitStorage implements AutoCloseable {
 
@@ -95,11 +103,60 @@ public class GitStorage implements AutoCloseable {
     }
 
     public List<ArtifactChange> getChanges(SavedState savedState) throws MetadataException {
+        Path hist = null;
+        Git temp = null;
         try {
-            return new GitDiffParser(git).getChanges(savedState.getName());
+            hist = Files.createTempDirectory("hist");
+            System.out.println(base.toUri().toString());
+            temp = Git.cloneRepository()
+                    .setDirectory(hist.toFile())
+                    .setRemote("origin")
+                    .setURI(base.toUri().toString())
+                    .call();
+            temp.checkout()
+                    .setStartPoint(savedState.getName())
+                    .addPath(InstallationMetadata.MANIFEST_FILE_NAME)
+                    .call();
+            final Manifest parseOld = ManifestYamlSupport.parse(hist.resolve(InstallationMetadata.MANIFEST_FILE_NAME).toFile());
+            final Manifest parseCurrent = ManifestYamlSupport.parse(base.resolve(InstallationMetadata.MANIFEST_FILE_NAME).toFile());
+
+            final Map<String, Artifact> oldArtifacts = toMap(parseOld.getArtifacts());
+            final Map<String, Artifact> currentArtifacts = toMap(parseCurrent.getArtifacts());
+
+            // TODO: support removing/adding
+            final ArrayList<ArtifactChange> artifactChanges = new ArrayList<>();
+            for (String cKey : currentArtifacts.keySet()) {
+                if (!oldArtifacts.get(cKey).getVersion().equals(currentArtifacts.get(cKey).getVersion())) {
+                    artifactChanges.add(new ArtifactChange(oldArtifacts.get(cKey), currentArtifacts.get(cKey)));
+                }
+            }
+
+            return artifactChanges;
+        } catch (GitAPIException e) {
+            e.printStackTrace();
         } catch (IOException e) {
-            throw new MetadataException("Unable to read history of installation", e);
+            e.printStackTrace();
+        } finally {
+            try {
+                if (temp != null) {
+                    temp.close();
+                }
+                if (hist != null) {
+                    FileUtils.deleteDirectory(hist.toFile());
+                }
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
         }
+        return Collections.emptyList();
+    }
+
+    private Map<String, Artifact> toMap(List<Artifact> artifacts) {
+        final HashMap<String, Artifact> map = new HashMap<>();
+        for (Artifact artifact : artifacts) {
+            map.put(artifact.getGroupId() + ":" + artifact.getArtifactId(), artifact);
+        }
+        return map;
     }
 
     private boolean isRepositoryEmpty(Git git) throws IOException {

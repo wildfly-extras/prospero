@@ -17,7 +17,10 @@
 
 package com.redhat.prospero.api;
 
+import com.redhat.prospero.model.ManifestYamlSupport;
 import org.eclipse.aether.artifact.Artifact;
+
+import java.io.IOException;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
@@ -35,8 +38,8 @@ public class Manifest {
         this.manifestFile = manifestFile;
     }
 
-    public static Manifest parseManifest(Path manifestPath) throws XmlException {
-        return ManifestXmlSupport.parse(manifestPath.toFile());
+    public static Manifest parseManifest(Path manifestPath) throws IOException {
+        return ManifestYamlSupport.parse(manifestPath.toFile());
     }
 
     public List<Artifact> getArtifacts() {
@@ -51,7 +54,7 @@ public class Manifest {
         // we can only update if we have old version of the same artifact
         Artifact oldArtifact = null;
         for (Artifact artifact : artifacts) {
-            if (artifact.getGroupId().equals(newVersion.getGroupId()) && artifact.getArtifactId().equals(newVersion.getArtifactId()) && artifact.getClassifier().equals(newVersion.getClassifier())) {
+            if (artifact.getGroupId().equals(newVersion.getGroupId()) && artifact.getArtifactId().equals(newVersion.getArtifactId())) {
                 oldArtifact = artifact;
                 break;
             }
@@ -67,8 +70,7 @@ public class Manifest {
 
     public Artifact find(Artifact gav) {
         for (Artifact artifact : artifacts) {
-            // TODO: move to Gav
-            if (artifact.getGroupId().equals(gav.getGroupId()) && artifact.getArtifactId().equals(gav.getArtifactId()) && artifact.getClassifier().equals(gav.getClassifier())) {
+            if (artifact.getGroupId().equals(gav.getGroupId()) && artifact.getArtifactId().equals(gav.getArtifactId())) {
                 return artifact;
             }
         }

@@ -24,8 +24,7 @@ import com.redhat.prospero.api.SavedState;
 import com.redhat.prospero.actions.Update;
 import com.redhat.prospero.api.ProvisioningDefinition;
 import com.redhat.prospero.cli.CliConsole;
-import com.redhat.prospero.model.ManifestXmlSupport;
-import com.redhat.prospero.model.XmlException;
+import com.redhat.prospero.model.ManifestYamlSupport;
 import com.redhat.prospero.wfchannel.MavenSessionManager;
 import org.apache.commons.io.FileUtils;
 import org.eclipse.aether.artifact.Artifact;
@@ -37,6 +36,7 @@ import org.junit.Before;
 import org.junit.Test;
 
 import java.io.File;
+import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -160,12 +160,10 @@ public class InstallationHistoryTest {
         final SavedState savedState = revisions.get(1);
         final List<ArtifactChange> changes = installationHistory.compare(savedState);
 
-        assertEquals(2, changes.size());
+        assertEquals(1, changes.size());
         Map<Artifact, Artifact> expected = new HashMap<>();
-        expected.put(new DefaultArtifact("org.wildfly.core:wildfly-cli:17.0.0.Final"),
-                new DefaultArtifact("org.wildfly.core:wildfly-cli:17.0.1.Final"));
-        expected.put(new DefaultArtifact("org.wildfly.core:wildfly-cli:jar:client:17.0.0.Final"),
-                new DefaultArtifact("org.wildfly.core:wildfly-cli:jar:client:17.0.1.Final"));
+        expected.put(new DefaultArtifact("org.wildfly.core", "wildfly-cli", null, "17.0.0.Final"),
+                new DefaultArtifact("org.wildfly.core","wildfly-cli", null, "17.0.1.Final"));
 
         for (ArtifactChange change : changes) {
             if (expected.containsKey(change.getOldVersion())) {
@@ -178,9 +176,9 @@ public class InstallationHistoryTest {
         assertEquals("Not all expected changes were listed", 0, expected.size());
     }
 
-    private Optional<Artifact> readArtifactFromManifest(String groupId, String artifactId) throws XmlException {
+    private Optional<Artifact> readArtifactFromManifest(String groupId, String artifactId) throws IOException {
         final File manifestFile = OUTPUT_PATH.resolve(TestUtil.MANIFEST_FILE_PATH).toFile();
-        return ManifestXmlSupport.parse(manifestFile).getArtifacts().stream()
+        return ManifestYamlSupport.parse(manifestFile).getArtifacts().stream()
                 .filter((a) -> a.getGroupId().equals(groupId) && a.getArtifactId().equals(artifactId))
                 .findFirst();
     }
