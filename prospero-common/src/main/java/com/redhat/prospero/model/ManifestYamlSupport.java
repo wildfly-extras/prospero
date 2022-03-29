@@ -34,7 +34,9 @@ import java.io.PrintWriter;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 public class ManifestYamlSupport {
 
@@ -57,13 +59,16 @@ public class ManifestYamlSupport {
         for (Artifact resolvedArtifact : manifest.getArtifacts()) {
             streams.add(new Stream(resolvedArtifact.getGroupId(), resolvedArtifact.getArtifactId(), resolvedArtifact.getVersion(), null));
         }
-        List<MavenRepository> repositories = new ArrayList<>();
+        
+        Set<MavenRepository> repositories = new HashSet<>();
         for (ChannelRef channelRef : channelRefs) {
-            repositories.add(new MavenRepository(channelRef.getName(), new URL(channelRef.getRepoUrl())));
+            final Channel channel = ChannelMapper.from(new URL(channelRef.getUrl()));
+            repositories.addAll(channel.getRepositories());
         }
+
         final Channel channel = new Channel("provisioned", "provisioned", "",
                 new Vendor("Custom", Vendor.Support.COMMUNITY),
-                true, null, repositories, streams);
+                true, null, new ArrayList<>(repositories), streams);
         String yaml = ChannelMapper.toYaml(channel);
         try (PrintWriter pw = new PrintWriter(new FileWriter(manifest.getManifestFile().toFile()))) {
             pw.println(yaml);
