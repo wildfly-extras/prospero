@@ -107,7 +107,6 @@ public class GitStorage implements AutoCloseable {
         Git temp = null;
         try {
             hist = Files.createTempDirectory("hist");
-            System.out.println(base.toUri().toString());
             temp = Git.cloneRepository()
                     .setDirectory(hist.toFile())
                     .setRemote("origin")
@@ -123,11 +122,17 @@ public class GitStorage implements AutoCloseable {
             final Map<String, Artifact> oldArtifacts = toMap(parseOld.getArtifacts());
             final Map<String, Artifact> currentArtifacts = toMap(parseCurrent.getArtifacts());
 
-            // TODO: support removing/adding
             final ArrayList<ArtifactChange> artifactChanges = new ArrayList<>();
-            for (String cKey : currentArtifacts.keySet()) {
-                if (!oldArtifacts.get(cKey).getVersion().equals(currentArtifacts.get(cKey).getVersion())) {
-                    artifactChanges.add(new ArtifactChange(oldArtifacts.get(cKey), currentArtifacts.get(cKey)));
+            for (String ga : currentArtifacts.keySet()) {
+                if (!oldArtifacts.containsKey(ga)) {
+                    artifactChanges.add(new ArtifactChange(null, currentArtifacts.get(ga)));
+                } else if (!currentArtifacts.get(ga).getVersion().equals(oldArtifacts.get(ga).getVersion())) {
+                    artifactChanges.add(new ArtifactChange(oldArtifacts.get(ga), currentArtifacts.get(ga)));
+                }
+            }
+            for (String ga: oldArtifacts.keySet()) {
+                if (!currentArtifacts.containsKey(ga)) {
+                    artifactChanges.add(new ArtifactChange(oldArtifacts.get(ga), null));
                 }
             }
 

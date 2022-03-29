@@ -25,8 +25,6 @@ import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
 
-import com.redhat.prospero.model.ManifestXmlSupport;
-import com.redhat.prospero.model.XmlException;
 
 public class Manifest {
 
