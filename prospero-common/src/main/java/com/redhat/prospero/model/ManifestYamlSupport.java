@@ -34,6 +34,7 @@ import java.io.PrintWriter;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -59,7 +60,18 @@ public class ManifestYamlSupport {
         for (Artifact resolvedArtifact : manifest.getArtifacts()) {
             streams.add(new Stream(resolvedArtifact.getGroupId(), resolvedArtifact.getArtifactId(), resolvedArtifact.getVersion(), null));
         }
-        
+
+        Collections.sort(streams, new Comparator<Stream>() {
+            @Override
+            public int compare(Stream s1, Stream s2) {
+                if (s1.getGroupId().equals(s2.getGroupId())) {
+                    return s1.getArtifactId().compareTo(s2.getArtifactId());
+                } else {
+                    return s1.getGroupId().compareTo(s2.getGroupId());
+                }
+            }
+        });
+
         Set<MavenRepository> repositories = new HashSet<>();
         for (ChannelRef channelRef : channelRefs) {
             final Channel channel = ChannelMapper.from(new URL(channelRef.getUrl()));
