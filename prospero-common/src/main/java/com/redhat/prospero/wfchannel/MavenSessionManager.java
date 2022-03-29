@@ -23,18 +23,26 @@ import java.nio.file.Path;
 
 import com.redhat.prospero.api.ProvisioningRuntimeException;
 import org.apache.maven.repository.internal.MavenRepositorySystemUtils;
+import org.eclipse.aether.AbstractRepositoryListener;
 import org.eclipse.aether.DefaultRepositorySystemSession;
+import org.eclipse.aether.RepositoryEvent;
 import org.eclipse.aether.RepositorySystem;
 import org.eclipse.aether.connector.basic.BasicRepositoryConnectorFactory;
 import org.eclipse.aether.impl.DefaultServiceLocator;
+import org.eclipse.aether.installation.InstallRequest;
+import org.eclipse.aether.installation.InstallationException;
 import org.eclipse.aether.repository.LocalRepository;
 import org.eclipse.aether.spi.connector.RepositoryConnectorFactory;
 import org.eclipse.aether.spi.connector.transport.TransporterFactory;
 import org.eclipse.aether.transport.file.FileTransporterFactory;
 import org.eclipse.aether.transport.http.HttpTransporterFactory;
 import org.jboss.galleon.ProvisioningException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class MavenSessionManager {
+    private static final Logger logger = LoggerFactory.getLogger(MavenSessionManager.class);
+
     private static String LOCAL_MAVEN_REPO = System.getProperty("user.home") + "/.m2/repository";
     private final Path provisioningRepo;
     private boolean offline;
@@ -77,9 +85,34 @@ public class MavenSessionManager {
             location = provisioningRepo.toAbsolutePath().toString();
         }
         LocalRepository localRepo = new LocalRepository(location);
+        if (resolveLocalCache) {
+            copyResolvedArtifactsToProvisiongRepository(session);
+        }
         session.setLocalRepositoryManager(system.newLocalRepositoryManager(session, localRepo));
         session.setOffline(offline);
         return session;
+    }
+
+    private void copyResolvedArtifactsToProvisiongRepository(DefaultRepositorySystemSession session) {
+        // hack to work around Galleon provisioning EAP again to generate docs
+        // whenever an artifact is resolved by a repository using LOCAL_MAVE_REPO,
+        // install the artifact into a temporary provisioningRepo. The provisioningRepo then is used
+        // by Galleon to start thin server.
+        final RepositorySystem localCacheBuilder = newRepositorySystem();
+        final DefaultRepositorySystemSession localCacheBuilderSession = newRepositorySystemSession(localCacheBuilder, false);
+        session.setRepositoryListener(new AbstractRepositoryListener() {
+            @Override
+            public void artifactResolved(RepositoryEvent event) {
+                final InstallRequest request = new InstallRequest();
+                request.addArtifact(event.getArtifact());
+                try {
+                    localCacheBuilder.install(localCacheBuilderSession, request);
+                } catch (InstallationException e) {
+                    // log and ignore
+                    logger.warn("Unable to install resolved artifact in the provisioning repository", e);
+                }
+            }
+        });
     }
 
     public Path getProvisioningRepo() {
