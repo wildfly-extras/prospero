@@ -18,7 +18,10 @@
 package com.redhat.prospero.api;
 
 import java.io.IOException;
+import java.net.MalformedURLException;
+import java.net.URL;
 import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
@@ -29,6 +32,7 @@ import java.util.Optional;
 import java.util.Set;
 
 import com.redhat.prospero.api.exceptions.ArtifactResolutionException;
+import org.jboss.galleon.ProvisioningException;
 
 public class ProvisioningDefinition {
 
@@ -46,6 +50,7 @@ public class ProvisioningDefinition {
         final String fpl = builder.fpl;
         final Optional<String> channelRepo = Optional.ofNullable(builder.channelRepo);
         final Optional<Path> channelsFile = Optional.ofNullable(builder.channelsFile);
+        final Optional<URL> channel = Optional.ofNullable(builder.channel);
         final Optional<Set<String>> includedPackages = Optional.ofNullable(builder.includedPackages);
 
         this.includedPackages.addAll(includedPackages.orElse(Collections.emptySet()));
@@ -55,18 +60,22 @@ public class ProvisioningDefinition {
                 this.fpl = "org.jboss.eap:wildfly-ee-galleon-pack";
                 this.includedPackages.add("docs.examples.configs");
 
-                if (!channelsFile.isPresent()) {
+                if (!channelsFile.isPresent() && !channel.isPresent()) {
                     final String repoUrl = channelRepo.orElse(CHANNEL_URLS.get("mrrc"));
                     this.channels = Arrays.asList(new ChannelRef("mrrc", repoUrl, "org.wildfly.channels:eap-74:7.4", null));
+                } else if (channel.isPresent()) {
+                    this.channels = Arrays.asList(new ChannelRef("local", null, null, channel.get().toString()));
                 } else {
                     this.channels = ChannelRef.readChannels(channelsFile.get());
                 }
             } else if (fpl.equals("wildfly")) {
                 this.fpl = "org.wildfly:wildfly-ee-galleon-pack";
 
-                if (!channelsFile.isPresent()) {
+                if (!channelsFile.isPresent() && !channel.isPresent()) {
                     final String repoUrl = channelRepo.orElse(CHANNEL_URLS.get("central"));
                     this.channels = Arrays.asList(new ChannelRef("central", repoUrl, "org.wildfly.channels:wildfly:26.1.0", null));
+                } else if (channel.isPresent()) {
+                    this.channels = Arrays.asList(new ChannelRef("local", null, null, channel.get().toString()));
                 } else {
                     this.channels = ChannelRef.readChannels(channelsFile.get());
                 }
@@ -100,6 +109,7 @@ public class ProvisioningDefinition {
         private Path channelsFile;
         private String channelRepo;
         private Set<String> includedPackages;
+        private URL channel;
 
         public ProvisioningDefinition build() throws ArtifactResolutionException {
             return new ProvisioningDefinition(this);
@@ -122,6 +132,21 @@ public class ProvisioningDefinition {
 
         public Builder setIncludedPackages(Set<String> includedPackages) {
             this.includedPackages = includedPackages;
+            return this;
+        }
+
+        public Builder setChannel(String channel) throws ProvisioningException {
+            if (channel != null) {
+                try {
+                    this.channel = new URL(channel);
+                } catch (MalformedURLException e) {
+                    try {
+                        this.channel = Paths.get(channel).toAbsolutePath().toUri().toURL();
+                    } catch (MalformedURLException ex) {
+                        throw new ProvisioningException("Unrecognized path to channels file", ex);
+                    }
+                }
+            }
             return this;
         }
     }

@@ -20,7 +20,6 @@ package com.redhat.prospero.cli;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Arrays;
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
@@ -46,7 +45,7 @@ class InstallCommand implements Command {
     @Override
     public Set<String> getSupportedArguments() {
         return new HashSet<>(Arrays.asList(CliMain.TARGET_PATH_ARG, CliMain.FPL_ARG, CliMain.CHANNEL_FILE_ARG,
-                CliMain.CHANNEL_REPO, CliMain.LOCAL_REPO, CliMain.OFFLINE));
+                CliMain.CHANNEL_REPO, CliMain.CHANNEL, CliMain.LOCAL_REPO, CliMain.OFFLINE));
     }
 
     @Override
@@ -56,8 +55,8 @@ class InstallCommand implements Command {
         String channelFile = parsedArgs.get(CliMain.CHANNEL_FILE_ARG);
         String channelRepo = parsedArgs.get(CliMain.CHANNEL_REPO);
         String localRepo = parsedArgs.get(CliMain.LOCAL_REPO);
+        String channel = parsedArgs.get(CliMain.CHANNEL);
         boolean offline = parsedArgs.containsKey(CliMain.OFFLINE) ? Boolean.parseBoolean(parsedArgs.get(CliMain.OFFLINE)) : false;
-        Map<String, String> channelUrls = new HashMap<>();
 
         if (dir == null || dir.isEmpty()) {
             throw new ArgumentParsingException("Target dir argument (--%s) need to be set on install command", CliMain.TARGET_PATH_ARG);
@@ -83,6 +82,7 @@ class InstallCommand implements Command {
 
             final ProvisioningDefinition provisioningDefinition = ProvisioningDefinition.builder()
                     .setFpl(fpl)
+                    .setChannel(channel)
                     .setChannelsFile(channelFile == null ? null : Paths.get(channelFile).toAbsolutePath())
                     .setChannelRepo(channelRepo)
                     .build();

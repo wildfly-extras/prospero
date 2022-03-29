@@ -34,6 +34,7 @@ import org.slf4j.LoggerFactory;
 
 public class CliMain {
 
+
     static {
         enableJBossLogManager();
     }
@@ -51,6 +52,7 @@ public class CliMain {
     public static final String FPL_ARG = "fpl";
     public static final String CHANNEL_FILE_ARG = "channel-file";
     public static final String CHANNEL_REPO = "channel-repo";
+    public static final String CHANNEL = "channel";
     public static final String DRY_RUN = "dry-run";
     public static final String LOCAL_REPO = "local-repo";
     public static final String OFFLINE = "offline";
