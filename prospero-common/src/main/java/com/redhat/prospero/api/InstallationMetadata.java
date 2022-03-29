@@ -196,7 +196,7 @@ public class InstallationMetadata {
 
     public void writeFiles() throws MetadataException {
         try {
-            ManifestYamlSupport.write(this.manifest);
+            ManifestYamlSupport.write(this.manifest, this.channelRefs);
         } catch (IOException e) {
             throw new MetadataException("Unable to save manifest in installation", e);
         }

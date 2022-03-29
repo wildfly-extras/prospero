@@ -17,11 +17,13 @@
 
 package com.redhat.prospero.model;
 
+import com.redhat.prospero.api.ChannelRef;
 import com.redhat.prospero.api.Manifest;
 import org.eclipse.aether.artifact.Artifact;
 import org.eclipse.aether.artifact.DefaultArtifact;
 import org.wildfly.channel.Channel;
 import org.wildfly.channel.ChannelMapper;
+import org.wildfly.channel.MavenRepository;
 import org.wildfly.channel.Stream;
 import org.wildfly.channel.Vendor;
 
@@ -29,7 +31,9 @@ import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.io.PrintWriter;
+import java.net.URL;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
 public class ManifestYamlSupport {
@@ -45,11 +49,21 @@ public class ManifestYamlSupport {
     }
 
     public static void write(Manifest manifest) throws IOException {
+        write(manifest, Collections.emptyList());
+    }
+
+    public static void write(Manifest manifest, List<ChannelRef> channelRefs) throws IOException {
         List<Stream> streams = new ArrayList<>();
         for (Artifact resolvedArtifact : manifest.getArtifacts()) {
             streams.add(new Stream(resolvedArtifact.getGroupId(), resolvedArtifact.getArtifactId(), resolvedArtifact.getVersion(), null));
         }
-        final Channel channel = new Channel("provisioned", "provisioned", "", new Vendor("Custom", Vendor.Support.COMMUNITY), true, null, null, streams);
+        List<MavenRepository> repositories = new ArrayList<>();
+        for (ChannelRef channelRef : channelRefs) {
+            repositories.add(new MavenRepository(channelRef.getName(), new URL(channelRef.getRepoUrl())));
+        }
+        final Channel channel = new Channel("provisioned", "provisioned", "",
+                new Vendor("Custom", Vendor.Support.COMMUNITY),
+                true, null, repositories, streams);
         String yaml = ChannelMapper.toYaml(channel);
         try (PrintWriter pw = new PrintWriter(new FileWriter(manifest.getManifestFile().toFile()))) {
             pw.println(yaml);
