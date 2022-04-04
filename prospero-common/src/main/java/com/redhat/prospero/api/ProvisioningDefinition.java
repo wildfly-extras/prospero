@@ -56,7 +56,7 @@ public class ProvisioningDefinition {
         this.includedPackages.addAll(includedPackages.orElse(Collections.emptySet()));
 
         try {
-            if (fpl.equals("eap")) {
+            if (fpl.equals("eap") || fpl.equals("eap-7.4")) {
                 this.fpl = "org.jboss.eap:wildfly-ee-galleon-pack";
                 this.includedPackages.add("docs.examples.configs");
 

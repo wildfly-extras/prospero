@@ -66,7 +66,7 @@ class InstallCommand implements Command {
         }
 
 
-        if (!fpl.equals("eap") && !fpl.equals("wildfly") && (channelFile == null || channelFile.isEmpty())) {
+        if (!fpl.equals("eap") && !fpl.equals("eap-7.4") && !fpl.equals("wildfly") && (channelFile == null || channelFile.isEmpty())) {
             throw new ArgumentParsingException("Channel file argument (--%s) need to be set when using custom fpl", CliMain.CHANNEL_FILE_ARG);
         }
 
