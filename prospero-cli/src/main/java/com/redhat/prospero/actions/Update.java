@@ -21,6 +21,7 @@ import java.net.MalformedURLException;
 import java.net.URL;
 import java.nio.file.Path;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
@@ -45,6 +46,7 @@ import com.redhat.prospero.wfchannel.MavenSessionManager;
 import com.redhat.prospero.wfchannel.WfChannelMavenResolverFactory;
 import org.eclipse.aether.artifact.Artifact;
 import org.eclipse.aether.artifact.DefaultArtifact;
+import org.eclipse.aether.repository.RemoteRepository;
 import org.jboss.galleon.ProvisioningException;
 import org.jboss.galleon.ProvisioningManager;
 import org.jboss.galleon.layout.ProvisioningLayoutFactory;
@@ -72,9 +74,12 @@ public class Update {
     public Update(Path installDir, MavenSessionManager mavenSessionManager, Console console) throws ProvisioningException, OperationException {
         this.metadata = new InstallationMetadata(installDir);
 
+        // TODO: figure out how to populate repositories
+        final List<RemoteRepository> repositories = Arrays.asList(new RemoteRepository.Builder("mrrc", null, "https://maven.repository.redhat.com").build());
+
         this.mavenSessionManager = mavenSessionManager;
         final List<Channel> channels = mapToChannels(new ChannelRefUpdater(this.mavenSessionManager).resolveLatest(metadata.getChannels()));
-        this.factory = new WfChannelMavenResolverFactory(mavenSessionManager);
+        this.factory = new WfChannelMavenResolverFactory(mavenSessionManager, repositories);
         this.channelSession = new ChannelSession(channels, factory);
         this.maven = new ChannelMavenArtifactRepositoryManager(channelSession);
         this.provMgr = GalleonUtils.getProvisioningManager(installDir, maven);
@@ -174,7 +179,7 @@ public class Update {
 
         final String latestVersion;
         try {
-            latestVersion = channelSession.findLatestMavenArtifactVersion(artifact.getGroupId(), artifact.getArtifactId(), artifact.getExtension(), artifact.getClassifier(), artifact.getVersion());
+            latestVersion = channelSession.findLatestMavenArtifactVersion(artifact.getGroupId(), artifact.getArtifactId(), artifact.getExtension(), artifact.getClassifier());
         } catch (UnresolvedMavenArtifactException e) {
             throw new ArtifactResolutionException(String.format("Artifact [%s:%s] not found", artifact.getGroupId(), artifact.getArtifactId()), e);
         }

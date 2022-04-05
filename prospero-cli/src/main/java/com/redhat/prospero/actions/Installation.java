@@ -31,6 +31,7 @@ import java.net.URL;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
 import com.redhat.prospero.api.ChannelRef;
@@ -38,6 +39,7 @@ import com.redhat.prospero.wfchannel.ChannelRefUpdater;
 import com.redhat.prospero.wfchannel.MavenSessionManager;
 import com.redhat.prospero.wfchannel.WfChannelMavenResolverFactory;
 import org.eclipse.aether.artifact.Artifact;
+import org.eclipse.aether.repository.RemoteRepository;
 import org.jboss.galleon.ProvisioningException;
 import org.jboss.galleon.ProvisioningManager;
 import org.jboss.galleon.config.FeaturePackConfig;
@@ -74,7 +76,10 @@ public class Installation {
         final List<ChannelRef> updatedRefs = new ChannelRefUpdater(mavenSessionManager).resolveLatest(provisioningDefinition.getChannelRefs());
         final List<Channel> channels = mapToChannels(updatedRefs);
 
-        final WfChannelMavenResolverFactory factory = new WfChannelMavenResolverFactory(mavenSessionManager);
+        // TODO: figure out how to populate repositories
+        final List<RemoteRepository> repositories = provisioningDefinition.getRepositories();
+
+        final WfChannelMavenResolverFactory factory = new WfChannelMavenResolverFactory(mavenSessionManager, repositories);
         final ChannelMavenArtifactRepositoryManager repoManager = new ChannelMavenArtifactRepositoryManager(channels, factory);
         ProvisioningManager provMgr = GalleonUtils.getProvisioningManager(installDir, repoManager);
         final ProvisioningLayoutFactory layoutFactory = provMgr.getLayoutFactory();
@@ -118,7 +123,10 @@ public class Installation {
         }
         final List<Channel> channels = mapToChannels(channelRefs);
 
-        final WfChannelMavenResolverFactory factory = new WfChannelMavenResolverFactory(mavenSessionManager);
+        // TODO: figure out how to populate repositories
+        final List<RemoteRepository> repositories = Arrays.asList(new RemoteRepository.Builder("mrrc", null, "https://maven.repository.redhat.com").build());
+
+        final WfChannelMavenResolverFactory factory = new WfChannelMavenResolverFactory(mavenSessionManager, repositories);
         final ChannelMavenArtifactRepositoryManager repoManager = new ChannelMavenArtifactRepositoryManager(channels, factory);
         ProvisioningManager provMgr = GalleonUtils.getProvisioningManager(installDir, repoManager);
 

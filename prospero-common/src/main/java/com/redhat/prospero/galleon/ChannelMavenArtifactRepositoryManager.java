@@ -62,16 +62,16 @@ public class ChannelMavenArtifactRepositoryManager implements MavenRepoManager {
             final org.wildfly.channel.MavenArtifact result;
             if (manifest == null) {
                 result = channelSession.resolveLatestMavenArtifact(artifact.getGroupId(), artifact.getArtifactId(), artifact.getExtension(),
-                        artifact.getClassifier(), artifact.getVersion());
+                        artifact.getClassifier());
             } else {
                 final DefaultArtifact gav = new DefaultArtifact(artifact.getGroupId(), artifact.getArtifactId(), artifact.getClassifier(), artifact.getExtension(), artifact.getVersion() != null ? artifact.getVersion() : artifact.getVersionRange());
                 Artifact found = manifest.find(gav);
                 if (found != null) {
-                    result = channelSession.resolveExactMavenArtifact(artifact.getGroupId(), artifact.getArtifactId(), artifact.getExtension(),
+                    result = channelSession.resolveMavenArtifact(artifact.getGroupId(), artifact.getArtifactId(), artifact.getExtension(),
                             artifact.getClassifier(), found.getVersion());
                 } else if (artifact.getArtifactId().equals("community-universe") || artifact.getArtifactId().equals("wildfly-producers")) {
                     result = channelSession.resolveLatestMavenArtifact(artifact.getGroupId(), artifact.getArtifactId(), artifact.getExtension(),
-                            artifact.getClassifier(), artifact.getVersion());
+                            artifact.getClassifier());
                 } else {
                     throw new MavenUniverseException("Unable to resolve " + artifact);
                 }
@@ -142,7 +142,7 @@ public class ChannelMavenArtifactRepositoryManager implements MavenRepoManager {
         // TODO: handle version ranges
         try {
             return channelSession.resolveLatestMavenArtifact(artifact.getGroupId(), artifact.getArtifactId(), artifact.getExtension(),
-                    artifact.getClassifier(), artifact.getVersion()).getVersion();
+                    artifact.getClassifier()).getVersion();
         } catch (UnresolvedMavenArtifactException e) {
             throw new MavenUniverseException(e.getMessage(), e);
         }

@@ -3,6 +3,7 @@ package com.redhat.prospero.galleon;
 import com.redhat.prospero.api.ChannelRef;
 import com.redhat.prospero.wfchannel.MavenSessionManager;
 import com.redhat.prospero.wfchannel.WfChannelMavenResolverFactory;
+import org.eclipse.aether.repository.RemoteRepository;
 import org.jboss.galleon.universe.FeaturePackLocation;
 import org.jboss.galleon.universe.maven.MavenUniverseException;
 import org.junit.Ignore;
@@ -14,6 +15,7 @@ import java.net.MalformedURLException;
 import java.net.URL;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -47,7 +49,9 @@ public class FeaturePackLocationParserTest {
         Path provisioningRepo = Paths.get("/Users/spyrkob/workspaces/set/prospero/debug/provision-repo/");
         final MavenSessionManager mavenSessionManager = new MavenSessionManager(provisioningRepo);
 
-        final WfChannelMavenResolverFactory factory = new WfChannelMavenResolverFactory(mavenSessionManager);
+        final List<RemoteRepository> repositories = Arrays.asList(new RemoteRepository.Builder("mrrc", null, "https://maven.repository.redhat.com").build());
+
+        final WfChannelMavenResolverFactory factory = new WfChannelMavenResolverFactory(mavenSessionManager, repositories);
         repoManager = new ChannelMavenArtifactRepositoryManager(channels, factory);
         parser = new FeaturePackLocationParser(repoManager);
     }

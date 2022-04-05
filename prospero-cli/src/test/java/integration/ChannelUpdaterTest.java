@@ -8,6 +8,7 @@ import com.redhat.prospero.cli.CliConsole;
 import com.redhat.prospero.galleon.ChannelMavenArtifactRepositoryManager;
 import com.redhat.prospero.wfchannel.MavenSessionManager;
 import com.redhat.prospero.wfchannel.WfChannelMavenResolverFactory;
+import org.eclipse.aether.repository.RemoteRepository;
 import org.jboss.galleon.ProvisioningException;
 import org.jboss.galleon.universe.FeaturePackLocation;
 import org.jboss.galleon.universe.Producer;
@@ -24,6 +25,7 @@ import java.net.URL;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -56,7 +58,9 @@ public class ChannelUpdaterTest {
             }
         }).collect(Collectors.toList());
 
-        final WfChannelMavenResolverFactory factory = new WfChannelMavenResolverFactory(mavenSessionManager);
+        final List<RemoteRepository> repositories = Arrays.asList(new RemoteRepository.Builder("mrrc", null, "https://maven.repository.redhat.com").build());
+
+        final WfChannelMavenResolverFactory factory = new WfChannelMavenResolverFactory(mavenSessionManager, repositories);
         final ChannelMavenArtifactRepositoryManager repoManager = new ChannelMavenArtifactRepositoryManager(channels, factory);
 
 
@@ -97,14 +101,15 @@ public class ChannelUpdaterTest {
 
     @Test
     public void eap74() throws Exception {
-        final WfChannelMavenResolverFactory factory = new WfChannelMavenResolverFactory(mavenSessionManager);
+        final List<RemoteRepository> repositories = Arrays.asList(new RemoteRepository.Builder("mrrc", null, "https://maven.repository.redhat.com").build());
+        final WfChannelMavenResolverFactory factory = new WfChannelMavenResolverFactory(mavenSessionManager, repositories);
 
         final URL wlflUrl = new URL("file:///Users/spyrkob/workspaces/set/prospero/prospero/examples/eap/wildfly-ee-galleon-pack-7.4.3.GA-redhat-SNAPSHOT-channel.yaml");
         Channel primaryChannel = ChannelMapper.from(wlflUrl);
 
         ChannelSession session = new ChannelSession(asList(primaryChannel), factory);
 
-        final MavenArtifact resolved = session.resolveLatestMavenArtifact("org.eclipse", "yasson", "jar", null, "1.0.9.redhat-00001");
+        final MavenArtifact resolved = session.resolveLatestMavenArtifact("org.eclipse", "yasson", "jar", null);
         System.out.println("Resolved " + resolved.getVersion());
     }
 

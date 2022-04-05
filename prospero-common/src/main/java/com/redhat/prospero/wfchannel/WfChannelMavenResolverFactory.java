@@ -17,21 +17,23 @@
 
 package com.redhat.prospero.wfchannel;
 
+import org.eclipse.aether.repository.RemoteRepository;
 import org.jboss.galleon.ProvisioningException;
-import org.wildfly.channel.MavenRepository;
 import org.wildfly.channel.spi.MavenVersionsResolver;
 
 import java.util.List;
 
 public class WfChannelMavenResolverFactory implements MavenVersionsResolver.Factory {
     private final MavenSessionManager mavenSessionManager;
+    private final List<RemoteRepository> remoteRepositories;
 
-    public WfChannelMavenResolverFactory(MavenSessionManager mavenSessionManager) throws ProvisioningException {
+    public WfChannelMavenResolverFactory(MavenSessionManager mavenSessionManager, List<RemoteRepository> remoteRepositories) throws ProvisioningException {
         this.mavenSessionManager = mavenSessionManager;
+        this.remoteRepositories = remoteRepositories;
     }
 
     @Override
-    public MavenVersionsResolver create(List<MavenRepository> mavenRepositories, boolean resolveLocalCache) {
-        return new WfChannelMavenResolver(mavenRepositories, resolveLocalCache, mavenSessionManager);
+    public MavenVersionsResolver create() {
+        return new WfChannelMavenResolver(remoteRepositories, false, mavenSessionManager);
     }
 }

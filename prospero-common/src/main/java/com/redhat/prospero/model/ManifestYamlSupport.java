@@ -23,7 +23,6 @@ import org.eclipse.aether.artifact.Artifact;
 import org.eclipse.aether.artifact.DefaultArtifact;
 import org.wildfly.channel.Channel;
 import org.wildfly.channel.ChannelMapper;
-import org.wildfly.channel.MavenRepository;
 import org.wildfly.channel.Stream;
 import org.wildfly.channel.Vendor;
 
@@ -31,13 +30,10 @@ import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.io.PrintWriter;
-import java.net.URL;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
-import java.util.HashSet;
 import java.util.List;
-import java.util.Set;
 
 public class ManifestYamlSupport {
 
@@ -72,15 +68,16 @@ public class ManifestYamlSupport {
             }
         });
 
-        Set<MavenRepository> repositories = new HashSet<>();
-        for (ChannelRef channelRef : channelRefs) {
-            final Channel channel = ChannelMapper.from(new URL(channelRef.getUrl()));
-            repositories.addAll(channel.getRepositories());
-        }
+        // TODO: do we need to store the repositories for updates?
+        //   probably yes - otherwise on moving the installation things stop working
+//        Set<MavenRepository> repositories = new HashSet<>();
+//        for (ChannelRef channelRef : channelRefs) {
+//            final Channel channel = ChannelMapper.from(new URL(channelRef.getUrl()));
+//            repositories.addAll(channel.getRepositories());
+//        }
 
-        final Channel channel = new Channel("provisioned", "provisioned", "",
-                new Vendor("Custom", Vendor.Support.COMMUNITY),
-                true, null, new ArrayList<>(repositories), streams);
+        final Channel channel = new Channel("provisioned", "",
+                new Vendor("Custom", Vendor.Support.COMMUNITY), null, streams);
         String yaml = ChannelMapper.toYaml(channel);
         try (PrintWriter pw = new PrintWriter(new FileWriter(manifest.getManifestFile().toFile()))) {
             pw.println(yaml);

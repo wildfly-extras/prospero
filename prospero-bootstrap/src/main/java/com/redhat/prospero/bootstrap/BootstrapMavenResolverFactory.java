@@ -41,7 +41,6 @@ import org.eclipse.aether.spi.connector.RepositoryConnectorFactory;
 import org.eclipse.aether.spi.connector.transport.TransporterFactory;
 import org.eclipse.aether.transport.http.HttpTransporterFactory;
 import org.eclipse.aether.version.Version;
-import org.wildfly.channel.MavenRepository;
 import org.wildfly.channel.UnresolvedMavenArtifactException;
 import org.wildfly.channel.spi.MavenVersionsResolver;
 
@@ -51,14 +50,18 @@ import static java.util.Objects.requireNonNull;
 public class BootstrapMavenResolverFactory implements MavenVersionsResolver.Factory {
 
     static String LOCAL_MAVEN_REPO = System.getProperty("user.home") + "/.m2/repository";
+    private List<RemoteRepository> remoteRepositories;
 
-    @Override
-    public MavenVersionsResolver create(List<MavenRepository> mavenRepositories, boolean resolveLocalCache) {
-        final List<RemoteRepository> remoteRepositories = mavenRepositories.stream().map(BootstrapMavenResolverFactory::newRemoteRepository).collect(Collectors.toList());
-        return getMavenResolver(remoteRepositories, resolveLocalCache);
+    public BootstrapMavenResolverFactory(List<RemoteRepository> remoteRepositories) {
+        this.remoteRepositories = remoteRepositories;
     }
 
-    public MavenVersionsResolver getMavenResolver(List<RemoteRepository> remoteRepositories, boolean resolveLocalCache) {
+    @Override
+    public MavenVersionsResolver create() {
+        return getMavenResolver();
+    }
+
+    public MavenVersionsResolver getMavenResolver() {
         final RepositorySystem system = newRepositorySystem();
         final DefaultRepositorySystemSession session = newRepositorySystemSession(system, true);
         return new BootstrapMavenVersionsResolver(remoteRepositories, system, session);
@@ -85,10 +88,6 @@ public class BootstrapMavenResolverFactory implements MavenVersionsResolver.Fact
         return session;
     }
 
-    private static RemoteRepository newRemoteRepository(MavenRepository mavenRepository) {
-        return new RemoteRepository.Builder(mavenRepository.getId(), "default", mavenRepository.getUrl().toExternalForm()).build();
-    }
-
     private static class BootstrapMavenVersionsResolver implements MavenVersionsResolver {
 
         private final List<RemoteRepository> remoteRepositories;
@@ -101,6 +100,35 @@ public class BootstrapMavenResolverFactory implements MavenVersionsResolver.Fact
             this.remoteRepositories = remoteRepositories;
             this.system = system;
             this.session = session;
+        }
+
+        @Override
+        public File resolveLatestVersionFromMavenMetadata(String groupId, String artifactId, String extension, String classifier) throws UnresolvedMavenArtifactException {
+            Artifact artifact = new DefaultArtifact(groupId, artifactId, classifier, extension, "[0,)");
+            VersionRangeRequest versionRangeRequest = new VersionRangeRequest();
+            versionRangeRequest.setArtifact(artifact);
+            versionRangeRequest.setRepositories(remoteRepositories);
+
+            try {
+                VersionRangeResult versionRangeResult = system.resolveVersionRange(session, versionRangeRequest);
+                Set<String> versions = versionRangeResult.getVersions().stream().map(Version::toString).collect(Collectors.toSet());
+                if (versionRangeResult.getHighestVersion() == null) {
+                    throw new UnresolvedMavenArtifactException("Artifact " + artifact + " metadata has no highest version");
+                }
+                artifact = artifact.setVersion(versionRangeResult.getHighestVersion().toString());
+            } catch (VersionRangeResolutionException e) {
+                throw new UnresolvedMavenArtifactException("Unable to resolve artifact versions " + artifact, e);
+            }
+
+            ArtifactRequest request = new ArtifactRequest();
+            request.setArtifact(artifact);
+            request.setRepositories(remoteRepositories);
+            try {
+                ArtifactResult result = system.resolveArtifact(session, request);
+                return result.getArtifact().getFile();
+            } catch (ArtifactResolutionException e) {
+                throw new UnresolvedMavenArtifactException("Unable to resolve artifact " + artifact, e);
+            }
         }
 
         @Override

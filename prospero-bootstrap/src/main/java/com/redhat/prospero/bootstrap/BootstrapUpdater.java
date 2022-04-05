@@ -57,10 +57,10 @@ public class BootstrapUpdater {
 
     private List<Path> downloadAllDeps(Path installerLib, Optional<String> channelRepo) throws BootstrapException {
         try {
-            final BootstrapMavenResolverFactory factory = new BootstrapMavenResolverFactory();
-
             final RemoteRepository repo = new RemoteRepository.Builder("mrrc", "default", channelRepo.orElse("https://maven.repository.redhat.com/ga/")).build();
-            final MavenVersionsResolver mavenResolver = factory.getMavenResolver(Arrays.asList(repo), true);
+            final BootstrapMavenResolverFactory factory = new BootstrapMavenResolverFactory(Arrays.asList(repo));
+
+            final MavenVersionsResolver mavenResolver = factory.getMavenResolver();
             final Set<String> allVersions = mavenResolver.getAllVersions("org.wildfly.channels", "installer", "yaml", "channel");
             if (allVersions.isEmpty()) {
                 throw new BootstrapException("Unable to find installer channel definition");
@@ -80,7 +80,7 @@ public class BootstrapUpdater {
                 final String groupId = stream.getGroupId();
                 final String artifactId = stream.getArtifactId();
                 final String extension = "jar";
-                final MavenArtifact artifact = channelSession.resolveLatestMavenArtifact(groupId, artifactId, extension, null, null);
+                final MavenArtifact artifact = channelSession.resolveLatestMavenArtifact(groupId, artifactId, extension, null);
                 final Path targetPath = installerLib.resolve(artifact.getFile().getName());
                 if (!targetPath.toFile().exists()) {
                     Files.copy(artifact.getFile().toPath(), targetPath);

@@ -32,6 +32,7 @@ import java.util.Optional;
 import java.util.Set;
 
 import com.redhat.prospero.api.exceptions.ArtifactResolutionException;
+import org.eclipse.aether.repository.RemoteRepository;
 import org.jboss.galleon.ProvisioningException;
 
 public class ProvisioningDefinition {
@@ -40,11 +41,13 @@ public class ProvisioningDefinition {
     private final List<ChannelRef> channels;
     private final Set<String> includedPackages = new HashSet<>();
     private static final Map<String, String> CHANNEL_URLS = new HashMap<>();
+    private final List<RemoteRepository> repositories;
 
     static {
         CHANNEL_URLS.put("mrrc", "https://maven.repository.redhat.com/ga/");
         CHANNEL_URLS.put("central", "https://repo1.maven.org/maven2/");
     }
+
 
     private ProvisioningDefinition(Builder builder) throws ArtifactResolutionException {
         final String fpl = builder.fpl;
@@ -52,6 +55,7 @@ public class ProvisioningDefinition {
         final Optional<Path> channelsFile = Optional.ofNullable(builder.channelsFile);
         final Optional<URL> channel = Optional.ofNullable(builder.channel);
         final Optional<Set<String>> includedPackages = Optional.ofNullable(builder.includedPackages);
+        this.repositories = builder.repositories;
 
         this.includedPackages.addAll(includedPackages.orElse(Collections.emptySet()));
 
@@ -104,12 +108,17 @@ public class ProvisioningDefinition {
         return channels;
     }
 
+    public List<RemoteRepository> getRepositories() {
+        return repositories;
+    }
+
     public static class Builder {
         private String fpl;
         private Path channelsFile;
         private String channelRepo;
         private Set<String> includedPackages;
         private URL channel;
+        private List<RemoteRepository> repositories;
 
         public ProvisioningDefinition build() throws ArtifactResolutionException {
             return new ProvisioningDefinition(this);
@@ -147,6 +156,11 @@ public class ProvisioningDefinition {
                     }
                 }
             }
+            return this;
+        }
+
+        public Builder setRepositories(List<RemoteRepository> repositories) {
+            this.repositories = repositories;
             return this;
         }
     }

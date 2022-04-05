@@ -31,7 +31,6 @@ import org.eclipse.aether.resolution.VersionRangeResult;
 import org.eclipse.aether.version.Version;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.wildfly.channel.MavenRepository;
 import org.wildfly.channel.UnresolvedMavenArtifactException;
 import org.wildfly.channel.spi.MavenVersionsResolver;
 
@@ -54,9 +53,9 @@ public class WfChannelMavenResolver implements MavenVersionsResolver {
 
     private final MavenSessionManager mavenSessionManager;
 
-    WfChannelMavenResolver(List<MavenRepository> mavenRepositories, boolean resolveLocalCache, MavenSessionManager mavenSessionManager) {
+    WfChannelMavenResolver(List<RemoteRepository> mavenRepositories, boolean resolveLocalCache, MavenSessionManager mavenSessionManager) {
         this.mavenSessionManager = mavenSessionManager;
-        remoteRepositories = mavenRepositories.stream().map(r -> newRemoteRepository(r)).collect(Collectors.toList());
+        this.remoteRepositories = mavenRepositories;
         system = mavenSessionManager.newRepositorySystem();
         session = mavenSessionManager.newRepositorySystemSession(system, resolveLocalCache);
     }
@@ -84,6 +83,36 @@ public class WfChannelMavenResolver implements MavenVersionsResolver {
     }
 
     @Override
+    public File resolveLatestVersionFromMavenMetadata(String groupId, String artifactId, String extension, String classifier) throws UnresolvedMavenArtifactException {
+        Artifact artifact = new DefaultArtifact(groupId, artifactId, classifier, extension, "[0,)");
+        VersionRangeRequest versionRangeRequest = new VersionRangeRequest();
+        versionRangeRequest.setArtifact(artifact);
+        versionRangeRequest.setRepositories(remoteRepositories);
+
+        try {
+            VersionRangeResult versionRangeResult = system.resolveVersionRange(session, versionRangeRequest);
+            Set<String> versions = versionRangeResult.getVersions().stream().map(Version::toString).collect(Collectors.toSet());
+            logger.trace("All versions in the repositories: %s", versions);
+            if (versionRangeResult.getHighestVersion() == null) {
+                throw new UnresolvedMavenArtifactException("Artifact " + artifact + " metadata has no highest version");
+            }
+            artifact = artifact.setVersion(versionRangeResult.getHighestVersion().toString());
+        } catch (VersionRangeResolutionException e) {
+            throw new UnresolvedMavenArtifactException("Unable to resolve artifact versions " + artifact, e);
+        }
+
+        ArtifactRequest request = new ArtifactRequest();
+        request.setArtifact(artifact);
+        request.setRepositories(remoteRepositories);
+        try {
+            ArtifactResult result = system.resolveArtifact(session, request);
+            return result.getArtifact().getFile();
+        } catch (ArtifactResolutionException e) {
+            throw new UnresolvedMavenArtifactException("Unable to resolve artifact " + artifact, e);
+        }
+    }
+
+    @Override
     public File resolveArtifact(String groupId, String artifactId, String extension, String classifier, String version) throws UnresolvedMavenArtifactException {
         Artifact artifact = new DefaultArtifact(groupId, artifactId, classifier, extension, version);
 
@@ -97,7 +126,4 @@ public class WfChannelMavenResolver implements MavenVersionsResolver {
             throw new UnresolvedMavenArtifactException("Unable to resolve artifact " + artifact, e);
         }
     }
-
-    private static RemoteRepository newRemoteRepository(MavenRepository mavenRepository) {
-        return new RemoteRepository.Builder(mavenRepository.getId(), "default", mavenRepository.getUrl().toExternalForm()).build();
-    }}
+}

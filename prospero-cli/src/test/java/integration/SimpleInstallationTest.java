@@ -27,6 +27,7 @@ import com.redhat.prospero.model.ManifestYamlSupport;
 import com.redhat.prospero.wfchannel.MavenSessionManager;
 import org.apache.commons.io.FileUtils;
 import org.eclipse.aether.artifact.Artifact;
+import org.eclipse.aether.repository.RemoteRepository;
 import org.jboss.galleon.layout.FeaturePackUpdatePlan;
 import org.junit.After;
 import org.junit.Before;
@@ -36,6 +37,7 @@ import java.io.File;
 import java.io.IOException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.List;
@@ -56,6 +58,7 @@ public class SimpleInstallationTest {
     private Path manifestPath = OUTPUT_PATH.resolve(TestUtil.MANIFEST_FILE_PATH);
     private MavenSessionManager mavenSessionManager = new MavenSessionManager();
     private Installation installation = new Installation(OUTPUT_PATH, mavenSessionManager, new CliConsole());
+    private List<RemoteRepository> repositories;
 
     public SimpleInstallationTest() throws Exception {
     }
@@ -66,6 +69,11 @@ public class SimpleInstallationTest {
             FileUtils.deleteDirectory(OUTPUT_PATH.toFile());
             OUTPUT_PATH.toFile().delete();
         }
+        repositories = Arrays.asList(
+                new RemoteRepository.Builder("maven-central", "default", "https://repo1.maven.org/maven2/").build(),
+                new RemoteRepository.Builder("nexus", "default", "https://repository.jboss.org/nexus/content/groups/public-jboss").build(),
+                new RemoteRepository.Builder("maven-redhat-ga", "default", "https://maven.repository.redhat.com/ga").build()
+        );
     }
 
     @After
@@ -83,6 +91,7 @@ public class SimpleInstallationTest {
         final ProvisioningDefinition provisioningDefinition = ProvisioningDefinition.builder()
            .setFpl("org.wildfly.core:wildfly-core-galleon-pack:17.0.0.Final")
            .setChannelsFile(channelFile)
+           .setRepositories(repositories)
            .build();
         installation.provision(provisioningDefinition);
 
@@ -102,6 +111,7 @@ public class SimpleInstallationTest {
         final ProvisioningDefinition provisioningDefinition = ProvisioningDefinition.builder()
            .setFpl("org.wildfly.core:wildfly-core-galleon-pack:17.0.0.Final")
            .setChannelsFile(channelFile)
+           .setRepositories(repositories)
            .build();
         installation.provision(provisioningDefinition);
 
@@ -120,6 +130,7 @@ public class SimpleInstallationTest {
         final ProvisioningDefinition provisioningDefinition = ProvisioningDefinition.builder()
            .setFpl("org.wildfly.core:wildfly-core-galleon-pack:17.0.0.Final")
            .setChannelsFile(channelFile)
+           .setRepositories(repositories)
            .build();
         installation.provision(provisioningDefinition);
 
@@ -155,9 +166,6 @@ public class SimpleInstallationTest {
 
     private Optional<Artifact> readArtifactFromManifest(String groupId, String artifactId) throws IOException {
         final File manifestFile = manifestPath.toFile();
-//        return ManifestXmlSupport.parse(manifestFile).getArtifacts().stream()
-//                .filter((a) -> a.getGroupId().equals(groupId) && a.getArtifactId().equals(artifactId))
-//                .findFirst();
         return ManifestYamlSupport.parse(manifestFile).getArtifacts().stream()
                 .filter((a) -> a.getGroupId().equals(groupId) && a.getArtifactId().equals(artifactId))
                 .findFirst();
