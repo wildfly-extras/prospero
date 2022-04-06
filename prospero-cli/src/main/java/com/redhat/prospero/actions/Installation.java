@@ -158,13 +158,6 @@ public class Installation {
             artifacts.add(from(resolvedArtifact));
         }
 
-        new InstallationMetadata(home, artifacts, channelRefs).writeFiles();
-
-        try {
-            RepositoryRef.writeRepositories(repositories.stream().map(r->new RepositoryRef(r.getId(), r.getUrl())).collect(Collectors.toList()),
-                    home.resolve(".installation").resolve("repos.yaml").toFile());
-        } catch (IOException e) {
-            throw new MetadataException("Unable to write installation metadata",e);
-        }
+        new InstallationMetadata(home, artifacts, channelRefs, repositories).writeFiles();
     }
 }

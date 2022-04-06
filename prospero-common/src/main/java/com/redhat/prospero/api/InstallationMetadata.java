@@ -90,14 +90,15 @@ public class InstallationMetadata {
             this.manifest = Manifest.parseManifest(manifestFile);
             this.channelRefs = ChannelRef.readChannels(channelsFile);
             this.provisioningConfig = ProvisioningXmlParser.parse(provisioningFile);
-            this.repositories = RepositoryRef.readRepositories(base.resolve(METADATA_DIR).resolve(REPOS_FILE_NAME))
+            this.repositories = RepositoryRef.readRepositories(repositoriesFile)
                     .stream().map(r->r.toRemoteRepository()).collect(Collectors.toList());
         } catch (IOException | ProvisioningException e) {
             throw new MetadataException("Error when parsing installation metadata", e);
         }
     }
 
-    public InstallationMetadata(Path base, List<Artifact> artifacts, List<ChannelRef> channelRefs) throws MetadataException {
+    public InstallationMetadata(Path base, List<Artifact> artifacts, List<ChannelRef> channelRefs,
+                                List<RemoteRepository> repositories) throws MetadataException {
         this.base = base;
         this.gitStorage = new GitStorage(base);
         this.manifestFile = base.resolve(METADATA_DIR).resolve(InstallationMetadata.MANIFEST_FILE_NAME);
@@ -107,8 +108,7 @@ public class InstallationMetadata {
 
         this.manifest = new Manifest(artifacts, manifestFile);
         this.channelRefs = channelRefs;
-        // TODO: add parameter
-        this.repositories = null;
+        this.repositories = repositories;
         try {
             this.provisioningConfig = ProvisioningXmlParser.parse(provisioningFile);
         } catch (ProvisioningException e) {
@@ -244,7 +244,13 @@ public class InstallationMetadata {
             throw new MetadataException("Unable to save channel list in installation", e);
         }
 
-        //TODO : write repositories
+        // write repositories
+        try {
+            RepositoryRef.writeRepositories(repositories.stream().map(r->new RepositoryRef(r.getId(), r.getUrl())).collect(Collectors.toList()),
+                    this.repositoriesFile.toFile());
+        } catch (IOException e) {
+            throw new MetadataException("Unable to write installation metadata",e);
+        }
 
         gitStorage.record();
     }
