@@ -33,8 +33,10 @@ import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.stream.Collectors;
 
 import com.redhat.prospero.api.ChannelRef;
+import com.redhat.prospero.model.RepositoryRef;
 import com.redhat.prospero.wfchannel.ChannelRefUpdater;
 import com.redhat.prospero.wfchannel.MavenSessionManager;
 import com.redhat.prospero.wfchannel.WfChannelMavenResolverFactory;
@@ -105,7 +107,7 @@ public class Installation {
             System.clearProperty(MAVEN_REPO_LOCAL);
         }
 
-        writeProsperoMetadata(installDir, repoManager, updatedRefs);
+        writeProsperoMetadata(installDir, repoManager, updatedRefs, repositories);
     }
 
     /**
@@ -113,18 +115,16 @@ public class Installation {
      *
      * @param installationFile
      * @param channelRefs
+     * @param repositories
      * @throws ProvisioningException
      * @throws IOException
      * @throws MetadataException
      */
-    public void provision(Path installationFile, List<ChannelRef> channelRefs) throws ProvisioningException, MetadataException {
+    public void provision(Path installationFile, List<ChannelRef> channelRefs, List<RemoteRepository> repositories) throws ProvisioningException, MetadataException {
         if (Files.exists(installDir)) {
             throw new ProvisioningException("Installation dir " + installDir + " already exists");
         }
         final List<Channel> channels = mapToChannels(channelRefs);
-
-        // TODO: figure out how to populate repositories
-        final List<RemoteRepository> repositories = Arrays.asList(new RemoteRepository.Builder("mrrc", null, "https://maven.repository.redhat.com").build());
 
         final WfChannelMavenResolverFactory factory = new WfChannelMavenResolverFactory(mavenSessionManager, repositories);
         final ChannelMavenArtifactRepositoryManager repoManager = new ChannelMavenArtifactRepositoryManager(channels, factory);
@@ -137,7 +137,7 @@ public class Installation {
             System.clearProperty(MAVEN_REPO_LOCAL);
         }
 
-        writeProsperoMetadata(installDir, repoManager, channelRefs);
+        writeProsperoMetadata(installDir, repoManager, channelRefs, repositories);
     }
 
     private List<Channel> mapToChannels(List<ChannelRef> channelRefs) throws MetadataException {
@@ -151,12 +151,20 @@ public class Installation {
         } return channels;
     }
 
-    private void writeProsperoMetadata(Path home, ChannelMavenArtifactRepositoryManager maven, List<ChannelRef> channelRefs) throws MetadataException {
+    private void writeProsperoMetadata(Path home, ChannelMavenArtifactRepositoryManager maven, List<ChannelRef> channelRefs,
+                                       List<RemoteRepository> repositories) throws MetadataException {
         List<Artifact> artifacts = new ArrayList<>();
         for (MavenArtifact resolvedArtifact : maven.resolvedArtfacts()) {
             artifacts.add(from(resolvedArtifact));
         }
 
         new InstallationMetadata(home, artifacts, channelRefs).writeFiles();
+
+        try {
+            RepositoryRef.writeRepositories(repositories.stream().map(r->new RepositoryRef(r.getId(), r.getUrl())).collect(Collectors.toList()),
+                    home.resolve(".installation").resolve("repos.yaml").toFile());
+        } catch (IOException e) {
+            throw new MetadataException("Unable to write installation metadata",e);
+        }
     }
 }

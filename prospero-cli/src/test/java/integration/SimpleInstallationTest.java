@@ -158,7 +158,7 @@ public class SimpleInstallationTest {
         final File installationFile = new File(this.getClass().getClassLoader().getResource("provisioning.xml").toURI());
         final List<ChannelRef> channelRefs = ChannelRef.readChannels(channelFile);
 
-        installation.provision(installationFile.toPath(), channelRefs);
+        installation.provision(installationFile.toPath(), channelRefs, repositories);
 
         final Optional<Artifact> wildflyCliArtifact = readArtifactFromManifest("org.wildfly.core", "wildfly-cli");
         assertEquals("17.0.0.Final", wildflyCliArtifact.get().getVersion());

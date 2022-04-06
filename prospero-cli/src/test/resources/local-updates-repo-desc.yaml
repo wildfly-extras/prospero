@@ -5,18 +5,9 @@ vendor:
   name: WildFly
   support: community
 streams:
-  - groupId: org.jboss.universe
-    artifactId: community-universe
-    version: 1.2.0.Final
   - groupId: org.wildfly.core
     artifactId: wildfly-core-galleon-pack
     version: 17.0.0.Final
   - groupId: org.wildfly.core
     artifactId: wildfly-cli
     version: 17.0.1.Final
-  - groupId: org.jboss.universe
-    artifactId: community-universe
-    version: 1.2.0.Final
-  - groupId: org.jboss.universe.producer
-    artifactId: wildfly-producers
-    version: 1.3.2.Final
