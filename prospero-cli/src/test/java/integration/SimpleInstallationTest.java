@@ -51,14 +51,13 @@ import static org.junit.Assert.*;
  * Currently requires a local repos to run
  * TODO: use channels based on central repo once the metadata issue is fixed (MVNCENTRAL-7012)
  */
-public class SimpleInstallationTest {
+public class SimpleInstallationTest extends WfCoreTestBase {
 
     private static final String OUTPUT_DIR = "target/server";
     private Path OUTPUT_PATH = Paths.get(OUTPUT_DIR).toAbsolutePath();
     private Path manifestPath = OUTPUT_PATH.resolve(TestUtil.MANIFEST_FILE_PATH);
     private MavenSessionManager mavenSessionManager = new MavenSessionManager();
     private Installation installation = new Installation(OUTPUT_PATH, mavenSessionManager, new CliConsole());
-    private List<RemoteRepository> repositories;
 
     public SimpleInstallationTest() throws Exception {
     }
@@ -69,11 +68,6 @@ public class SimpleInstallationTest {
             FileUtils.deleteDirectory(OUTPUT_PATH.toFile());
             OUTPUT_PATH.toFile().delete();
         }
-        repositories = Arrays.asList(
-                new RemoteRepository.Builder("maven-central", "default", "https://repo1.maven.org/maven2/").build(),
-                new RemoteRepository.Builder("nexus", "default", "https://repository.jboss.org/nexus/content/groups/public-jboss").build(),
-                new RemoteRepository.Builder("maven-redhat-ga", "default", "https://maven.repository.redhat.com/ga").build()
-        );
     }
 
     @After
@@ -88,11 +82,9 @@ public class SimpleInstallationTest {
     public void installWildflyCore() throws Exception {
         final Path channelFile = TestUtil.prepareChannelFile("local-repo-desc.yaml");
 
-        final ProvisioningDefinition provisioningDefinition = ProvisioningDefinition.builder()
-           .setFpl("org.wildfly.core:wildfly-core-galleon-pack:17.0.0.Final")
-           .setChannelsFile(channelFile)
-           .setRepositories(repositories)
-           .build();
+        final ProvisioningDefinition provisioningDefinition = defaultWfCoreDefinition()
+                .setChannelsFile(channelFile)
+                .build();
         installation.provision(provisioningDefinition);
 
         // verify installation with manifest file is present
@@ -108,11 +100,9 @@ public class SimpleInstallationTest {
     public void updateWildflyCore() throws Exception {
         final Path channelFile = TestUtil.prepareChannelFile("local-repo-desc.yaml");
 
-        final ProvisioningDefinition provisioningDefinition = ProvisioningDefinition.builder()
-           .setFpl("org.wildfly.core:wildfly-core-galleon-pack:17.0.0.Final")
-           .setChannelsFile(channelFile)
-           .setRepositories(repositories)
-           .build();
+        final ProvisioningDefinition provisioningDefinition = defaultWfCoreDefinition()
+                .setChannelsFile(channelFile)
+                .build();
         installation.provision(provisioningDefinition);
 
         TestUtil.prepareChannelFileAsUrl(OUTPUT_PATH.resolve(TestUtil.CHANNELS_FILE_PATH), "local-repo-desc.yaml", "local-updates-repo-desc.yaml");
@@ -127,11 +117,9 @@ public class SimpleInstallationTest {
     public void updateWildflyCoreDryRun() throws Exception {
         final Path channelFile = TestUtil.prepareChannelFile("local-repo-desc.yaml");
 
-        final ProvisioningDefinition provisioningDefinition = ProvisioningDefinition.builder()
-           .setFpl("org.wildfly.core:wildfly-core-galleon-pack:17.0.0.Final")
-           .setChannelsFile(channelFile)
-           .setRepositories(repositories)
-           .build();
+        final ProvisioningDefinition provisioningDefinition = defaultWfCoreDefinition()
+                .setChannelsFile(channelFile)
+                .build();
         installation.provision(provisioningDefinition);
 
         TestUtil.prepareChannelFileAsUrl(OUTPUT_PATH.resolve(TestUtil.CHANNELS_FILE_PATH), "local-repo-desc.yaml", "local-updates-repo-desc.yaml");

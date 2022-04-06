@@ -38,7 +38,6 @@ import java.net.URL;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 
 import static com.redhat.prospero.api.ArtifactUtils.from;
@@ -68,9 +67,7 @@ public class InstallationRestore {
 
         final InstallationMetadata metadataBundle = InstallationMetadata.importMetadata(metadataBundleZip);
         final List<Channel> channels = mapToChannels(metadataBundle.getChannels());
-
-        // TODO: figure out how to populate repositories
-        final List<RemoteRepository> repositories = Arrays.asList(new RemoteRepository.Builder("mrrc", null, "https://maven.repository.redhat.com").build());
+        final List<RemoteRepository> repositories = metadataBundle.getRepositories();
 
         final MavenSessionManager mavenSessionManager = new MavenSessionManager();
         final WfChannelMavenResolverFactory factory = new WfChannelMavenResolverFactory(mavenSessionManager, repositories);

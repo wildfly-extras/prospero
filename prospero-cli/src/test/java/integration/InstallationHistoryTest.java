@@ -29,6 +29,7 @@ import com.redhat.prospero.wfchannel.MavenSessionManager;
 import org.apache.commons.io.FileUtils;
 import org.eclipse.aether.artifact.Artifact;
 import org.eclipse.aether.artifact.DefaultArtifact;
+import org.eclipse.aether.repository.RemoteRepository;
 import org.jboss.galleon.ProvisioningException;
 import org.junit.After;
 import org.junit.Assert;
@@ -40,6 +41,7 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -48,7 +50,7 @@ import java.util.Optional;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
-public class InstallationHistoryTest {
+public class InstallationHistoryTest extends WfCoreTestBase {
 
     private static final String OUTPUT_DIR = "target/server";
     private static final Path OUTPUT_PATH = Paths.get(OUTPUT_DIR).toAbsolutePath();
@@ -87,8 +89,7 @@ public class InstallationHistoryTest {
             throw new ProvisioningException("Installation dir " + installDir + " already exists");
         }
 
-        final ProvisioningDefinition provisioningDefinition = ProvisioningDefinition.builder()
-                .setFpl("org.wildfly.core:wildfly-core-galleon-pack:17.0.0.Final")
+        final ProvisioningDefinition provisioningDefinition = defaultWfCoreDefinition()
                 .setChannelsFile(channelFile)
                 .build();
         installation.provision(provisioningDefinition);
@@ -114,8 +115,7 @@ public class InstallationHistoryTest {
             throw new ProvisioningException("Installation dir " + OUTPUT_PATH + " already exists");
         }
 
-        final ProvisioningDefinition provisioningDefinition = ProvisioningDefinition.builder()
-                .setFpl("org.wildfly.core:wildfly-core-galleon-pack:17.0.0.Final")
+        final ProvisioningDefinition provisioningDefinition = defaultWfCoreDefinition()
                 .setChannelsFile(channelFile)
                 .build();
         installation.provision(provisioningDefinition);
@@ -145,8 +145,7 @@ public class InstallationHistoryTest {
             throw new ProvisioningException("Installation dir " + installDir + " already exists");
         }
 
-        final ProvisioningDefinition provisioningDefinition = ProvisioningDefinition.builder()
-                .setFpl("org.wildfly.core:wildfly-core-galleon-pack:17.0.0.Final")
+        final ProvisioningDefinition provisioningDefinition = defaultWfCoreDefinition()
                 .setChannelsFile(channelFile)
                 .build();
         installation.provision(provisioningDefinition);

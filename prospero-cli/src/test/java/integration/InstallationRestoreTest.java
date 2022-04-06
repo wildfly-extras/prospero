@@ -38,7 +38,7 @@ import java.util.Optional;
 
 import static org.junit.Assert.assertEquals;
 
-public class InstallationRestoreTest {
+public class InstallationRestoreTest extends WfCoreTestBase {
     private static final String FIRST_SERVER_DIR = "target/server";
     private static final Path FIRST_SERVER_PATH = Paths.get(FIRST_SERVER_DIR).toAbsolutePath();
 
@@ -80,8 +80,7 @@ public class InstallationRestoreTest {
     public void restoreInstallation() throws Exception {
         final Path channelFile = TestUtil.prepareChannelFile("local-repo-desc.yaml");
 
-        final ProvisioningDefinition provisioningDefinition = ProvisioningDefinition.builder()
-                .setFpl("org.wildfly.core:wildfly-core-galleon-pack:17.0.0.Final")
+        final ProvisioningDefinition provisioningDefinition = defaultWfCoreDefinition()
                 .setChannelsFile(channelFile)
                 .build();
         new Installation(FIRST_SERVER_PATH, mavenSessionManager, new CliConsole()).provision(provisioningDefinition);

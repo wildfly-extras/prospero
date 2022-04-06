@@ -37,7 +37,6 @@ import java.net.MalformedURLException;
 import java.net.URL;
 import java.nio.file.Path;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 
 import static com.redhat.prospero.galleon.GalleonUtils.MAVEN_REPO_LOCAL;
@@ -67,9 +66,7 @@ public class InstallationHistory {
         metadata = metadata.rollback(savedState);
 
         final List<Channel> channels = mapToChannels(metadata.getChannels());
-
-        // TODO: figure out how to populate repositories
-        final List<RemoteRepository> repositories = Arrays.asList(new RemoteRepository.Builder("mrrc", null, "https://maven.repository.redhat.com").build());
+        final List<RemoteRepository> repositories = metadata.getRepositories();
 
         final WfChannelMavenResolverFactory factory = new WfChannelMavenResolverFactory(mavenSessionManager, repositories);
         final ChannelMavenArtifactRepositoryManager repoManager = new ChannelMavenArtifactRepositoryManager(channels, factory, metadata.getManifest());

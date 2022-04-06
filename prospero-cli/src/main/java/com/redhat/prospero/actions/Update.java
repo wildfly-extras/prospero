@@ -17,12 +17,10 @@
 
 package com.redhat.prospero.actions;
 
-import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.nio.file.Path;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
@@ -42,7 +40,6 @@ import com.redhat.prospero.galleon.GalleonUtils;
 import com.redhat.prospero.galleon.ChannelMavenArtifactRepositoryManager;
 import com.redhat.prospero.api.ChannelRef;
 import com.redhat.prospero.api.Manifest;
-import com.redhat.prospero.model.RepositoryRef;
 import com.redhat.prospero.wfchannel.ChannelRefUpdater;
 import com.redhat.prospero.wfchannel.MavenSessionManager;
 import com.redhat.prospero.wfchannel.WfChannelMavenResolverFactory;
@@ -76,16 +73,10 @@ public class Update {
     public Update(Path installDir, MavenSessionManager mavenSessionManager, Console console) throws ProvisioningException, OperationException {
         this.metadata = new InstallationMetadata(installDir);
 
-        final List<RemoteRepository> repositories;
-        try {
-            repositories = RepositoryRef.readRepositories(installDir.resolve(".installation").resolve("repos.yaml"))
-                    .stream().map(r->r.toRemoteRepository()).collect(Collectors.toList());
-        } catch (IOException e) {
-            throw new MetadataException("Unable to read installation metadata", e);
-        }
-
         this.mavenSessionManager = mavenSessionManager;
         final List<Channel> channels = mapToChannels(new ChannelRefUpdater(this.mavenSessionManager).resolveLatest(metadata.getChannels()));
+        final List<RemoteRepository> repositories = metadata.getRepositories();
+
         this.factory = new WfChannelMavenResolverFactory(mavenSessionManager, repositories);
         this.channelSession = new ChannelSession(channels, factory);
         this.maven = new ChannelMavenArtifactRepositoryManager(channelSession);
