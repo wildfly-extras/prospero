@@ -32,6 +32,7 @@ import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutorService;
@@ -65,10 +66,12 @@ public class ChannelMavenArtifactRepositoryManager implements MavenRepoManager {
                         artifact.getClassifier());
             } else {
                 final DefaultArtifact gav = new DefaultArtifact(artifact.getGroupId(), artifact.getArtifactId(), artifact.getClassifier(), artifact.getExtension(), artifact.getVersion() != null ? artifact.getVersion() : artifact.getVersionRange());
-                Artifact found = find(gav);
-                if (found != null) {
+
+                Optional<Artifact> found = manifest.findStreamFor(((Artifact) gav).getGroupId(), ((Artifact) gav).getArtifactId()).map(this::streamToArtifact);
+
+                if (found.isPresent()) {
                     result = channelSession.resolveMavenArtifact(artifact.getGroupId(), artifact.getArtifactId(), artifact.getExtension(),
-                            artifact.getClassifier(), found.getVersion());
+                            artifact.getClassifier(), found.get().getVersion());
                 } else if (artifact.getArtifactId().equals("community-universe") || artifact.getArtifactId().equals("wildfly-producers")) {
                     result = channelSession.resolveLatestMavenArtifact(artifact.getGroupId(), artifact.getArtifactId(), artifact.getExtension(),
                             artifact.getClassifier());
@@ -82,16 +85,6 @@ public class ChannelMavenArtifactRepositoryManager implements MavenRepoManager {
         } catch (UnresolvedMavenArtifactException e) {
             throw new MavenUniverseException(e.getLocalizedMessage(), e);
         }
-    }
-
-    // TODO: replace with Channel.findStreamFor
-    private Artifact find(Artifact gav) {
-        for (Stream stream : manifest.getStreams()) {
-            if (stream.getGroupId().equals(gav.getGroupId()) && stream.getArtifactId().equals(gav.getArtifactId())) {
-                return streamToArtifact(stream);
-            }
-        }
-        return null;
     }
 
     private DefaultArtifact streamToArtifact(Stream s) {
