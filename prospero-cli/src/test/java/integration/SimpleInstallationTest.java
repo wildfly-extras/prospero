@@ -27,7 +27,7 @@ import com.redhat.prospero.model.ManifestYamlSupport;
 import com.redhat.prospero.wfchannel.MavenSessionManager;
 import org.apache.commons.io.FileUtils;
 import org.eclipse.aether.artifact.Artifact;
-import org.eclipse.aether.repository.RemoteRepository;
+import org.eclipse.aether.artifact.DefaultArtifact;
 import org.jboss.galleon.layout.FeaturePackUpdatePlan;
 import org.junit.After;
 import org.junit.Before;
@@ -37,7 +37,6 @@ import java.io.File;
 import java.io.IOException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.List;
@@ -154,9 +153,10 @@ public class SimpleInstallationTest extends WfCoreTestBase {
 
     private Optional<Artifact> readArtifactFromManifest(String groupId, String artifactId) throws IOException {
         final File manifestFile = manifestPath.toFile();
-        return ManifestYamlSupport.parse(manifestFile).getArtifacts().stream()
+        return ManifestYamlSupport.parse(manifestFile).getStreams().stream()
                 .filter((a) -> a.getGroupId().equals(groupId) && a.getArtifactId().equals(artifactId))
-                .findFirst();
+                .findFirst()
+                .map(s->new DefaultArtifact(s.getGroupId(), s.getArtifactId(), "jar", s.getVersion()));
     }
 
 }

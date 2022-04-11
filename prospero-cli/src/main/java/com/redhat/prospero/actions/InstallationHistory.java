@@ -69,7 +69,7 @@ public class InstallationHistory {
         final List<RemoteRepository> repositories = metadata.getRepositories();
 
         final WfChannelMavenResolverFactory factory = new WfChannelMavenResolverFactory(mavenSessionManager, repositories);
-        final ChannelMavenArtifactRepositoryManager repoManager = new ChannelMavenArtifactRepositoryManager(channels, factory, metadata.getManifest());
+        final ChannelMavenArtifactRepositoryManager repoManager = new ChannelMavenArtifactRepositoryManager(channels, factory, metadata.getChannel());
         ProvisioningManager provMgr = GalleonUtils.getProvisioningManager(installation, repoManager);
         final ProvisioningLayoutFactory layoutFactory = provMgr.getLayoutFactory();
 

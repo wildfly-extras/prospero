@@ -149,7 +149,7 @@ class GalleonPackInspector extends XmlSupport {
     }
 
     private Artifact getInstalledVersion(Artifact artifact) {
-        final Artifact installedVersion = installationMetadata.getManifest().find(artifact);
+        final Artifact installedVersion = installationMetadata.find(artifact);
         if (installedVersion != null && !artifact.getVersion().equals(installedVersion.getVersion())) {
             artifact = artifact.setVersion(installedVersion.getVersion());
         }

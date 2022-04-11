@@ -30,6 +30,8 @@ import org.eclipse.aether.resolution.ArtifactResult;
 import org.jboss.galleon.ProvisioningException;
 import org.junit.Before;
 import org.junit.Test;
+import org.wildfly.channel.Channel;
+import org.wildfly.channel.Stream;
 
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -57,7 +59,9 @@ public class GalleonPackInspectorTest {
         Files.createDirectories(undertowModulePath);
         Files.createFile(undertowModulePath.resolve("undertow-core-1.2.3.Final.jar"));
 
-        installationMetadata = new InstallationMetadata(basePath, Arrays.asList(new DefaultArtifact("io.undertow:undertow-core:jar:1.2.3.Final")), null);
+        final Channel channel = new Channel("test", "", null, null,
+                Arrays.asList(new Stream("io.undertow", "undertow-core", "1.2.3.Final", null)));
+        installationMetadata = new InstallationMetadata(basePath, channel, null, null);
 
         wildflyCoreFP = downloadFeaturePack("org.wildfly.core:wildfly-core-galleon-pack:zip:17.0.0.Final");
     }

@@ -29,7 +29,6 @@ import com.redhat.prospero.wfchannel.MavenSessionManager;
 import org.apache.commons.io.FileUtils;
 import org.eclipse.aether.artifact.Artifact;
 import org.eclipse.aether.artifact.DefaultArtifact;
-import org.eclipse.aether.repository.RemoteRepository;
 import org.jboss.galleon.ProvisioningException;
 import org.junit.After;
 import org.junit.Assert;
@@ -41,7 +40,6 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -159,10 +157,14 @@ public class InstallationHistoryTest extends WfCoreTestBase {
         final SavedState savedState = revisions.get(1);
         final List<ArtifactChange> changes = installationHistory.compare(savedState);
 
+        for (ArtifactChange change : changes) {
+            System.out.println(change);
+        }
+
         assertEquals(1, changes.size());
         Map<Artifact, Artifact> expected = new HashMap<>();
-        expected.put(new DefaultArtifact("org.wildfly.core", "wildfly-cli", null, "17.0.0.Final"),
-                new DefaultArtifact("org.wildfly.core","wildfly-cli", null, "17.0.1.Final"));
+        expected.put(new DefaultArtifact("org.wildfly.core", "wildfly-cli", "jar", "17.0.0.Final"),
+                new DefaultArtifact("org.wildfly.core","wildfly-cli", "jar", "17.0.1.Final"));
 
         for (ArtifactChange change : changes) {
             if (expected.containsKey(change.getOldVersion())) {
@@ -177,8 +179,9 @@ public class InstallationHistoryTest extends WfCoreTestBase {
 
     private Optional<Artifact> readArtifactFromManifest(String groupId, String artifactId) throws IOException {
         final File manifestFile = OUTPUT_PATH.resolve(TestUtil.MANIFEST_FILE_PATH).toFile();
-        return ManifestYamlSupport.parse(manifestFile).getArtifacts().stream()
-                .filter((a) -> a.getGroupId().equals(groupId) && a.getArtifactId().equals(artifactId))
-                .findFirst();
+        return ManifestYamlSupport.parse(manifestFile).getStreams()
+                .stream().filter((a) -> a.getGroupId().equals(groupId) && a.getArtifactId().equals(artifactId))
+                .findFirst()
+                .map(s->new DefaultArtifact(s.getGroupId(), s.getArtifactId(), "jar", s.getVersion()));
     }
 }

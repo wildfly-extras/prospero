@@ -18,24 +18,27 @@
 package com.redhat.prospero.installation.git;
 
 import com.redhat.prospero.api.InstallationMetadata;
-import com.redhat.prospero.api.Manifest;
 import com.redhat.prospero.api.MetadataException;
 import com.redhat.prospero.api.SavedState;
 import com.redhat.prospero.api.ArtifactChange;
 import com.redhat.prospero.model.ManifestYamlSupport;
 import org.apache.commons.io.FileUtils;
 import org.eclipse.aether.artifact.Artifact;
+import org.eclipse.aether.artifact.DefaultArtifact;
 import org.eclipse.jgit.api.Git;
 import org.eclipse.jgit.api.errors.GitAPIException;
 import org.eclipse.jgit.lib.Constants;
 import org.eclipse.jgit.lib.PersonIdent;
 import org.eclipse.jgit.revwalk.RevCommit;
+import org.wildfly.channel.Channel;
+import org.wildfly.channel.Stream;
 
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.time.Instant;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
@@ -116,11 +119,11 @@ public class GitStorage implements AutoCloseable {
                     .setStartPoint(savedState.getName())
                     .addPath(InstallationMetadata.MANIFEST_FILE_NAME)
                     .call();
-            final Manifest parseOld = ManifestYamlSupport.parse(hist.resolve(InstallationMetadata.MANIFEST_FILE_NAME).toFile());
-            final Manifest parseCurrent = ManifestYamlSupport.parse(base.resolve(InstallationMetadata.MANIFEST_FILE_NAME).toFile());
+            final Channel parseOld = ManifestYamlSupport.parse(hist.resolve(InstallationMetadata.MANIFEST_FILE_NAME).toFile());
+            final Channel parseCurrent = ManifestYamlSupport.parse(base.resolve(InstallationMetadata.MANIFEST_FILE_NAME).toFile());
 
-            final Map<String, Artifact> oldArtifacts = toMap(parseOld.getArtifacts());
-            final Map<String, Artifact> currentArtifacts = toMap(parseCurrent.getArtifacts());
+            final Map<String, Artifact> oldArtifacts = toMap(parseOld.getStreams());
+            final Map<String, Artifact> currentArtifacts = toMap(parseCurrent.getStreams());
 
             final ArrayList<ArtifactChange> artifactChanges = new ArrayList<>();
             for (String ga : currentArtifacts.keySet()) {
@@ -156,10 +159,11 @@ public class GitStorage implements AutoCloseable {
         return Collections.emptyList();
     }
 
-    private Map<String, Artifact> toMap(List<Artifact> artifacts) {
+    private Map<String, Artifact> toMap(Collection<Stream> artifacts) {
         final HashMap<String, Artifact> map = new HashMap<>();
-        for (Artifact artifact : artifacts) {
-            map.put(artifact.getGroupId() + ":" + artifact.getArtifactId(), artifact);
+        for (Stream stream : artifacts) {
+            DefaultArtifact artifact = new DefaultArtifact(stream.getGroupId(), stream.getArtifactId(), "jar", stream.getVersion());
+            map.put(stream.getGroupId() + ":" + stream.getArtifactId(), artifact);
         }
         return map;
     }

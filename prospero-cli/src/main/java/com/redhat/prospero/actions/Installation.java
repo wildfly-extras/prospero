@@ -31,12 +31,9 @@ import java.net.URL;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
-import java.util.stream.Collectors;
 
 import com.redhat.prospero.api.ChannelRef;
-import com.redhat.prospero.model.RepositoryRef;
 import com.redhat.prospero.wfchannel.ChannelRefUpdater;
 import com.redhat.prospero.wfchannel.MavenSessionManager;
 import com.redhat.prospero.wfchannel.WfChannelMavenResolverFactory;
@@ -48,6 +45,7 @@ import org.jboss.galleon.config.FeaturePackConfig;
 import org.jboss.galleon.layout.ProvisioningLayoutFactory;
 import org.jboss.galleon.universe.FeaturePackLocation;
 import org.jboss.galleon.universe.maven.MavenArtifact;
+import org.jboss.galleon.universe.maven.MavenUniverseException;
 import org.wildfly.channel.Channel;
 import org.wildfly.channel.ChannelMapper;
 
@@ -78,7 +76,6 @@ public class Installation {
         final List<ChannelRef> updatedRefs = new ChannelRefUpdater(mavenSessionManager).resolveLatest(provisioningDefinition.getChannelRefs());
         final List<Channel> channels = mapToChannels(updatedRefs);
 
-        // TODO: figure out how to populate repositories
         final List<RemoteRepository> repositories = provisioningDefinition.getRepositories();
 
         final WfChannelMavenResolverFactory factory = new WfChannelMavenResolverFactory(mavenSessionManager, repositories);
@@ -158,6 +155,15 @@ public class Installation {
             artifacts.add(from(resolvedArtifact));
         }
 
-        new InstallationMetadata(home, artifacts, channelRefs, repositories).writeFiles();
+        // Add producer in universe to generated manifest as they will be needed for updates. Note the versions don't matter
+        try {
+            maven.resolve(MavenArtifact.fromString("org.jboss.universe.producer:wildfly-producers:1.3.2.Final"));
+            maven.resolve(MavenArtifact.fromString("org.jboss.universe:community-universe:1.2.0.Final"));
+        } catch (MavenUniverseException e) {
+            e.printStackTrace();
+        }
+        final Channel channel = maven.resolvedChannel();
+
+        new InstallationMetadata(home, channel, channelRefs, repositories).writeFiles();
     }
 }

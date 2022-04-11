@@ -38,12 +38,23 @@ public class ArtifactChange {
 
     @Override
     public String toString() {
-        final String gac;
-        if (oldVersion.getClassifier() == null || oldVersion.getClassifier().isEmpty()) {
-            gac = String.format("%s:%s", oldVersion.getGroupId(), oldVersion.getArtifactId());
-        } else {
-            gac = String.format("%s:%s:%s", oldVersion.getGroupId(), oldVersion.getArtifactId(), oldVersion.getClassifier());
+        if (oldVersion == null) {
+            return String.format("Install [%s]:\t\t [] ==> %s", toGav(newVersion), newVersion.getVersion());
         }
+        if (newVersion == null) {
+            return String.format("Remove [%s]:\t\t %s ==> []", toGav(oldVersion), oldVersion.getVersion());
+        }
+        final String gac = toGav(oldVersion);
         return String.format("Update [%s]:\t\t %s ==> %s", gac, oldVersion.getVersion(), newVersion.getVersion());
+    }
+
+    private String toGav(Artifact artifact) {
+        final String gac;
+        if (artifact.getClassifier() == null || artifact.getClassifier().isEmpty()) {
+            gac = String.format("%s:%s", artifact.getGroupId(), artifact.getArtifactId());
+        } else {
+            gac = String.format("%s:%s:%s", artifact.getGroupId(), artifact.getArtifactId(), artifact.getClassifier());
+        }
+        return gac;
     }
 }

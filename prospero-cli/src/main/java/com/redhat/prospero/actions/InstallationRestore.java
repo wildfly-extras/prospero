@@ -81,17 +81,17 @@ public class InstallationRestore {
         } finally {
             System.clearProperty(MAVEN_REPO_LOCAL);
         }
-        writeProsperoMetadata(repoManager, metadataBundle.getChannels());
+        writeProsperoMetadata(repoManager, metadataBundle.getChannels(), repositories);
     }
 
-    private void writeProsperoMetadata(ChannelMavenArtifactRepositoryManager maven, List<ChannelRef> channelRefs)
+    private void writeProsperoMetadata(ChannelMavenArtifactRepositoryManager maven, List<ChannelRef> channelRefs, List<RemoteRepository> repositories)
             throws MetadataException {
         List<Artifact> artifacts = new ArrayList<>();
         for (MavenArtifact resolvedArtifact : maven.resolvedArtfacts()) {
             artifacts.add(from(resolvedArtifact));
         }
 
-        new InstallationMetadata(installDir, artifacts, channelRefs).writeFiles();
+        new InstallationMetadata(installDir, maven.resolvedChannel(), channelRefs, repositories).writeFiles();
     }
 
     private List<Channel> mapToChannels(List<ChannelRef> channelRefs) throws MetadataException {

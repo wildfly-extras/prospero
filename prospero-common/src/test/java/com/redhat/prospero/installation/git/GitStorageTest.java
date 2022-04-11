@@ -1,17 +1,20 @@
 package com.redhat.prospero.installation.git;
 
 import com.redhat.prospero.api.ArtifactChange;
-import com.redhat.prospero.api.Manifest;
 import com.redhat.prospero.api.SavedState;
 import com.redhat.prospero.model.ManifestYamlSupport;
-import org.eclipse.aether.artifact.Artifact;
-import org.eclipse.aether.artifact.DefaultArtifact;
+import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
+import org.wildfly.channel.Channel;
+import org.wildfly.channel.Stream;
 
+import java.io.IOException;
 import java.nio.file.Path;
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 
 import static org.junit.Assert.*;
@@ -20,21 +23,24 @@ public class GitStorageTest {
 
     @Rule
     public TemporaryFolder folder = new TemporaryFolder();
+    private Path base;
+
+    @Before
+    public void setUp() throws Exception {
+        base = folder.newFolder().toPath().resolve(".installation");
+    }
 
     @Test
     public void testChangedArtifactVersion() throws Exception {
-        final Path base = folder.newFolder().toPath().resolve(".installation");
         final GitStorage gitStorage = new GitStorage(base.getParent());
-        List<Artifact> artifacts = new ArrayList<>();
-        final Manifest manifest = new Manifest(artifacts, base.resolve("manifest.yaml"));
+        final Channel channel = new Channel("test", "", null, null,
+                new ArrayList<>());
+        final Channel manifest = channel;
 
-        artifacts.add(new DefaultArtifact("org.test:test:1.2.3"));
-        ManifestYamlSupport.write(manifest);
+        setArtifact(manifest, "org.test:test:1.2.3");
         gitStorage.record();
 
-        artifacts.remove(0);
-        artifacts.add(new DefaultArtifact("org.test:test:1.2.4"));
-        ManifestYamlSupport.write(manifest);
+        setArtifact(manifest, "org.test:test:1.2.4");
         gitStorage.record();
 
         final List<SavedState> revisions = gitStorage.getRevisions();
@@ -48,17 +54,16 @@ public class GitStorageTest {
 
     @Test
     public void testRemovedArtifact() throws Exception {
-        final Path base = folder.newFolder().toPath().resolve(".installation");
         final GitStorage gitStorage = new GitStorage(base.getParent());
-        List<Artifact> artifacts = new ArrayList<>();
-        final Manifest manifest = new Manifest(artifacts, base.resolve("manifest.yaml"));
+        final Channel channel = new Channel("test", "", null, null,
+                new ArrayList<>());
+        final Channel manifest = channel;
 
-        artifacts.add(new DefaultArtifact("org.test:test:1.2.3"));
-        ManifestYamlSupport.write(manifest);
+        setArtifact(manifest, "org.test:test:1.2.3");
         gitStorage.record();
 
-        artifacts.remove(0);
-        ManifestYamlSupport.write(manifest);
+        setArtifact(manifest, null);
+        ManifestYamlSupport.write(channel, base.resolve("manifest.yaml"));
         gitStorage.record();
 
         final List<SavedState> revisions = gitStorage.getRevisions();
@@ -72,16 +77,15 @@ public class GitStorageTest {
 
     @Test
     public void testAddedArtifact() throws Exception {
-        final Path base = folder.newFolder().toPath().resolve(".installation");
         final GitStorage gitStorage = new GitStorage(base.getParent());
-        List<Artifact> artifacts = new ArrayList<>();
-        final Manifest manifest = new Manifest(artifacts, base.resolve("manifest.yaml"));
+        final Channel channel = new Channel("test", "", null, null,
+                new ArrayList<>());
+        final Channel manifest = channel;
 
-        ManifestYamlSupport.write(manifest);
+        ManifestYamlSupport.write(channel, base.resolve("manifest.yaml"));
         gitStorage.record();
 
-        artifacts.add(new DefaultArtifact("org.test:test:1.2.3"));
-        ManifestYamlSupport.write(manifest);
+        setArtifact(manifest, "org.test:test:1.2.3");
         gitStorage.record();
 
         final List<SavedState> revisions = gitStorage.getRevisions();
@@ -93,4 +97,17 @@ public class GitStorageTest {
         assertEquals("1.2.3", changes.get(0).getNewVersion().getVersion());
     }
 
+
+    private void setArtifact(Channel manifest, String gav) throws IOException {
+        final Channel channel;
+        if (gav == null) {
+            channel = new Channel("test", "", null, null,
+                    Collections.emptyList());
+        } else {
+            final String[] splitGav = gav.split(":");
+            channel = new Channel("test", "", null, null,
+                    Arrays.asList(new Stream(splitGav[0], splitGav[1], splitGav[2], null)));
+        }
+        ManifestYamlSupport.write(channel, base.resolve("manifest.yaml"));
+    }
 }

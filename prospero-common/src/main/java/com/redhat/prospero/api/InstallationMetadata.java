@@ -21,10 +21,13 @@ import com.redhat.prospero.installation.git.GitStorage;
 import com.redhat.prospero.model.ManifestYamlSupport;
 import com.redhat.prospero.model.RepositoryRef;
 import org.eclipse.aether.artifact.Artifact;
+import org.eclipse.aether.artifact.DefaultArtifact;
 import org.eclipse.aether.repository.RemoteRepository;
 import org.jboss.galleon.ProvisioningException;
 import org.jboss.galleon.config.ProvisioningConfig;
 import org.jboss.galleon.xml.ProvisioningXmlParser;
+import org.wildfly.channel.Channel;
+import org.wildfly.channel.Stream;
 
 import java.io.File;
 import java.io.FileInputStream;
@@ -34,7 +37,6 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
 import java.util.List;
-import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
@@ -52,7 +54,7 @@ public class InstallationMetadata {
     private final Path channelsFile;
     private final Path provisioningFile;
     private final Path repositoriesFile;
-    private final Manifest manifest;
+    private Channel manifest;
     private final ProvisioningConfig provisioningConfig;
     private final List<ChannelRef> channelRefs;
     private final List<RemoteRepository> repositories;
@@ -68,7 +70,7 @@ public class InstallationMetadata {
         this.repositoriesFile = repositoriesFile;
 
         try {
-            this.manifest = Manifest.parseManifest(manifestFile);
+            this.manifest = ManifestYamlSupport.parse(manifestFile.toFile());
             this.channelRefs = ChannelRef.readChannels(channelsFile);
             this.provisioningConfig = ProvisioningXmlParser.parse(provisioningFile);
             this.repositories = RepositoryRef.readRepositories(repositoriesFile)
@@ -87,7 +89,7 @@ public class InstallationMetadata {
         this.repositoriesFile = base.resolve(METADATA_DIR).resolve(REPOS_FILE_NAME);
 
         try {
-            this.manifest = Manifest.parseManifest(manifestFile);
+            this.manifest = ManifestYamlSupport.parse(manifestFile.toFile());
             this.channelRefs = ChannelRef.readChannels(channelsFile);
             this.provisioningConfig = ProvisioningXmlParser.parse(provisioningFile);
             this.repositories = RepositoryRef.readRepositories(repositoriesFile)
@@ -97,7 +99,7 @@ public class InstallationMetadata {
         }
     }
 
-    public InstallationMetadata(Path base, List<Artifact> artifacts, List<ChannelRef> channelRefs,
+    public InstallationMetadata(Path base, Channel channel, List<ChannelRef> channelRefs,
                                 List<RemoteRepository> repositories) throws MetadataException {
         this.base = base;
         this.gitStorage = new GitStorage(base);
@@ -106,7 +108,7 @@ public class InstallationMetadata {
         this.provisioningFile = base.resolve(GALLEON_INSTALLATION_DIR).resolve(InstallationMetadata.PROVISIONING_FILE_NAME);
         this.repositoriesFile = base.resolve(METADATA_DIR).resolve(REPOS_FILE_NAME);
 
-        this.manifest = new Manifest(artifacts, manifestFile);
+        this.manifest = channel;
         this.channelRefs = channelRefs;
         this.repositories = repositories;
         try {
@@ -208,13 +210,15 @@ public class InstallationMetadata {
         return file.toPath();
     }
 
-    public void registerUpdates(Set<Artifact> artifacts) {
-        for (Artifact artifact : artifacts) {
-            manifest.updateVersion(artifact);
-        }
-    }
+    // TODO: do we need this?
 
-    public Manifest getManifest() {
+//    public void registerUpdates(Set<Artifact> artifacts) {
+//        for (Artifact artifact : artifacts) {
+//            manifest.updateVersion(artifact);
+//        }
+//    }
+
+    public Channel getManifest() {
         return manifest;
     }
 
@@ -232,7 +236,7 @@ public class InstallationMetadata {
 
     public void writeFiles() throws MetadataException {
         try {
-            ManifestYamlSupport.write(this.manifest, this.channelRefs);
+            ManifestYamlSupport.write(this.manifest, this.manifestFile, this.channelRefs);
         } catch (IOException e) {
             throw new MetadataException("Unable to save manifest in installation", e);
         }
@@ -270,5 +274,30 @@ public class InstallationMetadata {
 
     public List<ArtifactChange> getChangesSince(SavedState savedState) throws MetadataException {
         return gitStorage.getChanges(savedState);
+    }
+
+    public void setChannel(Channel resolvedChannel) {
+        manifest = resolvedChannel;
+    }
+
+    public List<Artifact> getArtifacts() {
+        return manifest.getStreams().stream().map(s-> streamToArtifact(s)).collect(Collectors.toList());
+    }
+
+    private DefaultArtifact streamToArtifact(Stream s) {
+        return new DefaultArtifact(s.getGroupId(), s.getArtifactId(), "jar", s.getVersion());
+    }
+
+    public Artifact find(Artifact gav) {
+        for (Stream stream : manifest.getStreams()) {
+            if (stream.getGroupId().equals(gav.getGroupId()) && stream.getArtifactId().equals(gav.getArtifactId())) {
+                return streamToArtifact(stream);
+            }
+        }
+        return null;
+    }
+
+    public Channel getChannel() {
+        return manifest;
     }
 }

@@ -19,7 +19,7 @@ package com.redhat.prospero.installation;
 
 import com.redhat.prospero.api.ArtifactChange;
 import com.redhat.prospero.api.InstallationMetadata;
-import com.redhat.prospero.api.Manifest;
+import com.redhat.prospero.api.MetadataException;
 import com.redhat.prospero.api.SavedState;
 import com.redhat.prospero.model.ManifestYamlSupport;
 import com.redhat.prospero.model.RepositoryRef;
@@ -27,8 +27,11 @@ import org.apache.commons.io.FileUtils;
 import org.eclipse.aether.artifact.DefaultArtifact;
 import org.junit.After;
 import org.junit.Test;
+import org.wildfly.channel.Channel;
+import org.wildfly.channel.Stream;
 
 import java.io.FileWriter;
+import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Arrays;
@@ -61,13 +64,12 @@ public class LocalInstallationHistoryTest {
     public void revertToPreviousVersion() throws Exception {
         final InstallationMetadata metadata = mockInstallation();
 
-        metadata.getManifest().updateVersion(new DefaultArtifact("foo:bar:1.1.2"));
-        metadata.writeFiles();
+        updateManifest(metadata);
 
         final SavedState previousState = metadata.getRevisions().get(1);
 
         final InstallationMetadata reverted = metadata.rollback(previousState);
-        assertEquals("1.1.1", reverted.getManifest().find(new DefaultArtifact("foo:bar:1.1.0")).getVersion());
+        assertEquals("1.1.1", reverted.find(new DefaultArtifact("foo:bar:1.1.0")).getVersion());
 
     }
 
@@ -75,8 +77,7 @@ public class LocalInstallationHistoryTest {
     public void statusRepresentsAction() throws Exception {
         final InstallationMetadata metadata = mockInstallation();
 
-        metadata.getManifest().updateVersion(new DefaultArtifact("foo:bar:1.1.2"));
-        metadata.writeFiles();
+        updateManifest(metadata);
 
         final SavedState previousState = metadata.getRevisions().get(1);
 
@@ -92,8 +93,7 @@ public class LocalInstallationHistoryTest {
     public void showDifferences() throws Exception {
         final InstallationMetadata metadata = mockInstallation();
 
-        metadata.getManifest().updateVersion(new DefaultArtifact("foo:bar:1.1.2"));
-        metadata.writeFiles();
+        updateManifest(metadata);
 
         final SavedState previousState = metadata.getRevisions().get(1);
 
@@ -109,13 +109,19 @@ public class LocalInstallationHistoryTest {
     public void showDifferences_noChanges() throws Exception {
         final InstallationMetadata metadata = mockInstallation();
 
-        metadata.getManifest().updateVersion(new DefaultArtifact("foo:bar:1.1.2"));
-        metadata.writeFiles();
+        updateManifest(metadata);
 
         final SavedState previousState = metadata.getRevisions().get(0);
 
         final List<ArtifactChange> changes = metadata.getChangesSince(previousState);
         assertEquals(0, changes.size());
+    }
+
+    private void updateManifest(InstallationMetadata metadata) throws MetadataException, IOException {
+        final Channel channel = new Channel("test", "", null, null,
+                Arrays.asList(new Stream("foo", "bar", "1.1.2", null)));
+        metadata.setChannel(channel);
+        metadata.writeFiles();
     }
 
     private InstallationMetadata mockInstallation() throws Exception {
@@ -125,8 +131,9 @@ public class LocalInstallationHistoryTest {
         try (FileWriter fw = new FileWriter(installation.resolve(InstallationMetadata.METADATA_DIR).resolve(InstallationMetadata.CHANNELS_FILE_NAME).toFile())) {
             fw.write("[]");
         }
-        final Manifest manifest = new Manifest(Arrays.asList(new DefaultArtifact("foo:bar:1.1.1")), installation.resolve(InstallationMetadata.METADATA_DIR).resolve(InstallationMetadata.MANIFEST_FILE_NAME));
-        ManifestYamlSupport.write(manifest);
+        final Channel channel = new Channel("test", "", null, null,
+                Arrays.asList(new Stream("foo", "bar", "1.1.1", null)));
+        ManifestYamlSupport.write(channel, installation.resolve(InstallationMetadata.METADATA_DIR).resolve(InstallationMetadata.MANIFEST_FILE_NAME));
         RepositoryRef.writeRepositories(Collections.emptyList(), installation.resolve(InstallationMetadata.METADATA_DIR).resolve(InstallationMetadata.REPOS_FILE_NAME).toFile());
 
         final InstallationMetadata metadata = new InstallationMetadata(installation);

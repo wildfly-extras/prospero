@@ -39,7 +39,6 @@ import com.redhat.prospero.api.exceptions.OperationException;
 import com.redhat.prospero.galleon.GalleonUtils;
 import com.redhat.prospero.galleon.ChannelMavenArtifactRepositoryManager;
 import com.redhat.prospero.api.ChannelRef;
-import com.redhat.prospero.api.Manifest;
 import com.redhat.prospero.wfchannel.ChannelRefUpdater;
 import com.redhat.prospero.wfchannel.MavenSessionManager;
 import com.redhat.prospero.wfchannel.WfChannelMavenResolverFactory;
@@ -129,11 +128,10 @@ public class Update {
 
     private UpdateSet findUpdates() throws ArtifactResolutionException, ProvisioningException {
         final List<ArtifactChange> updates = new ArrayList<>();
-        final Manifest manifest = metadata.getManifest();
         // use parallel executor to speed up the artifact resolution
         final ExecutorService executorService = Executors.newWorkStealingPool(UPDATES_SEARCH_PARALLELISM);
         List<CompletableFuture<List<ArtifactChange>>> allPackages = new ArrayList<>();
-        for (Artifact artifact : manifest.getArtifacts()) {
+        for (Artifact artifact : metadata.getArtifacts()) {
             final CompletableFuture<List<ArtifactChange>> cf = new CompletableFuture<>();
             executorService.submit(() -> {
                 try {
@@ -212,7 +210,9 @@ public class Update {
                 .map(a -> new DefaultArtifact(a.getGroupId(), a.getArtifactId(), a.getClassifier(), a.getExtension(), a.getVersion()))
                 .filter(a -> (!a.getArtifactId().equals("wildfly-producers") && !a.getArtifactId().equals("community-universe")))
                 .collect(Collectors.toSet());
-        metadata.registerUpdates(collected);
+        // TODO: do we need to update? can we just write data?
+//        metadata.registerUpdates(collected);
+        metadata.setChannel(maven.resolvedChannel());
         return collected;
     }
 

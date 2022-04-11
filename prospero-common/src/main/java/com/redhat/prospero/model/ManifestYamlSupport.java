@@ -18,56 +18,29 @@
 package com.redhat.prospero.model;
 
 import com.redhat.prospero.api.ChannelRef;
-import com.redhat.prospero.api.Manifest;
-import org.eclipse.aether.artifact.Artifact;
-import org.eclipse.aether.artifact.DefaultArtifact;
 import org.wildfly.channel.Channel;
 import org.wildfly.channel.ChannelMapper;
-import org.wildfly.channel.Stream;
-import org.wildfly.channel.Vendor;
 
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.io.PrintWriter;
-import java.util.ArrayList;
+import java.nio.file.Path;
 import java.util.Collections;
-import java.util.Comparator;
 import java.util.List;
 
 public class ManifestYamlSupport {
 
-    public static Manifest parse(File manifestFile) throws IOException {
+    public static Channel parse(File manifestFile) throws IOException {
         final Channel channel = ChannelMapper.from(manifestFile.toURI().toURL());
-        List<Artifact> artifacts = new ArrayList<>();
-        for (Stream stream : channel.getStreams()) {
-            Artifact a = new DefaultArtifact(stream.getGroupId(), stream.getArtifactId(), null, stream.getVersion());
-            artifacts.add(a);
-        }
-        return new Manifest(artifacts, manifestFile.toPath());
+        return channel;
     }
 
-    public static void write(Manifest manifest) throws IOException {
-        write(manifest, Collections.emptyList());
+    public static void write(Channel manifest, Path channelFile) throws IOException {
+        write(manifest, channelFile, Collections.emptyList());
     }
 
-    public static void write(Manifest manifest, List<ChannelRef> channelRefs) throws IOException {
-        List<Stream> streams = new ArrayList<>();
-        for (Artifact resolvedArtifact : manifest.getArtifacts()) {
-            streams.add(new Stream(resolvedArtifact.getGroupId(), resolvedArtifact.getArtifactId(), resolvedArtifact.getVersion(), null));
-        }
-
-        Collections.sort(streams, new Comparator<Stream>() {
-            @Override
-            public int compare(Stream s1, Stream s2) {
-                if (s1.getGroupId().equals(s2.getGroupId())) {
-                    return s1.getArtifactId().compareTo(s2.getArtifactId());
-                } else {
-                    return s1.getGroupId().compareTo(s2.getGroupId());
-                }
-            }
-        });
-
+    public static void write(Channel channel, Path channelFile, List<ChannelRef> channelRefs) throws IOException {
         // TODO: do we need to store the repositories for updates?
         //   probably yes - otherwise on moving the installation things stop working
 //        Set<MavenRepository> repositories = new HashSet<>();
@@ -76,10 +49,8 @@ public class ManifestYamlSupport {
 //            repositories.addAll(channel.getRepositories());
 //        }
 
-        final Channel channel = new Channel("provisioned", "",
-                new Vendor("Custom", Vendor.Support.COMMUNITY), null, streams);
         String yaml = ChannelMapper.toYaml(channel);
-        try (PrintWriter pw = new PrintWriter(new FileWriter(manifest.getManifestFile().toFile()))) {
+        try (PrintWriter pw = new PrintWriter(new FileWriter(channelFile.toFile()))) {
             pw.println(yaml);
         }
     }

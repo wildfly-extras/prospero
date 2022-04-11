@@ -17,7 +17,6 @@
 
 package com.redhat.prospero.galleon;
 
-import com.redhat.prospero.api.Manifest;
 import com.redhat.prospero.wfchannel.WfChannelMavenResolverFactory;
 import org.eclipse.aether.artifact.Artifact;
 import org.eclipse.aether.artifact.DefaultArtifact;
@@ -26,6 +25,7 @@ import org.jboss.galleon.universe.maven.MavenUniverseException;
 import org.jboss.galleon.universe.maven.repo.MavenRepoManager;
 import org.wildfly.channel.Channel;
 import org.wildfly.channel.ChannelSession;
+import org.wildfly.channel.Stream;
 import org.wildfly.channel.UnresolvedMavenArtifactException;
 
 import java.nio.file.Path;
@@ -41,7 +41,7 @@ import java.util.regex.Pattern;
 public class ChannelMavenArtifactRepositoryManager implements MavenRepoManager {
     private ChannelSession channelSession;
     private Set<MavenArtifact> resolvedArtifacts = new HashSet<>();
-    private Manifest manifest = null;
+    private Channel manifest = null;
 
     public ChannelMavenArtifactRepositoryManager(List<Channel> channels, WfChannelMavenResolverFactory factory) {
         channelSession = new ChannelSession(channels, factory);
@@ -51,7 +51,7 @@ public class ChannelMavenArtifactRepositoryManager implements MavenRepoManager {
         this.channelSession = channelSession;
     }
 
-    public ChannelMavenArtifactRepositoryManager(List<Channel> channels, WfChannelMavenResolverFactory factory, Manifest manifest) {
+    public ChannelMavenArtifactRepositoryManager(List<Channel> channels, WfChannelMavenResolverFactory factory, Channel manifest) {
         channelSession = new ChannelSession(channels, factory);
         this.manifest = manifest;
     }
@@ -65,7 +65,7 @@ public class ChannelMavenArtifactRepositoryManager implements MavenRepoManager {
                         artifact.getClassifier());
             } else {
                 final DefaultArtifact gav = new DefaultArtifact(artifact.getGroupId(), artifact.getArtifactId(), artifact.getClassifier(), artifact.getExtension(), artifact.getVersion() != null ? artifact.getVersion() : artifact.getVersionRange());
-                Artifact found = manifest.find(gav);
+                Artifact found = find(gav);
                 if (found != null) {
                     result = channelSession.resolveMavenArtifact(artifact.getGroupId(), artifact.getArtifactId(), artifact.getExtension(),
                             artifact.getClassifier(), found.getVersion());
@@ -82,6 +82,20 @@ public class ChannelMavenArtifactRepositoryManager implements MavenRepoManager {
         } catch (UnresolvedMavenArtifactException e) {
             throw new MavenUniverseException(e.getLocalizedMessage(), e);
         }
+    }
+
+    // TODO: replace with Channel.findStreamFor
+    private Artifact find(Artifact gav) {
+        for (Stream stream : manifest.getStreams()) {
+            if (stream.getGroupId().equals(gav.getGroupId()) && stream.getArtifactId().equals(gav.getArtifactId())) {
+                return streamToArtifact(stream);
+            }
+        }
+        return null;
+    }
+
+    private DefaultArtifact streamToArtifact(Stream s) {
+        return new DefaultArtifact(s.getGroupId(), s.getArtifactId(), "jar", s.getVersion());
     }
 
     @Override
@@ -165,5 +179,9 @@ public class ChannelMavenArtifactRepositoryManager implements MavenRepoManager {
 
     public Set<MavenArtifact> resolvedArtfacts() {
         return resolvedArtifacts;
+    }
+
+    public Channel resolvedChannel() {
+        return channelSession.getRecordedChannel();
     }
 }
