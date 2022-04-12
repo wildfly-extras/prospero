@@ -105,6 +105,16 @@ public class Installation {
             System.clearProperty(MAVEN_REPO_LOCAL);
         }
 
+        // Add producer in universe to generated manifest as they will be needed for updates. Note the versions don't matter
+        try {
+            for (String additionalPackage : provisioningDefinition.getAdditionalPackages()) {
+                repoManager.resolve(MavenArtifact.fromString(additionalPackage));
+
+            }
+        } catch (MavenUniverseException e) {
+            throw new ProvisioningException("Unable to resolve required artifacts", e);
+        }
+
         writeProsperoMetadata(installDir, repoManager, updatedRefs, repositories);
     }
 
@@ -156,13 +166,6 @@ public class Installation {
             artifacts.add(from(resolvedArtifact));
         }
 
-        // Add producer in universe to generated manifest as they will be needed for updates. Note the versions don't matter
-        try {
-            maven.resolve(MavenArtifact.fromString("org.jboss.universe.producer:wildfly-producers:1.3.2.Final"));
-            maven.resolve(MavenArtifact.fromString("org.jboss.universe:community-universe:1.2.0.Final"));
-        } catch (MavenUniverseException e) {
-            e.printStackTrace();
-        }
         final Channel channel = maven.resolvedChannel();
 
         new InstallationMetadata(home, channel, channelRefs, repositories).writeFiles();

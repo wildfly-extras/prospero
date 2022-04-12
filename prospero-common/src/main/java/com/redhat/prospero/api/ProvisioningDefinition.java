@@ -45,6 +45,7 @@ public class ProvisioningDefinition {
     private final Set<String> includedPackages = new HashSet<>();
     private static final Map<String, String> CHANNEL_URLS = new HashMap<>();
     private final List<RemoteRepository> repositories;
+    private final List<String> additionalPackages;
 
     static {
         CHANNEL_URLS.put("mrrc", "https://maven.repository.redhat.com/ga/");
@@ -66,6 +67,7 @@ public class ProvisioningDefinition {
             if (fpl.equals("eap") || fpl.equals("eap-7.4")) {
                 this.fpl = "org.jboss.eap:wildfly-ee-galleon-pack";
                 this.includedPackages.add("docs.examples.configs");
+                this.additionalPackages = Collections.emptyList();
 
                 if (!channelsFile.isPresent() && !channel.isPresent()) {
                     final String repoUrl = CHANNEL_URLS.get("mrrc");
@@ -84,6 +86,8 @@ public class ProvisioningDefinition {
                 }
             } else if (fpl.equals("wildfly")) {
                 this.fpl = "org.wildfly:wildfly-ee-galleon-pack";
+                this.additionalPackages = Arrays.asList("org.jboss.universe.producer:wildfly-producers:1.3.2.Final",
+                        "org.jboss.universe:community-universe:1.2.0.Final");
 
                 if (!channelsFile.isPresent() && !channel.isPresent()) {
                     final String repoUrl = CHANNEL_URLS.get("central");
@@ -102,6 +106,7 @@ public class ProvisioningDefinition {
                 }
             } else {
                 this.fpl = fpl;
+                this.additionalPackages = Collections.emptyList();
                 final ProvisioningRecord record = ProvisioningRecord.readChannels(channelsFile.get());
                 this.channels = record.getChannels();
                 this.repositories.clear();
@@ -130,6 +135,10 @@ public class ProvisioningDefinition {
 
     public List<RemoteRepository> getRepositories() {
         return repositories;
+    }
+
+    public List<String> getAdditionalPackages() {
+        return additionalPackages;
     }
 
     public static class Builder {
