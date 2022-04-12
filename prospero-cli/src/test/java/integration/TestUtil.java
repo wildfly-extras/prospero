@@ -23,11 +23,15 @@ import java.net.URL;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
 
+import com.redhat.prospero.api.ChannelRef;
 import com.redhat.prospero.api.InstallationMetadata;
+import com.redhat.prospero.model.ProvisioningRecord;
+import com.redhat.prospero.model.RepositoryRef;
 
 public class TestUtil {
 
@@ -50,19 +54,15 @@ public class TestUtil {
     }
 
     static public Path prepareChannelFileAsUrl(Path channelFile, String... channelDescriptor) throws IOException {
-        List<URL> repoUrls = Arrays.stream(channelDescriptor).map(d->TestUtil.class.getClassLoader().getResource(d)).collect(Collectors.toList());
-        StringBuilder sb = new StringBuilder("[");
-        for (int i=0; i<repoUrls.size(); i++) {
-            sb.append(String.format("{\"name\":\"%s\",\"url\":\"%s\"}", "repo-"+i, repoUrls.get(i)));
-            if (i < (repoUrls.size()-1)) {
-                sb.append(",");
-            }
+        List<URL> channelUrls = Arrays.stream(channelDescriptor).map(d->TestUtil.class.getClassLoader().getResource(d)).collect(Collectors.toList());
+        List<ChannelRef> channels = new ArrayList<>();
+        List<RepositoryRef> repositories = WfCoreTestBase.defaultRemoteRepositories().stream()
+                .map(r->new RepositoryRef(r.getId(), r.getUrl())).collect(Collectors.toList());
+        for (int i=0; i<channelUrls.size(); i++) {
+            channels.add(new ChannelRef(null, channelUrls.get(i).toString()));
         }
-        sb.append("]");
+        new ProvisioningRecord(channels, repositories).writeChannels(channelFile.toFile());
 
-        try (FileWriter fw = new FileWriter(channelFile.toFile())) {
-            fw.write(sb.toString());
-        }
         return channelFile;
     }
 }

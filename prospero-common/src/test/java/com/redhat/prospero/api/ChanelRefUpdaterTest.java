@@ -17,15 +17,24 @@
 package com.redhat.prospero.api;
 
 import com.redhat.prospero.api.exceptions.ArtifactResolutionException;
+import com.redhat.prospero.model.RepositoryRef;
 import com.redhat.prospero.wfchannel.ChannelRefUpdater;
 import com.redhat.prospero.wfchannel.MavenSessionManager;
+import org.eclipse.aether.repository.RemoteRepository;
 import org.junit.Test;
+
+import java.util.Arrays;
+import java.util.List;
 
 public class ChanelRefUpdaterTest {
 
     @Test(expected = ArtifactResolutionException.class)
     public void resolveChannelFileThrowsExceptionIfNoVersionsFound() throws Exception {
-        final ChannelRef channels = new ChannelRef("test", this.getClass().getResource("/").toString(), "org.test:test:1.0", null);
-        new ChannelRefUpdater(new MavenSessionManager()).resolveLatest(channels);
+        // repository "test", this.getClass().getResource("/").toString(),
+        final List<RemoteRepository> repositories = Arrays.asList(
+                new RemoteRepository.Builder("test", "default", this.getClass().getResource("/").toString())
+                        .build());
+        final List<ChannelRef> channels = Arrays.asList(new ChannelRef("org.test:test:1.0", null));
+        new ChannelRefUpdater(new MavenSessionManager()).resolveLatest(channels, repositories);
     }
 }

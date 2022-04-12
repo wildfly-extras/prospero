@@ -73,7 +73,8 @@ public class Installation {
      * @throws MetadataException
      */
     public void provision(ProvisioningDefinition provisioningDefinition) throws ProvisioningException, OperationException {
-        final List<ChannelRef> updatedRefs = new ChannelRefUpdater(mavenSessionManager).resolveLatest(provisioningDefinition.getChannelRefs());
+        final List<ChannelRef> updatedRefs = new ChannelRefUpdater(mavenSessionManager)
+                .resolveLatest(provisioningDefinition.getChannelRefs(), provisioningDefinition.getRepositories());
         final List<Channel> channels = mapToChannels(updatedRefs);
 
         final List<RemoteRepository> repositories = provisioningDefinition.getRepositories();

@@ -73,7 +73,8 @@ public class Update {
         this.metadata = new InstallationMetadata(installDir);
 
         this.mavenSessionManager = mavenSessionManager;
-        final List<Channel> channels = mapToChannels(new ChannelRefUpdater(this.mavenSessionManager).resolveLatest(metadata.getChannels()));
+        final List<Channel> channels = mapToChannels(new ChannelRefUpdater(this.mavenSessionManager)
+                .resolveLatest(metadata.getChannels(), metadata.getRepositories()));
         final List<RemoteRepository> repositories = metadata.getRepositories();
 
         this.factory = new WfChannelMavenResolverFactory(mavenSessionManager, repositories);

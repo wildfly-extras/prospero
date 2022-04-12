@@ -18,7 +18,6 @@
 package com.redhat.prospero.wfchannel;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 
 import com.redhat.prospero.api.ChannelRef;
@@ -28,7 +27,6 @@ import org.eclipse.aether.RepositorySystem;
 import org.eclipse.aether.artifact.Artifact;
 import org.eclipse.aether.artifact.DefaultArtifact;
 import org.eclipse.aether.repository.RemoteRepository;
-import org.eclipse.aether.repository.RepositoryPolicy;
 import org.eclipse.aether.resolution.ArtifactRequest;
 import org.eclipse.aether.resolution.VersionRangeRequest;
 import org.eclipse.aether.resolution.VersionRangeResolutionException;
@@ -42,42 +40,41 @@ public class ChannelRefUpdater {
         this.mavenSessionManager = mavenSessionManager;
     }
 
-    public ChannelRef resolveLatest(ChannelRef channelRef) throws ArtifactResolutionException {
-        if (channelRef.getGav() != null && channelRef.getRepoUrl() != null) {
+    private ChannelRef resolveLatest(ChannelRef channelRef, List<RemoteRepository> repositories) throws ArtifactResolutionException {
+        if (channelRef.getGav() != null && !repositories.isEmpty()) {
 
             String groupId = channelRef.getGav().split(":")[0];
             String artifactId = channelRef.getGav().split(":")[1];
             String version = channelRef.getGav().split(":")[2];
-            final Artifact resolvedChannelArtifact = resolveChannelFile(new DefaultArtifact(groupId, artifactId, "channel", "yaml", "[" + version + ",)"),
-                    new RemoteRepository.Builder(channelRef.getName(), "default", channelRef.getRepoUrl())
-                            .setPolicy(new RepositoryPolicy(true, RepositoryPolicy.UPDATE_POLICY_ALWAYS, RepositoryPolicy.CHECKSUM_POLICY_IGNORE))
-                            .build());
+            final Artifact resolvedChannelArtifact = resolveChannelFile(
+                    new DefaultArtifact(groupId, artifactId, "channel", "yaml", "[" + version + ",)"),
+                    repositories);
             final String fileUrl = resolvedChannelArtifact.getFile().toURI().toString();
 
             String newGav = String.format("%s:%s:%s", resolvedChannelArtifact.getGroupId(), resolvedChannelArtifact.getArtifactId(), resolvedChannelArtifact.getVersion());
-            return new ChannelRef(channelRef.getName(), channelRef.getRepoUrl(), newGav, fileUrl);
+            return new ChannelRef(newGav, fileUrl);
         } else {
             return channelRef;
         }
     }
 
-    public List<ChannelRef> resolveLatest(List<ChannelRef> channelRefs) throws ArtifactResolutionException {
+    public List<ChannelRef> resolveLatest(List<ChannelRef> channelRefs, List<RemoteRepository> repositories) throws ArtifactResolutionException {
         final ChannelRefUpdater channelRefUpdater = new ChannelRefUpdater(mavenSessionManager);
         final List<ChannelRef> updatedRefs = new ArrayList<>();
         for (ChannelRef channelRef : channelRefs) {
-            updatedRefs.add(channelRefUpdater.resolveLatest(channelRef));
+            updatedRefs.add(channelRefUpdater.resolveLatest(channelRef, repositories));
         }
         return updatedRefs;
     }
 
     private Artifact resolveChannelFile(DefaultArtifact artifact,
-                                        RemoteRepository repo) throws ArtifactResolutionException {
+                                        List<RemoteRepository> repositories) throws ArtifactResolutionException {
         final RepositorySystem repositorySystem = mavenSessionManager.newRepositorySystem();
         final DefaultRepositorySystemSession repositorySession = mavenSessionManager.newRepositorySystemSession(repositorySystem, false);
 
         final VersionRangeRequest request = new VersionRangeRequest();
         request.setArtifact(artifact);
-        request.setRepositories(Arrays.asList(repo));
+        request.setRepositories(repositories);
         final VersionRangeResult versionRangeResult;
         try {
             versionRangeResult = repositorySystem.resolveVersionRange(repositorySession, request);
@@ -87,11 +84,11 @@ public class ChannelRefUpdater {
         // TODO: pick latest version using Comparator
         if (versionRangeResult.getHighestVersion() == null && versionRangeResult.getVersions().isEmpty()) {
             throw new ArtifactResolutionException(
-                    String.format("Unable to resolve versions of %s in repository [%s: %s]", artifact, repo.getId(), repo.getUrl()));
+                    String.format("Unable to resolve versions of %s", artifact));
         }
         final Artifact latestArtifact = artifact.setVersion(versionRangeResult.getHighestVersion().toString());
 
-        final ArtifactRequest artifactRequest = new ArtifactRequest(latestArtifact, Arrays.asList(repo), null);
+        final ArtifactRequest artifactRequest = new ArtifactRequest(latestArtifact, repositories, null);
         try {
             return repositorySystem.resolveArtifact(repositorySession, artifactRequest).getArtifact();
         } catch (org.eclipse.aether.resolution.ArtifactResolutionException e) {

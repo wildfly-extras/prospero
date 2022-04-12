@@ -6,6 +6,7 @@ import com.redhat.prospero.actions.Update;
 import com.redhat.prospero.api.ProvisioningDefinition;
 import com.redhat.prospero.cli.CliConsole;
 import com.redhat.prospero.galleon.ChannelMavenArtifactRepositoryManager;
+import com.redhat.prospero.model.ProvisioningRecord;
 import com.redhat.prospero.wfchannel.MavenSessionManager;
 import com.redhat.prospero.wfchannel.WfChannelMavenResolverFactory;
 import org.eclipse.aether.repository.RemoteRepository;
@@ -49,7 +50,8 @@ public class ChannelUpdaterTest {
     @Test
     public void findLatestEap() throws Exception {
         final Path channelFile = Paths.get("/Users/spyrkob/workspaces/set/prospero/prospero/examples/eap/channels-eap74.json");
-        final List<ChannelRef> channelRefs = ChannelRef.readChannels(channelFile);
+        final ProvisioningRecord provisioningRecord = ProvisioningRecord.readChannels(channelFile);
+        final List<ChannelRef> channelRefs = provisioningRecord.getChannels();
         final List<Channel> channels = channelRefs.stream().map(ref-> {
             try {
                 return ChannelMapper.from(new URL(ref.getUrl()));

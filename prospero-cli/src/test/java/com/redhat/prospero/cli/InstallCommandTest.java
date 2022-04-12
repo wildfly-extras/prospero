@@ -17,7 +17,10 @@
 
 package com.redhat.prospero.cli;
 
+import java.io.File;
 import java.nio.file.Paths;
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -25,11 +28,14 @@ import java.util.Map;
 import com.redhat.prospero.actions.Installation;
 import com.redhat.prospero.api.ChannelRef;
 import com.redhat.prospero.api.ProvisioningDefinition;
+import com.redhat.prospero.model.ProvisioningRecord;
+import com.redhat.prospero.model.RepositoryRef;
 import com.redhat.prospero.wfchannel.MavenSessionManager;
+import org.junit.Rule;
 import org.junit.Test;
+import org.junit.rules.TemporaryFolder;
 import org.junit.runner.RunWith;
 import org.mockito.ArgumentCaptor;
-import org.mockito.ArgumentMatcher;
 import org.mockito.Captor;
 import org.mockito.Mock;
 import org.mockito.Mockito;
@@ -43,6 +49,9 @@ import static org.mockito.Mockito.when;
 
 @RunWith(MockitoJUnitRunner.class)
 public class InstallCommandTest {
+
+    @Rule
+    public TemporaryFolder temporaryFolder = new TemporaryFolder();
 
     @Mock
     private Installation installation;
@@ -92,12 +101,16 @@ public class InstallCommandTest {
     @Test
     public void callProvisionOnInstallCommandWithCustomFpl() throws Exception {
         when(actionFactory.install(any(), any())).thenReturn(installation);
-        String channels = Paths.get(InstallCommandTest.class.getResource("/channels.yaml").toURI()).toString();
+        List<ChannelRef> channels = new ArrayList<>();
+        List<RepositoryRef> repositories = new ArrayList<>();
+
+        final File channelsFile = temporaryFolder.newFile();
+        new ProvisioningRecord(channels, repositories).writeChannels(channelsFile);
 
         Map<String, String> args = new HashMap<>();
         args.put(CliMain.TARGET_PATH_ARG, "test");
         args.put(CliMain.FPL_ARG, "org.jboss.eap:wildfly-ee-galleon-pack");
-        args.put(CliMain.CHANNEL_FILE_ARG, channels);
+        args.put(CliMain.CHANNEL_FILE_ARG, channelsFile.getAbsolutePath());
         new InstallCommand(actionFactory).execute(args);
 
         Mockito.verify(actionFactory).install(eq(Paths.get("test").toAbsolutePath()), any(MavenSessionManager.class));
@@ -122,21 +135,22 @@ public class InstallCommandTest {
     @Test
     public void callProvisionOnInstallEapOverrideChannelsCommand() throws Exception {
         when(actionFactory.install(any(), any(MavenSessionManager.class))).thenReturn(installation);
-        String channels = Paths.get(InstallCommandTest.class.getResource("/channels.yaml").toURI()).toString();
+        List<ChannelRef> channels = Arrays.asList(new ChannelRef("org.jboss.eap:wildfly-ee-galleon-pack", null));
+        List<RepositoryRef> repositories = Arrays.asList(new RepositoryRef("dev", "http://test.test"));
+
+        final File channelsFile = temporaryFolder.newFile();
+        new ProvisioningRecord(channels, repositories).writeChannels(channelsFile);
 
         Map<String, String> args = new HashMap<>();
         args.put(CliMain.TARGET_PATH_ARG, "test");
         args.put(CliMain.FPL_ARG, "eap");
-        args.put(CliMain.CHANNEL_FILE_ARG, channels);
+        args.put(CliMain.CHANNEL_FILE_ARG, channelsFile.getAbsolutePath());
         new InstallCommand(actionFactory).execute(args);
 
         Mockito.verify(actionFactory).install(eq(Paths.get("test").toAbsolutePath()), any(MavenSessionManager.class));
-        ArgumentMatcher<List<ChannelRef>> matcher = channelRefs -> {
-            if (channelRefs.size() != 1) return false;
-            return channelRefs.get(0).getName().equals("dev");
-        };
         Mockito.verify(installation).provision(serverDefiniton.capture());
         assertEquals("org.jboss.eap:wildfly-ee-galleon-pack", serverDefiniton.getValue().getFpl());
+        assertEquals("dev", serverDefiniton.getValue().getRepositories().get(0).getId());
     }
 
 }

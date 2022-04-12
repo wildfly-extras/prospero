@@ -19,6 +19,7 @@ package com.redhat.prospero.api;
 
 import com.redhat.prospero.installation.git.GitStorage;
 import com.redhat.prospero.model.ManifestYamlSupport;
+import com.redhat.prospero.model.ProvisioningRecord;
 import com.redhat.prospero.model.RepositoryRef;
 import org.eclipse.aether.artifact.Artifact;
 import org.eclipse.aether.artifact.DefaultArtifact;
@@ -49,11 +50,9 @@ public class InstallationMetadata {
     public static final String CHANNELS_FILE_NAME = "channels.yaml";
     public static final String PROVISIONING_FILE_NAME = "provisioning.xml";
     public static final String GALLEON_INSTALLATION_DIR = ".galleon";
-    public static final String REPOS_FILE_NAME = "repos.yaml";
     private final Path manifestFile;
     private final Path channelsFile;
     private final Path provisioningFile;
-    private final Path repositoriesFile;
     private Channel manifest;
     private final ProvisioningConfig provisioningConfig;
     private final List<ChannelRef> channelRefs;
@@ -61,20 +60,20 @@ public class InstallationMetadata {
     private final GitStorage gitStorage;
     private Path base;
 
-    private InstallationMetadata(Path manifestFile, Path channelsFile, Path provisioningFile, Path repositoriesFile) throws MetadataException {
+    private InstallationMetadata(Path manifestFile, Path channelsFile, Path provisioningFile) throws MetadataException {
         this.base = manifestFile.getParent();
         this.gitStorage = null;
         this.manifestFile = manifestFile;
         this.channelsFile = channelsFile;
         this.provisioningFile = provisioningFile;
-        this.repositoriesFile = repositoriesFile;
 
         try {
             this.manifest = ManifestYamlSupport.parse(manifestFile.toFile());
-            this.channelRefs = ChannelRef.readChannels(channelsFile);
-            this.provisioningConfig = ProvisioningXmlParser.parse(provisioningFile);
-            this.repositories = RepositoryRef.readRepositories(repositoriesFile)
+            final ProvisioningRecord provisioningRecord = ProvisioningRecord.readChannels(channelsFile);
+            this.channelRefs = provisioningRecord.getChannels();
+            this.repositories = provisioningRecord.getRepositories()
                         .stream().map(r->r.toRemoteRepository()).collect(Collectors.toList());
+            this.provisioningConfig = ProvisioningXmlParser.parse(provisioningFile);
         } catch (IOException | ProvisioningException e) {
             throw new MetadataException("Error when parsing installation metadata", e);
         }
@@ -86,14 +85,14 @@ public class InstallationMetadata {
         this.manifestFile = base.resolve(METADATA_DIR).resolve(InstallationMetadata.MANIFEST_FILE_NAME);
         this.channelsFile = base.resolve(METADATA_DIR).resolve(InstallationMetadata.CHANNELS_FILE_NAME);
         this.provisioningFile = base.resolve(GALLEON_INSTALLATION_DIR).resolve(InstallationMetadata.PROVISIONING_FILE_NAME);
-        this.repositoriesFile = base.resolve(METADATA_DIR).resolve(REPOS_FILE_NAME);
 
         try {
             this.manifest = ManifestYamlSupport.parse(manifestFile.toFile());
-            this.channelRefs = ChannelRef.readChannels(channelsFile);
-            this.provisioningConfig = ProvisioningXmlParser.parse(provisioningFile);
-            this.repositories = RepositoryRef.readRepositories(repositoriesFile)
+            final ProvisioningRecord provisioningRecord = ProvisioningRecord.readChannels(channelsFile);
+            this.channelRefs = provisioningRecord.getChannels();
+            this.repositories = provisioningRecord.getRepositories()
                     .stream().map(r->r.toRemoteRepository()).collect(Collectors.toList());
+            this.provisioningConfig = ProvisioningXmlParser.parse(provisioningFile);
         } catch (IOException | ProvisioningException e) {
             throw new MetadataException("Error when parsing installation metadata", e);
         }
@@ -106,7 +105,6 @@ public class InstallationMetadata {
         this.manifestFile = base.resolve(METADATA_DIR).resolve(InstallationMetadata.MANIFEST_FILE_NAME);
         this.channelsFile = base.resolve(METADATA_DIR).resolve(InstallationMetadata.CHANNELS_FILE_NAME);
         this.provisioningFile = base.resolve(GALLEON_INSTALLATION_DIR).resolve(InstallationMetadata.PROVISIONING_FILE_NAME);
-        this.repositoriesFile = base.resolve(METADATA_DIR).resolve(REPOS_FILE_NAME);
 
         this.manifest = channel;
         this.channelRefs = channelRefs;
@@ -122,11 +120,10 @@ public class InstallationMetadata {
         Path manifestFile = null;
         Path channelsFile = null;
         Path provisioningFile = null;
-        Path repositoriesFile = null;
 
         try (ZipInputStream zis = new ZipInputStream(new FileInputStream(location.toFile()))) {
-            ZipEntry entry = zis.getNextEntry();
-            while (entry != null) {
+            ZipEntry entry;
+            while ((entry = zis.getNextEntry()) != null) {
 
                 if (entry.getName().equals(MANIFEST_FILE_NAME)) {
                     manifestFile = Files.createTempFile("manifest", "yaml");
@@ -145,22 +142,14 @@ public class InstallationMetadata {
                     Files.copy(zis, provisioningFile, StandardCopyOption.REPLACE_EXISTING);
                     provisioningFile.toFile().deleteOnExit();
                 }
-
-                if (entry.getName().equals(REPOS_FILE_NAME)) {
-                    repositoriesFile = Files.createTempFile("repos", "yaml");
-                    Files.copy(zis, repositoriesFile, StandardCopyOption.REPLACE_EXISTING);
-                    repositoriesFile.toFile().deleteOnExit();
-                }
-
-                entry = zis.getNextEntry();
             }
         }
 
-        if (manifestFile == null || channelsFile == null || provisioningFile == null || repositoriesFile == null) {
+        if (manifestFile == null || channelsFile == null || provisioningFile == null) {
             throw new IllegalArgumentException("Provided metadata bundle is missing one or more entries");
         }
 
-        return new InstallationMetadata(manifestFile, channelsFile, provisioningFile, repositoriesFile);
+        return new InstallationMetadata(manifestFile, channelsFile, provisioningFile);
     }
 
     public Path exportMetadataBundle(Path location) throws IOException {
@@ -196,27 +185,9 @@ public class InstallationMetadata {
                 }
             }
             zos.closeEntry();
-
-            zos.putNextEntry(new ZipEntry(REPOS_FILE_NAME));
-            try(FileInputStream fis = new FileInputStream(repositoriesFile.toFile())) {
-                byte[] buffer = new byte[1024];
-                int len;
-                while ((len = fis.read(buffer)) > 0) {
-                    zos.write(buffer, 0, len);
-                }
-            }
-            zos.closeEntry();
         }
         return file.toPath();
     }
-
-    // TODO: do we need this?
-
-//    public void registerUpdates(Set<Artifact> artifacts) {
-//        for (Artifact artifact : artifacts) {
-//            manifest.updateVersion(artifact);
-//        }
-//    }
 
     public Channel getManifest() {
         return manifest;
@@ -241,19 +212,12 @@ public class InstallationMetadata {
             throw new MetadataException("Unable to save manifest in installation", e);
         }
 
-        // write channels into installation
         try {
-            ChannelRef.writeChannels(this.channelRefs, this.channelsFile.toFile());
+            final ProvisioningRecord provisioningRecord = new ProvisioningRecord(this.channelRefs,
+                    repositories.stream().map(r -> new RepositoryRef(r.getId(), r.getUrl())).collect(Collectors.toList()));
+            provisioningRecord.writeChannels(this.channelsFile.toFile());
         } catch (IOException e) {
             throw new MetadataException("Unable to save channel list in installation", e);
-        }
-
-        // write repositories
-        try {
-            RepositoryRef.writeRepositories(repositories.stream().map(r->new RepositoryRef(r.getId(), r.getUrl())).collect(Collectors.toList()),
-                    this.repositoriesFile.toFile());
-        } catch (IOException e) {
-            throw new MetadataException("Unable to write installation metadata",e);
         }
 
         gitStorage.record();

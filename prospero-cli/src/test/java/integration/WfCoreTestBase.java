@@ -33,7 +33,7 @@ public class WfCoreTestBase {
                 .setRepositories(repositories);
     }
 
-    private static List<RemoteRepository> defaultRemoteRepositories() {
+    public static List<RemoteRepository> defaultRemoteRepositories() {
         return Arrays.asList(
                 new RemoteRepository.Builder("maven-central", "default", "https://repo1.maven.org/maven2/").build(),
                 new RemoteRepository.Builder("nexus", "default", "https://repository.jboss.org/nexus/content/groups/public-jboss").build(),

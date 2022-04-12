@@ -17,54 +17,19 @@
 
 package com.redhat.prospero.api;
 
-import java.io.File;
-import java.io.IOException;
-import java.nio.file.Path;
-import java.util.List;
-
-import com.fasterxml.jackson.databind.JavaType;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
+import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonProperty;
 
 public class ChannelRef {
 
-    public static void writeChannels(List<ChannelRef> channelRefs, File channelsFile) throws IOException {
-        new ObjectMapper(new YAMLFactory()).writeValue(channelsFile, channelRefs);
-    }
-
-    public static List<ChannelRef> readChannels(Path path) throws IOException {
-        final ObjectMapper objectMapper = new ObjectMapper(new YAMLFactory());
-        JavaType type = objectMapper.getTypeFactory().constructCollectionType(List.class, ChannelRef.class);
-        final List<ChannelRef> channelRefs = objectMapper.readValue(path.toUri().toURL(), type);
-
-        return channelRefs;
-    }
-
-    private String name;
-
     private String url;
-
-    private String repoUrl;
 
     private String gav;
 
-    public ChannelRef() {
-
-    }
-
-    public ChannelRef(String name, String repoUrl, String gav, String fileUrl) {
-        this.name = name;
-        this.repoUrl = repoUrl;
+    @JsonCreator
+    public ChannelRef(@JsonProperty(value = "gav") String gav, @JsonProperty(value = "fileUrl") String fileUrl) {
         this.gav = gav;
         this.url = fileUrl;
-    }
-
-    public String getName() {
-        return name;
-    }
-
-    public void setName(String name) {
-        this.name = name;
     }
 
     public String getUrl() {
@@ -75,24 +40,12 @@ public class ChannelRef {
         this.url = url;
     }
 
-    public String getRepoUrl() {
-        return repoUrl;
-    }
-
-    public void setRepoUrl(String repoUrl) {
-        this.repoUrl = repoUrl;
-    }
-
     public String getGav() {
         return gav;
     }
 
-    public void setGav(String gav) {
-        this.gav = gav;
-    }
-
     @Override
     public String toString() {
-        return "Channel{" + "name='" + name + '\'' + ", url='" + url + '\'' + '}';
+        return "Channel{" + "gav='" + gav + '\'' + ", url='" + url + '\'' + '}';
     }
 }

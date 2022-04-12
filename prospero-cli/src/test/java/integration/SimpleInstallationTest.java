@@ -24,6 +24,7 @@ import com.redhat.prospero.actions.Update;
 import com.redhat.prospero.api.ProvisioningDefinition;
 import com.redhat.prospero.cli.CliConsole;
 import com.redhat.prospero.model.ManifestYamlSupport;
+import com.redhat.prospero.model.ProvisioningRecord;
 import com.redhat.prospero.wfchannel.MavenSessionManager;
 import org.apache.commons.io.FileUtils;
 import org.eclipse.aether.artifact.Artifact;
@@ -143,7 +144,8 @@ public class SimpleInstallationTest extends WfCoreTestBase {
     public void installWildflyCoreFromInstallationFile() throws Exception {
         final Path channelFile = TestUtil.prepareChannelFile("local-repo-desc.yaml");
         final File installationFile = new File(this.getClass().getClassLoader().getResource("provisioning.xml").toURI());
-        final List<ChannelRef> channelRefs = ChannelRef.readChannels(channelFile);
+        final ProvisioningRecord provisioningRecord = ProvisioningRecord.readChannels(channelFile);
+        final List<ChannelRef> channelRefs = provisioningRecord.getChannels();
 
         installation.provision(installationFile.toPath(), channelRefs, repositories);
 

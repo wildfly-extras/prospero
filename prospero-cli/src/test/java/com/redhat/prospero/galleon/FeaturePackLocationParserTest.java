@@ -1,6 +1,7 @@
 package com.redhat.prospero.galleon;
 
 import com.redhat.prospero.api.ChannelRef;
+import com.redhat.prospero.model.ProvisioningRecord;
 import com.redhat.prospero.wfchannel.MavenSessionManager;
 import com.redhat.prospero.wfchannel.WfChannelMavenResolverFactory;
 import org.eclipse.aether.repository.RemoteRepository;
@@ -31,7 +32,8 @@ public class FeaturePackLocationParserTest {
     public void setUp() throws Exception {
         final Path channelsFile = Paths.get(FeaturePackLocationParserTest.class.getResource("/channels/eap/channels-eap74.yaml").toURI());
 
-        final List<ChannelRef> channelRefs = ChannelRef.readChannels(channelsFile);
+        final ProvisioningRecord provisioningRecord = ProvisioningRecord.readChannels(channelsFile);
+        final List<ChannelRef> channelRefs = provisioningRecord.getChannels();
         final List<Channel> channels = channelRefs.stream().map(ref-> {
             try {
                 return ChannelMapper.from(new URL(ref.getUrl()));

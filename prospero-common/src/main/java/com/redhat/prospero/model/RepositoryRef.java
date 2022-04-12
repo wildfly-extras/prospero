@@ -17,26 +17,18 @@
 
 package com.redhat.prospero.model;
 
-import com.fasterxml.jackson.databind.JavaType;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
+import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import org.eclipse.aether.repository.RemoteRepository;
 
-import java.io.File;
-import java.io.IOException;
-import java.nio.file.Path;
-import java.util.List;
 
 public class RepositoryRef {
 
     private String id;
     private String url;
 
-    public RepositoryRef() {
-
-    }
-
-    public RepositoryRef(String id, String url) {
+    @JsonCreator
+    public RepositoryRef(@JsonProperty(value = "id") String id, @JsonProperty(value = "url") String url) {
         this.id = id;
         this.url = url;
     }
@@ -47,18 +39,6 @@ public class RepositoryRef {
 
     public String getUrl() {
         return url;
-    }
-
-    public static void writeRepositories(List<RepositoryRef> repositories, File repositoriesFile) throws IOException {
-        new ObjectMapper(new YAMLFactory()).writeValue(repositoriesFile, repositories);
-    }
-
-    public static List<RepositoryRef> readRepositories(Path path) throws IOException {
-        final ObjectMapper objectMapper = new ObjectMapper(new YAMLFactory());
-        JavaType type = objectMapper.getTypeFactory().constructCollectionType(List.class, RepositoryRef.class);
-        final List<RepositoryRef> repositories = objectMapper.readValue(path.toUri().toURL(), type);
-
-        return repositories;
     }
 
     public RemoteRepository toRemoteRepository() {

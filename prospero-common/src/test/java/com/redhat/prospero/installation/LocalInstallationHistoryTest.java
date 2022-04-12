@@ -22,7 +22,7 @@ import com.redhat.prospero.api.InstallationMetadata;
 import com.redhat.prospero.api.MetadataException;
 import com.redhat.prospero.api.SavedState;
 import com.redhat.prospero.model.ManifestYamlSupport;
-import com.redhat.prospero.model.RepositoryRef;
+import com.redhat.prospero.model.ProvisioningRecord;
 import org.apache.commons.io.FileUtils;
 import org.eclipse.aether.artifact.DefaultArtifact;
 import org.junit.After;
@@ -30,7 +30,6 @@ import org.junit.Test;
 import org.wildfly.channel.Channel;
 import org.wildfly.channel.Stream;
 
-import java.io.FileWriter;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -128,13 +127,12 @@ public class LocalInstallationHistoryTest {
         installation = Files.createTempDirectory("installation");
         installation.toFile().deleteOnExit();
         Files.createDirectories(installation.resolve(InstallationMetadata.METADATA_DIR));
-        try (FileWriter fw = new FileWriter(installation.resolve(InstallationMetadata.METADATA_DIR).resolve(InstallationMetadata.CHANNELS_FILE_NAME).toFile())) {
-            fw.write("[]");
-        }
+        new ProvisioningRecord(Collections.emptyList(), Collections.emptyList())
+                .writeChannels(installation.resolve(InstallationMetadata.METADATA_DIR).resolve(InstallationMetadata.CHANNELS_FILE_NAME).toFile());
+
         final Channel channel = new Channel("test", "", null, null,
                 Arrays.asList(new Stream("foo", "bar", "1.1.1", null)));
         ManifestYamlSupport.write(channel, installation.resolve(InstallationMetadata.METADATA_DIR).resolve(InstallationMetadata.MANIFEST_FILE_NAME));
-        RepositoryRef.writeRepositories(Collections.emptyList(), installation.resolve(InstallationMetadata.METADATA_DIR).resolve(InstallationMetadata.REPOS_FILE_NAME).toFile());
 
         final InstallationMetadata metadata = new InstallationMetadata(installation);
         metadata.writeFiles();
