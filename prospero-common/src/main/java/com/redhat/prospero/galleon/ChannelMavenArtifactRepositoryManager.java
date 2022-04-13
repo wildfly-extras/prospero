@@ -32,6 +32,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CompletionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.regex.Pattern;
@@ -88,24 +89,44 @@ public class ChannelMavenArtifactRepositoryManager implements MavenRepoManager {
 
     @Override
     public void resolveAll(List<MavenArtifact> artifacts) throws MavenUniverseException {
-        final ExecutorService executorService = Executors.newWorkStealingPool(30);
-        List<CompletableFuture<Void>> allPackages = new ArrayList<>();
+        // use sync until wildfly-channel can handle async search
+        resolveSynchronously(artifacts);
+    }
 
+    private void resolveSynchronously(List<MavenArtifact> artifacts) throws MavenUniverseException {
         for (MavenArtifact artifact : artifacts) {
-            final CompletableFuture<Void> cf = new CompletableFuture<>();
-            executorService.submit(()->{
-                try {
-                    resolve(artifact);
-                    cf.complete(null);
-                } catch (MavenUniverseException e) {
-                    cf.completeExceptionally(e);
-                }
-            });
-            allPackages.add(cf);
+            resolve(artifact);
         }
+    }
 
-        CompletableFuture.allOf(allPackages.toArray(new CompletableFuture[]{})).join();
-        executorService.shutdown();
+    private void resolveConcurrently(List<MavenArtifact> artifacts) throws MavenUniverseException {
+        final ExecutorService executorService = Executors.newWorkStealingPool(30);
+        try {
+            List<CompletableFuture<Void>> allPackages = new ArrayList<>();
+
+            for (MavenArtifact artifact : artifacts) {
+                final CompletableFuture<Void> cf = new CompletableFuture<>();
+                allPackages.add(cf);
+                executorService.submit(() -> {
+                    try {
+                        resolve(artifact);
+                        cf.complete(null);
+                    } catch (Exception e) {
+                        cf.completeExceptionally(e);
+                    }
+                });
+            }
+
+            CompletableFuture.allOf(allPackages.toArray(new CompletableFuture[]{})).join();
+        } catch (CompletionException e) {
+            if (e.getCause() instanceof MavenUniverseException) {
+                throw (MavenUniverseException) e.getCause();
+            } else {
+                throw e;
+            }
+        } finally {
+            executorService.shutdown();
+        }
     }
 
     @Override
