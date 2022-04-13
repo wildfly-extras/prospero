@@ -161,11 +161,6 @@ public class Installation {
 
     private void writeProsperoMetadata(Path home, ChannelMavenArtifactRepositoryManager maven, List<ChannelRef> channelRefs,
                                        List<RemoteRepository> repositories) throws MetadataException {
-        List<Artifact> artifacts = new ArrayList<>();
-        for (MavenArtifact resolvedArtifact : maven.resolvedArtfacts()) {
-            artifacts.add(from(resolvedArtifact));
-        }
-
         final Channel channel = maven.resolvedChannel();
 
         new InstallationMetadata(home, channel, channelRefs, repositories).writeFiles();

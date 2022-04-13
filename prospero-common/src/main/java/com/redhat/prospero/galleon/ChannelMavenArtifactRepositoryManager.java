@@ -18,7 +18,6 @@
 package com.redhat.prospero.galleon;
 
 import com.redhat.prospero.wfchannel.WfChannelMavenResolverFactory;
-import org.eclipse.aether.artifact.Artifact;
 import org.eclipse.aether.artifact.DefaultArtifact;
 import org.jboss.galleon.universe.maven.MavenArtifact;
 import org.jboss.galleon.universe.maven.MavenUniverseException;
@@ -30,10 +29,8 @@ import org.wildfly.channel.UnresolvedMavenArtifactException;
 
 import java.nio.file.Path;
 import java.util.ArrayList;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
-import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -41,7 +38,6 @@ import java.util.regex.Pattern;
 
 public class ChannelMavenArtifactRepositoryManager implements MavenRepoManager {
     private ChannelSession channelSession;
-    private Set<MavenArtifact> resolvedArtifacts = new HashSet<>();
     private Channel manifest = null;
 
     public ChannelMavenArtifactRepositoryManager(List<Channel> channels, WfChannelMavenResolverFactory factory) {
@@ -67,7 +63,7 @@ public class ChannelMavenArtifactRepositoryManager implements MavenRepoManager {
             } else {
                 final DefaultArtifact gav = new DefaultArtifact(artifact.getGroupId(), artifact.getArtifactId(), artifact.getClassifier(), artifact.getExtension(), artifact.getVersion() != null ? artifact.getVersion() : artifact.getVersionRange());
 
-                Optional<Artifact> found = manifest.findStreamFor(((Artifact) gav).getGroupId(), ((Artifact) gav).getArtifactId()).map(this::streamToArtifact);
+                Optional<DefaultArtifact> found = manifest.findStreamFor(gav.getGroupId(), gav.getArtifactId()).map(this::streamToArtifact);
 
                 if (found.isPresent()) {
                     result = channelSession.resolveMavenArtifact(artifact.getGroupId(), artifact.getArtifactId(), artifact.getExtension(),
@@ -81,7 +77,6 @@ public class ChannelMavenArtifactRepositoryManager implements MavenRepoManager {
             }
             artifact.setVersion(result.getVersion());
             artifact.setPath(result.getFile().toPath());
-            resolvedArtifacts.add(artifact);
         } catch (UnresolvedMavenArtifactException e) {
             throw new MavenUniverseException(e.getLocalizedMessage(), e);
         }
@@ -168,10 +163,6 @@ public class ChannelMavenArtifactRepositoryManager implements MavenRepoManager {
     @Override
     public void install(MavenArtifact artifact, Path path) throws MavenUniverseException {
         throw new UnsupportedOperationException("Not yet implemented");
-    }
-
-    public Set<MavenArtifact> resolvedArtfacts() {
-        return resolvedArtifacts;
     }
 
     public Channel resolvedChannel() {

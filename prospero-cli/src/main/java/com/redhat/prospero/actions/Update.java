@@ -196,7 +196,7 @@ public class Update {
         return provMgr.getUpdates(true);
     }
 
-    private Set<Artifact> applyFpUpdates(ProvisioningPlan updates) throws ProvisioningException {
+    private void applyFpUpdates(ProvisioningPlan updates) throws ProvisioningException {
         try {
             System.setProperty(MAVEN_REPO_LOCAL, mavenSessionManager.getProvisioningRepo().toAbsolutePath().toString());
             provMgr.apply(updates);
@@ -204,17 +204,7 @@ public class Update {
             System.clearProperty(MAVEN_REPO_LOCAL);
         }
 
-        final Set<MavenArtifact> resolvedArtfacts = maven.resolvedArtfacts();
-
-        // filter out non-installed artefacts
-        final Set<Artifact> collected = resolvedArtfacts.stream()
-                .map(a -> new DefaultArtifact(a.getGroupId(), a.getArtifactId(), a.getClassifier(), a.getExtension(), a.getVersion()))
-                .filter(a -> (!a.getArtifactId().equals("wildfly-producers") && !a.getArtifactId().equals("community-universe")))
-                .collect(Collectors.toSet());
-        // TODO: do we need to update? can we just write data?
-//        metadata.registerUpdates(collected);
         metadata.setChannel(maven.resolvedChannel());
-        return collected;
     }
 
     private class UpdateSet {
