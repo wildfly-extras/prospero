@@ -29,7 +29,7 @@ public class WfCoreTestBase {
 
     protected ProvisioningDefinition.Builder defaultWfCoreDefinition() {
         return ProvisioningDefinition.builder()
-                .setFpl("org.wildfly.core:wildfly-core-galleon-pack:17.0.0.Final")
+                .setFpl("wildfly-core@maven(org.jboss.universe:community-universe):17.0")
                 .setRepositories(repositories);
     }
 

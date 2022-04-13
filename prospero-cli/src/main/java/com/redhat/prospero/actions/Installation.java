@@ -105,16 +105,6 @@ public class Installation {
             System.clearProperty(MAVEN_REPO_LOCAL);
         }
 
-        // Add producer in universe to generated manifest as they will be needed for updates. Note the versions don't matter
-        try {
-            for (String additionalPackage : provisioningDefinition.getAdditionalPackages()) {
-                repoManager.resolve(MavenArtifact.fromString(additionalPackage));
-
-            }
-        } catch (MavenUniverseException e) {
-            throw new ProvisioningException("Unable to resolve required artifacts", e);
-        }
-
         writeProsperoMetadata(installDir, repoManager, updatedRefs, repositories);
     }
 
