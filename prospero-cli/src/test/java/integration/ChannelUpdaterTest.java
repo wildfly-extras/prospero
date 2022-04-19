@@ -111,7 +111,7 @@ public class ChannelUpdaterTest {
 
         ChannelSession session = new ChannelSession(asList(primaryChannel), factory);
 
-        final MavenArtifact resolved = session.resolveLatestMavenArtifact("org.eclipse", "yasson", "jar", null);
+        final MavenArtifact resolved = session.resolveMavenArtifact("org.eclipse", "yasson", "jar", null);
         System.out.println("Resolved " + resolved.getVersion());
     }
 

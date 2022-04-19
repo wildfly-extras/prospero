@@ -105,7 +105,7 @@ public class SimpleInstallationTest extends WfCoreTestBase {
                 .build();
         installation.provision(provisioningDefinition);
 
-        TestUtil.prepareChannelFileAsUrl(OUTPUT_PATH.resolve(TestUtil.CHANNELS_FILE_PATH), "local-repo-desc.yaml", "local-updates-repo-desc.yaml");
+        TestUtil.prepareChannelFileAsUrl(OUTPUT_PATH.resolve(TestUtil.CHANNELS_FILE_PATH), "local-updates-repo-desc.yaml", "local-repo-desc.yaml");
         new Update(OUTPUT_PATH, mavenSessionManager, new AcceptingConsole()).doUpdateAll();
 
         // verify manifest contains versions 17.0.1
@@ -122,7 +122,7 @@ public class SimpleInstallationTest extends WfCoreTestBase {
                 .build();
         installation.provision(provisioningDefinition);
 
-        TestUtil.prepareChannelFileAsUrl(OUTPUT_PATH.resolve(TestUtil.CHANNELS_FILE_PATH), "local-repo-desc.yaml", "local-updates-repo-desc.yaml");
+        TestUtil.prepareChannelFileAsUrl(OUTPUT_PATH.resolve(TestUtil.CHANNELS_FILE_PATH), "local-updates-repo-desc.yaml", "local-repo-desc.yaml");
         final Set<String> updates = new HashSet<>();
         new Update(OUTPUT_PATH, mavenSessionManager, new AcceptingConsole() {
             @Override

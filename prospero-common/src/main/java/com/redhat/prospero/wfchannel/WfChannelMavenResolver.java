@@ -83,36 +83,6 @@ public class WfChannelMavenResolver implements MavenVersionsResolver {
     }
 
     @Override
-    public File resolveLatestVersionFromMavenMetadata(String groupId, String artifactId, String extension, String classifier) throws UnresolvedMavenArtifactException {
-        Artifact artifact = new DefaultArtifact(groupId, artifactId, classifier, extension, "[0,)");
-        VersionRangeRequest versionRangeRequest = new VersionRangeRequest();
-        versionRangeRequest.setArtifact(artifact);
-        versionRangeRequest.setRepositories(remoteRepositories);
-
-        try {
-            VersionRangeResult versionRangeResult = system.resolveVersionRange(session, versionRangeRequest);
-            Set<String> versions = versionRangeResult.getVersions().stream().map(Version::toString).collect(Collectors.toSet());
-            logger.trace("All versions in the repositories: %s", versions);
-            if (versionRangeResult.getHighestVersion() == null) {
-                throw new UnresolvedMavenArtifactException("Artifact " + artifact + " metadata has no highest version");
-            }
-            artifact = artifact.setVersion(versionRangeResult.getHighestVersion().toString());
-        } catch (VersionRangeResolutionException e) {
-            throw new UnresolvedMavenArtifactException("Unable to resolve artifact versions " + artifact, e);
-        }
-
-        ArtifactRequest request = new ArtifactRequest();
-        request.setArtifact(artifact);
-        request.setRepositories(remoteRepositories);
-        try {
-            ArtifactResult result = system.resolveArtifact(session, request);
-            return result.getArtifact().getFile();
-        } catch (ArtifactResolutionException e) {
-            throw new UnresolvedMavenArtifactException("Unable to resolve artifact " + artifact, e);
-        }
-    }
-
-    @Override
     public File resolveArtifact(String groupId, String artifactId, String extension, String classifier, String version) throws UnresolvedMavenArtifactException {
         Artifact artifact = new DefaultArtifact(groupId, artifactId, classifier, extension, version);
 
