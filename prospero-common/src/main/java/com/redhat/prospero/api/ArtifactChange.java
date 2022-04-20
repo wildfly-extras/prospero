@@ -19,6 +19,8 @@ package com.redhat.prospero.api;
 
 import org.eclipse.aether.artifact.Artifact;
 
+import java.util.Optional;
+
 public class ArtifactChange {
     private Artifact oldVersion;
     private Artifact newVersion;
@@ -28,12 +30,20 @@ public class ArtifactChange {
         this.newVersion = newVersion;
     }
 
-    public Artifact getNewVersion() {
-        return newVersion;
+    public String getArtifactName() {
+        if (oldVersion == null) {
+            return toGav(newVersion);
+        } else {
+            return toGav(oldVersion);
+        }
     }
 
-    public Artifact getOldVersion() {
-        return oldVersion;
+    public Optional<String> getOldVersion() {
+        return oldVersion==null?Optional.empty():Optional.of(oldVersion.getVersion());
+    }
+
+    public Optional<String> getNewVersion() {
+        return newVersion==null?Optional.empty():Optional.of(newVersion.getVersion());
     }
 
     @Override

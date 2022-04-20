@@ -48,8 +48,8 @@ public class GitStorageTest {
 
         final List<ArtifactChange> changes = gitStorage.getChanges(savedState);
         assertEquals(1, changes.size());
-        assertEquals("1.2.3", changes.get(0).getOldVersion().getVersion());
-        assertEquals("1.2.4", changes.get(0).getNewVersion().getVersion());
+        assertEquals("1.2.3", changes.get(0).getOldVersion().get());
+        assertEquals("1.2.4", changes.get(0).getNewVersion().get());
     }
 
     @Test
@@ -71,8 +71,8 @@ public class GitStorageTest {
 
         final List<ArtifactChange> changes = gitStorage.getChanges(savedState);
         assertEquals(1, changes.size());
-        assertEquals("1.2.3", changes.get(0).getOldVersion().getVersion());
-        assertNull(changes.get(0).getNewVersion());
+        assertEquals("1.2.3", changes.get(0).getOldVersion().get());
+        assertTrue(changes.get(0).getNewVersion().isEmpty());
     }
 
     @Test
@@ -93,8 +93,8 @@ public class GitStorageTest {
 
         final List<ArtifactChange> changes = gitStorage.getChanges(savedState);
         assertEquals(1, changes.size());
-        assertNull(changes.get(0).getOldVersion());
-        assertEquals("1.2.3", changes.get(0).getNewVersion().getVersion());
+        assertTrue(changes.get(0).getOldVersion().isEmpty());
+        assertEquals("1.2.3", changes.get(0).getNewVersion().get());
     }
 
 

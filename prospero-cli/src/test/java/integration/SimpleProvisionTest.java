@@ -128,7 +128,7 @@ public class SimpleProvisionTest extends WfCoreTestBase {
             @Override
             public void updatesFound(Collection<FeaturePackUpdatePlan> fpUpdates,
                                      List<ArtifactChange> artifactUpdates) {
-                updates.addAll(artifactUpdates.stream().map(ac->ac.getOldVersion().getArtifactId()).collect(Collectors.toSet()));
+                updates.addAll(artifactUpdates.stream().map(ac->ac.getArtifactName()).collect(Collectors.toSet()));
                 super.updatesFound(fpUpdates, artifactUpdates);
             }
         }).listUpdates();
@@ -137,7 +137,7 @@ public class SimpleProvisionTest extends WfCoreTestBase {
         final Optional<Artifact> wildflyCliArtifact = readArtifactFromManifest("org.wildfly.core", "wildfly-cli");
         assertEquals("17.0.0.Final", wildflyCliArtifact.get().getVersion());
         assertEquals(1, updates.size());
-        assertEquals("wildfly-cli", updates.stream().findFirst().get());
+        assertEquals("org.wildfly.core:wildfly-cli", updates.stream().findFirst().get());
     }
 
     @Test

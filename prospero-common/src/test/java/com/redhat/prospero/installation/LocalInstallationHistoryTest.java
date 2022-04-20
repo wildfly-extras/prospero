@@ -36,8 +36,10 @@ import java.nio.file.Path;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
+import java.util.Optional;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 
 public class LocalInstallationHistoryTest {
 
@@ -98,10 +100,9 @@ public class LocalInstallationHistoryTest {
 
         final List<ArtifactChange> changes = metadata.getChangesSince(previousState);
         assertEquals(1, changes.size());
-        assertEquals("foo", changes.get(0).getOldVersion().getGroupId());
-        assertEquals("bar", changes.get(0).getOldVersion().getArtifactId());
-        assertEquals("1.1.1", changes.get(0).getOldVersion().getVersion());
-        assertEquals("1.1.2", changes.get(0).getNewVersion().getVersion());
+        assertEquals("foo:bar", changes.get(0).getArtifactName());
+        assertEquals("1.1.1", changes.get(0).getOldVersion().get());
+        assertEquals("1.1.2", changes.get(0).getNewVersion().get());
     }
 
     @Test

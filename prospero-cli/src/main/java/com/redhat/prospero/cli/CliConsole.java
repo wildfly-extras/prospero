@@ -19,6 +19,7 @@ package com.redhat.prospero.cli;
 
 import java.util.Collection;
 import java.util.List;
+import java.util.Optional;
 import java.util.Scanner;
 
 import com.redhat.prospero.actions.Console;
@@ -135,15 +136,11 @@ public class CliConsole implements Console {
                 System.out.printf("  %-40s    %-20s ==>  %-20s%n", newFp.getProducerName(), oldFp.getBuild(), newFp.getBuild());
             }
             for (ArtifactChange artifactUpdate : artifactUpdates) {
-                final Artifact newArtifact = artifactUpdate.getNewVersion();
-                final Artifact oldArtifact = artifactUpdate.getOldVersion();
-                final String artifactName;
-                if (oldArtifact.getClassifier() == null || oldArtifact.getClassifier().isEmpty()) {
-                    artifactName = String.format("%s:%s", oldArtifact.getGroupId(), oldArtifact.getArtifactId());
-                } else {
-                    artifactName = String.format("%s:%s:%s", oldArtifact.getGroupId(), oldArtifact.getArtifactId(), oldArtifact.getClassifier());
-                }
-                System.out.printf("  %-40s    %-20s ==>  %-20s%n", artifactName, oldArtifact.getVersion(), newArtifact.getVersion());
+                final Optional<String> newVersion = artifactUpdate.getNewVersion();
+                final Optional<String> oldVersion = artifactUpdate.getOldVersion();
+                final String artifactName = artifactUpdate.getArtifactName();
+
+                System.out.printf("  %-40s    %-20s ==>  %-20s%n", artifactName, oldVersion.orElse("[]"), newVersion.orElse("[]"));
             }
         }
     }
