@@ -24,11 +24,9 @@ import com.redhat.prospero.galleon.GalleonUtils;
 import com.redhat.prospero.galleon.ChannelMavenArtifactRepositoryManager;
 import com.redhat.prospero.wfchannel.MavenSessionManager;
 import com.redhat.prospero.wfchannel.WfChannelMavenResolverFactory;
-import org.eclipse.aether.artifact.Artifact;
 import org.eclipse.aether.repository.RemoteRepository;
 import org.jboss.galleon.ProvisioningException;
 import org.jboss.galleon.ProvisioningManager;
-import org.jboss.galleon.universe.maven.MavenArtifact;
 import org.wildfly.channel.Channel;
 import org.wildfly.channel.ChannelMapper;
 
@@ -40,7 +38,6 @@ import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.List;
 
-import static com.redhat.prospero.api.ArtifactUtils.from;
 import static com.redhat.prospero.galleon.GalleonUtils.MAVEN_REPO_LOCAL;
 
 public class InstallationRestore {

@@ -1,7 +1,7 @@
 package integration;
 
 import com.redhat.prospero.api.ChannelRef;
-import com.redhat.prospero.actions.Installation;
+import com.redhat.prospero.actions.Provision;
 import com.redhat.prospero.actions.Update;
 import com.redhat.prospero.api.ProvisioningDefinition;
 import com.redhat.prospero.cli.CliConsole;
@@ -85,7 +85,7 @@ public class ChannelUpdaterTest {
         final ProvisioningDefinition provisioningDefinition = ProvisioningDefinition.builder()
            .setFpl("org.jboss.eap:wildfly-ee-galleon-pack")
            .build();
-        new Installation(EAP_PATH, mavenSessionManager, new CliConsole()).provision(provisioningDefinition);
+        new Provision(EAP_PATH, mavenSessionManager, new CliConsole()).provision(provisioningDefinition);
 
         // verify installation with manifest file is present
         assertTrue(EAP_PATH.resolve(TestUtil.MANIFEST_FILE_PATH).toFile().exists());
@@ -125,7 +125,7 @@ public class ChannelUpdaterTest {
         final ProvisioningDefinition provisioningDefinition = ProvisioningDefinition.builder()
            .setFpl("org.wildfly:wildfly-ee-galleon-pack:24.0.0.Final")
            .build();
-        new Installation(OUTPUT_PATH, mavenSessionManager, new CliConsole()).provision(provisioningDefinition);
+        new Provision(OUTPUT_PATH, mavenSessionManager, new CliConsole()).provision(provisioningDefinition);
 
         // verify installation with manifest file is present
         assertTrue(OUTPUT_PATH.resolve(TestUtil.MANIFEST_FILE_PATH).toFile().exists());

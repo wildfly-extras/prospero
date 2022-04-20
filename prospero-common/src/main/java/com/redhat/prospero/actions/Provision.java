@@ -37,28 +37,24 @@ import com.redhat.prospero.api.ChannelRef;
 import com.redhat.prospero.wfchannel.ChannelRefUpdater;
 import com.redhat.prospero.wfchannel.MavenSessionManager;
 import com.redhat.prospero.wfchannel.WfChannelMavenResolverFactory;
-import org.eclipse.aether.artifact.Artifact;
 import org.eclipse.aether.repository.RemoteRepository;
 import org.jboss.galleon.ProvisioningException;
 import org.jboss.galleon.ProvisioningManager;
 import org.jboss.galleon.config.FeaturePackConfig;
 import org.jboss.galleon.layout.ProvisioningLayoutFactory;
 import org.jboss.galleon.universe.FeaturePackLocation;
-import org.jboss.galleon.universe.maven.MavenArtifact;
-import org.jboss.galleon.universe.maven.MavenUniverseException;
 import org.wildfly.channel.Channel;
 import org.wildfly.channel.ChannelMapper;
 
-import static com.redhat.prospero.api.ArtifactUtils.from;
 import static com.redhat.prospero.galleon.GalleonUtils.MAVEN_REPO_LOCAL;
 
-public class Installation {
+public class Provision {
 
     private final MavenSessionManager mavenSessionManager;
     private Path installDir;
     private Console console;
 
-    public Installation(Path installDir, MavenSessionManager mavenSessionManager, Console console) {
+    public Provision(Path installDir, MavenSessionManager mavenSessionManager, Console console) {
         this.installDir = installDir;
         this.console = console;
         this.mavenSessionManager = mavenSessionManager;

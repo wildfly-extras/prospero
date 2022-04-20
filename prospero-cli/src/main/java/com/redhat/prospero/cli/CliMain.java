@@ -22,7 +22,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 import com.redhat.prospero.actions.Console;
-import com.redhat.prospero.actions.Installation;
+import com.redhat.prospero.actions.Provision;
 import com.redhat.prospero.actions.InstallationHistory;
 import com.redhat.prospero.actions.Update;
 import com.redhat.prospero.api.ProvisioningRuntimeException;
@@ -141,8 +141,8 @@ public class CliMain {
     }
 
     static class ActionFactory {
-        public Installation install(Path targetPath, MavenSessionManager mavenSessionManager) {
-            return new Installation(targetPath, mavenSessionManager, new CliConsole());
+        public Provision install(Path targetPath, MavenSessionManager mavenSessionManager) {
+            return new Provision(targetPath, mavenSessionManager, new CliConsole());
         }
 
         public Update update(Path targetPath, MavenSessionManager mavenSessionManager) throws OperationException, ProvisioningException {

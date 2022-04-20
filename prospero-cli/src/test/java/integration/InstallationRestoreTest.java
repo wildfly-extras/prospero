@@ -19,7 +19,7 @@ package integration;
 
 import com.redhat.prospero.actions.InstallationExport;
 import com.redhat.prospero.actions.InstallationRestore;
-import com.redhat.prospero.actions.Installation;
+import com.redhat.prospero.actions.Provision;
 import com.redhat.prospero.api.ProvisioningDefinition;
 import com.redhat.prospero.cli.CliConsole;
 import com.redhat.prospero.model.ManifestYamlSupport;
@@ -84,7 +84,7 @@ public class InstallationRestoreTest extends WfCoreTestBase {
         final ProvisioningDefinition provisioningDefinition = defaultWfCoreDefinition()
                 .setChannelsFile(channelFile)
                 .build();
-        new Installation(FIRST_SERVER_PATH, mavenSessionManager, new CliConsole()).provision(provisioningDefinition);
+        new Provision(FIRST_SERVER_PATH, mavenSessionManager, new CliConsole()).provision(provisioningDefinition);
 
         TestUtil.prepareChannelFileAsUrl(FIRST_SERVER_PATH.resolve(TestUtil.CHANNELS_FILE_PATH), "local-repo-desc.yaml", "local-updates-repo-desc.yaml");
 

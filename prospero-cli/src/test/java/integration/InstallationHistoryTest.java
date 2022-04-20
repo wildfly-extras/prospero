@@ -18,7 +18,7 @@
 package integration;
 
 import com.redhat.prospero.api.ArtifactChange;
-import com.redhat.prospero.actions.Installation;
+import com.redhat.prospero.actions.Provision;
 import com.redhat.prospero.actions.InstallationHistory;
 import com.redhat.prospero.api.SavedState;
 import com.redhat.prospero.actions.Update;
@@ -53,7 +53,7 @@ public class InstallationHistoryTest extends WfCoreTestBase {
     private static final String OUTPUT_DIR = "target/server";
     private static final Path OUTPUT_PATH = Paths.get(OUTPUT_DIR).toAbsolutePath();
     private MavenSessionManager mavenSessionManager = new MavenSessionManager();
-    private final Installation installation = new Installation(OUTPUT_PATH, mavenSessionManager, new CliConsole());
+    private final Provision installation = new Provision(OUTPUT_PATH, mavenSessionManager, new CliConsole());
     private Path channelFile;
 
     public InstallationHistoryTest() throws Exception {

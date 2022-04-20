@@ -19,7 +19,7 @@ package integration;
 
 import com.redhat.prospero.api.ArtifactChange;
 import com.redhat.prospero.api.ChannelRef;
-import com.redhat.prospero.actions.Installation;
+import com.redhat.prospero.actions.Provision;
 import com.redhat.prospero.actions.Update;
 import com.redhat.prospero.api.ProvisioningDefinition;
 import com.redhat.prospero.cli.CliConsole;
@@ -51,15 +51,15 @@ import static org.junit.Assert.*;
  * Currently requires a local repos to run
  * TODO: use channels based on central repo once the metadata issue is fixed (MVNCENTRAL-7012)
  */
-public class SimpleInstallationTest extends WfCoreTestBase {
+public class SimpleProvisionTest extends WfCoreTestBase {
 
     private static final String OUTPUT_DIR = "target/server";
     private Path OUTPUT_PATH = Paths.get(OUTPUT_DIR).toAbsolutePath();
     private Path manifestPath = OUTPUT_PATH.resolve(TestUtil.MANIFEST_FILE_PATH);
     private MavenSessionManager mavenSessionManager = new MavenSessionManager();
-    private Installation installation = new Installation(OUTPUT_PATH, mavenSessionManager, new CliConsole());
+    private Provision installation = new Provision(OUTPUT_PATH, mavenSessionManager, new CliConsole());
 
-    public SimpleInstallationTest() throws Exception {
+    public SimpleProvisionTest() throws Exception {
     }
 
     @Before
