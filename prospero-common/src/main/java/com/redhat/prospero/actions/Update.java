@@ -22,11 +22,12 @@ import java.net.URL;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionException;
-import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.stream.Collectors;
 
 import com.redhat.prospero.api.ArtifactUtils;
 import com.redhat.prospero.api.InstallationMetadata;
@@ -125,17 +126,17 @@ public class Update {
     }
 
     private UpdateSet findUpdates() throws ArtifactResolutionException, ProvisioningException {
-        final List<ArtifactChange> updates = new ArrayList<>();
+
         // use parallel executor to speed up the artifact resolution
         final ExecutorService executorService = Executors.newWorkStealingPool(UPDATES_SEARCH_PARALLELISM);
-        List<CompletableFuture<List<ArtifactChange>>> allPackages = new ArrayList<>();
+        List<CompletableFuture<Optional<ArtifactChange>>> allPackages = new ArrayList<>();
         for (Artifact artifact : metadata.getArtifacts()) {
-            final CompletableFuture<List<ArtifactChange>> cf = new CompletableFuture<>();
+            final CompletableFuture<Optional<ArtifactChange>> cf = new CompletableFuture<>();
             executorService.submit(() -> {
                 try {
-                    final List<ArtifactChange> found = findUpdates(artifact);
+                    final Optional<ArtifactChange> found = findUpdates(artifact);
                     cf.complete(found);
-                } catch (ArtifactResolutionException e) {
+                } catch (Exception e) {
                     cf.completeExceptionally(e);
                 }
             });
@@ -153,20 +154,17 @@ public class Update {
         }
 
         executorService.shutdown();
-        for (CompletableFuture<List<ArtifactChange>> future : allPackages) {
-            try {
-                updates.addAll(future.get());
-            } catch (InterruptedException | ExecutionException e) {
-                // ignore - the future is complete at this point
-            }
-        }
+
+        final List<ArtifactChange> updates = allPackages.stream()
+                .map(cf ->cf.getNow(Optional.empty()))
+                .flatMap(Optional::stream)
+                .collect(Collectors.toList());
+
         final ProvisioningPlan fpUpdates = findFPUpdates();
         return new UpdateSet(fpUpdates, updates);
     }
 
-    private List<ArtifactChange> findUpdates(Artifact artifact) throws ArtifactResolutionException {
-        List<ArtifactChange> updates = new ArrayList<>();
-
+    private Optional<ArtifactChange> findUpdates(Artifact artifact) throws ArtifactResolutionException {
         if (artifact == null) {
             throw new ArtifactResolutionException(String.format("Artifact [%s:%s] not found", artifact.getGroupId(), artifact.getArtifactId()));
         }
@@ -181,12 +179,10 @@ public class Update {
 
 
         if (latestVersion == null || ArtifactUtils.compareVersion(latest, artifact) <= 0) {
-            return updates;
+            return Optional.empty();
+        } else {
+            return Optional.of(new ArtifactChange(artifact, latest));
         }
-
-        updates.add(new ArtifactChange(artifact, latest));
-
-        return updates;
     }
 
     private ProvisioningPlan findFPUpdates() throws ProvisioningException {

@@ -19,23 +19,9 @@ package com.redhat.prospero.api;
 
 import org.apache.maven.artifact.versioning.ComparableVersion;
 import org.eclipse.aether.artifact.Artifact;
-import org.eclipse.aether.artifact.DefaultArtifact;
-import org.jboss.galleon.universe.maven.MavenArtifact;
 
 public class ArtifactUtils {
     public static int compareVersion(Artifact first, Artifact other) {
         return new ComparableVersion(first.getVersion()).compareTo(new ComparableVersion(other.getVersion()));
-    }
-
-    public static String getFileName(Artifact artifact) {
-        if (artifact.getClassifier() == null || artifact.getClassifier().length() == 0) {
-            return String.format("%s-%s.%s", artifact.getArtifactId(), artifact.getVersion(), artifact.getExtension());
-        } else {
-            return String.format("%s-%s-%s.%s", artifact.getArtifactId(), artifact.getVersion(), artifact.getClassifier(), artifact.getExtension());
-        }
-    }
-
-    public static Artifact from(MavenArtifact artifact) {
-        return new DefaultArtifact(artifact.getGroupId(), artifact.getArtifactId(), artifact.getClassifier(), artifact.getExtension(), artifact.getVersion());
     }
 }
