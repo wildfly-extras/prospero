@@ -162,18 +162,15 @@ public class InstallationHistoryTest extends WfCoreTestBase {
         }
 
         assertEquals(1, changes.size());
-        Map<Artifact, Artifact> expected = new HashMap<>();
-        expected.put(new DefaultArtifact("org.wildfly.core", "wildfly-cli", "jar", "17.0.0.Final"),
-                new DefaultArtifact("org.wildfly.core","wildfly-cli", "jar", "17.0.1.Final"));
 
-        Map<String, String[]> expected2 = new HashMap<>();
-        expected2.put("org.wildfly.core:wildfly-cli", new String[]{"17.0.0.Final", "17.0.1.Final"});
+        Map<String, String[]> expected = new HashMap<>();
+        expected.put("org.wildfly.core:wildfly-cli", new String[]{"17.0.0.Final", "17.0.1.Final"});
 
         for (ArtifactChange change : changes) {
-            if (expected2.containsKey(change.getArtifactName())) {
-                final String[] versions = expected2.get(change.getArtifactName());
+            if (expected.containsKey(change.getArtifactName())) {
+                final String[] versions = expected.get(change.getArtifactName());
                 assertEquals(versions[1], change.getNewVersion().get());
-                expected2.remove(change.getArtifactName());
+                expected.remove(change.getArtifactName());
             } else {
                 Assert.fail("Unexpected artifact in updates " + change);
             }
