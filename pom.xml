@@ -24,7 +24,7 @@
         <version.org.mockito>3.12.4</version.org.mockito>
         <version.junit>4.13.2</version.junit>
         <version.maven-shade-plugin>2.3</version.maven-shade-plugin>
-        <version.org.wildfly.channel>1.0.0.Alpha11-SNAPSHOT</version.org.wildfly.channel>
+        <version.org.wildfly.channel>1.0.0.Alpha12</version.org.wildfly.channel>
     </properties>
 
     <modules>
@@ -149,8 +149,23 @@
                     <target>11</target>
                 </configuration>
             </plugin>
-
-
         </plugins>
     </build>
+
+    <repositories>
+        <repository>
+            <releases>
+                <enabled>true</enabled>
+                <updatePolicy>never</updatePolicy>
+            </releases>
+            <snapshots>
+                <enabled>true</enabled>
+                <updatePolicy>never</updatePolicy>
+            </snapshots>
+            <id>jboss-public-repository-group</id>
+            <name>JBoss Public Repository Group</name>
+            <url>https://repository.jboss.org/</url>
+            <layout>default</layout>
+        </repository>
+    </repositories>
 </project>
