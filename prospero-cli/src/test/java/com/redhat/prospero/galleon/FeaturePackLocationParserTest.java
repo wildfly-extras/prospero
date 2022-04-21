@@ -1,65 +1,33 @@
 package com.redhat.prospero.galleon;
 
-import com.redhat.prospero.api.ChannelRef;
-import com.redhat.prospero.model.ProvisioningRecord;
-import com.redhat.prospero.wfchannel.MavenSessionManager;
-import com.redhat.prospero.wfchannel.WfChannelMavenResolverFactory;
-import org.eclipse.aether.repository.RemoteRepository;
 import org.jboss.galleon.universe.FeaturePackLocation;
 import org.jboss.galleon.universe.maven.MavenUniverseException;
-import org.junit.Ignore;
+import org.junit.Before;
 import org.junit.Test;
-import org.wildfly.channel.Channel;
-import org.wildfly.channel.ChannelMapper;
-
-import java.net.MalformedURLException;
-import java.net.URL;
-import java.nio.file.Path;
-import java.nio.file.Paths;
-import java.util.Arrays;
-import java.util.List;
-import java.util.stream.Collectors;
+import org.junit.runner.RunWith;
+import org.mockito.Mock;
+import org.mockito.junit.MockitoJUnitRunner;
 
 import static org.junit.Assert.*;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.when;
 
-@Ignore
+
+@RunWith(MockitoJUnitRunner.class)
 public class FeaturePackLocationParserTest {
 
+    @Mock
     private ChannelMavenArtifactRepositoryManager repoManager;
     private FeaturePackLocationParser parser;
 
-//    @Before
+    @Before
     public void setUp() throws Exception {
-        final Path channelsFile = Paths.get(FeaturePackLocationParserTest.class.getResource("/channels/eap/channels-eap74.yaml").toURI());
-
-        final ProvisioningRecord provisioningRecord = ProvisioningRecord.readChannels(channelsFile);
-        final List<ChannelRef> channelRefs = provisioningRecord.getChannels();
-        final List<Channel> channels = channelRefs.stream().map(ref-> {
-            try {
-                return ChannelMapper.from(new URL(ref.getUrl()));
-            } catch (MalformedURLException e) {
-                throw new RuntimeException(e);
-            }
-        }).collect(Collectors.toList());
-
-        //        try {
-        //            provisioningRepo = Files.createTempDirectory("provisioning-repo");
-        //            provisioningRepo.toFile().deleteOnExit();
-        //        } catch (IOException e) {
-        //            throw new ProvisioningException("Unable to create provisioning repository folder.", e);
-        //        }
-        Path provisioningRepo = Paths.get("/Users/spyrkob/workspaces/set/prospero/debug/provision-repo/");
-        final MavenSessionManager mavenSessionManager = new MavenSessionManager(provisioningRepo);
-
-        final List<RemoteRepository> repositories = Arrays.asList(new RemoteRepository.Builder("mrrc", null, "https://maven.repository.redhat.com").build());
-
-        final WfChannelMavenResolverFactory factory = new WfChannelMavenResolverFactory(mavenSessionManager, repositories);
-        repoManager = new ChannelMavenArtifactRepositoryManager(channels, factory);
         parser = new FeaturePackLocationParser(repoManager);
     }
 
     @Test
     public void findLatestFeaturePackInPartialGav() throws Exception {
+        when(repoManager.getLatestVersion(any())).thenReturn("7.4.3.GA-redhat-SNAPSHOT");
         final FeaturePackLocation resolvedFpl = resolveFplVersion("org.jboss.eap:wildfly-ee-galleon-pack");
         assertEquals("7.4.3.GA-redhat-SNAPSHOT", resolvedFpl.getBuild());
         assertEquals("org.jboss.eap:wildfly-ee-galleon-pack::zip", resolvedFpl.getProducerName());

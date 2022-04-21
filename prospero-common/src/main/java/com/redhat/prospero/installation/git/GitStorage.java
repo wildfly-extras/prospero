@@ -18,7 +18,7 @@
 package com.redhat.prospero.installation.git;
 
 import com.redhat.prospero.api.InstallationMetadata;
-import com.redhat.prospero.api.MetadataException;
+import com.redhat.prospero.api.exceptions.MetadataException;
 import com.redhat.prospero.api.SavedState;
 import com.redhat.prospero.api.ArtifactChange;
 import com.redhat.prospero.model.ManifestYamlSupport;

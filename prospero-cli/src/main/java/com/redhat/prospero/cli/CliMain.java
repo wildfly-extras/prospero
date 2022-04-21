@@ -25,7 +25,7 @@ import com.redhat.prospero.actions.Console;
 import com.redhat.prospero.actions.Provision;
 import com.redhat.prospero.actions.InstallationHistory;
 import com.redhat.prospero.actions.Update;
-import com.redhat.prospero.api.ProvisioningRuntimeException;
+import com.redhat.prospero.api.exceptions.ProvisioningRuntimeException;
 import com.redhat.prospero.api.exceptions.OperationException;
 import com.redhat.prospero.wfchannel.MavenSessionManager;
 import org.jboss.galleon.ProvisioningException;

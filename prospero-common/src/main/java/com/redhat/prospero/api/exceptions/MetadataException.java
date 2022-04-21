@@ -15,32 +15,13 @@
  * limitations under the License.
  */
 
-package com.redhat.prospero.galleon;
+package com.redhat.prospero.api.exceptions;
 
-import org.jboss.galleon.progresstracking.ProgressCallback;
-import org.jboss.galleon.progresstracking.ProgressTracker;
-
-public class GalleonProgressCallback<T> implements ProgressCallback<T> {
-
-    private final String start;
-    private final String end;
-
-    public GalleonProgressCallback(String start, String end) {
-        this.start = start;
-        this.end = end;
-    }
-
-    @Override
-    public void starting(ProgressTracker<T> progressTracker) {
-        System.out.println(start);
-    }
-
-    @Override
-    public void pulse(ProgressTracker<T> progressTracker) {
-    }
-
-    @Override
-    public void complete(ProgressTracker<T> progressTracker) {
-        System.out.println(end);
+/**
+ * Represents metadata read/write operations exceptions
+ */
+public class MetadataException extends OperationException {
+    public MetadataException(String msg, Exception e) {
+        super(msg, e);
     }
 }

@@ -51,10 +51,7 @@ public class WfChannelMavenResolver implements MavenVersionsResolver {
 
     private final List<RemoteRepository> remoteRepositories;
 
-    private final MavenSessionManager mavenSessionManager;
-
     WfChannelMavenResolver(List<RemoteRepository> mavenRepositories, boolean resolveLocalCache, MavenSessionManager mavenSessionManager) {
-        this.mavenSessionManager = mavenSessionManager;
         this.remoteRepositories = mavenRepositories;
         system = mavenSessionManager.newRepositorySystem();
         session = mavenSessionManager.newRepositorySystemSession(system, resolveLocalCache);

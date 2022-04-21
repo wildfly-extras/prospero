@@ -17,7 +17,9 @@
 
 package com.redhat.prospero.api;
 
+import com.redhat.prospero.api.exceptions.MetadataException;
 import com.redhat.prospero.installation.git.GitStorage;
+import com.redhat.prospero.model.ChannelRef;
 import com.redhat.prospero.model.ManifestYamlSupport;
 import com.redhat.prospero.model.ProvisioningRecord;
 import com.redhat.prospero.model.RepositoryRef;

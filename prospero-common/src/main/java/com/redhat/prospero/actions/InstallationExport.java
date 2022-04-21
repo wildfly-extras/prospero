@@ -18,7 +18,7 @@
 package com.redhat.prospero.actions;
 
 import com.redhat.prospero.api.InstallationMetadata;
-import com.redhat.prospero.api.MetadataException;
+import com.redhat.prospero.api.exceptions.MetadataException;
 import org.jboss.galleon.ProvisioningException;
 
 import java.io.IOException;

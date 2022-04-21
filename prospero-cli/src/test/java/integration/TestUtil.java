@@ -17,7 +17,6 @@
 
 package integration;
 
-import java.io.FileWriter;
 import java.io.IOException;
 import java.net.URL;
 import java.nio.file.Files;
@@ -28,7 +27,7 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
 
-import com.redhat.prospero.api.ChannelRef;
+import com.redhat.prospero.model.ChannelRef;
 import com.redhat.prospero.api.InstallationMetadata;
 import com.redhat.prospero.model.ProvisioningRecord;
 import com.redhat.prospero.model.RepositoryRef;

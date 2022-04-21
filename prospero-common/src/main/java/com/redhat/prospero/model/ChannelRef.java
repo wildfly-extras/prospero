@@ -15,15 +15,37 @@
  * limitations under the License.
  */
 
-package com.redhat.prospero.api;
+package com.redhat.prospero.model;
 
-import com.redhat.prospero.api.exceptions.OperationException;
+import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonProperty;
 
-/**
- * Represents metadata read/write operations exceptions
- */
-public class MetadataException extends OperationException {
-    public MetadataException(String msg, Exception e) {
-        super(msg, e);
+public class ChannelRef {
+
+    private String url;
+
+    private String gav;
+
+    @JsonCreator
+    public ChannelRef(@JsonProperty(value = "gav") String gav, @JsonProperty(value = "fileUrl") String fileUrl) {
+        this.gav = gav;
+        this.url = fileUrl;
+    }
+
+    public String getUrl() {
+        return url;
+    }
+
+    public void setUrl(String url) {
+        this.url = url;
+    }
+
+    public String getGav() {
+        return gav;
+    }
+
+    @Override
+    public String toString() {
+        return "Channel{" + "gav='" + gav + '\'' + ", url='" + url + '\'' + '}';
     }
 }

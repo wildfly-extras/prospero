@@ -26,7 +26,7 @@ import java.util.List;
 import java.util.Map;
 
 import com.redhat.prospero.actions.Provision;
-import com.redhat.prospero.api.ChannelRef;
+import com.redhat.prospero.model.ChannelRef;
 import com.redhat.prospero.api.ProvisioningDefinition;
 import com.redhat.prospero.model.ProvisioningRecord;
 import com.redhat.prospero.model.RepositoryRef;

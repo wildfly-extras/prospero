@@ -15,37 +15,12 @@
  * limitations under the License.
  */
 
-package com.redhat.prospero.api;
+package com.redhat.prospero.api.exceptions;
 
-import com.fasterxml.jackson.annotation.JsonCreator;
-import com.fasterxml.jackson.annotation.JsonProperty;
+public class ProvisioningRuntimeException extends RuntimeException {
 
-public class ChannelRef {
-
-    private String url;
-
-    private String gav;
-
-    @JsonCreator
-    public ChannelRef(@JsonProperty(value = "gav") String gav, @JsonProperty(value = "fileUrl") String fileUrl) {
-        this.gav = gav;
-        this.url = fileUrl;
+    public ProvisioningRuntimeException(String msg) {
+        super(msg);
     }
 
-    public String getUrl() {
-        return url;
-    }
-
-    public void setUrl(String url) {
-        this.url = url;
-    }
-
-    public String getGav() {
-        return gav;
-    }
-
-    @Override
-    public String toString() {
-        return "Channel{" + "gav='" + gav + '\'' + ", url='" + url + '\'' + '}';
-    }
 }

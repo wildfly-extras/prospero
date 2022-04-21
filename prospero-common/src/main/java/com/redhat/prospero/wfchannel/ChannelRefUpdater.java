@@ -20,7 +20,7 @@ package com.redhat.prospero.wfchannel;
 import java.util.ArrayList;
 import java.util.List;
 
-import com.redhat.prospero.api.ChannelRef;
+import com.redhat.prospero.model.ChannelRef;
 import com.redhat.prospero.api.exceptions.ArtifactResolutionException;
 import org.eclipse.aether.DefaultRepositorySystemSession;
 import org.eclipse.aether.RepositorySystem;

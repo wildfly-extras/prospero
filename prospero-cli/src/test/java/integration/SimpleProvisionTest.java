@@ -18,7 +18,7 @@
 package integration;
 
 import com.redhat.prospero.api.ArtifactChange;
-import com.redhat.prospero.api.ChannelRef;
+import com.redhat.prospero.model.ChannelRef;
 import com.redhat.prospero.actions.Provision;
 import com.redhat.prospero.actions.Update;
 import com.redhat.prospero.api.ProvisioningDefinition;

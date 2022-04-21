@@ -24,7 +24,7 @@ import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 
-import com.redhat.prospero.api.MetadataException;
+import com.redhat.prospero.api.exceptions.MetadataException;
 import com.redhat.prospero.api.exceptions.OperationException;
 import com.redhat.prospero.wfchannel.MavenSessionManager;
 import org.jboss.galleon.ProvisioningException;

@@ -15,10 +15,10 @@
  * limitations under the License.
  */
 
-package com.redhat.prospero.galleon.repository;
+package com.redhat.prospero.galleon.inspect;
 
 import com.redhat.prospero.api.InstallationMetadata;
-import com.redhat.prospero.api.ProvisioningRuntimeException;
+import com.redhat.prospero.api.exceptions.ProvisioningRuntimeException;
 import com.redhat.prospero.model.XmlException;
 import com.redhat.prospero.model.XmlSupport;
 import org.eclipse.aether.artifact.Artifact;

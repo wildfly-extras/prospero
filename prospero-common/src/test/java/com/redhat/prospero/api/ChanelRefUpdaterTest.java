@@ -17,7 +17,7 @@
 package com.redhat.prospero.api;
 
 import com.redhat.prospero.api.exceptions.ArtifactResolutionException;
-import com.redhat.prospero.model.RepositoryRef;
+import com.redhat.prospero.model.ChannelRef;
 import com.redhat.prospero.wfchannel.ChannelRefUpdater;
 import com.redhat.prospero.wfchannel.MavenSessionManager;
 import org.eclipse.aether.repository.RemoteRepository;

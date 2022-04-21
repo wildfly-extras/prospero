@@ -17,7 +17,6 @@
 
 package com.redhat.prospero.model;
 
-import com.redhat.prospero.api.ChannelRef;
 import org.wildfly.channel.Channel;
 import org.wildfly.channel.ChannelMapper;
 
@@ -41,14 +40,6 @@ public class ManifestYamlSupport {
     }
 
     public static void write(Channel channel, Path channelFile, List<ChannelRef> channelRefs) throws IOException {
-        // TODO: do we need to store the repositories for updates?
-        //   probably yes - otherwise on moving the installation things stop working
-//        Set<MavenRepository> repositories = new HashSet<>();
-//        for (ChannelRef channelRef : channelRefs) {
-//            final Channel channel = ChannelMapper.from(new URL(channelRef.getUrl()));
-//            repositories.addAll(channel.getRepositories());
-//        }
-
         String yaml = ChannelMapper.toYaml(channel);
         try (PrintWriter pw = new PrintWriter(new FileWriter(channelFile.toFile()))) {
             pw.println(yaml);

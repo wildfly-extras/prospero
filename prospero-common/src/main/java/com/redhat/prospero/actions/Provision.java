@@ -18,7 +18,7 @@
 package com.redhat.prospero.actions;
 
 import com.redhat.prospero.api.InstallationMetadata;
-import com.redhat.prospero.api.MetadataException;
+import com.redhat.prospero.api.exceptions.MetadataException;
 import com.redhat.prospero.api.ProvisioningDefinition;
 import com.redhat.prospero.api.exceptions.OperationException;
 import com.redhat.prospero.galleon.FeaturePackLocationParser;
@@ -33,7 +33,7 @@ import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
 
-import com.redhat.prospero.api.ChannelRef;
+import com.redhat.prospero.model.ChannelRef;
 import com.redhat.prospero.wfchannel.ChannelRefUpdater;
 import com.redhat.prospero.wfchannel.MavenSessionManager;
 import com.redhat.prospero.wfchannel.WfChannelMavenResolverFactory;

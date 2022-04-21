@@ -34,6 +34,7 @@ import java.util.Set;
 import java.util.stream.Collectors;
 
 import com.redhat.prospero.api.exceptions.ArtifactResolutionException;
+import com.redhat.prospero.model.ChannelRef;
 import com.redhat.prospero.model.ProvisioningRecord;
 import org.eclipse.aether.repository.RemoteRepository;
 import org.jboss.galleon.ProvisioningException;

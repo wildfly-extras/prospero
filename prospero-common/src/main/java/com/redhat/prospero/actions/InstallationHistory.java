@@ -18,9 +18,9 @@
 package com.redhat.prospero.actions;
 
 import com.redhat.prospero.api.ArtifactChange;
-import com.redhat.prospero.api.ChannelRef;
+import com.redhat.prospero.model.ChannelRef;
 import com.redhat.prospero.api.InstallationMetadata;
-import com.redhat.prospero.api.MetadataException;
+import com.redhat.prospero.api.exceptions.MetadataException;
 import com.redhat.prospero.api.SavedState;
 import com.redhat.prospero.galleon.GalleonUtils;
 import com.redhat.prospero.galleon.ChannelMavenArtifactRepositoryManager;

@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-package com.redhat.prospero.galleon.repository;
+package com.redhat.prospero.galleon.inspect;
 
 import com.redhat.prospero.api.InstallationMetadata;
 import com.redhat.prospero.wfchannel.MavenSessionManager;
