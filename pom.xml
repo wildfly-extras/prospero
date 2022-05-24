@@ -13,9 +13,8 @@
         <version.org.apache.logging.log4j>2.14.1</version.org.apache.logging.log4j>
         <version.commons.io>2.11.0</version.commons.io>
         <version.org.jboss.galleon>4.2.9.Final-SNAPSHOT</version.org.jboss.galleon>
-        <version.com.fasterxml.jackson>2.10.0</version.com.fasterxml.jackson>
         <version.org.eclipse.jgit>5.13.0.202109080827-r</version.org.eclipse.jgit>
-        <version.com.fasterxml.jackson>2.13.0</version.com.fasterxml.jackson>
+        <version.com.fasterxml.jackson>2.12.3</version.com.fasterxml.jackson>
         <version.com.networknt.json-schema-validator>1.0.61</version.com.networknt.json-schema-validator>
         <version.org.jboss.logging>3.3.1.Final</version.org.jboss.logging>
         <version.org.jboss.logmanager>2.0.6.Final</version.org.jboss.logmanager>
@@ -25,6 +24,7 @@
         <version.junit>4.13.2</version.junit>
         <version.maven-shade-plugin>2.3</version.maven-shade-plugin>
         <version.org.wildfly.channel>1.0.0.Alpha12</version.org.wildfly.channel>
+        <version.org.jboss.eap.galleon-pack>8.0.0.Alpha-DR2-redhat-SNAPSHOT</version.org.jboss.eap.galleon-pack>
     </properties>
 
     <modules>
@@ -32,10 +32,22 @@
         <module>prospero-cli</module>
         <module>prospero-launcher</module>
         <module>prospero-bootstrap</module>
+        <module>galleon-pack</module>
     </modules>
 
     <dependencyManagement>
         <dependencies>
+            <dependency>
+                <groupId>com.redhat.prospero</groupId>
+                <artifactId>prospero-cli</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.jboss.eap</groupId>
+                <artifactId>wildfly-ee-galleon-pack</artifactId>
+                <version>${version.org.jboss.eap.galleon-pack}</version>
+                <type>zip</type>
+            </dependency>
             <dependency>
                 <groupId>org.apache.maven.resolver</groupId>
                 <artifactId>maven-resolver-connector-basic</artifactId>

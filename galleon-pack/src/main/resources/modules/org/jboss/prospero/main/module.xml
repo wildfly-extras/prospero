@@ -1,0 +1,68 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<!--
+  ~ JBoss, Home of Professional Open Source.
+  ~ Copyright 2022, Red Hat, Inc., and individual contributors
+  ~ as indicated by the @author tags. See the copyright.txt file in the
+  ~ distribution for a full listing of individual contributors.
+  ~
+  ~ This is free software; you can redistribute it and/or modify it
+  ~ under the terms of the GNU Lesser General Public License as
+  ~ published by the Free Software Foundation; either version 2.1 of
+  ~ the License, or (at your option) any later version.
+  ~
+  ~ This software is distributed in the hope that it will be useful,
+  ~ but WITHOUT ANY WARRANTY; without even the implied warranty of
+  ~ MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
+  ~ Lesser General Public License for more details.
+  ~
+  ~ You should have received a copy of the GNU Lesser General Public
+  ~ License along with this software; if not, write to the Free
+  ~ Software Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA
+  ~ 02110-1301 USA, or see the FSF site: http://www.fsf.org.
+  -->
+<module name="org.jboss.prospero" xmlns="urn:jboss:module:1.6">
+  <main-class name="com.redhat.prospero.cli.CliMain"/>
+    <resources>
+        <artifact name="${org.wildfly.channel:channel-core}"/>
+        <artifact name="${org.codehaus.plexus:plexus-interpolation}"/>
+        <artifact name="${org.codehaus.plexus:plexus-utils}"/>
+        <artifact name="${com.redhat.prospero:prospero-common}"/>
+        <artifact name="${com.redhat.prospero:prospero-cli}"/>
+        <artifact name="${org.jboss.galleon:galleon-core}"/>
+        <artifact name="${org.jboss.galleon:galleon-maven-universe}"/>
+        <artifact name="${com.fasterxml.jackson.dataformat:jackson-dataformat-yaml}"/>
+        <artifact name="${com.networknt:json-schema-validator}"/>
+        <artifact name="${org.apache.maven:maven-artifact}"/>
+        <artifact name="${org.apache.maven:maven-builder-support}"/>
+        <artifact name="${org.apache.maven:maven-model}"/>
+        <artifact name="${org.apache.maven:maven-model-builder}"/>
+        <artifact name="${org.apache.maven:maven-repository-metadata}"/>
+        <artifact name="${org.apache.maven.resolver:maven-resolver-api}"/>
+        <artifact name="${org.apache.maven.resolver:maven-resolver-connector-basic}"/>
+        <artifact name="${org.apache.maven.resolver:maven-resolver-impl}"/>
+        <artifact name="${org.apache.maven:maven-resolver-provider}"/>
+        <artifact name="${org.apache.maven.resolver:maven-resolver-spi}"/>
+        <artifact name="${org.apache.maven.resolver:maven-resolver-transport-file}"/>
+        <artifact name="${org.apache.maven.resolver:maven-resolver-transport-http}"/>
+        <artifact name="${org.apache.maven.resolver:maven-resolver-util}"/>
+    </resources>
+
+    <dependencies>
+      <module name="org.apache.commons.io"/>
+      <module name="org.apache.commons.codec"/>
+      <module name="com.googlecode.javaewah"/>
+      <module name="org.apache.commons.lang3"/>
+      <module name="org.apache.httpcomponents.core"/>
+      <module name="com.fasterxml.jackson.core.jackson-core"/>
+      <module name="com.fasterxml.jackson.core.jackson-annotations"/>
+      <module name="com.fasterxml.jackson.core.jackson-databind"/>
+      <module name="javax.inject.api"/>
+      <module name="org.jboss.logging"/>
+      <module name="org.jboss.logmanager"/>
+      <module name="org.eclipse.jgit"/>
+      <module name="org.slf4j"/>
+      <module name="org.yaml.snakeyaml"/>
+      <module name="org.jboss.staxmapper"/>
+    </dependencies>
+</module>
