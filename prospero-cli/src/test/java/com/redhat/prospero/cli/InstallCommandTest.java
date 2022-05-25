@@ -42,6 +42,7 @@ import org.mockito.Mockito;
 import org.mockito.junit.MockitoJUnitRunner;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNull;
 import static org.junit.Assert.fail;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
@@ -153,4 +154,39 @@ public class InstallCommandTest {
         assertEquals("dev", serverDefiniton.getValue().getRepositories().get(0).getId());
     }
 
+    @Test
+    public void usingProvisionDefinitonRequiresChannel() throws Exception {
+        when(actionFactory.install(any(), any(MavenSessionManager.class))).thenReturn(provisionAction);
+        List<ChannelRef> channels = Arrays.asList(new ChannelRef("org.jboss.eap:wildfly-ee-galleon-pack", null));
+        List<RepositoryRef> repositories = Arrays.asList(new RepositoryRef("dev", "http://test.test"));
+
+        final File provisionDefinitionFile = temporaryFolder.newFile("provision.xml");
+        final File channelsFile = temporaryFolder.newFile();
+        new ProvisioningRecord(channels, repositories).writeChannels(channelsFile);
+
+        Map<String, String> args = new HashMap<>();
+        args.put(CliMain.CHANNEL_FILE_ARG, channelsFile.getAbsolutePath());
+        args.put(CliMain.TARGET_PATH_ARG, "test");
+        args.put(InstallCommand.DEFINITION_ARG, provisionDefinitionFile.getAbsolutePath());
+        new InstallCommand(actionFactory).execute(args);
+
+        Mockito.verify(actionFactory).install(eq(Paths.get("test").toAbsolutePath()), any(MavenSessionManager.class));
+        Mockito.verify(provisionAction).provision(serverDefiniton.capture());
+        assertNull("org.jboss.eap:wildfly-ee-galleon-pack", serverDefiniton.getValue().getFpl());
+        assertEquals("dev", serverDefiniton.getValue().getRepositories().get(0).getId());
+        assertEquals(provisionDefinitionFile.toPath(), serverDefiniton.getValue().getDefinition());
+    }
+
+    @Test(expected = ArgumentParsingException.class)
+    public void fplAndDefinitionAreNotAllowedTogether() throws Exception {
+        final File provisionDefinitionFile = temporaryFolder.newFile("provision.xml");
+        final File channelsFile = temporaryFolder.newFile();
+
+        Map<String, String> args = new HashMap<>();
+        args.put(CliMain.CHANNEL_FILE_ARG, channelsFile.getAbsolutePath());
+        args.put(CliMain.TARGET_PATH_ARG, "test");
+        args.put(CliMain.FPL_ARG, "test");
+        args.put(InstallCommand.DEFINITION_ARG, provisionDefinitionFile.getAbsolutePath());
+        new InstallCommand(actionFactory).execute(args);
+    }
 }

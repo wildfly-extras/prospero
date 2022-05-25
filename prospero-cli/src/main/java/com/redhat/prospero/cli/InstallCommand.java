@@ -31,6 +31,8 @@ import com.redhat.prospero.wfchannel.MavenSessionManager;
 import org.jboss.galleon.ProvisioningException;
 
 class InstallCommand implements Command {
+    public static final String DEFINITION_ARG = "definition";
+
     private final CliMain.ActionFactory actionFactory;
 
     InstallCommand(CliMain.ActionFactory actionFactory) {
@@ -45,12 +47,13 @@ class InstallCommand implements Command {
     @Override
     public Set<String> getSupportedArguments() {
         return new HashSet<>(Arrays.asList(CliMain.TARGET_PATH_ARG, CliMain.FPL_ARG, CliMain.CHANNEL_FILE_ARG,
-                CliMain.CHANNEL_REPO, CliMain.CHANNEL, CliMain.LOCAL_REPO, CliMain.OFFLINE));
+                CliMain.CHANNEL_REPO, CliMain.CHANNEL, CliMain.LOCAL_REPO, CliMain.OFFLINE, DEFINITION_ARG));
     }
 
     @Override
     public void execute(Map<String, String> parsedArgs) throws ArgumentParsingException, OperationException {
         String dir = parsedArgs.get(CliMain.TARGET_PATH_ARG);
+        String provisionDefinition = parsedArgs.get(DEFINITION_ARG);
         String fpl = parsedArgs.get(CliMain.FPL_ARG);
         String channelFile = parsedArgs.get(CliMain.CHANNEL_FILE_ARG);
         String channelRepo = parsedArgs.get(CliMain.CHANNEL_REPO);
@@ -61,12 +64,16 @@ class InstallCommand implements Command {
         if (dir == null || dir.isEmpty()) {
             throw new ArgumentParsingException("Target dir argument (--%s) need to be set on install command", CliMain.TARGET_PATH_ARG);
         }
-        if (fpl == null || fpl.isEmpty()) {
+        final boolean usingFpl = fpl != null && !fpl.isEmpty();
+        final boolean usingProvDefinition = provisionDefinition != null && !provisionDefinition.isEmpty();
+        if (!usingFpl && !usingProvDefinition) {
             throw new ArgumentParsingException("Feature pack name argument (--%s) need to be set on install command", CliMain.FPL_ARG);
         }
+        if (usingFpl && usingProvDefinition) {
+            throw new ArgumentParsingException("Feature pack name argument (--%s) cannot be used together with provisioning definition argument (--%s)", CliMain.FPL_ARG, InstallCommand.DEFINITION_ARG);
+        }
 
-
-        if (!fpl.equals("eap") && !fpl.equals("eap-7.4") && !fpl.equals("wildfly") && (channelFile == null || channelFile.isEmpty())) {
+        if (!usingProvDefinition && isStandardFpl(fpl) && (channelFile == null || channelFile.isEmpty())) {
             throw new ArgumentParsingException("Channel file argument (--%s) need to be set when using custom fpl", CliMain.CHANNEL_FILE_ARG);
         }
 
@@ -85,11 +92,16 @@ class InstallCommand implements Command {
                     .setChannel(channel)
                     .setChannelsFile(channelFile == null ? null : Paths.get(channelFile).toAbsolutePath())
                     .setChannelRepo(channelRepo)
+                    .setDefinitionFile(provisionDefinition == null ? null : Paths.get(provisionDefinition).toAbsolutePath())
                     .build();
 
             actionFactory.install(installationDir, mavenSessionManager).provision(provisioningDefinition);
         } catch (ProvisioningException | MetadataException e) {
             throw new OperationException("Error while executing installation: " + e.getMessage(), e);
         }
+    }
+
+    private boolean isStandardFpl(String fpl) {
+        return !fpl.equals("eap") && !fpl.equals("eap-7.4") && !fpl.equals("wildfly");
     }
 }

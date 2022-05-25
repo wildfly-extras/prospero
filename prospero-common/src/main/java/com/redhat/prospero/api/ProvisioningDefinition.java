@@ -46,6 +46,7 @@ public class ProvisioningDefinition {
     private final Set<String> includedPackages = new HashSet<>();
     private static final Map<String, String> CHANNEL_URLS = new HashMap<>();
     private final List<RemoteRepository> repositories;
+    private Path definition;
 
     static {
         CHANNEL_URLS.put("mrrc", "https://maven.repository.redhat.com/ga/");
@@ -53,8 +54,10 @@ public class ProvisioningDefinition {
     }
 
 
+
     private ProvisioningDefinition(Builder builder) throws ArtifactResolutionException {
-        final String fpl = builder.fpl;
+        final Optional<String> fpl = Optional.ofNullable(builder.fpl);
+        final Optional<Path> definition = Optional.ofNullable(builder.definitionFile);
         final Optional<String> channelRepo = Optional.ofNullable(builder.channelRepo);
         final Optional<Path> channelsFile = Optional.ofNullable(builder.channelsFile);
         final Optional<URL> channel = Optional.ofNullable(builder.channel);
@@ -64,7 +67,7 @@ public class ProvisioningDefinition {
         this.includedPackages.addAll(includedPackages.orElse(Collections.emptySet()));
 
         try {
-            if (fpl.equals("eap") || fpl.equals("eap-7.4")) {
+            if (fpl.isPresent() && (fpl.get().equals("eap") || fpl.get().equals("eap-7.4"))) {
                 this.fpl = "org.jboss.eap:wildfly-ee-galleon-pack";
                 this.includedPackages.add("docs.examples.configs");
 
@@ -102,7 +105,8 @@ public class ProvisioningDefinition {
                     this.repositories.addAll(record.getRepositories().stream().map(r->r.toRemoteRepository()).collect(Collectors.toList()));
                 }
             } else {
-                this.fpl = fpl;
+                this.fpl = fpl.orElse(null);
+                this.definition = definition.orElse(null);
                 final ProvisioningRecord record = ProvisioningRecord.readChannels(channelsFile.get());
                 this.channels = record.getChannels();
                 this.repositories.clear();
@@ -133,9 +137,14 @@ public class ProvisioningDefinition {
         return repositories;
     }
 
+    public Path getDefinition() {
+        return definition;
+    }
+
     public static class Builder {
         private String fpl;
         private Path channelsFile;
+        private Path definitionFile;
         private String channelRepo;
         private Set<String> includedPackages;
         private URL channel;
@@ -182,6 +191,11 @@ public class ProvisioningDefinition {
 
         public Builder setRepositories(List<RemoteRepository> repositories) {
             this.repositories = repositories;
+            return this;
+        }
+
+        public Builder setDefinitionFile(Path provisionDefinition) {
+            this.definitionFile = provisionDefinition;
             return this;
         }
     }

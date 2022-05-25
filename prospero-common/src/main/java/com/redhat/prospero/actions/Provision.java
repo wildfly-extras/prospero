@@ -33,6 +33,7 @@ import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
 
+import com.redhat.prospero.galleon.ProvisioningConfigUpdater;
 import com.redhat.prospero.model.ChannelRef;
 import com.redhat.prospero.wfchannel.ChannelRefUpdater;
 import com.redhat.prospero.wfchannel.MavenSessionManager;
@@ -41,8 +42,10 @@ import org.eclipse.aether.repository.RemoteRepository;
 import org.jboss.galleon.ProvisioningException;
 import org.jboss.galleon.ProvisioningManager;
 import org.jboss.galleon.config.FeaturePackConfig;
+import org.jboss.galleon.config.ProvisioningConfig;
 import org.jboss.galleon.layout.ProvisioningLayoutFactory;
 import org.jboss.galleon.universe.FeaturePackLocation;
+import org.jboss.galleon.xml.ProvisioningXmlParser;
 import org.wildfly.channel.Channel;
 import org.wildfly.channel.ChannelMapper;
 
@@ -84,19 +87,25 @@ public class Provision {
         layoutFactory.setProgressCallback("PACKAGES", console.getProgressCallback("PACKAGES"));
         layoutFactory.setProgressCallback("CONFIGS", console.getProgressCallback("CONFIGS"));
         layoutFactory.setProgressCallback("JBMODULES", console.getProgressCallback("JBMODULES"));
-        FeaturePackLocation loc = new FeaturePackLocationParser(repoManager).resolveFpl(provisioningDefinition.getFpl());
 
-        console.println("Installing " + loc.toString());
+        final ProvisioningConfig config;
+        if (provisioningDefinition.getFpl() != null) {
+            FeaturePackLocation loc = new FeaturePackLocationParser(repoManager).resolveFpl(provisioningDefinition.getFpl());
 
-        final FeaturePackConfig.Builder configBuilder = FeaturePackConfig.builder(loc);
-        for (String includedPackage : provisioningDefinition.getIncludedPackages()) {
-            configBuilder.includePackage(includedPackage);
+            console.println("Installing " + loc.toString());
+
+            final FeaturePackConfig.Builder configBuilder = FeaturePackConfig.builder(loc);
+            for (String includedPackage : provisioningDefinition.getIncludedPackages()) {
+                configBuilder.includePackage(includedPackage);
+            }
+            config = ProvisioningConfig.builder().addFeaturePackDep(configBuilder.build()).build();
+        } else {
+            final ProvisioningConfig provisioningConfig = ProvisioningXmlParser.parse(provisioningDefinition.getDefinition());
+            config = new ProvisioningConfigUpdater(repoManager).updateFPs(provisioningConfig);
         }
-        final FeaturePackConfig config = configBuilder.build();
-
         try {
             System.setProperty(MAVEN_REPO_LOCAL, mavenSessionManager.getProvisioningRepo().toAbsolutePath().toString());
-            provMgr.install(config);
+            provMgr.provision(config);
         } finally {
             System.clearProperty(MAVEN_REPO_LOCAL);
         }
