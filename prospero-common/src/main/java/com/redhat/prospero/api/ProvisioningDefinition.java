@@ -42,7 +42,7 @@ import org.jboss.galleon.ProvisioningException;
 public class ProvisioningDefinition {
 
     private final String fpl;
-    private final List<ChannelRef> channels;
+    private List<ChannelRef> channels;
     private final Set<String> includedPackages = new HashSet<>();
     private static final Map<String, String> CHANNEL_URLS = new HashMap<>();
     private final List<RemoteRepository> repositories;
@@ -70,40 +70,16 @@ public class ProvisioningDefinition {
             if (fpl.isPresent() && (fpl.get().equals("eap") || fpl.get().equals("eap-7.4"))) {
                 this.fpl = "org.jboss.eap:wildfly-ee-galleon-pack";
                 this.includedPackages.add("docs.examples.configs");
+                final String repoId = "mrrc";
+                final String channelGA = "org.wildfly.channels:eap-74:7.4";
 
-                if (!channelsFile.isPresent() && !channel.isPresent()) {
-                    final String repoUrl = CHANNEL_URLS.get("mrrc");
-                    this.channels = Arrays.asList(new ChannelRef("org.wildfly.channels:eap-74:7.4", null));
-                    if (channelRepo.isPresent()) {
-                        this.repositories.add(new RemoteRepository.Builder("channel", "default", channelRepo.get()).build());
-                    }
-                    repositories.add(new RemoteRepository.Builder("mrrc", "default", repoUrl).build());
-                } else if (channel.isPresent()) {
-                    this.channels = Arrays.asList(new ChannelRef(null, channel.get().toString()));
-                } else {
-                    final ProvisioningRecord record = ProvisioningRecord.readChannels(channelsFile.get());
-                    this.channels = record.getChannels();
-                    this.repositories.clear();
-                    this.repositories.addAll(record.getRepositories().stream().map(r->r.toRemoteRepository()).collect(Collectors.toList()));
-                }
+                setUpBuildEnv(channelRepo, channelsFile, channel, repoId, channelGA);
             } else if (fpl.isPresent() && fpl.get().equals("wildfly")) {
                 this.fpl = "wildfly-core@maven(org.jboss.universe:community-universe):current";
+                final String repoId = "central";
+                final String channelGA = "org.wildfly.channels:wildfly:26.1.0";
 
-                if (!channelsFile.isPresent() && !channel.isPresent()) {
-                    final String repoUrl = CHANNEL_URLS.get("central");
-                    this.channels = Arrays.asList(new ChannelRef("org.wildfly.channels:wildfly:26.1.0", null));
-                    if (channelRepo.isPresent()) {
-                        this.repositories.add(new RemoteRepository.Builder("channel", "default", channelRepo.get()).build());
-                    }
-                    repositories.add(new RemoteRepository.Builder("mrrc", "default", repoUrl).build());
-                } else if (channel.isPresent()) {
-                    this.channels = Arrays.asList(new ChannelRef(null, channel.get().toString()));
-                } else {
-                    final ProvisioningRecord record = ProvisioningRecord.readChannels(channelsFile.get());
-                    this.channels = record.getChannels();
-                    this.repositories.clear();
-                    this.repositories.addAll(record.getRepositories().stream().map(r->r.toRemoteRepository()).collect(Collectors.toList()));
-                }
+                setUpBuildEnv(channelRepo, channelsFile, channel, repoId, channelGA);
             } else {
                 this.fpl = fpl.orElse(null);
                 this.definition = definition.orElse(null);
@@ -114,6 +90,24 @@ public class ProvisioningDefinition {
             }
         } catch (IOException e) {
             throw new ArtifactResolutionException("Unable to resolve channel definition", e);
+        }
+    }
+
+    private void setUpBuildEnv(Optional<String> channelRepo, Optional<Path> channelsFile, Optional<URL> channel, String repoId, String channelGA) throws IOException {
+        if (!channelsFile.isPresent() && !channel.isPresent()) {
+            final String repoUrl = CHANNEL_URLS.get(repoId);
+            this.channels = Arrays.asList(new ChannelRef(channelGA, null));
+            if (channelRepo.isPresent()) {
+                this.repositories.add(new RemoteRepository.Builder("channel", "default", channelRepo.get()).build());
+            }
+            repositories.add(new RemoteRepository.Builder(repoId, "default", repoUrl).build());
+        } else if (channel.isPresent()) {
+            this.channels = Arrays.asList(new ChannelRef(null, channel.get().toString()));
+        } else {
+            final ProvisioningRecord record = ProvisioningRecord.readChannels(channelsFile.get());
+            this.channels = record.getChannels();
+            this.repositories.clear();
+            this.repositories.addAll(record.getRepositories().stream().map(r -> r.toRemoteRepository()).collect(Collectors.toList()));
         }
     }
 

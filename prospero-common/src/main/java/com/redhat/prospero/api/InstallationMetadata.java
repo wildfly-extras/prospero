@@ -56,9 +56,9 @@ public class InstallationMetadata {
     private final Path channelsFile;
     private final Path provisioningFile;
     private Channel manifest;
-    private final ProvisioningConfig provisioningConfig;
-    private final List<ChannelRef> channelRefs;
-    private final List<RemoteRepository> repositories;
+    private ProvisioningConfig provisioningConfig;
+    private List<ChannelRef> channelRefs;
+    private List<RemoteRepository> repositories;
     private final GitStorage gitStorage;
     private Path base;
 
@@ -69,17 +69,9 @@ public class InstallationMetadata {
         this.channelsFile = channelsFile;
         this.provisioningFile = provisioningFile;
 
-        try {
-            this.manifest = ManifestYamlSupport.parse(manifestFile.toFile());
-            final ProvisioningRecord provisioningRecord = ProvisioningRecord.readChannels(channelsFile);
-            this.channelRefs = provisioningRecord.getChannels();
-            this.repositories = provisioningRecord.getRepositories()
-                        .stream().map(r->r.toRemoteRepository()).collect(Collectors.toList());
-            this.provisioningConfig = ProvisioningXmlParser.parse(provisioningFile);
-        } catch (IOException | ProvisioningException e) {
-            throw new MetadataException("Error when parsing installation metadata", e);
-        }
+        doInit(manifestFile, channelsFile, provisioningFile);
     }
+
 
     public InstallationMetadata(Path base) throws MetadataException {
         this.base = base;
@@ -88,16 +80,7 @@ public class InstallationMetadata {
         this.channelsFile = base.resolve(METADATA_DIR).resolve(InstallationMetadata.CHANNELS_FILE_NAME);
         this.provisioningFile = base.resolve(GALLEON_INSTALLATION_DIR).resolve(InstallationMetadata.PROVISIONING_FILE_NAME);
 
-        try {
-            this.manifest = ManifestYamlSupport.parse(manifestFile.toFile());
-            final ProvisioningRecord provisioningRecord = ProvisioningRecord.readChannels(channelsFile);
-            this.channelRefs = provisioningRecord.getChannels();
-            this.repositories = provisioningRecord.getRepositories()
-                    .stream().map(r->r.toRemoteRepository()).collect(Collectors.toList());
-            this.provisioningConfig = ProvisioningXmlParser.parse(provisioningFile);
-        } catch (IOException | ProvisioningException e) {
-            throw new MetadataException("Error when parsing installation metadata", e);
-        }
+        doInit(manifestFile, channelsFile, provisioningFile);
     }
 
     public InstallationMetadata(Path base, Channel channel, List<ChannelRef> channelRefs,
@@ -114,6 +97,19 @@ public class InstallationMetadata {
         try {
             this.provisioningConfig = ProvisioningXmlParser.parse(provisioningFile);
         } catch (ProvisioningException e) {
+            throw new MetadataException("Error when parsing installation metadata", e);
+        }
+    }
+
+    private void doInit(Path manifestFile, Path channelsFile, Path provisioningFile) throws MetadataException {
+        try {
+            this.manifest = ManifestYamlSupport.parse(manifestFile.toFile());
+            final ProvisioningRecord provisioningRecord = ProvisioningRecord.readChannels(channelsFile);
+            this.channelRefs = provisioningRecord.getChannels();
+            this.repositories = provisioningRecord.getRepositories()
+                    .stream().map(r -> r.toRemoteRepository()).collect(Collectors.toList());
+            this.provisioningConfig = ProvisioningXmlParser.parse(provisioningFile);
+        } catch (IOException | ProvisioningException e) {
             throw new MetadataException("Error when parsing installation metadata", e);
         }
     }
