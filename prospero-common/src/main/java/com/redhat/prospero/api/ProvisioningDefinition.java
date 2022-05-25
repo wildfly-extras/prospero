@@ -86,7 +86,7 @@ public class ProvisioningDefinition {
                     this.repositories.clear();
                     this.repositories.addAll(record.getRepositories().stream().map(r->r.toRemoteRepository()).collect(Collectors.toList()));
                 }
-            } else if (fpl.equals("wildfly")) {
+            } else if (fpl.isPresent() && fpl.get().equals("wildfly")) {
                 this.fpl = "wildfly-core@maven(org.jboss.universe:community-universe):current";
 
                 if (!channelsFile.isPresent() && !channel.isPresent()) {
