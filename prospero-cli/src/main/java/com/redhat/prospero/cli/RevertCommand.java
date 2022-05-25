@@ -50,7 +50,7 @@ public class RevertCommand implements Command {
         String dir = parsedArgs.get(CliMain.TARGET_PATH_ARG);
         String rev = parsedArgs.get(CliMain.REVISION);
         String localRepo = parsedArgs.get(CliMain.LOCAL_REPO);
-        boolean offline = parsedArgs.containsKey(CliMain.OFFLINE) ? Boolean.parseBoolean(parsedArgs.get(CliMain.OFFLINE)) : false;
+        boolean offline = parsedArgs.containsKey(CliMain.OFFLINE) && Boolean.parseBoolean(parsedArgs.get(CliMain.OFFLINE));
 
         if (dir == null || dir.isEmpty()) {
             throw new ArgumentParsingException("Target dir argument (--%s) need to be set on revert command", CliMain.TARGET_PATH_ARG);

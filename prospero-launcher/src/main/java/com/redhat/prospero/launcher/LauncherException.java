@@ -17,8 +17,6 @@
 
 package com.redhat.prospero.launcher;
 
-import java.net.MalformedURLException;
-
 public class LauncherException extends Throwable {
 
     public LauncherException(String msg, Throwable cause) {

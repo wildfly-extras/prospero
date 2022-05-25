@@ -67,7 +67,7 @@ public class HistoryCommand implements Command {
             if (changes.isEmpty()) {
                 console.println("No changes found");
             } else {
-                changes.forEach((c-> console.println(c.toString())));
+                changes.forEach(c-> console.println(c.toString()));
             }
         }
     }

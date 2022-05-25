@@ -24,7 +24,6 @@ import java.util.Scanner;
 
 import com.redhat.prospero.actions.Console;
 import com.redhat.prospero.api.ArtifactChange;
-import org.eclipse.aether.artifact.Artifact;
 import org.jboss.galleon.layout.FeaturePackUpdatePlan;
 import org.jboss.galleon.progresstracking.ProgressCallback;
 import org.jboss.galleon.progresstracking.ProgressTracker;

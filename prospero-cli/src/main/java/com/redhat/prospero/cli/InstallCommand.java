@@ -59,7 +59,7 @@ class InstallCommand implements Command {
         String channelRepo = parsedArgs.get(CliMain.CHANNEL_REPO);
         String localRepo = parsedArgs.get(CliMain.LOCAL_REPO);
         String channel = parsedArgs.get(CliMain.CHANNEL);
-        boolean offline = parsedArgs.containsKey(CliMain.OFFLINE) ? Boolean.parseBoolean(parsedArgs.get(CliMain.OFFLINE)) : false;
+        boolean offline = parsedArgs.containsKey(CliMain.OFFLINE) && Boolean.parseBoolean(parsedArgs.get(CliMain.OFFLINE));
 
         if (dir == null || dir.isEmpty()) {
             throw new ArgumentParsingException("Target dir argument (--%s) need to be set on install command", CliMain.TARGET_PATH_ARG);

@@ -50,9 +50,9 @@ class UpdateCommand implements Command {
     @Override
     public void execute(Map<String, String> parsedArgs) throws ArgumentParsingException, OperationException {
         String dir = parsedArgs.get(CliMain.TARGET_PATH_ARG);
-        Boolean dryRun = parsedArgs.containsKey(CliMain.DRY_RUN) ? Boolean.parseBoolean(parsedArgs.get(CliMain.DRY_RUN)) : false;
+        Boolean dryRun = parsedArgs.containsKey(CliMain.DRY_RUN) && Boolean.parseBoolean(parsedArgs.get(CliMain.DRY_RUN));
         String localRepo = parsedArgs.get(CliMain.LOCAL_REPO);
-        boolean offline = parsedArgs.containsKey(CliMain.OFFLINE) ? Boolean.parseBoolean(parsedArgs.get(CliMain.OFFLINE)) : false;
+        boolean offline = parsedArgs.containsKey(CliMain.OFFLINE) && Boolean.parseBoolean(parsedArgs.get(CliMain.OFFLINE));
         if (dir == null || dir.isEmpty()) {
             throw new ArgumentParsingException("Target dir argument (--%s) need to be set on update command", CliMain.TARGET_PATH_ARG);
         }
