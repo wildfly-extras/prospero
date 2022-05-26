@@ -37,7 +37,7 @@ public class TestUtil {
     public static final Path MANIFEST_FILE_PATH = Paths.get(InstallationMetadata.METADATA_DIR, InstallationMetadata.MANIFEST_FILE_NAME);
     public static final Path CHANNELS_FILE_PATH = Paths.get(InstallationMetadata.METADATA_DIR, InstallationMetadata.CHANNELS_FILE_NAME);
 
-    static public URL prepareChannelFileAsUrl(String channelDescriptor) throws IOException {
+    public static URL prepareChannelFileAsUrl(String channelDescriptor) throws IOException {
         final Path channelFile = Files.createTempFile("channels", "yaml");
         channelFile.toFile().deleteOnExit();
 
@@ -45,14 +45,14 @@ public class TestUtil {
         return path.toUri().toURL();
     }
 
-    static public Path prepareChannelFile(String channelDescriptor) throws IOException {
+    public static Path prepareChannelFile(String channelDescriptor) throws IOException {
         final Path channelFile = Files.createTempFile("channels", "yaml");
         channelFile.toFile().deleteOnExit();
 
         return prepareChannelFileAsUrl(channelFile, channelDescriptor);
     }
 
-    static public Path prepareChannelFileAsUrl(Path channelFile, String... channelDescriptor) throws IOException {
+    public static Path prepareChannelFileAsUrl(Path channelFile, String... channelDescriptor) throws IOException {
         List<URL> channelUrls = Arrays.stream(channelDescriptor).map(d->TestUtil.class.getClassLoader().getResource(d)).collect(Collectors.toList());
         List<ChannelRef> channels = new ArrayList<>();
         List<RepositoryRef> repositories = WfCoreTestBase.defaultRemoteRepositories().stream()

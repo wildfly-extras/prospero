@@ -1,6 +1,5 @@
 package com.redhat.prospero.galleon;
 
-import junit.framework.TestCase;
 import org.jboss.galleon.config.FeaturePackConfig;
 import org.jboss.galleon.config.ProvisioningConfig;
 import org.jboss.galleon.universe.FeaturePackLocation;
@@ -12,12 +11,14 @@ import org.mockito.Mock;
 import org.mockito.junit.MockitoJUnitRunner;
 import org.mockito.stubbing.Answer;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
 @RunWith(MockitoJUnitRunner.class)
-public class ProvisioningConfigUpdaterTest extends TestCase {
+public class ProvisioningConfigUpdaterTest {
 
     public static final FeaturePackLocation TEST_FPL = FeaturePackLocation.fromString("org.jboss.eap:wildfly-ee-galleon-pack:1.2.2:zip");
     @Mock

@@ -2,6 +2,14 @@
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
+
+    <parent>
+        <groupId>org.jboss</groupId>
+        <artifactId>jboss-parent</artifactId>
+        <version>39</version>
+        <relativePath/>
+    </parent>
+
     <groupId>com.redhat.prospero</groupId>
     <artifactId>prospero</artifactId>
     <version>1.0-SNAPSHOT</version>
@@ -25,6 +33,8 @@
         <version.maven-shade-plugin>2.3</version.maven-shade-plugin>
         <version.org.wildfly.channel>1.0.0.Alpha12</version.org.wildfly.channel>
         <version.org.jboss.eap.galleon-pack>8.0.0.Alpha-DR2-redhat-SNAPSHOT</version.org.jboss.eap.galleon-pack>
+
+        <version.org.wildfly.checkstyle-config>1.0.8.Final</version.org.wildfly.checkstyle-config>
     </properties>
 
     <modules>
@@ -165,6 +175,36 @@
                 <configuration>
                     <source>11</source>
                     <target>11</target>
+                </configuration>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-checkstyle-plugin</artifactId>
+                <version>${version.checkstyle.plugin}</version>
+                <executions>
+                    <execution>
+                        <id>check-style</id>
+                        <phase>compile</phase>
+                        <goals>
+                            <goal>checkstyle</goal>
+                        </goals>
+                    </execution>
+                </executions>
+                <dependencies>
+                    <dependency>
+                        <groupId>org.wildfly.checkstyle</groupId>
+                        <artifactId>wildfly-checkstyle-config</artifactId>
+                        <version>${version.org.wildfly.checkstyle-config}</version>
+                    </dependency>
+                </dependencies>
+                <configuration>
+                    <configLocation>wildfly-checkstyle/checkstyle.xml</configLocation>
+                    <consoleOutput>true</consoleOutput>
+                    <failsOnError>true</failsOnError>
+                    <includeTestSourceDirectory>true</includeTestSourceDirectory>
+                    <excludes>**/*$logger.java,**/*$bundle.java,**/*$___Marshaller_*.java,**/*SerializationContextInitializerImpl.java</excludes>
+                    <suppressionsLocation>wildfly-checkstyle/suppressions.xml</suppressionsLocation>
+                    <useFile></useFile>
                 </configuration>
             </plugin>
         </plugins>
