@@ -21,6 +21,7 @@ import java.net.MalformedURLException;
 import java.net.URL;
 import java.nio.file.Path;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
@@ -192,7 +193,9 @@ public class Update {
     private void applyFpUpdates(ProvisioningPlan updates) throws ProvisioningException {
         try {
             System.setProperty(MAVEN_REPO_LOCAL, mavenSessionManager.getProvisioningRepo().toAbsolutePath().toString());
-            provMgr.apply(updates);
+            final HashMap<String, String> options = new HashMap<>();
+            options.put("jboss-fork-embedded", "true");
+            provMgr.apply(updates, options);
         } finally {
             System.clearProperty(MAVEN_REPO_LOCAL);
         }

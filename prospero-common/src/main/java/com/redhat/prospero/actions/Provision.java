@@ -31,7 +31,9 @@ import java.net.URL;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import com.redhat.prospero.galleon.ProvisioningConfigUpdater;
 import com.redhat.prospero.model.ChannelRef;
@@ -105,7 +107,9 @@ public class Provision {
         }
         try {
             System.setProperty(MAVEN_REPO_LOCAL, mavenSessionManager.getProvisioningRepo().toAbsolutePath().toString());
-            provMgr.provision(config);
+            final Map<String, String> options = new HashMap<>();
+            options.put("jboss-fork-embedded", "true");
+            provMgr.provision(config, options);
         } finally {
             System.clearProperty(MAVEN_REPO_LOCAL);
         }
