@@ -19,9 +19,15 @@ package com.redhat.prospero.galleon;
 
 import org.jboss.galleon.ProvisioningException;
 import org.jboss.galleon.ProvisioningManager;
+import org.jboss.galleon.state.ProvisionedFeaturePack;
 import org.jboss.galleon.universe.maven.repo.MavenRepoManager;
+import org.jboss.galleon.util.PathsUtils;
+import org.jboss.galleon.xml.ProvisionedStateXmlParser;
 
 import java.nio.file.Path;
+import java.util.Collection;
+import java.util.List;
+import java.util.stream.Collectors;
 
 public class GalleonUtils {
 
@@ -31,5 +37,12 @@ public class GalleonUtils {
         ProvisioningManager provMgr = ProvisioningManager.builder().addArtifactResolver(maven)
                 .setInstallationHome(installDir).build();
         return provMgr;
+    }
+
+    public static List<String> getInstalledPacks(Path dir) throws ProvisioningException {
+        final Collection<ProvisionedFeaturePack> featurePacks = ProvisionedStateXmlParser.parse(
+                PathsUtils.getProvisionedStateXml(dir)).getFeaturePacks();
+
+        return featurePacks.stream().map(fp -> fp.getFPID().getProducer().getName()).collect(Collectors.toList());
     }
 }

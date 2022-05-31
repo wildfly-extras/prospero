@@ -21,16 +21,23 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Arrays;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
 import com.redhat.prospero.api.exceptions.MetadataException;
 import com.redhat.prospero.api.exceptions.OperationException;
+import com.redhat.prospero.galleon.GalleonUtils;
 import com.redhat.prospero.wfchannel.MavenSessionManager;
+import org.apache.commons.lang3.StringUtils;
 import org.jboss.galleon.ProvisioningException;
 
 class UpdateCommand implements Command {
 
+    public static final String SELF_ARG = "self";
+    public static final String JBOSS_MODULE_PATH = "module.path";
+    public static final String PROSPERO_FP_GA = "com.redhat.prospero:prospero-standalone-galleon-pack";
+    public static final String PROSPERO_FP_ZIP = PROSPERO_FP_GA + "::zip";
     private final CliMain.ActionFactory actionFactory;
 
     public UpdateCommand(CliMain.ActionFactory actionFactory) {
@@ -44,16 +51,26 @@ class UpdateCommand implements Command {
 
     @Override
     public Set<String> getSupportedArguments() {
-        return new HashSet<>(Arrays.asList(CliMain.TARGET_PATH_ARG, CliMain.DRY_RUN, CliMain.LOCAL_REPO, CliMain.OFFLINE));
+        return new HashSet<>(Arrays.asList(CliMain.TARGET_PATH_ARG, CliMain.DRY_RUN, CliMain.LOCAL_REPO, CliMain.OFFLINE, SELF_ARG));
     }
 
     @Override
     public void execute(Map<String, String> parsedArgs) throws ArgumentParsingException, OperationException {
         String dir = parsedArgs.get(CliMain.TARGET_PATH_ARG);
-        Boolean dryRun = parsedArgs.containsKey(CliMain.DRY_RUN) && Boolean.parseBoolean(parsedArgs.get(CliMain.DRY_RUN));
-        String localRepo = parsedArgs.get(CliMain.LOCAL_REPO);
-        boolean offline = parsedArgs.containsKey(CliMain.OFFLINE) && Boolean.parseBoolean(parsedArgs.get(CliMain.OFFLINE));
-        if (dir == null || dir.isEmpty()) {
+        final boolean dryRun = parseBooleanFlag(parsedArgs, CliMain.DRY_RUN);
+        final String localRepo = parsedArgs.get(CliMain.LOCAL_REPO);
+        final boolean offline = parseBooleanFlag(parsedArgs, CliMain.OFFLINE);
+        final boolean selfUpdate = parseBooleanFlag(parsedArgs, SELF_ARG);
+
+        if (selfUpdate) {
+            if (StringUtils.isEmpty(dir)) {
+                dir = detectInstallationPath();
+            }
+
+            verifyInstallationContainsOnlyProspero(dir);
+        }
+
+        if (StringUtils.isEmpty(dir)) {
             throw new ArgumentParsingException("Target dir argument (--%s) need to be set on update command", CliMain.TARGET_PATH_ARG);
         }
 
@@ -75,5 +92,31 @@ class UpdateCommand implements Command {
         } catch (MetadataException | ProvisioningException e) {
             throw new OperationException("Error while executing update: " + e.getMessage(), e);
         }
+    }
+
+    private void verifyInstallationContainsOnlyProspero(String dir) throws ArgumentParsingException {
+        try {
+            final List<String> fpNames = GalleonUtils.getInstalledPacks(Paths.get(dir).toAbsolutePath());
+            if (fpNames.size() != 1) {
+                throw new ArgumentParsingException(Messages.unexpectedPackageInSelfUpdate(dir));
+            }
+            if (!fpNames.stream().allMatch(n-> PROSPERO_FP_ZIP.equals(n))) {
+                throw new ArgumentParsingException(Messages.unexpectedPackageInSelfUpdate(dir));
+            }
+        } catch (ProvisioningException e) {
+            throw new ArgumentParsingException(Messages.unableToParseSelfUpdateData(), e);
+        }
+    }
+
+    private String detectInstallationPath() throws ArgumentParsingException {
+        final String modulePath = System.getProperty(JBOSS_MODULE_PATH);
+        if (modulePath == null) {
+            throw new ArgumentParsingException(Messages.unableToLocateInstallation());
+        }
+        return Paths.get(modulePath).getParent().toString();
+    }
+
+    private boolean parseBooleanFlag(Map<String, String> parsedArgs, String self) {
+        return parsedArgs.containsKey(self) && Boolean.parseBoolean(parsedArgs.get(self));
     }
 }
