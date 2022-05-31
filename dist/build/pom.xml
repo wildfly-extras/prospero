@@ -49,6 +49,32 @@
             </plugin>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-dependency-plugin</artifactId>
+                <executions>
+                    <execution>
+                        <id>generate-metadata</id>
+                        <goals>
+                            <goal>copy</goal>
+                        </goals>
+                        <phase>compile</phase>
+                        <configuration>
+                            <artifactItems>
+                                <artifactItem>
+                                    <groupId>${project.groupId}</groupId>
+                                    <artifactId>prospero-standalone-galleon-pack</artifactId>
+                                    <version>${project.version}</version>
+                                    <type>yaml</type>
+                                    <classifier>channel</classifier>
+                                    <outputDirectory>${basedir}/target/${project.build.finalName}/.installation</outputDirectory>
+                                    <destFileName>manifest.yaml</destFileName>
+                                </artifactItem>
+                            </artifactItems>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-assembly-plugin</artifactId>
                 <executions>
                     <execution>

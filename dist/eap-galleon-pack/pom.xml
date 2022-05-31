@@ -85,6 +85,7 @@
             <phase>compile</phase>
             <configuration>
               <resources-dir>${basedir}/target/resources</resources-dir>
+              <generate-channel>true</generate-channel>
             </configuration>
           </execution>
         </executions>
