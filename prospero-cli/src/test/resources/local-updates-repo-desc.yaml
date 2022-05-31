@@ -1,13 +1,10 @@
-name: Channel for WildFly Core 17
+name: Update channel for WildFly Core 19
 description: |-
-  This channel provides a stream of WildFly Core 17 Feature Packs.
+  This channel provides test update for wildfly-cli
 vendor:
   name: WildFly
   support: community
 streams:
   - groupId: org.wildfly.core
-    artifactId: wildfly-core-galleon-pack
-    version: 17.0.0.Final
-  - groupId: org.wildfly.core
     artifactId: wildfly-cli
-    version: 17.0.1.Final
+    version: 19.0.0.Beta12-SNAPSHOT

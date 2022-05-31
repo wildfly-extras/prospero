@@ -25,7 +25,6 @@ import org.wildfly.prospero.api.ProvisioningDefinition;
 import org.wildfly.prospero.cli.CliConsole;
 import org.wildfly.prospero.model.ManifestYamlSupport;
 import org.wildfly.prospero.model.ProvisioningRecord;
-import org.wildfly.prospero.wfchannel.MavenSessionManager;
 import org.apache.commons.io.FileUtils;
 import org.eclipse.aether.artifact.Artifact;
 import org.eclipse.aether.artifact.DefaultArtifact;
@@ -47,16 +46,12 @@ import java.util.stream.Collectors;
 
 import static org.junit.Assert.*;
 
-/*
- * Currently requires a local repos to run
- * TODO: use channels based on central repo once the metadata issue is fixed (MVNCENTRAL-7012)
- */
 public class SimpleProvisionTest extends WfCoreTestBase {
 
     private static final String OUTPUT_DIR = "target/server";
     private Path OUTPUT_PATH = Paths.get(OUTPUT_DIR).toAbsolutePath();
     private Path manifestPath = OUTPUT_PATH.resolve(TestUtil.MANIFEST_FILE_PATH);
-    private MavenSessionManager mavenSessionManager = new MavenSessionManager();
+
     private Provision installation = new Provision(OUTPUT_PATH, mavenSessionManager, new CliConsole());
 
     public SimpleProvisionTest() throws Exception {
@@ -91,7 +86,7 @@ public class SimpleProvisionTest extends WfCoreTestBase {
         assertTrue(manifestPath.toFile().exists());
         // verify manifest contains versions 17.0.1
         final Optional<Artifact> wildflyCliArtifact = readArtifactFromManifest("org.wildfly.core", "wildfly-cli");
-        assertEquals("17.0.0.Final", wildflyCliArtifact.get().getVersion());
+        assertEquals(BASE_VERSION, wildflyCliArtifact.get().getVersion());
 
 
     }
@@ -110,7 +105,7 @@ public class SimpleProvisionTest extends WfCoreTestBase {
 
         // verify manifest contains versions 17.0.1
         final Optional<Artifact> wildflyCliArtifact = readArtifactFromManifest("org.wildfly.core", "wildfly-cli");
-        assertEquals("17.0.1.Final", wildflyCliArtifact.get().getVersion());
+        assertEquals(UPGRADE_VERSION, wildflyCliArtifact.get().getVersion());
     }
 
     @Test
@@ -135,7 +130,7 @@ public class SimpleProvisionTest extends WfCoreTestBase {
 
         // verify manifest contains versions 17.0.1
         final Optional<Artifact> wildflyCliArtifact = readArtifactFromManifest("org.wildfly.core", "wildfly-cli");
-        assertEquals("17.0.0.Final", wildflyCliArtifact.get().getVersion());
+        assertEquals(BASE_VERSION, wildflyCliArtifact.get().getVersion());
         assertEquals(1, updates.size());
         assertEquals("org.wildfly.core:wildfly-cli", updates.stream().findFirst().get());
     }
@@ -150,7 +145,7 @@ public class SimpleProvisionTest extends WfCoreTestBase {
         installation.provision(installationFile.toPath(), channelRefs, repositories);
 
         final Optional<Artifact> wildflyCliArtifact = readArtifactFromManifest("org.wildfly.core", "wildfly-cli");
-        assertEquals("17.0.0.Final", wildflyCliArtifact.get().getVersion());
+        assertEquals(BASE_VERSION, wildflyCliArtifact.get().getVersion());
     }
 
     private Optional<Artifact> readArtifactFromManifest(String groupId, String artifactId) throws IOException {

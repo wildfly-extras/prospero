@@ -43,9 +43,11 @@ import static org.wildfly.prospero.galleon.GalleonUtils.MAVEN_REPO_LOCAL;
 public class InstallationRestore {
 
     private final Path installDir;
+    private MavenSessionManager sessionManager;
 
-    public InstallationRestore(Path installDir) {
+    public InstallationRestore(Path installDir, MavenSessionManager sessionManager) {
         this.installDir = installDir;
+        this.sessionManager = sessionManager;
     }
 
     public static void main(String[] args) throws Exception {
@@ -53,7 +55,7 @@ public class InstallationRestore {
         String targetDir = args[0];
         String metadataBundle = args[1];
 
-        new InstallationRestore(Paths.get(targetDir)).restore(Paths.get(metadataBundle));
+        new InstallationRestore(Paths.get(targetDir), new MavenSessionManager()).restore(Paths.get(metadataBundle));
     }
 
     public void restore(Path metadataBundleZip)
@@ -66,14 +68,13 @@ public class InstallationRestore {
         final List<Channel> channels = mapToChannels(metadataBundle.getChannels());
         final List<RemoteRepository> repositories = metadataBundle.getRepositories();
 
-        final MavenSessionManager mavenSessionManager = new MavenSessionManager();
-        final WfChannelMavenResolverFactory factory = new WfChannelMavenResolverFactory(mavenSessionManager, repositories);
+        final WfChannelMavenResolverFactory factory = new WfChannelMavenResolverFactory(sessionManager, repositories);
         final ChannelMavenArtifactRepositoryManager repoManager = new ChannelMavenArtifactRepositoryManager(channels, factory, metadataBundle.getManifest());
 
         ProvisioningManager provMgr = GalleonUtils.getProvisioningManager(installDir, repoManager);
 
         try {
-            System.setProperty(MAVEN_REPO_LOCAL, mavenSessionManager.getProvisioningRepo().toAbsolutePath().toString());
+            System.setProperty(MAVEN_REPO_LOCAL, sessionManager.getProvisioningRepo().toAbsolutePath().toString());
             provMgr.provision(metadataBundle.getProvisioningConfig());
         } finally {
             System.clearProperty(MAVEN_REPO_LOCAL);

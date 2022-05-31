@@ -23,7 +23,6 @@ import org.wildfly.prospero.actions.Provision;
 import org.wildfly.prospero.api.ProvisioningDefinition;
 import org.wildfly.prospero.cli.CliConsole;
 import org.wildfly.prospero.model.ManifestYamlSupport;
-import org.wildfly.prospero.wfchannel.MavenSessionManager;
 import org.apache.commons.io.FileUtils;
 import org.eclipse.aether.artifact.Artifact;
 import org.eclipse.aether.artifact.DefaultArtifact;
@@ -42,11 +41,8 @@ import static org.junit.Assert.assertEquals;
 public class InstallationRestoreTest extends WfCoreTestBase {
     private static final String FIRST_SERVER_DIR = "target/server";
     private static final Path FIRST_SERVER_PATH = Paths.get(FIRST_SERVER_DIR).toAbsolutePath();
-
     private static final String RESTORED_SERVER_DIR = "target/restored";
     private static final Path RESTORED_SERVER_PATH = Paths.get(RESTORED_SERVER_DIR).toAbsolutePath();
-
-    private MavenSessionManager mavenSessionManager = new MavenSessionManager();
 
     public InstallationRestoreTest() throws Exception {
     }
@@ -90,10 +86,10 @@ public class InstallationRestoreTest extends WfCoreTestBase {
 
         new InstallationExport(FIRST_SERVER_PATH).export("target/bundle.zip");
 
-        new InstallationRestore(RESTORED_SERVER_PATH).restore(Paths.get("target/bundle.zip"));
+        new InstallationRestore(RESTORED_SERVER_PATH, mavenSessionManager).restore(Paths.get("target/bundle.zip"));
 
         final Optional<Artifact> wildflyCliArtifact = readArtifactFromManifest("org.wildfly.core", "wildfly-cli");
-        assertEquals("17.0.0.Final", wildflyCliArtifact.get().getVersion());
+        assertEquals(BASE_VERSION, wildflyCliArtifact.get().getVersion());
     }
 
     private Optional<Artifact> readArtifactFromManifest(String groupId, String artifactId) throws IOException {

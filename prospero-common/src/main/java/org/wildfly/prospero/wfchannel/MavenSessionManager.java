@@ -43,7 +43,7 @@ import org.slf4j.LoggerFactory;
 public class MavenSessionManager {
     private static final Logger logger = LoggerFactory.getLogger(MavenSessionManager.class);
 
-    private static String LOCAL_MAVEN_REPO = System.getProperty("user.home") + "/.m2/repository";
+    public static String LOCAL_MAVEN_REPO = System.getProperty("user.home") + "/.m2/repository";
     private final Path provisioningRepo;
     private boolean offline;
 

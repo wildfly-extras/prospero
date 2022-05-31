@@ -25,7 +25,6 @@ import org.wildfly.prospero.actions.Update;
 import org.wildfly.prospero.api.ProvisioningDefinition;
 import org.wildfly.prospero.cli.CliConsole;
 import org.wildfly.prospero.model.ManifestYamlSupport;
-import org.wildfly.prospero.wfchannel.MavenSessionManager;
 import org.apache.commons.io.FileUtils;
 import org.eclipse.aether.artifact.Artifact;
 import org.eclipse.aether.artifact.DefaultArtifact;
@@ -52,7 +51,6 @@ public class InstallationHistoryTest extends WfCoreTestBase {
 
     private static final String OUTPUT_DIR = "target/server";
     private static final Path OUTPUT_PATH = Paths.get(OUTPUT_DIR).toAbsolutePath();
-    private MavenSessionManager mavenSessionManager = new MavenSessionManager();
     private final Provision installation = new Provision(OUTPUT_PATH, mavenSessionManager, new CliConsole());
     private Path channelFile;
 
@@ -121,18 +119,18 @@ public class InstallationHistoryTest extends WfCoreTestBase {
         TestUtil.prepareChannelFileAsUrl(OUTPUT_PATH.resolve(TestUtil.CHANNELS_FILE_PATH), "local-updates-repo-desc.yaml", "local-repo-desc.yaml");
         new Update(OUTPUT_PATH, mavenSessionManager, new AcceptingConsole()).doUpdateAll();
         Optional<Artifact> wildflyCliArtifact = readArtifactFromManifest("org.wildfly.core", "wildfly-cli");
-        assertEquals("17.0.1.Final", wildflyCliArtifact.get().getVersion());
-        assertTrue("Updated jar should be present in module", wildflyCliModulePath.resolve("wildfly-cli-17.0.1.Final.jar").toFile().exists());
+        assertEquals(UPGRADE_VERSION, wildflyCliArtifact.get().getVersion());
+        assertTrue("Updated jar should be present in module", wildflyCliModulePath.resolve(UPGRADE_JAR).toFile().exists());
 
         final InstallationHistory installationHistory = new InstallationHistory(OUTPUT_PATH, new AcceptingConsole());
         final List<SavedState> revisions = installationHistory.getRevisions();
 
         final SavedState savedState = revisions.get(1);
-        installationHistory.rollback(savedState, new MavenSessionManager());
+        installationHistory.rollback(savedState, mavenSessionManager);
 
         wildflyCliArtifact = readArtifactFromManifest("org.wildfly.core", "wildfly-cli");
-        assertEquals("17.0.0.Final", wildflyCliArtifact.get().getVersion());
-        assertTrue("Reverted jar should be present in module", wildflyCliModulePath.resolve("wildfly-cli-17.0.0.Final.jar").toFile().exists());
+        assertEquals(BASE_VERSION, wildflyCliArtifact.get().getVersion());
+        assertTrue("Reverted jar should be present in module", wildflyCliModulePath.resolve(BASE_JAR).toFile().exists());
     }
 
     @Test
@@ -164,7 +162,7 @@ public class InstallationHistoryTest extends WfCoreTestBase {
         assertEquals(1, changes.size());
 
         Map<String, String[]> expected = new HashMap<>();
-        expected.put("org.wildfly.core:wildfly-cli", new String[]{"17.0.0.Final", "17.0.1.Final"});
+        expected.put("org.wildfly.core:wildfly-cli", new String[]{BASE_VERSION, UPGRADE_VERSION});
 
         for (ArtifactChange change : changes) {
             if (expected.containsKey(change.getArtifactName())) {
