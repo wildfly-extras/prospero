@@ -22,7 +22,7 @@
   ~ 02110-1301 USA, or see the FSF site: http://www.fsf.org.
   -->
 
-<build xmlns="urn:wildfly:feature-pack-build:3.0" producer="com.redhat.prospero:prospero-eap-galleon-pack">
+<build xmlns="urn:wildfly:feature-pack-build:3.0" producer="org.wildfly.prospero:prospero-eap-galleon-pack">
   <dependencies>
     <dependency group-id="org.jboss.eap" artifact-id="wildfly-ee-galleon-pack">
       <packages inherit="true"/>

@@ -15,7 +15,7 @@ then
     TARGET_SERVER="$(greadlink -f ${3})"
     echo "Installing into ${TARGET_SERVER}"
   fi
-  java -agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=5005 -cp "${CLASSPATH}" com.redhat.prospero.cli.actions.GalleonProvision "${2}" "${TARGET_SERVER}"
+  java -agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=5005 -cp "${CLASSPATH}" org.wildfly.prospero.cli.actions.GalleonProvision "${2}" "${TARGET_SERVER}"
 elif [ "$1" == 'update' ];
 then
   if [ $# -lt 2 ];
@@ -34,9 +34,9 @@ then
   fi
   if [ -n "${3}" ];
   then
-    java -agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=5005 -cp "${CLASSPATH}" com.redhat.prospero.cli.actions.Update "${TARGET_SERVER}" "target/prospero-repo" "${3}"
+    java -agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=5005 -cp "${CLASSPATH}" org.wildfly.prospero.cli.actions.Update "${TARGET_SERVER}" "target/prospero-repo" "${3}"
   else
-    java -agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=5005 -cp "${CLASSPATH}" com.redhat.prospero.cli.actions.Update "${TARGET_SERVER}"
+    java -agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=5005 -cp "${CLASSPATH}" org.wildfly.prospero.cli.actions.Update "${TARGET_SERVER}"
   fi
 elif [ "$1" == 'export' ];
 then
@@ -46,7 +46,7 @@ then
     exit 1
   fi
   TARGET_SERVER="$(greadlink -f ${2})"
-  java -agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=5005 -cp "${CLASSPATH}" com.redhat.prospero.cli.actions.InstallationExport "${TARGET_SERVER}" "${3}"
+  java -agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=5005 -cp "${CLASSPATH}" org.wildfly.prospero.cli.actions.InstallationExport "${TARGET_SERVER}" "${3}"
 elif [ "$1" == 'restore' ];
   then
     if [ $# -lt 3 ];
@@ -55,7 +55,7 @@ elif [ "$1" == 'restore' ];
       exit 1
     fi
     TARGET_SERVER="$(greadlink -f ${2})"
-    java -agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=5005 -cp "${CLASSPATH}" com.redhat.prospero.cli.actions.InstallationRestore "${TARGET_SERVER}" "${3}"
+    java -agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=5005 -cp "${CLASSPATH}" org.wildfly.prospero.cli.actions.InstallationRestore "${TARGET_SERVER}" "${3}"
 elif [ "$1" == 'history' ];
   then
     if [ $# -lt 2 ];
@@ -64,7 +64,7 @@ elif [ "$1" == 'history' ];
           exit 1
         fi
     TARGET_SERVER="$(greadlink -f ${2})"
-    java -agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=5005 -cp "${CLASSPATH}" com.redhat.prospero.cli.actions.InstallationHistory list "${TARGET_SERVER}"
+    java -agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=5005 -cp "${CLASSPATH}" org.wildfly.prospero.cli.actions.InstallationHistory list "${TARGET_SERVER}"
 elif [ "$1" == 'rollback' ];
   then
     if [ $# -lt 3 ];
@@ -73,7 +73,7 @@ elif [ "$1" == 'rollback' ];
       exit 1
     fi
     TARGET_SERVER="$(greadlink -f ${2})"
-    java -agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=5005 -cp "${CLASSPATH}" com.redhat.prospero.cli.actions.InstallationHistory revert "${TARGET_SERVER}" "${3}"
+    java -agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=5005 -cp "${CLASSPATH}" org.wildfly.prospero.cli.actions.InstallationHistory revert "${TARGET_SERVER}" "${3}"
 elif [ "$1" == 'compare' ];
   then
     if [ $# -lt 3 ];
@@ -82,10 +82,10 @@ elif [ "$1" == 'compare' ];
       exit 1
     fi
     TARGET_SERVER="$(greadlink -f ${2})"
-    java -agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=5005 -cp "${CLASSPATH}" com.redhat.prospero.cli.actions.InstallationHistory compare "${TARGET_SERVER}" "${3}"
+    java -agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=5005 -cp "${CLASSPATH}" org.wildfly.prospero.cli.actions.InstallationHistory compare "${TARGET_SERVER}" "${3}"
 elif [ "$1" == 'deploy' ];
 then
-    java -cp "${CLASSPATH}" com.redhat.prospero.cli.actions.DeployerArtifact "${2}" "${3}" "${4}" "${5}" "target/prospero-repo" "${@:6}"
+    java -cp "${CLASSPATH}" org.wildfly.prospero.cli.actions.DeployerArtifact "${2}" "${3}" "${4}" "${5}" "target/prospero-repo" "${@:6}"
 else
   echo "Unrecognized command"
   exit 1;

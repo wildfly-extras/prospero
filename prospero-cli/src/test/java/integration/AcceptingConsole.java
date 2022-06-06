@@ -17,7 +17,7 @@
 
 package integration;
 
-import com.redhat.prospero.cli.CliConsole;
+import org.wildfly.prospero.cli.CliConsole;
 
 public class AcceptingConsole extends CliConsole {
 

@@ -22,13 +22,13 @@
   ~ 02110-1301 USA, or see the FSF site: http://www.fsf.org.
   -->
 <module name="org.jboss.prospero" xmlns="urn:jboss:module:1.6">
-  <main-class name="com.redhat.prospero.cli.CliMain"/>
+  <main-class name="org.wildfly.prospero.cli.CliMain"/>
     <resources>
         <artifact name="${org.wildfly.channel:channel-core}"/>
         <artifact name="${org.codehaus.plexus:plexus-interpolation}"/>
         <artifact name="${org.codehaus.plexus:plexus-utils}"/>
-        <artifact name="${com.redhat.prospero:prospero-common}"/>
-        <artifact name="${com.redhat.prospero:prospero-cli}"/>
+        <artifact name="${org.wildfly.prospero:prospero-common}"/>
+        <artifact name="${org.wildfly.prospero:prospero-cli}"/>
         <artifact name="${org.jboss.galleon:galleon-core}"/>
         <artifact name="${org.jboss.galleon:galleon-maven-universe}"/>
         <artifact name="${com.fasterxml.jackson.dataformat:jackson-dataformat-yaml}"/>

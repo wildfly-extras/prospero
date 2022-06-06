@@ -17,7 +17,7 @@
 
 package integration;
 
-import com.redhat.prospero.api.ProvisioningDefinition;
+import org.wildfly.prospero.api.ProvisioningDefinition;
 import org.eclipse.aether.repository.RemoteRepository;
 
 import java.util.Arrays;

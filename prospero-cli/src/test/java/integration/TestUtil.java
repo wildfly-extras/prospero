@@ -27,10 +27,10 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
 
-import com.redhat.prospero.model.ChannelRef;
-import com.redhat.prospero.api.InstallationMetadata;
-import com.redhat.prospero.model.ProvisioningRecord;
-import com.redhat.prospero.model.RepositoryRef;
+import org.wildfly.prospero.model.ChannelRef;
+import org.wildfly.prospero.api.InstallationMetadata;
+import org.wildfly.prospero.model.ProvisioningRecord;
+import org.wildfly.prospero.model.RepositoryRef;
 
 public class TestUtil {
 

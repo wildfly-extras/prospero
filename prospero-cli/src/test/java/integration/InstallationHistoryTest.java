@@ -17,15 +17,15 @@
 
 package integration;
 
-import com.redhat.prospero.api.ArtifactChange;
-import com.redhat.prospero.actions.Provision;
-import com.redhat.prospero.actions.InstallationHistory;
-import com.redhat.prospero.api.SavedState;
-import com.redhat.prospero.actions.Update;
-import com.redhat.prospero.api.ProvisioningDefinition;
-import com.redhat.prospero.cli.CliConsole;
-import com.redhat.prospero.model.ManifestYamlSupport;
-import com.redhat.prospero.wfchannel.MavenSessionManager;
+import org.wildfly.prospero.api.ArtifactChange;
+import org.wildfly.prospero.actions.Provision;
+import org.wildfly.prospero.actions.InstallationHistory;
+import org.wildfly.prospero.api.SavedState;
+import org.wildfly.prospero.actions.Update;
+import org.wildfly.prospero.api.ProvisioningDefinition;
+import org.wildfly.prospero.cli.CliConsole;
+import org.wildfly.prospero.model.ManifestYamlSupport;
+import org.wildfly.prospero.wfchannel.MavenSessionManager;
 import org.apache.commons.io.FileUtils;
 import org.eclipse.aether.artifact.Artifact;
 import org.eclipse.aether.artifact.DefaultArtifact;

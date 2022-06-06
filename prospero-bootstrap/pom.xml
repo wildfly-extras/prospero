@@ -3,13 +3,13 @@
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
 
     <parent>
-        <groupId>com.redhat.prospero</groupId>
+        <groupId>org.wildfly.prospero</groupId>
         <artifactId>prospero</artifactId>
         <version>1.0-SNAPSHOT</version>
     </parent>
 
     <modelVersion>4.0.0</modelVersion>
-    <groupId>com.redhat.prospero</groupId>
+    <groupId>org.wildfly.prospero</groupId>
     <artifactId>prospero-bootstrap</artifactId>
     <version>1.0-SNAPSHOT</version>
     <packaging>jar</packaging>

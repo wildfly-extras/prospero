@@ -10,7 +10,7 @@
         <relativePath/>
     </parent>
 
-    <groupId>com.redhat.prospero</groupId>
+    <groupId>org.wildfly.prospero</groupId>
     <artifactId>prospero</artifactId>
     <version>1.0-SNAPSHOT</version>
     <packaging>pom</packaging>
@@ -47,7 +47,7 @@
     <dependencyManagement>
         <dependencies>
             <dependency>
-                <groupId>com.redhat.prospero</groupId>
+                <groupId>org.wildfly.prospero</groupId>
                 <artifactId>prospero-cli</artifactId>
                 <version>${project.version}</version>
             </dependency>
