@@ -59,6 +59,10 @@ public class RevertCommand implements Command {
             throw new ArgumentParsingException("Revision argument (--%s) need to be set on revert command", CliMain.REVISION);
         }
 
+        if (offline && localRepo == null) {
+            throw new ArgumentParsingException(Messages.offlineModeRequiresLocalRepo());
+        }
+
         try {
             final MavenSessionManager mavenSessionManager;
             if (localRepo == null) {

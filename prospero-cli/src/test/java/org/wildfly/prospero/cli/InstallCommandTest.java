@@ -87,6 +87,20 @@ public class InstallCommandTest {
     }
 
     @Test
+    public void offlineModeRequiresLocalRepoOption() throws Exception {
+        try {
+            Map<String, String> args = new HashMap<>();
+            args.put(CliMain.TARGET_PATH_ARG, "test");
+            args.put(CliMain.FPL_ARG, "eap");
+            args.put(CliMain.OFFLINE, "true");
+            new InstallCommand(actionFactory).execute(args);
+            fail("Should have failed");
+        } catch (ArgumentParsingException e) {
+            assertEquals(Messages.offlineModeRequiresLocalRepo(), e.getMessage());
+        }
+    }
+
+    @Test
     public void errorIfChannelsIsNotPresentAndUsingCustomFplOnInstall() throws Exception {
         try {
             Map<String, String> args = new HashMap<>();

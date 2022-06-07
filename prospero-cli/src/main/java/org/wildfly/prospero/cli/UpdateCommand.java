@@ -74,6 +74,10 @@ class UpdateCommand implements Command {
             throw new ArgumentParsingException("Target dir argument (--%s) need to be set on update command", CliMain.TARGET_PATH_ARG);
         }
 
+        if (offline && localRepo == null) {
+            throw new ArgumentParsingException(Messages.offlineModeRequiresLocalRepo());
+        }
+
         final Path targetPath = Paths.get(dir).toAbsolutePath();
         try {
             final MavenSessionManager mavenSessionManager;
