@@ -87,7 +87,6 @@ public class ChannelMavenArtifactRepositoryManager implements MavenRepoManager {
         return new DefaultArtifact(s.getGroupId(), s.getArtifactId(), "jar", s.getVersion());
     }
 
-    @Override
     public void resolveAll(List<MavenArtifact> artifacts) throws MavenUniverseException {
         // use sync until wildfly-channel can handle async search
         resolveSynchronously(artifacts);
