@@ -29,4 +29,8 @@ public class Messages {
     public static String unableToParseSelfUpdateData() {
         return "Unable to perform self-update - unable to determine installed feature packs.";
     }
+
+    public static String offlineModeRequiresLocalRepo() {
+        return "Using offline mode requires a local-repo parameter present.";
+    }
 }

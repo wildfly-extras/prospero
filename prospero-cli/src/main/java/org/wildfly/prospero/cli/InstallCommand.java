@@ -77,6 +77,10 @@ class InstallCommand implements Command {
             throw new ArgumentParsingException("Channel file argument (--%s) need to be set when using custom fpl", CliMain.CHANNEL_FILE_ARG);
         }
 
+        if (offline && localRepo == null) {
+            throw new ArgumentParsingException(Messages.offlineModeRequiresLocalRepo());
+        }
+
         try {
             final Path installationDir = Paths.get(dir).toAbsolutePath();
             final MavenSessionManager mavenSessionManager;

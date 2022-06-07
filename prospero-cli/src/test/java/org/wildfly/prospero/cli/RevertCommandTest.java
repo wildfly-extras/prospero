@@ -69,11 +69,26 @@ public class RevertCommandTest {
     }
 
     @Test
+    public void offlineModeRequiresLocalRepoOption() throws Exception {
+        try {
+            Map<String, String> args = new HashMap<>();
+            args.put(CliMain.TARGET_PATH_ARG, "test");
+            args.put(CliMain.REVISION, "abcd");
+            args.put(CliMain.OFFLINE, "true");
+
+            revertCommand.execute(args);
+        } catch (ArgumentParsingException e) {
+            assertEquals(Messages.offlineModeRequiresLocalRepo(), e.getMessage());
+        }
+    }
+
+    @Test
     public void useOfflineMavenSessionManagerIfOfflineSet() throws Exception {
         Map<String, String> args = new HashMap<>();
         args.put(CliMain.TARGET_PATH_ARG, "test");
         args.put(CliMain.REVISION, "abcd");
         args.put(CliMain.OFFLINE, "true");
+        args.put(CliMain.LOCAL_REPO, "local-repo");
 
         when(actionFactory.history(any())).thenReturn(historyAction);
         revertCommand.execute(args);

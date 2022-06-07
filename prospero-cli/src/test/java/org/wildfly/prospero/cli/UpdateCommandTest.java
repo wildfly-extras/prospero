@@ -150,6 +150,18 @@ public class UpdateCommandTest {
         }
     }
 
+    @Test
+    public void offlineModeRequiresLocalRepoOption() throws Exception {
+        final Path baseDir = mockGalleonInstallation(OTHER_FP);
+        try {
+            args.put(CliMain.OFFLINE, "true");
+            args.put(CliMain.TARGET_PATH_ARG, baseDir.toAbsolutePath().toString());
+            new UpdateCommand(actionFactory).execute(args);
+        } catch (ArgumentParsingException e) {
+            assertEquals(Messages.offlineModeRequiresLocalRepo(), e.getMessage());
+        }
+    }
+
     private Path mockGalleonInstallation(String... fps) throws IOException, javax.xml.stream.XMLStreamException {
         final ProvisionedState.Builder builder = ProvisionedState.builder();
         for (String fp : fps) {
