@@ -108,7 +108,7 @@ public class Provision {
         try {
             System.setProperty(MAVEN_REPO_LOCAL, mavenSessionManager.getProvisioningRepo().toAbsolutePath().toString());
             final Map<String, String> options = new HashMap<>();
-            options.put("jboss-fork-embedded", "true");
+            options.put(GalleonUtils.JBOSS_FORK_EMBEDDED_PROPERTY, GalleonUtils.JBOSS_FORK_EMBEDDED_VALUE);
             provMgr.provision(config, options);
         } finally {
             System.clearProperty(MAVEN_REPO_LOCAL);

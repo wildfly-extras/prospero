@@ -33,7 +33,7 @@
         <version.junit>4.13.2</version.junit>
         <version.maven-shade-plugin>2.3</version.maven-shade-plugin>
         <version.org.wildfly.channel>1.0.0.Alpha12</version.org.wildfly.channel>
-        <version.org.jboss.eap.galleon-pack>8.0.0.Alpha-DR2-redhat-SNAPSHOT</version.org.jboss.eap.galleon-pack>
+        <version.org.wildfly.galleon-pack>26.1.0.Final</version.org.wildfly.galleon-pack>
 
         <version.org.wildfly.checkstyle-config>1.0.8.Final</version.org.wildfly.checkstyle-config>
     </properties>
@@ -53,9 +53,9 @@
                 <version>${project.version}</version>
             </dependency>
             <dependency>
-                <groupId>org.jboss.eap</groupId>
+                <groupId>org.wildfly</groupId>
                 <artifactId>wildfly-ee-galleon-pack</artifactId>
-                <version>${version.org.jboss.eap.galleon-pack}</version>
+                <version>${version.org.wildfly.galleon-pack}</version>
                 <type>zip</type>
             </dependency>
             <dependency>

@@ -32,6 +32,9 @@ import java.util.stream.Collectors;
 public class GalleonUtils {
 
     public static final String MAVEN_REPO_LOCAL = "maven.repo.local";
+    public static final String JBOSS_FORK_EMBEDDED_PROPERTY = "jboss-fork-embedded";
+    // enable forked mode when Wildfly galleon-plugins are upgraded to 6.0.0.Alpha2
+    public static final String JBOSS_FORK_EMBEDDED_VALUE = "false";
 
     public static ProvisioningManager getProvisioningManager(Path installDir, MavenRepoManager maven) throws ProvisioningException {
         ProvisioningManager provMgr = ProvisioningManager.builder().addArtifactResolver(maven)

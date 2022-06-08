@@ -13,7 +13,7 @@
 
   <dependencies>
     <dependency>
-      <groupId>org.jboss.eap</groupId>
+      <groupId>org.wildfly</groupId>
       <artifactId>wildfly-ee-galleon-pack</artifactId>
       <type>zip</type>
     </dependency>
