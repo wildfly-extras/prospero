@@ -94,7 +94,7 @@ public class MavenSessionManager {
     }
 
     private void copyResolvedArtifactsToProvisiongRepository(DefaultRepositorySystemSession session) {
-        // hack to work around Galleon provisioning EAP again to generate docs
+        // hack to work around Galleon provisioning again to generate examples
         // whenever an artifact is resolved by a repository using LOCAL_MAVE_REPO,
         // install the artifact into a temporary provisioningRepo. The provisioningRepo then is used
         // by Galleon to start thin server.

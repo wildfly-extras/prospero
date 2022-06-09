@@ -47,7 +47,7 @@ import java.util.Map;
 
 public class GitStorage implements AutoCloseable {
 
-    public static final String GIT_HISTORY_USER = "EAP Installer";
+    public static final String GIT_HISTORY_USER = "Wildfly Installer";
     public static final PersonIdent GIT_HISTORY_COMMITTER = new PersonIdent(GIT_HISTORY_USER, "");
     private final Git git;
     private Path base;
