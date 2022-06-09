@@ -20,7 +20,7 @@
     <modules>
         <module>common</module>
         <module>standalone-galleon-pack</module>
-        <module>eap-galleon-pack</module>
+        <module>wildfly-galleon-pack</module>
         <module>build</module>
     </modules>
 

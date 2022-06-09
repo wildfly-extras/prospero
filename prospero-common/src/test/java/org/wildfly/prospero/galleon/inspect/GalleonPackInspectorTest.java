@@ -51,7 +51,7 @@ public class GalleonPackInspectorTest {
     @Before
     public void setUp() throws Exception {
         // mock up local installation with undertow
-        basePath = Files.createTempDirectory("eap-test");
+        basePath = Files.createTempDirectory("wfly-test");
         basePath.toFile().deleteOnExit();
 
         undertowModulePath = basePath.resolve("modules")

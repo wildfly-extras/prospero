@@ -10,7 +10,7 @@ public class ProvisioningDefinitionTest {
 
     @Test
     public void setChannelWithFileUrl() throws Exception {
-        final ProvisioningDefinition.Builder builder = new ProvisioningDefinition.Builder().setFpl("eap");
+        final ProvisioningDefinition.Builder builder = new ProvisioningDefinition.Builder().setFpl("wildfly");
 
         builder.setChannel("file:/tmp/foo.bar");
 
@@ -19,7 +19,7 @@ public class ProvisioningDefinitionTest {
 
     @Test
     public void setChannelWithHttpUrl() throws Exception {
-        final ProvisioningDefinition.Builder builder = new ProvisioningDefinition.Builder().setFpl("eap");
+        final ProvisioningDefinition.Builder builder = new ProvisioningDefinition.Builder().setFpl("wildfly");
 
         builder.setChannel("http://localhost/foo.bar");
 
@@ -28,7 +28,7 @@ public class ProvisioningDefinitionTest {
 
     @Test
     public void setChannelWithLocalFilePath() throws Exception {
-        final ProvisioningDefinition.Builder builder = new ProvisioningDefinition.Builder().setFpl("eap");
+        final ProvisioningDefinition.Builder builder = new ProvisioningDefinition.Builder().setFpl("wildfly");
 
         builder.setChannel("tmp/foo.bar");
 

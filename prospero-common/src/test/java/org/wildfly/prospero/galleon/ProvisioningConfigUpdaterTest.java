@@ -20,7 +20,7 @@ import static org.mockito.Mockito.when;
 @RunWith(MockitoJUnitRunner.class)
 public class ProvisioningConfigUpdaterTest {
 
-    public static final FeaturePackLocation TEST_FPL = FeaturePackLocation.fromString("org.jboss.eap:wildfly-ee-galleon-pack:1.2.2:zip");
+    public static final FeaturePackLocation TEST_FPL = FeaturePackLocation.fromString("org.wildfly:wildfly-ee-galleon-pack:1.2.2:zip");
     @Mock
     private MavenRepoManager mavenRepoManager;
 
@@ -41,7 +41,7 @@ public class ProvisioningConfigUpdaterTest {
         when(mavenRepoManager.getLatestVersion(any())).then((Answer<String>) invocationOnMock -> {
             final MavenArtifact artifact = invocationOnMock.getArgument(0);
             assertEquals("1.2.2", artifact.getVersion());
-            assertEquals("org.jboss.eap", artifact.getGroupId());
+            assertEquals("org.wildfly", artifact.getGroupId());
             assertEquals("wildfly-ee-galleon-pack", artifact.getArtifactId());
             assertEquals("zip", artifact.getExtension());
             return "1.2.3";

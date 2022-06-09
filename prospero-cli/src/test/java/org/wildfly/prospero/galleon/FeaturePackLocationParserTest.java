@@ -27,17 +27,17 @@ public class FeaturePackLocationParserTest {
 
     @Test
     public void findLatestFeaturePackInPartialGav() throws Exception {
-        when(repoManager.getLatestVersion(any())).thenReturn("7.4.3.GA-redhat-SNAPSHOT");
-        final FeaturePackLocation resolvedFpl = resolveFplVersion("org.jboss.eap:wildfly-ee-galleon-pack");
-        assertEquals("7.4.3.GA-redhat-SNAPSHOT", resolvedFpl.getBuild());
-        assertEquals("org.jboss.eap:wildfly-ee-galleon-pack::zip", resolvedFpl.getProducerName());
+        when(repoManager.getLatestVersion(any())).thenReturn("26.1.0.Final");
+        final FeaturePackLocation resolvedFpl = resolveFplVersion("org.wildfly:wildfly-ee-galleon-pack");
+        assertEquals("26.1.0.Final", resolvedFpl.getBuild());
+        assertEquals("org.wildfly:wildfly-ee-galleon-pack::zip", resolvedFpl.getProducerName());
     }
 
     @Test
     public void useProvidedGavWhenUsedFull() throws Exception {
-        final FeaturePackLocation resolvedFpl = resolveFplVersion("org.jboss.eap:wildfly-ee-galleon-pack:7.4.2.GA-redhat-00003");
-        assertEquals("7.4.2.GA-redhat-00003", resolvedFpl.getBuild());
-        assertEquals("org.jboss.eap:wildfly-ee-galleon-pack::zip", resolvedFpl.getProducerName());
+        final FeaturePackLocation resolvedFpl = resolveFplVersion("org.wildfly:wildfly-ee-galleon-pack:26.0.0.Final");
+        assertEquals("26.0.0.Final", resolvedFpl.getBuild());
+        assertEquals("org.wildfly:wildfly-ee-galleon-pack::zip", resolvedFpl.getProducerName());
     }
 
     @Test

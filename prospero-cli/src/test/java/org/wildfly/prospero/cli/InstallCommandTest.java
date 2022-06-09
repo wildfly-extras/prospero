@@ -124,13 +124,13 @@ public class InstallCommandTest {
 
         Map<String, String> args = new HashMap<>();
         args.put(CliMain.TARGET_PATH_ARG, "test");
-        args.put(CliMain.FPL_ARG, "org.jboss.eap:wildfly-ee-galleon-pack");
+        args.put(CliMain.FPL_ARG, "org.wildfly:wildfly-ee-galleon-pack");
         args.put(CliMain.CHANNEL_FILE_ARG, channelsFile.getAbsolutePath());
         new InstallCommand(actionFactory).execute(args);
 
         Mockito.verify(actionFactory).install(eq(Paths.get("test").toAbsolutePath()), any(MavenSessionManager.class));
         Mockito.verify(provisionAction).provision(serverDefiniton.capture());
-        assertEquals("org.jboss.eap:wildfly-ee-galleon-pack", serverDefiniton.getValue().getFpl());
+        assertEquals("org.wildfly:wildfly-ee-galleon-pack", serverDefiniton.getValue().getFpl());
     }
 
     @Test
@@ -150,7 +150,7 @@ public class InstallCommandTest {
     @Test
     public void callProvisionOnInstallEapOverrideChannelsCommand() throws Exception {
         when(actionFactory.install(any(), any(MavenSessionManager.class))).thenReturn(provisionAction);
-        List<ChannelRef> channels = Arrays.asList(new ChannelRef("org.jboss.eap:wildfly-ee-galleon-pack", null));
+        List<ChannelRef> channels = Arrays.asList(new ChannelRef("org.wildfly:wildfly-channel", null));
         List<RepositoryRef> repositories = Arrays.asList(new RepositoryRef("dev", "http://test.test"));
 
         final File channelsFile = temporaryFolder.newFile();
@@ -171,7 +171,7 @@ public class InstallCommandTest {
     @Test
     public void usingProvisionDefinitonRequiresChannel() throws Exception {
         when(actionFactory.install(any(), any(MavenSessionManager.class))).thenReturn(provisionAction);
-        List<ChannelRef> channels = Arrays.asList(new ChannelRef("org.jboss.eap:wildfly-ee-galleon-pack", null));
+        List<ChannelRef> channels = Arrays.asList(new ChannelRef("org.wildfly:wildfly-channel", null));
         List<RepositoryRef> repositories = Arrays.asList(new RepositoryRef("dev", "http://test.test"));
 
         final File provisionDefinitionFile = temporaryFolder.newFile("provision.xml");
@@ -186,7 +186,7 @@ public class InstallCommandTest {
 
         Mockito.verify(actionFactory).install(eq(Paths.get("test").toAbsolutePath()), any(MavenSessionManager.class));
         Mockito.verify(provisionAction).provision(serverDefiniton.capture());
-        assertNull("org.jboss.eap:wildfly-ee-galleon-pack", serverDefiniton.getValue().getFpl());
+        assertNull("org.wildfly:wildfly-ee-galleon-pack", serverDefiniton.getValue().getFpl());
         assertEquals("dev", serverDefiniton.getValue().getRepositories().get(0).getId());
         assertEquals(provisionDefinitionFile.toPath(), serverDefiniton.getValue().getDefinition());
     }
