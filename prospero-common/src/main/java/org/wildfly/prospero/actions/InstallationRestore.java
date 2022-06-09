@@ -38,8 +38,6 @@ import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.List;
 
-import static org.wildfly.prospero.galleon.GalleonUtils.MAVEN_REPO_LOCAL;
-
 public class InstallationRestore {
 
     private final Path installDir;
@@ -73,12 +71,8 @@ public class InstallationRestore {
 
         ProvisioningManager provMgr = GalleonUtils.getProvisioningManager(installDir, repoManager);
 
-        try {
-            System.setProperty(MAVEN_REPO_LOCAL, sessionManager.getProvisioningRepo().toAbsolutePath().toString());
-            provMgr.provision(metadataBundle.getProvisioningConfig());
-        } finally {
-            System.clearProperty(MAVEN_REPO_LOCAL);
-        }
+        GalleonUtils.executeGalleon(options -> provMgr.provision(metadataBundle.getProvisioningConfig(), options),
+                sessionManager.getProvisioningRepo().toAbsolutePath());
         writeProsperoMetadata(repoManager, metadataBundle.getChannels(), repositories);
     }
 
