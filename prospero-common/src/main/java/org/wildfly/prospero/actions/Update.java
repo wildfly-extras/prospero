@@ -21,7 +21,6 @@ import java.net.MalformedURLException;
 import java.net.URL;
 import java.nio.file.Path;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
@@ -53,8 +52,6 @@ import org.wildfly.channel.Channel;
 import org.wildfly.channel.ChannelMapper;
 import org.wildfly.channel.ChannelSession;
 import org.wildfly.channel.UnresolvedMavenArtifactException;
-
-import static org.wildfly.prospero.galleon.GalleonUtils.MAVEN_REPO_LOCAL;
 
 public class Update {
 
@@ -191,14 +188,8 @@ public class Update {
     }
 
     private void applyFpUpdates(ProvisioningPlan updates) throws ProvisioningException {
-        try {
-            System.setProperty(MAVEN_REPO_LOCAL, mavenSessionManager.getProvisioningRepo().toAbsolutePath().toString());
-            final HashMap<String, String> options = new HashMap<>();
-            options.put(GalleonUtils.JBOSS_FORK_EMBEDDED_PROPERTY, GalleonUtils.JBOSS_FORK_EMBEDDED_VALUE);
-            provMgr.apply(updates, options);
-        } finally {
-            System.clearProperty(MAVEN_REPO_LOCAL);
-        }
+        GalleonUtils.executeGalleon(options -> provMgr.apply(updates, options),
+                mavenSessionManager.getProvisioningRepo().toAbsolutePath());
 
         metadata.setChannel(maven.resolvedChannel());
     }

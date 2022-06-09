@@ -31,9 +31,7 @@ import java.net.URL;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 
 import org.wildfly.prospero.galleon.ProvisioningConfigUpdater;
 import org.wildfly.prospero.model.ChannelRef;
@@ -50,8 +48,6 @@ import org.jboss.galleon.universe.FeaturePackLocation;
 import org.jboss.galleon.xml.ProvisioningXmlParser;
 import org.wildfly.channel.Channel;
 import org.wildfly.channel.ChannelMapper;
-
-import static org.wildfly.prospero.galleon.GalleonUtils.MAVEN_REPO_LOCAL;
 
 public class Provision {
 
@@ -105,14 +101,9 @@ public class Provision {
             final ProvisioningConfig provisioningConfig = ProvisioningXmlParser.parse(provisioningDefinition.getDefinition());
             config = new ProvisioningConfigUpdater(repoManager).updateFPs(provisioningConfig);
         }
-        try {
-            System.setProperty(MAVEN_REPO_LOCAL, mavenSessionManager.getProvisioningRepo().toAbsolutePath().toString());
-            final Map<String, String> options = new HashMap<>();
-            options.put(GalleonUtils.JBOSS_FORK_EMBEDDED_PROPERTY, GalleonUtils.JBOSS_FORK_EMBEDDED_VALUE);
-            provMgr.provision(config, options);
-        } finally {
-            System.clearProperty(MAVEN_REPO_LOCAL);
-        }
+
+        GalleonUtils.executeGalleon(options->provMgr.provision(config, options),
+                mavenSessionManager.getProvisioningRepo().toAbsolutePath());
 
         writeProsperoMetadata(installDir, repoManager, updatedRefs, repositories);
     }
@@ -137,12 +128,8 @@ public class Provision {
         final ChannelMavenArtifactRepositoryManager repoManager = new ChannelMavenArtifactRepositoryManager(channels, factory);
         ProvisioningManager provMgr = GalleonUtils.getProvisioningManager(installDir, repoManager);
 
-        try {
-            System.setProperty(MAVEN_REPO_LOCAL, mavenSessionManager.getProvisioningRepo().toAbsolutePath().toString());
-            provMgr.provision(installationFile);
-        }finally {
-            System.clearProperty(MAVEN_REPO_LOCAL);
-        }
+        GalleonUtils.executeGalleon(options->provMgr.provision(installationFile, options),
+                mavenSessionManager.getProvisioningRepo().toAbsolutePath());
 
         writeProsperoMetadata(installDir, repoManager, channelRefs, repositories);
     }

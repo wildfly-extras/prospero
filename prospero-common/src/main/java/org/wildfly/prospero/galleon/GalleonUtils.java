@@ -26,7 +26,9 @@ import org.jboss.galleon.xml.ProvisionedStateXmlParser;
 
 import java.nio.file.Path;
 import java.util.Collection;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 public class GalleonUtils {
@@ -35,6 +37,29 @@ public class GalleonUtils {
     public static final String JBOSS_FORK_EMBEDDED_PROPERTY = "jboss-fork-embedded";
     // enable forked mode when Wildfly galleon-plugins are upgraded to 6.0.0.Alpha2
     public static final String JBOSS_FORK_EMBEDDED_VALUE = "false";
+    public static final String MODULE_PATH_PROPERTY = "module.path";
+
+    public static void executeGalleon(GalleonExecution execution, Path localRepository) throws ProvisioningException {
+        final String modulePathProperty = System.getProperty(MODULE_PATH_PROPERTY);
+        try {
+            System.setProperty(MAVEN_REPO_LOCAL, localRepository.toString());
+            if (modulePathProperty != null) {
+                System.clearProperty(MODULE_PATH_PROPERTY);
+            }
+            final Map<String, String> options = new HashMap<>();
+            options.put(GalleonUtils.JBOSS_FORK_EMBEDDED_PROPERTY, GalleonUtils.JBOSS_FORK_EMBEDDED_VALUE);
+            execution.execute(options);
+        } finally {
+            System.clearProperty(MAVEN_REPO_LOCAL);
+            if (modulePathProperty != null) {
+                System.setProperty(MODULE_PATH_PROPERTY, modulePathProperty);
+            }
+        }
+    }
+
+    public interface GalleonExecution {
+        void execute(Map<String, String> options) throws ProvisioningException;
+    }
 
     public static ProvisioningManager getProvisioningManager(Path installDir, MavenRepoManager maven) throws ProvisioningException {
         ProvisioningManager provMgr = ProvisioningManager.builder().addArtifactResolver(maven)
