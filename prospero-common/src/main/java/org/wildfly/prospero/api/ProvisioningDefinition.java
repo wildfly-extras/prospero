@@ -23,37 +23,29 @@ import java.net.URL;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
-import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 
+import org.eclipse.aether.repository.RemoteRepository;
+import org.jboss.galleon.ProvisioningException;
 import org.wildfly.prospero.api.exceptions.ArtifactResolutionException;
 import org.wildfly.prospero.model.ChannelRef;
 import org.wildfly.prospero.model.ProvisioningRecord;
-import org.eclipse.aether.repository.RemoteRepository;
-import org.jboss.galleon.ProvisioningException;
+import org.wildfly.prospero.model.RepositoryRef;
 
 public class ProvisioningDefinition {
 
     private static final String REPO_TYPE = "default";
 
     private final String fpl;
-    private List<ChannelRef> channels;
+    private final List<ChannelRef> channels = new ArrayList<>();
     private final Set<String> includedPackages = new HashSet<>();
-    private static final Map<String, String> CHANNEL_URLS = new HashMap<>();
-    private final List<RemoteRepository> repositories;
-    private Path definition;
-
-    static {
-        CHANNEL_URLS.put("mrrc", "https://maven.repository.redhat.com/ga/");
-        CHANNEL_URLS.put("central", "https://repo1.maven.org/maven2/");
-    }
+    private final List<RemoteRepository> repositories = new ArrayList<>();
+    private final Path definition;
 
     private ProvisioningDefinition(Builder builder) throws ArtifactResolutionException {
         final Optional<String> fpl = Optional.ofNullable(builder.fpl);
@@ -62,41 +54,39 @@ public class ProvisioningDefinition {
         final Optional<Path> channelsFile = Optional.ofNullable(builder.channelsFile);
         final Optional<URL> channel = Optional.ofNullable(builder.channel);
         final Optional<Set<String>> includedPackages = Optional.ofNullable(builder.includedPackages);
-        this.repositories = builder.repositories==null?new ArrayList<>():new ArrayList<>(builder.repositories);
+
+        if (builder.repositories != null) {
+            this.repositories.addAll(builder.repositories);
+        }
 
         this.includedPackages.addAll(includedPackages.orElse(Collections.emptySet()));
 
         try {
-            if (fpl.isPresent() && (fpl.get().equals("eap") || fpl.get().equals("eap-7.4"))) {
-                this.fpl = "org.jboss.eap:wildfly-ee-galleon-pack";
-                this.includedPackages.add("docs.examples.configs");
-                final String repoId = "mrrc";
-                final String channelGA = "org.wildfly.channels:eap-74:7.4";
-
-                setUpBuildEnv(channelRepo, channelsFile, channel, repoId, channelGA);
-            } else if (fpl.isPresent() && fpl.get().equals("wildfly")) {
-                this.fpl = "wildfly-core@maven(org.jboss.universe:community-universe):current";
-                final String repoId = "central";
-                final String channelGA = "org.wildfly.channels:wildfly:26.1.0";
-
-                setUpBuildEnv(channelRepo, channelsFile, channel, repoId, channelGA);
+            if (fpl.isPresent() && WellKnownFeaturePacks.isNameKnown(fpl.get())) {
+                WellKnownFeaturePacks featurePackInfo = WellKnownFeaturePacks.getByName(fpl.get());
+                this.fpl = featurePackInfo.location;
+                this.definition = null;
+                this.includedPackages.addAll(featurePackInfo.packages);
+                this.repositories.addAll(featurePackInfo.repositories);
+                setUpBuildEnv(channelRepo, channelsFile, channel, featurePackInfo.channelGav);
             } else {
                 this.fpl = fpl.orElse(null);
                 this.definition = definition.orElse(null);
                 final ProvisioningRecord record = ProvisioningRecord.readChannels(channelsFile.get());
-                this.channels = record.getChannels();
+                if (record.getChannels() != null) {
+                    this.channels.addAll(record.getChannels());
+                }
                 this.repositories.clear();
-                this.repositories.addAll(record.getRepositories().stream().map(r->r.toRemoteRepository()).collect(Collectors.toList()));
+                this.repositories.addAll(record.getRepositories().stream().map(RepositoryRef::toRemoteRepository).collect(Collectors.toList()));
             }
         } catch (IOException e) {
-            throw new ArtifactResolutionException("Unable to resolve channel definition", e);
+            throw new ArtifactResolutionException("Unable to resolve channel definition: " + e.getMessage(), e);
         }
     }
 
-    private void setUpBuildEnv(Optional<String> channelRepo, Optional<Path> channelsFile, Optional<URL> channel, String repoId, String channelGA) throws IOException {
+    private void setUpBuildEnv(Optional<String> channelRepo, Optional<Path> channelsFile, Optional<URL> channel, String channelGA) throws IOException {
         if (!channelsFile.isPresent() && !channel.isPresent()) {
-            final String repoUrl = CHANNEL_URLS.get(repoId);
-            this.channels = Arrays.asList(new ChannelRef(channelGA, null));
+            this.channels.add(new ChannelRef(channelGA, null));
             if (channelRepo.isPresent()) {
                 String[] urls = channelRepo.get().split(",");
                 for (int i = 0; i < urls.length; i++) {
@@ -105,14 +95,13 @@ public class ProvisioningDefinition {
                             new RemoteRepository.Builder(channelRepoId, REPO_TYPE, channelRepo.get()).build());
                 }
             }
-            repositories.add(new RemoteRepository.Builder(repoId, REPO_TYPE, repoUrl).build());
         } else if (channel.isPresent()) {
-            this.channels = Arrays.asList(new ChannelRef(null, channel.get().toString()));
+            this.channels.add(new ChannelRef(null, channel.get().toString()));
         } else {
             final ProvisioningRecord record = ProvisioningRecord.readChannels(channelsFile.get());
-            this.channels = record.getChannels();
+            this.channels.addAll(record.getChannels());
             this.repositories.clear();
-            this.repositories.addAll(record.getRepositories().stream().map(r -> r.toRemoteRepository()).collect(Collectors.toList()));
+            this.repositories.addAll(record.getRepositories().stream().map(RepositoryRef::toRemoteRepository).collect(Collectors.toList()));
         }
     }
 

@@ -24,6 +24,7 @@ import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 
+import org.wildfly.prospero.api.WellKnownFeaturePacks;
 import org.wildfly.prospero.api.exceptions.MetadataException;
 import org.wildfly.prospero.api.ProvisioningDefinition;
 import org.wildfly.prospero.api.exceptions.OperationException;
@@ -106,6 +107,6 @@ class InstallCommand implements Command {
     }
 
     private boolean isStandardFpl(String fpl) {
-        return !fpl.equals("eap") && !fpl.equals("eap-7.4") && !fpl.equals("wildfly");
+        return !WellKnownFeaturePacks.isNameKnown(fpl);
     }
 }
