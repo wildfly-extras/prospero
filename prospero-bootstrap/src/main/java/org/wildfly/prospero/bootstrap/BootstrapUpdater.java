@@ -80,7 +80,7 @@ public class BootstrapUpdater {
                 final String groupId = stream.getGroupId();
                 final String artifactId = stream.getArtifactId();
                 final String extension = "jar";
-                final MavenArtifact artifact = channelSession.resolveMavenArtifact(groupId, artifactId, extension, null);
+                final MavenArtifact artifact = channelSession.resolveMavenArtifact(groupId, artifactId, extension, null, null);
                 final Path targetPath = installerLib.resolve(artifact.getFile().getName());
                 if (!targetPath.toFile().exists()) {
                     Files.copy(artifact.getFile().toPath(), targetPath);

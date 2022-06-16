@@ -169,7 +169,8 @@ public class Update {
 
         final String latestVersion;
         try {
-            latestVersion = channelSession.findLatestMavenArtifactVersion(artifact.getGroupId(), artifact.getArtifactId(), artifact.getExtension(), artifact.getClassifier());
+            latestVersion = channelSession.findLatestMavenArtifactVersion(artifact.getGroupId(),
+                    artifact.getArtifactId(), artifact.getExtension(), artifact.getClassifier(), null);
         } catch (UnresolvedMavenArtifactException e) {
             throw new ArtifactResolutionException(String.format("Artifact [%s:%s] not found", artifact.getGroupId(), artifact.getArtifactId()), e);
         }
