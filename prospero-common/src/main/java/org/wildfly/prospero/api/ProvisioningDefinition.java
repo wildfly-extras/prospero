@@ -41,6 +41,8 @@ import org.jboss.galleon.ProvisioningException;
 
 public class ProvisioningDefinition {
 
+    private static final String REPO_TYPE = "default";
+
     private final String fpl;
     private List<ChannelRef> channels;
     private final Set<String> includedPackages = new HashSet<>();
@@ -52,8 +54,6 @@ public class ProvisioningDefinition {
         CHANNEL_URLS.put("mrrc", "https://maven.repository.redhat.com/ga/");
         CHANNEL_URLS.put("central", "https://repo1.maven.org/maven2/");
     }
-
-
 
     private ProvisioningDefinition(Builder builder) throws ArtifactResolutionException {
         final Optional<String> fpl = Optional.ofNullable(builder.fpl);
@@ -98,9 +98,14 @@ public class ProvisioningDefinition {
             final String repoUrl = CHANNEL_URLS.get(repoId);
             this.channels = Arrays.asList(new ChannelRef(channelGA, null));
             if (channelRepo.isPresent()) {
-                this.repositories.add(new RemoteRepository.Builder("channel", "default", channelRepo.get()).build());
+                String[] urls = channelRepo.get().split(",");
+                for (int i = 0; i < urls.length; i++) {
+                    String channelRepoId = "channel-" + (i + 1);
+                    this.repositories.add(
+                            new RemoteRepository.Builder(channelRepoId, REPO_TYPE, channelRepo.get()).build());
+                }
             }
-            repositories.add(new RemoteRepository.Builder(repoId, "default", repoUrl).build());
+            repositories.add(new RemoteRepository.Builder(repoId, REPO_TYPE, repoUrl).build());
         } else if (channel.isPresent()) {
             this.channels = Arrays.asList(new ChannelRef(null, channel.get().toString()));
         } else {
