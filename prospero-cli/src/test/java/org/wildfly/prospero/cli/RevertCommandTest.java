@@ -1,114 +1,92 @@
 package org.wildfly.prospero.cli;
 
-import org.wildfly.prospero.actions.InstallationHistory;
-import org.wildfly.prospero.api.SavedState;
-import org.wildfly.prospero.wfchannel.MavenSessionManager;
-import org.junit.Before;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Captor;
 import org.mockito.Mock;
 import org.mockito.junit.MockitoJUnitRunner;
+import org.wildfly.prospero.actions.Console;
+import org.wildfly.prospero.actions.InstallationHistory;
+import org.wildfly.prospero.api.SavedState;
+import org.wildfly.prospero.wfchannel.MavenSessionManager;
 
-import java.nio.file.Paths;
-import java.util.HashMap;
-import java.util.Map;
-
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
 
 @RunWith(MockitoJUnitRunner.class)
-public class RevertCommandTest {
+public class RevertCommandTest extends AbstractConsoleTest {
 
     @Mock
     private InstallationHistory historyAction;
 
-    @Mock
-    private CliMain.ActionFactory actionFactory;
-
     @Captor
     private ArgumentCaptor<MavenSessionManager> mavenSessionManager;
 
-    private RevertCommand revertCommand;
-
-    @Before
-    public void setUp() {
-        revertCommand = new RevertCommand(actionFactory);
+    @Override
+    protected ActionFactory createActionFactory() {
+        return new ActionFactory() {
+            @Override
+            public InstallationHistory history(Path targetPath, Console console) {
+                return historyAction;
+            }
+        };
     }
 
-    @Test(expected = ArgumentParsingException.class)
-    public void requireDirArgument() throws Exception {
-        Map<String, String> args = new HashMap<>();
-        revertCommand.execute(args);
-        fail("Should have failed");
+    @Test
+    public void requireDirArgument() {
+        int exitCode = commandLine.execute("revert");
+
+        assertEquals(ReturnCodes.INVALID_ARGUMENTS, exitCode);
+        assertTrue(getErrorOutput().contains("Missing required options: '--dir=<directory>', '--revision=<revision>'"));
     }
 
-    @Test(expected = ArgumentParsingException.class)
-    public void requireRevisionArgument() throws Exception {
-        Map<String, String> args = new HashMap<>();
-        args.put(CliMain.TARGET_PATH_ARG, "test");
-        revertCommand.execute(args);
-        fail("Should have failed");
+    @Test
+    public void requireRevisionArgument() {
+        int exitCode = commandLine.execute("revert", "--dir", "test");
+
+        assertEquals(ReturnCodes.INVALID_ARGUMENTS, exitCode);
+        assertTrue(getErrorOutput().contains("Missing required option: '--revision=<revision>'"));
     }
 
     @Test
     public void callRevertOpertation() throws Exception {
-        Map<String, String> args = new HashMap<>();
-        args.put(CliMain.TARGET_PATH_ARG, "test");
-        args.put(CliMain.REVISION, "abcd");
+        int exitCode = commandLine.execute("revert", "--dir", "test", "--revision", "abcd");
 
-        when(actionFactory.history(any())).thenReturn(historyAction);
-        revertCommand.execute(args);
-
-        verify(actionFactory).history(eq(Paths.get("test").toAbsolutePath()));
+        assertEquals(ReturnCodes.SUCCESS, exitCode);
         verify(historyAction).rollback(eq(new SavedState("abcd")), any());
     }
 
     @Test
-    public void offlineModeRequiresLocalRepoOption() throws Exception {
-        try {
-            Map<String, String> args = new HashMap<>();
-            args.put(CliMain.TARGET_PATH_ARG, "test");
-            args.put(CliMain.REVISION, "abcd");
-            args.put(CliMain.OFFLINE, "true");
+    public void offlineModeRequiresLocalRepoOption() {
+        int exitCode = commandLine.execute("revert", "--dir", "test", "--revision", "abcd", "--offline");
 
-            revertCommand.execute(args);
-        } catch (ArgumentParsingException e) {
-            assertEquals(Messages.offlineModeRequiresLocalRepo(), e.getMessage());
-        }
+        assertEquals(ReturnCodes.INVALID_ARGUMENTS, exitCode);
+        assertTrue(getErrorOutput().contains(Messages.offlineModeRequiresLocalRepo()));
     }
 
     @Test
     public void useOfflineMavenSessionManagerIfOfflineSet() throws Exception {
-        Map<String, String> args = new HashMap<>();
-        args.put(CliMain.TARGET_PATH_ARG, "test");
-        args.put(CliMain.REVISION, "abcd");
-        args.put(CliMain.OFFLINE, "true");
-        args.put(CliMain.LOCAL_REPO, "local-repo");
+        int exitCode = commandLine.execute("revert", "--dir", "test", "--revision", "abcd", "--offline",
+                "--local-repo", "local-repo");
 
-        when(actionFactory.history(any())).thenReturn(historyAction);
-        revertCommand.execute(args);
-
-        verify(actionFactory).history(eq(Paths.get("test").toAbsolutePath()));
+        assertEquals(ReturnCodes.SUCCESS, exitCode);
         verify(historyAction).rollback(eq(new SavedState("abcd")), mavenSessionManager.capture());
         assertTrue(mavenSessionManager.getValue().isOffline());
     }
 
     @Test
     public void useLocalMavenRepoIfParameterSet() throws Exception {
-        Map<String, String> args = new HashMap<>();
-        args.put(CliMain.TARGET_PATH_ARG, "test");
-        args.put(CliMain.REVISION, "abcd");
-        args.put(CliMain.LOCAL_REPO, "local-repo");
+        int exitCode = commandLine.execute("revert", "--dir", "test", "--revision", "abcd",
+                "--local-repo", "local-repo");
 
-        when(actionFactory.history(any())).thenReturn(historyAction);
-        revertCommand.execute(args);
-
-        verify(actionFactory).history(eq(Paths.get("test").toAbsolutePath()));
+        assertEquals(ReturnCodes.SUCCESS, exitCode);
         verify(historyAction).rollback(eq(new SavedState("abcd")), mavenSessionManager.capture());
         assertEquals(Paths.get("local-repo").toAbsolutePath(), mavenSessionManager.getValue().getProvisioningRepo());
     }

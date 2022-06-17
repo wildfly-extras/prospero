@@ -18,19 +18,11 @@
 package org.wildfly.prospero.cli;
 
 import java.io.File;
-import java.nio.file.Paths;
+import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 
-import org.wildfly.prospero.actions.Provision;
-import org.wildfly.prospero.model.ChannelRef;
-import org.wildfly.prospero.api.ProvisioningDefinition;
-import org.wildfly.prospero.model.ProvisioningConfig;
-import org.wildfly.prospero.model.RepositoryRef;
-import org.wildfly.prospero.wfchannel.MavenSessionManager;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
@@ -40,16 +32,20 @@ import org.mockito.Captor;
 import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.junit.MockitoJUnitRunner;
+import org.wildfly.prospero.actions.Console;
+import org.wildfly.prospero.actions.Provision;
+import org.wildfly.prospero.api.ProvisioningDefinition;
+import org.wildfly.prospero.model.ChannelRef;
+import org.wildfly.prospero.model.ProvisioningConfig;
+import org.wildfly.prospero.model.RepositoryRef;
+import org.wildfly.prospero.wfchannel.MavenSessionManager;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNull;
-import static org.junit.Assert.fail;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.Mockito.when;
+import static org.junit.Assert.assertTrue;
 
 @RunWith(MockitoJUnitRunner.class)
-public class InstallCommandTest {
+public class InstallCommandTest extends AbstractConsoleTest {
 
     @Rule
     public TemporaryFolder temporaryFolder = new TemporaryFolder();
@@ -57,112 +53,82 @@ public class InstallCommandTest {
     @Mock
     private Provision provisionAction;
 
-    @Mock
-    private CliMain.ActionFactory actionFactory;
-
     @Captor
     private ArgumentCaptor<ProvisioningDefinition> serverDefiniton;
 
-    @Test
-    public void errorIfTargetPathIsNotPresent() throws Exception {
-        try {
-            Map<String, String> args = new HashMap<>();
-            new InstallCommand(actionFactory).execute(args);
-            fail("Should have failed");
-        } catch (ArgumentParsingException e) {
-            assertEquals("Target dir argument (--dir) need to be set on install command", e.getMessage());
-        }
+    @Override
+    protected ActionFactory createActionFactory() {
+        return new ActionFactory() {
+            @Override
+            public Provision install(Path targetPath, MavenSessionManager mavenSessionManager, Console console) {
+                return provisionAction;
+            }
+        };
     }
 
     @Test
-    public void errorIfFplIsNotPresent() throws Exception {
-        try {
-            Map<String, String> args = new HashMap<>();
-            args.put(CliMain.TARGET_PATH_ARG, "test");
-            new InstallCommand(actionFactory).execute(args);
-            fail("Should have failed");
-        } catch (ArgumentParsingException e) {
-            assertEquals("Feature pack name argument (--fpl) need to be set on install command", e.getMessage());
-        }
+    public void errorIfTargetPathIsNotPresent() {
+        int exitCode = commandLine.execute("install");
+        assertEquals(ReturnCodes.INVALID_ARGUMENTS, exitCode);
+        assertTrue(getErrorOutput().contains("Missing required option: '--dir=<directory>'"));
     }
 
     @Test
-    public void offlineModeRequiresLocalRepoOption() throws Exception {
-        try {
-            Map<String, String> args = new HashMap<>();
-            args.put(CliMain.TARGET_PATH_ARG, "test");
-            args.put(CliMain.FPL_ARG, "eap");
-            args.put(CliMain.OFFLINE, "true");
-            new InstallCommand(actionFactory).execute(args);
-            fail("Should have failed");
-        } catch (ArgumentParsingException e) {
-            assertEquals(Messages.offlineModeRequiresLocalRepo(), e.getMessage());
-        }
+    public void errorIfFplIsNotPresent() {
+        int exitCode = commandLine.execute("install", "--dir", "test");
+        assertEquals(ReturnCodes.INVALID_ARGUMENTS, exitCode);
+        assertTrue(getErrorOutput().contains("Missing required argument (specify one of these): (--fpl=<fpl> | --definition=<definition>)"));
     }
 
     @Test
-    public void errorIfChannelsIsNotPresentAndUsingCustomFplOnInstall() throws Exception {
-        try {
-            Map<String, String> args = new HashMap<>();
-            args.put(CliMain.TARGET_PATH_ARG, "test");
-            args.put(CliMain.FPL_ARG, "foo:bar");
-            new InstallCommand(actionFactory).execute(args);
-            fail("Should have failed");
-        } catch (ArgumentParsingException e) {
-            assertEquals("Channel file argument (--provision-config) need to be set when using custom fpl", e.getMessage());
-        }
+    public void offlineModeRequiresLocalRepoOption() {
+        int exitCode = commandLine.execute("install", "--dir", "test", "--fpl", "eap", "--offline");
+        assertEquals(ReturnCodes.INVALID_ARGUMENTS, exitCode);
+        assertTrue(getErrorOutput().contains(Messages.offlineModeRequiresLocalRepo()));
+    }
+
+    @Test
+    public void errorIfChannelsIsNotPresentAndUsingCustomFplOnInstall() {
+        int exitCode = commandLine.execute("install", "--dir", "test", "--fpl", "foo:bar");
+        assertEquals(ReturnCodes.INVALID_ARGUMENTS, exitCode);
+        assertTrue("output: " + getErrorOutput(), getErrorOutput().contains("Channel file argument (--provision-config) need to be set when using custom fpl"));
     }
 
     @Test
     public void callProvisionOnInstallCommandWithCustomFpl() throws Exception {
-        when(actionFactory.install(any(), any())).thenReturn(provisionAction);
         List<ChannelRef> channels = new ArrayList<>();
         List<RepositoryRef> repositories = new ArrayList<>();
-
         final File channelsFile = temporaryFolder.newFile();
         new ProvisioningConfig(channels, repositories).writeConfig(channelsFile);
 
-        Map<String, String> args = new HashMap<>();
-        args.put(CliMain.TARGET_PATH_ARG, "test");
-        args.put(CliMain.FPL_ARG, "org.wildfly:wildfly-ee-galleon-pack");
-        args.put(CliMain.PROVISION_CONFIG_ARG, channelsFile.getAbsolutePath());
-        new InstallCommand(actionFactory).execute(args);
-
-        Mockito.verify(actionFactory).install(eq(Paths.get("test").toAbsolutePath()), any(MavenSessionManager.class));
+        int exitCode = commandLine.execute("install", "--dir", "test",
+                "--fpl", "org.wildfly:wildfly-ee-galleon-pack",
+                "--provision-config", channelsFile.getAbsolutePath());
+        assertEquals(ReturnCodes.SUCCESS, exitCode);
         Mockito.verify(provisionAction).provision(serverDefiniton.capture());
         assertEquals("org.wildfly:wildfly-ee-galleon-pack", serverDefiniton.getValue().getFpl());
     }
 
     @Test
     public void callProvisionOnInstallEapCommand() throws Exception {
-        when(actionFactory.install(any(), any(MavenSessionManager.class))).thenReturn(provisionAction);
+        int exitCode = commandLine.execute("install", "--dir", "test", "--fpl", "eap");
 
-        Map<String, String> args = new HashMap<>();
-        args.put(CliMain.TARGET_PATH_ARG, "test");
-        args.put(CliMain.FPL_ARG, "eap");
-        new InstallCommand(actionFactory).execute(args);
-
-        Mockito.verify(actionFactory).install(eq(Paths.get("test").toAbsolutePath()), any(MavenSessionManager.class));
+        assertEquals(ReturnCodes.SUCCESS, exitCode);
         Mockito.verify(provisionAction).provision(serverDefiniton.capture());
         assertEquals("org.jboss.eap:wildfly-ee-galleon-pack", serverDefiniton.getValue().getFpl());
     }
 
     @Test
     public void callProvisionOnInstallEapOverrideChannelsCommand() throws Exception {
-        when(actionFactory.install(any(), any(MavenSessionManager.class))).thenReturn(provisionAction);
         List<ChannelRef> channels = Arrays.asList(new ChannelRef("org.wildfly:wildfly-channel", null));
         List<RepositoryRef> repositories = Arrays.asList(new RepositoryRef("dev", "http://test.test"));
-
         final File channelsFile = temporaryFolder.newFile();
         new ProvisioningConfig(channels, repositories).writeConfig(channelsFile);
 
-        Map<String, String> args = new HashMap<>();
-        args.put(CliMain.TARGET_PATH_ARG, "test");
-        args.put(CliMain.FPL_ARG, "eap");
-        args.put(CliMain.PROVISION_CONFIG_ARG, channelsFile.getAbsolutePath());
-        new InstallCommand(actionFactory).execute(args);
+        int exitCode = commandLine.execute("install", "--dir", "test", "--fpl", "eap",
+                "--provision-config", channelsFile.getAbsolutePath());
 
-        Mockito.verify(actionFactory).install(eq(Paths.get("test").toAbsolutePath()), any(MavenSessionManager.class));
+        assertEquals(ReturnCodes.SUCCESS, exitCode);
         Mockito.verify(provisionAction).provision(serverDefiniton.capture());
         assertEquals("org.jboss.eap:wildfly-ee-galleon-pack", serverDefiniton.getValue().getFpl());
         assertEquals("dev", serverDefiniton.getValue().getRepositories().get(0).getId());
@@ -170,37 +136,33 @@ public class InstallCommandTest {
 
     @Test
     public void usingProvisionDefinitonRequiresChannel() throws Exception {
-        when(actionFactory.install(any(), any(MavenSessionManager.class))).thenReturn(provisionAction);
         List<ChannelRef> channels = Arrays.asList(new ChannelRef("org.wildfly:wildfly-channel", null));
         List<RepositoryRef> repositories = Arrays.asList(new RepositoryRef("dev", "http://test.test"));
-
         final File provisionDefinitionFile = temporaryFolder.newFile("provision.xml");
         final File channelsFile = temporaryFolder.newFile();
         new ProvisioningConfig(channels, repositories).writeConfig(channelsFile);
 
-        Map<String, String> args = new HashMap<>();
-        args.put(CliMain.PROVISION_CONFIG_ARG, channelsFile.getAbsolutePath());
-        args.put(CliMain.TARGET_PATH_ARG, "test");
-        args.put(InstallCommand.DEFINITION_ARG, provisionDefinitionFile.getAbsolutePath());
-        new InstallCommand(actionFactory).execute(args);
+        int exitCode = commandLine.execute("install", "--dir", "test",
+                "--provision-config", channelsFile.getAbsolutePath(),
+                "--definition", provisionDefinitionFile.getAbsolutePath());
 
-        Mockito.verify(actionFactory).install(eq(Paths.get("test").toAbsolutePath()), any(MavenSessionManager.class));
+        assertEquals(ReturnCodes.SUCCESS, exitCode);
         Mockito.verify(provisionAction).provision(serverDefiniton.capture());
         assertNull("org.wildfly:wildfly-ee-galleon-pack", serverDefiniton.getValue().getFpl());
         assertEquals("dev", serverDefiniton.getValue().getRepositories().get(0).getId());
         assertEquals(provisionDefinitionFile.toPath(), serverDefiniton.getValue().getDefinition());
     }
 
-    @Test(expected = ArgumentParsingException.class)
+    @Test
     public void fplAndDefinitionAreNotAllowedTogether() throws Exception {
         final File provisionDefinitionFile = temporaryFolder.newFile("provision.xml");
         final File channelsFile = temporaryFolder.newFile();
 
-        Map<String, String> args = new HashMap<>();
-        args.put(CliMain.PROVISION_CONFIG_ARG, channelsFile.getAbsolutePath());
-        args.put(CliMain.TARGET_PATH_ARG, "test");
-        args.put(CliMain.FPL_ARG, "test");
-        args.put(InstallCommand.DEFINITION_ARG, provisionDefinitionFile.getAbsolutePath());
-        new InstallCommand(actionFactory).execute(args);
+        int exitCode = commandLine.execute("install", "--dir", "test",
+                "--definition", provisionDefinitionFile.getAbsolutePath(),
+                "--provision-config", channelsFile.getAbsolutePath(),
+                "--fpl", "test");
+
+        assertEquals(ReturnCodes.INVALID_ARGUMENTS, exitCode);
     }
 }

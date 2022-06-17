@@ -54,9 +54,6 @@ public class InstallationHistoryTest extends WfCoreTestBase {
     private final Provision installation = new Provision(OUTPUT_PATH, mavenSessionManager, new CliConsole());
     private Path channelFile;
 
-    public InstallationHistoryTest() throws Exception {
-    }
-
     @Before
     public void setUp() throws Exception {
         if (OUTPUT_PATH.toFile().exists()) {
