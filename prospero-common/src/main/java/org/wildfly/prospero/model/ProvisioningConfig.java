@@ -27,12 +27,12 @@ import java.io.IOException;
 import java.nio.file.Path;
 import java.util.List;
 
-public class ProvisioningRecord {
+public class ProvisioningConfig {
     private List<ChannelRef> channels;
     private List<RepositoryRef> repositories;
 
     @JsonCreator
-    public ProvisioningRecord(@JsonProperty(value = "channels") List<ChannelRef> channels,
+    public ProvisioningConfig(@JsonProperty(value = "channels") List<ChannelRef> channels,
                               @JsonProperty(value = "repositories") List<RepositoryRef> repositories) {
         this.channels = channels;
         this.repositories = repositories;
@@ -46,12 +46,12 @@ public class ProvisioningRecord {
         return repositories;
     }
 
-    public void writeChannels(File channelsFile) throws IOException {
+    public void writeConfig(File channelsFile) throws IOException {
         new ObjectMapper(new YAMLFactory()).writeValue(channelsFile, this);
     }
 
-    public static ProvisioningRecord readChannels(Path path) throws IOException {
+    public static ProvisioningConfig readChannels(Path path) throws IOException {
         final ObjectMapper objectMapper = new ObjectMapper(new YAMLFactory());
-        return objectMapper.readValue(path.toUri().toURL(), ProvisioningRecord.class);
+        return objectMapper.readValue(path.toUri().toURL(), ProvisioningConfig.class);
     }
 }

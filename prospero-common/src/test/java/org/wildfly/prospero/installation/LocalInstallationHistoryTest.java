@@ -22,7 +22,7 @@ import org.wildfly.prospero.api.InstallationMetadata;
 import org.wildfly.prospero.api.exceptions.MetadataException;
 import org.wildfly.prospero.api.SavedState;
 import org.wildfly.prospero.model.ManifestYamlSupport;
-import org.wildfly.prospero.model.ProvisioningRecord;
+import org.wildfly.prospero.model.ProvisioningConfig;
 import org.apache.commons.io.FileUtils;
 import org.eclipse.aether.artifact.DefaultArtifact;
 import org.junit.After;
@@ -126,8 +126,8 @@ public class LocalInstallationHistoryTest {
         installation = Files.createTempDirectory("installation");
         installation.toFile().deleteOnExit();
         Files.createDirectories(installation.resolve(InstallationMetadata.METADATA_DIR));
-        new ProvisioningRecord(Collections.emptyList(), Collections.emptyList())
-                .writeChannels(installation.resolve(InstallationMetadata.METADATA_DIR).resolve(InstallationMetadata.CHANNELS_FILE_NAME).toFile());
+        new ProvisioningConfig(Collections.emptyList(), Collections.emptyList())
+                .writeConfig(installation.resolve(InstallationMetadata.METADATA_DIR).resolve(InstallationMetadata.PROSPERO_CONFIG_FILE_NAME).toFile());
 
         final Channel channel = new Channel("test", "", null, null,
                 Arrays.asList(new Stream("foo", "bar", "1.1.1", null)));
