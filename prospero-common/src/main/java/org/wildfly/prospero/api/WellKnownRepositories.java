@@ -13,6 +13,9 @@ public enum WellKnownRepositories implements Supplier<RemoteRepository> {
             .build()),
 
     CENTRAL(new RemoteRepository.Builder("central", "default", "https://repo1.maven.org/maven2/")
+            .build()),
+
+    JBOSS_PUBLIC(new RemoteRepository.Builder("jboss-public", "default", "https://repository.jboss.org/nexus/content/groups/public/")
             .build());
 
     private final RemoteRepository repository;

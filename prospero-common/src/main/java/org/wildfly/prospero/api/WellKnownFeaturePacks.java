@@ -13,10 +13,10 @@ import org.eclipse.aether.repository.RemoteRepository;
  */
 public enum WellKnownFeaturePacks {
 
-    WILDFLY("wildfly-core@maven(org.jboss.universe:community-universe):current",
+    WILDFLY("wildfly@maven(org.jboss.universe:community-universe):current",
             "org.wildfly.channels:wildfly:26.1.0",
             Arrays.asList(),
-            Arrays.asList(WellKnownRepositories.CENTRAL.get())),
+            Arrays.asList(WellKnownRepositories.CENTRAL.get(), WellKnownRepositories.JBOSS_PUBLIC.get())),
 
     EAP_74("org.jboss.eap:wildfly-ee-galleon-pack",
             "org.wildfly.channels:eap-74:7.4",
