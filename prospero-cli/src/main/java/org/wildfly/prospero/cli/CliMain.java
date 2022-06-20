@@ -50,7 +50,7 @@ public class CliMain {
 
     public static final String TARGET_PATH_ARG = "dir";
     public static final String FPL_ARG = "fpl";
-    public static final String CHANNEL_FILE_ARG = "channel-file";
+    public static final String PROVISION_CONFIG_ARG = "provision-config";
     public static final String CHANNEL_REPO = "channel-repo";
     public static final String CHANNEL = "channel";
     public static final String DRY_RUN = "dry-run";

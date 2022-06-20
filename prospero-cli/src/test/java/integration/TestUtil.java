@@ -29,13 +29,13 @@ import java.util.stream.Collectors;
 
 import org.wildfly.prospero.model.ChannelRef;
 import org.wildfly.prospero.api.InstallationMetadata;
-import org.wildfly.prospero.model.ProvisioningRecord;
+import org.wildfly.prospero.model.ProvisioningConfig;
 import org.wildfly.prospero.model.RepositoryRef;
 
 public class TestUtil {
 
     public static final Path MANIFEST_FILE_PATH = Paths.get(InstallationMetadata.METADATA_DIR, InstallationMetadata.MANIFEST_FILE_NAME);
-    public static final Path CHANNELS_FILE_PATH = Paths.get(InstallationMetadata.METADATA_DIR, InstallationMetadata.CHANNELS_FILE_NAME);
+    public static final Path CHANNELS_FILE_PATH = Paths.get(InstallationMetadata.METADATA_DIR, InstallationMetadata.PROSPERO_CONFIG_FILE_NAME);
 
     public static URL prepareChannelFileAsUrl(String channelDescriptor) throws IOException {
         final Path channelFile = Files.createTempFile("channels", "yaml");
@@ -60,7 +60,7 @@ public class TestUtil {
         for (int i=0; i<channelUrls.size(); i++) {
             channels.add(new ChannelRef(null, channelUrls.get(i).toString()));
         }
-        new ProvisioningRecord(channels, repositories).writeChannels(channelFile.toFile());
+        new ProvisioningConfig(channels, repositories).writeConfig(channelFile.toFile());
 
         return channelFile;
     }

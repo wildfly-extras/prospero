@@ -47,7 +47,7 @@ class InstallCommand implements Command {
 
     @Override
     public Set<String> getSupportedArguments() {
-        return new HashSet<>(Arrays.asList(CliMain.TARGET_PATH_ARG, CliMain.FPL_ARG, CliMain.CHANNEL_FILE_ARG,
+        return new HashSet<>(Arrays.asList(CliMain.TARGET_PATH_ARG, CliMain.FPL_ARG, CliMain.PROVISION_CONFIG_ARG,
                 CliMain.CHANNEL_REPO, CliMain.CHANNEL, CliMain.LOCAL_REPO, CliMain.OFFLINE, DEFINITION_ARG));
     }
 
@@ -56,7 +56,7 @@ class InstallCommand implements Command {
         String dir = parsedArgs.get(CliMain.TARGET_PATH_ARG);
         String provisionDefinition = parsedArgs.get(DEFINITION_ARG);
         String fpl = parsedArgs.get(CliMain.FPL_ARG);
-        String channelFile = parsedArgs.get(CliMain.CHANNEL_FILE_ARG);
+        String channelFile = parsedArgs.get(CliMain.PROVISION_CONFIG_ARG);
         String channelRepo = parsedArgs.get(CliMain.CHANNEL_REPO);
         String localRepo = parsedArgs.get(CliMain.LOCAL_REPO);
         String channel = parsedArgs.get(CliMain.CHANNEL);
@@ -75,7 +75,7 @@ class InstallCommand implements Command {
         }
 
         if (!usingProvDefinition && isStandardFpl(fpl) && (channelFile == null || channelFile.isEmpty())) {
-            throw new ArgumentParsingException("Channel file argument (--%s) need to be set when using custom fpl", CliMain.CHANNEL_FILE_ARG);
+            throw new ArgumentParsingException("Channel file argument (--%s) need to be set when using custom fpl", CliMain.PROVISION_CONFIG_ARG);
         }
 
         if (offline && localRepo == null) {

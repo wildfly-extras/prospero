@@ -24,7 +24,7 @@ import org.wildfly.prospero.actions.Update;
 import org.wildfly.prospero.api.ProvisioningDefinition;
 import org.wildfly.prospero.cli.CliConsole;
 import org.wildfly.prospero.model.ManifestYamlSupport;
-import org.wildfly.prospero.model.ProvisioningRecord;
+import org.wildfly.prospero.model.ProvisioningConfig;
 import org.apache.commons.io.FileUtils;
 import org.eclipse.aether.artifact.Artifact;
 import org.eclipse.aether.artifact.DefaultArtifact;
@@ -139,8 +139,8 @@ public class SimpleProvisionTest extends WfCoreTestBase {
     public void installWildflyCoreFromInstallationFile() throws Exception {
         final Path channelFile = TestUtil.prepareChannelFile("local-repo-desc.yaml");
         final File installationFile = new File(this.getClass().getClassLoader().getResource("provisioning.xml").toURI());
-        final ProvisioningRecord provisioningRecord = ProvisioningRecord.readChannels(channelFile);
-        final List<ChannelRef> channelRefs = provisioningRecord.getChannels();
+        final ProvisioningConfig provisioningConfig = ProvisioningConfig.readChannels(channelFile);
+        final List<ChannelRef> channelRefs = provisioningConfig.getChannels();
 
         installation.provision(installationFile.toPath(), channelRefs, repositories);
 

@@ -28,7 +28,7 @@ import java.util.Map;
 import org.wildfly.prospero.actions.Provision;
 import org.wildfly.prospero.model.ChannelRef;
 import org.wildfly.prospero.api.ProvisioningDefinition;
-import org.wildfly.prospero.model.ProvisioningRecord;
+import org.wildfly.prospero.model.ProvisioningConfig;
 import org.wildfly.prospero.model.RepositoryRef;
 import org.wildfly.prospero.wfchannel.MavenSessionManager;
 import org.junit.Rule;
@@ -109,7 +109,7 @@ public class InstallCommandTest {
             new InstallCommand(actionFactory).execute(args);
             fail("Should have failed");
         } catch (ArgumentParsingException e) {
-            assertEquals("Channel file argument (--channel-file) need to be set when using custom fpl", e.getMessage());
+            assertEquals("Channel file argument (--provision-config) need to be set when using custom fpl", e.getMessage());
         }
     }
 
@@ -120,12 +120,12 @@ public class InstallCommandTest {
         List<RepositoryRef> repositories = new ArrayList<>();
 
         final File channelsFile = temporaryFolder.newFile();
-        new ProvisioningRecord(channels, repositories).writeChannels(channelsFile);
+        new ProvisioningConfig(channels, repositories).writeConfig(channelsFile);
 
         Map<String, String> args = new HashMap<>();
         args.put(CliMain.TARGET_PATH_ARG, "test");
         args.put(CliMain.FPL_ARG, "org.wildfly:wildfly-ee-galleon-pack");
-        args.put(CliMain.CHANNEL_FILE_ARG, channelsFile.getAbsolutePath());
+        args.put(CliMain.PROVISION_CONFIG_ARG, channelsFile.getAbsolutePath());
         new InstallCommand(actionFactory).execute(args);
 
         Mockito.verify(actionFactory).install(eq(Paths.get("test").toAbsolutePath()), any(MavenSessionManager.class));
@@ -154,12 +154,12 @@ public class InstallCommandTest {
         List<RepositoryRef> repositories = Arrays.asList(new RepositoryRef("dev", "http://test.test"));
 
         final File channelsFile = temporaryFolder.newFile();
-        new ProvisioningRecord(channels, repositories).writeChannels(channelsFile);
+        new ProvisioningConfig(channels, repositories).writeConfig(channelsFile);
 
         Map<String, String> args = new HashMap<>();
         args.put(CliMain.TARGET_PATH_ARG, "test");
         args.put(CliMain.FPL_ARG, "eap");
-        args.put(CliMain.CHANNEL_FILE_ARG, channelsFile.getAbsolutePath());
+        args.put(CliMain.PROVISION_CONFIG_ARG, channelsFile.getAbsolutePath());
         new InstallCommand(actionFactory).execute(args);
 
         Mockito.verify(actionFactory).install(eq(Paths.get("test").toAbsolutePath()), any(MavenSessionManager.class));
@@ -176,10 +176,10 @@ public class InstallCommandTest {
 
         final File provisionDefinitionFile = temporaryFolder.newFile("provision.xml");
         final File channelsFile = temporaryFolder.newFile();
-        new ProvisioningRecord(channels, repositories).writeChannels(channelsFile);
+        new ProvisioningConfig(channels, repositories).writeConfig(channelsFile);
 
         Map<String, String> args = new HashMap<>();
-        args.put(CliMain.CHANNEL_FILE_ARG, channelsFile.getAbsolutePath());
+        args.put(CliMain.PROVISION_CONFIG_ARG, channelsFile.getAbsolutePath());
         args.put(CliMain.TARGET_PATH_ARG, "test");
         args.put(InstallCommand.DEFINITION_ARG, provisionDefinitionFile.getAbsolutePath());
         new InstallCommand(actionFactory).execute(args);
@@ -197,7 +197,7 @@ public class InstallCommandTest {
         final File channelsFile = temporaryFolder.newFile();
 
         Map<String, String> args = new HashMap<>();
-        args.put(CliMain.CHANNEL_FILE_ARG, channelsFile.getAbsolutePath());
+        args.put(CliMain.PROVISION_CONFIG_ARG, channelsFile.getAbsolutePath());
         args.put(CliMain.TARGET_PATH_ARG, "test");
         args.put(CliMain.FPL_ARG, "test");
         args.put(InstallCommand.DEFINITION_ARG, provisionDefinitionFile.getAbsolutePath());

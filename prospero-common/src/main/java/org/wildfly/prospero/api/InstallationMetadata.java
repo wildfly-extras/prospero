@@ -21,13 +21,12 @@ import org.wildfly.prospero.api.exceptions.MetadataException;
 import org.wildfly.prospero.installation.git.GitStorage;
 import org.wildfly.prospero.model.ChannelRef;
 import org.wildfly.prospero.model.ManifestYamlSupport;
-import org.wildfly.prospero.model.ProvisioningRecord;
+import org.wildfly.prospero.model.ProvisioningConfig;
 import org.wildfly.prospero.model.RepositoryRef;
 import org.eclipse.aether.artifact.Artifact;
 import org.eclipse.aether.artifact.DefaultArtifact;
 import org.eclipse.aether.repository.RemoteRepository;
 import org.jboss.galleon.ProvisioningException;
-import org.jboss.galleon.config.ProvisioningConfig;
 import org.jboss.galleon.xml.ProvisioningXmlParser;
 import org.wildfly.channel.Channel;
 import org.wildfly.channel.Stream;
@@ -49,27 +48,27 @@ public class InstallationMetadata {
 
     public static final String METADATA_DIR = ".installation";
     public static final String MANIFEST_FILE_NAME = "manifest.yaml";
-    public static final String CHANNELS_FILE_NAME = "channels.yaml";
+    public static final String PROSPERO_CONFIG_FILE_NAME = "prospero-config.yaml";
     public static final String PROVISIONING_FILE_NAME = "provisioning.xml";
     public static final String GALLEON_INSTALLATION_DIR = ".galleon";
     private final Path manifestFile;
-    private final Path channelsFile;
+    private final Path prosperoConfigFile;
     private final Path provisioningFile;
     private Channel manifest;
-    private ProvisioningConfig provisioningConfig;
+    private org.jboss.galleon.config.ProvisioningConfig provisioningConfig;
     private List<ChannelRef> channelRefs;
     private List<RemoteRepository> repositories;
     private final GitStorage gitStorage;
     private Path base;
 
-    private InstallationMetadata(Path manifestFile, Path channelsFile, Path provisioningFile) throws MetadataException {
+    private InstallationMetadata(Path manifestFile, Path prosperoConfigFile, Path provisioningFile) throws MetadataException {
         this.base = manifestFile.getParent();
         this.gitStorage = null;
         this.manifestFile = manifestFile;
-        this.channelsFile = channelsFile;
+        this.prosperoConfigFile = prosperoConfigFile;
         this.provisioningFile = provisioningFile;
 
-        doInit(manifestFile, channelsFile, provisioningFile);
+        doInit(manifestFile, prosperoConfigFile, provisioningFile);
     }
 
 
@@ -77,10 +76,10 @@ public class InstallationMetadata {
         this.base = base;
         this.gitStorage = new GitStorage(base);
         this.manifestFile = base.resolve(METADATA_DIR).resolve(InstallationMetadata.MANIFEST_FILE_NAME);
-        this.channelsFile = base.resolve(METADATA_DIR).resolve(InstallationMetadata.CHANNELS_FILE_NAME);
+        this.prosperoConfigFile = base.resolve(METADATA_DIR).resolve(InstallationMetadata.PROSPERO_CONFIG_FILE_NAME);
         this.provisioningFile = base.resolve(GALLEON_INSTALLATION_DIR).resolve(InstallationMetadata.PROVISIONING_FILE_NAME);
 
-        doInit(manifestFile, channelsFile, provisioningFile);
+        doInit(manifestFile, prosperoConfigFile, provisioningFile);
     }
 
     public InstallationMetadata(Path base, Channel channel, List<ChannelRef> channelRefs,
@@ -88,7 +87,7 @@ public class InstallationMetadata {
         this.base = base;
         this.gitStorage = new GitStorage(base);
         this.manifestFile = base.resolve(METADATA_DIR).resolve(InstallationMetadata.MANIFEST_FILE_NAME);
-        this.channelsFile = base.resolve(METADATA_DIR).resolve(InstallationMetadata.CHANNELS_FILE_NAME);
+        this.prosperoConfigFile = base.resolve(METADATA_DIR).resolve(InstallationMetadata.PROSPERO_CONFIG_FILE_NAME);
         this.provisioningFile = base.resolve(GALLEON_INSTALLATION_DIR).resolve(InstallationMetadata.PROVISIONING_FILE_NAME);
 
         this.manifest = channel;
@@ -104,9 +103,9 @@ public class InstallationMetadata {
     private void doInit(Path manifestFile, Path channelsFile, Path provisioningFile) throws MetadataException {
         try {
             this.manifest = ManifestYamlSupport.parse(manifestFile.toFile());
-            final ProvisioningRecord provisioningRecord = ProvisioningRecord.readChannels(channelsFile);
-            this.channelRefs = provisioningRecord.getChannels();
-            this.repositories = provisioningRecord.getRepositories()
+            final ProvisioningConfig provisioningConfig = ProvisioningConfig.readChannels(channelsFile);
+            this.channelRefs = provisioningConfig.getChannels();
+            this.repositories = provisioningConfig.getRepositories()
                     .stream().map(r -> r.toRemoteRepository()).collect(Collectors.toList());
             this.provisioningConfig = ProvisioningXmlParser.parse(provisioningFile);
         } catch (IOException | ProvisioningException e) {
@@ -129,7 +128,7 @@ public class InstallationMetadata {
                     manifestFile.toFile().deleteOnExit();
                 }
 
-                if (entry.getName().equals(CHANNELS_FILE_NAME)) {
+                if (entry.getName().equals(PROSPERO_CONFIG_FILE_NAME)) {
                     channelsFile = Files.createTempFile("channels", "yaml");
                     Files.copy(zis, channelsFile, StandardCopyOption.REPLACE_EXISTING);
                     channelsFile.toFile().deleteOnExit();
@@ -164,8 +163,8 @@ public class InstallationMetadata {
             }
             zos.closeEntry();
 
-            zos.putNextEntry(new ZipEntry(CHANNELS_FILE_NAME));
-            try(FileInputStream fis = new FileInputStream(channelsFile.toFile())) {
+            zos.putNextEntry(new ZipEntry(PROSPERO_CONFIG_FILE_NAME));
+            try(FileInputStream fis = new FileInputStream(prosperoConfigFile.toFile())) {
                 byte[] buffer = new byte[1024];
                 int len;
                 while ((len = fis.read(buffer)) > 0) {
@@ -199,7 +198,7 @@ public class InstallationMetadata {
         return repositories;
     }
 
-    public ProvisioningConfig getProvisioningConfig() {
+    public org.jboss.galleon.config.ProvisioningConfig getProvisioningConfig() {
         return provisioningConfig;
     }
 
@@ -211,9 +210,9 @@ public class InstallationMetadata {
         }
 
         try {
-            final ProvisioningRecord provisioningRecord = new ProvisioningRecord(this.channelRefs,
+            final ProvisioningConfig provisioningConfig = new ProvisioningConfig(this.channelRefs,
                     repositories.stream().map(r -> new RepositoryRef(r.getId(), r.getUrl())).collect(Collectors.toList()));
-            provisioningRecord.writeChannels(this.channelsFile.toFile());
+            provisioningConfig.writeConfig(this.prosperoConfigFile.toFile());
         } catch (IOException e) {
             throw new MetadataException("Unable to save channel list in installation", e);
         }
