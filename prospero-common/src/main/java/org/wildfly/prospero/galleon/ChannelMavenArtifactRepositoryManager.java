@@ -60,7 +60,7 @@ public class ChannelMavenArtifactRepositoryManager implements MavenRepoManager {
             final org.wildfly.channel.MavenArtifact result;
             if (manifest == null) {
                 result = channelSession.resolveMavenArtifact(artifact.getGroupId(), artifact.getArtifactId(), artifact.getExtension(),
-                        artifact.getClassifier());
+                        artifact.getClassifier(), null);
             } else {
                 final DefaultArtifact gav = new DefaultArtifact(artifact.getGroupId(), artifact.getArtifactId(), artifact.getClassifier(), artifact.getExtension(), artifact.getVersion() != null ? artifact.getVersion() : artifact.getVersionRange());
 
@@ -71,7 +71,7 @@ public class ChannelMavenArtifactRepositoryManager implements MavenRepoManager {
                             artifact.getClassifier(), found.get().getVersion());
                 } else if (artifact.getArtifactId().equals("community-universe") || artifact.getArtifactId().equals("wildfly-producers")) {
                     result = channelSession.resolveMavenArtifact(artifact.getGroupId(), artifact.getArtifactId(), artifact.getExtension(),
-                            artifact.getClassifier());
+                            artifact.getClassifier(), null);
                 } else {
                     throw new MavenUniverseException("Unable to resolve " + artifact);
                 }
@@ -164,7 +164,7 @@ public class ChannelMavenArtifactRepositoryManager implements MavenRepoManager {
         // TODO: handle version ranges
         try {
             return channelSession.resolveMavenArtifact(artifact.getGroupId(), artifact.getArtifactId(), artifact.getExtension(),
-                    artifact.getClassifier()).getVersion();
+                    artifact.getClassifier(), null).getVersion();
         } catch (UnresolvedMavenArtifactException e) {
             throw new MavenUniverseException(e.getMessage(), e);
         }
