@@ -107,6 +107,6 @@ class InstallCommand implements Command {
     }
 
     private boolean isStandardFpl(String fpl) {
-        return !WellKnownFeaturePacks.isNameKnown(fpl);
+        return !WellKnownFeaturePacks.isWellKnownName(fpl);
     }
 }

@@ -62,7 +62,7 @@ public class ProvisioningDefinition {
         this.includedPackages.addAll(includedPackages.orElse(Collections.emptySet()));
 
         try {
-            if (fpl.isPresent() && WellKnownFeaturePacks.isNameKnown(fpl.get())) {
+            if (fpl.isPresent() && WellKnownFeaturePacks.isWellKnownName(fpl.get())) {
                 WellKnownFeaturePacks featurePackInfo = WellKnownFeaturePacks.getByName(fpl.get());
                 this.fpl = featurePackInfo.location;
                 this.definition = null;
