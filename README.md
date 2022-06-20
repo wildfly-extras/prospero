@@ -1,58 +1,27 @@
-Demo:
+## Prospero 
+Prospero is a tool combining Galleon feature packs and wildfly-channels to provision 
+and update Wildfly server.
 
-The demo below provisions Wildfly Core feature pack.
-It uses docker to host a nexus repository and requires
-building galleo-plugins and wildfly-core projects
+## Example:
+The demo below provisions and updates Wildfly 27.0.0.Alpha1.
 
-1. Build Wildfly Core
-   1. Build prospero-galleon-plugin
-      ```
-         cd <PROSPERO_HOME>
-         mvn clean install -Dgalleon
-      ```
-   1. Build galleon-plugins
-      ```
-         git clone https://github.com/spyrkob/galleon-plugins.git -b prospero <PATH_TO_GALLEON_PLUGINS>
-         cd <PATH_TO_GALLEON_PLUGINS>
-         mvn clean install -DskipTests
-      ```
-   1. Build wildfly-core with updated galleon-plugin
-      ```
-         git clone https://github.com/spyrkob/wildfly-core.git -b prospero <PATH_TO_WF_CORE>
-         cd <PATH_TO_WF_CORE>
-         mvn clean install -DskipTests
-      ```
-1. Setup nexus with channel repository   
-   1. Start and setup nexus container in docker (or other MVN repository)
-      ```
-         cd <PROSPERO_HOME>
-         ./scripts/setupNexus.sh
-      ```
-   1. Add nexus credential in `~/.m2/settings.xml` 
-       ```
-      <servers>
-      ...
-          <server>
-              <id>nexus2</id>
-              <username>admin</username>
-              <password>admin</password>
-          </server>
-      ...
-      </servers>
-      ```
-
-   1. Deploy artifacts into repositories
-      ```
-         WILDFLY_CORE_SRC="<PATH_TO_WF_CORE>" ./scripts/upload-artifacts.sh
-         WILDFLY_CORE_SRC="<PATH_TO_WF_CORE>" \
-           GALLEON_SRC=<PATH_TO_GALLEON_PLUGINS> \
-           ./scripts/upload-galleon-.sh
-      ```
-1. Build prospero-cli
+1. Build prospero
    ```
-      mvn clean install -pl prospero-cli
+      cd <PROSPERO_HOME>
+      mvn clean install
    ```
-1. Provision server
+2. Provision server
    ```
-      ./prospero install wildfly-core:current/snapshot eap-dev dev-channels.json
+      ./<PROSPERO_HOME>/prospero install --fpl=wildfly --dir=wfly-27 --channel=examples/wildfly-27.0.0.Alpha1-channel.yaml
+   ```
+3. Update server
+   1. Edit `examples/wildfly-27.0.0.Alpha1-channel.yaml` and update undertow-core version to:
+   ```
+      - groupId: "io.undertow"
+        artifactId: "undertow-core"
+        version: "2.2.17.Final"
+   ```
+   2. Update server
+   ```
+      ./<PROSPERO_HOME>/prospero update --dir=wfly-27
    ```
