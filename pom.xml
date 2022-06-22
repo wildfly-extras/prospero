@@ -98,6 +98,12 @@
             </dependency>
 
             <dependency>
+                <groupId>org.wildfly.channel</groupId>
+                <artifactId>maven-resolver</artifactId>
+                <version>${version.org.wildfly.channel}</version>
+            </dependency>
+
+            <dependency>
                 <groupId>org.jboss.galleon</groupId>
                 <artifactId>galleon-maven-universe</artifactId>
                 <version>${version.org.jboss.galleon}</version>

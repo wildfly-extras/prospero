@@ -74,6 +74,10 @@ public class MavenSessionManager {
         return locator.getService(RepositorySystem.class);
     }
 
+    public DefaultRepositorySystemSession newRepositorySystemSession(RepositorySystem system) {
+        return newRepositorySystemSession(system, false);
+    }
+
     public DefaultRepositorySystemSession newRepositorySystemSession(RepositorySystem system,
                                                                      boolean resolveLocalCache) {
         DefaultRepositorySystemSession session = MavenRepositorySystemUtils.newSession();

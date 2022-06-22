@@ -28,17 +28,29 @@ import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 
+import org.apache.maven.repository.internal.MavenRepositorySystemUtils;
+import org.eclipse.aether.DefaultRepositorySystemSession;
+import org.eclipse.aether.RepositorySystem;
+import org.eclipse.aether.connector.basic.BasicRepositoryConnectorFactory;
+import org.eclipse.aether.impl.DefaultServiceLocator;
+import org.eclipse.aether.repository.LocalRepository;
 import org.eclipse.aether.repository.RemoteRepository;
+import org.eclipse.aether.spi.connector.RepositoryConnectorFactory;
+import org.eclipse.aether.spi.connector.transport.TransporterFactory;
+import org.eclipse.aether.transport.http.HttpTransporterFactory;
 import org.wildfly.channel.Channel;
 import org.wildfly.channel.ChannelMapper;
 import org.wildfly.channel.ChannelSession;
 import org.wildfly.channel.MavenArtifact;
 import org.wildfly.channel.Stream;
 import org.wildfly.channel.UnresolvedMavenArtifactException;
+import org.wildfly.channel.maven.VersionResolverFactory;
 import org.wildfly.channel.spi.MavenVersionsResolver;
 import org.wildfly.channel.version.VersionMatcher;
 
 public class BootstrapUpdater {
+
+    static String LOCAL_MAVEN_REPO = System.getProperty("user.home") + "/.m2/repository";
 
     public List<Path> update(String[] args) throws BootstrapException {
         final Path userHome = Paths.get(System.getProperty("user.home"));
@@ -58,9 +70,11 @@ public class BootstrapUpdater {
     private List<Path> downloadAllDeps(Path installerLib, Optional<String> channelRepo) throws BootstrapException {
         try {
             final RemoteRepository repo = new RemoteRepository.Builder("mrrc", "default", channelRepo.orElse("https://maven.repository.redhat.com/ga/")).build();
-            final BootstrapMavenResolverFactory factory = new BootstrapMavenResolverFactory(Arrays.asList(repo));
+            final RepositorySystem system = newRepositorySystem();
+            final DefaultRepositorySystemSession repoSession = newRepositorySystemSession(system, true);
+            final MavenVersionsResolver.Factory factory = new VersionResolverFactory(system, repoSession, Arrays.asList(repo));
 
-            final MavenVersionsResolver mavenResolver = factory.getMavenResolver();
+            final MavenVersionsResolver mavenResolver = factory.create();
             final Set<String> allVersions = mavenResolver.getAllVersions("org.wildfly.channels", "installer", "yaml", "channel");
             if (allVersions.isEmpty()) {
                 throw new BootstrapException("Unable to find installer channel definition");
@@ -94,6 +108,27 @@ public class BootstrapUpdater {
         } catch (UnresolvedMavenArtifactException | IOException e) {
             throw new BootstrapException(e);
         }
+    }
+
+    private RepositorySystem newRepositorySystem() {
+        DefaultServiceLocator locator = MavenRepositorySystemUtils.newServiceLocator();
+        locator.addService(RepositoryConnectorFactory.class, BasicRepositoryConnectorFactory.class);
+        locator.addService(TransporterFactory.class, HttpTransporterFactory.class);
+        return locator.getService(RepositorySystem.class);
+    }
+
+    private DefaultRepositorySystemSession newRepositorySystemSession(RepositorySystem system, boolean resolveLocalCache) {
+        DefaultRepositorySystemSession session = MavenRepositorySystemUtils.newSession();
+
+        String location;
+        if (resolveLocalCache) {
+            location = LOCAL_MAVEN_REPO;
+        } else {
+            location = "target/local-repo";
+        }
+        LocalRepository localRepo = new LocalRepository(location);
+        session.setLocalRepositoryManager(system.newLocalRepositoryManager(session, localRepo));
+        return session;
     }
 
     private Optional<Path> findPreviousVersion(MavenArtifact artifact, Path installerLib) {

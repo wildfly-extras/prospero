@@ -17,6 +17,10 @@
 
 package org.wildfly.prospero.actions;
 
+import org.eclipse.aether.DefaultRepositorySystemSession;
+import org.eclipse.aether.RepositorySystem;
+import org.wildfly.channel.maven.VersionResolverFactory;
+import org.wildfly.channel.spi.MavenVersionsResolver;
 import org.wildfly.prospero.api.ArtifactChange;
 import org.wildfly.prospero.model.ChannelRef;
 import org.wildfly.prospero.api.InstallationMetadata;
@@ -25,7 +29,6 @@ import org.wildfly.prospero.api.SavedState;
 import org.wildfly.prospero.galleon.GalleonUtils;
 import org.wildfly.prospero.galleon.ChannelMavenArtifactRepositoryManager;
 import org.wildfly.prospero.wfchannel.MavenSessionManager;
-import org.wildfly.prospero.wfchannel.WfChannelMavenResolverFactory;
 import org.eclipse.aether.repository.RemoteRepository;
 import org.jboss.galleon.ProvisioningException;
 import org.jboss.galleon.ProvisioningManager;
@@ -68,7 +71,9 @@ public class InstallationHistory {
         final List<Channel> channels = mapToChannels(metadata.getChannels());
         final List<RemoteRepository> repositories = metadata.getRepositories();
 
-        final WfChannelMavenResolverFactory factory = new WfChannelMavenResolverFactory(mavenSessionManager, repositories);
+        final RepositorySystem system = mavenSessionManager.newRepositorySystem();
+        final DefaultRepositorySystemSession session = mavenSessionManager.newRepositorySystemSession(system);
+        MavenVersionsResolver.Factory factory = new VersionResolverFactory(system, session, repositories);
         final ChannelMavenArtifactRepositoryManager repoManager = new ChannelMavenArtifactRepositoryManager(channels, factory, metadata.getChannel());
         ProvisioningManager provMgr = GalleonUtils.getProvisioningManager(installation, repoManager);
         final ProvisioningLayoutFactory layoutFactory = provMgr.getLayoutFactory();
