@@ -22,12 +22,12 @@ import java.util.List;
 import java.util.Optional;
 import java.util.Scanner;
 
-import org.wildfly.prospero.actions.Console;
-import org.wildfly.prospero.api.ArtifactChange;
 import org.jboss.galleon.layout.FeaturePackUpdatePlan;
 import org.jboss.galleon.progresstracking.ProgressCallback;
 import org.jboss.galleon.progresstracking.ProgressTracker;
 import org.jboss.galleon.universe.FeaturePackLocation;
+import org.wildfly.prospero.actions.Console;
+import org.wildfly.prospero.api.ArtifactChange;
 
 public class CliConsole implements Console {
 
@@ -40,8 +40,8 @@ public class CliConsole implements Console {
     }
 
     @Override
-    public ProgressCallback getProgressCallback(String id) {
-        return new ProgressCallback() {
+    public ProgressCallback<?> getProgressCallback(String id) {
+        return new ProgressCallback<>() {
 
             @Override
             public long getProgressPulsePct() {
@@ -62,16 +62,16 @@ public class CliConsole implements Console {
             public void starting(ProgressTracker tracker) {
                 switch (id) {
                     case "LAYOUT_BUILD":
-                        System.out.print("Resolving feature-pack");
+                        getStdOut().print("Resolving feature-pack");
                         break;
                     case "PACKAGES":
-                        System.out.print("Installing packages");
+                        getStdOut().print("Installing packages");
                         break;
                     case "CONFIGS":
-                        System.out.print("Generating configuration");
+                        getStdOut().print("Generating configuration");
                         break;
                     case "JBMODULES":
-                        System.out.print("Installing JBoss modules");
+                        getStdOut().print("Installing JBoss modules");
                         break;
                 }
             }
@@ -81,20 +81,20 @@ public class CliConsole implements Console {
                 final double progress = tracker.getProgress();
                 switch (id) {
                     case "LAYOUT_BUILD":
-                        System.out.print("\r");
-                        System.out.printf("Resolving feature-pack %.0f%%", progress);
+                        getStdOut().print("\r");
+                        getStdOut().printf("Resolving feature-pack %.0f%%", progress);
                         break;
                     case "PACKAGES":
-                        System.out.print("\r");
-                        System.out.printf("Installing packages %.0f%%", progress);
+                        getStdOut().print("\r");
+                        getStdOut().printf("Installing packages %.0f%%", progress);
                         break;
                     case "CONFIGS":
-                        System.out.print("\r");
-                        System.out.printf("Generating configuration %.0f%%", progress);
+                        getStdOut().print("\r");
+                        getStdOut().printf("Generating configuration %.0f%%", progress);
                         break;
                     case "JBMODULES":
-                        System.out.print("\r");
-                        System.out.printf("Installing JBoss modules %.0f%%", progress);
+                        getStdOut().print("\r");
+                        getStdOut().printf("Installing JBoss modules %.0f%%", progress);
                         break;
                 }
             }
@@ -103,20 +103,20 @@ public class CliConsole implements Console {
             public void complete(ProgressTracker tracker) {
                 switch (id) {
                     case "LAYOUT_BUILD":
-                        System.out.print("\r");
-                        System.out.println("Feature-packs resolved.");
+                        getStdOut().print("\r");
+                        getStdOut().println("Feature-packs resolved.");
                         break;
                     case "PACKAGES":
-                        System.out.print("\r");
-                        System.out.println("Packages installed.");
+                        getStdOut().print("\r");
+                        getStdOut().println("Packages installed.");
                         break;
                     case "CONFIGS":
-                        System.out.print("\r");
-                        System.out.println("Configurations generated.");
+                        getStdOut().print("\r");
+                        getStdOut().println("Configurations generated.");
                         break;
                     case "JBMODULES":
-                        System.out.print("\r");
-                        System.out.println("JBoss modules installed.");
+                        getStdOut().print("\r");
+                        getStdOut().println("JBoss modules installed.");
                         break;
                 }
             }
@@ -126,49 +126,45 @@ public class CliConsole implements Console {
     @Override
     public void updatesFound(Collection<FeaturePackUpdatePlan> fpUpdates, List<ArtifactChange> artifactUpdates) {
         if (fpUpdates.isEmpty() && artifactUpdates.isEmpty()) {
-            System.out.println("No updates found");
+            getStdOut().println("No updates found");
         } else {
-            System.out.println("Updates found:");
+            getStdOut().println("Updates found:");
             for (FeaturePackUpdatePlan fpUpdate : fpUpdates) {
                 final FeaturePackLocation oldFp = fpUpdate.getInstalledLocation();
                 final FeaturePackLocation newFp = fpUpdate.getNewLocation();
-                System.out.printf("  %-40s    %-20s ==>  %-20s%n", newFp.getProducerName(), oldFp.getBuild(), newFp.getBuild());
+                getStdOut().printf("  %-40s    %-20s ==>  %-20s%n", newFp.getProducerName(), oldFp.getBuild(), newFp.getBuild());
             }
             for (ArtifactChange artifactUpdate : artifactUpdates) {
                 final Optional<String> newVersion = artifactUpdate.getNewVersion();
                 final Optional<String> oldVersion = artifactUpdate.getOldVersion();
                 final String artifactName = artifactUpdate.getArtifactName();
 
-                System.out.printf("  %-40s    %-20s ==>  %-20s%n", artifactName, oldVersion.orElse("[]"), newVersion.orElse("[]"));
+                getStdOut().printf("  %-40s    %-20s ==>  %-20s%n", artifactName, oldVersion.orElse("[]"), newVersion.orElse("[]"));
             }
         }
     }
 
     @Override
     public boolean confirmUpdates() {
-        System.out.print("Continue with update [y/n]: ");
-        Scanner sc = new Scanner(System.in);
+        getStdOut().print("Continue with update [y/n]: ");
+        Scanner sc = new Scanner(getInput());
         while (true) {
             String resp = sc.nextLine();
             if (resp.equalsIgnoreCase("n")) {
-                System.out.println("Update cancelled");
+                println("Update cancelled");
                 return false;
             } else if (resp.equalsIgnoreCase("y")) {
-                System.out.println("Applying updates");
+                println("Applying updates");
                 return true;
             } else {
-                System.out.print("Choose [y/n]: ");
+                getStdOut().print("Choose [y/n]: ");
             }
         }
     }
 
     @Override
     public void updatesComplete() {
-        System.out.println("Update complete!");
+        println("Update complete!");
     }
 
-    @Override
-    public void println(String text) {
-        System.out.println(text);
-    }
 }

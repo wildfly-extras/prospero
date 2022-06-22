@@ -19,6 +19,7 @@ package org.wildfly.prospero.wfchannel;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.stream.Collectors;
 
 import org.wildfly.prospero.model.ChannelRef;
 import org.wildfly.prospero.api.exceptions.ArtifactResolutionException;
@@ -83,8 +84,15 @@ public class ChannelRefUpdater {
         }
         // TODO: pick latest version using Comparator
         if (versionRangeResult.getHighestVersion() == null && versionRangeResult.getVersions().isEmpty()) {
+            final String delimiter = "\n  * ";
+            String remoteRepositoriesString = request.getRepositories()
+                    .stream()
+                    .map(RemoteRepository::getUrl)
+                    .collect(Collectors.joining(delimiter, delimiter, ""));
+            String localRepositoryString = this.mavenSessionManager.getProvisioningRepo().toString();
             throw new ArtifactResolutionException(
-                    String.format("Unable to resolve versions of %s", artifact));
+                    String.format("Unable to resolve versions of %s\n  remote repositories: %s\n  local repository: %s",
+                            artifact, remoteRepositoriesString, localRepositoryString));
         }
         final Artifact latestArtifact = artifact.setVersion(versionRangeResult.getHighestVersion().toString());
 

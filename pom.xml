@@ -33,7 +33,10 @@
         <version.junit>4.13.2</version.junit>
         <version.maven-shade-plugin>2.3</version.maven-shade-plugin>
         <version.org.wildfly.channel>1.0.0.Alpha16</version.org.wildfly.channel>
+        <version.maven-compiler-plugin>3.10.1</version.maven-compiler-plugin>
         <version.org.wildfly.galleon-pack>26.1.0.Final</version.org.wildfly.galleon-pack>
+        <version.info.picocli>4.6.3</version.info.picocli>
+        <version.system-rules>1.19.0</version.system-rules>
 
         <version.org.wildfly.checkstyle-config>1.0.8.Final</version.org.wildfly.checkstyle-config>
     </properties>
@@ -170,6 +173,12 @@
             </dependency>
 
             <dependency>
+                <groupId>info.picocli</groupId>
+                <artifactId>picocli</artifactId>
+                <version>${version.info.picocli}</version>
+            </dependency>
+
+            <dependency>
                 <groupId>junit</groupId>
                 <artifactId>junit</artifactId>
                 <version>${version.junit}</version>
@@ -179,6 +188,12 @@
                 <groupId>org.mockito</groupId>
                 <artifactId>mockito-core</artifactId>
                 <version>${version.org.mockito}</version>
+                <scope>test</scope>
+            </dependency>
+            <dependency>
+                <groupId>com.github.stefanbirkner</groupId>
+                <artifactId>system-rules</artifactId>
+                <version>${version.system-rules}</version>
                 <scope>test</scope>
             </dependency>
         </dependencies>

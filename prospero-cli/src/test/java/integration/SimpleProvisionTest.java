@@ -49,13 +49,10 @@ import static org.junit.Assert.*;
 public class SimpleProvisionTest extends WfCoreTestBase {
 
     private static final String OUTPUT_DIR = "target/server";
-    private Path OUTPUT_PATH = Paths.get(OUTPUT_DIR).toAbsolutePath();
-    private Path manifestPath = OUTPUT_PATH.resolve(TestUtil.MANIFEST_FILE_PATH);
+    private static final Path OUTPUT_PATH = Paths.get(OUTPUT_DIR).toAbsolutePath();
+    private static final Path MANIFEST_PATH = OUTPUT_PATH.resolve(TestUtil.MANIFEST_FILE_PATH);
 
-    private Provision installation = new Provision(OUTPUT_PATH, mavenSessionManager, new CliConsole());
-
-    public SimpleProvisionTest() throws Exception {
-    }
+    private final Provision installation = new Provision(OUTPUT_PATH, mavenSessionManager, new CliConsole());
 
     @Before
     public void setUp() throws Exception {
@@ -83,7 +80,7 @@ public class SimpleProvisionTest extends WfCoreTestBase {
         installation.provision(provisioningDefinition);
 
         // verify installation with manifest file is present
-        assertTrue(manifestPath.toFile().exists());
+        assertTrue(MANIFEST_PATH.toFile().exists());
         // verify manifest contains versions 17.0.1
         final Optional<Artifact> wildflyCliArtifact = readArtifactFromManifest("org.wildfly.core", "wildfly-cli");
         assertEquals(BASE_VERSION, wildflyCliArtifact.get().getVersion());
@@ -149,7 +146,7 @@ public class SimpleProvisionTest extends WfCoreTestBase {
     }
 
     private Optional<Artifact> readArtifactFromManifest(String groupId, String artifactId) throws IOException {
-        final File manifestFile = manifestPath.toFile();
+        final File manifestFile = MANIFEST_PATH.toFile();
         return ManifestYamlSupport.parse(manifestFile).getStreams().stream()
                 .filter((a) -> a.getGroupId().equals(groupId) && a.getArtifactId().equals(artifactId))
                 .findFirst()

@@ -44,9 +44,6 @@ public class InstallationRestoreTest extends WfCoreTestBase {
     private static final String RESTORED_SERVER_DIR = "target/restored";
     private static final Path RESTORED_SERVER_PATH = Paths.get(RESTORED_SERVER_DIR).toAbsolutePath();
 
-    public InstallationRestoreTest() throws Exception {
-    }
-
     @Before
     public void setUp() throws Exception {
         if (FIRST_SERVER_PATH.toFile().exists()) {

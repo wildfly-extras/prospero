@@ -17,20 +17,15 @@
 
 package org.wildfly.prospero.cli;
 
-import java.nio.file.Path;
-import java.util.HashMap;
-import java.util.Map;
-
-import org.wildfly.prospero.actions.Console;
-import org.wildfly.prospero.actions.Provision;
-import org.wildfly.prospero.actions.InstallationHistory;
-import org.wildfly.prospero.actions.Update;
-import org.wildfly.prospero.api.exceptions.ProvisioningRuntimeException;
-import org.wildfly.prospero.api.exceptions.OperationException;
-import org.wildfly.prospero.wfchannel.MavenSessionManager;
-import org.jboss.galleon.ProvisioningException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.wildfly.prospero.actions.Console;
+import org.wildfly.prospero.cli.commands.HistoryCommand;
+import org.wildfly.prospero.cli.commands.InstallCommand;
+import org.wildfly.prospero.cli.commands.MainCommand;
+import org.wildfly.prospero.cli.commands.RevertCommand;
+import org.wildfly.prospero.cli.commands.UpdateCommand;
+import picocli.CommandLine;
 
 public class CliMain {
 
@@ -49,109 +44,29 @@ public class CliMain {
     private static final Logger logger = LoggerFactory.getLogger(CliMain.class);
 
     public static final String TARGET_PATH_ARG = "dir";
-    public static final String FPL_ARG = "fpl";
     public static final String PROVISION_CONFIG_ARG = "provision-config";
-    public static final String CHANNEL_REPO = "channel-repo";
-    public static final String CHANNEL = "channel";
-    public static final String DRY_RUN = "dry-run";
-    public static final String LOCAL_REPO = "local-repo";
-    public static final String OFFLINE = "offline";
-    public static final String REVISION = "revision";
-
-    private final ActionFactory actionFactory;
-    private final Console console = new CliConsole();
-    private final Map<String, Command> operations;
-
-    public CliMain(ActionFactory actionFactory) {
-        this.actionFactory = actionFactory;
-        this.operations = loadCommands();
-    }
 
     public static void main(String[] args) {
         try {
-            new CliMain(new ActionFactory()).handleArgs(args);
-        } catch (ArgumentParsingException e) {
-            System.err.println(e.getMessage());
-            logger.error("Argument parsing error", e);
-            System.exit(1);
-        } catch (OperationException e) {
-            System.err.println(e.getMessage());
-            logger.error("Operation error", e);
-            System.exit(1);
-        } catch (ProvisioningRuntimeException e) {
-            System.err.println(e.getMessage());
-            logger.error("Runtime error", e);
-            System.exit(1);
+            Console console = new CliConsole();
+            ActionFactory actionFactory = new ActionFactory();
+            CommandLine commandLine = createCommandLine(console, actionFactory);
+            int exitCode = commandLine.execute(args);
+            System.exit(exitCode);
+        } catch (Exception e) {
+            System.err.println("Error when processing command: " + e.getMessage());
+            logger.error("Error when processing command", e);
+            System.exit(ReturnCodes.PROCESSING_ERROR);
         }
     }
 
-    public void handleArgs(String[] args) throws ArgumentParsingException, OperationException {
-        final String operation = args[0];
-        if (!operations.containsKey(operation)) {
-            throw new ArgumentParsingException("Unknown operation " + operation);
-        }
-
-        final Command command = operations.get(operation);
-
-        Map<String, String> parsedArgs = parseArguments(args, command);
-
-        command.execute(parsedArgs);
-    }
-
-    private Map<String, Command> loadCommands() {
-        Map<String, Command> operations = new HashMap<>();
-        Command command = new HistoryCommand(actionFactory, console);
-        operations.put(command.getOperationName(), command);
-        command = new RevertCommand(actionFactory);
-        operations.put(command.getOperationName(), command);
-        command = new InstallCommand(actionFactory);
-        operations.put(command.getOperationName(), command);
-        command = new UpdateCommand(actionFactory);
-        operations.put(command.getOperationName(), command);
-        return operations;
-    }
-
-    private Map<String, String> parseArguments(String[] args, Command command) throws ArgumentParsingException {
-        Map<String, String> parsedArgs = new HashMap<>();
-        for (int i = 1; i < args.length; i++) {
-            final int nameEndIndex = args[i].indexOf('=');
-
-            if (nameEndIndex < 0) {
-                throw new ArgumentParsingException("Argument value cannot be empty");
-            }
-
-            if (!args[i].startsWith("--")) {
-                throw new ArgumentParsingException("Argument [%s] not recognized", args[i]);
-            }
-
-            final String name = (nameEndIndex > 0) ? args[i].substring(2, nameEndIndex) : args[i];
-            final String value = args[i].substring(nameEndIndex + 1);
-
-            if (!command.getSupportedArguments().contains(name)) {
-                throw new ArgumentParsingException("Argument name [--%s] not recognized", name);
-            }
-
-            if (value.isEmpty()) {
-                throw new ArgumentParsingException("Argument value cannot be empty");
-            }
-
-            parsedArgs.put(name, value);
-        }
-        return parsedArgs;
-    }
-
-    static class ActionFactory {
-        public Provision install(Path targetPath, MavenSessionManager mavenSessionManager) {
-            return new Provision(targetPath, mavenSessionManager, new CliConsole());
-        }
-
-        public Update update(Path targetPath, MavenSessionManager mavenSessionManager) throws OperationException, ProvisioningException {
-            return new Update(targetPath, mavenSessionManager, new CliConsole());
-        }
-
-        public InstallationHistory history(Path targetPath) {
-            return new InstallationHistory(targetPath, new CliConsole());
-        }
+    public static CommandLine createCommandLine(Console console, ActionFactory actionFactory) {
+        CommandLine commandLine = new CommandLine(new MainCommand(console));
+        commandLine.addSubcommand(new InstallCommand(console, actionFactory));
+        commandLine.addSubcommand(new UpdateCommand(console, actionFactory));
+        commandLine.addSubcommand(new HistoryCommand(console, actionFactory));
+        commandLine.addSubcommand(new RevertCommand(console, actionFactory));
+        return commandLine;
     }
 
 }

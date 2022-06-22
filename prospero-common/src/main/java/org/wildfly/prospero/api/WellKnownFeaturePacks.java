@@ -54,7 +54,7 @@ public enum WellKnownFeaturePacks {
         return nameMap.get(name);
     }
 
-    public static boolean isNameKnown(String name) {
+    public static boolean isWellKnownName(String name) {
         return nameMap.containsKey(name);
     }
 
