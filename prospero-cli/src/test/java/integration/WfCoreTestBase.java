@@ -18,6 +18,7 @@
 package integration;
 
 import org.wildfly.prospero.api.ProvisioningDefinition;
+import org.wildfly.prospero.api.WellKnownRepositories;
 import org.wildfly.prospero.wfchannel.MavenSessionManager;
 import org.eclipse.aether.DefaultRepositorySystemSession;
 import org.eclipse.aether.RepositorySystem;
@@ -72,6 +73,7 @@ public class WfCoreTestBase {
     private static File resolveExistingCliArtifact(RepositorySystem system, DefaultRepositorySystemSession session, String groupId, String artifactId, String classifier) throws ArtifactResolutionException {
         final ArtifactRequest artifactRequest = new ArtifactRequest();
         final DefaultArtifact existing = new DefaultArtifact(groupId, artifactId, classifier, "jar", BASE_VERSION);
+        artifactRequest.setRepositories(Arrays.asList(WellKnownRepositories.CENTRAL.get()));
         artifactRequest.setArtifact(existing);
         final ArtifactResult artifactResult = system.resolveArtifact(session, artifactRequest);
         return artifactResult.getArtifact().getFile();
