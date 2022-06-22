@@ -17,6 +17,10 @@
 
 package org.wildfly.prospero.actions;
 
+import org.eclipse.aether.DefaultRepositorySystemSession;
+import org.eclipse.aether.RepositorySystem;
+import org.wildfly.channel.maven.VersionResolverFactory;
+import org.wildfly.channel.spi.MavenVersionsResolver;
 import org.wildfly.prospero.api.InstallationMetadata;
 import org.wildfly.prospero.api.exceptions.MetadataException;
 import org.wildfly.prospero.api.ProvisioningDefinition;
@@ -37,7 +41,6 @@ import org.wildfly.prospero.galleon.ProvisioningConfigUpdater;
 import org.wildfly.prospero.model.ChannelRef;
 import org.wildfly.prospero.wfchannel.ChannelRefUpdater;
 import org.wildfly.prospero.wfchannel.MavenSessionManager;
-import org.wildfly.prospero.wfchannel.WfChannelMavenResolverFactory;
 import org.eclipse.aether.repository.RemoteRepository;
 import org.jboss.galleon.ProvisioningException;
 import org.jboss.galleon.ProvisioningManager;
@@ -76,7 +79,10 @@ public class Provision {
 
         final List<RemoteRepository> repositories = provisioningDefinition.getRepositories();
 
-        final WfChannelMavenResolverFactory factory = new WfChannelMavenResolverFactory(mavenSessionManager, repositories);
+        final RepositorySystem system = mavenSessionManager.newRepositorySystem();
+        final DefaultRepositorySystemSession session = mavenSessionManager.newRepositorySystemSession(system);
+        MavenVersionsResolver.Factory factory = new VersionResolverFactory(system, session, repositories);
+
         final ChannelMavenArtifactRepositoryManager repoManager = new ChannelMavenArtifactRepositoryManager(channels, factory);
         ProvisioningManager provMgr = GalleonUtils.getProvisioningManager(installDir, repoManager);
         final ProvisioningLayoutFactory layoutFactory = provMgr.getLayoutFactory();
@@ -124,7 +130,10 @@ public class Provision {
         }
         final List<Channel> channels = mapToChannels(channelRefs);
 
-        final WfChannelMavenResolverFactory factory = new WfChannelMavenResolverFactory(mavenSessionManager, repositories);
+        final RepositorySystem system = mavenSessionManager.newRepositorySystem();
+        final DefaultRepositorySystemSession session = mavenSessionManager.newRepositorySystemSession(system);
+        MavenVersionsResolver.Factory factory = new VersionResolverFactory(system, session, repositories);
+
         final ChannelMavenArtifactRepositoryManager repoManager = new ChannelMavenArtifactRepositoryManager(channels, factory);
         ProvisioningManager provMgr = GalleonUtils.getProvisioningManager(installDir, repoManager);
 

@@ -17,13 +17,16 @@
 
 package org.wildfly.prospero.actions;
 
+import org.eclipse.aether.DefaultRepositorySystemSession;
+import org.eclipse.aether.RepositorySystem;
+import org.wildfly.channel.maven.VersionResolverFactory;
+import org.wildfly.channel.spi.MavenVersionsResolver;
 import org.wildfly.prospero.model.ChannelRef;
 import org.wildfly.prospero.api.InstallationMetadata;
 import org.wildfly.prospero.api.exceptions.MetadataException;
 import org.wildfly.prospero.galleon.GalleonUtils;
 import org.wildfly.prospero.galleon.ChannelMavenArtifactRepositoryManager;
 import org.wildfly.prospero.wfchannel.MavenSessionManager;
-import org.wildfly.prospero.wfchannel.WfChannelMavenResolverFactory;
 import org.eclipse.aether.repository.RemoteRepository;
 import org.jboss.galleon.ProvisioningException;
 import org.jboss.galleon.ProvisioningManager;
@@ -41,11 +44,11 @@ import java.util.List;
 public class InstallationRestore {
 
     private final Path installDir;
-    private MavenSessionManager sessionManager;
+    private MavenSessionManager mavenSessionManager;
 
-    public InstallationRestore(Path installDir, MavenSessionManager sessionManager) {
+    public InstallationRestore(Path installDir, MavenSessionManager mavenSessionManager) {
         this.installDir = installDir;
-        this.sessionManager = sessionManager;
+        this.mavenSessionManager = mavenSessionManager;
     }
 
     public static void main(String[] args) throws Exception {
@@ -66,13 +69,15 @@ public class InstallationRestore {
         final List<Channel> channels = mapToChannels(metadataBundle.getChannels());
         final List<RemoteRepository> repositories = metadataBundle.getRepositories();
 
-        final WfChannelMavenResolverFactory factory = new WfChannelMavenResolverFactory(sessionManager, repositories);
+        final RepositorySystem system = mavenSessionManager.newRepositorySystem();
+        final DefaultRepositorySystemSession session = mavenSessionManager.newRepositorySystemSession(system);
+        MavenVersionsResolver.Factory factory = new VersionResolverFactory(system, session, repositories);
         final ChannelMavenArtifactRepositoryManager repoManager = new ChannelMavenArtifactRepositoryManager(channels, factory, metadataBundle.getManifest());
 
         ProvisioningManager provMgr = GalleonUtils.getProvisioningManager(installDir, repoManager);
 
         GalleonUtils.executeGalleon(options -> provMgr.provision(metadataBundle.getProvisioningConfig(), options),
-                sessionManager.getProvisioningRepo().toAbsolutePath());
+                mavenSessionManager.getProvisioningRepo().toAbsolutePath());
         writeProsperoMetadata(repoManager, metadataBundle.getChannels(), repositories);
     }
 

@@ -17,7 +17,7 @@
 
 package org.wildfly.prospero.galleon;
 
-import org.wildfly.prospero.wfchannel.WfChannelMavenResolverFactory;
+import org.wildfly.channel.spi.MavenVersionsResolver;
 import org.eclipse.aether.artifact.DefaultArtifact;
 import org.jboss.galleon.universe.maven.MavenArtifact;
 import org.jboss.galleon.universe.maven.MavenUniverseException;
@@ -41,7 +41,7 @@ public class ChannelMavenArtifactRepositoryManager implements MavenRepoManager {
     private ChannelSession channelSession;
     private Channel manifest = null;
 
-    public ChannelMavenArtifactRepositoryManager(List<Channel> channels, WfChannelMavenResolverFactory factory) {
+    public ChannelMavenArtifactRepositoryManager(List<Channel> channels, MavenVersionsResolver.Factory factory) {
         channelSession = new ChannelSession(channels, factory);
     }
 
@@ -49,7 +49,7 @@ public class ChannelMavenArtifactRepositoryManager implements MavenRepoManager {
         this.channelSession = channelSession;
     }
 
-    public ChannelMavenArtifactRepositoryManager(List<Channel> channels, WfChannelMavenResolverFactory factory, Channel manifest) {
+    public ChannelMavenArtifactRepositoryManager(List<Channel> channels, MavenVersionsResolver.Factory factory, Channel manifest) {
         channelSession = new ChannelSession(channels, factory);
         this.manifest = manifest;
     }

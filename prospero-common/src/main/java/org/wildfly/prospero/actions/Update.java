@@ -29,6 +29,10 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.stream.Collectors;
 
+import org.eclipse.aether.DefaultRepositorySystemSession;
+import org.eclipse.aether.RepositorySystem;
+import org.wildfly.channel.maven.VersionResolverFactory;
+import org.wildfly.channel.spi.MavenVersionsResolver;
 import org.wildfly.prospero.api.ArtifactUtils;
 import org.wildfly.prospero.api.InstallationMetadata;
 import org.wildfly.prospero.api.ArtifactChange;
@@ -40,7 +44,6 @@ import org.wildfly.prospero.galleon.ChannelMavenArtifactRepositoryManager;
 import org.wildfly.prospero.model.ChannelRef;
 import org.wildfly.prospero.wfchannel.ChannelRefUpdater;
 import org.wildfly.prospero.wfchannel.MavenSessionManager;
-import org.wildfly.prospero.wfchannel.WfChannelMavenResolverFactory;
 import org.eclipse.aether.artifact.Artifact;
 import org.eclipse.aether.artifact.DefaultArtifact;
 import org.eclipse.aether.repository.RemoteRepository;
@@ -62,7 +65,7 @@ public class Update {
     private final ChannelSession channelSession;
 
     private final Console console;
-    private final WfChannelMavenResolverFactory factory;
+    private final MavenVersionsResolver.Factory factory;
     private final MavenSessionManager mavenSessionManager;
 
     public Update(Path installDir, MavenSessionManager mavenSessionManager, Console console) throws ProvisioningException, OperationException {
@@ -73,7 +76,9 @@ public class Update {
                 .resolveLatest(metadata.getChannels(), metadata.getRepositories()));
         final List<RemoteRepository> repositories = metadata.getRepositories();
 
-        this.factory = new WfChannelMavenResolverFactory(mavenSessionManager, repositories);
+        final RepositorySystem system = mavenSessionManager.newRepositorySystem();
+        final DefaultRepositorySystemSession session = mavenSessionManager.newRepositorySystemSession(system);
+        this.factory = new VersionResolverFactory(system, session, repositories);
         this.channelSession = new ChannelSession(channels, factory);
         this.maven = new ChannelMavenArtifactRepositoryManager(channelSession);
         this.provMgr = GalleonUtils.getProvisioningManager(installDir, maven);
