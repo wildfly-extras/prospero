@@ -17,6 +17,7 @@
 
 package org.wildfly.prospero.galleon;
 
+import org.wildfly.channel.spi.ChannelResolvable;
 import org.wildfly.channel.spi.MavenVersionsResolver;
 import org.eclipse.aether.artifact.DefaultArtifact;
 import org.jboss.galleon.universe.maven.MavenArtifact;
@@ -37,7 +38,7 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.regex.Pattern;
 
-public class ChannelMavenArtifactRepositoryManager implements MavenRepoManager {
+public class ChannelMavenArtifactRepositoryManager implements MavenRepoManager, ChannelResolvable {
     private ChannelSession channelSession;
     private Channel manifest = null;
 
