@@ -8,11 +8,11 @@ on:
       - '.gitignore'
       - 'examples'
       - 'README.md'
-    pull_request:
-      paths-ignore:
-        - '.gitignore'
-        - 'examples'
-        - 'README.md'
+  pull_request:
+    paths-ignore:
+      - '.gitignore'
+      - 'examples'
+      - 'README.md'
 
 jobs:
   build:
