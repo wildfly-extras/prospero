@@ -29,6 +29,7 @@ import org.wildfly.channel.UnresolvedMavenArtifactException;
 
 import java.nio.file.Path;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
@@ -59,9 +60,7 @@ public class ChannelMavenArtifactRepositoryManager implements MavenRepoManager, 
                 result = channelSession.resolveMavenArtifact(artifact.getGroupId(), artifact.getArtifactId(), artifact.getExtension(),
                         artifact.getClassifier(), null);
             } else {
-                final DefaultArtifact gav = new DefaultArtifact(artifact.getGroupId(), artifact.getArtifactId(), artifact.getClassifier(), artifact.getExtension(), artifact.getVersion() != null ? artifact.getVersion() : artifact.getVersionRange());
-
-                Optional<DefaultArtifact> found = manifest.findStreamFor(gav.getGroupId(), gav.getArtifactId()).map(this::streamToArtifact);
+                Optional<DefaultArtifact> found = manifest.findStreamFor(artifact.getGroupId(), artifact.getArtifactId()).map(this::streamToArtifact);
 
                 if (found.isPresent()) {
                     result = channelSession.resolveDirectMavenArtifact(artifact.getGroupId(), artifact.getArtifactId(), artifact.getExtension(),
@@ -80,13 +79,24 @@ public class ChannelMavenArtifactRepositoryManager implements MavenRepoManager, 
         }
     }
 
-    private DefaultArtifact streamToArtifact(Stream s) {
-        return new DefaultArtifact(s.getGroupId(), s.getArtifactId(), "jar", s.getVersion());
+    @Override
+    public void resolveAll(Collection<MavenArtifact> artifacts) throws MavenUniverseException {
+        if (manifest == null) {
+            final MavenArtifactMapper mapper = new MavenArtifactMapper(artifacts);
+
+            final List<org.wildfly.channel.MavenArtifact> channelArtifacts = channelSession.resolveMavenArtifacts(mapper.toChannelArtifacts());
+
+            mapper.applyResolution(channelArtifacts);
+        } else {
+            // TODO: add support for bulk ops
+            throw new UnsupportedOperationException("Not implemented yet");
+        }
+
+
     }
 
-    public void resolveAll(List<MavenArtifact> artifacts) throws MavenUniverseException {
-        // use sync until wildfly-channel can handle async search
-        resolveSynchronously(artifacts);
+    private DefaultArtifact streamToArtifact(Stream s) {
+        return new DefaultArtifact(s.getGroupId(), s.getArtifactId(), "jar", s.getVersion());
     }
 
     private void resolveSynchronously(List<MavenArtifact> artifacts) throws MavenUniverseException {

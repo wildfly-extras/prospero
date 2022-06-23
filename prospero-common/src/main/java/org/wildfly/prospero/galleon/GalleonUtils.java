@@ -36,6 +36,8 @@ public class GalleonUtils {
     public static final String MAVEN_REPO_LOCAL = "maven.repo.local";
     public static final String JBOSS_FORK_EMBEDDED_PROPERTY = "jboss-fork-embedded";
     public static final String JBOSS_FORK_EMBEDDED_VALUE = "true";
+    public static final String JBOSS_BULK_RESOLVE_PROPERTY = "jboss-bulk-resolve-artifacts";
+    public static final String JBOSS_BULK_RESOLVE_VALUE = "true";
     public static final String MODULE_PATH_PROPERTY = "module.path";
 
     public static void executeGalleon(GalleonExecution execution, Path localRepository) throws ProvisioningException {
@@ -47,6 +49,7 @@ public class GalleonUtils {
             }
             final Map<String, String> options = new HashMap<>();
             options.put(GalleonUtils.JBOSS_FORK_EMBEDDED_PROPERTY, GalleonUtils.JBOSS_FORK_EMBEDDED_VALUE);
+            options.put(GalleonUtils.JBOSS_BULK_RESOLVE_PROPERTY, GalleonUtils.JBOSS_BULK_RESOLVE_VALUE);
             execution.execute(options);
         } finally {
             System.clearProperty(MAVEN_REPO_LOCAL);
