@@ -100,10 +100,10 @@ public class InstallationMetadata {
         }
     }
 
-    private void doInit(Path manifestFile, Path channelsFile, Path provisioningFile) throws MetadataException {
+    private void doInit(Path manifestFile, Path provisionConfig, Path provisioningFile) throws MetadataException {
         try {
             this.manifest = ManifestYamlSupport.parse(manifestFile.toFile());
-            final ProvisioningConfig provisioningConfig = ProvisioningConfig.readChannels(channelsFile);
+            final ProvisioningConfig provisioningConfig = ProvisioningConfig.readChannels(provisionConfig);
             this.channelRefs = provisioningConfig.getChannels();
             this.repositories = provisioningConfig.getRepositories()
                     .stream().map(r -> r.toRemoteRepository()).collect(Collectors.toList());
@@ -115,7 +115,7 @@ public class InstallationMetadata {
 
     public static InstallationMetadata importMetadata(Path location) throws IOException, MetadataException {
         Path manifestFile = null;
-        Path channelsFile = null;
+        Path provisionConfigFile = null;
         Path provisioningFile = null;
 
         try (ZipInputStream zis = new ZipInputStream(new FileInputStream(location.toFile()))) {
@@ -129,9 +129,9 @@ public class InstallationMetadata {
                 }
 
                 if (entry.getName().equals(PROSPERO_CONFIG_FILE_NAME)) {
-                    channelsFile = Files.createTempFile("channels", "yaml");
-                    Files.copy(zis, channelsFile, StandardCopyOption.REPLACE_EXISTING);
-                    channelsFile.toFile().deleteOnExit();
+                    provisionConfigFile = Files.createTempFile("channels", "yaml");
+                    Files.copy(zis, provisionConfigFile, StandardCopyOption.REPLACE_EXISTING);
+                    provisionConfigFile.toFile().deleteOnExit();
                 }
 
                 if (entry.getName().equals(PROVISIONING_FILE_NAME)) {
@@ -142,11 +142,11 @@ public class InstallationMetadata {
             }
         }
 
-        if (manifestFile == null || channelsFile == null || provisioningFile == null) {
+        if (manifestFile == null || provisionConfigFile == null || provisioningFile == null) {
             throw new IllegalArgumentException("Provided metadata bundle is missing one or more entries");
         }
 
-        return new InstallationMetadata(manifestFile, channelsFile, provisioningFile);
+        return new InstallationMetadata(manifestFile, provisionConfigFile, provisioningFile);
     }
 
     public Path exportMetadataBundle(Path location) throws IOException {

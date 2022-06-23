@@ -52,7 +52,7 @@ public class InstallationHistoryTest extends WfCoreTestBase {
     private static final String OUTPUT_DIR = "target/server";
     private static final Path OUTPUT_PATH = Paths.get(OUTPUT_DIR).toAbsolutePath();
     private final Provision installation = new Provision(OUTPUT_PATH, mavenSessionManager, new CliConsole());
-    private Path channelFile;
+    private Path provisionConfigFile;
 
     @Before
     public void setUp() throws Exception {
@@ -68,27 +68,27 @@ public class InstallationHistoryTest extends WfCoreTestBase {
             FileUtils.deleteDirectory(OUTPUT_PATH.toFile());
             OUTPUT_PATH.toFile().delete();
         }
-        if (Files.exists(channelFile)) {
-            Files.delete(channelFile);
+        if (Files.exists(provisionConfigFile)) {
+            Files.delete(provisionConfigFile);
         }
     }
 
     @Test
     public void listUpdates() throws Exception {
         // installCore
-        channelFile = TestUtil.prepareChannelFile("local-repo-desc.yaml");
+        provisionConfigFile = TestUtil.prepareProvisionConfig("local-repo-desc.yaml");
         Path installDir = Paths.get(OUTPUT_PATH.toString());
         if (Files.exists(installDir)) {
             throw new ProvisioningException("Installation dir " + installDir + " already exists");
         }
 
         final ProvisioningDefinition provisioningDefinition = defaultWfCoreDefinition()
-                .setChannelsFile(channelFile)
+                .setProvisionConfig(provisionConfigFile)
                 .build();
         installation.provision(provisioningDefinition);
 
         // updateCore
-        TestUtil.prepareChannelFileAsUrl(OUTPUT_PATH.resolve(TestUtil.CHANNELS_FILE_PATH), "local-updates-repo-desc.yaml", "local-repo-desc.yaml");
+        TestUtil.prepareProvisionConfigAsUrl(OUTPUT_PATH.resolve(TestUtil.PROVISION_CONFIG_FILE_PATH), "local-updates-repo-desc.yaml", "local-repo-desc.yaml");
         new Update(OUTPUT_PATH, mavenSessionManager, new AcceptingConsole()).doUpdateAll();
 
         // get history
@@ -100,7 +100,7 @@ public class InstallationHistoryTest extends WfCoreTestBase {
 
     @Test
     public void rollbackChanges() throws Exception {
-        channelFile = TestUtil.prepareChannelFile("local-repo-desc.yaml");
+        provisionConfigFile = TestUtil.prepareProvisionConfig("local-repo-desc.yaml");
         final Path modulesPaths = OUTPUT_PATH.resolve(Paths.get("modules", "system", "layers", "base"));
         final Path wildflyCliModulePath = modulesPaths.resolve(Paths.get("org", "jboss", "as", "cli", "main"));
 
@@ -109,11 +109,11 @@ public class InstallationHistoryTest extends WfCoreTestBase {
         }
 
         final ProvisioningDefinition provisioningDefinition = defaultWfCoreDefinition()
-                .setChannelsFile(channelFile)
+                .setProvisionConfig(provisionConfigFile)
                 .build();
         installation.provision(provisioningDefinition);
 
-        TestUtil.prepareChannelFileAsUrl(OUTPUT_PATH.resolve(TestUtil.CHANNELS_FILE_PATH), "local-updates-repo-desc.yaml", "local-repo-desc.yaml");
+        TestUtil.prepareProvisionConfigAsUrl(OUTPUT_PATH.resolve(TestUtil.PROVISION_CONFIG_FILE_PATH), "local-updates-repo-desc.yaml", "local-repo-desc.yaml");
         new Update(OUTPUT_PATH, mavenSessionManager, new AcceptingConsole()).doUpdateAll();
         Optional<Artifact> wildflyCliArtifact = readArtifactFromManifest("org.wildfly.core", "wildfly-cli");
         assertEquals(UPGRADE_VERSION, wildflyCliArtifact.get().getVersion());
@@ -132,18 +132,18 @@ public class InstallationHistoryTest extends WfCoreTestBase {
 
     @Test
     public void displayChanges() throws Exception {
-        channelFile = TestUtil.prepareChannelFile("local-repo-desc.yaml");
+        provisionConfigFile = TestUtil.prepareProvisionConfig("local-repo-desc.yaml");
         Path installDir = Paths.get(OUTPUT_PATH.toString());
         if (Files.exists(installDir)) {
             throw new ProvisioningException("Installation dir " + installDir + " already exists");
         }
 
         final ProvisioningDefinition provisioningDefinition = defaultWfCoreDefinition()
-                .setChannelsFile(channelFile)
+                .setProvisionConfig(provisionConfigFile)
                 .build();
         installation.provision(provisioningDefinition);
 
-        TestUtil.prepareChannelFileAsUrl(OUTPUT_PATH.resolve(TestUtil.CHANNELS_FILE_PATH), "local-updates-repo-desc.yaml", "local-repo-desc.yaml");
+        TestUtil.prepareProvisionConfigAsUrl(OUTPUT_PATH.resolve(TestUtil.PROVISION_CONFIG_FILE_PATH), "local-updates-repo-desc.yaml", "local-repo-desc.yaml");
         new Update(OUTPUT_PATH, mavenSessionManager, new AcceptingConsole()).doUpdateAll();
 
         final InstallationHistory installationHistory = new InstallationHistory(OUTPUT_PATH, new AcceptingConsole());

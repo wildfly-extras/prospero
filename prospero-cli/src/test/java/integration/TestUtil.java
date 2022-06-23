@@ -34,34 +34,39 @@ import org.wildfly.prospero.model.RepositoryRef;
 
 public class TestUtil {
 
-    public static final Path MANIFEST_FILE_PATH = Paths.get(InstallationMetadata.METADATA_DIR, InstallationMetadata.MANIFEST_FILE_NAME);
-    public static final Path CHANNELS_FILE_PATH = Paths.get(InstallationMetadata.METADATA_DIR, InstallationMetadata.PROSPERO_CONFIG_FILE_NAME);
+    public static final Path MANIFEST_FILE_PATH =
+            Paths.get(InstallationMetadata.METADATA_DIR, InstallationMetadata.MANIFEST_FILE_NAME);
+    public static final Path PROVISION_CONFIG_FILE_PATH =
+            Paths.get(InstallationMetadata.METADATA_DIR, InstallationMetadata.PROSPERO_CONFIG_FILE_NAME);
 
-    public static URL prepareChannelFileAsUrl(String channelDescriptor) throws IOException {
-        final Path channelFile = Files.createTempFile("channels", "yaml");
-        channelFile.toFile().deleteOnExit();
+    public static URL prepareProvisionConfigAsUrl(String channelDescriptor) throws IOException {
+        final Path provisionConfigFile = Files.createTempFile("channels", "yaml");
+        provisionConfigFile.toFile().deleteOnExit();
 
-        final Path path = prepareChannelFileAsUrl(channelFile, channelDescriptor);
+        final Path path = prepareProvisionConfigAsUrl(provisionConfigFile, channelDescriptor);
         return path.toUri().toURL();
     }
 
-    public static Path prepareChannelFile(String channelDescriptor) throws IOException {
-        final Path channelFile = Files.createTempFile("channels", "yaml");
-        channelFile.toFile().deleteOnExit();
+    public static Path prepareProvisionConfig(String channelDescriptor) throws IOException {
+        final Path provisionConfigFile = Files.createTempFile("channels", "yaml");
+        provisionConfigFile.toFile().deleteOnExit();
 
-        return prepareChannelFileAsUrl(channelFile, channelDescriptor);
+        return prepareProvisionConfigAsUrl(provisionConfigFile, channelDescriptor);
     }
 
-    public static Path prepareChannelFileAsUrl(Path channelFile, String... channelDescriptor) throws IOException {
-        List<URL> channelUrls = Arrays.stream(channelDescriptor).map(d->TestUtil.class.getClassLoader().getResource(d)).collect(Collectors.toList());
+    public static Path prepareProvisionConfigAsUrl(Path provisionConfigFile, String... channelDescriptor)
+            throws IOException {
+        List<URL> channelUrls = Arrays.stream(channelDescriptor)
+                .map(d->TestUtil.class.getClassLoader().getResource(d))
+                .collect(Collectors.toList());
         List<ChannelRef> channels = new ArrayList<>();
         List<RepositoryRef> repositories = WfCoreTestBase.defaultRemoteRepositories().stream()
                 .map(r->new RepositoryRef(r.getId(), r.getUrl())).collect(Collectors.toList());
         for (int i=0; i<channelUrls.size(); i++) {
             channels.add(new ChannelRef(null, channelUrls.get(i).toString()));
         }
-        new ProvisioningConfig(channels, repositories).writeConfig(channelFile.toFile());
+        new ProvisioningConfig(channels, repositories).writeConfig(provisionConfigFile.toFile());
 
-        return channelFile;
+        return provisionConfigFile;
     }
 }

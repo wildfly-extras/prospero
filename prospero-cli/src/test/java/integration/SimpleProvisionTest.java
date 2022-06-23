@@ -72,10 +72,10 @@ public class SimpleProvisionTest extends WfCoreTestBase {
 
     @Test
     public void installWildflyCore() throws Exception {
-        final Path channelFile = TestUtil.prepareChannelFile("local-repo-desc.yaml");
+        final Path provisionConfigFile = TestUtil.prepareProvisionConfig("local-repo-desc.yaml");
 
         final ProvisioningDefinition provisioningDefinition = defaultWfCoreDefinition()
-                .setChannelsFile(channelFile)
+                .setProvisionConfig(provisionConfigFile)
                 .build();
         installation.provision(provisioningDefinition);
 
@@ -90,14 +90,14 @@ public class SimpleProvisionTest extends WfCoreTestBase {
 
     @Test
     public void updateWildflyCore() throws Exception {
-        final Path channelFile = TestUtil.prepareChannelFile("local-repo-desc.yaml");
+        final Path provisionConfigFile = TestUtil.prepareProvisionConfig("local-repo-desc.yaml");
 
         final ProvisioningDefinition provisioningDefinition = defaultWfCoreDefinition()
-                .setChannelsFile(channelFile)
+                .setProvisionConfig(provisionConfigFile)
                 .build();
         installation.provision(provisioningDefinition);
 
-        TestUtil.prepareChannelFileAsUrl(OUTPUT_PATH.resolve(TestUtil.CHANNELS_FILE_PATH), "local-updates-repo-desc.yaml", "local-repo-desc.yaml");
+        TestUtil.prepareProvisionConfigAsUrl(OUTPUT_PATH.resolve(TestUtil.PROVISION_CONFIG_FILE_PATH), "local-updates-repo-desc.yaml", "local-repo-desc.yaml");
         new Update(OUTPUT_PATH, mavenSessionManager, new AcceptingConsole()).doUpdateAll();
 
         // verify manifest contains versions 17.0.1
@@ -107,14 +107,14 @@ public class SimpleProvisionTest extends WfCoreTestBase {
 
     @Test
     public void updateWildflyCoreDryRun() throws Exception {
-        final Path channelFile = TestUtil.prepareChannelFile("local-repo-desc.yaml");
+        final Path provisionConfigFile = TestUtil.prepareProvisionConfig("local-repo-desc.yaml");
 
         final ProvisioningDefinition provisioningDefinition = defaultWfCoreDefinition()
-                .setChannelsFile(channelFile)
+                .setProvisionConfig(provisionConfigFile)
                 .build();
         installation.provision(provisioningDefinition);
 
-        TestUtil.prepareChannelFileAsUrl(OUTPUT_PATH.resolve(TestUtil.CHANNELS_FILE_PATH), "local-updates-repo-desc.yaml", "local-repo-desc.yaml");
+        TestUtil.prepareProvisionConfigAsUrl(OUTPUT_PATH.resolve(TestUtil.PROVISION_CONFIG_FILE_PATH), "local-updates-repo-desc.yaml", "local-repo-desc.yaml");
         final Set<String> updates = new HashSet<>();
         new Update(OUTPUT_PATH, mavenSessionManager, new AcceptingConsole() {
             @Override
@@ -134,9 +134,9 @@ public class SimpleProvisionTest extends WfCoreTestBase {
 
     @Test
     public void installWildflyCoreFromInstallationFile() throws Exception {
-        final Path channelFile = TestUtil.prepareChannelFile("local-repo-desc.yaml");
+        final Path provisionConfigFile = TestUtil.prepareProvisionConfig("local-repo-desc.yaml");
         final File installationFile = new File(this.getClass().getClassLoader().getResource("provisioning.xml").toURI());
-        final ProvisioningConfig provisioningConfig = ProvisioningConfig.readChannels(channelFile);
+        final ProvisioningConfig provisioningConfig = ProvisioningConfig.readChannels(provisionConfigFile);
         final List<ChannelRef> channelRefs = provisioningConfig.getChannels();
 
         installation.provision(installationFile.toPath(), channelRefs, repositories);

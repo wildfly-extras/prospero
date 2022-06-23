@@ -6,7 +6,7 @@ import org.wildfly.prospero.actions.Console;
 import org.wildfly.prospero.cli.ReturnCodes;
 import picocli.CommandLine;
 
-@CommandLine.Command(name = "prospero")
+@CommandLine.Command(name = CliConstants.MAIN_COMMAND)
 public class MainCommand implements Callable<Integer> {
 
     @CommandLine.Spec

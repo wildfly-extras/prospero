@@ -72,14 +72,14 @@ public class InstallationRestoreTest extends WfCoreTestBase {
 
     @Test
     public void restoreInstallation() throws Exception {
-        final Path channelFile = TestUtil.prepareChannelFile("local-repo-desc.yaml");
+        final Path provisionConfigFile = TestUtil.prepareProvisionConfig("local-repo-desc.yaml");
 
         final ProvisioningDefinition provisioningDefinition = defaultWfCoreDefinition()
-                .setChannelsFile(channelFile)
+                .setProvisionConfig(provisionConfigFile)
                 .build();
         new Provision(FIRST_SERVER_PATH, mavenSessionManager, new CliConsole()).provision(provisioningDefinition);
 
-        TestUtil.prepareChannelFileAsUrl(FIRST_SERVER_PATH.resolve(TestUtil.CHANNELS_FILE_PATH), "local-repo-desc.yaml", "local-updates-repo-desc.yaml");
+        TestUtil.prepareProvisionConfigAsUrl(FIRST_SERVER_PATH.resolve(TestUtil.PROVISION_CONFIG_FILE_PATH), "local-repo-desc.yaml", "local-updates-repo-desc.yaml");
 
         new InstallationExport(FIRST_SERVER_PATH).export("target/bundle.zip");
 

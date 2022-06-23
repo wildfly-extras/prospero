@@ -14,22 +14,22 @@ import org.wildfly.prospero.wfchannel.MavenSessionManager;
 import picocli.CommandLine;
 
 @CommandLine.Command(
-        name = "revert",
+        name = CliConstants.REVERT,
         description = "Reverts to a previous installation state.",
         sortOptions = false
 )
 public class RevertCommand extends AbstractCommand {
 
-    @CommandLine.Option(names = "--dir", required = true)
+    @CommandLine.Option(names = CliConstants.DIR, required = true)
     Path directory;
 
-    @CommandLine.Option(names = "--revision", required = true)
+    @CommandLine.Option(names = CliConstants.REVISION, required = true)
     String revision;
 
-    @CommandLine.Option(names = "--local-repo")
+    @CommandLine.Option(names = CliConstants.LOCAL_REPO)
     Optional<Path> localRepo;
 
-    @CommandLine.Option(names = "--offline")
+    @CommandLine.Option(names = CliConstants.OFFLINE)
     boolean offline;
 
     public RevertCommand(Console console, ActionFactory actionFactory) {

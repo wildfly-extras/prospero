@@ -35,6 +35,7 @@ import org.mockito.junit.MockitoJUnitRunner;
 import org.wildfly.prospero.actions.Console;
 import org.wildfly.prospero.actions.Provision;
 import org.wildfly.prospero.api.ProvisioningDefinition;
+import org.wildfly.prospero.cli.commands.CliConstants;
 import org.wildfly.prospero.model.ChannelRef;
 import org.wildfly.prospero.model.ProvisioningConfig;
 import org.wildfly.prospero.model.RepositoryRef;
@@ -68,42 +69,48 @@ public class InstallCommandTest extends AbstractConsoleTest {
 
     @Test
     public void errorIfTargetPathIsNotPresent() {
-        int exitCode = commandLine.execute("install");
+        int exitCode = commandLine.execute(CliConstants.INSTALL);
         assertEquals(ReturnCodes.INVALID_ARGUMENTS, exitCode);
-        assertTrue(getErrorOutput().contains("Missing required option: '--dir=<directory>'"));
+        assertTrue(getErrorOutput().contains(String.format("Missing required option: '--dir=<directory>'",
+                CliConstants.DIR)));
     }
 
     @Test
     public void errorIfFplIsNotPresent() {
-        int exitCode = commandLine.execute("install", "--dir", "test");
+        int exitCode = commandLine.execute(CliConstants.INSTALL, CliConstants.DIR, "test");
         assertEquals(ReturnCodes.INVALID_ARGUMENTS, exitCode);
-        assertTrue(getErrorOutput().contains("Missing required argument (specify one of these): (--fpl=<fpl> | --definition=<definition>)"));
+        assertTrue(getErrorOutput().contains(String.format(
+                "Missing required argument (specify one of these): (%s=<fpl> | %s=<definition>)",
+                CliConstants.FPL, CliConstants.DEFINITION)));
     }
 
     @Test
     public void offlineModeRequiresLocalRepoOption() {
-        int exitCode = commandLine.execute("install", "--dir", "test", "--fpl", "eap", "--offline");
+        int exitCode = commandLine.execute(CliConstants.INSTALL, CliConstants.DIR, "test",
+                CliConstants.FPL, "eap", CliConstants.OFFLINE);
         assertEquals(ReturnCodes.INVALID_ARGUMENTS, exitCode);
         assertTrue(getErrorOutput().contains(Messages.offlineModeRequiresLocalRepo()));
     }
 
     @Test
     public void errorIfChannelsIsNotPresentAndUsingCustomFplOnInstall() {
-        int exitCode = commandLine.execute("install", "--dir", "test", "--fpl", "foo:bar");
+        int exitCode = commandLine.execute(CliConstants.INSTALL, CliConstants.DIR, "test",
+                CliConstants.FPL, "foo:bar");
         assertEquals(ReturnCodes.INVALID_ARGUMENTS, exitCode);
-        assertTrue("output: " + getErrorOutput(), getErrorOutput().contains("Channel file argument (--provision-config) need to be set when using custom fpl"));
+        assertTrue("output: " + getErrorOutput(), getErrorOutput().contains(String.format(
+                Messages.provisioningConfigMandatoryWhenCustomFpl(), CliConstants.PROVISION_CONFIG)));
     }
 
     @Test
     public void callProvisionOnInstallCommandWithCustomFpl() throws Exception {
         List<ChannelRef> channels = new ArrayList<>();
         List<RepositoryRef> repositories = new ArrayList<>();
-        final File channelsFile = temporaryFolder.newFile();
-        new ProvisioningConfig(channels, repositories).writeConfig(channelsFile);
+        final File provisionConfigFile = temporaryFolder.newFile();
+        new ProvisioningConfig(channels, repositories).writeConfig(provisionConfigFile);
 
-        int exitCode = commandLine.execute("install", "--dir", "test",
-                "--fpl", "org.wildfly:wildfly-ee-galleon-pack",
-                "--provision-config", channelsFile.getAbsolutePath());
+        int exitCode = commandLine.execute(CliConstants.INSTALL, CliConstants.DIR, "test",
+                CliConstants.FPL, "org.wildfly:wildfly-ee-galleon-pack",
+                CliConstants.PROVISION_CONFIG, provisionConfigFile.getAbsolutePath());
         assertEquals(ReturnCodes.SUCCESS, exitCode);
         Mockito.verify(provisionAction).provision(serverDefiniton.capture());
         assertEquals("org.wildfly:wildfly-ee-galleon-pack", serverDefiniton.getValue().getFpl());
@@ -111,7 +118,7 @@ public class InstallCommandTest extends AbstractConsoleTest {
 
     @Test
     public void callProvisionOnInstallEapCommand() throws Exception {
-        int exitCode = commandLine.execute("install", "--dir", "test", "--fpl", "eap");
+        int exitCode = commandLine.execute(CliConstants.INSTALL, CliConstants.DIR, "test", CliConstants.FPL, "eap");
 
         assertEquals(ReturnCodes.SUCCESS, exitCode);
         Mockito.verify(provisionAction).provision(serverDefiniton.capture());
@@ -122,11 +129,11 @@ public class InstallCommandTest extends AbstractConsoleTest {
     public void callProvisionOnInstallEapOverrideChannelsCommand() throws Exception {
         List<ChannelRef> channels = Arrays.asList(new ChannelRef("org.wildfly:wildfly-channel", null));
         List<RepositoryRef> repositories = Arrays.asList(new RepositoryRef("dev", "http://test.test"));
-        final File channelsFile = temporaryFolder.newFile();
-        new ProvisioningConfig(channels, repositories).writeConfig(channelsFile);
+        final File provisionConfigFile = temporaryFolder.newFile();
+        new ProvisioningConfig(channels, repositories).writeConfig(provisionConfigFile);
 
-        int exitCode = commandLine.execute("install", "--dir", "test", "--fpl", "eap",
-                "--provision-config", channelsFile.getAbsolutePath());
+        int exitCode = commandLine.execute(CliConstants.INSTALL, CliConstants.DIR, "test", CliConstants.FPL, "eap",
+                CliConstants.PROVISION_CONFIG, provisionConfigFile.getAbsolutePath());
 
         assertEquals(ReturnCodes.SUCCESS, exitCode);
         Mockito.verify(provisionAction).provision(serverDefiniton.capture());
@@ -139,12 +146,12 @@ public class InstallCommandTest extends AbstractConsoleTest {
         List<ChannelRef> channels = Arrays.asList(new ChannelRef("org.wildfly:wildfly-channel", null));
         List<RepositoryRef> repositories = Arrays.asList(new RepositoryRef("dev", "http://test.test"));
         final File provisionDefinitionFile = temporaryFolder.newFile("provision.xml");
-        final File channelsFile = temporaryFolder.newFile();
-        new ProvisioningConfig(channels, repositories).writeConfig(channelsFile);
+        final File provisionConfigFile = temporaryFolder.newFile();
+        new ProvisioningConfig(channels, repositories).writeConfig(provisionConfigFile);
 
-        int exitCode = commandLine.execute("install", "--dir", "test",
-                "--provision-config", channelsFile.getAbsolutePath(),
-                "--definition", provisionDefinitionFile.getAbsolutePath());
+        int exitCode = commandLine.execute(CliConstants.INSTALL, CliConstants.DIR, "test",
+                CliConstants.PROVISION_CONFIG, provisionConfigFile.getAbsolutePath(),
+                CliConstants.DEFINITION, provisionDefinitionFile.getAbsolutePath());
 
         assertEquals(ReturnCodes.SUCCESS, exitCode);
         Mockito.verify(provisionAction).provision(serverDefiniton.capture());
@@ -156,12 +163,12 @@ public class InstallCommandTest extends AbstractConsoleTest {
     @Test
     public void fplAndDefinitionAreNotAllowedTogether() throws Exception {
         final File provisionDefinitionFile = temporaryFolder.newFile("provision.xml");
-        final File channelsFile = temporaryFolder.newFile();
+        final File provisionConfigFile = temporaryFolder.newFile();
 
-        int exitCode = commandLine.execute("install", "--dir", "test",
-                "--definition", provisionDefinitionFile.getAbsolutePath(),
-                "--provision-config", channelsFile.getAbsolutePath(),
-                "--fpl", "test");
+        int exitCode = commandLine.execute(CliConstants.INSTALL, CliConstants.DIR, "test",
+                CliConstants.DEFINITION, provisionDefinitionFile.getAbsolutePath(),
+                CliConstants.PROVISION_CONFIG, provisionConfigFile.getAbsolutePath(),
+                CliConstants.FPL, "test");
 
         assertEquals(ReturnCodes.INVALID_ARGUMENTS, exitCode);
     }
