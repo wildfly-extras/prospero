@@ -17,6 +17,8 @@
 
 package org.wildfly.prospero.cli;
 
+import org.wildfly.prospero.cli.commands.CliConstants;
+
 public class Messages {
     public static String unexpectedPackageInSelfUpdate(String path) {
         return String.format("Unable to perform self-update - folder [%s] contains unexpected feature packs.", path);
@@ -32,5 +34,9 @@ public class Messages {
 
     public static String offlineModeRequiresLocalRepo() {
         return "Using offline mode requires a local-repo parameter present.";
+    }
+
+    public static String provisioningConfigMandatoryWhenCustomFpl() {
+        return String.format("Provisioning config argument (--%s) need to be set when using custom fpl", CliConstants.PROVISION_CONFIG);
     }
 }

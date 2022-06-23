@@ -37,6 +37,7 @@ import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.junit.MockitoJUnitRunner;
 import org.wildfly.prospero.actions.Update;
+import org.wildfly.prospero.cli.commands.CliConstants;
 import org.wildfly.prospero.cli.commands.UpdateCommand;
 
 import static org.junit.Assert.assertEquals;
@@ -80,7 +81,7 @@ public class UpdateCommandTest extends AbstractConsoleTest {
 
     @Test
     public void errorIfTargetPathNotPresent() {
-        int exitCode = commandLine.execute("update");
+        int exitCode = commandLine.execute(CliConstants.UPDATE);
 
         assertEquals(ReturnCodes.INVALID_ARGUMENTS, exitCode);
         assertTrue(getErrorOutput().contains(UpdateCommand.DIR_OR_SELF_IS_MANDATORY));
@@ -88,7 +89,7 @@ public class UpdateCommandTest extends AbstractConsoleTest {
 
     @Test
     public void callUpdate() throws Exception {
-        int exitCode = commandLine.execute("update", "--dir", "test");
+        int exitCode = commandLine.execute(CliConstants.UPDATE, CliConstants.DIR, "test");
 
         assertEquals(ReturnCodes.SUCCESS, exitCode);
         Mockito.verify(update).doUpdateAll();
@@ -96,7 +97,7 @@ public class UpdateCommandTest extends AbstractConsoleTest {
 
     @Test
     public void selfUpdateRequiresModulePathProp() {
-        int exitCode = commandLine.execute("update", "--self");
+        int exitCode = commandLine.execute(CliConstants.UPDATE, CliConstants.SELF);
 
         assertEquals(ReturnCodes.PROCESSING_ERROR, exitCode);
         assertTrue(getErrorOutput().contains(Messages.unableToLocateInstallation()));
@@ -106,7 +107,7 @@ public class UpdateCommandTest extends AbstractConsoleTest {
     public void selfUpdatePassesModulePathAsDir() throws Exception {
         final Path baseDir = mockGalleonInstallation(A_PROSPERO_FP);
         System.setProperty(UpdateCommand.JBOSS_MODULE_PATH, baseDir.resolve(MODULES_DIR).toString());
-        int exitCode = commandLine.execute("update", "--self");
+        int exitCode = commandLine.execute(CliConstants.UPDATE, CliConstants.SELF);
 
         assertEquals(ReturnCodes.SUCCESS, exitCode);
         Mockito.verify(actionFactory).update(eq(baseDir.toAbsolutePath()), any(), any());
@@ -117,7 +118,8 @@ public class UpdateCommandTest extends AbstractConsoleTest {
     public void dirParameterOverridesModulePathInSelfUpdate() throws Exception {
         final Path baseDir = mockGalleonInstallation(A_PROSPERO_FP);
         System.setProperty(UpdateCommand.JBOSS_MODULE_PATH, "test");
-        int exitCode = commandLine.execute("update", "--self", "--dir", baseDir.toAbsolutePath().toString());
+        int exitCode = commandLine.execute(CliConstants.UPDATE, CliConstants.SELF,
+                CliConstants.DIR, baseDir.toAbsolutePath().toString());
 
         assertEquals(ReturnCodes.SUCCESS, exitCode);
         Mockito.verify(actionFactory).update(eq(baseDir.toAbsolutePath()), any(), any());
@@ -127,7 +129,8 @@ public class UpdateCommandTest extends AbstractConsoleTest {
     @Test
     public void selfUpdateFailsIfMultipleFPsDetected() throws Exception {
         final Path baseDir = mockGalleonInstallation(A_PROSPERO_FP, OTHER_FP);
-        int exitCode = commandLine.execute("update", "--self", "--dir", baseDir.toAbsolutePath().toString());
+        int exitCode = commandLine.execute(CliConstants.UPDATE, CliConstants.SELF,
+                CliConstants.DIR, baseDir.toAbsolutePath().toString());
 
         assertEquals(ReturnCodes.PROCESSING_ERROR, exitCode);
         assertTrue(getErrorOutput().contains(Messages.unexpectedPackageInSelfUpdate(baseDir.toAbsolutePath().toString())));
@@ -136,7 +139,8 @@ public class UpdateCommandTest extends AbstractConsoleTest {
     @Test
     public void selfUpdateFailsIfProsperoFPNotDetected() throws Exception {
         final Path baseDir = mockGalleonInstallation(OTHER_FP);
-        int exitCode = commandLine.execute("update", "--self", "--dir", baseDir.toAbsolutePath().toString());
+        int exitCode = commandLine.execute(CliConstants.UPDATE, CliConstants.SELF,
+                CliConstants.DIR, baseDir.toAbsolutePath().toString());
 
         assertEquals(ReturnCodes.PROCESSING_ERROR, exitCode);
         assertTrue(getErrorOutput().contains(Messages.unexpectedPackageInSelfUpdate(baseDir.toAbsolutePath().toString())));
@@ -145,8 +149,8 @@ public class UpdateCommandTest extends AbstractConsoleTest {
     @Test
     public void offlineModeRequiresLocalRepoOption() throws Exception {
         final Path baseDir = mockGalleonInstallation(A_PROSPERO_FP);
-        int exitCode = commandLine.execute("update", "--self", "--dir", baseDir.toAbsolutePath().toString(),
-                "--offline");
+        int exitCode = commandLine.execute(CliConstants.UPDATE, CliConstants.SELF,
+                CliConstants.DIR, baseDir.toAbsolutePath().toString(), CliConstants.OFFLINE);
 
         assertEquals(ReturnCodes.INVALID_ARGUMENTS, exitCode);
         assertTrue(getErrorOutput().contains(Messages.offlineModeRequiresLocalRepo()));

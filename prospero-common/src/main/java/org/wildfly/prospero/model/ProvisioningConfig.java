@@ -46,8 +46,8 @@ public class ProvisioningConfig {
         return repositories;
     }
 
-    public void writeConfig(File channelsFile) throws IOException {
-        new ObjectMapper(new YAMLFactory()).writeValue(channelsFile, this);
+    public void writeConfig(File configFile) throws IOException {
+        new ObjectMapper(new YAMLFactory()).writeValue(configFile, this);
     }
 
     public static ProvisioningConfig readChannels(Path path) throws IOException {

@@ -19,7 +19,7 @@ import org.wildfly.prospero.wfchannel.MavenSessionManager;
 import picocli.CommandLine;
 
 @CommandLine.Command(
-        name = "update",
+        name = CliConstants.UPDATE,
         description = "Applies the latest available patches on a server instance.",
         sortOptions = false
 )
@@ -31,19 +31,19 @@ public class UpdateCommand extends AbstractCommand {
     public static final String DIR_OR_SELF_IS_MANDATORY =
             String.format("Target dir argument (--%s) need to be set on update command", CliMain.TARGET_PATH_ARG);
 
-    @CommandLine.Option(names = "--dir")
+    @CommandLine.Option(names = CliConstants.DIR)
     Optional<Path> directory;
 
-    @CommandLine.Option(names = "--dry-run")
+    @CommandLine.Option(names = CliConstants.DRY_RUN)
     boolean dryRun;
 
-    @CommandLine.Option(names = "--self")
+    @CommandLine.Option(names = CliConstants.SELF)
     boolean self;
 
-    @CommandLine.Option(names = "--local-repo")
+    @CommandLine.Option(names = CliConstants.LOCAL_REPO)
     Optional<Path> localRepo;
 
-    @CommandLine.Option(names = "--offline")
+    @CommandLine.Option(names = CliConstants.OFFLINE)
     boolean offline;
 
     public UpdateCommand(Console console, ActionFactory actionFactory) {

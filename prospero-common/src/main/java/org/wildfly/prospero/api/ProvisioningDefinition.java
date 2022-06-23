@@ -51,7 +51,7 @@ public class ProvisioningDefinition {
         final Optional<String> fpl = Optional.ofNullable(builder.fpl);
         final Optional<Path> definition = Optional.ofNullable(builder.definitionFile);
         final Optional<String> channelRepo = Optional.ofNullable(builder.channelRepo);
-        final Optional<Path> channelsFile = Optional.ofNullable(builder.channelsFile);
+        final Optional<Path> provisionConfigFile = Optional.ofNullable(builder.provisionConfigFile);
         final Optional<URL> channel = Optional.ofNullable(builder.channel);
         final Optional<Set<String>> includedPackages = Optional.ofNullable(builder.includedPackages);
 
@@ -68,11 +68,11 @@ public class ProvisioningDefinition {
                 this.definition = null;
                 this.includedPackages.addAll(featurePackInfo.packages);
                 this.repositories.addAll(featurePackInfo.repositories);
-                setUpBuildEnv(channelRepo, channelsFile, channel, featurePackInfo.channelGav);
+                setUpBuildEnv(channelRepo, provisionConfigFile, channel, featurePackInfo.channelGav);
             } else {
                 this.fpl = fpl.orElse(null);
                 this.definition = definition.orElse(null);
-                final ProvisioningConfig record = ProvisioningConfig.readChannels(channelsFile.get());
+                final ProvisioningConfig record = ProvisioningConfig.readChannels(provisionConfigFile.get());
                 if (record.getChannels() != null) {
                     this.channels.addAll(record.getChannels());
                 }
@@ -84,8 +84,8 @@ public class ProvisioningDefinition {
         }
     }
 
-    private void setUpBuildEnv(Optional<String> channelRepo, Optional<Path> channelsFile, Optional<URL> channel, String channelGA) throws IOException {
-        if (!channelsFile.isPresent() && !channel.isPresent()) {
+    private void setUpBuildEnv(Optional<String> channelRepo, Optional<Path> provisionConfigFile, Optional<URL> channel, String channelGA) throws IOException {
+        if (!provisionConfigFile.isPresent() && !channel.isPresent()) {
             this.channels.add(new ChannelRef(channelGA, null));
             if (channelRepo.isPresent()) {
                 String[] urls = channelRepo.get().split(",");
@@ -98,7 +98,7 @@ public class ProvisioningDefinition {
         } else if (channel.isPresent()) {
             this.channels.add(new ChannelRef(null, channel.get().toString()));
         } else {
-            final ProvisioningConfig record = ProvisioningConfig.readChannels(channelsFile.get());
+            final ProvisioningConfig record = ProvisioningConfig.readChannels(provisionConfigFile.get());
             this.channels.addAll(record.getChannels());
             this.repositories.clear();
             this.repositories.addAll(record.getRepositories().stream().map(RepositoryRef::toRemoteRepository).collect(Collectors.toList()));
@@ -131,7 +131,7 @@ public class ProvisioningDefinition {
 
     public static class Builder {
         private String fpl;
-        private Path channelsFile;
+        private Path provisionConfigFile;
         private Path definitionFile;
         private String channelRepo;
         private Set<String> includedPackages;
@@ -147,8 +147,8 @@ public class ProvisioningDefinition {
             return this;
         }
 
-        public Builder setChannelsFile(Path channelsFile) {
-            this.channelsFile = channelsFile;
+        public Builder setProvisionConfig(Path provisionConfigFile) {
+            this.provisionConfigFile = provisionConfigFile;
             return this;
         }
 

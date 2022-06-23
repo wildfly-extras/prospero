@@ -13,6 +13,7 @@ import org.wildfly.prospero.actions.Console;
 import org.wildfly.prospero.actions.InstallationHistory;
 import org.wildfly.prospero.api.ArtifactChange;
 import org.wildfly.prospero.api.SavedState;
+import org.wildfly.prospero.cli.commands.CliConstants;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
@@ -39,9 +40,9 @@ public class HistoryCommandTest extends AbstractConsoleTest {
 
     @Test
     public void requireDirFolder() {
-        int exitCode = commandLine.execute("history");
+        int exitCode = commandLine.execute(CliConstants.HISTORY);
         assertEquals(ReturnCodes.INVALID_ARGUMENTS, exitCode);
-        assertTrue(getErrorOutput().contains("Missing required option: '--dir=<directory>'"));
+        assertTrue(getErrorOutput().contains(String.format("Missing required option: '%s=<directory>'", CliConstants.DIR)));
     }
 
     @Test
@@ -49,7 +50,7 @@ public class HistoryCommandTest extends AbstractConsoleTest {
         when(historyAction.getRevisions()).thenReturn(Arrays.asList(
                 new SavedState("abcd", Instant.ofEpochSecond(System.currentTimeMillis()), SavedState.Type.INSTALL)));
 
-        int exitCode = commandLine.execute("history", "--dir", "test");
+        int exitCode = commandLine.execute(CliConstants.HISTORY, CliConstants.DIR, "test");
         assertEquals(ReturnCodes.SUCCESS, exitCode);
         verify(historyAction).getRevisions();
         assertTrue(getStandardOutput().contains("abcd"));
@@ -61,7 +62,7 @@ public class HistoryCommandTest extends AbstractConsoleTest {
                         new DefaultArtifact("foo", "bar", "jar", "1.1"),
                         new DefaultArtifact("foo", "bar", "jar", "1.2"))));
 
-        int exitCode = commandLine.execute("history", "--dir", "test", "--revision", "abcd");
+        int exitCode = commandLine.execute(CliConstants.HISTORY, CliConstants.DIR, "test", CliConstants.REVISION, "abcd");
         assertEquals(ReturnCodes.SUCCESS, exitCode);
         verify(historyAction).compare(eq(new SavedState("abcd")));
         assertTrue(getStandardOutput().contains("foo:bar"));

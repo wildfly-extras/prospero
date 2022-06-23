@@ -12,6 +12,7 @@ import org.mockito.junit.MockitoJUnitRunner;
 import org.wildfly.prospero.actions.Console;
 import org.wildfly.prospero.actions.InstallationHistory;
 import org.wildfly.prospero.api.SavedState;
+import org.wildfly.prospero.cli.commands.CliConstants;
 import org.wildfly.prospero.wfchannel.MavenSessionManager;
 
 import static org.junit.Assert.assertEquals;
@@ -41,23 +42,25 @@ public class RevertCommandTest extends AbstractConsoleTest {
 
     @Test
     public void requireDirArgument() {
-        int exitCode = commandLine.execute("revert");
+        int exitCode = commandLine.execute(CliConstants.REVERT);
 
         assertEquals(ReturnCodes.INVALID_ARGUMENTS, exitCode);
-        assertTrue(getErrorOutput().contains("Missing required options: '--dir=<directory>', '--revision=<revision>'"));
+        assertTrue(getErrorOutput().contains(String.format(
+                "Missing required options: '%s=<directory>', '%s=<revision>'", CliConstants.DIR, CliConstants.REVISION)));
     }
 
     @Test
     public void requireRevisionArgument() {
-        int exitCode = commandLine.execute("revert", "--dir", "test");
+        int exitCode = commandLine.execute(CliConstants.REVERT, CliConstants.DIR, "test");
 
         assertEquals(ReturnCodes.INVALID_ARGUMENTS, exitCode);
-        assertTrue(getErrorOutput().contains("Missing required option: '--revision=<revision>'"));
+        assertTrue(getErrorOutput().contains(String.format(
+                "Missing required option: '%s=<revision>'", CliConstants.REVISION)));
     }
 
     @Test
     public void callRevertOpertation() throws Exception {
-        int exitCode = commandLine.execute("revert", "--dir", "test", "--revision", "abcd");
+        int exitCode = commandLine.execute(CliConstants.REVERT, CliConstants.DIR, "test", CliConstants.REVISION, "abcd");
 
         assertEquals(ReturnCodes.SUCCESS, exitCode);
         verify(historyAction).rollback(eq(new SavedState("abcd")), any());
@@ -65,7 +68,8 @@ public class RevertCommandTest extends AbstractConsoleTest {
 
     @Test
     public void offlineModeRequiresLocalRepoOption() {
-        int exitCode = commandLine.execute("revert", "--dir", "test", "--revision", "abcd", "--offline");
+        int exitCode = commandLine.execute(CliConstants.REVERT, CliConstants.DIR, "test", CliConstants.REVISION, "abcd",
+                CliConstants.OFFLINE);
 
         assertEquals(ReturnCodes.INVALID_ARGUMENTS, exitCode);
         assertTrue(getErrorOutput().contains(Messages.offlineModeRequiresLocalRepo()));
@@ -73,8 +77,8 @@ public class RevertCommandTest extends AbstractConsoleTest {
 
     @Test
     public void useOfflineMavenSessionManagerIfOfflineSet() throws Exception {
-        int exitCode = commandLine.execute("revert", "--dir", "test", "--revision", "abcd", "--offline",
-                "--local-repo", "local-repo");
+        int exitCode = commandLine.execute(CliConstants.REVERT, CliConstants.DIR, "test", CliConstants.REVISION, "abcd",
+                CliConstants.OFFLINE, CliConstants.LOCAL_REPO, "local-repo");
 
         assertEquals(ReturnCodes.SUCCESS, exitCode);
         verify(historyAction).rollback(eq(new SavedState("abcd")), mavenSessionManager.capture());
@@ -83,8 +87,8 @@ public class RevertCommandTest extends AbstractConsoleTest {
 
     @Test
     public void useLocalMavenRepoIfParameterSet() throws Exception {
-        int exitCode = commandLine.execute("revert", "--dir", "test", "--revision", "abcd",
-                "--local-repo", "local-repo");
+        int exitCode = commandLine.execute(CliConstants.REVERT, CliConstants.DIR, "test", CliConstants.REVISION, "abcd",
+                CliConstants.LOCAL_REPO, "local-repo");
 
         assertEquals(ReturnCodes.SUCCESS, exitCode);
         verify(historyAction).rollback(eq(new SavedState("abcd")), mavenSessionManager.capture());

@@ -13,16 +13,16 @@ import org.wildfly.prospero.cli.ReturnCodes;
 import picocli.CommandLine;
 
 @CommandLine.Command(
-        name = "history",
+        name = CliConstants.HISTORY,
         description = "Lists previous installation states.",
         sortOptions = false
 )
 public class HistoryCommand extends AbstractCommand {
 
-    @CommandLine.Option(names = "--dir", required = true)
+    @CommandLine.Option(names = CliConstants.DIR, required = true)
     Path directory;
 
-    @CommandLine.Option(names = "--revision")
+    @CommandLine.Option(names = CliConstants.REVISION)
     Optional<String> revision;
 
     public HistoryCommand(Console console, ActionFactory actionFactory) {

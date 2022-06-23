@@ -19,14 +19,14 @@ import org.wildfly.prospero.wfchannel.MavenSessionManager;
 import picocli.CommandLine;
 
 @CommandLine.Command(
-        name = "install",
+        name = CliConstants.INSTALL,
         description = "Installs a new application server instance.",
         sortOptions = false
 )
 public class InstallCommand extends AbstractCommand {
 
     @CommandLine.Option(
-            names = "--dir",
+            names = CliConstants.DIR,
             required = true,
             description = "Target directory where the application server is going to be provisioned."
     )
@@ -36,42 +36,42 @@ public class InstallCommand extends AbstractCommand {
     FeaturePackOrDefinition featurePackOrDefinition;
 
     @CommandLine.Option(
-            names = "--channel",
+            names = CliConstants.CHANNEL,
             description = "Channel file URL."
     )
     Optional<String> channel;
 
     @CommandLine.Option(
-            names = "--provision-config",
+            names = CliConstants.PROVISION_CONFIG,
             description = "Provisioning configuration file path. This is special JSON configuration file that cotnains list of channel file references and list of remote Maven repositories."
     )
-    Optional<Path> channelFile;
+    Optional<Path> provisionConfig;
 
     @CommandLine.Option(
-            names = "--channel-repo",
+            names = CliConstants.CHANNEL_REPO,
             description = "URL of a remote Maven repository that contains artifacts required to build an application container."
     )
     List<URL> channelRepositories;
 
     @CommandLine.Option(
-            names = "--local-repo",
+            names = CliConstants.LOCAL_REPO,
             // TODO: Fix description.
             description = "Path to a local Maven repository."
     )
     Optional<Path> localRepo;
 
     @CommandLine.Option(
-            names = "--offline",
+            names = CliConstants.OFFLINE,
             description = "Perform installation from local Maven repository only. Offline installation requires --local-repo to be configured."
     )
     boolean offline;
 
-    @CommandLine.Option(names = {"-h", "--help"}, usageHelp = true)
+    @CommandLine.Option(names = {CliConstants.H, CliConstants.HELP}, usageHelp = true)
     boolean help;
 
     static class FeaturePackOrDefinition {
         @CommandLine.Option(
-                names = "--fpl",
+                names = CliConstants.FPL,
                 required = true,
                 // TODO: Check what the correct notations of fpl are.
                 description = "Feature pack location. This can be a well known shortcut like \"eap-8.0\" or \"wildfly\", " +
@@ -81,7 +81,7 @@ public class InstallCommand extends AbstractCommand {
         Optional<String> fpl;
 
         @CommandLine.Option(
-                names = "--definition",
+                names = CliConstants.DEFINITION,
                 required = true,
                 description = "Galleon provisioning XML definition file path."
         )
@@ -97,8 +97,8 @@ public class InstallCommand extends AbstractCommand {
         // following is checked by picocli, adding this to avoid IDE warnings
         assert featurePackOrDefinition.definition.isPresent() || featurePackOrDefinition.fpl.isPresent();
 
-        if (featurePackOrDefinition.definition.isEmpty() && isStandardFpl(featurePackOrDefinition.fpl.get()) && channelFile.isEmpty()) {
-            console.error("Channel file argument (--%s) need to be set when using custom fpl", CliMain.PROVISION_CONFIG_ARG);
+        if (featurePackOrDefinition.definition.isEmpty() && isStandardFpl(featurePackOrDefinition.fpl.get()) && provisionConfig.isEmpty()) {
+            console.error(Messages.provisioningConfigMandatoryWhenCustomFpl(), CliMain.PROVISION_CONFIG_ARG);
             return ReturnCodes.INVALID_ARGUMENTS;
         }
 
@@ -119,7 +119,7 @@ public class InstallCommand extends AbstractCommand {
             final ProvisioningDefinition provisioningDefinition = ProvisioningDefinition.builder()
                     .setFpl(featurePackOrDefinition.fpl.orElse(null))
                     .setChannel(channel.orElse(null))
-                    .setChannelsFile(channelFile.orElse(null))
+                    .setProvisionConfig(provisionConfig.orElse(null))
                     .setChannelRepo(channelRepositories == null || channelRepositories.isEmpty() ?
                             null : channelRepositories.get(0).toString())
                     .setDefinitionFile(featurePackOrDefinition.definition.orElse(null))
