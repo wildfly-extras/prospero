@@ -15,7 +15,6 @@ import picocli.CommandLine;
 
 @CommandLine.Command(
         name = CliConstants.REVERT,
-        description = "Reverts to a previous installation state.",
         sortOptions = false
 )
 public class RevertCommand extends AbstractCommand {
