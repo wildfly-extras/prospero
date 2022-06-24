@@ -87,6 +87,35 @@ public class MavenArtifactMapperTest {
         assertEquals("1.2.4", mappedArtifacts.get(1).getVersion());
     }
 
+    @Test
+    public void testResolveArtifactUpdatesVersionAndFile() throws Exception {
+        final File file1 = temporaryFolder.newFile();
+        final org.jboss.galleon.universe.maven.MavenArtifact originalArtifact = galleonArtifact("foo.bar", "test1", "jar");
+        final MavenArtifact resolvedArtifact = new MavenArtifact("foo.bar", "test1", "jar", "", "1.2.3", file1);
+
+        MavenArtifactMapper.resolve(originalArtifact, resolvedArtifact);
+
+        assertEquals(file1, originalArtifact.getPath().toFile());
+        assertEquals("1.2.3", originalArtifact.getVersion());
+    }
+
+    @Test(expected = NullPointerException.class)
+    public void testResolveArtifactThrowsExceptionIfVersionIsMissing() throws Exception {
+        final File file1 = temporaryFolder.newFile();
+        final org.jboss.galleon.universe.maven.MavenArtifact originalArtifact = galleonArtifact("foo.bar", "test1", "jar");
+        final MavenArtifact resolvedArtifact = new MavenArtifact("foo.bar", "test1", "jar", "", null, file1);
+
+        MavenArtifactMapper.resolve(originalArtifact, resolvedArtifact);
+    }
+
+    @Test(expected = NullPointerException.class)
+    public void testResolveArtifactThrowsExceptionIfFileIsMissing() throws Exception {
+        final org.jboss.galleon.universe.maven.MavenArtifact originalArtifact = galleonArtifact("foo.bar", "test1", "jar");
+        final MavenArtifact resolvedArtifact = new MavenArtifact("foo.bar", "test1", "jar", "", "1.2.3", null);
+
+        MavenArtifactMapper.resolve(originalArtifact, resolvedArtifact);
+    }
+
     private org.jboss.galleon.universe.maven.MavenArtifact galleonArtifact(String groupId, String artifactId, String extension) {
         final org.jboss.galleon.universe.maven.MavenArtifact galleonArtifact = new org.jboss.galleon.universe.maven.MavenArtifact();
         galleonArtifact.setGroupId(groupId);

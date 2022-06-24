@@ -18,12 +18,12 @@
 package org.wildfly.prospero.galleon;
 
 import org.wildfly.channel.ArtifactCoordinate;
-import org.wildfly.channel.DefaultArtifactCoordinate;
 import org.wildfly.channel.MavenArtifact;
 
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Objects;
 import java.util.stream.Collectors;
 
 public class MavenArtifactMapper {
@@ -49,7 +49,7 @@ public class MavenArtifactMapper {
 
     public List<ArtifactCoordinate> toChannelArtifacts() {
         return galleonArtifacts.stream()
-                .map(a -> new DefaultArtifactCoordinate(a.getGroupId(), a.getArtifactId(), a.getExtension(), a.getClassifier(), a.getVersion()))
+                .map(a -> new ArtifactCoordinate(a.getGroupId(), a.getArtifactId(), a.getExtension(), a.getClassifier(), a.getVersion()))
                 .collect(Collectors.toList());
     }
 
@@ -66,10 +66,18 @@ public class MavenArtifactMapper {
             if (!artifactMap.containsKey(key)) {
                 throw new IllegalArgumentException("Unknown artifact: " + key);
             }
-            artifactMap.get(key)
-                    .setPath(channelArtifact.getFile().toPath())
-                    .setVersion(channelArtifact.getVersion());
+            resolve(artifactMap.get(key), channelArtifact);
         }
         return galleonArtifacts;
+    }
+
+    public static void resolve(org.jboss.galleon.universe.maven.MavenArtifact artifact, MavenArtifact resolvedArtifact) {
+        Objects.requireNonNull(artifact);
+        Objects.requireNonNull(resolvedArtifact);
+        Objects.requireNonNull(resolvedArtifact.getFile());
+        Objects.requireNonNull(resolvedArtifact.getVersion());
+
+        artifact.setPath(resolvedArtifact.getFile().toPath());
+        artifact.setVersion(resolvedArtifact.getVersion());
     }
 }
