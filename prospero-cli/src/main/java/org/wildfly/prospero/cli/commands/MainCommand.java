@@ -6,7 +6,7 @@ import org.wildfly.prospero.actions.Console;
 import org.wildfly.prospero.cli.ReturnCodes;
 import picocli.CommandLine;
 
-@CommandLine.Command(name = CliConstants.MAIN_COMMAND)
+@CommandLine.Command(name = CliConstants.MAIN_COMMAND, resourceBundle = "UsageMessages")
 public class MainCommand implements Callable<Integer> {
 
     @CommandLine.Spec
@@ -14,19 +14,17 @@ public class MainCommand implements Callable<Integer> {
 
     private Console console;
 
+    @SuppressWarnings("unused")
+    @CommandLine.Option(names = {CliConstants.H, CliConstants.HELP}, usageHelp = true)
+    boolean help;
+
     public MainCommand(Console console) {
         this.console = console;
     }
 
     @Override
     public Integer call() {
-        console.println(CommandLine.Help.Ansi.AUTO.string("@|bold Welcome to Prospero CLI!|@"));
-        console.println("");
-        console.println(
-                "This tool allows you to provision instannces of Wildfly or JBoss EAP application containers.");
         spec.commandLine().usage(System.out);
-        console.println("");
-        console.println("Use `prospero <command> --help` to show usage information about given command.");
         return ReturnCodes.SUCCESS;
     }
 

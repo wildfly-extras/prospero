@@ -20,7 +20,6 @@ import picocli.CommandLine;
 
 @CommandLine.Command(
         name = CliConstants.UPDATE,
-        description = "Applies the latest available patches on a server instance.",
         sortOptions = false
 )
 public class UpdateCommand extends AbstractCommand {

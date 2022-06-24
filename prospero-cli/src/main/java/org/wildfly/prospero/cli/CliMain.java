@@ -66,6 +66,7 @@ public class CliMain {
         commandLine.addSubcommand(new UpdateCommand(console, actionFactory));
         commandLine.addSubcommand(new HistoryCommand(console, actionFactory));
         commandLine.addSubcommand(new RevertCommand(console, actionFactory));
+        commandLine.setHelpFactory(new CustomHelp.CustomHelpFactory());
         return commandLine;
     }
 

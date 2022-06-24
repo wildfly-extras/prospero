@@ -14,7 +14,6 @@ import picocli.CommandLine;
 
 @CommandLine.Command(
         name = CliConstants.HISTORY,
-        description = "Lists previous installation states.",
         sortOptions = false
 )
 public class HistoryCommand extends AbstractCommand {
