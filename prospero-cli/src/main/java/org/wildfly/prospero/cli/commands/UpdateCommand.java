@@ -45,6 +45,9 @@ public class UpdateCommand extends AbstractCommand {
     @CommandLine.Option(names = CliConstants.OFFLINE)
     boolean offline;
 
+    @CommandLine.Option(names = {CliConstants.Y, CliConstants.YES})
+    boolean yes;
+
     public UpdateCommand(Console console, ActionFactory actionFactory) {
         super(console, actionFactory);
     }
@@ -81,7 +84,7 @@ public class UpdateCommand extends AbstractCommand {
             final Path targetPath = directory.get().toAbsolutePath();
             Update update = actionFactory.update(targetPath, mavenSessionManager, console);
             if (!dryRun) {
-                update.doUpdateAll();
+                update.doUpdateAll(yes);
             } else {
                 update.listUpdates();
             }
