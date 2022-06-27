@@ -17,6 +17,7 @@
 
 package org.wildfly.prospero.api;
 
+import org.apache.maven.artifact.versioning.ComparableVersion;
 import org.eclipse.aether.artifact.Artifact;
 
 import java.util.Optional;
@@ -66,5 +67,13 @@ public class ArtifactChange {
             gac = String.format("%s:%s:%s", artifact.getGroupId(), artifact.getArtifactId(), artifact.getClassifier());
         }
         return gac;
+    }
+
+    public boolean isDowngrade() {
+        if (getNewVersion().isPresent() && getOldVersion().isPresent()) {
+            return new ComparableVersion(getNewVersion().get()).compareTo(new ComparableVersion(getOldVersion().get())) < 0;
+        } else {
+            return false;
+        }
     }
 }

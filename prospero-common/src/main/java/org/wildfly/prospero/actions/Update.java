@@ -22,31 +22,23 @@ import java.net.URL;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Optional;
-import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.CompletionException;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.stream.Collectors;
 
 import org.eclipse.aether.DefaultRepositorySystemSession;
 import org.eclipse.aether.RepositorySystem;
 import org.wildfly.channel.maven.VersionResolverFactory;
 import org.wildfly.channel.spi.MavenVersionsResolver;
 import org.wildfly.prospero.Messages;
-import org.wildfly.prospero.api.ArtifactUtils;
 import org.wildfly.prospero.api.InstallationMetadata;
-import org.wildfly.prospero.api.ArtifactChange;
 import org.wildfly.prospero.api.exceptions.MetadataException;
 import org.wildfly.prospero.api.exceptions.ArtifactResolutionException;
 import org.wildfly.prospero.api.exceptions.OperationException;
 import org.wildfly.prospero.galleon.GalleonUtils;
 import org.wildfly.prospero.galleon.ChannelMavenArtifactRepositoryManager;
 import org.wildfly.prospero.model.ChannelRef;
+import org.wildfly.prospero.updates.UpdateFinder;
+import org.wildfly.prospero.updates.UpdateSet;
 import org.wildfly.prospero.wfchannel.ChannelRefUpdater;
 import org.wildfly.prospero.wfchannel.MavenSessionManager;
-import org.eclipse.aether.artifact.Artifact;
-import org.eclipse.aether.artifact.DefaultArtifact;
 import org.eclipse.aether.repository.RemoteRepository;
 import org.jboss.galleon.ProvisioningException;
 import org.jboss.galleon.ProvisioningManager;
@@ -55,11 +47,9 @@ import org.jboss.galleon.layout.ProvisioningPlan;
 import org.wildfly.channel.Channel;
 import org.wildfly.channel.ChannelMapper;
 import org.wildfly.channel.ChannelSession;
-import org.wildfly.channel.UnresolvedMavenArtifactException;
 
 public class Update {
 
-    public static final int UPDATES_SEARCH_PARALLELISM = 10;
     private final InstallationMetadata metadata;
     private final ChannelMavenArtifactRepositoryManager maven;
     private final ProvisioningManager provMgr;
@@ -107,7 +97,7 @@ public class Update {
     public void doUpdateAll(boolean confirmed) throws ProvisioningException, MetadataException, ArtifactResolutionException {
         final UpdateSet updateSet = findUpdates();
 
-        console.updatesFound(updateSet.fpUpdates.getUpdates(), updateSet.artifactUpdates);
+        console.updatesFound(updateSet.getFpUpdates().getUpdates(), updateSet.getArtifactUpdates());
         if (updateSet.isEmpty()) {
             return;
         }
@@ -116,7 +106,7 @@ public class Update {
             return;
         }
 
-        applyFpUpdates(updateSet.fpUpdates);
+        applyFpUpdates(updateSet.getFpUpdates());
 
         metadata.writeFiles();
 
@@ -126,72 +116,13 @@ public class Update {
     public void listUpdates() throws ArtifactResolutionException, ProvisioningException {
         final UpdateSet updateSet = findUpdates();
 
-        console.updatesFound(updateSet.fpUpdates.getUpdates(), updateSet.artifactUpdates);
+        console.updatesFound(updateSet.getFpUpdates().getUpdates(), updateSet.getArtifactUpdates());
     }
 
     protected UpdateSet findUpdates() throws ArtifactResolutionException, ProvisioningException {
-
-        // use parallel executor to speed up the artifact resolution
-        final ExecutorService executorService = Executors.newWorkStealingPool(UPDATES_SEARCH_PARALLELISM);
-        List<CompletableFuture<Optional<ArtifactChange>>> allPackages = new ArrayList<>();
-        for (Artifact artifact : metadata.getArtifacts()) {
-            final CompletableFuture<Optional<ArtifactChange>> cf = new CompletableFuture<>();
-            executorService.submit(() -> {
-                try {
-                    final Optional<ArtifactChange> found = findUpdates(artifact);
-                    cf.complete(found);
-                } catch (Exception e) {
-                    cf.completeExceptionally(e);
-                }
-            });
-            allPackages.add(cf);
+        try (final UpdateFinder updateFinder = new UpdateFinder(channelSession, provMgr)) {
+            return updateFinder.findUpdates(metadata.getArtifacts());
         }
-
-        try {
-            CompletableFuture.allOf(allPackages.toArray(new CompletableFuture[]{})).join();
-        } catch (CompletionException e) {
-            if (e.getCause() instanceof ArtifactResolutionException) {
-                throw (ArtifactResolutionException) e.getCause();
-            } else {
-                throw e;
-            }
-        }
-
-        executorService.shutdown();
-
-        final List<ArtifactChange> updates = allPackages.stream()
-                .map(cf ->cf.getNow(Optional.empty()))
-                .flatMap(Optional::stream)
-                .collect(Collectors.toList());
-
-        final ProvisioningPlan fpUpdates = findFPUpdates();
-        return new UpdateSet(fpUpdates, updates);
-    }
-
-    private Optional<ArtifactChange> findUpdates(Artifact artifact) throws ArtifactResolutionException {
-        if (artifact == null) {
-            throw Messages.MESSAGES.artifactNotFound(artifact.getGroupId(), artifact.getArtifactId(), null);
-        }
-
-        final String latestVersion;
-        try {
-            latestVersion = channelSession.findLatestMavenArtifactVersion(artifact.getGroupId(),
-                    artifact.getArtifactId(), artifact.getExtension(), artifact.getClassifier(), null);
-        } catch (UnresolvedMavenArtifactException e) {
-            throw Messages.MESSAGES.artifactNotFound(artifact.getGroupId(), artifact.getArtifactId(), e);
-        }
-        final Artifact latest = new DefaultArtifact(artifact.getGroupId(), artifact.getArtifactId(), artifact.getExtension(), latestVersion);
-
-
-        if (latestVersion == null || ArtifactUtils.compareVersion(latest, artifact) <= 0) {
-            return Optional.empty();
-        } else {
-            return Optional.of(new ArtifactChange(artifact, latest));
-        }
-    }
-
-    private ProvisioningPlan findFPUpdates() throws ProvisioningException {
-        return provMgr.getUpdates(true);
     }
 
     protected void applyFpUpdates(ProvisioningPlan updates) throws ProvisioningException {
@@ -201,18 +132,4 @@ public class Update {
         metadata.setChannel(maven.resolvedChannel());
     }
 
-    protected static class UpdateSet {
-
-        private final ProvisioningPlan fpUpdates;
-        private final List<ArtifactChange> artifactUpdates;
-
-        public UpdateSet(ProvisioningPlan fpUpdates, List<ArtifactChange> updates) {
-            this.fpUpdates = fpUpdates;
-            this.artifactUpdates = updates;
-        }
-
-        public boolean isEmpty() {
-            return fpUpdates.getUpdates().isEmpty() && artifactUpdates.isEmpty();
-        }
-    }
 }

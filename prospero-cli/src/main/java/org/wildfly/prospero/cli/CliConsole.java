@@ -139,7 +139,12 @@ public class CliConsole implements Console {
                 final Optional<String> oldVersion = artifactUpdate.getOldVersion();
                 final String artifactName = artifactUpdate.getArtifactName();
 
-                getStdOut().printf("  %-40s    %-20s ==>  %-20s%n", artifactName, oldVersion.orElse("[]"), newVersion.orElse("[]"));
+                getStdOut().printf("  %s%-40s    %-20s ==>  %-20s%n", artifactUpdate.isDowngrade()?"[*]":"", artifactName, oldVersion.orElse("[]"),
+                        newVersion.orElse("[]"));
+            }
+
+            if (artifactUpdates.stream().anyMatch(ArtifactChange::isDowngrade)) {
+                getStdOut().printf(CliMessages.MESSAGES.possibleDowngrade());
             }
         }
     }
