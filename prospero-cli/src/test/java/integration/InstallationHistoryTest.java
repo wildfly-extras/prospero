@@ -89,7 +89,7 @@ public class InstallationHistoryTest extends WfCoreTestBase {
 
         // updateCore
         TestUtil.prepareProvisionConfigAsUrl(OUTPUT_PATH.resolve(TestUtil.PROVISION_CONFIG_FILE_PATH), "local-updates-repo-desc.yaml", "local-repo-desc.yaml");
-        new Update(OUTPUT_PATH, mavenSessionManager, new AcceptingConsole()).doUpdateAll();
+        new Update(OUTPUT_PATH, mavenSessionManager, new AcceptingConsole()).doUpdateAll(false);
 
         // get history
         List<SavedState> states = new InstallationHistory(OUTPUT_PATH, new AcceptingConsole()).getRevisions();
@@ -114,7 +114,7 @@ public class InstallationHistoryTest extends WfCoreTestBase {
         installation.provision(provisioningDefinition);
 
         TestUtil.prepareProvisionConfigAsUrl(OUTPUT_PATH.resolve(TestUtil.PROVISION_CONFIG_FILE_PATH), "local-updates-repo-desc.yaml", "local-repo-desc.yaml");
-        new Update(OUTPUT_PATH, mavenSessionManager, new AcceptingConsole()).doUpdateAll();
+        new Update(OUTPUT_PATH, mavenSessionManager, new AcceptingConsole()).doUpdateAll(false);
         Optional<Artifact> wildflyCliArtifact = readArtifactFromManifest("org.wildfly.core", "wildfly-cli");
         assertEquals(UPGRADE_VERSION, wildflyCliArtifact.get().getVersion());
         assertTrue("Updated jar should be present in module", wildflyCliModulePath.resolve(UPGRADE_JAR).toFile().exists());
@@ -144,7 +144,7 @@ public class InstallationHistoryTest extends WfCoreTestBase {
         installation.provision(provisioningDefinition);
 
         TestUtil.prepareProvisionConfigAsUrl(OUTPUT_PATH.resolve(TestUtil.PROVISION_CONFIG_FILE_PATH), "local-updates-repo-desc.yaml", "local-repo-desc.yaml");
-        new Update(OUTPUT_PATH, mavenSessionManager, new AcceptingConsole()).doUpdateAll();
+        new Update(OUTPUT_PATH, mavenSessionManager, new AcceptingConsole()).doUpdateAll(false);
 
         final InstallationHistory installationHistory = new InstallationHistory(OUTPUT_PATH, new AcceptingConsole());
         final List<SavedState> revisions = installationHistory.getRevisions();

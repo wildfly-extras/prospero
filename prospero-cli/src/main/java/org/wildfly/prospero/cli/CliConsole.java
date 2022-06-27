@@ -146,11 +146,11 @@ public class CliConsole implements Console {
 
     @Override
     public boolean confirmUpdates() {
-        getStdOut().print("Continue with update [y/n]: ");
+        getStdOut().print("Continue with update [y/N]: ");
         Scanner sc = new Scanner(getInput());
         while (true) {
             String resp = sc.nextLine();
-            if (resp.equalsIgnoreCase("n")) {
+            if (resp.equalsIgnoreCase("n") || resp.isBlank()) {
                 println("Update cancelled");
                 return false;
             } else if (resp.equalsIgnoreCase("y")) {

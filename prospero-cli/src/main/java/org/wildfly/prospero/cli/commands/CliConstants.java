@@ -31,4 +31,6 @@ public final class CliConstants {
     public static final String PROVISION_CONFIG = "--provision-config";
     public static final String REVISION = "--revision";
     public static final String SELF = "--self";
+    public static final String Y = "-y";
+    public static final String YES = "--yes";
 }

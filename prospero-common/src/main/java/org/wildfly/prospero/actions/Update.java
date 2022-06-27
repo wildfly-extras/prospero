@@ -103,7 +103,7 @@ public class Update {
         return channels;
     }
 
-    public void doUpdateAll() throws ProvisioningException, MetadataException, ArtifactResolutionException {
+    public void doUpdateAll(boolean confirmed) throws ProvisioningException, MetadataException, ArtifactResolutionException {
         final UpdateSet updateSet = findUpdates();
 
         console.updatesFound(updateSet.fpUpdates.getUpdates(), updateSet.artifactUpdates);
@@ -111,7 +111,7 @@ public class Update {
             return;
         }
 
-        if (!console.confirmUpdates()) {
+        if (!confirmed && !console.confirmUpdates()) {
             return;
         }
 
@@ -128,7 +128,7 @@ public class Update {
         console.updatesFound(updateSet.fpUpdates.getUpdates(), updateSet.artifactUpdates);
     }
 
-    private UpdateSet findUpdates() throws ArtifactResolutionException, ProvisioningException {
+    protected UpdateSet findUpdates() throws ArtifactResolutionException, ProvisioningException {
 
         // use parallel executor to speed up the artifact resolution
         final ExecutorService executorService = Executors.newWorkStealingPool(UPDATES_SEARCH_PARALLELISM);
@@ -193,14 +193,14 @@ public class Update {
         return provMgr.getUpdates(true);
     }
 
-    private void applyFpUpdates(ProvisioningPlan updates) throws ProvisioningException {
+    protected void applyFpUpdates(ProvisioningPlan updates) throws ProvisioningException {
         GalleonUtils.executeGalleon(options -> provMgr.apply(updates, options),
                 mavenSessionManager.getProvisioningRepo().toAbsolutePath());
 
         metadata.setChannel(maven.resolvedChannel());
     }
 
-    private class UpdateSet {
+    protected static class UpdateSet {
 
         private final ProvisioningPlan fpUpdates;
         private final List<ArtifactChange> artifactUpdates;

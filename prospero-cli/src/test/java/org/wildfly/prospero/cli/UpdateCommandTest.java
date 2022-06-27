@@ -92,7 +92,7 @@ public class UpdateCommandTest extends AbstractConsoleTest {
         int exitCode = commandLine.execute(CliConstants.UPDATE, CliConstants.DIR, "test");
 
         assertEquals(ReturnCodes.SUCCESS, exitCode);
-        Mockito.verify(update).doUpdateAll();
+        Mockito.verify(update).doUpdateAll(false);
     }
 
     @Test
@@ -111,7 +111,7 @@ public class UpdateCommandTest extends AbstractConsoleTest {
 
         assertEquals(ReturnCodes.SUCCESS, exitCode);
         Mockito.verify(actionFactory).update(eq(baseDir.toAbsolutePath()), any(), any());
-        Mockito.verify(update).doUpdateAll();
+        Mockito.verify(update).doUpdateAll(false);
     }
 
     @Test
@@ -123,7 +123,7 @@ public class UpdateCommandTest extends AbstractConsoleTest {
 
         assertEquals(ReturnCodes.SUCCESS, exitCode);
         Mockito.verify(actionFactory).update(eq(baseDir.toAbsolutePath()), any(), any());
-        Mockito.verify(update).doUpdateAll();
+        Mockito.verify(update).doUpdateAll(false);
     }
 
     @Test
