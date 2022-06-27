@@ -13,7 +13,7 @@ import org.wildfly.prospero.api.WellKnownFeaturePacks;
 import org.wildfly.prospero.api.exceptions.OperationException;
 import org.wildfly.prospero.cli.ActionFactory;
 import org.wildfly.prospero.cli.CliMain;
-import org.wildfly.prospero.cli.Messages;
+import org.wildfly.prospero.cli.CliMessages;
 import org.wildfly.prospero.cli.ReturnCodes;
 import org.wildfly.prospero.wfchannel.MavenSessionManager;
 import picocli.CommandLine;
@@ -94,12 +94,12 @@ public class InstallCommand extends AbstractCommand {
         assert featurePackOrDefinition.definition.isPresent() || featurePackOrDefinition.fpl.isPresent();
 
         if (featurePackOrDefinition.definition.isEmpty() && isStandardFpl(featurePackOrDefinition.fpl.get()) && provisionConfig.isEmpty()) {
-            console.error(Messages.provisioningConfigMandatoryWhenCustomFpl(), CliMain.PROVISION_CONFIG_ARG);
+            console.error(CliMessages.MESSAGES.provisioningConfigMandatoryWhenCustomFpl(), CliMain.PROVISION_CONFIG_ARG);
             return ReturnCodes.INVALID_ARGUMENTS;
         }
 
         if (offline && localRepo.isEmpty()) {
-            console.error(Messages.offlineModeRequiresLocalRepo());
+            console.error(CliMessages.MESSAGES.offlineModeRequiresLocalRepo());
             return ReturnCodes.INVALID_ARGUMENTS;
         }
 
@@ -124,7 +124,7 @@ public class InstallCommand extends AbstractCommand {
             Provision provision = actionFactory.install(directory.toAbsolutePath(), mavenSessionManager, console);
             provision.provision(provisioningDefinition);
         } catch (ProvisioningException | OperationException e) {
-            console.error("Error while executing installation: " + e.getMessage());
+            console.error(CliMessages.MESSAGES.errorWhileExecutingOperation(CliConstants.INSTALL, e.getMessage()));
             return ReturnCodes.PROCESSING_ERROR;
         } catch (IllegalArgumentException e) {
             console.error(e.getMessage());

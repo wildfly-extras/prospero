@@ -8,7 +8,7 @@ import org.wildfly.prospero.actions.Console;
 import org.wildfly.prospero.actions.InstallationHistory;
 import org.wildfly.prospero.api.SavedState;
 import org.wildfly.prospero.cli.ActionFactory;
-import org.wildfly.prospero.cli.Messages;
+import org.wildfly.prospero.cli.CliMessages;
 import org.wildfly.prospero.cli.ReturnCodes;
 import org.wildfly.prospero.wfchannel.MavenSessionManager;
 import picocli.CommandLine;
@@ -38,7 +38,7 @@ public class RevertCommand extends AbstractCommand {
     @Override
     public Integer call() throws Exception {
         if (offline && localRepo.isEmpty()) {
-            console.error(Messages.offlineModeRequiresLocalRepo());
+            console.error(CliMessages.MESSAGES.offlineModeRequiresLocalRepo());
             return ReturnCodes.INVALID_ARGUMENTS;
         }
 
@@ -53,7 +53,7 @@ public class RevertCommand extends AbstractCommand {
             InstallationHistory installationHistory = actionFactory.history(directory.toAbsolutePath(), console);
             installationHistory.rollback(new SavedState(revision), mavenSessionManager);
         } catch (ProvisioningException e) {
-            console.error("Error while executing update: " + e.getMessage());
+            console.error(CliMessages.MESSAGES.errorWhileExecutingOperation(CliConstants.REVERT, e.getMessage()));
             return ReturnCodes.PROCESSING_ERROR;
         }
 

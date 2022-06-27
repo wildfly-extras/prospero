@@ -72,7 +72,7 @@ public class RevertCommandTest extends AbstractConsoleTest {
                 CliConstants.OFFLINE);
 
         assertEquals(ReturnCodes.INVALID_ARGUMENTS, exitCode);
-        assertTrue(getErrorOutput().contains(Messages.offlineModeRequiresLocalRepo()));
+        assertTrue(getErrorOutput().contains(CliMessages.MESSAGES.offlineModeRequiresLocalRepo()));
     }
 
     @Test

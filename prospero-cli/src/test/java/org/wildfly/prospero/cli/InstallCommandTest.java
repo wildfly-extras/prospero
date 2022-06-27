@@ -89,7 +89,7 @@ public class InstallCommandTest extends AbstractConsoleTest {
         int exitCode = commandLine.execute(CliConstants.INSTALL, CliConstants.DIR, "test",
                 CliConstants.FPL, "eap", CliConstants.OFFLINE);
         assertEquals(ReturnCodes.INVALID_ARGUMENTS, exitCode);
-        assertTrue(getErrorOutput().contains(Messages.offlineModeRequiresLocalRepo()));
+        assertTrue(getErrorOutput().contains(CliMessages.MESSAGES.offlineModeRequiresLocalRepo()));
     }
 
     @Test
@@ -98,7 +98,7 @@ public class InstallCommandTest extends AbstractConsoleTest {
                 CliConstants.FPL, "foo:bar");
         assertEquals(ReturnCodes.INVALID_ARGUMENTS, exitCode);
         assertTrue("output: " + getErrorOutput(), getErrorOutput().contains(String.format(
-                Messages.provisioningConfigMandatoryWhenCustomFpl(), CliConstants.PROVISION_CONFIG)));
+                CliMessages.MESSAGES.provisioningConfigMandatoryWhenCustomFpl(), CliConstants.PROVISION_CONFIG)));
     }
 
     @Test

@@ -33,6 +33,7 @@ import org.eclipse.aether.DefaultRepositorySystemSession;
 import org.eclipse.aether.RepositorySystem;
 import org.wildfly.channel.maven.VersionResolverFactory;
 import org.wildfly.channel.spi.MavenVersionsResolver;
+import org.wildfly.prospero.Messages;
 import org.wildfly.prospero.api.ArtifactUtils;
 import org.wildfly.prospero.api.InstallationMetadata;
 import org.wildfly.prospero.api.ArtifactChange;
@@ -97,7 +98,7 @@ public class Update {
             try {
                 channels.add(ChannelMapper.from(new URL(ref.getUrl())));
             } catch (MalformedURLException e) {
-                throw new MetadataException("Unable to resolve channel configuration", e);
+                throw Messages.MESSAGES.unableToResolveChannelConfiguration(e);
             }
         }
         return channels;
@@ -169,7 +170,7 @@ public class Update {
 
     private Optional<ArtifactChange> findUpdates(Artifact artifact) throws ArtifactResolutionException {
         if (artifact == null) {
-            throw new ArtifactResolutionException(String.format("Artifact [%s:%s] not found", artifact.getGroupId(), artifact.getArtifactId()));
+            throw Messages.MESSAGES.artifactNotFound(artifact.getGroupId(), artifact.getArtifactId(), null);
         }
 
         final String latestVersion;
@@ -177,7 +178,7 @@ public class Update {
             latestVersion = channelSession.findLatestMavenArtifactVersion(artifact.getGroupId(),
                     artifact.getArtifactId(), artifact.getExtension(), artifact.getClassifier(), null);
         } catch (UnresolvedMavenArtifactException e) {
-            throw new ArtifactResolutionException(String.format("Artifact [%s:%s] not found", artifact.getGroupId(), artifact.getArtifactId()), e);
+            throw Messages.MESSAGES.artifactNotFound(artifact.getGroupId(), artifact.getArtifactId(), e);
         }
         final Artifact latest = new DefaultArtifact(artifact.getGroupId(), artifact.getArtifactId(), artifact.getExtension(), latestVersion);
 
