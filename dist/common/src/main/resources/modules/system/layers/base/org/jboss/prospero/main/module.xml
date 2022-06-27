@@ -32,6 +32,8 @@
         <artifact name="${org.wildfly.prospero:prospero-cli}"/>
         <artifact name="${org.jboss.galleon:galleon-core}"/>
         <artifact name="${org.jboss.galleon:galleon-maven-universe}"/>
+        <artifact name="${info.picocli:picocli}"/>
+        <artifact name="${org.slf4j:slf4j-nop}"/>
         <artifact name="${com.fasterxml.jackson.dataformat:jackson-dataformat-yaml}"/>
         <artifact name="${com.networknt:json-schema-validator}"/>
         <artifact name="${org.apache.maven:maven-artifact}"/>
