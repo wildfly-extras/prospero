@@ -21,6 +21,7 @@ import org.eclipse.aether.DefaultRepositorySystemSession;
 import org.eclipse.aether.RepositorySystem;
 import org.wildfly.channel.maven.VersionResolverFactory;
 import org.wildfly.channel.spi.MavenVersionsResolver;
+import org.wildfly.prospero.Messages;
 import org.wildfly.prospero.api.InstallationMetadata;
 import org.wildfly.prospero.api.exceptions.MetadataException;
 import org.wildfly.prospero.api.ProvisioningDefinition;
@@ -55,13 +56,14 @@ import org.wildfly.channel.ChannelMapper;
 public class Provision {
 
     private final MavenSessionManager mavenSessionManager;
-    private Path installDir;
-    private Console console;
+    private final Path installDir;
+    private final Console console;
 
     public Provision(Path installDir, MavenSessionManager mavenSessionManager, Console console) {
         this.installDir = installDir;
         this.console = console;
         this.mavenSessionManager = mavenSessionManager;
+        verifyInstallDir(installDir);
     }
 
     /**
@@ -159,5 +161,20 @@ public class Provision {
         final Channel channel = maven.resolvedChannel();
 
         new InstallationMetadata(home, channel, channelRefs, repositories).writeFiles();
+    }
+
+    private static void verifyInstallDir(Path directory) {
+        if (directory.toFile().isFile()) {
+            // file exists and is a regular file
+            throw Messages.MESSAGES.dirMustBeDirectory(directory);
+        }
+        if (!isEmptyDirectory(directory)) {
+            throw Messages.MESSAGES.cannotInstallIntoNonEmptyDirectory(directory);
+        }
+    }
+
+    private static boolean isEmptyDirectory(Path directory) {
+        String[] list = directory.toFile().list();
+        return list == null || list.length == 0;
     }
 }

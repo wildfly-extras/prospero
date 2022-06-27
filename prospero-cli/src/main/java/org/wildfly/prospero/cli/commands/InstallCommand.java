@@ -126,6 +126,9 @@ public class InstallCommand extends AbstractCommand {
         } catch (ProvisioningException | OperationException e) {
             console.error("Error while executing installation: " + e.getMessage());
             return ReturnCodes.PROCESSING_ERROR;
+        } catch (IllegalArgumentException e) {
+            console.error(e.getMessage());
+            return ReturnCodes.INVALID_ARGUMENTS;
         }
 
         return ReturnCodes.SUCCESS;
@@ -134,4 +137,5 @@ public class InstallCommand extends AbstractCommand {
     private boolean isStandardFpl(String fpl) {
         return !WellKnownFeaturePacks.isWellKnownName(fpl);
     }
+
 }
