@@ -112,4 +112,6 @@ public interface CliMessages {
     @Message("Error when processing command: ")
     String errorWhenProcessingCommand();
 
+    @Message("%n[*] The update list contain one or more artifacts with lower versions then currently installed. Proceed with caution.%n%n")
+    String possibleDowngrade();
 }

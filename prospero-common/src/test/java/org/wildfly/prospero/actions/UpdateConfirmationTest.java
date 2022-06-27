@@ -21,6 +21,7 @@ import org.wildfly.channel.ChannelMapper;
 import org.wildfly.prospero.api.ArtifactChange;
 import org.wildfly.prospero.api.InstallationMetadata;
 import org.wildfly.prospero.api.exceptions.OperationException;
+import org.wildfly.prospero.updates.UpdateSet;
 import org.wildfly.prospero.wfchannel.MavenSessionManager;
 
 @RunWith(MockitoJUnitRunner.class)
@@ -46,10 +47,10 @@ public class UpdateConfirmationTest {
         }
 
         @Override
-        protected Update.UpdateSet findUpdates() {
+        protected UpdateSet findUpdates() {
             ArtifactChange artifactChange = new ArtifactChange(new DefaultArtifact("g", "a", null, "1.0.0"),
                     new DefaultArtifact("g", "a", null, "1.0.1"));
-            return new Update.UpdateSet(ProvisioningPlan.builder(), Collections.singletonList(artifactChange));
+            return new UpdateSet(ProvisioningPlan.builder(), Collections.singletonList(artifactChange));
         }
 
         @Override
