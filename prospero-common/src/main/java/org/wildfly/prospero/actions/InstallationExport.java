@@ -17,9 +17,9 @@
 
 package org.wildfly.prospero.actions;
 
+import org.wildfly.prospero.Messages;
 import org.wildfly.prospero.api.InstallationMetadata;
 import org.wildfly.prospero.api.exceptions.MetadataException;
-import org.jboss.galleon.ProvisioningException;
 
 import java.io.IOException;
 import java.nio.file.Path;
@@ -40,9 +40,9 @@ public class InstallationExport {
         new InstallationExport(Paths.get(installation)).export(exportName);
     }
 
-    public void export(String exportName) throws ProvisioningException, IOException, MetadataException {
+    public void export(String exportName) throws IOException, MetadataException {
         if (!installationDir.toFile().exists()) {
-            throw new ProvisioningException("Installation dir " + installationDir + " doesn't exist");
+            throw Messages.MESSAGES.installationDirDoesNotExist(installationDir);
         }
 
         final InstallationMetadata metadataBundle = new InstallationMetadata(installationDir);

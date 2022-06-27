@@ -100,7 +100,7 @@ public class UpdateCommandTest extends AbstractConsoleTest {
         int exitCode = commandLine.execute(CliConstants.UPDATE, CliConstants.SELF);
 
         assertEquals(ReturnCodes.PROCESSING_ERROR, exitCode);
-        assertTrue(getErrorOutput().contains(Messages.unableToLocateInstallation()));
+        assertTrue(getErrorOutput().contains(CliMessages.MESSAGES.unableToLocateInstallation()));
     }
 
     @Test
@@ -133,7 +133,8 @@ public class UpdateCommandTest extends AbstractConsoleTest {
                 CliConstants.DIR, baseDir.toAbsolutePath().toString());
 
         assertEquals(ReturnCodes.PROCESSING_ERROR, exitCode);
-        assertTrue(getErrorOutput().contains(Messages.unexpectedPackageInSelfUpdate(baseDir.toAbsolutePath().toString())));
+        assertTrue(getErrorOutput().contains(
+                CliMessages.MESSAGES.unexpectedPackageInSelfUpdate(baseDir.toAbsolutePath().toString())));
     }
 
     @Test
@@ -143,7 +144,8 @@ public class UpdateCommandTest extends AbstractConsoleTest {
                 CliConstants.DIR, baseDir.toAbsolutePath().toString());
 
         assertEquals(ReturnCodes.PROCESSING_ERROR, exitCode);
-        assertTrue(getErrorOutput().contains(Messages.unexpectedPackageInSelfUpdate(baseDir.toAbsolutePath().toString())));
+        assertTrue(getErrorOutput().contains(
+                CliMessages.MESSAGES.unexpectedPackageInSelfUpdate(baseDir.toAbsolutePath().toString())));
     }
 
     @Test
@@ -153,7 +155,7 @@ public class UpdateCommandTest extends AbstractConsoleTest {
                 CliConstants.DIR, baseDir.toAbsolutePath().toString(), CliConstants.OFFLINE);
 
         assertEquals(ReturnCodes.INVALID_ARGUMENTS, exitCode);
-        assertTrue(getErrorOutput().contains(Messages.offlineModeRequiresLocalRepo()));
+        assertTrue(getErrorOutput().contains(CliMessages.MESSAGES.offlineModeRequiresLocalRepo()));
     }
 
     private Path mockGalleonInstallation(String... fps) throws IOException, javax.xml.stream.XMLStreamException {

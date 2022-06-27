@@ -21,6 +21,7 @@ import org.eclipse.aether.DefaultRepositorySystemSession;
 import org.eclipse.aether.RepositorySystem;
 import org.wildfly.channel.maven.VersionResolverFactory;
 import org.wildfly.channel.spi.MavenVersionsResolver;
+import org.wildfly.prospero.Messages;
 import org.wildfly.prospero.model.ChannelRef;
 import org.wildfly.prospero.api.InstallationMetadata;
 import org.wildfly.prospero.api.exceptions.MetadataException;
@@ -62,7 +63,7 @@ public class InstallationRestore {
     public void restore(Path metadataBundleZip)
             throws ProvisioningException, IOException, MetadataException {
         if (installDir.toFile().exists()) {
-            throw new ProvisioningException("Installation dir " + installDir + " already exists");
+            throw Messages.MESSAGES.installationDirAlreadyExists(installDir);
         }
 
         final InstallationMetadata metadataBundle = InstallationMetadata.importMetadata(metadataBundleZip);
@@ -92,7 +93,7 @@ public class InstallationRestore {
             try {
                 channels.add(ChannelMapper.from(new URL(ref.getUrl())));
             } catch (MalformedURLException e) {
-                throw new MetadataException("Unable to resolve channel configuration", e);
+                throw Messages.MESSAGES.unableToResolveChannelConfiguration(e);
             }
         } return channels;
     }

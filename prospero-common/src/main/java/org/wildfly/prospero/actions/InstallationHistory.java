@@ -21,6 +21,7 @@ import org.eclipse.aether.DefaultRepositorySystemSession;
 import org.eclipse.aether.RepositorySystem;
 import org.wildfly.channel.maven.VersionResolverFactory;
 import org.wildfly.channel.spi.MavenVersionsResolver;
+import org.wildfly.prospero.Messages;
 import org.wildfly.prospero.api.ArtifactChange;
 import org.wildfly.prospero.model.ChannelRef;
 import org.wildfly.prospero.api.InstallationMetadata;
@@ -99,7 +100,7 @@ public class InstallationHistory {
             try {
                 channels.add(ChannelMapper.from(new URL(ref.getUrl())));
             } catch (MalformedURLException e) {
-                throw new MetadataException("Unable to resolve channel configuration", e);
+                throw Messages.MESSAGES.unableToResolveChannelConfiguration(e);
             }
         } return channels;
     }

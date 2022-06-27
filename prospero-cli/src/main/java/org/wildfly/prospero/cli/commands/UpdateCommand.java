@@ -12,7 +12,7 @@ import org.wildfly.prospero.api.exceptions.MetadataException;
 import org.wildfly.prospero.cli.ActionFactory;
 import org.wildfly.prospero.cli.ArgumentParsingException;
 import org.wildfly.prospero.cli.CliMain;
-import org.wildfly.prospero.cli.Messages;
+import org.wildfly.prospero.cli.CliMessages;
 import org.wildfly.prospero.cli.ReturnCodes;
 import org.wildfly.prospero.galleon.GalleonUtils;
 import org.wildfly.prospero.wfchannel.MavenSessionManager;
@@ -68,7 +68,7 @@ public class UpdateCommand extends AbstractCommand {
         }
 
         if (offline && localRepo.isEmpty()) {
-            console.error(Messages.offlineModeRequiresLocalRepo());
+            console.error(CliMessages.MESSAGES.offlineModeRequiresLocalRepo());
             return ReturnCodes.INVALID_ARGUMENTS;
         }
 
@@ -89,7 +89,7 @@ public class UpdateCommand extends AbstractCommand {
                 update.listUpdates();
             }
         } catch (MetadataException | ProvisioningException e) {
-            console.error("Error while executing update: " + e.getMessage());
+            console.error(CliMessages.MESSAGES.errorWhileExecutingOperation(CliConstants.UPDATE, e.getMessage()));
             return ReturnCodes.PROCESSING_ERROR;
         }
         return ReturnCodes.SUCCESS;
@@ -100,20 +100,20 @@ public class UpdateCommand extends AbstractCommand {
         try {
             final List<String> fpNames = GalleonUtils.getInstalledPacks(dir.toAbsolutePath());
             if (fpNames.size() != 1) {
-                throw new ArgumentParsingException(Messages.unexpectedPackageInSelfUpdate(dir.toString()));
+                throw new ArgumentParsingException(CliMessages.MESSAGES.unexpectedPackageInSelfUpdate(dir.toString()));
             }
             if (!fpNames.stream().allMatch(PROSPERO_FP_ZIP::equals)) {
-                throw new ArgumentParsingException(Messages.unexpectedPackageInSelfUpdate(dir.toString()));
+                throw new ArgumentParsingException(CliMessages.MESSAGES.unexpectedPackageInSelfUpdate(dir.toString()));
             }
         } catch (ProvisioningException e) {
-            throw new ArgumentParsingException(Messages.unableToParseSelfUpdateData(), e);
+            throw new ArgumentParsingException(CliMessages.MESSAGES.unableToParseSelfUpdateData(), e);
         }
     }
 
     private Path detectInstallationPath() throws ArgumentParsingException {
         final String modulePath = System.getProperty(JBOSS_MODULE_PATH);
         if (modulePath == null) {
-            throw new ArgumentParsingException(Messages.unableToLocateInstallation());
+            throw new ArgumentParsingException(CliMessages.MESSAGES.unableToLocateInstallation());
         }
         return Paths.get(modulePath).toAbsolutePath().getParent();
     }

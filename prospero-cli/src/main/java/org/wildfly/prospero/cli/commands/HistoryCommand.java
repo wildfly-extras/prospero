@@ -9,6 +9,7 @@ import org.wildfly.prospero.actions.InstallationHistory;
 import org.wildfly.prospero.api.ArtifactChange;
 import org.wildfly.prospero.api.SavedState;
 import org.wildfly.prospero.cli.ActionFactory;
+import org.wildfly.prospero.cli.CliMessages;
 import org.wildfly.prospero.cli.ReturnCodes;
 import picocli.CommandLine;
 
@@ -40,7 +41,7 @@ public class HistoryCommand extends AbstractCommand {
         } else {
             List<ArtifactChange> changes = installationHistory.compare(new SavedState(revision.get()));
             if (changes.isEmpty()) {
-                console.println("No changes found");
+                console.println(CliMessages.MESSAGES.noChangesFound());
             } else {
                 changes.forEach(c-> console.println(c.toString()));
             }

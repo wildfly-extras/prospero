@@ -62,16 +62,16 @@ public class CliConsole implements Console {
             public void starting(ProgressTracker tracker) {
                 switch (id) {
                     case "LAYOUT_BUILD":
-                        getStdOut().print("Resolving feature-pack");
+                        getStdOut().print(CliMessages.MESSAGES.resolvingFeaturePack());
                         break;
                     case "PACKAGES":
-                        getStdOut().print("Installing packages");
+                        getStdOut().print(CliMessages.MESSAGES.installingPackages());
                         break;
                     case "CONFIGS":
-                        getStdOut().print("Generating configuration");
+                        getStdOut().print(CliMessages.MESSAGES.generatingConfiguration());
                         break;
                     case "JBMODULES":
-                        getStdOut().print("Installing JBoss modules");
+                        getStdOut().print(CliMessages.MESSAGES.installingJBossModules());
                         break;
                 }
             }
@@ -82,19 +82,19 @@ public class CliConsole implements Console {
                 switch (id) {
                     case "LAYOUT_BUILD":
                         getStdOut().print("\r");
-                        getStdOut().printf("Resolving feature-pack %.0f%%", progress);
+                        getStdOut().printf(CliMessages.MESSAGES.resolvingFeaturePack() + " %.0f%%", progress);
                         break;
                     case "PACKAGES":
                         getStdOut().print("\r");
-                        getStdOut().printf("Installing packages %.0f%%", progress);
+                        getStdOut().printf(CliMessages.MESSAGES.installingPackages() + " %.0f%%", progress);
                         break;
                     case "CONFIGS":
                         getStdOut().print("\r");
-                        getStdOut().printf("Generating configuration %.0f%%", progress);
+                        getStdOut().printf(CliMessages.MESSAGES.generatingConfiguration() + " %.0f%%", progress);
                         break;
                     case "JBMODULES":
                         getStdOut().print("\r");
-                        getStdOut().printf("Installing JBoss modules %.0f%%", progress);
+                        getStdOut().printf(CliMessages.MESSAGES.installingJBossModules() + " %.0f%%", progress);
                         break;
                 }
             }
@@ -104,19 +104,19 @@ public class CliConsole implements Console {
                 switch (id) {
                     case "LAYOUT_BUILD":
                         getStdOut().print("\r");
-                        getStdOut().println("Feature-packs resolved.");
+                        getStdOut().println(CliMessages.MESSAGES.featurePacksResolved());
                         break;
                     case "PACKAGES":
                         getStdOut().print("\r");
-                        getStdOut().println("Packages installed.");
+                        getStdOut().println(CliMessages.MESSAGES.packagesInstalled());
                         break;
                     case "CONFIGS":
                         getStdOut().print("\r");
-                        getStdOut().println("Configurations generated.");
+                        getStdOut().println(CliMessages.MESSAGES.configurationsGenerated());
                         break;
                     case "JBMODULES":
                         getStdOut().print("\r");
-                        getStdOut().println("JBoss modules installed.");
+                        getStdOut().println(CliMessages.MESSAGES.jbossModulesInstalled());
                         break;
                 }
             }
@@ -126,9 +126,9 @@ public class CliConsole implements Console {
     @Override
     public void updatesFound(Collection<FeaturePackUpdatePlan> fpUpdates, List<ArtifactChange> artifactUpdates) {
         if (fpUpdates.isEmpty() && artifactUpdates.isEmpty()) {
-            getStdOut().println("No updates found");
+            getStdOut().println(CliMessages.MESSAGES.noUpdatesFound());
         } else {
-            getStdOut().println("Updates found:");
+            getStdOut().println(CliMessages.MESSAGES.updatesFound());
             for (FeaturePackUpdatePlan fpUpdate : fpUpdates) {
                 final FeaturePackLocation oldFp = fpUpdate.getInstalledLocation();
                 final FeaturePackLocation newFp = fpUpdate.getNewLocation();
@@ -146,25 +146,25 @@ public class CliConsole implements Console {
 
     @Override
     public boolean confirmUpdates() {
-        getStdOut().print("Continue with update [y/N]: ");
+        getStdOut().print(CliMessages.MESSAGES.continueWithUpdate());
         Scanner sc = new Scanner(getInput());
         while (true) {
             String resp = sc.nextLine();
-            if (resp.equalsIgnoreCase("n") || resp.isBlank()) {
-                println("Update cancelled");
+            if (resp.equalsIgnoreCase(CliMessages.MESSAGES.noShortcut()) || resp.isBlank()) {
+                println(CliMessages.MESSAGES.updateCancelled());
                 return false;
-            } else if (resp.equalsIgnoreCase("y")) {
-                println("Applying updates");
+            } else if (resp.equalsIgnoreCase(CliMessages.MESSAGES.yesShortcut())) {
+                println(CliMessages.MESSAGES.applyingUpdates());
                 return true;
             } else {
-                getStdOut().print("Choose [y/n]: ");
+                getStdOut().print(CliMessages.MESSAGES.chooseYN());
             }
         }
     }
 
     @Override
     public void updatesComplete() {
-        println("Update complete!");
+        println(CliMessages.MESSAGES.updateComplete());
     }
 
 }

@@ -98,7 +98,7 @@ public class Provision {
         if (provisioningDefinition.getFpl() != null) {
             FeaturePackLocation loc = new FeaturePackLocationParser(repoManager).resolveFpl(provisioningDefinition.getFpl());
 
-            console.println("Installing " + loc.toString());
+            console.println(Messages.MESSAGES.installingFpl(loc.toString()));
 
             final FeaturePackConfig.Builder configBuilder = FeaturePackConfig.builder(loc);
             for (String includedPackage : provisioningDefinition.getIncludedPackages()) {
@@ -128,7 +128,7 @@ public class Provision {
      */
     public void provision(Path installationFile, List<ChannelRef> channelRefs, List<RemoteRepository> repositories) throws ProvisioningException, MetadataException {
         if (Files.exists(installDir)) {
-            throw new ProvisioningException("Installation dir " + installDir + " already exists");
+            throw Messages.MESSAGES.installationDirAlreadyExists(installDir);
         }
         final List<Channel> channels = mapToChannels(channelRefs);
 
@@ -151,7 +151,7 @@ public class Provision {
             try {
                 channels.add(ChannelMapper.from(new URL(ref.getUrl())));
             } catch (MalformedURLException e) {
-                throw new MetadataException("Unable to resolve channel configuration", e);
+                throw Messages.MESSAGES.unableToResolveChannelConfiguration(e);
             }
         } return channels;
     }

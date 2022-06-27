@@ -54,8 +54,8 @@ public class CliMain {
             int exitCode = commandLine.execute(args);
             System.exit(exitCode);
         } catch (Exception e) {
-            System.err.println("Error when processing command: " + e.getMessage());
-            logger.error("Error when processing command", e);
+            System.err.println(CliMessages.MESSAGES.errorWhenProcessingCommand() + e.getMessage());
+            logger.error(CliMessages.MESSAGES.errorWhenProcessingCommand(), e);
             System.exit(ReturnCodes.PROCESSING_ERROR);
         }
     }
