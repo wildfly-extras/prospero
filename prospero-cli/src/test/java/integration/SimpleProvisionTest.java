@@ -106,6 +106,41 @@ public class SimpleProvisionTest extends WfCoreTestBase {
     }
 
     @Test
+    public void updateWildflyCoreFp() throws Exception {
+        final Path provisionConfigFile = TestUtil.prepareProvisionConfig("local-repo-desc.yaml");
+
+        final ProvisioningDefinition provisioningDefinition = defaultWfCoreDefinition()
+                .setProvisionConfig(provisionConfigFile)
+                .build();
+        installation.provision(provisioningDefinition);
+
+        TestUtil.prepareProvisionConfigAsUrl(OUTPUT_PATH.resolve(TestUtil.PROVISION_CONFIG_FILE_PATH), "local-updates-fp.yaml", "local-repo-desc.yaml");
+        new Update(OUTPUT_PATH, mavenSessionManager, new AcceptingConsole()).doUpdateAll(false);
+
+        // verify manifest contains versions 17.0.1
+        final Optional<Artifact> wildflyCliArtifact = readArtifactFromManifest("org.wildfly.core", "wildfly-core-galleon-pack");
+        assertEquals("19.0.0.Beta12", wildflyCliArtifact.get().getVersion());
+    }
+
+    @Test
+    public void updateWildflyCoreFp_InstalledWithGAV() throws Exception {
+        final Path provisionConfigFile = TestUtil.prepareProvisionConfig("local-repo-desc.yaml");
+
+        final ProvisioningDefinition provisioningDefinition = defaultWfCoreDefinition()
+                .setFpl("org.wildfly.core:wildfly-core-galleon-pack")
+                .setProvisionConfig(provisionConfigFile)
+                .build();
+        installation.provision(provisioningDefinition);
+
+        TestUtil.prepareProvisionConfigAsUrl(OUTPUT_PATH.resolve(TestUtil.PROVISION_CONFIG_FILE_PATH), "local-updates-fp.yaml", "local-repo-desc.yaml");
+        new Update(OUTPUT_PATH, mavenSessionManager, new AcceptingConsole()).doUpdateAll(false);
+
+        // verify manifest contains versions 17.0.1
+        final Optional<Artifact> wildflyCliArtifact = readArtifactFromManifest("org.wildfly.core", "wildfly-core-galleon-pack");
+        assertEquals("19.0.0.Beta12", wildflyCliArtifact.get().getVersion());
+    }
+
+    @Test
     public void updateWildflyCoreDryRun() throws Exception {
         final Path provisionConfigFile = TestUtil.prepareProvisionConfig("local-repo-desc.yaml");
 
