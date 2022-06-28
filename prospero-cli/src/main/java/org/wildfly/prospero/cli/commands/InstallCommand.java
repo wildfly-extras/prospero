@@ -6,6 +6,7 @@ import java.util.List;
 import java.util.Optional;
 
 import org.jboss.galleon.ProvisioningException;
+import org.jboss.logging.Logger;
 import org.wildfly.prospero.actions.Console;
 import org.wildfly.prospero.actions.Provision;
 import org.wildfly.prospero.api.ProvisioningDefinition;
@@ -23,6 +24,8 @@ import picocli.CommandLine;
         sortOptions = false
 )
 public class InstallCommand extends AbstractCommand {
+
+    private final Logger logger = Logger.getLogger(this.getClass());
 
     @CommandLine.Option(
             names = CliConstants.DIR,
@@ -125,6 +128,7 @@ public class InstallCommand extends AbstractCommand {
             provision.provision(provisioningDefinition);
         } catch (ProvisioningException | OperationException e) {
             console.error(CliMessages.MESSAGES.errorWhileExecutingOperation(CliConstants.INSTALL, e.getMessage()));
+            logger.error(CliMessages.MESSAGES.errorWhileExecutingOperation(CliConstants.INSTALL, e.getMessage()), e);
             return ReturnCodes.PROCESSING_ERROR;
         } catch (IllegalArgumentException e) {
             console.error(e.getMessage());

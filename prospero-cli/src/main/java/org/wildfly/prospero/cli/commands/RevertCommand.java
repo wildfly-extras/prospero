@@ -4,6 +4,7 @@ import java.nio.file.Path;
 import java.util.Optional;
 
 import org.jboss.galleon.ProvisioningException;
+import org.jboss.logging.Logger;
 import org.wildfly.prospero.actions.Console;
 import org.wildfly.prospero.actions.InstallationHistory;
 import org.wildfly.prospero.api.SavedState;
@@ -18,6 +19,8 @@ import picocli.CommandLine;
         sortOptions = false
 )
 public class RevertCommand extends AbstractCommand {
+
+    private final Logger logger = Logger.getLogger(this.getClass());
 
     @CommandLine.Option(names = CliConstants.DIR, required = true)
     Path directory;
@@ -54,6 +57,7 @@ public class RevertCommand extends AbstractCommand {
             installationHistory.rollback(new SavedState(revision), mavenSessionManager);
         } catch (ProvisioningException e) {
             console.error(CliMessages.MESSAGES.errorWhileExecutingOperation(CliConstants.REVERT, e.getMessage()));
+            logger.error(CliMessages.MESSAGES.errorWhileExecutingOperation(CliConstants.INSTALL, e.getMessage()), e);
             return ReturnCodes.PROCESSING_ERROR;
         }
 

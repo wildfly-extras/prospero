@@ -6,6 +6,7 @@ import java.util.List;
 import java.util.Optional;
 
 import org.jboss.galleon.ProvisioningException;
+import org.jboss.logging.Logger;
 import org.wildfly.prospero.actions.Console;
 import org.wildfly.prospero.actions.Update;
 import org.wildfly.prospero.api.exceptions.MetadataException;
@@ -29,6 +30,8 @@ public class UpdateCommand extends AbstractCommand {
     public static final String PROSPERO_FP_ZIP = PROSPERO_FP_GA + "::zip";
     public static final String DIR_OR_SELF_IS_MANDATORY =
             String.format("Target dir argument (--%s) need to be set on update command", CliMain.TARGET_PATH_ARG);
+
+    private final Logger logger = Logger.getLogger(this.getClass());
 
     @CommandLine.Option(names = CliConstants.DIR)
     Optional<Path> directory;
@@ -90,6 +93,7 @@ public class UpdateCommand extends AbstractCommand {
             }
         } catch (MetadataException | ProvisioningException e) {
             console.error(CliMessages.MESSAGES.errorWhileExecutingOperation(CliConstants.UPDATE, e.getMessage()));
+            logger.error(CliMessages.MESSAGES.errorWhileExecutingOperation(CliConstants.INSTALL, e.getMessage()), e);
             return ReturnCodes.PROCESSING_ERROR;
         }
         return ReturnCodes.SUCCESS;

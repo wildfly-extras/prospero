@@ -17,8 +17,7 @@
 
 package org.wildfly.prospero.cli;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import org.jboss.logging.Logger;
 import org.wildfly.prospero.actions.Console;
 import org.wildfly.prospero.cli.commands.HistoryCommand;
 import org.wildfly.prospero.cli.commands.InstallCommand;
@@ -41,7 +40,7 @@ public class CliMain {
         }
     }
 
-    private static final Logger logger = LoggerFactory.getLogger(CliMain.class);
+    private static final Logger logger = Logger.getLogger(CliMain.class);
 
     public static final String TARGET_PATH_ARG = "dir";
     public static final String PROVISION_CONFIG_ARG = "provision-config";
