@@ -43,6 +43,10 @@ public class WfCoreTestBase {
     public static final String BASE_JAR = "wildfly-cli-" + BASE_VERSION + ".jar";
     public static final String UPGRADE_VERSION = "19.0.0.Beta12-SNAPSHOT";
     public static final String UPGRADE_JAR = "wildfly-cli-" + UPGRADE_VERSION + ".jar";
+    public static final String CHANNEL_BASE_CORE_19 = "channels/wfcore-19-base.yaml";
+    public static final String CHANNEL_FP_UPDATES = "channels/wfcore-19-upgrade-fp.yaml";
+    public static final String CHANNEL_COMPONENT_UPDATES = "channels/wfcore-19-upgrade-component.yaml";
+
     protected final List<RemoteRepository> repositories = defaultRemoteRepositories();
     protected MavenSessionManager mavenSessionManager = new MavenSessionManager(Paths.get(MavenSessionManager.LOCAL_MAVEN_REPO));
 
