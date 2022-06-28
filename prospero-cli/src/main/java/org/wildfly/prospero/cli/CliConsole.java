@@ -132,14 +132,14 @@ public class CliConsole implements Console {
             for (FeaturePackUpdatePlan fpUpdate : fpUpdates) {
                 final FeaturePackLocation oldFp = fpUpdate.getInstalledLocation();
                 final FeaturePackLocation newFp = fpUpdate.getNewLocation();
-                getStdOut().printf("  %-40s    %-20s ==>  %-20s%n", newFp.getProducerName(), oldFp.getBuild(), newFp.getBuild());
+                getStdOut().printf("  %-50s    %-20s ==>  %-20s%n", newFp.getProducerName(), oldFp.getBuild(), newFp.getBuild());
             }
             for (ArtifactChange artifactUpdate : artifactUpdates) {
                 final Optional<String> newVersion = artifactUpdate.getNewVersion();
                 final Optional<String> oldVersion = artifactUpdate.getOldVersion();
                 final String artifactName = artifactUpdate.getArtifactName();
 
-                getStdOut().printf("  %s%-40s    %-20s ==>  %-20s%n", artifactUpdate.isDowngrade()?"[*]":"", artifactName, oldVersion.orElse("[]"),
+                getStdOut().printf("  %s%-50s    %-20s ==>  %-20s%n", artifactUpdate.isDowngrade()?"[*]":"", artifactName, oldVersion.orElse("[]"),
                         newVersion.orElse("[]"));
             }
 
