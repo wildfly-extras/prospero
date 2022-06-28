@@ -21,6 +21,7 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 
+import org.jboss.logging.Logger;
 import org.wildfly.prospero.api.exceptions.ProvisioningRuntimeException;
 import org.apache.maven.repository.internal.MavenRepositorySystemUtils;
 import org.eclipse.aether.AbstractRepositoryListener;
@@ -37,11 +38,10 @@ import org.eclipse.aether.spi.connector.transport.TransporterFactory;
 import org.eclipse.aether.transport.file.FileTransporterFactory;
 import org.eclipse.aether.transport.http.HttpTransporterFactory;
 import org.jboss.galleon.ProvisioningException;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 public class MavenSessionManager {
-    private static final Logger logger = LoggerFactory.getLogger(MavenSessionManager.class);
+
+    private static final Logger logger = Logger.getLogger(MavenSessionManager.class);
 
     public static String LOCAL_MAVEN_REPO = System.getProperty("user.home") + "/.m2/repository";
     private final Path provisioningRepo;

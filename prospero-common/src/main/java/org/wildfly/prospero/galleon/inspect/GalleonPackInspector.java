@@ -17,6 +17,7 @@
 
 package org.wildfly.prospero.galleon.inspect;
 
+import org.jboss.logging.Logger;
 import org.wildfly.prospero.api.InstallationMetadata;
 import org.wildfly.prospero.api.exceptions.ProvisioningRuntimeException;
 import org.wildfly.prospero.model.XmlException;
@@ -24,8 +25,6 @@ import org.wildfly.prospero.model.XmlSupport;
 import org.eclipse.aether.artifact.Artifact;
 import org.eclipse.aether.artifact.DefaultArtifact;
 import org.jboss.galleon.ProvisioningException;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.NodeList;
@@ -49,10 +48,10 @@ import static java.nio.file.StandardCopyOption.REPLACE_EXISTING;
 
 class GalleonPackInspector extends XmlSupport {
 
-    private static final Logger logger = LoggerFactory.getLogger(GalleonPackInspector.class);
+    private static final Logger logger = Logger.getLogger(GalleonPackInspector.class);
 
     private final InstallationMetadata installationMetadata;
-    private Path installedModules;
+    private final Path installedModules;
 
     public GalleonPackInspector(InstallationMetadata installationMetadata, Path modulesDir) {
         this.installationMetadata = installationMetadata;

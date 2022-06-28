@@ -38,5 +38,6 @@
         <artifact name="${org.jboss.logmanager:jboss-logmanager}"/>
         <artifact name="${org.jboss.logging:jboss-logging}"/>
         <artifact name="${org.slf4j:jcl-over-slf4j}"></artifact>
+        <artifact name="${org.jboss.slf4j:slf4j-jboss-logging}"/>
     </resources>
 </module>

@@ -38,7 +38,6 @@
         <version.org.wildfly.galleon-pack>26.1.0.Final</version.org.wildfly.galleon-pack>
         <version.info.picocli>4.6.3</version.info.picocli>
         <version.system-rules>1.19.0</version.system-rules>
-        <version.org.slf4j>1.7.36</version.org.slf4j>
 
         <version.org.wildfly.checkstyle-config>1.0.8.Final</version.org.wildfly.checkstyle-config>
     </properties>
@@ -82,12 +81,6 @@
                 <groupId>org.apache.maven</groupId>
                 <artifactId>maven-resolver-provider</artifactId>
                 <version>${version.org.apache.maven.resolver.provider}</version>
-            </dependency>
-            <!-- slf4j-nop to avoid "Failed to load class "org.slf4j.impl.StaticLoggerBinder"." warning -->
-            <dependency>
-                <groupId>org.slf4j</groupId>
-                <artifactId>slf4j-nop</artifactId>
-                <version>${version.org.slf4j}</version>
             </dependency>
 
             <dependency>
