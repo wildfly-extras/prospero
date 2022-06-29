@@ -21,6 +21,7 @@ import java.io.File;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 
 import org.junit.Rule;
@@ -103,7 +104,7 @@ public class InstallCommandTest extends AbstractConsoleTest {
 
     @Test
     public void callProvisionOnInstallCommandWithCustomFpl() throws Exception {
-        List<ChannelRef> channels = new ArrayList<>();
+        List<ChannelRef> channels = Collections.singletonList(new ChannelRef("g:a:v", null));
         List<RepositoryRef> repositories = new ArrayList<>();
         final File provisionConfigFile = temporaryFolder.newFile();
         new ProvisioningConfig(channels, repositories).writeConfig(provisionConfigFile);

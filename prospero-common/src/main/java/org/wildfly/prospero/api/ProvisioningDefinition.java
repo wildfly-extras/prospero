@@ -32,6 +32,7 @@ import java.util.stream.Collectors;
 
 import org.eclipse.aether.repository.RemoteRepository;
 import org.jboss.galleon.ProvisioningException;
+import org.wildfly.prospero.Messages;
 import org.wildfly.prospero.api.exceptions.ArtifactResolutionException;
 import org.wildfly.prospero.model.ChannelRef;
 import org.wildfly.prospero.model.ProvisioningConfig;
@@ -69,7 +70,7 @@ public class ProvisioningDefinition {
                 this.includedPackages.addAll(featurePackInfo.packages);
                 this.repositories.addAll(featurePackInfo.repositories);
                 setUpBuildEnv(channelRepo, provisionConfigFile, channel, featurePackInfo.channelGav);
-            } else {
+            } else if (provisionConfigFile.isPresent()) {
                 this.fpl = fpl.orElse(null);
                 this.definition = definition.orElse(null);
                 final ProvisioningConfig record = ProvisioningConfig.readChannels(provisionConfigFile.get());
@@ -78,9 +79,19 @@ public class ProvisioningDefinition {
                 }
                 this.repositories.clear();
                 this.repositories.addAll(record.getRepositories().stream().map(RepositoryRef::toRemoteRepository).collect(Collectors.toList()));
+            } else {
+                // TODO: provisionConfigFile needn't be mandatory, we could still collect all required data from the
+                //  other options (channel, channelRepo - perhaps both should be made collections)
+                throw new IllegalArgumentException(
+                        String.format("Incomplete configuration: either a predefined fpl (%s) or a provisionConfigFile must be given.",
+                                String.join(", ", WellKnownFeaturePacks.getNames())));
             }
         } catch (IOException e) {
             throw new ArtifactResolutionException("Unable to resolve channel definition: " + e.getMessage(), e);
+        }
+
+        if (channels.isEmpty()) {
+            throw Messages.MESSAGES.noChannelReference();
         }
     }
 
