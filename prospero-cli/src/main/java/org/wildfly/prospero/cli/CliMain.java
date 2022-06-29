@@ -61,11 +61,15 @@ public class CliMain {
 
     public static CommandLine createCommandLine(Console console, ActionFactory actionFactory) {
         CommandLine commandLine = new CommandLine(new MainCommand(console));
+
         commandLine.addSubcommand(new InstallCommand(console, actionFactory));
         commandLine.addSubcommand(new UpdateCommand(console, actionFactory));
         commandLine.addSubcommand(new HistoryCommand(console, actionFactory));
         commandLine.addSubcommand(new RevertCommand(console, actionFactory));
+
         commandLine.setHelpFactory(new CustomHelp.CustomHelpFactory());
+        commandLine.setUsageHelpAutoWidth(true);
+
         return commandLine;
     }
 

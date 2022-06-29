@@ -30,7 +30,12 @@ public enum WellKnownFeaturePacks {
             Arrays.asList(
                     WellKnownRepositories.MRRC.get(),
                     WellKnownRepositories.CENTRAL.get() // EAP 8 is currently mix of productized and community artifacts
-            ));
+            )),
+
+    EAP_XP_50("org.jboss.eap:wildfly-galleon-pack",
+            "org.jboss.eap.channels:eap-xp-5.0-beta:1.0.0.Beta-redhat-00001", // TODO: channel GAV still unknown
+            Arrays.asList("docs.examples.configs"),
+            Arrays.asList(WellKnownRepositories.MRRC.get()));
 
     private static final Map<String, WellKnownFeaturePacks> nameMap = new HashMap<>();
     public final String location;
@@ -64,10 +69,15 @@ public enum WellKnownFeaturePacks {
     }
 
     static {
+        //
+        // Update also the list of names in UsageMessages.properties when modifying this.
+        //
         nameMap.put("wildfly", WILDFLY);
         nameMap.put("eap", EAP_80);
         nameMap.put("eap-7.4", EAP_74);
         nameMap.put("eap-8.0", EAP_80);
+        nameMap.put("xp-5.0", EAP_XP_50);
+        nameMap.put("xp", EAP_XP_50);
     }
 
 }
