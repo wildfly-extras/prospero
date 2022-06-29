@@ -24,6 +24,7 @@ import org.jboss.galleon.ProvisioningManager;
 import org.jboss.galleon.layout.ProvisioningPlan;
 import org.wildfly.channel.ChannelSession;
 import org.wildfly.channel.UnresolvedMavenArtifactException;
+import org.wildfly.prospero.Messages;
 import org.wildfly.prospero.api.ArtifactChange;
 import org.wildfly.prospero.api.exceptions.ArtifactResolutionException;
 
@@ -87,7 +88,7 @@ public class UpdateFinder implements AutoCloseable {
 
     private Optional<ArtifactChange> findUpdates(Artifact artifact) throws ArtifactResolutionException {
         if (artifact == null) {
-            throw new ArtifactResolutionException(String.format("Artifact [%s:%s] not found", artifact.getGroupId(), artifact.getArtifactId()));
+            throw Messages.MESSAGES.artifactNotFound(artifact.getGroupId(), artifact.getArtifactId(), null);
         }
 
         final String latestVersion;
@@ -95,7 +96,7 @@ public class UpdateFinder implements AutoCloseable {
             latestVersion = channelSession.findLatestMavenArtifactVersion(artifact.getGroupId(),
                     artifact.getArtifactId(), artifact.getExtension(), artifact.getClassifier(), null);
         } catch (UnresolvedMavenArtifactException e) {
-            throw new ArtifactResolutionException(String.format("Artifact [%s:%s] not found", artifact.getGroupId(), artifact.getArtifactId()), e);
+            throw Messages.MESSAGES.artifactNotFound(artifact.getGroupId(), artifact.getArtifactId(), e);
         }
         final Artifact latest = new DefaultArtifact(artifact.getGroupId(), artifact.getArtifactId(), artifact.getExtension(), latestVersion);
 
