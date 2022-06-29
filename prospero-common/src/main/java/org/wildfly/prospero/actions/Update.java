@@ -43,7 +43,6 @@ import org.eclipse.aether.repository.RemoteRepository;
 import org.jboss.galleon.ProvisioningException;
 import org.jboss.galleon.ProvisioningManager;
 import org.jboss.galleon.layout.ProvisioningLayoutFactory;
-import org.jboss.galleon.layout.ProvisioningPlan;
 import org.wildfly.channel.Channel;
 import org.wildfly.channel.ChannelMapper;
 import org.wildfly.channel.ChannelSession;
@@ -106,7 +105,7 @@ public class Update {
             return;
         }
 
-        applyFpUpdates(updateSet.getFpUpdates());
+        applyUpdates();
 
         metadata.writeFiles();
 
@@ -125,8 +124,8 @@ public class Update {
         }
     }
 
-    protected void applyFpUpdates(ProvisioningPlan updates) throws ProvisioningException {
-        GalleonUtils.executeGalleon(options -> provMgr.apply(updates, options),
+    protected void applyUpdates() throws ProvisioningException {
+        GalleonUtils.executeGalleon(options -> provMgr.provision(provMgr.getProvisioningConfig(), options),
                 mavenSessionManager.getProvisioningRepo().toAbsolutePath());
 
         metadata.setChannel(maven.resolvedChannel());

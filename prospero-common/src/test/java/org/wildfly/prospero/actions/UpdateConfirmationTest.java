@@ -54,7 +54,7 @@ public class UpdateConfirmationTest {
         }
 
         @Override
-        protected void applyFpUpdates(ProvisioningPlan updates) {
+        protected void applyUpdates() {
             // no-op
         }
     }
