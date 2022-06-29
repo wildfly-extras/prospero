@@ -34,4 +34,7 @@ public interface Messages {
 
     @Message("Artifact [%s:%s] not found")
     ArtifactResolutionException artifactNotFound(String g, String a, @Cause Exception e);
+
+    @Message("At least one channel reference must be given.")
+    IllegalArgumentException noChannelReference();
 }

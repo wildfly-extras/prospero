@@ -5,6 +5,7 @@ import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Set;
 
 import org.eclipse.aether.repository.RemoteRepository;
 
@@ -58,9 +59,13 @@ public enum WellKnownFeaturePacks {
         return nameMap.containsKey(name);
     }
 
+    public static Set<String> getNames() {
+        return nameMap.keySet();
+    }
+
     static {
         nameMap.put("wildfly", WILDFLY);
-        nameMap.put("eap", EAP_74); // TODO: should give the latest version?
+        nameMap.put("eap", EAP_80);
         nameMap.put("eap-7.4", EAP_74);
         nameMap.put("eap-8.0", EAP_80);
     }
