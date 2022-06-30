@@ -38,6 +38,7 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 import java.util.zip.ZipEntry;
@@ -72,8 +73,12 @@ public class InstallationMetadata {
     }
 
     public InstallationMetadata(Path base) throws MetadataException {
+        this(base, new GitStorage(base));
+    }
+
+    protected InstallationMetadata(Path base, GitStorage gitStorage) throws MetadataException {
         this.base = base;
-        this.gitStorage = new GitStorage(base);
+        this.gitStorage = gitStorage;
         this.manifestFile = base.resolve(METADATA_DIR).resolve(InstallationMetadata.MANIFEST_FILE_NAME);
         this.prosperoConfigFile = base.resolve(METADATA_DIR).resolve(InstallationMetadata.PROSPERO_CONFIG_FILE_NAME);
         this.provisioningFile = base.resolve(GALLEON_INSTALLATION_DIR).resolve(InstallationMetadata.PROVISIONING_FILE_NAME);
@@ -189,25 +194,23 @@ public class InstallationMetadata {
         return manifest;
     }
 
-    public List<ChannelRef> getChannels() {
-        return channelRefs;
-    }
-
-    public List<RemoteRepository> getRepositories() {
-        return repositories;
-    }
-
     public org.jboss.galleon.config.ProvisioningConfig getProvisioningConfig() {
         return provisioningConfig;
     }
 
     public void writeFiles() throws MetadataException {
         try {
-            ManifestYamlSupport.write(this.manifest, this.manifestFile, this.channelRefs);
+            ManifestYamlSupport.write(this.manifest, this.manifestFile);
         } catch (IOException e) {
             throw new MetadataException("Unable to save manifest in installation", e);
         }
 
+        writeProvisioningConfig();
+
+        gitStorage.record();
+    }
+
+    private void writeProvisioningConfig() throws MetadataException {
         try {
             final ProvisioningConfig provisioningConfig = new ProvisioningConfig(this.channelRefs,
                     repositories.stream().map(r -> new RepositoryRef(r.getId(), r.getUrl())).collect(Collectors.toList()));
@@ -215,8 +218,6 @@ public class InstallationMetadata {
         } catch (IOException e) {
             throw new MetadataException("Unable to save channel list in installation", e);
         }
-
-        gitStorage.record();
     }
 
     public List<SavedState> getRevisions() throws MetadataException {
@@ -257,7 +258,16 @@ public class InstallationMetadata {
         return null;
     }
 
-    public Channel getChannel() {
-        return manifest;
+    public ProvisioningConfig getProsperoConfig() {
+        return new ProvisioningConfig(new ArrayList<>(channelRefs), repositories.stream().map(RepositoryRef::new).collect(Collectors.toList()));
+    }
+
+    public void updateProsperoConfig(ProvisioningConfig config) throws MetadataException {
+        this.channelRefs = new ArrayList<>(config.getChannels());
+        this.repositories = config.getRepositories().stream().map(RepositoryRef::toRemoteRepository).collect(Collectors.toList());
+
+        writeProvisioningConfig();
+
+        gitStorage.recordConfigChange();
     }
 }

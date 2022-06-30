@@ -27,6 +27,7 @@ import org.wildfly.prospero.api.InstallationMetadata;
 import org.wildfly.prospero.api.exceptions.MetadataException;
 import org.wildfly.prospero.galleon.GalleonUtils;
 import org.wildfly.prospero.galleon.ChannelMavenArtifactRepositoryManager;
+import org.wildfly.prospero.model.ProvisioningConfig;
 import org.wildfly.prospero.wfchannel.MavenSessionManager;
 import org.eclipse.aether.repository.RemoteRepository;
 import org.jboss.galleon.ProvisioningException;
@@ -67,8 +68,9 @@ public class InstallationRestore {
         }
 
         final InstallationMetadata metadataBundle = InstallationMetadata.importMetadata(metadataBundleZip);
-        final List<Channel> channels = mapToChannels(metadataBundle.getChannels());
-        final List<RemoteRepository> repositories = metadataBundle.getRepositories();
+        final ProvisioningConfig prosperoConfig = metadataBundle.getProsperoConfig();
+        final List<Channel> channels = mapToChannels(prosperoConfig.getChannels());
+        final List<RemoteRepository> repositories = prosperoConfig.getRemoteRepositories();
 
         final RepositorySystem system = mavenSessionManager.newRepositorySystem();
         final DefaultRepositorySystemSession session = mavenSessionManager.newRepositorySystemSession(system);
@@ -79,7 +81,7 @@ public class InstallationRestore {
 
         GalleonUtils.executeGalleon(options -> provMgr.provision(metadataBundle.getProvisioningConfig(), options),
                 mavenSessionManager.getProvisioningRepo().toAbsolutePath());
-        writeProsperoMetadata(repoManager, metadataBundle.getChannels(), repositories);
+        writeProsperoMetadata(repoManager, prosperoConfig.getChannels(), repositories);
     }
 
     private void writeProsperoMetadata(ChannelMavenArtifactRepositoryManager maven, List<ChannelRef> channelRefs, List<RemoteRepository> repositories)
