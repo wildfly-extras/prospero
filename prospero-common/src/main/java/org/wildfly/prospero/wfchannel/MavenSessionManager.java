@@ -21,6 +21,7 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 
+import org.apache.commons.io.FileUtils;
 import org.jboss.logging.Logger;
 import org.wildfly.prospero.api.exceptions.ProvisioningRuntimeException;
 import org.apache.maven.repository.internal.MavenRepositorySystemUtils;
@@ -54,7 +55,7 @@ public class MavenSessionManager {
     public MavenSessionManager() throws ProvisioningException {
         try {
             provisioningRepo = Files.createTempDirectory("provisioning-repo");
-            provisioningRepo.toFile().deleteOnExit();
+            Runtime.getRuntime().addShutdownHook(new Thread(() -> FileUtils.deleteQuietly(provisioningRepo.toFile())));
         } catch (IOException e) {
             throw new ProvisioningException("Unable to create provisioning repository folder.", e);
         }
