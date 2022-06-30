@@ -50,7 +50,7 @@ public class ProvisioningConfig {
         new ObjectMapper(new YAMLFactory()).writeValue(configFile, this);
     }
 
-    public static ProvisioningConfig readChannels(Path path) throws IOException {
+    public static ProvisioningConfig readConfig(Path path) throws IOException {
         final ObjectMapper objectMapper = new ObjectMapper(new YAMLFactory());
         return objectMapper.readValue(path.toUri().toURL(), ProvisioningConfig.class);
     }

@@ -71,7 +71,6 @@ public class InstallationMetadata {
         doInit(manifestFile, prosperoConfigFile, provisioningFile);
     }
 
-
     public InstallationMetadata(Path base) throws MetadataException {
         this.base = base;
         this.gitStorage = new GitStorage(base);
@@ -103,7 +102,7 @@ public class InstallationMetadata {
     private void doInit(Path manifestFile, Path provisionConfig, Path provisioningFile) throws MetadataException {
         try {
             this.manifest = ManifestYamlSupport.parse(manifestFile.toFile());
-            final ProvisioningConfig provisioningConfig = ProvisioningConfig.readChannels(provisionConfig);
+            final ProvisioningConfig provisioningConfig = ProvisioningConfig.readConfig(provisionConfig);
             this.channelRefs = provisioningConfig.getChannels();
             this.repositories = provisioningConfig.getRepositories()
                     .stream().map(r -> r.toRemoteRepository()).collect(Collectors.toList());
