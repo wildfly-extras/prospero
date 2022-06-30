@@ -32,7 +32,7 @@ public class ActionFactory {
         return new MetadataActions(targetPath);
     }
 
-    public ApplyPatch applyPatch(Path targetPath, MavenSessionManager mavenSessionManager, Console console) {
+    public ApplyPatch applyPatch(Path targetPath, MavenSessionManager mavenSessionManager, Console console) throws OperationException {
         return new ApplyPatch(targetPath, mavenSessionManager, console);
     }
 }

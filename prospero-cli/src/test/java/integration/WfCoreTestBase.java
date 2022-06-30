@@ -17,6 +17,7 @@
 
 package integration;
 
+import org.eclipse.aether.installation.InstallResult;
 import org.wildfly.prospero.api.ProvisioningDefinition;
 import org.wildfly.prospero.api.WellKnownRepositories;
 import org.wildfly.prospero.wfchannel.MavenSessionManager;
@@ -46,6 +47,7 @@ public class WfCoreTestBase {
     public static final String CHANNEL_BASE_CORE_19 = "channels/wfcore-19-base.yaml";
     public static final String CHANNEL_FP_UPDATES = "channels/wfcore-19-upgrade-fp.yaml";
     public static final String CHANNEL_COMPONENT_UPDATES = "channels/wfcore-19-upgrade-component.yaml";
+    protected static Artifact resolvedUpgradeArtifact;
 
     protected final List<RemoteRepository> repositories = defaultRemoteRepositories();
     protected MavenSessionManager mavenSessionManager = new MavenSessionManager(Paths.get(MavenSessionManager.LOCAL_MAVEN_REPO));
@@ -64,29 +66,46 @@ public class WfCoreTestBase {
         final ArtifactRequest artifactRequest = new ArtifactRequest();
         Artifact updateCli = new DefaultArtifact(groupId, artifactId, classifier, "jar", UPGRADE_VERSION);
         artifactRequest.setArtifact(updateCli);
+        Artifact upgradeArtifact;
         try {
-            system.resolveArtifact(session, artifactRequest);
+            final ArtifactResult result = system.resolveArtifact(session, artifactRequest);
+            upgradeArtifact = result.getArtifact();
         } catch (ArtifactResolutionException e) {
             final InstallRequest installRequest = new InstallRequest();
             updateCli = updateCli.setFile(resolveExistingCliArtifact(system, session, groupId, artifactId, classifier));
             installRequest.addArtifact(updateCli);
-            system.install(session, installRequest);
+            final InstallResult result = system.install(session, installRequest);
+            upgradeArtifact = result.getArtifacts().stream().findFirst().get();
         }
+        resolvedUpgradeArtifact = upgradeArtifact;
     }
 
     private static File resolveExistingCliArtifact(RepositorySystem system, DefaultRepositorySystemSession session, String groupId, String artifactId, String classifier) throws ArtifactResolutionException {
-        final ArtifactRequest artifactRequest = new ArtifactRequest();
         final DefaultArtifact existing = new DefaultArtifact(groupId, artifactId, classifier, "jar", BASE_VERSION);
-        artifactRequest.setRepositories(Arrays.asList(WellKnownRepositories.CENTRAL.get()));
-        artifactRequest.setArtifact(existing);
-        final ArtifactResult artifactResult = system.resolveArtifact(session, artifactRequest);
-        return artifactResult.getArtifact().getFile();
+        return resolveArtifact(system, session, existing).getFile();
     }
 
     protected ProvisioningDefinition.Builder defaultWfCoreDefinition() {
         return ProvisioningDefinition.builder()
                 .setFpl("wildfly-core@maven(org.jboss.universe:community-universe):19.0")
                 .setRepositories(repositories);
+    }
+
+    protected Artifact resolveArtifact(String groupId, String artifactId, String version) throws ArtifactResolutionException {
+        final MavenSessionManager msm = new MavenSessionManager(Paths.get(MavenSessionManager.LOCAL_MAVEN_REPO));
+        final RepositorySystem system = msm.newRepositorySystem();
+        final DefaultRepositorySystemSession session = msm.newRepositorySystemSession(system, false);
+
+        final DefaultArtifact existing = new DefaultArtifact(groupId, artifactId, null, "jar", BASE_VERSION);
+        return resolveArtifact(system, session, existing);
+    }
+
+    private static Artifact resolveArtifact(RepositorySystem system, DefaultRepositorySystemSession session, DefaultArtifact existing) throws ArtifactResolutionException {
+        final ArtifactRequest artifactRequest = new ArtifactRequest();
+        artifactRequest.setRepositories(Arrays.asList(WellKnownRepositories.CENTRAL.get()));
+        artifactRequest.setArtifact(existing);
+        final ArtifactResult artifactResult = system.resolveArtifact(session, artifactRequest);
+        return artifactResult.getArtifact();
     }
 
     public static List<RemoteRepository> defaultRemoteRepositories() {
