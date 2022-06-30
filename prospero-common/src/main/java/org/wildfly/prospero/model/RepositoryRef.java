@@ -21,6 +21,8 @@ import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import org.eclipse.aether.repository.RemoteRepository;
 
+import java.util.Objects;
+
 
 public class RepositoryRef {
 
@@ -33,6 +35,11 @@ public class RepositoryRef {
         this.url = url;
     }
 
+    public RepositoryRef(RemoteRepository remoteRepository) {
+        this.id = remoteRepository.getId();
+        this.url = remoteRepository.getUrl();
+    }
+
     public String getId() {
         return id;
     }
@@ -43,5 +50,18 @@ public class RepositoryRef {
 
     public RemoteRepository toRemoteRepository() {
         return new RemoteRepository.Builder(id, "default", url).build();
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        RepositoryRef that = (RepositoryRef) o;
+        return Objects.equals(id, that.id) && Objects.equals(url, that.url);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(id, url);
     }
 }

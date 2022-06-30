@@ -25,8 +25,6 @@ import java.io.FileWriter;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.nio.file.Path;
-import java.util.Collections;
-import java.util.List;
 
 public class ManifestYamlSupport {
 
@@ -35,11 +33,7 @@ public class ManifestYamlSupport {
         return channel;
     }
 
-    public static void write(Channel manifest, Path channelFile) throws IOException {
-        write(manifest, channelFile, Collections.emptyList());
-    }
-
-    public static void write(Channel channel, Path channelFile, List<ChannelRef> channelRefs) throws IOException {
+    public static void write(Channel channel, Path channelFile) throws IOException {
         String yaml = ChannelMapper.toYaml(channel);
         try (PrintWriter pw = new PrintWriter(new FileWriter(channelFile.toFile()))) {
             pw.println(yaml);

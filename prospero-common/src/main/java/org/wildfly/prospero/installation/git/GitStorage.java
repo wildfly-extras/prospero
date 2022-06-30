@@ -82,12 +82,22 @@ public class GitStorage implements AutoCloseable {
             git.add().addFilepattern(InstallationMetadata.MANIFEST_FILE_NAME).call();
 
             if (isRepositoryEmpty(git)) {
+                git.add().addFilepattern(InstallationMetadata.PROSPERO_CONFIG_FILE_NAME).call();
                 git.commit().setCommitter(GIT_HISTORY_COMMITTER).setMessage(SavedState.Type.INSTALL.name()).call();
             } else {
                 git.commit().setCommitter(GIT_HISTORY_COMMITTER).setMessage(SavedState.Type.UPDATE.name()).call();
             }
 
         } catch (IOException | GitAPIException e) {
+            throw new MetadataException("Unable to write history of installation", e);
+        }
+    }
+
+    public void recordConfigChange() throws MetadataException {
+        try {
+            git.add().addFilepattern(InstallationMetadata.PROSPERO_CONFIG_FILE_NAME).call();
+            git.commit().setCommitter(GIT_HISTORY_COMMITTER).setMessage(SavedState.Type.CONFIG_CHANGE.name()).call();
+        } catch (GitAPIException e) {
             throw new MetadataException("Unable to write history of installation", e);
         }
     }
