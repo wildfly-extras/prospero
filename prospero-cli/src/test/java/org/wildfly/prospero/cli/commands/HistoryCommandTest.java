@@ -1,10 +1,11 @@
-package org.wildfly.prospero.cli;
+package org.wildfly.prospero.cli.commands;
 
 import java.nio.file.Path;
 import java.time.Instant;
 import java.util.Arrays;
 
 import org.eclipse.aether.artifact.DefaultArtifact;
+import org.junit.Assert;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.Mock;
@@ -13,7 +14,9 @@ import org.wildfly.prospero.actions.Console;
 import org.wildfly.prospero.actions.InstallationHistory;
 import org.wildfly.prospero.api.ArtifactChange;
 import org.wildfly.prospero.api.SavedState;
-import org.wildfly.prospero.cli.commands.CliConstants;
+import org.wildfly.prospero.cli.AbstractConsoleTest;
+import org.wildfly.prospero.cli.ActionFactory;
+import org.wildfly.prospero.cli.ReturnCodes;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
@@ -41,7 +44,7 @@ public class HistoryCommandTest extends AbstractConsoleTest {
     @Test
     public void requireDirFolder() {
         int exitCode = commandLine.execute(CliConstants.HISTORY);
-        assertEquals(ReturnCodes.INVALID_ARGUMENTS, exitCode);
+        Assert.assertEquals(ReturnCodes.INVALID_ARGUMENTS, exitCode);
         assertTrue(getErrorOutput().contains(String.format("Missing required option: '%s=<directory>'", CliConstants.DIR)));
     }
 

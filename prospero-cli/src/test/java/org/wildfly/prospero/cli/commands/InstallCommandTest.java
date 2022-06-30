@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-package org.wildfly.prospero.cli;
+package org.wildfly.prospero.cli.commands;
 
 import java.io.File;
 import java.nio.file.Path;
@@ -24,6 +24,7 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 
+import org.junit.Assert;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
@@ -36,7 +37,10 @@ import org.mockito.junit.MockitoJUnitRunner;
 import org.wildfly.prospero.actions.Console;
 import org.wildfly.prospero.actions.Provision;
 import org.wildfly.prospero.api.ProvisioningDefinition;
-import org.wildfly.prospero.cli.commands.CliConstants;
+import org.wildfly.prospero.cli.AbstractConsoleTest;
+import org.wildfly.prospero.cli.ActionFactory;
+import org.wildfly.prospero.cli.CliMessages;
+import org.wildfly.prospero.cli.ReturnCodes;
 import org.wildfly.prospero.model.ChannelRef;
 import org.wildfly.prospero.model.ProvisioningConfig;
 import org.wildfly.prospero.model.RepositoryRef;
@@ -71,7 +75,7 @@ public class InstallCommandTest extends AbstractConsoleTest {
     @Test
     public void errorIfTargetPathIsNotPresent() {
         int exitCode = commandLine.execute(CliConstants.INSTALL);
-        assertEquals(ReturnCodes.INVALID_ARGUMENTS, exitCode);
+        Assert.assertEquals(ReturnCodes.INVALID_ARGUMENTS, exitCode);
         assertTrue(getErrorOutput().contains(String.format("Missing required option: '--dir=<directory>'",
                 CliConstants.DIR)));
     }

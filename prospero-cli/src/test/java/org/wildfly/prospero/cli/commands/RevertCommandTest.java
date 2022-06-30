@@ -1,8 +1,9 @@
-package org.wildfly.prospero.cli;
+package org.wildfly.prospero.cli.commands;
 
 import java.nio.file.Path;
 import java.nio.file.Paths;
 
+import org.junit.Assert;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.ArgumentCaptor;
@@ -12,7 +13,10 @@ import org.mockito.junit.MockitoJUnitRunner;
 import org.wildfly.prospero.actions.Console;
 import org.wildfly.prospero.actions.InstallationHistory;
 import org.wildfly.prospero.api.SavedState;
-import org.wildfly.prospero.cli.commands.CliConstants;
+import org.wildfly.prospero.cli.AbstractConsoleTest;
+import org.wildfly.prospero.cli.ActionFactory;
+import org.wildfly.prospero.cli.CliMessages;
+import org.wildfly.prospero.cli.ReturnCodes;
 import org.wildfly.prospero.wfchannel.MavenSessionManager;
 
 import static org.junit.Assert.assertEquals;
@@ -44,7 +48,7 @@ public class RevertCommandTest extends AbstractConsoleTest {
     public void requireDirArgument() {
         int exitCode = commandLine.execute(CliConstants.REVERT);
 
-        assertEquals(ReturnCodes.INVALID_ARGUMENTS, exitCode);
+        Assert.assertEquals(ReturnCodes.INVALID_ARGUMENTS, exitCode);
         assertTrue(getErrorOutput().contains(String.format(
                 "Missing required options: '%s=<directory>', '%s=<revision>'", CliConstants.DIR, CliConstants.REVISION)));
     }

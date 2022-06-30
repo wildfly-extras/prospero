@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-package org.wildfly.prospero.cli;
+package org.wildfly.prospero.cli.commands;
 
 import java.io.File;
 import java.io.IOException;
@@ -28,6 +28,7 @@ import org.jboss.galleon.state.ProvisionedState;
 import org.jboss.galleon.universe.FeaturePackLocation;
 import org.jboss.galleon.xml.ProvisionedStateXmlWriter;
 import org.junit.After;
+import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
@@ -37,8 +38,10 @@ import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.junit.MockitoJUnitRunner;
 import org.wildfly.prospero.actions.Update;
-import org.wildfly.prospero.cli.commands.CliConstants;
-import org.wildfly.prospero.cli.commands.UpdateCommand;
+import org.wildfly.prospero.cli.AbstractConsoleTest;
+import org.wildfly.prospero.cli.ActionFactory;
+import org.wildfly.prospero.cli.CliMessages;
+import org.wildfly.prospero.cli.ReturnCodes;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
@@ -83,7 +86,7 @@ public class UpdateCommandTest extends AbstractConsoleTest {
     public void errorIfTargetPathNotPresent() {
         int exitCode = commandLine.execute(CliConstants.UPDATE);
 
-        assertEquals(ReturnCodes.INVALID_ARGUMENTS, exitCode);
+        Assert.assertEquals(ReturnCodes.INVALID_ARGUMENTS, exitCode);
         assertTrue(getErrorOutput().contains(UpdateCommand.DIR_OR_SELF_IS_MANDATORY));
     }
 
