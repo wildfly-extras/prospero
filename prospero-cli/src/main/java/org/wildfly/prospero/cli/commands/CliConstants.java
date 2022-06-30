@@ -5,6 +5,8 @@ package org.wildfly.prospero.cli.commands;
  */
 public final class CliConstants {
 
+
+
     private CliConstants() {
     }
 
@@ -21,6 +23,7 @@ public final class CliConstants {
     public static final String LIST = "list";
     public static final String ADD = "add";
     public static final String REMOVE = "remove";
+    public static final String APPLY_PATCH = "apply-patch";
 
     // Options:
 
@@ -34,6 +37,7 @@ public final class CliConstants {
     public static final String HELP = "--help";
     public static final String LOCAL_REPO = "--local-repo";
     public static final String OFFLINE = "--offline";
+    public static final String PATCH_FILE = "--patch-file";
     public static final String PROVISION_CONFIG = "--provision-config";
     public static final String REVISION = "--revision";
     public static final String SELF = "--self";

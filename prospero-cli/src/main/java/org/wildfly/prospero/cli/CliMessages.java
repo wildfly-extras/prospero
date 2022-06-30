@@ -22,6 +22,8 @@ import org.jboss.logging.annotations.Message;
 import org.jboss.logging.annotations.MessageBundle;
 import org.wildfly.prospero.cli.commands.CliConstants;
 
+import java.nio.file.Path;
+
 @MessageBundle(projectCode = "PRSP-CLI")
 public interface CliMessages {
 
@@ -120,4 +122,7 @@ public interface CliMessages {
 
     @Message("Repository %s added.")
     String repositoryAdded(String repoId);
+
+    @Message("File referenced by [%s] doesn't exist: %s")
+    String fileDoesntExist(String optionName, Path patchArchive);
 }
