@@ -20,6 +20,7 @@ package org.wildfly.prospero.wfchannel;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.Optional;
 
 import org.apache.commons.io.FileUtils;
 import org.jboss.logging.Logger;
@@ -48,17 +49,26 @@ public class MavenSessionManager {
     private final Path provisioningRepo;
     private boolean offline;
 
+    public MavenSessionManager(Optional<Path> provisioningRepo, boolean offline) throws ProvisioningException {
+        this.offline = offline;
+        if (provisioningRepo.isPresent()) {
+            this.provisioningRepo = provisioningRepo.get().toAbsolutePath();
+        } else {
+            try {
+                this.provisioningRepo = Files.createTempDirectory("provisioning-repo");
+                Runtime.getRuntime().addShutdownHook(new Thread(() -> FileUtils.deleteQuietly(this.provisioningRepo.toFile())));
+            } catch (IOException e) {
+                throw new ProvisioningException("Unable to create provisioning repository folder.", e);
+            }
+        }
+    }
+
     public MavenSessionManager(Path provisioningRepo) {
-        this.provisioningRepo = provisioningRepo;
+        this.provisioningRepo = provisioningRepo.toAbsolutePath();
     }
 
     public MavenSessionManager() throws ProvisioningException {
-        try {
-            provisioningRepo = Files.createTempDirectory("provisioning-repo");
-            Runtime.getRuntime().addShutdownHook(new Thread(() -> FileUtils.deleteQuietly(provisioningRepo.toFile())));
-        } catch (IOException e) {
-            throw new ProvisioningException("Unable to create provisioning repository folder.", e);
-        }
+        this(Optional.empty(), false);
     }
 
     public RepositorySystem newRepositorySystem() {

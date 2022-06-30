@@ -76,13 +76,7 @@ public class UpdateCommand extends AbstractCommand {
         }
 
         try {
-            final MavenSessionManager mavenSessionManager;
-            if (localRepo.isEmpty()) {
-                mavenSessionManager = new MavenSessionManager();
-            } else {
-                mavenSessionManager = new MavenSessionManager(localRepo.get().toAbsolutePath());
-            }
-            mavenSessionManager.setOffline(offline);
+            final MavenSessionManager mavenSessionManager = new MavenSessionManager(localRepo, offline);
 
             final Path targetPath = directory.get().toAbsolutePath();
             Update update = actionFactory.update(targetPath, mavenSessionManager, console);

@@ -107,13 +107,7 @@ public class InstallCommand extends AbstractCommand {
         }
 
         try {
-            final MavenSessionManager mavenSessionManager;
-            if (localRepo.isEmpty()) {
-                mavenSessionManager = new MavenSessionManager();
-            } else {
-                mavenSessionManager = new MavenSessionManager(localRepo.get().toAbsolutePath());
-            }
-            mavenSessionManager.setOffline(offline);
+            final MavenSessionManager mavenSessionManager = new MavenSessionManager(localRepo, offline);
 
             final ProvisioningDefinition provisioningDefinition = ProvisioningDefinition.builder()
                     .setFpl(featurePackOrDefinition.fpl.orElse(null))

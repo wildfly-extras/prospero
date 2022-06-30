@@ -46,13 +46,8 @@ public class RevertCommand extends AbstractCommand {
         }
 
         try {
-            final MavenSessionManager mavenSessionManager;
-            if (localRepo.isEmpty()) {
-                mavenSessionManager = new MavenSessionManager();
-            } else {
-                mavenSessionManager = new MavenSessionManager(localRepo.get().toAbsolutePath());
-            }
-            mavenSessionManager.setOffline(offline);
+            final MavenSessionManager mavenSessionManager = new MavenSessionManager(localRepo, offline);
+
             InstallationHistory installationHistory = actionFactory.history(directory.toAbsolutePath(), console);
             installationHistory.rollback(new SavedState(revision), mavenSessionManager);
         } catch (ProvisioningException e) {
