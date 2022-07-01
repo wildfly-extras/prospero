@@ -5,8 +5,6 @@ package org.wildfly.prospero.cli.commands;
  */
 public final class CliConstants {
 
-
-
     private CliConstants() {
     }
 

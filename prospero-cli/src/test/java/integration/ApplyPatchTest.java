@@ -71,7 +71,7 @@ public class ApplyPatchTest extends WfCoreTestBase {
 
         // build patch zip
         final File patchArchive = temp.newFile("patch-test.zip");
-        new PatchArchive().createPatchArchive(
+        PatchArchive.createPatchArchive(
                 Collections.singletonList(mockArtifact),
                 patchArchive,
                 "patch-test00001");

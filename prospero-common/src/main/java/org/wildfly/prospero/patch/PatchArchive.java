@@ -49,19 +49,29 @@ public class PatchArchive {
     public static final String CHANNEL_SUFFIX = "-channel.yaml";
     public static final String PATCH_REPO_FOLDER = "repository";
     public static final String FS = "/";
+    private final Path patchArchive;
+
+    public PatchArchive(Path patchArchive) {
+        this.patchArchive = patchArchive;
+    }
+
+    public String getName() {
+        // TODO: the patch name should be based on the channel name not archive
+        final String archiveName = patchArchive.getFileName().toString();
+        return archiveName.substring(0, archiveName.lastIndexOf('.'));
+    }
 
     /**
      *
-     * @param patchArchive
      * @param server
      * @return path of extracted patch channel definition
      * @throws IOException
      * @throws MetadataException
      */
-    public Patch extract(File patchArchive, Path server) throws IOException, MetadataException {
+    public Patch extract(Path server) throws IOException, MetadataException {
         Path extracted = null;
         try {
-            extracted = unzipArchive(patchArchive);
+            extracted = unzipArchive(patchArchive.toFile());
 
             // TODO: validate??
 
@@ -81,7 +91,7 @@ public class PatchArchive {
         }
     }
 
-    public File createPatchArchive(List<Artifact> artifacts, File archive, String patchName) throws Exception {
+    public static Path createPatchArchive(List<Artifact> artifacts, File archive, String patchName) throws Exception {
         Channel channel = new Channel(patchName, null, null, null,
                 artifacts.stream().map(a-> new Stream(a.getGroupId(), a.getArtifactId(), a.getVersion())).collect(Collectors.toList()));
 
@@ -115,7 +125,7 @@ public class PatchArchive {
             }
         }
 
-        return archive;
+        return archive.toPath();
     }
 
     private void cacheRepositoryContent(Path server, Path extracted) throws IOException {
@@ -169,4 +179,5 @@ public class PatchArchive {
         }
         return extracted;
     }
+
 }

@@ -58,20 +58,24 @@ public class ApplyPatch {
     private final Path installDir;
     private final InstallationMetadata metadata;
     private final MavenSessionManager mavenSessionManager;
+    private final Console console;
 
     public ApplyPatch(Path targetPath, MavenSessionManager mavenSessionManager, Console console) throws OperationException {
         this.installDir = targetPath;
         this.metadata = new InstallationMetadata(targetPath);
         this.mavenSessionManager = mavenSessionManager;
+        this.console = console;
     }
 
-    public void apply(Path patchArchive) throws OperationException, ProvisioningException {
+    public void apply(Path patchArchivePath) throws OperationException, ProvisioningException {
         // TODO: verify archive
-        // TODO: add console logging
 
         try {
+            final PatchArchive patchArchive = new PatchArchive(patchArchivePath);
+            console.println(Messages.MESSAGES.installingPatch(patchArchive.getName()));
+
             // install patch locally
-            final Patch patch = new PatchArchive().extract(patchArchive.toFile(), installDir);
+            final Patch patch = patchArchive.extract(installDir);
 
             // update config
             final ProvisioningConfig provisioningConfig = metadata.getProsperoConfig();
