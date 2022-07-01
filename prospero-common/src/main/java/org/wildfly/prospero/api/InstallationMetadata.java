@@ -60,7 +60,7 @@ public class InstallationMetadata {
     private List<ChannelRef> channelRefs;
     private List<RemoteRepository> repositories;
     private final GitStorage gitStorage;
-    private Path base;
+    private final Path base;
 
     private InstallationMetadata(Path manifestFile, Path prosperoConfigFile, Path provisioningFile) throws MetadataException {
         this.base = manifestFile.getParent();
@@ -86,7 +86,7 @@ public class InstallationMetadata {
         doInit(manifestFile, prosperoConfigFile, provisioningFile);
     }
 
-    public InstallationMetadata(Path base, Channel channel, List<ChannelRef> channelRefs,
+    public InstallationMetadata(Path base, Channel manifest, List<ChannelRef> channelRefs,
                                 List<RemoteRepository> repositories) throws MetadataException {
         this.base = base;
         this.gitStorage = new GitStorage(base);
@@ -94,7 +94,7 @@ public class InstallationMetadata {
         this.prosperoConfigFile = base.resolve(METADATA_DIR).resolve(InstallationMetadata.PROSPERO_CONFIG_FILE_NAME);
         this.provisioningFile = base.resolve(GALLEON_INSTALLATION_DIR).resolve(InstallationMetadata.PROVISIONING_FILE_NAME);
 
-        this.manifest = channel;
+        this.manifest = manifest;
         this.channelRefs = channelRefs;
         this.repositories = repositories;
         try {
@@ -270,4 +270,5 @@ public class InstallationMetadata {
 
         gitStorage.recordConfigChange();
     }
+
 }

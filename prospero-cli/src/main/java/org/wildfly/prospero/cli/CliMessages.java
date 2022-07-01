@@ -114,4 +114,10 @@ public interface CliMessages {
 
     @Message("%n[*] The update list contain one or more artifacts with lower versions then currently installed. Proceed with caution.%n%n")
     String possibleDowngrade();
+
+    @Message("Repository %s removed.")
+    String repositoryRemoved(String repoId);
+
+    @Message("Repository %s added.")
+    String repositoryAdded(String repoId);
 }

@@ -1,5 +1,6 @@
 package org.wildfly.prospero;
 
+import java.net.URL;
 import java.nio.file.Path;
 
 import org.jboss.galleon.ProvisioningException;
@@ -37,4 +38,10 @@ public interface Messages {
 
     @Message("At least one channel reference must be given.")
     IllegalArgumentException noChannelReference();
+
+    @Message("Unknown repository '%s'")
+    IllegalArgumentException unknownRepository(String repoId);
+
+    @Message("Repository '%s' with URL '%s' is alreay present.")
+    IllegalArgumentException repositoryExists(String repoId, URL url);
 }
