@@ -23,6 +23,7 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
 import org.eclipse.aether.repository.RemoteRepository;
+import org.wildfly.prospero.Messages;
 
 import java.io.File;
 import java.io.IOException;
@@ -32,8 +33,8 @@ import java.util.Optional;
 import java.util.stream.Collectors;
 
 public class ProvisioningConfig {
-    private List<ChannelRef> channels;
-    private List<RepositoryRef> repositories;
+    private final List<ChannelRef> channels;
+    private final List<RepositoryRef> repositories;
 
     @JsonCreator
     public ProvisioningConfig(@JsonProperty(value = "channels") List<ChannelRef> channels,
@@ -58,6 +59,7 @@ public class ProvisioningConfig {
      * Adds a repository to the config. If the repository already exists ({@code id} and {@code url} matches), it is not added.
      * Adding a repository with existing {@code id} but different {@code url} causes {@code IllegalArgumentException}
      * @param repository
+     * @throws IllegalArgumentException if a repository with given id but different URL is already present
      * @return true if the repository was added, false if the repository already exists
      */
     public boolean addRepository(RepositoryRef repository) {
@@ -70,6 +72,23 @@ public class ProvisioningConfig {
             }
         repositories.add(repository);
         return true;
+    }
+
+    /**
+     * Removes a remote maven repository with given id from the config.
+     *
+     * @param id repository id
+     * @throws IllegalArgumentException if a repository with given id is not present
+     */
+    public void removeRepository(String id) {
+        Optional<RepositoryRef> repo = repositories.stream()
+                .filter(r -> id.equals(r.getId()))
+                .findFirst();
+        if (repo.isPresent()) {
+            repositories.remove(repo.get());
+        } else {
+            throw Messages.MESSAGES.unknownRepository(id);
+        }
     }
 
     public void writeConfig(File configFile) throws IOException {

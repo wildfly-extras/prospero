@@ -6,6 +6,7 @@ import java.nio.file.Path;
 import org.jboss.galleon.ProvisioningException;
 import org.wildfly.prospero.actions.Console;
 import org.wildfly.prospero.actions.InstallationHistory;
+import org.wildfly.prospero.actions.MetadataActions;
 import org.wildfly.prospero.actions.Provision;
 import org.wildfly.prospero.actions.Update;
 import org.wildfly.prospero.api.exceptions.OperationException;
@@ -24,5 +25,9 @@ public class ActionFactory {
 
     public InstallationHistory history(Path targetPath, Console console) {
         return new InstallationHistory(targetPath, console);
+    }
+
+    public MetadataActions metadataActions(Path targetPath) {
+        return new MetadataActions(targetPath);
     }
 }

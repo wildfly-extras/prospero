@@ -15,6 +15,12 @@ public final class CliConstants {
     public static final String UPDATE = "update";
     public static final String HISTORY = "history";
     public static final String REVERT = "revert";
+    public static final String REPO = "repo";
+    public static final String REPOSITORY = "repository";
+
+    public static final String LIST = "list";
+    public static final String ADD = "add";
+    public static final String REMOVE = "remove";
 
     // Options:
 

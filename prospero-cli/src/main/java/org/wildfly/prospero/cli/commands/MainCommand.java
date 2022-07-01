@@ -24,8 +24,8 @@ public class MainCommand implements Callable<Integer> {
 
     @Override
     public Integer call() {
-        spec.commandLine().usage(System.out);
-        return ReturnCodes.SUCCESS;
+        spec.commandLine().usage(console.getErrOut());
+        return ReturnCodes.INVALID_ARGUMENTS;
     }
 
 }

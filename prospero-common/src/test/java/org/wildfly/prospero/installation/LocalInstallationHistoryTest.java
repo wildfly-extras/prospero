@@ -17,19 +17,6 @@
 
 package org.wildfly.prospero.installation;
 
-import org.wildfly.prospero.api.ArtifactChange;
-import org.wildfly.prospero.api.InstallationMetadata;
-import org.wildfly.prospero.api.exceptions.MetadataException;
-import org.wildfly.prospero.api.SavedState;
-import org.wildfly.prospero.model.ManifestYamlSupport;
-import org.wildfly.prospero.model.ProvisioningConfig;
-import org.apache.commons.io.FileUtils;
-import org.eclipse.aether.artifact.DefaultArtifact;
-import org.junit.After;
-import org.junit.Test;
-import org.wildfly.channel.Channel;
-import org.wildfly.channel.Stream;
-
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -37,11 +24,34 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 
+import org.apache.commons.io.FileUtils;
+import org.eclipse.aether.artifact.DefaultArtifact;
+import org.junit.After;
+import org.junit.Before;
+import org.junit.Rule;
+import org.junit.Test;
+import org.junit.rules.TemporaryFolder;
+import org.wildfly.channel.Channel;
+import org.wildfly.channel.Stream;
+import org.wildfly.prospero.api.ArtifactChange;
+import org.wildfly.prospero.api.InstallationMetadata;
+import org.wildfly.prospero.api.SavedState;
+import org.wildfly.prospero.api.exceptions.MetadataException;
+import org.wildfly.prospero.test.MetadataTestUtils;
+
 import static org.junit.Assert.assertEquals;
 
 public class LocalInstallationHistoryTest {
 
+    @Rule
+    public TemporaryFolder tempDir = new TemporaryFolder();
+
     private Path installation;
+
+    @Before
+    public void setUp() throws IOException {
+        this.installation = tempDir.newFolder().toPath();
+    }
 
     @After
     public void tearDown() throws Exception {
@@ -115,7 +125,7 @@ public class LocalInstallationHistoryTest {
         assertEquals(0, changes.size());
     }
 
-    private void updateManifest(InstallationMetadata metadata) throws MetadataException, IOException {
+    private void updateManifest(InstallationMetadata metadata) throws MetadataException {
         final Channel channel = new Channel("test", "", null, null,
                 Arrays.asList(new Stream("foo", "bar", "1.1.2", null)));
         metadata.setChannel(channel);
@@ -123,18 +133,9 @@ public class LocalInstallationHistoryTest {
     }
 
     private InstallationMetadata mockInstallation() throws Exception {
-        installation = Files.createTempDirectory("installation");
-        installation.toFile().deleteOnExit();
-        Files.createDirectories(installation.resolve(InstallationMetadata.METADATA_DIR));
-        new ProvisioningConfig(Collections.emptyList(), Collections.emptyList())
-                .writeConfig(installation.resolve(InstallationMetadata.METADATA_DIR).resolve(InstallationMetadata.PROSPERO_CONFIG_FILE_NAME).toFile());
-
-        final Channel channel = new Channel("test", "", null, null,
-                Arrays.asList(new Stream("foo", "bar", "1.1.1", null)));
-        ManifestYamlSupport.write(channel, installation.resolve(InstallationMetadata.METADATA_DIR).resolve(InstallationMetadata.MANIFEST_FILE_NAME));
-
-        final InstallationMetadata metadata = new InstallationMetadata(installation);
-        metadata.writeFiles();
-        return metadata;
+        final Channel channel = MetadataTestUtils.createManifest(Arrays.asList(new Stream("foo", "bar", "1.1.1", null)));
+        InstallationMetadata installationMetadata = MetadataTestUtils.createInstallationMetadata(installation, channel,
+                Collections.emptyList(), Collections.emptyList());
+        return installationMetadata;
     }
 }

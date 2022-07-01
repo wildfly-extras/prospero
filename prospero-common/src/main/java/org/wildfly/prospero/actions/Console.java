@@ -30,6 +30,10 @@ public interface Console {
         getStdOut().println(text);
     }
 
+    default void println(String text, String... args) {
+        getStdOut().println(String.format(text, args));
+    }
+
     default void error(String message, String... args) {
         getErrOut().println(String.format(message, args));
     }
