@@ -17,6 +17,7 @@
 
 package org.wildfly.prospero.model;
 
+import org.junit.Assert;
 import org.junit.Test;
 
 import java.util.ArrayList;
@@ -40,11 +41,16 @@ public class ProvisioningConfigTest {
         );
     }
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test
     public void addRepositoryThrowsErrorIfSameIdDifferentUrl() throws Exception {
-        provisioningConfig.addRepository(new RepositoryRef("existing", "file:///foo.bar"));
+        assertTrue(provisioningConfig.addRepository(new RepositoryRef("existing", "file:///foo.bar")));
 
-        provisioningConfig.addRepository(new RepositoryRef("existing", "file:///different.url"));
+        try {
+            provisioningConfig.addRepository(new RepositoryRef("existing", "file:///different.url"));
+            Assert.fail("Adding repository with the same ID but different URL should fail");
+        } catch (IllegalArgumentException e) {
+            // OK, ignore
+        }
     }
 
     @Test
