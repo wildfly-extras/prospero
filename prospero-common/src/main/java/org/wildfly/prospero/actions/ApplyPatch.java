@@ -36,6 +36,7 @@ import org.wildfly.prospero.galleon.GalleonUtils;
 import org.wildfly.prospero.model.ChannelRef;
 import org.wildfly.prospero.model.ProvisioningConfig;
 import org.wildfly.prospero.model.RepositoryRef;
+import org.wildfly.prospero.patch.Patch;
 import org.wildfly.prospero.patch.PatchArchive;
 import org.wildfly.prospero.wfchannel.ChannelRefUpdater;
 import org.wildfly.prospero.wfchannel.MavenSessionManager;
@@ -70,11 +71,11 @@ public class ApplyPatch {
 
         try {
             // install patch locally
-            final Path patchFile = new PatchArchive().extract(patchArchive.toFile(), installDir);
+            final Patch patch = new PatchArchive().extract(patchArchive.toFile(), installDir);
 
             // update config
             final ProvisioningConfig provisioningConfig = metadata.getProsperoConfig();
-            provisioningConfig.addChannel(new ChannelRef(null, patchFile.toUri().toURL().toString()));
+            provisioningConfig.addChannel(new ChannelRef(null, patch.getChannelFileUrl().toString()));
 
             // add cached repository to config if not present
             provisioningConfig.addRepository(new RepositoryRef(PATCH_REPO_NAME, installDir.resolve(PATCHES_REPO_PATH).toUri().toURL().toString()));

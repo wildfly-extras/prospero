@@ -58,7 +58,7 @@ public class PatchArchive {
      * @throws IOException
      * @throws MetadataException
      */
-    public Path extract(File patchArchive, Path server) throws IOException, MetadataException {
+    public Patch extract(File patchArchive, Path server) throws IOException, MetadataException {
         Path extracted = null;
         try {
             extracted = unzipArchive(patchArchive);
@@ -73,7 +73,7 @@ public class PatchArchive {
 
             cacheRepositoryContent(server, extracted);
 
-            return server.resolve(ApplyPatch.PATCHES_FOLDER).resolve(cachedPatchFile.getFileName());
+            return new Patch(server, cachedPatchFile.getFileName().toString());
         } finally {
             if (extracted != null) {
                 FileUtils.deleteQuietly(extracted.toFile());

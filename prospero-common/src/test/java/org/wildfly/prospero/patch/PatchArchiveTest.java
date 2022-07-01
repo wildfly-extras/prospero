@@ -40,7 +40,6 @@ import static org.junit.Assert.assertTrue;
 import static org.wildfly.prospero.actions.ApplyPatch.PATCHES_REPO_PATH;
 import static org.wildfly.prospero.api.InstallationMetadata.METADATA_DIR;
 import static org.wildfly.prospero.api.InstallationMetadata.PROSPERO_CONFIG_FILE_NAME;
-import static org.wildfly.prospero.actions.ApplyPatch.PATCHES_FOLDER;
 
 public class PatchArchiveTest {
 
@@ -58,11 +57,11 @@ public class PatchArchiveTest {
         final File patchArchive = createPatchArchive();
 
         // install
-        final Path patchFile = installer.extract(patchArchive, server);
+        final Patch patchFile = installer.extract(patchArchive, server);
 
         // should have .patches/channels with channel file and .patches/repository with the repository content
-        assertTrue(Files.exists(server.resolve(PATCHES_FOLDER).resolve("patch-test00001-channel.yaml")));
-        assertEquals(server.resolve(PATCHES_FOLDER).resolve("patch-test00001-channel.yaml"), patchFile);
+        assertTrue(Files.exists(new Patch(server, "patch-test00001-channel.yaml").getChannelFilePath()));
+        assertEquals(new Patch(server, "patch-test00001-channel.yaml").getChannelFilePath(), patchFile.getChannelFilePath());
         assertTrue(Files.exists(server.resolve(PATCHES_REPO_PATH).resolve(Paths.get("foo/bar/test/1.2.3/test-1.2.3.jar"))));
     }
 
