@@ -73,7 +73,7 @@ public class ProvisioningDefinition {
             } else if (provisionConfigFile.isPresent()) {
                 this.fpl = fpl.orElse(null);
                 this.definition = definition.orElse(null);
-                final ProvisioningConfig record = ProvisioningConfig.readChannels(provisionConfigFile.get());
+                final ProvisioningConfig record = ProvisioningConfig.readConfig(provisionConfigFile.get());
                 if (record.getChannels() != null) {
                     this.channels.addAll(record.getChannels());
                 }
@@ -109,7 +109,7 @@ public class ProvisioningDefinition {
         } else if (channel.isPresent()) {
             this.channels.add(new ChannelRef(null, channel.get().toString()));
         } else {
-            final ProvisioningConfig record = ProvisioningConfig.readChannels(provisionConfigFile.get());
+            final ProvisioningConfig record = ProvisioningConfig.readConfig(provisionConfigFile.get());
             this.channels.addAll(record.getChannels());
             this.repositories.clear();
             this.repositories.addAll(record.getRepositories().stream().map(RepositoryRef::toRemoteRepository).collect(Collectors.toList()));

@@ -170,7 +170,7 @@ public class SimpleProvisionTest extends WfCoreTestBase {
     public void installWildflyCoreFromInstallationFile() throws Exception {
         final Path provisionConfigFile = TestUtil.prepareProvisionConfig(CHANNEL_BASE_CORE_19);
         final File installationFile = new File(this.getClass().getClassLoader().getResource("provisioning.xml").toURI());
-        final ProvisioningConfig provisioningConfig = ProvisioningConfig.readChannels(provisionConfigFile);
+        final ProvisioningConfig provisioningConfig = ProvisioningConfig.readConfig(provisionConfigFile);
         final List<ChannelRef> channelRefs = provisioningConfig.getChannels();
 
         installation.provision(installationFile.toPath(), channelRefs, repositories);

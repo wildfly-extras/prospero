@@ -20,6 +20,8 @@ package org.wildfly.prospero.model;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
+import java.util.Objects;
+
 public class ChannelRef {
 
     private String url;
@@ -36,10 +38,6 @@ public class ChannelRef {
         return url;
     }
 
-    public void setUrl(String url) {
-        this.url = url;
-    }
-
     public String getGav() {
         return gav;
     }
@@ -47,5 +45,18 @@ public class ChannelRef {
     @Override
     public String toString() {
         return "Channel{" + "gav='" + gav + '\'' + ", url='" + url + '\'' + '}';
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        ChannelRef that = (ChannelRef) o;
+        return Objects.equals(url, that.url) && Objects.equals(gav, that.gav);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(url, gav);
     }
 }

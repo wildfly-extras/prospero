@@ -1,7 +1,13 @@
 package org.wildfly.prospero.installation.git;
 
+import org.eclipse.jgit.api.Git;
+import org.eclipse.jgit.api.errors.GitAPIException;
+import org.eclipse.jgit.revwalk.RevCommit;
+import org.eclipse.jgit.treewalk.TreeWalk;
 import org.wildfly.prospero.api.ArtifactChange;
+import org.wildfly.prospero.api.InstallationMetadata;
 import org.wildfly.prospero.api.SavedState;
+import org.wildfly.prospero.model.ChannelRef;
 import org.wildfly.prospero.model.ManifestYamlSupport;
 import org.junit.Before;
 import org.junit.Rule;
@@ -9,12 +15,14 @@ import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
 import org.wildfly.channel.Channel;
 import org.wildfly.channel.Stream;
+import org.wildfly.prospero.model.ProvisioningConfig;
 
 import java.io.IOException;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.List;
 
 import static org.junit.Assert.*;
@@ -27,7 +35,7 @@ public class GitStorageTest {
 
     @Before
     public void setUp() throws Exception {
-        base = folder.newFolder().toPath().resolve(".installation");
+        base = folder.newFolder().toPath().resolve(InstallationMetadata.METADATA_DIR);
     }
 
     @Test
@@ -35,12 +43,11 @@ public class GitStorageTest {
         final GitStorage gitStorage = new GitStorage(base.getParent());
         final Channel channel = new Channel("test", "", null, null,
                 new ArrayList<>());
-        final Channel manifest = channel;
 
-        setArtifact(manifest, "org.test:test:1.2.3");
+        setArtifact(channel, "org.test:test:1.2.3");
         gitStorage.record();
 
-        setArtifact(manifest, "org.test:test:1.2.4");
+        setArtifact(channel, "org.test:test:1.2.4");
         gitStorage.record();
 
         final List<SavedState> revisions = gitStorage.getRevisions();
@@ -57,13 +64,12 @@ public class GitStorageTest {
         final GitStorage gitStorage = new GitStorage(base.getParent());
         final Channel channel = new Channel("test", "", null, null,
                 new ArrayList<>());
-        final Channel manifest = channel;
 
-        setArtifact(manifest, "org.test:test:1.2.3");
+        setArtifact(channel, "org.test:test:1.2.3");
         gitStorage.record();
 
-        setArtifact(manifest, null);
-        ManifestYamlSupport.write(channel, base.resolve("manifest.yaml"));
+        setArtifact(channel, null);
+        ManifestYamlSupport.write(channel, base.resolve(InstallationMetadata.MANIFEST_FILE_NAME));
         gitStorage.record();
 
         final List<SavedState> revisions = gitStorage.getRevisions();
@@ -80,12 +86,11 @@ public class GitStorageTest {
         final GitStorage gitStorage = new GitStorage(base.getParent());
         final Channel channel = new Channel("test", "", null, null,
                 new ArrayList<>());
-        final Channel manifest = channel;
 
-        ManifestYamlSupport.write(channel, base.resolve("manifest.yaml"));
+        ManifestYamlSupport.write(channel, base.resolve(InstallationMetadata.MANIFEST_FILE_NAME));
         gitStorage.record();
 
-        setArtifact(manifest, "org.test:test:1.2.3");
+        setArtifact(channel, "org.test:test:1.2.3");
         gitStorage.record();
 
         final List<SavedState> revisions = gitStorage.getRevisions();
@@ -95,6 +100,36 @@ public class GitStorageTest {
         assertEquals(1, changes.size());
         assertTrue(changes.get(0).getOldVersion().isEmpty());
         assertEquals("1.2.3", changes.get(0).getNewVersion().get());
+    }
+
+    @Test
+    public void initialRecordStoresConfigState() throws Exception {
+        final GitStorage gitStorage = new GitStorage(base.getParent());
+        final Channel channel = new Channel("test", "", null, null,
+                new ArrayList<>());
+        ManifestYamlSupport.write(channel, base.resolve(InstallationMetadata.MANIFEST_FILE_NAME));
+        new ProvisioningConfig(Arrays.asList(new ChannelRef("foo:bar", null)), Collections.emptyList()).writeConfig(base.resolve(InstallationMetadata.PROSPERO_CONFIG_FILE_NAME).toFile());
+
+        gitStorage.record();
+
+        // TODO: replace with gitStorage API for reading config changes
+        HashSet<String> storedPaths = getPathsInCommit();
+
+        assertEquals(new HashSet<>(Arrays.asList("manifest.yaml", "prospero-config.yaml")), storedPaths);
+    }
+
+    private HashSet<String> getPathsInCommit() throws IOException, GitAPIException {
+        final Git git = Git.open(base.resolve(".git").toFile());
+        HashSet<String> paths = new HashSet<>();
+        for (RevCommit revCommit : git.log().setMaxCount(1).call()) {
+            try (TreeWalk treeWalk = new TreeWalk(git.getRepository())) {
+                treeWalk.reset(revCommit.getTree().getId());
+                while (treeWalk.next()) {
+                    paths.add(treeWalk.getPathString());
+                }
+            }
+        }
+        return paths;
     }
 
 

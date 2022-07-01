@@ -18,14 +18,18 @@
 package org.wildfly.prospero.model;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
+import org.eclipse.aether.repository.RemoteRepository;
 
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Path;
 import java.util.List;
+import java.util.Optional;
+import java.util.stream.Collectors;
 
 public class ProvisioningConfig {
     private List<ChannelRef> channels;
@@ -46,12 +50,39 @@ public class ProvisioningConfig {
         return repositories;
     }
 
+    public void addChannel(ChannelRef channelRef) {
+        channels.add(0, channelRef);
+    }
+
+    /**
+     * Adds a repository to the config. If the repository already exists ({@code id} and {@code url} matches), it is not added.
+     * Adding a repository with existing {@code id} but different {@code url} causes {@code IllegalArgumentException}
+     * @param repository
+     * @return true if the repository was added, false if the repository already exists
+     */
+    public boolean addRepository(RepositoryRef repository) {
+        final Optional<RepositoryRef> matched = repositories.stream().filter(r -> r.getId().equals(repository.getId())).findFirst();
+        if (matched.isPresent())
+            if (matched.get().getUrl().equals(repository.getUrl())) {
+                return false;
+            } else {
+                throw new IllegalArgumentException(String.format("Repository %s already exists with different url", repository.getId()));
+            }
+        repositories.add(repository);
+        return true;
+    }
+
     public void writeConfig(File configFile) throws IOException {
         new ObjectMapper(new YAMLFactory()).writeValue(configFile, this);
     }
 
-    public static ProvisioningConfig readChannels(Path path) throws IOException {
+    public static ProvisioningConfig readConfig(Path path) throws IOException {
         final ObjectMapper objectMapper = new ObjectMapper(new YAMLFactory());
         return objectMapper.readValue(path.toUri().toURL(), ProvisioningConfig.class);
+    }
+
+    @JsonIgnore
+    public List<RemoteRepository> getRemoteRepositories() {
+        return repositories.stream().map(RepositoryRef::toRemoteRepository).collect(Collectors.toList());
     }
 }
