@@ -5,6 +5,6 @@ then
  full_path=$(realpath $0)
  PROSPERO_HOME=$(dirname $full_path)
 fi
-CLASSPATH="${PROSPERO_HOME}/prospero-cli/target/prospero-cli-1.0-SNAPSHOT-shaded.jar"
+CLASSPATH=( "${PROSPERO_HOME}/prospero-cli/target/"prospero-cli-*-shaded.jar )
 
 java -jar "${CLASSPATH}" "$@"
