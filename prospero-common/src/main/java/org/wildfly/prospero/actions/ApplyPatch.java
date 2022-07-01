@@ -22,6 +22,7 @@ import org.eclipse.aether.RepositorySystem;
 import org.eclipse.aether.repository.RemoteRepository;
 import org.jboss.galleon.ProvisioningException;
 import org.jboss.galleon.ProvisioningManager;
+import org.jboss.galleon.layout.ProvisioningLayoutFactory;
 import org.wildfly.channel.Channel;
 import org.wildfly.channel.ChannelMapper;
 import org.wildfly.channel.ChannelSession;
@@ -106,6 +107,12 @@ public class ApplyPatch {
         final ChannelSession channelSession = new ChannelSession(channels, factory);
         ChannelMavenArtifactRepositoryManager maven = new ChannelMavenArtifactRepositoryManager(channelSession);
         ProvisioningManager provMgr = GalleonUtils.getProvisioningManager(installDir, maven);
+
+        final ProvisioningLayoutFactory layoutFactory = provMgr.getLayoutFactory();
+        layoutFactory.setProgressCallback("LAYOUT_BUILD", console.getProgressCallback("LAYOUT_BUILD"));
+        layoutFactory.setProgressCallback("PACKAGES", console.getProgressCallback("PACKAGES"));
+        layoutFactory.setProgressCallback("CONFIGS", console.getProgressCallback("CONFIGS"));
+        layoutFactory.setProgressCallback("JBMODULES", console.getProgressCallback("JBMODULES"));
 
         GalleonUtils.executeGalleon(options -> provMgr.provision(provMgr.getProvisioningConfig(), options),
                 mavenSessionManager.getProvisioningRepo().toAbsolutePath());

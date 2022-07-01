@@ -91,7 +91,7 @@ public class PatchArchive {
         }
     }
 
-    public static Path createPatchArchive(List<Artifact> artifacts, File archive, String patchName) throws Exception {
+    public static Path createPatchArchive(List<? extends Artifact> artifacts, File archive, String patchName) throws IOException {
         Channel channel = new Channel(patchName, null, null, null,
                 artifacts.stream().map(a-> new Stream(a.getGroupId(), a.getArtifactId(), a.getVersion())).collect(Collectors.toList()));
 
