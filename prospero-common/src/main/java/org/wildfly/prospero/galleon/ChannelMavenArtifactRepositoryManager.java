@@ -18,7 +18,6 @@
 package org.wildfly.prospero.galleon;
 
 import org.wildfly.channel.spi.ChannelResolvable;
-import org.wildfly.channel.spi.MavenVersionsResolver;
 import org.eclipse.aether.artifact.DefaultArtifact;
 import org.jboss.galleon.universe.maven.MavenArtifact;
 import org.jboss.galleon.universe.maven.MavenUniverseException;
@@ -39,19 +38,16 @@ import java.util.concurrent.Executors;
 import java.util.regex.Pattern;
 
 public class ChannelMavenArtifactRepositoryManager implements MavenRepoManager, ChannelResolvable {
-    private ChannelSession channelSession;
-    private Channel manifest = null;
-
-    public ChannelMavenArtifactRepositoryManager(List<Channel> channels, MavenVersionsResolver.Factory factory) {
-        channelSession = new ChannelSession(channels, factory);
-    }
+    private final ChannelSession channelSession;
+    private final Channel manifest;
 
     public ChannelMavenArtifactRepositoryManager(ChannelSession channelSession) {
         this.channelSession = channelSession;
+        this.manifest = null;
     }
 
-    public ChannelMavenArtifactRepositoryManager(List<Channel> channels, MavenVersionsResolver.Factory factory, Channel manifest) {
-        channelSession = new ChannelSession(channels, factory);
+    public ChannelMavenArtifactRepositoryManager(ChannelSession channelSession, Channel manifest) {
+        this.channelSession = channelSession;
         this.manifest = manifest;
     }
 

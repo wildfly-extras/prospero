@@ -83,7 +83,7 @@ public class InstallationRestoreActionTest extends WfCoreTestBase {
 
         new InstallationExportAction(FIRST_SERVER_PATH).export("target/bundle.zip");
 
-        new InstallationRestoreAction(RESTORED_SERVER_PATH, mavenSessionManager).restore(Paths.get("target/bundle.zip"));
+        new InstallationRestoreAction(RESTORED_SERVER_PATH, mavenSessionManager, new AcceptingConsole()).restore(Paths.get("target/bundle.zip"));
 
         final Optional<Artifact> wildflyCliArtifact = readArtifactFromManifest("org.wildfly.core", "wildfly-cli");
         assertEquals(BASE_VERSION, wildflyCliArtifact.get().getVersion());

@@ -17,31 +17,17 @@
 
 package org.wildfly.prospero.actions;
 
-import org.eclipse.aether.DefaultRepositorySystemSession;
-import org.eclipse.aether.RepositorySystem;
-import org.wildfly.channel.maven.VersionResolverFactory;
-import org.wildfly.channel.spi.MavenVersionsResolver;
-import org.wildfly.prospero.Messages;
 import org.wildfly.prospero.api.ArtifactChange;
-import org.wildfly.prospero.model.ChannelRef;
+import org.wildfly.prospero.api.exceptions.OperationException;
 import org.wildfly.prospero.api.InstallationMetadata;
 import org.wildfly.prospero.api.exceptions.MetadataException;
 import org.wildfly.prospero.api.SavedState;
-import org.wildfly.prospero.galleon.GalleonUtils;
-import org.wildfly.prospero.galleon.ChannelMavenArtifactRepositoryManager;
+import org.wildfly.prospero.galleon.GalleonEnvironment;
 import org.wildfly.prospero.model.ProsperoConfig;
 import org.wildfly.prospero.wfchannel.MavenSessionManager;
-import org.eclipse.aether.repository.RemoteRepository;
 import org.jboss.galleon.ProvisioningException;
-import org.jboss.galleon.ProvisioningManager;
-import org.jboss.galleon.layout.ProvisioningLayoutFactory;
-import org.wildfly.channel.Channel;
-import org.wildfly.channel.ChannelMapper;
 
-import java.net.MalformedURLException;
-import java.net.URL;
 import java.nio.file.Path;
-import java.util.ArrayList;
 import java.util.List;
 
 import static org.wildfly.prospero.galleon.GalleonUtils.MAVEN_REPO_LOCAL;
@@ -66,44 +52,24 @@ public class InstallationHistoryAction {
         return installationMetadata.getRevisions();
     }
 
-    public void rollback(SavedState savedState, MavenSessionManager mavenSessionManager) throws MetadataException, ProvisioningException {
+    public void rollback(SavedState savedState, MavenSessionManager mavenSessionManager) throws OperationException, ProvisioningException {
         InstallationMetadata metadata = new InstallationMetadata(installation);
         metadata = metadata.rollback(savedState);
-
         final ProsperoConfig prosperoConfig = metadata.getProsperoConfig();
-        final List<Channel> channels = mapToChannels(prosperoConfig.getChannels());
-        final List<RemoteRepository> repositories = prosperoConfig.getRemoteRepositories();
-
-        final RepositorySystem system = mavenSessionManager.newRepositorySystem();
-        final DefaultRepositorySystemSession session = mavenSessionManager.newRepositorySystemSession(system);
-        MavenVersionsResolver.Factory factory = new VersionResolverFactory(system, session, repositories);
-        final ChannelMavenArtifactRepositoryManager repoManager = new ChannelMavenArtifactRepositoryManager(channels, factory, metadata.getManifest());
-        ProvisioningManager provMgr = GalleonUtils.getProvisioningManager(installation, repoManager);
-        final ProvisioningLayoutFactory layoutFactory = provMgr.getLayoutFactory();
-
-        layoutFactory.setProgressCallback("LAYOUT_BUILD", console.getProgressCallback("LAYOUT_BUILD"));
-        layoutFactory.setProgressCallback("PACKAGES", console.getProgressCallback("PACKAGES"));
-        layoutFactory.setProgressCallback("CONFIGS", console.getProgressCallback("CONFIGS"));
-        layoutFactory.setProgressCallback("JBMODULES", console.getProgressCallback("JBMODULES"));
+        final GalleonEnvironment galleonEnv = GalleonEnvironment
+                .builder(installation, prosperoConfig, mavenSessionManager)
+                .setConsole(console)
+                .setRestoreManifest(metadata.getManifest())
+                .skipUpdateChannel(true)
+                .build();
 
         try {
             System.setProperty(MAVEN_REPO_LOCAL, mavenSessionManager.getProvisioningRepo().toAbsolutePath().toString());
-            provMgr.provision(metadata.getGalleonProvisioningConfig());
+            galleonEnv.getProvisioningManager().provision(metadata.getGalleonProvisioningConfig());
         } finally {
             System.clearProperty(MAVEN_REPO_LOCAL);
         }
 
         // TODO: handle errors - write final state? revert rollback?
-    }
-
-    private List<Channel> mapToChannels(List<ChannelRef> channelRefs) throws MetadataException {
-        final List<Channel> channels = new ArrayList<>();
-        for (ChannelRef ref : channelRefs) {
-            try {
-                channels.add(ChannelMapper.from(new URL(ref.getUrl())));
-            } catch (MalformedURLException e) {
-                throw Messages.MESSAGES.unableToResolveChannelConfiguration(e);
-            }
-        } return channels;
     }
 }

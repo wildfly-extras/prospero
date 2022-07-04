@@ -140,6 +140,10 @@ public class ProvisioningDefinition {
         return definition;
     }
 
+    public ProsperoConfig getProsperoConfig() {
+        return new ProsperoConfig(channels, repositories.stream().map(RepositoryRef::new).collect(Collectors.toList()));
+    }
+
     public static class Builder {
         private String fpl;
         private Path provisionConfigFile;
