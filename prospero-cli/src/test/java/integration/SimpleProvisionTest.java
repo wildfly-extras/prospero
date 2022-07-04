@@ -19,8 +19,8 @@ package integration;
 
 import org.wildfly.prospero.api.ArtifactChange;
 import org.wildfly.prospero.model.ChannelRef;
-import org.wildfly.prospero.actions.Provision;
-import org.wildfly.prospero.actions.Update;
+import org.wildfly.prospero.actions.ProvisioningAction;
+import org.wildfly.prospero.actions.UpdateAction;
 import org.wildfly.prospero.api.ProvisioningDefinition;
 import org.wildfly.prospero.cli.CliConsole;
 import org.wildfly.prospero.model.ManifestYamlSupport;
@@ -51,7 +51,7 @@ public class SimpleProvisionTest extends WfCoreTestBase {
     private static final String OUTPUT_DIR = "target/server";
     private static final Path OUTPUT_PATH = Paths.get(OUTPUT_DIR).toAbsolutePath();
     private static final Path MANIFEST_PATH = OUTPUT_PATH.resolve(TestUtil.MANIFEST_FILE_PATH);
-    private final Provision installation = new Provision(OUTPUT_PATH, mavenSessionManager, new CliConsole());
+    private final ProvisioningAction installation = new ProvisioningAction(OUTPUT_PATH, mavenSessionManager, new CliConsole());
 
     @Before
     public void setUp() throws Exception {
@@ -97,7 +97,7 @@ public class SimpleProvisionTest extends WfCoreTestBase {
         installation.provision(provisioningDefinition);
 
         TestUtil.prepareProvisionConfigAsUrl(OUTPUT_PATH.resolve(TestUtil.PROVISION_CONFIG_FILE_PATH), CHANNEL_COMPONENT_UPDATES, CHANNEL_BASE_CORE_19);
-        new Update(OUTPUT_PATH, mavenSessionManager, new AcceptingConsole()).doUpdateAll(false);
+        new UpdateAction(OUTPUT_PATH, mavenSessionManager, new AcceptingConsole()).doUpdateAll(false);
 
         // verify manifest contains versions 17.0.1
         final Optional<Artifact> wildflyCliArtifact = readArtifactFromManifest("org.wildfly.core", "wildfly-cli");
@@ -114,7 +114,7 @@ public class SimpleProvisionTest extends WfCoreTestBase {
         installation.provision(provisioningDefinition);
 
         TestUtil.prepareProvisionConfigAsUrl(OUTPUT_PATH.resolve(TestUtil.PROVISION_CONFIG_FILE_PATH), CHANNEL_FP_UPDATES, CHANNEL_BASE_CORE_19);
-        new Update(OUTPUT_PATH, mavenSessionManager, new AcceptingConsole()).doUpdateAll(false);
+        new UpdateAction(OUTPUT_PATH, mavenSessionManager, new AcceptingConsole()).doUpdateAll(false);
 
         // verify manifest contains versions 17.0.1
         final Optional<Artifact> wildflyCliArtifact = readArtifactFromManifest("org.wildfly.core", "wildfly-core-galleon-pack");
@@ -132,7 +132,7 @@ public class SimpleProvisionTest extends WfCoreTestBase {
         installation.provision(provisioningDefinition);
 
         TestUtil.prepareProvisionConfigAsUrl(OUTPUT_PATH.resolve(TestUtil.PROVISION_CONFIG_FILE_PATH), CHANNEL_FP_UPDATES, CHANNEL_BASE_CORE_19);
-        new Update(OUTPUT_PATH, mavenSessionManager, new AcceptingConsole()).doUpdateAll(false);
+        new UpdateAction(OUTPUT_PATH, mavenSessionManager, new AcceptingConsole()).doUpdateAll(false);
 
         // verify manifest contains versions 17.0.1
         final Optional<Artifact> wildflyCliArtifact = readArtifactFromManifest("org.wildfly.core", "wildfly-core-galleon-pack");
@@ -150,7 +150,7 @@ public class SimpleProvisionTest extends WfCoreTestBase {
 
         TestUtil.prepareProvisionConfigAsUrl(OUTPUT_PATH.resolve(TestUtil.PROVISION_CONFIG_FILE_PATH), CHANNEL_COMPONENT_UPDATES, CHANNEL_BASE_CORE_19);
         final Set<String> updates = new HashSet<>();
-        new Update(OUTPUT_PATH, mavenSessionManager, new AcceptingConsole() {
+        new UpdateAction(OUTPUT_PATH, mavenSessionManager, new AcceptingConsole() {
             @Override
             public void updatesFound(Collection<FeaturePackUpdatePlan> fpUpdates,
                                      List<ArtifactChange> artifactUpdates) {

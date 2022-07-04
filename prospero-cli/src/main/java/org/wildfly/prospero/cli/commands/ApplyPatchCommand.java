@@ -17,7 +17,7 @@
 
 package org.wildfly.prospero.cli.commands;
 
-import org.wildfly.prospero.actions.ApplyPatch;
+import org.wildfly.prospero.actions.ApplyPatchAction;
 import org.wildfly.prospero.actions.Console;
 import org.wildfly.prospero.cli.ActionFactory;
 import org.wildfly.prospero.cli.CliMessages;
@@ -72,7 +72,7 @@ public class ApplyPatchCommand extends AbstractCommand {
 
         final MavenSessionManager mavenSessionManager = new MavenSessionManager(localRepo, offline);
 
-        final ApplyPatch applyPatchAction = actionFactory.applyPatch(directory, mavenSessionManager, console);
+        final ApplyPatchAction applyPatchAction = actionFactory.applyPatch(directory, mavenSessionManager, console);
         applyPatchAction.apply(patchArchive);
 
         return ReturnCodes.SUCCESS;

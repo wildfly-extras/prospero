@@ -18,10 +18,10 @@
 package integration;
 
 import org.wildfly.prospero.api.ArtifactChange;
-import org.wildfly.prospero.actions.Provision;
-import org.wildfly.prospero.actions.InstallationHistory;
+import org.wildfly.prospero.actions.ProvisioningAction;
+import org.wildfly.prospero.actions.InstallationHistoryAction;
 import org.wildfly.prospero.api.SavedState;
-import org.wildfly.prospero.actions.Update;
+import org.wildfly.prospero.actions.UpdateAction;
 import org.wildfly.prospero.api.ProvisioningDefinition;
 import org.wildfly.prospero.cli.CliConsole;
 import org.wildfly.prospero.model.ManifestYamlSupport;
@@ -47,11 +47,11 @@ import java.util.Optional;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
-public class InstallationHistoryTest extends WfCoreTestBase {
+public class InstallationHistoryActionTest extends WfCoreTestBase {
 
     private static final String OUTPUT_DIR = "target/server";
     private static final Path OUTPUT_PATH = Paths.get(OUTPUT_DIR).toAbsolutePath();
-    private final Provision installation = new Provision(OUTPUT_PATH, mavenSessionManager, new CliConsole());
+    private final ProvisioningAction installation = new ProvisioningAction(OUTPUT_PATH, mavenSessionManager, new CliConsole());
     private Path provisionConfigFile;
 
     @Before
@@ -89,10 +89,10 @@ public class InstallationHistoryTest extends WfCoreTestBase {
 
         // updateCore
         TestUtil.prepareProvisionConfigAsUrl(OUTPUT_PATH.resolve(TestUtil.PROVISION_CONFIG_FILE_PATH), CHANNEL_COMPONENT_UPDATES, CHANNEL_BASE_CORE_19);
-        new Update(OUTPUT_PATH, mavenSessionManager, new AcceptingConsole()).doUpdateAll(false);
+        new UpdateAction(OUTPUT_PATH, mavenSessionManager, new AcceptingConsole()).doUpdateAll(false);
 
         // get history
-        List<SavedState> states = new InstallationHistory(OUTPUT_PATH, new AcceptingConsole()).getRevisions();
+        List<SavedState> states = new InstallationHistoryAction(OUTPUT_PATH, new AcceptingConsole()).getRevisions();
 
         // assert two entries
         assertEquals(2, states.size());
@@ -114,16 +114,16 @@ public class InstallationHistoryTest extends WfCoreTestBase {
         installation.provision(provisioningDefinition);
 
         TestUtil.prepareProvisionConfigAsUrl(OUTPUT_PATH.resolve(TestUtil.PROVISION_CONFIG_FILE_PATH), CHANNEL_COMPONENT_UPDATES, CHANNEL_BASE_CORE_19);
-        new Update(OUTPUT_PATH, mavenSessionManager, new AcceptingConsole()).doUpdateAll(false);
+        new UpdateAction(OUTPUT_PATH, mavenSessionManager, new AcceptingConsole()).doUpdateAll(false);
         Optional<Artifact> wildflyCliArtifact = readArtifactFromManifest("org.wildfly.core", "wildfly-cli");
         assertEquals(UPGRADE_VERSION, wildflyCliArtifact.get().getVersion());
         assertTrue("Updated jar should be present in module", wildflyCliModulePath.resolve(UPGRADE_JAR).toFile().exists());
 
-        final InstallationHistory installationHistory = new InstallationHistory(OUTPUT_PATH, new AcceptingConsole());
-        final List<SavedState> revisions = installationHistory.getRevisions();
+        final InstallationHistoryAction historyAction = new InstallationHistoryAction(OUTPUT_PATH, new AcceptingConsole());
+        final List<SavedState> revisions = historyAction.getRevisions();
 
         final SavedState savedState = revisions.get(1);
-        installationHistory.rollback(savedState, mavenSessionManager);
+        historyAction.rollback(savedState, mavenSessionManager);
 
         wildflyCliArtifact = readArtifactFromManifest("org.wildfly.core", "wildfly-cli");
         assertEquals(BASE_VERSION, wildflyCliArtifact.get().getVersion());
@@ -144,13 +144,13 @@ public class InstallationHistoryTest extends WfCoreTestBase {
         installation.provision(provisioningDefinition);
 
         TestUtil.prepareProvisionConfigAsUrl(OUTPUT_PATH.resolve(TestUtil.PROVISION_CONFIG_FILE_PATH), CHANNEL_COMPONENT_UPDATES, CHANNEL_BASE_CORE_19);
-        new Update(OUTPUT_PATH, mavenSessionManager, new AcceptingConsole()).doUpdateAll(false);
+        new UpdateAction(OUTPUT_PATH, mavenSessionManager, new AcceptingConsole()).doUpdateAll(false);
 
-        final InstallationHistory installationHistory = new InstallationHistory(OUTPUT_PATH, new AcceptingConsole());
-        final List<SavedState> revisions = installationHistory.getRevisions();
+        final InstallationHistoryAction historyAction = new InstallationHistoryAction(OUTPUT_PATH, new AcceptingConsole());
+        final List<SavedState> revisions = historyAction.getRevisions();
 
         final SavedState savedState = revisions.get(1);
-        final List<ArtifactChange> changes = installationHistory.compare(savedState);
+        final List<ArtifactChange> changes = historyAction.compare(savedState);
 
         for (ArtifactChange change : changes) {
             System.out.println(change);

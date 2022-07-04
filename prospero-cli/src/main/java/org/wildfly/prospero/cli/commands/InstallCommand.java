@@ -8,7 +8,7 @@ import java.util.Optional;
 import org.jboss.galleon.ProvisioningException;
 import org.jboss.logging.Logger;
 import org.wildfly.prospero.actions.Console;
-import org.wildfly.prospero.actions.Provision;
+import org.wildfly.prospero.actions.ProvisioningAction;
 import org.wildfly.prospero.api.ProvisioningDefinition;
 import org.wildfly.prospero.api.WellKnownFeaturePacks;
 import org.wildfly.prospero.api.exceptions.OperationException;
@@ -118,8 +118,8 @@ public class InstallCommand extends AbstractCommand {
                     .setDefinitionFile(featurePackOrDefinition.definition.orElse(null))
                     .build();
 
-            Provision provision = actionFactory.install(directory.toAbsolutePath(), mavenSessionManager, console);
-            provision.provision(provisioningDefinition);
+            ProvisioningAction provisioningAction = actionFactory.install(directory.toAbsolutePath(), mavenSessionManager, console);
+            provisioningAction.provision(provisioningDefinition);
         } catch (ProvisioningException | OperationException e) {
             console.error(CliMessages.MESSAGES.errorWhileExecutingOperation(CliConstants.INSTALL, e.getMessage()));
             logger.error(CliMessages.MESSAGES.errorWhileExecutingOperation(CliConstants.INSTALL, e.getMessage()), e);

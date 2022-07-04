@@ -53,13 +53,13 @@ import org.jboss.galleon.xml.ProvisioningXmlParser;
 import org.wildfly.channel.Channel;
 import org.wildfly.channel.ChannelMapper;
 
-public class Provision {
+public class ProvisioningAction {
 
     private final MavenSessionManager mavenSessionManager;
     private final Path installDir;
     private final Console console;
 
-    public Provision(Path installDir, MavenSessionManager mavenSessionManager, Console console) {
+    public ProvisioningAction(Path installDir, MavenSessionManager mavenSessionManager, Console console) {
         this.installDir = installDir;
         this.console = console;
         this.mavenSessionManager = mavenSessionManager;

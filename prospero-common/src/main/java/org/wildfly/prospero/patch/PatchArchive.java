@@ -23,7 +23,7 @@ import org.eclipse.aether.artifact.Artifact;
 import org.wildfly.channel.Channel;
 import org.wildfly.channel.ChannelMapper;
 import org.wildfly.channel.Stream;
-import org.wildfly.prospero.actions.ApplyPatch;
+import org.wildfly.prospero.actions.ApplyPatchAction;
 import org.wildfly.prospero.api.exceptions.MetadataException;
 
 import java.io.File;
@@ -75,8 +75,8 @@ public class PatchArchive {
 
             // TODO: validate??
 
-            if (!Files.exists(server.resolve(ApplyPatch.PATCHES_FOLDER))) {
-                Files.createDirectory(server.resolve(ApplyPatch.PATCHES_FOLDER));
+            if (!Files.exists(server.resolve(ApplyPatchAction.PATCHES_FOLDER))) {
+                Files.createDirectory(server.resolve(ApplyPatchAction.PATCHES_FOLDER));
             }
 
             final Path cachedPatchFile = cachePatchChannel(server, extracted);
@@ -133,7 +133,7 @@ public class PatchArchive {
         Files.walkFileTree(extractedRepository, new SimpleFileVisitor<>() {
             @Override
             public FileVisitResult preVisitDirectory(Path dir, BasicFileAttributes attrs) throws IOException {
-                final Path targetDir = server.resolve(ApplyPatch.PATCHES_FOLDER).resolve(extracted.relativize(dir));
+                final Path targetDir = server.resolve(ApplyPatchAction.PATCHES_FOLDER).resolve(extracted.relativize(dir));
                 if (!Files.exists(targetDir)) {
                     Files.copy(dir, targetDir);
                 }
@@ -142,7 +142,7 @@ public class PatchArchive {
 
             @Override
             public FileVisitResult visitFile(Path file, BasicFileAttributes attrs) throws IOException {
-                final Path targetFile = server.resolve(ApplyPatch.PATCHES_FOLDER).resolve(extracted.relativize(file));
+                final Path targetFile = server.resolve(ApplyPatchAction.PATCHES_FOLDER).resolve(extracted.relativize(file));
                 if (!Files.exists(targetFile)) {
                     Files.copy(file, targetFile);
                 } else if (!IOUtils.contentEquals(new FileReader(file.toFile()), new FileReader(targetFile.toFile()))) {
@@ -159,7 +159,7 @@ public class PatchArchive {
             throw new IllegalArgumentException("The patch archive can have only a single channel file");
         }
         final Path patchFile = patchFiles.get(0);
-        final Path cachedPatchFile = server.resolve(ApplyPatch.PATCHES_FOLDER).resolve(patchFile.getFileName());
+        final Path cachedPatchFile = server.resolve(ApplyPatchAction.PATCHES_FOLDER).resolve(patchFile.getFileName());
         Files.copy(patchFile, cachedPatchFile);
         return cachedPatchFile;
     }

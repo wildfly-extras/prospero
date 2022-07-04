@@ -13,11 +13,11 @@ import org.wildfly.prospero.model.RepositoryRef;
 /**
  * Metadata related actions wrapper.
  */
-public class MetadataActions {
+public class MetadataAction {
 
     private final Path installation;
 
-    public MetadataActions(Path installation) {
+    public MetadataAction(Path installation) {
         this.installation = installation;
     }
 

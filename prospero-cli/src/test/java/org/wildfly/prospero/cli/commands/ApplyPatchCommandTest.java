@@ -7,7 +7,7 @@ import org.junit.runner.RunWith;
 import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.junit.MockitoJUnitRunner;
-import org.wildfly.prospero.actions.ApplyPatch;
+import org.wildfly.prospero.actions.ApplyPatchAction;
 import org.wildfly.prospero.actions.Console;
 import org.wildfly.prospero.cli.AbstractConsoleTest;
 import org.wildfly.prospero.cli.ActionFactory;
@@ -24,7 +24,7 @@ import static org.junit.Assert.*;
 public class ApplyPatchCommandTest extends AbstractConsoleTest {
 
     @Mock
-    private ApplyPatch applyPatchAction;
+    private ApplyPatchAction applyPatchAction;
 
     @Rule
     public TemporaryFolder temp = new TemporaryFolder();
@@ -33,7 +33,7 @@ public class ApplyPatchCommandTest extends AbstractConsoleTest {
     protected ActionFactory createActionFactory() {
         return new ActionFactory() {
             @Override
-            public ApplyPatch applyPatch(Path targetPath, MavenSessionManager mavenSessionManager, Console console) {
+            public ApplyPatchAction applyPatch(Path targetPath, MavenSessionManager mavenSessionManager, Console console) {
                 return applyPatchAction;
             }
         };

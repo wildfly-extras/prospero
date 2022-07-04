@@ -35,7 +35,7 @@ import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.junit.MockitoJUnitRunner;
 import org.wildfly.prospero.actions.Console;
-import org.wildfly.prospero.actions.Provision;
+import org.wildfly.prospero.actions.ProvisioningAction;
 import org.wildfly.prospero.api.ProvisioningDefinition;
 import org.wildfly.prospero.cli.AbstractConsoleTest;
 import org.wildfly.prospero.cli.ActionFactory;
@@ -57,7 +57,7 @@ public class InstallCommandTest extends AbstractConsoleTest {
     public TemporaryFolder temporaryFolder = new TemporaryFolder();
 
     @Mock
-    private Provision provisionAction;
+    private ProvisioningAction provisionAction;
 
     @Captor
     private ArgumentCaptor<ProvisioningDefinition> serverDefiniton;
@@ -66,7 +66,7 @@ public class InstallCommandTest extends AbstractConsoleTest {
     protected ActionFactory createActionFactory() {
         return new ActionFactory() {
             @Override
-            public Provision install(Path targetPath, MavenSessionManager mavenSessionManager, Console console) {
+            public ProvisioningAction install(Path targetPath, MavenSessionManager mavenSessionManager, Console console) {
                 return provisionAction;
             }
         };

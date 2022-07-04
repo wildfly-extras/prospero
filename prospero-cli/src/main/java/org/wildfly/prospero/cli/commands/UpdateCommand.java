@@ -8,7 +8,7 @@ import java.util.Optional;
 import org.jboss.galleon.ProvisioningException;
 import org.jboss.logging.Logger;
 import org.wildfly.prospero.actions.Console;
-import org.wildfly.prospero.actions.Update;
+import org.wildfly.prospero.actions.UpdateAction;
 import org.wildfly.prospero.api.exceptions.MetadataException;
 import org.wildfly.prospero.cli.ActionFactory;
 import org.wildfly.prospero.cli.ArgumentParsingException;
@@ -79,11 +79,11 @@ public class UpdateCommand extends AbstractCommand {
             final MavenSessionManager mavenSessionManager = new MavenSessionManager(localRepo, offline);
 
             final Path targetPath = directory.get().toAbsolutePath();
-            Update update = actionFactory.update(targetPath, mavenSessionManager, console);
+            UpdateAction updateAction = actionFactory.update(targetPath, mavenSessionManager, console);
             if (!dryRun) {
-                update.doUpdateAll(yes);
+                updateAction.doUpdateAll(yes);
             } else {
-                update.listUpdates();
+                updateAction.listUpdates();
             }
         } catch (MetadataException | ProvisioningException e) {
             console.error(CliMessages.MESSAGES.errorWhileExecutingOperation(CliConstants.UPDATE, e.getMessage()));

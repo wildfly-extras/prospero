@@ -36,7 +36,7 @@ import java.util.List;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
-import static org.wildfly.prospero.actions.ApplyPatch.PATCHES_REPO_PATH;
+import static org.wildfly.prospero.actions.ApplyPatchAction.PATCHES_REPO_PATH;
 import static org.wildfly.prospero.api.InstallationMetadata.METADATA_DIR;
 import static org.wildfly.prospero.api.InstallationMetadata.PROSPERO_CONFIG_FILE_NAME;
 

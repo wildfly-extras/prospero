@@ -4,7 +4,7 @@ import java.net.URL;
 import java.nio.file.Path;
 
 import org.wildfly.prospero.actions.Console;
-import org.wildfly.prospero.actions.MetadataActions;
+import org.wildfly.prospero.actions.MetadataAction;
 import org.wildfly.prospero.cli.ActionFactory;
 import org.wildfly.prospero.cli.CliMessages;
 import org.wildfly.prospero.cli.ReturnCodes;
@@ -29,8 +29,8 @@ public class RepositoryAddCommand extends AbstractCommand {
     @Override
     public Integer call() throws Exception {
         try {
-            MetadataActions metadataActions = actionFactory.metadataActions(directory);
-            metadataActions.addRepository(repoId, url);
+            MetadataAction metadataAction = actionFactory.metadataActions(directory);
+            metadataAction.addRepository(repoId, url);
             console.println(CliMessages.MESSAGES.repositoryAdded(repoId));
             return ReturnCodes.SUCCESS;
         } catch (IllegalArgumentException e) {

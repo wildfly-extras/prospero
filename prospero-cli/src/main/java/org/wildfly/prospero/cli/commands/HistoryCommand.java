@@ -5,7 +5,7 @@ import java.util.List;
 import java.util.Optional;
 
 import org.wildfly.prospero.actions.Console;
-import org.wildfly.prospero.actions.InstallationHistory;
+import org.wildfly.prospero.actions.InstallationHistoryAction;
 import org.wildfly.prospero.api.ArtifactChange;
 import org.wildfly.prospero.api.SavedState;
 import org.wildfly.prospero.cli.ActionFactory;
@@ -31,15 +31,15 @@ public class HistoryCommand extends AbstractCommand {
 
     @Override
     public Integer call() throws Exception {
-        InstallationHistory installationHistory = actionFactory.history(directory.toAbsolutePath(), console);
+        InstallationHistoryAction historyAction = actionFactory.history(directory.toAbsolutePath(), console);
 
         if (revision.isEmpty()) {
-            List<SavedState> revisions = installationHistory.getRevisions();
+            List<SavedState> revisions = historyAction.getRevisions();
             for (SavedState savedState : revisions) {
                 console.println(savedState.shortDescription());
             }
         } else {
-            List<ArtifactChange> changes = installationHistory.compare(new SavedState(revision.get()));
+            List<ArtifactChange> changes = historyAction.compare(new SavedState(revision.get()));
             if (changes.isEmpty()) {
                 console.println(CliMessages.MESSAGES.noChangesFound());
             } else {

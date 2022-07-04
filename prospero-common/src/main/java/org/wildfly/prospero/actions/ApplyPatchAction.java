@@ -52,7 +52,7 @@ import java.util.List;
 
 import static org.wildfly.prospero.patch.PatchArchive.PATCH_REPO_FOLDER;
 
-public class ApplyPatch {
+public class ApplyPatchAction {
     public static final String PATCH_REPO_NAME = "patch-cache";
     public static final String PATCHES_FOLDER = ".patches";
     public static final Path PATCHES_REPO_PATH = Paths.get(PATCHES_FOLDER, PATCH_REPO_FOLDER);
@@ -61,7 +61,7 @@ public class ApplyPatch {
     private final MavenSessionManager mavenSessionManager;
     private final Console console;
 
-    public ApplyPatch(Path targetPath, MavenSessionManager mavenSessionManager, Console console) throws OperationException {
+    public ApplyPatchAction(Path targetPath, MavenSessionManager mavenSessionManager, Console console) throws OperationException {
         this.installDir = targetPath;
         this.metadata = new InstallationMetadata(targetPath);
         this.mavenSessionManager = mavenSessionManager;

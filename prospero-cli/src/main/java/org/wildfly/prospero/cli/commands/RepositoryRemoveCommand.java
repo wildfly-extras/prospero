@@ -3,7 +3,7 @@ package org.wildfly.prospero.cli.commands;
 import java.nio.file.Path;
 
 import org.wildfly.prospero.actions.Console;
-import org.wildfly.prospero.actions.MetadataActions;
+import org.wildfly.prospero.actions.MetadataAction;
 import org.wildfly.prospero.cli.ActionFactory;
 import org.wildfly.prospero.cli.CliMessages;
 import org.wildfly.prospero.cli.ReturnCodes;
@@ -25,8 +25,8 @@ public class RepositoryRemoveCommand extends AbstractCommand {
     @Override
     public Integer call() throws Exception {
         try {
-            MetadataActions metadataActions = actionFactory.metadataActions(directory);
-            metadataActions.removeRepository(repoId);
+            MetadataAction metadataAction = actionFactory.metadataActions(directory);
+            metadataAction.removeRepository(repoId);
             console.println(CliMessages.MESSAGES.repositoryRemoved(repoId));
             return ReturnCodes.SUCCESS;
         } catch (IllegalArgumentException e) {

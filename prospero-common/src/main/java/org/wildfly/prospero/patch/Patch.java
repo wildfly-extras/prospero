@@ -21,7 +21,7 @@ import java.net.MalformedURLException;
 import java.net.URL;
 import java.nio.file.Path;
 
-import static org.wildfly.prospero.actions.ApplyPatch.PATCHES_FOLDER;
+import static org.wildfly.prospero.actions.ApplyPatchAction.PATCHES_FOLDER;
 
 public class Patch {
 

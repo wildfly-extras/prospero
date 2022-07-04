@@ -10,8 +10,8 @@ import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
-import org.wildfly.prospero.actions.ApplyPatch;
-import org.wildfly.prospero.actions.Provision;
+import org.wildfly.prospero.actions.ApplyPatchAction;
+import org.wildfly.prospero.actions.ProvisioningAction;
 import org.wildfly.prospero.api.InstallationMetadata;
 import org.wildfly.prospero.api.ProvisioningDefinition;
 import org.wildfly.prospero.cli.CliConsole;
@@ -31,10 +31,10 @@ import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.Assert.assertEquals;
-import static org.wildfly.prospero.actions.ApplyPatch.PATCHES_REPO_PATH;
-import static org.wildfly.prospero.actions.ApplyPatch.PATCH_REPO_NAME;
+import static org.wildfly.prospero.actions.ApplyPatchAction.PATCHES_REPO_PATH;
+import static org.wildfly.prospero.actions.ApplyPatchAction.PATCH_REPO_NAME;
 
-public class ApplyPatchTest extends WfCoreTestBase {
+public class ApplyPatchActionTest extends WfCoreTestBase {
 
     public static final String PATCHED_ARTIFACT_ID = "wildfly-controller";
     public static final String PATCHED_ARTIFACT_GROUP = "org.wildfly.core";
@@ -45,7 +45,7 @@ public class ApplyPatchTest extends WfCoreTestBase {
 
     private static final String OUTPUT_DIR = "target/server";
     private static final Path OUTPUT_PATH = Paths.get(OUTPUT_DIR).toAbsolutePath();
-    private final Provision installation = new Provision(OUTPUT_PATH, mavenSessionManager, new CliConsole());
+    private final ProvisioningAction installation = new ProvisioningAction(OUTPUT_PATH, mavenSessionManager, new CliConsole());
     private Path provisionConfigFile;
 
     @Before
@@ -89,7 +89,7 @@ public class ApplyPatchTest extends WfCoreTestBase {
         installation.provision(provisioningDefinition);
 
         // apply patch
-        final ApplyPatch applyPatchAction = new ApplyPatch(OUTPUT_PATH, mavenSessionManager, new AcceptingConsole());
+        final ApplyPatchAction applyPatchAction = new ApplyPatchAction(OUTPUT_PATH, mavenSessionManager, new AcceptingConsole());
         applyPatchAction.apply(patchArchive.toPath());
 
         // verify config changed - patch channel & local repository
@@ -97,7 +97,7 @@ public class ApplyPatchTest extends WfCoreTestBase {
         final ProvisioningConfig provisioningConfig = ProvisioningConfig.readConfig(metadataDir.resolve(InstallationMetadata.PROSPERO_CONFIG_FILE_NAME));
         assertThat(provisioningConfig.getChannels()).containsExactly(
                 new ChannelRef(null, installDir.resolve(".patches").resolve("patch-test00001-channel.yaml").toUri().toURL().toString()),
-                new ChannelRef(null, ApplyPatchTest.class.getClassLoader().getResource(CHANNEL_BASE_CORE_19).toString())
+                new ChannelRef(null, ApplyPatchActionTest.class.getClassLoader().getResource(CHANNEL_BASE_CORE_19).toString())
         );
 
         assertThat(provisioningConfig.getRepositories()).contains(

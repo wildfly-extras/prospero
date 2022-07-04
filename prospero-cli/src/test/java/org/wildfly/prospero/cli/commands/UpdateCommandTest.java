@@ -37,7 +37,7 @@ import org.junit.runner.RunWith;
 import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.junit.MockitoJUnitRunner;
-import org.wildfly.prospero.actions.Update;
+import org.wildfly.prospero.actions.UpdateAction;
 import org.wildfly.prospero.cli.AbstractConsoleTest;
 import org.wildfly.prospero.cli.ActionFactory;
 import org.wildfly.prospero.cli.CliMessages;
@@ -58,7 +58,7 @@ public class UpdateCommandTest extends AbstractConsoleTest {
     public static final String MODULES_DIR = "modules";
 
     @Mock
-    private Update update;
+    private UpdateAction updateAction;
 
     @Mock
     private ActionFactory actionFactory;
@@ -74,7 +74,7 @@ public class UpdateCommandTest extends AbstractConsoleTest {
     @Before
     public void setUp() throws Exception {
         super.setUp();
-        when(actionFactory.update(any(), any(), any())).thenReturn(update);
+        when(actionFactory.update(any(), any(), any())).thenReturn(updateAction);
     }
 
     @After
@@ -95,7 +95,7 @@ public class UpdateCommandTest extends AbstractConsoleTest {
         int exitCode = commandLine.execute(CliConstants.UPDATE, CliConstants.DIR, "test");
 
         assertEquals(ReturnCodes.SUCCESS, exitCode);
-        Mockito.verify(update).doUpdateAll(false);
+        Mockito.verify(updateAction).doUpdateAll(false);
     }
 
     @Test
@@ -114,7 +114,7 @@ public class UpdateCommandTest extends AbstractConsoleTest {
 
         assertEquals(ReturnCodes.SUCCESS, exitCode);
         Mockito.verify(actionFactory).update(eq(baseDir.toAbsolutePath()), any(), any());
-        Mockito.verify(update).doUpdateAll(false);
+        Mockito.verify(updateAction).doUpdateAll(false);
     }
 
     @Test
@@ -126,7 +126,7 @@ public class UpdateCommandTest extends AbstractConsoleTest {
 
         assertEquals(ReturnCodes.SUCCESS, exitCode);
         Mockito.verify(actionFactory).update(eq(baseDir.toAbsolutePath()), any(), any());
-        Mockito.verify(update).doUpdateAll(false);
+        Mockito.verify(updateAction).doUpdateAll(false);
     }
 
     @Test
