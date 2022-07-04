@@ -17,11 +17,9 @@
 
 package org.wildfly.prospero.actions;
 
-import org.eclipse.aether.DefaultRepositorySystemSession;
-import org.eclipse.aether.RepositorySystem;
-import org.wildfly.channel.maven.VersionResolverFactory;
-import org.wildfly.channel.spi.MavenVersionsResolver;
 import org.wildfly.prospero.Messages;
+import org.wildfly.prospero.api.exceptions.OperationException;
+import org.wildfly.prospero.galleon.GalleonEnvironment;
 import org.wildfly.prospero.model.ChannelRef;
 import org.wildfly.prospero.api.InstallationMetadata;
 import org.wildfly.prospero.api.exceptions.MetadataException;
@@ -31,72 +29,45 @@ import org.wildfly.prospero.model.ProsperoConfig;
 import org.wildfly.prospero.wfchannel.MavenSessionManager;
 import org.eclipse.aether.repository.RemoteRepository;
 import org.jboss.galleon.ProvisioningException;
-import org.jboss.galleon.ProvisioningManager;
-import org.wildfly.channel.Channel;
-import org.wildfly.channel.ChannelMapper;
 
 import java.io.IOException;
-import java.net.MalformedURLException;
-import java.net.URL;
 import java.nio.file.Path;
-import java.nio.file.Paths;
-import java.util.ArrayList;
 import java.util.List;
 
 public class InstallationRestoreAction {
 
     private final Path installDir;
+    private final Console console;
     private MavenSessionManager mavenSessionManager;
 
-    public InstallationRestoreAction(Path installDir, MavenSessionManager mavenSessionManager) {
+    public InstallationRestoreAction(Path installDir, MavenSessionManager mavenSessionManager, Console console) {
         this.installDir = installDir;
         this.mavenSessionManager = mavenSessionManager;
-    }
-
-    public static void main(String[] args) throws Exception {
-
-        String targetDir = args[0];
-        String metadataBundle = args[1];
-
-        new InstallationRestoreAction(Paths.get(targetDir), new MavenSessionManager()).restore(Paths.get(metadataBundle));
+        this.console = console;
     }
 
     public void restore(Path metadataBundleZip)
-            throws ProvisioningException, IOException, MetadataException {
+            throws ProvisioningException, IOException, OperationException {
         if (installDir.toFile().exists()) {
             throw Messages.MESSAGES.installationDirAlreadyExists(installDir);
         }
 
         final InstallationMetadata metadataBundle = InstallationMetadata.importMetadata(metadataBundleZip);
         final ProsperoConfig prosperoConfig = metadataBundle.getProsperoConfig();
-        final List<Channel> channels = mapToChannels(prosperoConfig.getChannels());
-        final List<RemoteRepository> repositories = prosperoConfig.getRemoteRepositories();
+        final GalleonEnvironment galleonEnv = GalleonEnvironment
+                .builder(installDir, prosperoConfig, mavenSessionManager)
+                .setConsole(console)
+                .setRestoreManifest(metadataBundle.getManifest())
+                .skipUpdateChannel(true)
+                .build();
 
-        final RepositorySystem system = mavenSessionManager.newRepositorySystem();
-        final DefaultRepositorySystemSession session = mavenSessionManager.newRepositorySystemSession(system);
-        MavenVersionsResolver.Factory factory = new VersionResolverFactory(system, session, repositories);
-        final ChannelMavenArtifactRepositoryManager repoManager = new ChannelMavenArtifactRepositoryManager(channels, factory, metadataBundle.getManifest());
-
-        ProvisioningManager provMgr = GalleonUtils.getProvisioningManager(installDir, repoManager);
-
-        GalleonUtils.executeGalleon(options -> provMgr.provision(metadataBundle.getGalleonProvisioningConfig(), options),
+        GalleonUtils.executeGalleon(options -> galleonEnv.getProvisioningManager().provision(metadataBundle.getGalleonProvisioningConfig(), options),
                 mavenSessionManager.getProvisioningRepo().toAbsolutePath());
-        writeProsperoMetadata(repoManager, prosperoConfig.getChannels(), repositories);
+        writeProsperoMetadata(galleonEnv.getRepositoryManager(), prosperoConfig.getChannels(), prosperoConfig.getRemoteRepositories());
     }
 
     private void writeProsperoMetadata(ChannelMavenArtifactRepositoryManager maven, List<ChannelRef> channelRefs, List<RemoteRepository> repositories)
             throws MetadataException {
         new InstallationMetadata(installDir, maven.resolvedChannel(), channelRefs, repositories).writeFiles();
-    }
-
-    private List<Channel> mapToChannels(List<ChannelRef> channelRefs) throws MetadataException {
-        final List<Channel> channels = new ArrayList<>();
-        for (ChannelRef ref : channelRefs) {
-            try {
-                channels.add(ChannelMapper.from(new URL(ref.getUrl())));
-            } catch (MalformedURLException e) {
-                throw Messages.MESSAGES.unableToResolveChannelConfiguration(e);
-            }
-        } return channels;
     }
 }

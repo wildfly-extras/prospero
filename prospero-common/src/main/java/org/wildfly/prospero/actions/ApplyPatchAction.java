@@ -17,38 +17,24 @@
 
 package org.wildfly.prospero.actions;
 
-import org.eclipse.aether.DefaultRepositorySystemSession;
-import org.eclipse.aether.RepositorySystem;
-import org.eclipse.aether.repository.RemoteRepository;
 import org.jboss.galleon.ProvisioningException;
 import org.jboss.galleon.ProvisioningManager;
-import org.jboss.galleon.layout.ProvisioningLayoutFactory;
-import org.wildfly.channel.Channel;
-import org.wildfly.channel.ChannelMapper;
-import org.wildfly.channel.ChannelSession;
-import org.wildfly.channel.maven.VersionResolverFactory;
 import org.wildfly.prospero.Messages;
 import org.wildfly.prospero.api.InstallationMetadata;
-import org.wildfly.prospero.api.exceptions.ArtifactResolutionException;
 import org.wildfly.prospero.api.exceptions.MetadataException;
 import org.wildfly.prospero.api.exceptions.OperationException;
-import org.wildfly.prospero.galleon.ChannelMavenArtifactRepositoryManager;
+import org.wildfly.prospero.galleon.GalleonEnvironment;
 import org.wildfly.prospero.galleon.GalleonUtils;
 import org.wildfly.prospero.model.ChannelRef;
 import org.wildfly.prospero.model.ProsperoConfig;
 import org.wildfly.prospero.model.RepositoryRef;
 import org.wildfly.prospero.patch.Patch;
 import org.wildfly.prospero.patch.PatchArchive;
-import org.wildfly.prospero.wfchannel.ChannelRefUpdater;
 import org.wildfly.prospero.wfchannel.MavenSessionManager;
 
 import java.io.IOException;
-import java.net.MalformedURLException;
-import java.net.URL;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.ArrayList;
-import java.util.List;
 
 import static org.wildfly.prospero.patch.PatchArchive.PATCH_REPO_FOLDER;
 
@@ -94,43 +80,19 @@ public class ApplyPatchAction {
         reprovisionServer();
     }
 
-    private void reprovisionServer() throws MetadataException, ArtifactResolutionException, ProvisioningException {
+    private void reprovisionServer() throws OperationException, ProvisioningException {
         // have to parse the config after the patch metadata was applied
-        final ProsperoConfig prosperoConfig = metadata.getProsperoConfig();
-        final List<RemoteRepository> repositories = prosperoConfig.getRemoteRepositories();
-        final List<Channel> channels = mapToChannels(new ChannelRefUpdater(mavenSessionManager)
-                .resolveLatest(prosperoConfig.getChannels(), repositories));
+        final GalleonEnvironment galleonEnv = GalleonEnvironment
+                .builder(installDir, metadata.getProsperoConfig(), mavenSessionManager)
+                .setConsole(console)
+                .build();
 
-        final RepositorySystem system = mavenSessionManager.newRepositorySystem();
-        final DefaultRepositorySystemSession session = mavenSessionManager.newRepositorySystemSession(system);
-        final VersionResolverFactory factory = new VersionResolverFactory(system, session, repositories);
-        final ChannelSession channelSession = new ChannelSession(channels, factory);
-        ChannelMavenArtifactRepositoryManager maven = new ChannelMavenArtifactRepositoryManager(channelSession);
-        ProvisioningManager provMgr = GalleonUtils.getProvisioningManager(installDir, maven);
-
-        final ProvisioningLayoutFactory layoutFactory = provMgr.getLayoutFactory();
-        layoutFactory.setProgressCallback("LAYOUT_BUILD", console.getProgressCallback("LAYOUT_BUILD"));
-        layoutFactory.setProgressCallback("PACKAGES", console.getProgressCallback("PACKAGES"));
-        layoutFactory.setProgressCallback("CONFIGS", console.getProgressCallback("CONFIGS"));
-        layoutFactory.setProgressCallback("JBMODULES", console.getProgressCallback("JBMODULES"));
-
+        ProvisioningManager provMgr = galleonEnv.getProvisioningManager();
         GalleonUtils.executeGalleon(options -> provMgr.provision(provMgr.getProvisioningConfig(), options),
                 mavenSessionManager.getProvisioningRepo().toAbsolutePath());
 
-        metadata.setChannel(maven.resolvedChannel());
+        metadata.setChannel(galleonEnv.getRepositoryManager().resolvedChannel());
 
         metadata.writeFiles();
-    }
-
-    private List<Channel> mapToChannels(List<ChannelRef> channelRefs) throws MetadataException {
-        final List<Channel> channels = new ArrayList<>();
-        for (ChannelRef ref : channelRefs) {
-            try {
-                channels.add(ChannelMapper.from(new URL(ref.getUrl())));
-            } catch (MalformedURLException e) {
-                throw Messages.MESSAGES.unableToResolveChannelConfiguration(e);
-            }
-        }
-        return channels;
     }
 }

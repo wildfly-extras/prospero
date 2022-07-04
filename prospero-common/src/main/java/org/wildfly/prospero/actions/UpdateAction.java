@@ -17,82 +17,36 @@
 
 package org.wildfly.prospero.actions;
 
-import java.net.MalformedURLException;
-import java.net.URL;
 import java.nio.file.Path;
-import java.util.ArrayList;
-import java.util.List;
 
-import org.eclipse.aether.DefaultRepositorySystemSession;
-import org.eclipse.aether.RepositorySystem;
-import org.wildfly.channel.maven.VersionResolverFactory;
-import org.wildfly.channel.spi.MavenVersionsResolver;
-import org.wildfly.prospero.Messages;
 import org.wildfly.prospero.api.InstallationMetadata;
 import org.wildfly.prospero.api.exceptions.MetadataException;
 import org.wildfly.prospero.api.exceptions.ArtifactResolutionException;
 import org.wildfly.prospero.api.exceptions.OperationException;
+import org.wildfly.prospero.galleon.GalleonEnvironment;
 import org.wildfly.prospero.galleon.GalleonUtils;
-import org.wildfly.prospero.galleon.ChannelMavenArtifactRepositoryManager;
-import org.wildfly.prospero.model.ChannelRef;
-import org.wildfly.prospero.model.ProsperoConfig;
 import org.wildfly.prospero.updates.UpdateFinder;
 import org.wildfly.prospero.updates.UpdateSet;
-import org.wildfly.prospero.wfchannel.ChannelRefUpdater;
 import org.wildfly.prospero.wfchannel.MavenSessionManager;
-import org.eclipse.aether.repository.RemoteRepository;
 import org.jboss.galleon.ProvisioningException;
 import org.jboss.galleon.ProvisioningManager;
-import org.jboss.galleon.layout.ProvisioningLayoutFactory;
-import org.wildfly.channel.Channel;
-import org.wildfly.channel.ChannelMapper;
-import org.wildfly.channel.ChannelSession;
 
 public class UpdateAction {
 
     private final InstallationMetadata metadata;
-    private final ChannelMavenArtifactRepositoryManager maven;
-    private final ProvisioningManager provMgr;
-    private final ChannelSession channelSession;
 
     private final Console console;
-    private final MavenVersionsResolver.Factory factory;
     private final MavenSessionManager mavenSessionManager;
+    private final GalleonEnvironment galleonEnv;
 
     public UpdateAction(Path installDir, MavenSessionManager mavenSessionManager, Console console) throws ProvisioningException, OperationException {
         this.metadata = new InstallationMetadata(installDir);
-
+        galleonEnv = GalleonEnvironment
+                .builder(installDir, metadata.getProsperoConfig(), mavenSessionManager)
+                .setConsole(console)
+                .build();
         this.mavenSessionManager = mavenSessionManager;
-        final ProsperoConfig prosperoConfig = metadata.getProsperoConfig();
-        final List<RemoteRepository> repositories = prosperoConfig.getRemoteRepositories();
-        final List<Channel> channels = mapToChannels(new ChannelRefUpdater(this.mavenSessionManager)
-                .resolveLatest(prosperoConfig.getChannels(), repositories));
-
-        final RepositorySystem system = mavenSessionManager.newRepositorySystem();
-        final DefaultRepositorySystemSession session = mavenSessionManager.newRepositorySystemSession(system);
-        this.factory = new VersionResolverFactory(system, session, repositories);
-        this.channelSession = new ChannelSession(channels, factory);
-        this.maven = new ChannelMavenArtifactRepositoryManager(channelSession);
-        this.provMgr = GalleonUtils.getProvisioningManager(installDir, maven);
-        final ProvisioningLayoutFactory layoutFactory = provMgr.getLayoutFactory();
-
-        layoutFactory.setProgressCallback("LAYOUT_BUILD", console.getProgressCallback("LAYOUT_BUILD"));
-        layoutFactory.setProgressCallback("PACKAGES", console.getProgressCallback("PACKAGES"));
-        layoutFactory.setProgressCallback("CONFIGS", console.getProgressCallback("CONFIGS"));
-        layoutFactory.setProgressCallback("JBMODULES", console.getProgressCallback("JBMODULES"));
         this.console = console;
-    }
-
-    private List<Channel> mapToChannels(List<ChannelRef> channelRefs) throws MetadataException {
-        final List<Channel> channels = new ArrayList<>();
-        for (ChannelRef ref : channelRefs) {
-            try {
-                channels.add(ChannelMapper.from(new URL(ref.getUrl())));
-            } catch (MalformedURLException e) {
-                throw Messages.MESSAGES.unableToResolveChannelConfiguration(e);
-            }
-        }
-        return channels;
     }
 
     public void doUpdateAll(boolean confirmed) throws ProvisioningException, MetadataException, ArtifactResolutionException {
@@ -121,16 +75,17 @@ public class UpdateAction {
     }
 
     protected UpdateSet findUpdates() throws ArtifactResolutionException, ProvisioningException {
-        try (final UpdateFinder updateFinder = new UpdateFinder(channelSession, provMgr)) {
+        try (final UpdateFinder updateFinder = new UpdateFinder(galleonEnv.getChannelSession(), galleonEnv.getProvisioningManager())) {
             return updateFinder.findUpdates(metadata.getArtifacts());
         }
     }
 
     protected void applyUpdates() throws ProvisioningException {
+        final ProvisioningManager provMgr = galleonEnv.getProvisioningManager();
         GalleonUtils.executeGalleon(options -> provMgr.provision(provMgr.getProvisioningConfig(), options),
                 mavenSessionManager.getProvisioningRepo().toAbsolutePath());
 
-        metadata.setChannel(maven.resolvedChannel());
+        metadata.setChannel(galleonEnv.getRepositoryManager().resolvedChannel());
     }
 
 }
