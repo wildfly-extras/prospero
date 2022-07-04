@@ -44,4 +44,7 @@ public interface Messages {
 
     @Message("Repository '%s' with URL '%s' is alreay present.")
     IllegalArgumentException repositoryExists(String repoId, URL url);
+
+    @Message("Installing patch %s.")
+    String installingPatch(String name);
 }

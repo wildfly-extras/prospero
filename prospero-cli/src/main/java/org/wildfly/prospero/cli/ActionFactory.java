@@ -4,6 +4,7 @@ package org.wildfly.prospero.cli;
 import java.nio.file.Path;
 
 import org.jboss.galleon.ProvisioningException;
+import org.wildfly.prospero.actions.ApplyPatch;
 import org.wildfly.prospero.actions.Console;
 import org.wildfly.prospero.actions.InstallationHistory;
 import org.wildfly.prospero.actions.MetadataActions;
@@ -29,5 +30,9 @@ public class ActionFactory {
 
     public MetadataActions metadataActions(Path targetPath) {
         return new MetadataActions(targetPath);
+    }
+
+    public ApplyPatch applyPatch(Path targetPath, MavenSessionManager mavenSessionManager, Console console) throws OperationException {
+        return new ApplyPatch(targetPath, mavenSessionManager, console);
     }
 }
