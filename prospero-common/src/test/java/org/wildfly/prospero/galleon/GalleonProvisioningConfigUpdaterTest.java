@@ -18,7 +18,7 @@ import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
 @RunWith(MockitoJUnitRunner.class)
-public class ProvisioningConfigUpdaterTest {
+public class GalleonProvisioningConfigUpdaterTest {
 
     public static final FeaturePackLocation TEST_FPL = FeaturePackLocation.fromString("org.wildfly:wildfly-ee-galleon-pack:1.2.2:zip");
     @Mock
@@ -31,7 +31,7 @@ public class ProvisioningConfigUpdaterTest {
                 .addFeaturePackDep(nonMavenFpl)
                 .build();
 
-        final ProvisioningConfig updated = new ProvisioningConfigUpdater(mavenRepoManager).updateFPs(config);
+        final ProvisioningConfig updated = new GalleonProvisioningConfigUpdater(mavenRepoManager).updateFPs(config);
         assertEquals(nonMavenFpl, updated.getFeaturePackDeps().stream().findFirst().get().getLocation());
         verifyNoInteractions(mavenRepoManager);
     }
@@ -50,7 +50,7 @@ public class ProvisioningConfigUpdaterTest {
                 .addFeaturePackDep(TEST_FPL)
                 .build();
 
-        new ProvisioningConfigUpdater(mavenRepoManager).updateFPs(config);
+        new GalleonProvisioningConfigUpdater(mavenRepoManager).updateFPs(config);
     }
 
     @Test
@@ -60,7 +60,7 @@ public class ProvisioningConfigUpdaterTest {
                 .addFeaturePackDep(TEST_FPL)
                 .build();
 
-        final ProvisioningConfig updated = new ProvisioningConfigUpdater(mavenRepoManager).updateFPs(config);
+        final ProvisioningConfig updated = new GalleonProvisioningConfigUpdater(mavenRepoManager).updateFPs(config);
         assertEquals("1.2.3", updated.getFeaturePackDeps().stream().findFirst().get().getLocation().getBuild());
     }
 
@@ -71,7 +71,7 @@ public class ProvisioningConfigUpdaterTest {
                 .addFeaturePackDep(FeaturePackConfig.builder(TEST_FPL).setInheritPackages(true).build())
                 .build();
 
-        final ProvisioningConfig updated = new ProvisioningConfigUpdater(mavenRepoManager).updateFPs(config);
+        final ProvisioningConfig updated = new GalleonProvisioningConfigUpdater(mavenRepoManager).updateFPs(config);
         assertEquals(true, (boolean) updated.getFeaturePackDeps().stream().findFirst().get().getInheritPackages());
     }
 
@@ -82,7 +82,7 @@ public class ProvisioningConfigUpdaterTest {
                 .addFeaturePackDep(FeaturePackConfig.builder(TEST_FPL).includePackage("foo.bar").build())
                 .build();
 
-        final ProvisioningConfig updated = new ProvisioningConfigUpdater(mavenRepoManager).updateFPs(config);
+        final ProvisioningConfig updated = new GalleonProvisioningConfigUpdater(mavenRepoManager).updateFPs(config);
         assertTrue(updated.getFeaturePackDeps().stream().findFirst().get().getIncludedPackages().contains("foo.bar"));
     }
 
@@ -93,7 +93,7 @@ public class ProvisioningConfigUpdaterTest {
                 .addFeaturePackDep(FeaturePackConfig.builder(TEST_FPL).excludePackage("foo.bar").build())
                 .build();
 
-        final ProvisioningConfig updated = new ProvisioningConfigUpdater(mavenRepoManager).updateFPs(config);
+        final ProvisioningConfig updated = new GalleonProvisioningConfigUpdater(mavenRepoManager).updateFPs(config);
         assertTrue(updated.getFeaturePackDeps().stream().findFirst().get().getExcludedPackages().contains("foo.bar"));
     }
 
@@ -105,7 +105,7 @@ public class ProvisioningConfigUpdaterTest {
                 .addOption("foo.bar", "true")
                 .build();
 
-        final ProvisioningConfig updated = new ProvisioningConfigUpdater(mavenRepoManager).updateFPs(config);
+        final ProvisioningConfig updated = new GalleonProvisioningConfigUpdater(mavenRepoManager).updateFPs(config);
         assertEquals("true", updated.getOption("foo.bar"));
     }
 }

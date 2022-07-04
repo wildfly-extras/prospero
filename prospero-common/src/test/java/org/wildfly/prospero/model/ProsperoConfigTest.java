@@ -26,27 +26,27 @@ import java.util.ArrayList;
 import static org.assertj.core.api.Assertions.*;
 import static org.junit.Assert.*;
 
-public class ProvisioningConfigTest {
+public class ProsperoConfigTest {
 
-    private final ProvisioningConfig provisioningConfig = new ProvisioningConfig(new ArrayList<>(), new ArrayList<>());
+    private final ProsperoConfig prosperoConfig = new ProsperoConfig(new ArrayList<>(), new ArrayList<>());
 
     @Test
     public void addRepositoryIgnoresChangesIfExistingRepo() throws Exception {
-        provisioningConfig.addRepository(new RepositoryRef("existing", "file:///foo.bar"));
+        prosperoConfig.addRepository(new RepositoryRef("existing", "file:///foo.bar"));
 
-        assertFalse(provisioningConfig.addRepository(new RepositoryRef("existing", "file:///foo.bar")));
+        assertFalse(prosperoConfig.addRepository(new RepositoryRef("existing", "file:///foo.bar")));
 
-        assertThat(provisioningConfig.getRepositories()).containsExactly(
+        assertThat(prosperoConfig.getRepositories()).containsExactly(
                 new RepositoryRef("existing", "file:///foo.bar")
         );
     }
 
     @Test
     public void addRepositoryThrowsErrorIfSameIdDifferentUrl() throws Exception {
-        assertTrue(provisioningConfig.addRepository(new RepositoryRef("existing", "file:///foo.bar")));
+        assertTrue(prosperoConfig.addRepository(new RepositoryRef("existing", "file:///foo.bar")));
 
         try {
-            provisioningConfig.addRepository(new RepositoryRef("existing", "file:///different.url"));
+            prosperoConfig.addRepository(new RepositoryRef("existing", "file:///different.url"));
             Assert.fail("Adding repository with the same ID but different URL should fail");
         } catch (IllegalArgumentException e) {
             // OK, ignore
@@ -55,11 +55,11 @@ public class ProvisioningConfigTest {
 
     @Test
     public void addRepositoryAddsDistinctRepository() throws Exception {
-        provisioningConfig.addRepository(new RepositoryRef("existing", "file:///foo.bar"));
+        prosperoConfig.addRepository(new RepositoryRef("existing", "file:///foo.bar"));
 
-        assertTrue(provisioningConfig.addRepository(new RepositoryRef("test", "file:///foo.bar")));
+        assertTrue(prosperoConfig.addRepository(new RepositoryRef("test", "file:///foo.bar")));
 
-        assertThat(provisioningConfig.getRepositories()).containsExactlyInAnyOrder(
+        assertThat(prosperoConfig.getRepositories()).containsExactlyInAnyOrder(
                 new RepositoryRef("existing", "file:///foo.bar"),
                 new RepositoryRef("test", "file:///foo.bar")
         );
@@ -67,9 +67,9 @@ public class ProvisioningConfigTest {
 
     @Test
     public void addRepositoryAddsNewRepositoryToEmptyList() throws Exception {
-        assertTrue(provisioningConfig.addRepository(new RepositoryRef("test", "file:///foo.bar")));
+        assertTrue(prosperoConfig.addRepository(new RepositoryRef("test", "file:///foo.bar")));
 
-        assertThat(provisioningConfig.getRepositories()).containsExactly(
+        assertThat(prosperoConfig.getRepositories()).containsExactly(
                 new RepositoryRef("test", "file:///foo.bar")
         );
     }

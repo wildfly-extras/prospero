@@ -35,7 +35,7 @@ import org.wildfly.prospero.api.exceptions.OperationException;
 import org.wildfly.prospero.galleon.ChannelMavenArtifactRepositoryManager;
 import org.wildfly.prospero.galleon.GalleonUtils;
 import org.wildfly.prospero.model.ChannelRef;
-import org.wildfly.prospero.model.ProvisioningConfig;
+import org.wildfly.prospero.model.ProsperoConfig;
 import org.wildfly.prospero.model.RepositoryRef;
 import org.wildfly.prospero.patch.Patch;
 import org.wildfly.prospero.patch.PatchArchive;
@@ -79,12 +79,12 @@ public class ApplyPatchAction {
             final Patch patch = patchArchive.extract(installDir);
 
             // update config
-            final ProvisioningConfig provisioningConfig = metadata.getProsperoConfig();
-            provisioningConfig.addChannel(new ChannelRef(null, patch.getChannelFileUrl().toString()));
+            final ProsperoConfig prosperoConfig = metadata.getProsperoConfig();
+            prosperoConfig.addChannel(new ChannelRef(null, patch.getChannelFileUrl().toString()));
 
             // add cached repository to config if not present
-            provisioningConfig.addRepository(new RepositoryRef(PATCH_REPO_NAME, installDir.resolve(PATCHES_REPO_PATH).toUri().toURL().toString()));
-            metadata.updateProsperoConfig(provisioningConfig);
+            prosperoConfig.addRepository(new RepositoryRef(PATCH_REPO_NAME, installDir.resolve(PATCHES_REPO_PATH).toUri().toURL().toString()));
+            metadata.updateProsperoConfig(prosperoConfig);
         } catch (IOException e) {
             e.printStackTrace();
         } catch (MetadataException e) {
@@ -96,7 +96,7 @@ public class ApplyPatchAction {
 
     private void reprovisionServer() throws MetadataException, ArtifactResolutionException, ProvisioningException {
         // have to parse the config after the patch metadata was applied
-        final ProvisioningConfig prosperoConfig = metadata.getProsperoConfig();
+        final ProsperoConfig prosperoConfig = metadata.getProsperoConfig();
         final List<RemoteRepository> repositories = prosperoConfig.getRemoteRepositories();
         final List<Channel> channels = mapToChannels(new ChannelRefUpdater(mavenSessionManager)
                 .resolveLatest(prosperoConfig.getChannels(), repositories));

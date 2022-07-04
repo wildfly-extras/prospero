@@ -28,7 +28,7 @@ import org.wildfly.channel.Channel;
 import org.wildfly.channel.ChannelMapper;
 import org.wildfly.prospero.installation.git.GitStorage;
 import org.wildfly.prospero.model.ChannelRef;
-import org.wildfly.prospero.model.ProvisioningConfig;
+import org.wildfly.prospero.model.ProsperoConfig;
 import org.wildfly.prospero.model.RepositoryRef;
 
 import java.io.IOException;
@@ -58,14 +58,14 @@ public class InstallationMetadataTest {
 
     @Test
     public void testUpdateProsperoConfig() throws Exception {
-        final ProvisioningConfig config = installationMetadata.getProsperoConfig();
+        final ProsperoConfig config = installationMetadata.getProsperoConfig();
         config.addChannel(new ChannelRef("new:channel", null));
         config.addRepository(new RepositoryRef("test", "file://foo.bar"));
 
         installationMetadata.updateProsperoConfig(config);
 
         // verify new Channel and Repo in there
-        final ProvisioningConfig updatedConfig = installationMetadata.getProsperoConfig();
+        final ProsperoConfig updatedConfig = installationMetadata.getProsperoConfig();
         assertEquals(2, updatedConfig.getChannels().size());
         assertEquals("new channel should be added in first place",
                 new ChannelRef("new:channel", null), updatedConfig.getChannels().get(0));
@@ -82,7 +82,7 @@ public class InstallationMetadataTest {
         Files.writeString(metadataDir.resolve(InstallationMetadata.MANIFEST_FILE_NAME),
                 ChannelMapper.toYaml(new Channel(null, null, null, null, Collections.emptyList())),
                 StandardOpenOption.CREATE_NEW);
-        new ProvisioningConfig(Arrays.asList(new ChannelRef("foo:bar", null)), Collections.emptyList()).writeConfig(
+        new ProsperoConfig(Arrays.asList(new ChannelRef("foo:bar", null)), Collections.emptyList()).writeConfig(
                 metadataDir.resolve(InstallationMetadata.PROSPERO_CONFIG_FILE_NAME).toFile());
         return base;
     }

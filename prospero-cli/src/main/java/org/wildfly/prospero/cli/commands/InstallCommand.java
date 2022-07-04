@@ -97,7 +97,7 @@ public class InstallCommand extends AbstractCommand {
         assert featurePackOrDefinition.definition.isPresent() || featurePackOrDefinition.fpl.isPresent();
 
         if (featurePackOrDefinition.definition.isEmpty() && isStandardFpl(featurePackOrDefinition.fpl.get()) && provisionConfig.isEmpty()) {
-            console.error(CliMessages.MESSAGES.provisioningConfigMandatoryWhenCustomFpl(), CliMain.PROVISION_CONFIG_ARG);
+            console.error(CliMessages.MESSAGES.prosperoConfigMandatoryWhenCustomFpl(), CliMain.PROVISION_CONFIG_ARG);
             return ReturnCodes.INVALID_ARGUMENTS;
         }
 

@@ -29,7 +29,7 @@ import org.wildfly.prospero.api.exceptions.MetadataException;
 import org.wildfly.prospero.api.SavedState;
 import org.wildfly.prospero.galleon.GalleonUtils;
 import org.wildfly.prospero.galleon.ChannelMavenArtifactRepositoryManager;
-import org.wildfly.prospero.model.ProvisioningConfig;
+import org.wildfly.prospero.model.ProsperoConfig;
 import org.wildfly.prospero.wfchannel.MavenSessionManager;
 import org.eclipse.aether.repository.RemoteRepository;
 import org.jboss.galleon.ProvisioningException;
@@ -70,7 +70,7 @@ public class InstallationHistoryAction {
         InstallationMetadata metadata = new InstallationMetadata(installation);
         metadata = metadata.rollback(savedState);
 
-        final ProvisioningConfig prosperoConfig = metadata.getProsperoConfig();
+        final ProsperoConfig prosperoConfig = metadata.getProsperoConfig();
         final List<Channel> channels = mapToChannels(prosperoConfig.getChannels());
         final List<RemoteRepository> repositories = prosperoConfig.getRemoteRepositories();
 
@@ -88,7 +88,7 @@ public class InstallationHistoryAction {
 
         try {
             System.setProperty(MAVEN_REPO_LOCAL, mavenSessionManager.getProvisioningRepo().toAbsolutePath().toString());
-            provMgr.provision(metadata.getProvisioningConfig());
+            provMgr.provision(metadata.getGalleonProvisioningConfig());
         } finally {
             System.clearProperty(MAVEN_REPO_LOCAL);
         }

@@ -42,7 +42,7 @@ import org.wildfly.prospero.cli.ActionFactory;
 import org.wildfly.prospero.cli.CliMessages;
 import org.wildfly.prospero.cli.ReturnCodes;
 import org.wildfly.prospero.model.ChannelRef;
-import org.wildfly.prospero.model.ProvisioningConfig;
+import org.wildfly.prospero.model.ProsperoConfig;
 import org.wildfly.prospero.model.RepositoryRef;
 import org.wildfly.prospero.wfchannel.MavenSessionManager;
 
@@ -103,7 +103,7 @@ public class InstallCommandTest extends AbstractConsoleTest {
                 CliConstants.FPL, "foo:bar");
         assertEquals(ReturnCodes.INVALID_ARGUMENTS, exitCode);
         assertTrue("output: " + getErrorOutput(), getErrorOutput().contains(String.format(
-                CliMessages.MESSAGES.provisioningConfigMandatoryWhenCustomFpl(), CliConstants.PROVISION_CONFIG)));
+                CliMessages.MESSAGES.prosperoConfigMandatoryWhenCustomFpl(), CliConstants.PROVISION_CONFIG)));
     }
 
     @Test
@@ -111,7 +111,7 @@ public class InstallCommandTest extends AbstractConsoleTest {
         List<ChannelRef> channels = Collections.singletonList(new ChannelRef("g:a:v", null));
         List<RepositoryRef> repositories = new ArrayList<>();
         final File provisionConfigFile = temporaryFolder.newFile();
-        new ProvisioningConfig(channels, repositories).writeConfig(provisionConfigFile);
+        new ProsperoConfig(channels, repositories).writeConfig(provisionConfigFile);
 
         int exitCode = commandLine.execute(CliConstants.INSTALL, CliConstants.DIR, "test",
                 CliConstants.FPL, "org.wildfly:wildfly-ee-galleon-pack",
@@ -135,7 +135,7 @@ public class InstallCommandTest extends AbstractConsoleTest {
         List<ChannelRef> channels = Arrays.asList(new ChannelRef("org.wildfly:wildfly-channel", null));
         List<RepositoryRef> repositories = Arrays.asList(new RepositoryRef("dev", "http://test.test"));
         final File provisionConfigFile = temporaryFolder.newFile();
-        new ProvisioningConfig(channels, repositories).writeConfig(provisionConfigFile);
+        new ProsperoConfig(channels, repositories).writeConfig(provisionConfigFile);
 
         int exitCode = commandLine.execute(CliConstants.INSTALL, CliConstants.DIR, "test", CliConstants.FPL, "eap",
                 CliConstants.PROVISION_CONFIG, provisionConfigFile.getAbsolutePath());
@@ -152,7 +152,7 @@ public class InstallCommandTest extends AbstractConsoleTest {
         List<RepositoryRef> repositories = Arrays.asList(new RepositoryRef("dev", "http://test.test"));
         final File provisionDefinitionFile = temporaryFolder.newFile("provision.xml");
         final File provisionConfigFile = temporaryFolder.newFile();
-        new ProvisioningConfig(channels, repositories).writeConfig(provisionConfigFile);
+        new ProsperoConfig(channels, repositories).writeConfig(provisionConfigFile);
 
         int exitCode = commandLine.execute(CliConstants.INSTALL, CliConstants.DIR, "test",
                 CliConstants.PROVISION_CONFIG, provisionConfigFile.getAbsolutePath(),

@@ -15,7 +15,7 @@ import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
 import org.wildfly.channel.Channel;
 import org.wildfly.channel.Stream;
-import org.wildfly.prospero.model.ProvisioningConfig;
+import org.wildfly.prospero.model.ProsperoConfig;
 
 import java.io.IOException;
 import java.nio.file.Path;
@@ -108,7 +108,7 @@ public class GitStorageTest {
         final Channel channel = new Channel("test", "", null, null,
                 new ArrayList<>());
         ManifestYamlSupport.write(channel, base.resolve(InstallationMetadata.MANIFEST_FILE_NAME));
-        new ProvisioningConfig(Arrays.asList(new ChannelRef("foo:bar", null)), Collections.emptyList()).writeConfig(base.resolve(InstallationMetadata.PROSPERO_CONFIG_FILE_NAME).toFile());
+        new ProsperoConfig(Arrays.asList(new ChannelRef("foo:bar", null)), Collections.emptyList()).writeConfig(base.resolve(InstallationMetadata.PROSPERO_CONFIG_FILE_NAME).toFile());
 
         gitStorage.record();
 

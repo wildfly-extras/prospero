@@ -7,7 +7,7 @@ import java.util.List;
 import org.wildfly.prospero.Messages;
 import org.wildfly.prospero.api.InstallationMetadata;
 import org.wildfly.prospero.api.exceptions.MetadataException;
-import org.wildfly.prospero.model.ProvisioningConfig;
+import org.wildfly.prospero.model.ProsperoConfig;
 import org.wildfly.prospero.model.RepositoryRef;
 
 /**
@@ -26,7 +26,7 @@ public class MetadataAction {
      */
     public void addRepository(String name, URL url) throws MetadataException {
         InstallationMetadata installationMetadata = new InstallationMetadata(installation);
-        ProvisioningConfig prosperoConfig = installationMetadata.getProsperoConfig();
+        ProsperoConfig prosperoConfig = installationMetadata.getProsperoConfig();
         if (prosperoConfig.addRepository(new RepositoryRef(name, url.toString()))) {
             installationMetadata.updateProsperoConfig(prosperoConfig);
         } else {
@@ -39,7 +39,7 @@ public class MetadataAction {
      */
     public void removeRepository(String id) throws MetadataException {
         InstallationMetadata installationMetadata = new InstallationMetadata(installation);
-        ProvisioningConfig prosperoConfig = installationMetadata.getProsperoConfig();
+        ProsperoConfig prosperoConfig = installationMetadata.getProsperoConfig();
         prosperoConfig.removeRepository(id);
         installationMetadata.updateProsperoConfig(prosperoConfig);
     }
@@ -49,7 +49,7 @@ public class MetadataAction {
      */
     public List<RepositoryRef> getRepositories() throws MetadataException {
         InstallationMetadata installationMetadata = new InstallationMetadata(installation);
-        ProvisioningConfig prosperoConfig = installationMetadata.getProsperoConfig();
+        ProsperoConfig prosperoConfig = installationMetadata.getProsperoConfig();
         return prosperoConfig.getRepositories();
     }
 

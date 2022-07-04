@@ -32,13 +32,13 @@ import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
-public class ProvisioningConfig {
+public class ProsperoConfig {
     private final List<ChannelRef> channels;
     private final List<RepositoryRef> repositories;
 
     @JsonCreator
-    public ProvisioningConfig(@JsonProperty(value = "channels") List<ChannelRef> channels,
-                              @JsonProperty(value = "repositories") List<RepositoryRef> repositories) {
+    public ProsperoConfig(@JsonProperty(value = "channels") List<ChannelRef> channels,
+                          @JsonProperty(value = "repositories") List<RepositoryRef> repositories) {
         this.channels = channels;
         this.repositories = repositories;
     }
@@ -95,9 +95,9 @@ public class ProvisioningConfig {
         new ObjectMapper(new YAMLFactory()).writeValue(configFile, this);
     }
 
-    public static ProvisioningConfig readConfig(Path path) throws IOException {
+    public static ProsperoConfig readConfig(Path path) throws IOException {
         final ObjectMapper objectMapper = new ObjectMapper(new YAMLFactory());
-        return objectMapper.readValue(path.toUri().toURL(), ProvisioningConfig.class);
+        return objectMapper.readValue(path.toUri().toURL(), ProsperoConfig.class);
     }
 
     @JsonIgnore

@@ -17,7 +17,7 @@ import org.wildfly.prospero.api.ProvisioningDefinition;
 import org.wildfly.prospero.cli.CliConsole;
 import org.wildfly.prospero.model.ChannelRef;
 import org.wildfly.prospero.model.ManifestYamlSupport;
-import org.wildfly.prospero.model.ProvisioningConfig;
+import org.wildfly.prospero.model.ProsperoConfig;
 import org.wildfly.prospero.model.RepositoryRef;
 import org.wildfly.prospero.patch.PatchArchive;
 
@@ -94,13 +94,13 @@ public class ApplyPatchActionTest extends WfCoreTestBase {
 
         // verify config changed - patch channel & local repository
         final Path metadataDir = installDir.resolve(InstallationMetadata.METADATA_DIR);
-        final ProvisioningConfig provisioningConfig = ProvisioningConfig.readConfig(metadataDir.resolve(InstallationMetadata.PROSPERO_CONFIG_FILE_NAME));
-        assertThat(provisioningConfig.getChannels()).containsExactly(
+        final ProsperoConfig prosperoConfig = ProsperoConfig.readConfig(metadataDir.resolve(InstallationMetadata.PROSPERO_CONFIG_FILE_NAME));
+        assertThat(prosperoConfig.getChannels()).containsExactly(
                 new ChannelRef(null, installDir.resolve(".patches").resolve("patch-test00001-channel.yaml").toUri().toURL().toString()),
                 new ChannelRef(null, ApplyPatchActionTest.class.getClassLoader().getResource(CHANNEL_BASE_CORE_19).toString())
         );
 
-        assertThat(provisioningConfig.getRepositories()).contains(
+        assertThat(prosperoConfig.getRepositories()).contains(
                 new RepositoryRef(PATCH_REPO_NAME, installDir.resolve(PATCHES_REPO_PATH).toUri().toURL().toString())
         );
         // verify artifact changed in manifest

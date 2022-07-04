@@ -23,7 +23,7 @@ import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
 import org.wildfly.prospero.model.ChannelRef;
-import org.wildfly.prospero.model.ProvisioningConfig;
+import org.wildfly.prospero.model.ProsperoConfig;
 
 import java.io.IOException;
 import java.nio.file.Files;
@@ -125,7 +125,7 @@ public class PatchArchiveTest {
         Files.createDirectory(server.resolve(METADATA_DIR));
         final List<ChannelRef> channels = new ArrayList<>();
         channels.add(new ChannelRef("foo:bar", null));
-        ProvisioningConfig config = new ProvisioningConfig(channels, new ArrayList<>());
+        ProsperoConfig config = new ProsperoConfig(channels, new ArrayList<>());
         config.writeConfig(server.resolve(METADATA_DIR).resolve(PROSPERO_CONFIG_FILE_NAME).toFile());
         return server;
     }
