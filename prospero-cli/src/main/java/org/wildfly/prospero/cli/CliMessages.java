@@ -103,7 +103,7 @@ public interface CliMessages {
     String offlineModeRequiresLocalRepo();
 
     @Message("Provisioning config argument (" + CliConstants.PROVISION_CONFIG + ") need to be set when using custom fpl")
-    String provisioningConfigMandatoryWhenCustomFpl();
+    String prosperoConfigMandatoryWhenCustomFpl();
 
     @Message("Error while executing operation '%s': %s")
     String errorWhileExecutingOperation(String op, String exceptionMessage);

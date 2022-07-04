@@ -29,7 +29,7 @@ import java.util.stream.Collectors;
 
 import org.wildfly.prospero.model.ChannelRef;
 import org.wildfly.prospero.api.InstallationMetadata;
-import org.wildfly.prospero.model.ProvisioningConfig;
+import org.wildfly.prospero.model.ProsperoConfig;
 import org.wildfly.prospero.model.RepositoryRef;
 
 public class TestUtil {
@@ -65,7 +65,7 @@ public class TestUtil {
         for (int i=0; i<channelUrls.size(); i++) {
             channels.add(new ChannelRef(null, channelUrls.get(i).toString()));
         }
-        new ProvisioningConfig(channels, repositories).writeConfig(provisionConfigFile.toFile());
+        new ProsperoConfig(channels, repositories).writeConfig(provisionConfigFile.toFile());
 
         return provisionConfigFile;
     }

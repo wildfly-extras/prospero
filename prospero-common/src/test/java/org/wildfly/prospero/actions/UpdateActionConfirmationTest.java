@@ -25,7 +25,7 @@ import org.wildfly.prospero.updates.UpdateSet;
 import org.wildfly.prospero.wfchannel.MavenSessionManager;
 
 @RunWith(MockitoJUnitRunner.class)
-public class UpdateConfirmationTest {
+public class UpdateActionConfirmationTest {
 
     @Rule
     public TemporaryFolder tempDir = new TemporaryFolder();
@@ -36,13 +36,13 @@ public class UpdateConfirmationTest {
     private Path installDir;
 
     /**
-     * Testable implementation of {@link Update} that overrides {@link Update#findUpdates()} and
-     * {@link Update#applyFpUpdates(ProvisioningPlan)} methods to not call Galleon.
+     * Testable implementation of {@link UpdateAction} that overrides {@link UpdateAction#findUpdates()} and
+     * {@link UpdateAction#applyFpUpdates(ProvisioningPlan)} methods to not call Galleon.
      */
-    private static class UpdateFake extends Update {
+    private static class UpdateActionFake extends UpdateAction {
 
-        public UpdateFake(Path installDir, MavenSessionManager mavenSessionManager,
-                Console console) throws ProvisioningException, OperationException {
+        public UpdateActionFake(Path installDir, MavenSessionManager mavenSessionManager,
+                                Console console) throws ProvisioningException, OperationException {
             super(installDir, mavenSessionManager, console);
         }
 
@@ -79,16 +79,16 @@ public class UpdateConfirmationTest {
 
     @Test
     public void testAskForConfirmation() throws Exception {
-        Update update = new UpdateFake(installDir, new MavenSessionManager(), console);
-        update.doUpdateAll(false);
+        UpdateAction updateAction = new UpdateActionFake(installDir, new MavenSessionManager(), console);
+        updateAction.doUpdateAll(false);
         Mockito.verify(console, new Times(1)).confirmUpdates();
         Mockito.verify(console, new Times(0)).updatesComplete(); // update should have been denied
     }
 
     @Test
     public void testConfirmedConfirmation() throws Exception {
-        Update update = new UpdateFake(installDir, new MavenSessionManager(), console);
-        update.doUpdateAll(true);
+        UpdateAction updateAction = new UpdateActionFake(installDir, new MavenSessionManager(), console);
+        updateAction.doUpdateAll(true);
         Mockito.verify(console, new Times(0)).confirmUpdates();
         Mockito.verify(console, new Times(1)).updatesComplete(); // update should have been performed
     }

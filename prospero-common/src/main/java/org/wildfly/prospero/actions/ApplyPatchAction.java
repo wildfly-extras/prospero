@@ -35,7 +35,7 @@ import org.wildfly.prospero.api.exceptions.OperationException;
 import org.wildfly.prospero.galleon.ChannelMavenArtifactRepositoryManager;
 import org.wildfly.prospero.galleon.GalleonUtils;
 import org.wildfly.prospero.model.ChannelRef;
-import org.wildfly.prospero.model.ProvisioningConfig;
+import org.wildfly.prospero.model.ProsperoConfig;
 import org.wildfly.prospero.model.RepositoryRef;
 import org.wildfly.prospero.patch.Patch;
 import org.wildfly.prospero.patch.PatchArchive;
@@ -52,7 +52,7 @@ import java.util.List;
 
 import static org.wildfly.prospero.patch.PatchArchive.PATCH_REPO_FOLDER;
 
-public class ApplyPatch {
+public class ApplyPatchAction {
     public static final String PATCH_REPO_NAME = "patch-cache";
     public static final String PATCHES_FOLDER = ".patches";
     public static final Path PATCHES_REPO_PATH = Paths.get(PATCHES_FOLDER, PATCH_REPO_FOLDER);
@@ -61,7 +61,7 @@ public class ApplyPatch {
     private final MavenSessionManager mavenSessionManager;
     private final Console console;
 
-    public ApplyPatch(Path targetPath, MavenSessionManager mavenSessionManager, Console console) throws OperationException {
+    public ApplyPatchAction(Path targetPath, MavenSessionManager mavenSessionManager, Console console) throws OperationException {
         this.installDir = targetPath;
         this.metadata = new InstallationMetadata(targetPath);
         this.mavenSessionManager = mavenSessionManager;
@@ -79,12 +79,12 @@ public class ApplyPatch {
             final Patch patch = patchArchive.extract(installDir);
 
             // update config
-            final ProvisioningConfig provisioningConfig = metadata.getProsperoConfig();
-            provisioningConfig.addChannel(new ChannelRef(null, patch.getChannelFileUrl().toString()));
+            final ProsperoConfig prosperoConfig = metadata.getProsperoConfig();
+            prosperoConfig.addChannel(new ChannelRef(null, patch.getChannelFileUrl().toString()));
 
             // add cached repository to config if not present
-            provisioningConfig.addRepository(new RepositoryRef(PATCH_REPO_NAME, installDir.resolve(PATCHES_REPO_PATH).toUri().toURL().toString()));
-            metadata.updateProsperoConfig(provisioningConfig);
+            prosperoConfig.addRepository(new RepositoryRef(PATCH_REPO_NAME, installDir.resolve(PATCHES_REPO_PATH).toUri().toURL().toString()));
+            metadata.updateProsperoConfig(prosperoConfig);
         } catch (IOException e) {
             e.printStackTrace();
         } catch (MetadataException e) {
@@ -96,7 +96,7 @@ public class ApplyPatch {
 
     private void reprovisionServer() throws MetadataException, ArtifactResolutionException, ProvisioningException {
         // have to parse the config after the patch metadata was applied
-        final ProvisioningConfig prosperoConfig = metadata.getProsperoConfig();
+        final ProsperoConfig prosperoConfig = metadata.getProsperoConfig();
         final List<RemoteRepository> repositories = prosperoConfig.getRemoteRepositories();
         final List<Channel> channels = mapToChannels(new ChannelRefUpdater(mavenSessionManager)
                 .resolveLatest(prosperoConfig.getChannels(), repositories));

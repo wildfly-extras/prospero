@@ -22,78 +22,71 @@ import org.eclipse.aether.RepositorySystem;
 import org.wildfly.channel.maven.VersionResolverFactory;
 import org.wildfly.channel.spi.MavenVersionsResolver;
 import org.wildfly.prospero.Messages;
-import org.wildfly.prospero.api.ArtifactChange;
 import org.wildfly.prospero.model.ChannelRef;
 import org.wildfly.prospero.api.InstallationMetadata;
 import org.wildfly.prospero.api.exceptions.MetadataException;
-import org.wildfly.prospero.api.SavedState;
 import org.wildfly.prospero.galleon.GalleonUtils;
 import org.wildfly.prospero.galleon.ChannelMavenArtifactRepositoryManager;
-import org.wildfly.prospero.model.ProvisioningConfig;
+import org.wildfly.prospero.model.ProsperoConfig;
 import org.wildfly.prospero.wfchannel.MavenSessionManager;
 import org.eclipse.aether.repository.RemoteRepository;
 import org.jboss.galleon.ProvisioningException;
 import org.jboss.galleon.ProvisioningManager;
-import org.jboss.galleon.layout.ProvisioningLayoutFactory;
 import org.wildfly.channel.Channel;
 import org.wildfly.channel.ChannelMapper;
 
+import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.List;
 
-import static org.wildfly.prospero.galleon.GalleonUtils.MAVEN_REPO_LOCAL;
+public class InstallationRestoreAction {
 
-public class InstallationHistory {
+    private final Path installDir;
+    private MavenSessionManager mavenSessionManager;
 
-    private final Path installation;
-    private final Console console;
-
-    public InstallationHistory(Path installation, Console console) {
-        this.installation = installation;
-        this.console = console;
+    public InstallationRestoreAction(Path installDir, MavenSessionManager mavenSessionManager) {
+        this.installDir = installDir;
+        this.mavenSessionManager = mavenSessionManager;
     }
 
-    public List<ArtifactChange> compare(SavedState savedState) throws MetadataException {
-        final InstallationMetadata installationMetadata = new InstallationMetadata(installation);
-        return installationMetadata.getChangesSince(savedState);
+    public static void main(String[] args) throws Exception {
+
+        String targetDir = args[0];
+        String metadataBundle = args[1];
+
+        new InstallationRestoreAction(Paths.get(targetDir), new MavenSessionManager()).restore(Paths.get(metadataBundle));
     }
 
-    public List<SavedState> getRevisions() throws MetadataException {
-        final InstallationMetadata installationMetadata = new InstallationMetadata(installation);
-        return installationMetadata.getRevisions();
-    }
+    public void restore(Path metadataBundleZip)
+            throws ProvisioningException, IOException, MetadataException {
+        if (installDir.toFile().exists()) {
+            throw Messages.MESSAGES.installationDirAlreadyExists(installDir);
+        }
 
-    public void rollback(SavedState savedState, MavenSessionManager mavenSessionManager) throws MetadataException, ProvisioningException {
-        InstallationMetadata metadata = new InstallationMetadata(installation);
-        metadata = metadata.rollback(savedState);
-
-        final ProvisioningConfig prosperoConfig = metadata.getProsperoConfig();
+        final InstallationMetadata metadataBundle = InstallationMetadata.importMetadata(metadataBundleZip);
+        final ProsperoConfig prosperoConfig = metadataBundle.getProsperoConfig();
         final List<Channel> channels = mapToChannels(prosperoConfig.getChannels());
         final List<RemoteRepository> repositories = prosperoConfig.getRemoteRepositories();
 
         final RepositorySystem system = mavenSessionManager.newRepositorySystem();
         final DefaultRepositorySystemSession session = mavenSessionManager.newRepositorySystemSession(system);
         MavenVersionsResolver.Factory factory = new VersionResolverFactory(system, session, repositories);
-        final ChannelMavenArtifactRepositoryManager repoManager = new ChannelMavenArtifactRepositoryManager(channels, factory, metadata.getManifest());
-        ProvisioningManager provMgr = GalleonUtils.getProvisioningManager(installation, repoManager);
-        final ProvisioningLayoutFactory layoutFactory = provMgr.getLayoutFactory();
+        final ChannelMavenArtifactRepositoryManager repoManager = new ChannelMavenArtifactRepositoryManager(channels, factory, metadataBundle.getManifest());
 
-        layoutFactory.setProgressCallback("LAYOUT_BUILD", console.getProgressCallback("LAYOUT_BUILD"));
-        layoutFactory.setProgressCallback("PACKAGES", console.getProgressCallback("PACKAGES"));
-        layoutFactory.setProgressCallback("CONFIGS", console.getProgressCallback("CONFIGS"));
-        layoutFactory.setProgressCallback("JBMODULES", console.getProgressCallback("JBMODULES"));
+        ProvisioningManager provMgr = GalleonUtils.getProvisioningManager(installDir, repoManager);
 
-        try {
-            System.setProperty(MAVEN_REPO_LOCAL, mavenSessionManager.getProvisioningRepo().toAbsolutePath().toString());
-            provMgr.provision(metadata.getProvisioningConfig());
-        } finally {
-            System.clearProperty(MAVEN_REPO_LOCAL);
-        }
+        GalleonUtils.executeGalleon(options -> provMgr.provision(metadataBundle.getGalleonProvisioningConfig(), options),
+                mavenSessionManager.getProvisioningRepo().toAbsolutePath());
+        writeProsperoMetadata(repoManager, prosperoConfig.getChannels(), repositories);
+    }
 
-        // TODO: handle errors - write final state? revert rollback?
+    private void writeProsperoMetadata(ChannelMavenArtifactRepositoryManager maven, List<ChannelRef> channelRefs, List<RemoteRepository> repositories)
+            throws MetadataException {
+        new InstallationMetadata(installDir, maven.resolvedChannel(), channelRefs, repositories).writeFiles();
     }
 
     private List<Channel> mapToChannels(List<ChannelRef> channelRefs) throws MetadataException {

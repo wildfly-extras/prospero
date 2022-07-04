@@ -27,11 +27,11 @@ import org.jboss.galleon.universe.maven.MavenArtifact;
 import org.jboss.galleon.universe.maven.MavenUniverseException;
 import org.jboss.galleon.universe.maven.repo.MavenRepoManager;
 
-public class ProvisioningConfigUpdater {
+public class GalleonProvisioningConfigUpdater {
 
     private final MavenRepoManager mavenRepoManager;
 
-    public ProvisioningConfigUpdater(MavenRepoManager mavenRepoManager) {
+    public GalleonProvisioningConfigUpdater(MavenRepoManager mavenRepoManager) {
         this.mavenRepoManager = mavenRepoManager;
     }
 

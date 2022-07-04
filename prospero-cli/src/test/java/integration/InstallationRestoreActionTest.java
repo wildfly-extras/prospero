@@ -17,9 +17,9 @@
 
 package integration;
 
-import org.wildfly.prospero.actions.InstallationExport;
-import org.wildfly.prospero.actions.InstallationRestore;
-import org.wildfly.prospero.actions.Provision;
+import org.wildfly.prospero.actions.InstallationExportAction;
+import org.wildfly.prospero.actions.InstallationRestoreAction;
+import org.wildfly.prospero.actions.ProvisioningAction;
 import org.wildfly.prospero.api.ProvisioningDefinition;
 import org.wildfly.prospero.cli.CliConsole;
 import org.wildfly.prospero.model.ManifestYamlSupport;
@@ -38,7 +38,7 @@ import java.util.Optional;
 
 import static org.junit.Assert.assertEquals;
 
-public class InstallationRestoreTest extends WfCoreTestBase {
+public class InstallationRestoreActionTest extends WfCoreTestBase {
     private static final String FIRST_SERVER_DIR = "target/server";
     private static final Path FIRST_SERVER_PATH = Paths.get(FIRST_SERVER_DIR).toAbsolutePath();
     private static final String RESTORED_SERVER_DIR = "target/restored";
@@ -77,13 +77,13 @@ public class InstallationRestoreTest extends WfCoreTestBase {
         final ProvisioningDefinition provisioningDefinition = defaultWfCoreDefinition()
                 .setProvisionConfig(provisionConfigFile)
                 .build();
-        new Provision(FIRST_SERVER_PATH, mavenSessionManager, new CliConsole()).provision(provisioningDefinition);
+        new ProvisioningAction(FIRST_SERVER_PATH, mavenSessionManager, new CliConsole()).provision(provisioningDefinition);
 
         TestUtil.prepareProvisionConfigAsUrl(FIRST_SERVER_PATH.resolve(TestUtil.PROVISION_CONFIG_FILE_PATH), CHANNEL_COMPONENT_UPDATES, CHANNEL_BASE_CORE_19);
 
-        new InstallationExport(FIRST_SERVER_PATH).export("target/bundle.zip");
+        new InstallationExportAction(FIRST_SERVER_PATH).export("target/bundle.zip");
 
-        new InstallationRestore(RESTORED_SERVER_PATH, mavenSessionManager).restore(Paths.get("target/bundle.zip"));
+        new InstallationRestoreAction(RESTORED_SERVER_PATH, mavenSessionManager).restore(Paths.get("target/bundle.zip"));
 
         final Optional<Artifact> wildflyCliArtifact = readArtifactFromManifest("org.wildfly.core", "wildfly-cli");
         assertEquals(BASE_VERSION, wildflyCliArtifact.get().getVersion());

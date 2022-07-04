@@ -6,7 +6,7 @@ import java.util.Optional;
 import org.jboss.galleon.ProvisioningException;
 import org.jboss.logging.Logger;
 import org.wildfly.prospero.actions.Console;
-import org.wildfly.prospero.actions.InstallationHistory;
+import org.wildfly.prospero.actions.InstallationHistoryAction;
 import org.wildfly.prospero.api.SavedState;
 import org.wildfly.prospero.cli.ActionFactory;
 import org.wildfly.prospero.cli.CliMessages;
@@ -48,8 +48,8 @@ public class RevertCommand extends AbstractCommand {
         try {
             final MavenSessionManager mavenSessionManager = new MavenSessionManager(localRepo, offline);
 
-            InstallationHistory installationHistory = actionFactory.history(directory.toAbsolutePath(), console);
-            installationHistory.rollback(new SavedState(revision), mavenSessionManager);
+            InstallationHistoryAction historyAction = actionFactory.history(directory.toAbsolutePath(), console);
+            historyAction.rollback(new SavedState(revision), mavenSessionManager);
         } catch (ProvisioningException e) {
             console.error(CliMessages.MESSAGES.errorWhileExecutingOperation(CliConstants.REVERT, e.getMessage()));
             logger.error(CliMessages.MESSAGES.errorWhileExecutingOperation(CliConstants.INSTALL, e.getMessage()), e);

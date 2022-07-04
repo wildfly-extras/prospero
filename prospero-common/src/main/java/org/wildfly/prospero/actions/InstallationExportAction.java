@@ -25,11 +25,11 @@ import java.io.IOException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 
-public class InstallationExport {
+public class InstallationExportAction {
 
     private final Path installationDir;
 
-    public InstallationExport(Path installationDir) {
+    public InstallationExportAction(Path installationDir) {
         this.installationDir = installationDir;
     }
 
@@ -37,7 +37,7 @@ public class InstallationExport {
         String installation = args[0];
         String exportName = args[1];
 
-        new InstallationExport(Paths.get(installation)).export(exportName);
+        new InstallationExportAction(Paths.get(installation)).export(exportName);
     }
 
     public void export(String exportName) throws IOException, MetadataException {

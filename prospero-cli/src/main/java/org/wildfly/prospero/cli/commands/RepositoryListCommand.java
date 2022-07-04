@@ -5,7 +5,7 @@ import java.util.List;
 
 import org.apache.commons.lang3.StringUtils;
 import org.wildfly.prospero.actions.Console;
-import org.wildfly.prospero.actions.MetadataActions;
+import org.wildfly.prospero.actions.MetadataAction;
 import org.wildfly.prospero.cli.ActionFactory;
 import org.wildfly.prospero.cli.ReturnCodes;
 import org.wildfly.prospero.model.RepositoryRef;
@@ -23,8 +23,8 @@ public class RepositoryListCommand extends AbstractCommand {
 
     @Override
     public Integer call() throws Exception {
-        MetadataActions metadataActions = actionFactory.metadataActions(directory);
-        List<RepositoryRef> repositories = metadataActions.getRepositories();
+        MetadataAction metadataAction = actionFactory.metadataActions(directory);
+        List<RepositoryRef> repositories = metadataAction.getRepositories();
 
         // calculate maximum length of repository id strings, to make the list nicely alligned
         int maxRepoIdLength = repositories.stream()

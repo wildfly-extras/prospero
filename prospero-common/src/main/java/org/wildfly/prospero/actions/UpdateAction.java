@@ -35,7 +35,7 @@ import org.wildfly.prospero.api.exceptions.OperationException;
 import org.wildfly.prospero.galleon.GalleonUtils;
 import org.wildfly.prospero.galleon.ChannelMavenArtifactRepositoryManager;
 import org.wildfly.prospero.model.ChannelRef;
-import org.wildfly.prospero.model.ProvisioningConfig;
+import org.wildfly.prospero.model.ProsperoConfig;
 import org.wildfly.prospero.updates.UpdateFinder;
 import org.wildfly.prospero.updates.UpdateSet;
 import org.wildfly.prospero.wfchannel.ChannelRefUpdater;
@@ -48,7 +48,7 @@ import org.wildfly.channel.Channel;
 import org.wildfly.channel.ChannelMapper;
 import org.wildfly.channel.ChannelSession;
 
-public class Update {
+public class UpdateAction {
 
     private final InstallationMetadata metadata;
     private final ChannelMavenArtifactRepositoryManager maven;
@@ -59,11 +59,11 @@ public class Update {
     private final MavenVersionsResolver.Factory factory;
     private final MavenSessionManager mavenSessionManager;
 
-    public Update(Path installDir, MavenSessionManager mavenSessionManager, Console console) throws ProvisioningException, OperationException {
+    public UpdateAction(Path installDir, MavenSessionManager mavenSessionManager, Console console) throws ProvisioningException, OperationException {
         this.metadata = new InstallationMetadata(installDir);
 
         this.mavenSessionManager = mavenSessionManager;
-        final ProvisioningConfig prosperoConfig = metadata.getProsperoConfig();
+        final ProsperoConfig prosperoConfig = metadata.getProsperoConfig();
         final List<RemoteRepository> repositories = prosperoConfig.getRemoteRepositories();
         final List<Channel> channels = mapToChannels(new ChannelRefUpdater(this.mavenSessionManager)
                 .resolveLatest(prosperoConfig.getChannels(), repositories));

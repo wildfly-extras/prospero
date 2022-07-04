@@ -11,7 +11,7 @@ import org.junit.runner.RunWith;
 import org.mockito.Mock;
 import org.mockito.junit.MockitoJUnitRunner;
 import org.wildfly.prospero.actions.Console;
-import org.wildfly.prospero.actions.InstallationHistory;
+import org.wildfly.prospero.actions.InstallationHistoryAction;
 import org.wildfly.prospero.api.ArtifactChange;
 import org.wildfly.prospero.api.SavedState;
 import org.wildfly.prospero.cli.AbstractConsoleTest;
@@ -29,13 +29,13 @@ import static org.mockito.Mockito.when;
 public class HistoryCommandTest extends AbstractConsoleTest {
 
     @Mock
-    private InstallationHistory historyAction;
+    private InstallationHistoryAction historyAction;
 
     @Override
     protected ActionFactory createActionFactory() {
         return new ActionFactory() {
             @Override
-            public InstallationHistory history(Path targetPath, Console console) {
+            public InstallationHistoryAction history(Path targetPath, Console console) {
                 return historyAction;
             }
         };

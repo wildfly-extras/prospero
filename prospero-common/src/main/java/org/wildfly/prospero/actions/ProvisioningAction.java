@@ -38,7 +38,7 @@ import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.wildfly.prospero.galleon.ProvisioningConfigUpdater;
+import org.wildfly.prospero.galleon.GalleonProvisioningConfigUpdater;
 import org.wildfly.prospero.model.ChannelRef;
 import org.wildfly.prospero.wfchannel.ChannelRefUpdater;
 import org.wildfly.prospero.wfchannel.MavenSessionManager;
@@ -53,13 +53,13 @@ import org.jboss.galleon.xml.ProvisioningXmlParser;
 import org.wildfly.channel.Channel;
 import org.wildfly.channel.ChannelMapper;
 
-public class Provision {
+public class ProvisioningAction {
 
     private final MavenSessionManager mavenSessionManager;
     private final Path installDir;
     private final Console console;
 
-    public Provision(Path installDir, MavenSessionManager mavenSessionManager, Console console) {
+    public ProvisioningAction(Path installDir, MavenSessionManager mavenSessionManager, Console console) {
         this.installDir = installDir;
         this.console = console;
         this.mavenSessionManager = mavenSessionManager;
@@ -107,7 +107,7 @@ public class Provision {
             config = ProvisioningConfig.builder().addFeaturePackDep(configBuilder.build()).build();
         } else {
             final ProvisioningConfig provisioningConfig = ProvisioningXmlParser.parse(provisioningDefinition.getDefinition());
-            config = new ProvisioningConfigUpdater(repoManager).updateFPs(provisioningConfig);
+            config = new GalleonProvisioningConfigUpdater(repoManager).updateFPs(provisioningConfig);
         }
 
         GalleonUtils.executeGalleon(options->provMgr.provision(config, options),

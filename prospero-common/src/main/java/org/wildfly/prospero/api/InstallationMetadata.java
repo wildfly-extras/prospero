@@ -21,7 +21,7 @@ import org.wildfly.prospero.api.exceptions.MetadataException;
 import org.wildfly.prospero.installation.git.GitStorage;
 import org.wildfly.prospero.model.ChannelRef;
 import org.wildfly.prospero.model.ManifestYamlSupport;
-import org.wildfly.prospero.model.ProvisioningConfig;
+import org.wildfly.prospero.model.ProsperoConfig;
 import org.wildfly.prospero.model.RepositoryRef;
 import org.eclipse.aether.artifact.Artifact;
 import org.eclipse.aether.artifact.DefaultArtifact;
@@ -56,7 +56,7 @@ public class InstallationMetadata {
     private final Path prosperoConfigFile;
     private final Path provisioningFile;
     private Channel manifest;
-    private org.jboss.galleon.config.ProvisioningConfig provisioningConfig;
+    private org.jboss.galleon.config.ProvisioningConfig galleonProvisioningConfig;
     private List<ChannelRef> channelRefs;
     private List<RemoteRepository> repositories;
     private final GitStorage gitStorage;
@@ -98,7 +98,7 @@ public class InstallationMetadata {
         this.channelRefs = channelRefs;
         this.repositories = repositories;
         try {
-            this.provisioningConfig = ProvisioningXmlParser.parse(provisioningFile);
+            this.galleonProvisioningConfig = ProvisioningXmlParser.parse(provisioningFile);
         } catch (ProvisioningException e) {
             throw new MetadataException("Error when parsing installation metadata", e);
         }
@@ -107,11 +107,11 @@ public class InstallationMetadata {
     private void doInit(Path manifestFile, Path provisionConfig, Path provisioningFile) throws MetadataException {
         try {
             this.manifest = ManifestYamlSupport.parse(manifestFile.toFile());
-            final ProvisioningConfig provisioningConfig = ProvisioningConfig.readConfig(provisionConfig);
-            this.channelRefs = provisioningConfig.getChannels();
-            this.repositories = provisioningConfig.getRepositories()
+            final ProsperoConfig prosperoConfig = ProsperoConfig.readConfig(provisionConfig);
+            this.channelRefs = prosperoConfig.getChannels();
+            this.repositories = prosperoConfig.getRepositories()
                     .stream().map(r -> r.toRemoteRepository()).collect(Collectors.toList());
-            this.provisioningConfig = ProvisioningXmlParser.parse(provisioningFile);
+            this.galleonProvisioningConfig = ProvisioningXmlParser.parse(provisioningFile);
         } catch (IOException | ProvisioningException e) {
             throw new MetadataException("Error when parsing installation metadata", e);
         }
@@ -194,8 +194,8 @@ public class InstallationMetadata {
         return manifest;
     }
 
-    public org.jboss.galleon.config.ProvisioningConfig getProvisioningConfig() {
-        return provisioningConfig;
+    public org.jboss.galleon.config.ProvisioningConfig getGalleonProvisioningConfig() {
+        return galleonProvisioningConfig;
     }
 
     public void writeFiles() throws MetadataException {
@@ -205,16 +205,16 @@ public class InstallationMetadata {
             throw new MetadataException("Unable to save manifest in installation", e);
         }
 
-        writeProvisioningConfig();
+        writeProsperoConfig();
 
         gitStorage.record();
     }
 
-    private void writeProvisioningConfig() throws MetadataException {
+    private void writeProsperoConfig() throws MetadataException {
         try {
-            final ProvisioningConfig provisioningConfig = new ProvisioningConfig(this.channelRefs,
+            final ProsperoConfig prosperoConfig = new ProsperoConfig(this.channelRefs,
                     repositories.stream().map(r -> new RepositoryRef(r.getId(), r.getUrl())).collect(Collectors.toList()));
-            provisioningConfig.writeConfig(this.prosperoConfigFile.toFile());
+            prosperoConfig.writeConfig(this.prosperoConfigFile.toFile());
         } catch (IOException e) {
             throw new MetadataException("Unable to save channel list in installation", e);
         }
@@ -258,15 +258,15 @@ public class InstallationMetadata {
         return null;
     }
 
-    public ProvisioningConfig getProsperoConfig() {
-        return new ProvisioningConfig(new ArrayList<>(channelRefs), repositories.stream().map(RepositoryRef::new).collect(Collectors.toList()));
+    public ProsperoConfig getProsperoConfig() {
+        return new ProsperoConfig(new ArrayList<>(channelRefs), repositories.stream().map(RepositoryRef::new).collect(Collectors.toList()));
     }
 
-    public void updateProsperoConfig(ProvisioningConfig config) throws MetadataException {
+    public void updateProsperoConfig(ProsperoConfig config) throws MetadataException {
         this.channelRefs = new ArrayList<>(config.getChannels());
         this.repositories = config.getRepositories().stream().map(RepositoryRef::toRemoteRepository).collect(Collectors.toList());
 
-        writeProvisioningConfig();
+        writeProsperoConfig();
 
         gitStorage.recordConfigChange();
     }

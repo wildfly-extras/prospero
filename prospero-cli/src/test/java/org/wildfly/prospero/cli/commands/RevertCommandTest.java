@@ -11,7 +11,7 @@ import org.mockito.Captor;
 import org.mockito.Mock;
 import org.mockito.junit.MockitoJUnitRunner;
 import org.wildfly.prospero.actions.Console;
-import org.wildfly.prospero.actions.InstallationHistory;
+import org.wildfly.prospero.actions.InstallationHistoryAction;
 import org.wildfly.prospero.api.SavedState;
 import org.wildfly.prospero.cli.AbstractConsoleTest;
 import org.wildfly.prospero.cli.ActionFactory;
@@ -29,7 +29,7 @@ import static org.mockito.Mockito.verify;
 public class RevertCommandTest extends AbstractConsoleTest {
 
     @Mock
-    private InstallationHistory historyAction;
+    private InstallationHistoryAction historyAction;
 
     @Captor
     private ArgumentCaptor<MavenSessionManager> mavenSessionManager;
@@ -38,7 +38,7 @@ public class RevertCommandTest extends AbstractConsoleTest {
     protected ActionFactory createActionFactory() {
         return new ActionFactory() {
             @Override
-            public InstallationHistory history(Path targetPath, Console console) {
+            public InstallationHistoryAction history(Path targetPath, Console console) {
                 return historyAction;
             }
         };
