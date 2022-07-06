@@ -20,9 +20,11 @@ package org.wildfly.prospero.wfchannel;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.Optional;
 
 import org.apache.commons.io.FileUtils;
+import org.eclipse.aether.repository.LocalRepository;
 import org.jboss.logging.Logger;
 import org.wildfly.prospero.api.exceptions.ProvisioningRuntimeException;
 import org.apache.maven.repository.internal.MavenRepositorySystemUtils;
@@ -34,7 +36,6 @@ import org.eclipse.aether.connector.basic.BasicRepositoryConnectorFactory;
 import org.eclipse.aether.impl.DefaultServiceLocator;
 import org.eclipse.aether.installation.InstallRequest;
 import org.eclipse.aether.installation.InstallationException;
-import org.eclipse.aether.repository.LocalRepository;
 import org.eclipse.aether.spi.connector.RepositoryConnectorFactory;
 import org.eclipse.aether.spi.connector.transport.TransporterFactory;
 import org.eclipse.aether.transport.file.FileTransporterFactory;
@@ -45,7 +46,9 @@ public class MavenSessionManager {
 
     private static final Logger logger = Logger.getLogger(MavenSessionManager.class);
 
-    public static final String LOCAL_MAVEN_REPO = System.getProperty("user.home") + "/.m2/repository";
+    public static final Path LOCAL_MAVEN_REPO = Paths.get(System.getProperty("user.home"), ".m2", "repository");
+    private static final String AETHER_OFFLINE_PROTOCOLS_PROPERTY = "aether.offline.protocols";
+    private static final String AETHER_OFFLINE_PROTOCOLS_VALUE = "file";
     private final Path provisioningRepo;
     private boolean offline;
 
@@ -60,6 +63,12 @@ public class MavenSessionManager {
             } catch (IOException e) {
                 throw new ProvisioningException("Unable to create provisioning repository folder.", e);
             }
+        }
+
+        // allow to resolve file-system repositories in offline mode
+        if (System.getProperty(AETHER_OFFLINE_PROTOCOLS_PROPERTY) == null) {
+            System.setProperty(AETHER_OFFLINE_PROTOCOLS_PROPERTY, AETHER_OFFLINE_PROTOCOLS_VALUE);
+            Runtime.getRuntime().addShutdownHook(new Thread(()-> System.clearProperty(AETHER_OFFLINE_PROTOCOLS_PROPERTY)));
         }
     }
 
@@ -93,13 +102,13 @@ public class MavenSessionManager {
                                                                      boolean resolveLocalCache) {
         DefaultRepositorySystemSession session = MavenRepositorySystemUtils.newSession();
 
-        String location;
+        Path location;
         if (resolveLocalCache) {
             location = LOCAL_MAVEN_REPO;
         } else {
-            location = provisioningRepo.toAbsolutePath().toString();
+            location = provisioningRepo.toAbsolutePath();
         }
-        LocalRepository localRepo = new LocalRepository(location);
+        LocalRepository localRepo = new LocalRepository(location.toFile());
         if (resolveLocalCache) {
             copyResolvedArtifactsToProvisiongRepository(session);
         }

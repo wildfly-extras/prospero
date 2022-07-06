@@ -40,10 +40,6 @@ public class RevertCommand extends AbstractCommand {
 
     @Override
     public Integer call() throws Exception {
-        if (offline && localRepo.isEmpty()) {
-            console.error(CliMessages.MESSAGES.offlineModeRequiresLocalRepo());
-            return ReturnCodes.INVALID_ARGUMENTS;
-        }
 
         try {
             final MavenSessionManager mavenSessionManager = new MavenSessionManager(localRepo, offline);

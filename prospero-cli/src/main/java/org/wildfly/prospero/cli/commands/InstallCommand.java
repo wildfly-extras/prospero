@@ -2,7 +2,6 @@ package org.wildfly.prospero.cli.commands;
 
 import java.net.URL;
 import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
@@ -111,13 +110,8 @@ public class InstallCommand extends AbstractCommand {
 
         if (localRepo.isPresent()) {
             if (localRepo.get().getFileName().toString().equals(DEFAULT_REPO_KEY)) {
-                localRepo = Optional.of(Paths.get(MavenSessionManager.LOCAL_MAVEN_REPO));
+                localRepo = Optional.of(MavenSessionManager.LOCAL_MAVEN_REPO);
             }
-        }
-
-        if (offline && localRepo.isEmpty()) {
-            console.error(CliMessages.MESSAGES.offlineModeRequiresLocalRepo());
-            return ReturnCodes.INVALID_ARGUMENTS;
         }
 
         try {

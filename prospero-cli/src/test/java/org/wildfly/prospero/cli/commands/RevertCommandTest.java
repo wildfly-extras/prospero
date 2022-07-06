@@ -15,7 +15,6 @@ import org.wildfly.prospero.actions.InstallationHistoryAction;
 import org.wildfly.prospero.api.SavedState;
 import org.wildfly.prospero.cli.AbstractConsoleTest;
 import org.wildfly.prospero.cli.ActionFactory;
-import org.wildfly.prospero.cli.CliMessages;
 import org.wildfly.prospero.cli.ReturnCodes;
 import org.wildfly.prospero.wfchannel.MavenSessionManager;
 
@@ -68,15 +67,6 @@ public class RevertCommandTest extends AbstractConsoleTest {
 
         assertEquals(ReturnCodes.SUCCESS, exitCode);
         verify(historyAction).rollback(eq(new SavedState("abcd")), any());
-    }
-
-    @Test
-    public void offlineModeRequiresLocalRepoOption() {
-        int exitCode = commandLine.execute(CliConstants.REVERT, CliConstants.DIR, "test", CliConstants.REVISION, "abcd",
-                CliConstants.OFFLINE);
-
-        assertEquals(ReturnCodes.INVALID_ARGUMENTS, exitCode);
-        assertTrue(getErrorOutput().contains(CliMessages.MESSAGES.offlineModeRequiresLocalRepo()));
     }
 
     @Test

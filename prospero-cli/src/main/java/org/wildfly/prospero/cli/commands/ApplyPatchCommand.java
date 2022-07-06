@@ -60,11 +60,6 @@ public class ApplyPatchCommand extends AbstractCommand {
     @Override
     public Integer call() throws Exception {
 
-        if (offline && localRepo.isEmpty()) {
-            console.error(CliMessages.MESSAGES.offlineModeRequiresLocalRepo());
-            return ReturnCodes.INVALID_ARGUMENTS;
-        }
-
         if (!Files.exists(patchArchive)) {
             console.error(CliMessages.MESSAGES.fileDoesntExist(CliConstants.PATCH_FILE, patchArchive));
             return ReturnCodes.INVALID_ARGUMENTS;

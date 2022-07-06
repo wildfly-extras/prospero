@@ -92,14 +92,6 @@ public class InstallCommandTest extends AbstractConsoleTest {
     }
 
     @Test
-    public void offlineModeRequiresLocalRepoOption() {
-        int exitCode = commandLine.execute(CliConstants.INSTALL, CliConstants.DIR, "test",
-                CliConstants.FPL, "eap", CliConstants.OFFLINE);
-        assertEquals(ReturnCodes.INVALID_ARGUMENTS, exitCode);
-        assertTrue(getErrorOutput().contains(CliMessages.MESSAGES.offlineModeRequiresLocalRepo()));
-    }
-
-    @Test
     public void errorIfChannelsIsNotPresentAndUsingCustomFplOnInstall() {
         int exitCode = commandLine.execute(CliConstants.INSTALL, CliConstants.DIR, "test",
                 CliConstants.FPL, "foo:bar");

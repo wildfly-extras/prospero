@@ -70,11 +70,6 @@ public class UpdateCommand extends AbstractCommand {
             return ReturnCodes.INVALID_ARGUMENTS;
         }
 
-        if (offline && localRepo.isEmpty()) {
-            console.error(CliMessages.MESSAGES.offlineModeRequiresLocalRepo());
-            return ReturnCodes.INVALID_ARGUMENTS;
-        }
-
         try {
             final MavenSessionManager mavenSessionManager = new MavenSessionManager(localRepo, offline);
 

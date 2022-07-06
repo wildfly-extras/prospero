@@ -151,16 +151,6 @@ public class UpdateCommandTest extends AbstractConsoleTest {
                 CliMessages.MESSAGES.unexpectedPackageInSelfUpdate(baseDir.toAbsolutePath().toString())));
     }
 
-    @Test
-    public void offlineModeRequiresLocalRepoOption() throws Exception {
-        final Path baseDir = mockGalleonInstallation(A_PROSPERO_FP);
-        int exitCode = commandLine.execute(CliConstants.UPDATE, CliConstants.SELF,
-                CliConstants.DIR, baseDir.toAbsolutePath().toString(), CliConstants.OFFLINE);
-
-        assertEquals(ReturnCodes.INVALID_ARGUMENTS, exitCode);
-        assertTrue(getErrorOutput().contains(CliMessages.MESSAGES.offlineModeRequiresLocalRepo()));
-    }
-
     private Path mockGalleonInstallation(String... fps) throws IOException, javax.xml.stream.XMLStreamException {
         final ProvisionedState.Builder builder = ProvisionedState.builder();
         for (String fp : fps) {

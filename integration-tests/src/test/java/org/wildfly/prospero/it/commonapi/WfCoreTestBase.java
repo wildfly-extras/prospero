@@ -34,7 +34,6 @@ import org.eclipse.aether.resolution.ArtifactResult;
 import org.junit.BeforeClass;
 
 import java.io.File;
-import java.nio.file.Paths;
 import java.util.Arrays;
 import java.util.List;
 
@@ -50,11 +49,11 @@ public class WfCoreTestBase {
     protected static Artifact resolvedUpgradeArtifact;
 
     protected final List<RemoteRepository> repositories = defaultRemoteRepositories();
-    protected MavenSessionManager mavenSessionManager = new MavenSessionManager(Paths.get(MavenSessionManager.LOCAL_MAVEN_REPO));
+    protected MavenSessionManager mavenSessionManager = new MavenSessionManager(MavenSessionManager.LOCAL_MAVEN_REPO);
 
     @BeforeClass
     public static void deployUpgrade() throws InstallationException, ArtifactResolutionException {
-        final MavenSessionManager msm = new MavenSessionManager(Paths.get(MavenSessionManager.LOCAL_MAVEN_REPO));
+        final MavenSessionManager msm = new MavenSessionManager(MavenSessionManager.LOCAL_MAVEN_REPO);
         final RepositorySystem system = msm.newRepositorySystem();
         final DefaultRepositorySystemSession session = msm.newRepositorySystemSession(system, false);
 
@@ -92,7 +91,7 @@ public class WfCoreTestBase {
     }
 
     protected Artifact resolveArtifact(String groupId, String artifactId, String version) throws ArtifactResolutionException {
-        final MavenSessionManager msm = new MavenSessionManager(Paths.get(MavenSessionManager.LOCAL_MAVEN_REPO));
+        final MavenSessionManager msm = new MavenSessionManager(MavenSessionManager.LOCAL_MAVEN_REPO);
         final RepositorySystem system = msm.newRepositorySystem();
         final DefaultRepositorySystemSession session = msm.newRepositorySystemSession(system, false);
 

@@ -54,14 +54,6 @@ public class ApplyPatchCommandTest extends AbstractConsoleTest {
     }
 
     @Test
-    public void offlineModeRequiresLocalRepoOption() {
-        int exitCode = commandLine.execute(CliConstants.APPLY_PATCH, CliConstants.DIR, "test",
-                CliConstants.PATCH_FILE, "eap", CliConstants.OFFLINE);
-        assertEquals(ReturnCodes.INVALID_ARGUMENTS, exitCode);
-        assertTrue(getErrorOutput().contains(CliMessages.MESSAGES.offlineModeRequiresLocalRepo()));
-    }
-
-    @Test
     public void callApplyPatchAction() throws Exception {
         final Path testArchive = temp.newFile().toPath();
         int exitCode = commandLine.execute(CliConstants.APPLY_PATCH, CliConstants.DIR, "test",
