@@ -24,6 +24,7 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 
+import org.eclipse.aether.repository.RemoteRepository;
 import org.junit.Assert;
 import org.junit.Rule;
 import org.junit.Test;
@@ -46,6 +47,7 @@ import org.wildfly.prospero.model.ProsperoConfig;
 import org.wildfly.prospero.model.RepositoryRef;
 import org.wildfly.prospero.wfchannel.MavenSessionManager;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
@@ -176,5 +178,18 @@ public class InstallCommandTest extends AbstractConsoleTest {
                 CliConstants.FPL, "test");
 
         assertEquals(ReturnCodes.INVALID_ARGUMENTS, exitCode);
+    }
+
+    @Test
+    public void passChannelReposToProvisionDef() throws Exception {
+        int exitCode = commandLine.execute(CliConstants.INSTALL, CliConstants.DIR, "test",
+                CliConstants.FPL, "eap", CliConstants.REMOTE_REPOSITORIES, "http://test.repo1,http://test.repo2");
+
+        assertEquals(ReturnCodes.SUCCESS, exitCode);
+        Mockito.verify(provisionAction).provision(serverDefiniton.capture());
+        assertThat(serverDefiniton.getValue().getRepositories().stream().map(RemoteRepository::getUrl)).contains(
+                "http://test.repo1",
+                "http://test.repo2"
+        );
     }
 }

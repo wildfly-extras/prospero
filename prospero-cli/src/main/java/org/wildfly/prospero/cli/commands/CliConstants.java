@@ -26,7 +26,7 @@ public final class CliConstants {
     // Options:
 
     public static final String CHANNEL = "--channel";
-    public static final String CHANNEL_REPO = "--channel-repo";
+    public static final String REMOTE_REPOSITORIES = "--remote-repositories";
     public static final String DEFINITION = "--definition";
     public static final String DIR = "--dir";
     public static final String DRY_RUN = "--dry-run";
