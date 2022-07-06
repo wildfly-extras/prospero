@@ -45,7 +45,7 @@ public class MavenSessionManager {
 
     private static final Logger logger = Logger.getLogger(MavenSessionManager.class);
 
-    public static String LOCAL_MAVEN_REPO = System.getProperty("user.home") + "/.m2/repository";
+    public static final String LOCAL_MAVEN_REPO = System.getProperty("user.home") + "/.m2/repository";
     private final Path provisioningRepo;
     private boolean offline;
 

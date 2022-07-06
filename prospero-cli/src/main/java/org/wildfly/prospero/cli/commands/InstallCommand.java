@@ -2,6 +2,7 @@ package org.wildfly.prospero.cli.commands;
 
 import java.net.URL;
 import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
@@ -62,8 +63,12 @@ public class InstallCommand extends AbstractCommand {
     )
     List<URL> remoteRepositories;
 
+    public static final String DEFAULT_REPO_KEY = "__LOCAL_REPO__";
+
     @CommandLine.Option(
             names = CliConstants.LOCAL_REPO,
+            arity = "0..1",
+            fallbackValue = DEFAULT_REPO_KEY,
             order = 6
     )
     Optional<Path> localRepo;
@@ -102,6 +107,12 @@ public class InstallCommand extends AbstractCommand {
         if (featurePackOrDefinition.definition.isEmpty() && isStandardFpl(featurePackOrDefinition.fpl.get()) && provisionConfig.isEmpty()) {
             console.error(CliMessages.MESSAGES.prosperoConfigMandatoryWhenCustomFpl(), CliMain.PROVISION_CONFIG_ARG);
             return ReturnCodes.INVALID_ARGUMENTS;
+        }
+
+        if (localRepo.isPresent()) {
+            if (localRepo.get().getFileName().toString().equals(DEFAULT_REPO_KEY)) {
+                localRepo = Optional.of(Paths.get(MavenSessionManager.LOCAL_MAVEN_REPO));
+            }
         }
 
         if (offline && localRepo.isEmpty()) {
