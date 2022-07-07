@@ -15,24 +15,25 @@
  * limitations under the License.
  */
 
-package integration;
+package org.wildfly.prospero.it.commonapi;
 
+import org.junit.Assert;
 import org.wildfly.prospero.api.ArtifactChange;
 import org.wildfly.prospero.actions.ProvisioningAction;
 import org.wildfly.prospero.actions.InstallationHistoryAction;
 import org.wildfly.prospero.api.SavedState;
 import org.wildfly.prospero.actions.UpdateAction;
 import org.wildfly.prospero.api.ProvisioningDefinition;
-import org.wildfly.prospero.cli.CliConsole;
+import org.wildfly.prospero.it.AcceptingConsole;
 import org.wildfly.prospero.model.ManifestYamlSupport;
 import org.apache.commons.io.FileUtils;
 import org.eclipse.aether.artifact.Artifact;
 import org.eclipse.aether.artifact.DefaultArtifact;
 import org.jboss.galleon.ProvisioningException;
 import org.junit.After;
-import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
+import org.wildfly.prospero.test.MetadataTestUtils;
 
 import java.io.File;
 import java.io.IOException;
@@ -51,7 +52,7 @@ public class InstallationHistoryActionTest extends WfCoreTestBase {
 
     private static final String OUTPUT_DIR = "target/server";
     private static final Path OUTPUT_PATH = Paths.get(OUTPUT_DIR).toAbsolutePath();
-    private final ProvisioningAction installation = new ProvisioningAction(OUTPUT_PATH, mavenSessionManager, new CliConsole());
+    private final ProvisioningAction installation = new ProvisioningAction(OUTPUT_PATH, mavenSessionManager, new AcceptingConsole());
     private Path provisionConfigFile;
 
     @Before
@@ -76,7 +77,7 @@ public class InstallationHistoryActionTest extends WfCoreTestBase {
     @Test
     public void listUpdates() throws Exception {
         // installCore
-        provisionConfigFile = TestUtil.prepareProvisionConfig(CHANNEL_BASE_CORE_19);
+        provisionConfigFile = MetadataTestUtils.prepareProvisionConfig(CHANNEL_BASE_CORE_19);
         Path installDir = Paths.get(OUTPUT_PATH.toString());
         if (Files.exists(installDir)) {
             throw new ProvisioningException("Installation dir " + installDir + " already exists");
@@ -88,7 +89,7 @@ public class InstallationHistoryActionTest extends WfCoreTestBase {
         installation.provision(provisioningDefinition);
 
         // updateCore
-        TestUtil.prepareProvisionConfigAsUrl(OUTPUT_PATH.resolve(TestUtil.PROVISION_CONFIG_FILE_PATH), CHANNEL_COMPONENT_UPDATES, CHANNEL_BASE_CORE_19);
+        MetadataTestUtils.prepareProvisionConfigAsUrl(OUTPUT_PATH.resolve(MetadataTestUtils.PROVISION_CONFIG_FILE_PATH), CHANNEL_COMPONENT_UPDATES, CHANNEL_BASE_CORE_19);
         new UpdateAction(OUTPUT_PATH, mavenSessionManager, new AcceptingConsole()).doUpdateAll(false);
 
         // get history
@@ -100,7 +101,7 @@ public class InstallationHistoryActionTest extends WfCoreTestBase {
 
     @Test
     public void rollbackChanges() throws Exception {
-        provisionConfigFile = TestUtil.prepareProvisionConfig(CHANNEL_BASE_CORE_19);
+        provisionConfigFile = MetadataTestUtils.prepareProvisionConfig(CHANNEL_BASE_CORE_19);
         final Path modulesPaths = OUTPUT_PATH.resolve(Paths.get("modules", "system", "layers", "base"));
         final Path wildflyCliModulePath = modulesPaths.resolve(Paths.get("org", "jboss", "as", "cli", "main"));
 
@@ -113,7 +114,7 @@ public class InstallationHistoryActionTest extends WfCoreTestBase {
                 .build();
         installation.provision(provisioningDefinition);
 
-        TestUtil.prepareProvisionConfigAsUrl(OUTPUT_PATH.resolve(TestUtil.PROVISION_CONFIG_FILE_PATH), CHANNEL_COMPONENT_UPDATES, CHANNEL_BASE_CORE_19);
+        MetadataTestUtils.prepareProvisionConfigAsUrl(OUTPUT_PATH.resolve(MetadataTestUtils.PROVISION_CONFIG_FILE_PATH), CHANNEL_COMPONENT_UPDATES, CHANNEL_BASE_CORE_19);
         new UpdateAction(OUTPUT_PATH, mavenSessionManager, new AcceptingConsole()).doUpdateAll(false);
         Optional<Artifact> wildflyCliArtifact = readArtifactFromManifest("org.wildfly.core", "wildfly-cli");
         assertEquals(UPGRADE_VERSION, wildflyCliArtifact.get().getVersion());
@@ -132,7 +133,7 @@ public class InstallationHistoryActionTest extends WfCoreTestBase {
 
     @Test
     public void displayChanges() throws Exception {
-        provisionConfigFile = TestUtil.prepareProvisionConfig(CHANNEL_BASE_CORE_19);
+        provisionConfigFile = MetadataTestUtils.prepareProvisionConfig(CHANNEL_BASE_CORE_19);
         Path installDir = Paths.get(OUTPUT_PATH.toString());
         if (Files.exists(installDir)) {
             throw new ProvisioningException("Installation dir " + installDir + " already exists");
@@ -143,7 +144,7 @@ public class InstallationHistoryActionTest extends WfCoreTestBase {
                 .build();
         installation.provision(provisioningDefinition);
 
-        TestUtil.prepareProvisionConfigAsUrl(OUTPUT_PATH.resolve(TestUtil.PROVISION_CONFIG_FILE_PATH), CHANNEL_COMPONENT_UPDATES, CHANNEL_BASE_CORE_19);
+        MetadataTestUtils.prepareProvisionConfigAsUrl(OUTPUT_PATH.resolve(MetadataTestUtils.PROVISION_CONFIG_FILE_PATH), CHANNEL_COMPONENT_UPDATES, CHANNEL_BASE_CORE_19);
         new UpdateAction(OUTPUT_PATH, mavenSessionManager, new AcceptingConsole()).doUpdateAll(false);
 
         final InstallationHistoryAction historyAction = new InstallationHistoryAction(OUTPUT_PATH, new AcceptingConsole());
@@ -174,7 +175,7 @@ public class InstallationHistoryActionTest extends WfCoreTestBase {
     }
 
     private Optional<Artifact> readArtifactFromManifest(String groupId, String artifactId) throws IOException {
-        final File manifestFile = OUTPUT_PATH.resolve(TestUtil.MANIFEST_FILE_PATH).toFile();
+        final File manifestFile = OUTPUT_PATH.resolve(MetadataTestUtils.MANIFEST_FILE_PATH).toFile();
         return ManifestYamlSupport.parse(manifestFile).getStreams()
                 .stream().filter((a) -> a.getGroupId().equals(groupId) && a.getArtifactId().equals(artifactId))
                 .findFirst()

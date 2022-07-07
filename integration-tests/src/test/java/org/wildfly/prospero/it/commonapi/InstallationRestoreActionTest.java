@@ -15,13 +15,13 @@
  * limitations under the License.
  */
 
-package integration;
+package org.wildfly.prospero.it.commonapi;
 
 import org.wildfly.prospero.actions.InstallationExportAction;
 import org.wildfly.prospero.actions.InstallationRestoreAction;
 import org.wildfly.prospero.actions.ProvisioningAction;
 import org.wildfly.prospero.api.ProvisioningDefinition;
-import org.wildfly.prospero.cli.CliConsole;
+import org.wildfly.prospero.it.AcceptingConsole;
 import org.wildfly.prospero.model.ManifestYamlSupport;
 import org.apache.commons.io.FileUtils;
 import org.eclipse.aether.artifact.Artifact;
@@ -29,6 +29,7 @@ import org.eclipse.aether.artifact.DefaultArtifact;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
+import org.wildfly.prospero.test.MetadataTestUtils;
 
 import java.io.File;
 import java.io.IOException;
@@ -72,14 +73,14 @@ public class InstallationRestoreActionTest extends WfCoreTestBase {
 
     @Test
     public void restoreInstallation() throws Exception {
-        final Path provisionConfigFile = TestUtil.prepareProvisionConfig(CHANNEL_BASE_CORE_19);
+        final Path provisionConfigFile = MetadataTestUtils.prepareProvisionConfig(CHANNEL_BASE_CORE_19);
 
         final ProvisioningDefinition provisioningDefinition = defaultWfCoreDefinition()
                 .setProvisionConfig(provisionConfigFile)
                 .build();
-        new ProvisioningAction(FIRST_SERVER_PATH, mavenSessionManager, new CliConsole()).provision(provisioningDefinition);
+        new ProvisioningAction(FIRST_SERVER_PATH, mavenSessionManager, new AcceptingConsole()).provision(provisioningDefinition);
 
-        TestUtil.prepareProvisionConfigAsUrl(FIRST_SERVER_PATH.resolve(TestUtil.PROVISION_CONFIG_FILE_PATH), CHANNEL_COMPONENT_UPDATES, CHANNEL_BASE_CORE_19);
+        MetadataTestUtils.prepareProvisionConfigAsUrl(FIRST_SERVER_PATH.resolve(MetadataTestUtils.PROVISION_CONFIG_FILE_PATH), CHANNEL_COMPONENT_UPDATES, CHANNEL_BASE_CORE_19);
 
         new InstallationExportAction(FIRST_SERVER_PATH).export("target/bundle.zip");
 
@@ -90,7 +91,7 @@ public class InstallationRestoreActionTest extends WfCoreTestBase {
     }
 
     private Optional<Artifact> readArtifactFromManifest(String groupId, String artifactId) throws IOException {
-        final File manifestFile = RESTORED_SERVER_PATH.resolve(TestUtil.MANIFEST_FILE_PATH).toFile();
+        final File manifestFile = RESTORED_SERVER_PATH.resolve(MetadataTestUtils.MANIFEST_FILE_PATH).toFile();
         return ManifestYamlSupport.parse(manifestFile).getStreams()
                 .stream().filter((a) -> a.getGroupId().equals(groupId) && a.getArtifactId().equals(artifactId))
                 .findFirst()

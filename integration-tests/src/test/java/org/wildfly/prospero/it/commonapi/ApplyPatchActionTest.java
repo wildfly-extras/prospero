@@ -1,4 +1,4 @@
-package integration;
+package org.wildfly.prospero.it.commonapi;
 
 import org.apache.commons.io.FileUtils;
 import org.eclipse.aether.artifact.Artifact;
@@ -14,12 +14,13 @@ import org.wildfly.prospero.actions.ApplyPatchAction;
 import org.wildfly.prospero.actions.ProvisioningAction;
 import org.wildfly.prospero.api.InstallationMetadata;
 import org.wildfly.prospero.api.ProvisioningDefinition;
-import org.wildfly.prospero.cli.CliConsole;
+import org.wildfly.prospero.it.AcceptingConsole;
 import org.wildfly.prospero.model.ChannelRef;
 import org.wildfly.prospero.model.ManifestYamlSupport;
 import org.wildfly.prospero.model.ProsperoConfig;
 import org.wildfly.prospero.model.RepositoryRef;
 import org.wildfly.prospero.patch.PatchArchive;
+import org.wildfly.prospero.test.MetadataTestUtils;
 
 import java.io.File;
 import java.io.IOException;
@@ -45,7 +46,7 @@ public class ApplyPatchActionTest extends WfCoreTestBase {
 
     private static final String OUTPUT_DIR = "target/server";
     private static final Path OUTPUT_PATH = Paths.get(OUTPUT_DIR).toAbsolutePath();
-    private final ProvisioningAction installation = new ProvisioningAction(OUTPUT_PATH, mavenSessionManager, new CliConsole());
+    private final ProvisioningAction installation = new ProvisioningAction(OUTPUT_PATH, mavenSessionManager, new AcceptingConsole());
     private Path provisionConfigFile;
 
     @Before
@@ -77,7 +78,7 @@ public class ApplyPatchActionTest extends WfCoreTestBase {
                 "patch-test00001");
 
         // installCore
-        provisionConfigFile = TestUtil.prepareProvisionConfig(CHANNEL_BASE_CORE_19);
+        provisionConfigFile = MetadataTestUtils.prepareProvisionConfig(CHANNEL_BASE_CORE_19);
         Path installDir = Paths.get(OUTPUT_PATH.toString());
         if (Files.exists(installDir)) {
             throw new ProvisioningException("Installation dir " + installDir + " already exists");
