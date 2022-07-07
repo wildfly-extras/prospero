@@ -1,7 +1,6 @@
 package org.wildfly.prospero.cli.commands;
 
 import java.nio.file.Path;
-import java.util.Optional;
 
 import org.jboss.galleon.ProvisioningException;
 import org.jboss.logging.Logger;
@@ -11,6 +10,7 @@ import org.wildfly.prospero.api.SavedState;
 import org.wildfly.prospero.cli.ActionFactory;
 import org.wildfly.prospero.cli.CliMessages;
 import org.wildfly.prospero.cli.ReturnCodes;
+import org.wildfly.prospero.cli.commands.options.LocalRepoOptions;
 import org.wildfly.prospero.wfchannel.MavenSessionManager;
 import picocli.CommandLine;
 
@@ -28,8 +28,8 @@ public class RevertCommand extends AbstractCommand {
     @CommandLine.Option(names = CliConstants.REVISION, required = true)
     String revision;
 
-    @CommandLine.Option(names = CliConstants.LOCAL_REPO)
-    Optional<Path> localRepo;
+    @CommandLine.ArgGroup(exclusive = true)
+    LocalRepoOptions localRepoOptions;
 
     @CommandLine.Option(names = CliConstants.OFFLINE)
     boolean offline;
@@ -42,7 +42,7 @@ public class RevertCommand extends AbstractCommand {
     public Integer call() throws Exception {
 
         try {
-            final MavenSessionManager mavenSessionManager = new MavenSessionManager(localRepo, offline);
+            final MavenSessionManager mavenSessionManager = new MavenSessionManager(LocalRepoOptions.getLocalRepo(localRepoOptions), offline);
 
             InstallationHistoryAction historyAction = actionFactory.history(directory.toAbsolutePath(), console);
             historyAction.rollback(new SavedState(revision), mavenSessionManager);

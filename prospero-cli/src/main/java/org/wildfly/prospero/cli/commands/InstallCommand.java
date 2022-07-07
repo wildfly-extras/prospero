@@ -2,6 +2,7 @@ package org.wildfly.prospero.cli.commands;
 
 import java.net.URL;
 import java.nio.file.Path;
+import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
@@ -17,6 +18,7 @@ import org.wildfly.prospero.cli.ActionFactory;
 import org.wildfly.prospero.cli.CliMain;
 import org.wildfly.prospero.cli.CliMessages;
 import org.wildfly.prospero.cli.ReturnCodes;
+import org.wildfly.prospero.cli.commands.options.LocalRepoOptions;
 import org.wildfly.prospero.wfchannel.MavenSessionManager;
 import picocli.CommandLine;
 
@@ -62,19 +64,12 @@ public class InstallCommand extends AbstractCommand {
     )
     List<URL> remoteRepositories;
 
-    public static final String DEFAULT_REPO_KEY = "__LOCAL_REPO__";
-
-    @CommandLine.Option(
-            names = CliConstants.LOCAL_REPO,
-            arity = "0..1",
-            fallbackValue = DEFAULT_REPO_KEY,
-            order = 6
-    )
-    Optional<Path> localRepo;
+    @CommandLine.ArgGroup(exclusive = true)
+    LocalRepoOptions localRepoOptions;
 
     @CommandLine.Option(
             names = CliConstants.OFFLINE,
-            order = 7
+            order = 8
     )
     boolean offline;
 
@@ -108,11 +103,7 @@ public class InstallCommand extends AbstractCommand {
             return ReturnCodes.INVALID_ARGUMENTS;
         }
 
-        if (localRepo.isPresent()) {
-            if (localRepo.get().getFileName().toString().equals(DEFAULT_REPO_KEY)) {
-                localRepo = Optional.of(MavenSessionManager.LOCAL_MAVEN_REPO);
-            }
-        }
+        final Optional<Path> localRepo = LocalRepoOptions.getLocalRepo(localRepoOptions);
 
         try {
             final MavenSessionManager mavenSessionManager = new MavenSessionManager(localRepo, offline);
@@ -121,7 +112,7 @@ public class InstallCommand extends AbstractCommand {
                     .setFpl(featurePackOrDefinition.fpl.orElse(null))
                     .setChannel(channel.orElse(null))
                     .setProvisionConfig(provisionConfig.orElse(null))
-                    .setRemoteRepositories(remoteRepositories ==null?null: remoteRepositories.stream().map(URL::toString).collect(Collectors.toList()))
+                    .setRemoteRepositories(remoteRepositories ==null? Collections.emptyList() : remoteRepositories.stream().map(URL::toString).collect(Collectors.toList()))
                     .setDefinitionFile(featurePackOrDefinition.definition.orElse(null))
                     .build();
 

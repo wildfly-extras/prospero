@@ -168,11 +168,7 @@ public class ProvisioningDefinition {
         }
 
         public Builder setRemoteRepositories(List<String> remoteRepositories) {
-            if (remoteRepositories == null) {
-                this.remoteRepositories = Collections.emptyList();
-            } else {
-                this.remoteRepositories = remoteRepositories;
-            }
+            this.remoteRepositories = remoteRepositories;
             return this;
         }
 

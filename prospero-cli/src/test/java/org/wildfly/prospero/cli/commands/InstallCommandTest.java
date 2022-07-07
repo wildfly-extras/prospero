@@ -18,7 +18,6 @@
 package org.wildfly.prospero.cli.commands;
 
 import java.io.File;
-import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -26,6 +25,7 @@ import java.util.List;
 
 import org.eclipse.aether.repository.RemoteRepository;
 import org.junit.Assert;
+import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
@@ -35,10 +35,8 @@ import org.mockito.Captor;
 import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.junit.MockitoJUnitRunner;
-import org.wildfly.prospero.actions.Console;
 import org.wildfly.prospero.actions.ProvisioningAction;
 import org.wildfly.prospero.api.ProvisioningDefinition;
-import org.wildfly.prospero.cli.AbstractConsoleTest;
 import org.wildfly.prospero.cli.ActionFactory;
 import org.wildfly.prospero.cli.CliMessages;
 import org.wildfly.prospero.cli.ReturnCodes;
@@ -51,12 +49,17 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.when;
 
 @RunWith(MockitoJUnitRunner.class)
-public class InstallCommandTest extends AbstractConsoleTest {
+public class InstallCommandTest extends AbstractMavenCommandTest {
 
     @Rule
     public TemporaryFolder temporaryFolder = new TemporaryFolder();
+
+    @Mock
+    private ActionFactory actionFactory;
 
     @Mock
     private ProvisioningAction provisionAction;
@@ -64,14 +67,18 @@ public class InstallCommandTest extends AbstractConsoleTest {
     @Captor
     private ArgumentCaptor<ProvisioningDefinition> serverDefiniton;
 
+    @Captor
+    private ArgumentCaptor<MavenSessionManager> mavenSessionManager;
+
     @Override
     protected ActionFactory createActionFactory() {
-        return new ActionFactory() {
-            @Override
-            public ProvisioningAction install(Path targetPath, MavenSessionManager mavenSessionManager, Console console) {
-                return provisionAction;
-            }
-        };
+        return actionFactory;
+    }
+
+    @Before
+    public void setUp() throws Exception {
+        super.setUp();
+        when(actionFactory.install(any(), any(), any())).thenReturn(provisionAction);
     }
 
     @Test
@@ -183,5 +190,18 @@ public class InstallCommandTest extends AbstractConsoleTest {
                 "http://test.repo1",
                 "http://test.repo2"
         );
+    }
+
+    @Override
+    protected MavenSessionManager getCapturedSessionManager() {
+        Mockito.verify(actionFactory).install(any(), mavenSessionManager.capture(), any());
+        MavenSessionManager msm = mavenSessionManager.getValue();
+        return msm;
+    }
+
+    @Override
+    protected String[] getDefaultArguments() {
+        return new String[]{CliConstants.INSTALL, CliConstants.DIR, "test",
+                CliConstants.FPL, "eap"};
     }
 }

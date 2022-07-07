@@ -6,8 +6,8 @@ import org.junit.Test;
 import java.nio.file.Paths;
 import java.util.Arrays;
 
-import static org.assertj.core.api.Assertions.*;
-import static org.junit.Assert.*;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.Assert.assertEquals;
 
 public class ProvisioningDefinitionTest {
 

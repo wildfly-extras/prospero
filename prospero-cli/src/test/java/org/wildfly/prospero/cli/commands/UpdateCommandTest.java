@@ -34,14 +34,16 @@ import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
 import org.junit.runner.RunWith;
+import org.mockito.ArgumentCaptor;
+import org.mockito.Captor;
 import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.junit.MockitoJUnitRunner;
 import org.wildfly.prospero.actions.UpdateAction;
-import org.wildfly.prospero.cli.AbstractConsoleTest;
 import org.wildfly.prospero.cli.ActionFactory;
 import org.wildfly.prospero.cli.CliMessages;
 import org.wildfly.prospero.cli.ReturnCodes;
+import org.wildfly.prospero.wfchannel.MavenSessionManager;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
@@ -50,7 +52,7 @@ import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.when;
 
 @RunWith(MockitoJUnitRunner.class)
-public class UpdateCommandTest extends AbstractConsoleTest {
+public class UpdateCommandTest extends AbstractMavenCommandTest {
 
     public static final String A_PROSPERO_FP = UpdateCommand.PROSPERO_FP_GA + ":1.0.0";
     public static final String OTHER_FP = "com.another:galleon-pack:1.0.0";
@@ -63,8 +65,12 @@ public class UpdateCommandTest extends AbstractConsoleTest {
     @Mock
     private ActionFactory actionFactory;
 
+    @Captor
+    private ArgumentCaptor<MavenSessionManager> mavenSessionManager;
+
     @Rule
     public TemporaryFolder tempFolder = new TemporaryFolder();
+    private Path baseDir;
 
     @Override
     protected ActionFactory createActionFactory() {
@@ -75,6 +81,7 @@ public class UpdateCommandTest extends AbstractConsoleTest {
     public void setUp() throws Exception {
         super.setUp();
         when(actionFactory.update(any(), any(), any())).thenReturn(updateAction);
+        baseDir = mockGalleonInstallation(A_PROSPERO_FP);
     }
 
     @After
@@ -108,7 +115,6 @@ public class UpdateCommandTest extends AbstractConsoleTest {
 
     @Test
     public void selfUpdatePassesModulePathAsDir() throws Exception {
-        final Path baseDir = mockGalleonInstallation(A_PROSPERO_FP);
         System.setProperty(UpdateCommand.JBOSS_MODULE_PATH, baseDir.resolve(MODULES_DIR).toString());
         int exitCode = commandLine.execute(CliConstants.UPDATE, CliConstants.SELF);
 
@@ -119,7 +125,6 @@ public class UpdateCommandTest extends AbstractConsoleTest {
 
     @Test
     public void dirParameterOverridesModulePathInSelfUpdate() throws Exception {
-        final Path baseDir = mockGalleonInstallation(A_PROSPERO_FP);
         System.setProperty(UpdateCommand.JBOSS_MODULE_PATH, "test");
         int exitCode = commandLine.execute(CliConstants.UPDATE, CliConstants.SELF,
                 CliConstants.DIR, baseDir.toAbsolutePath().toString());
@@ -151,6 +156,18 @@ public class UpdateCommandTest extends AbstractConsoleTest {
                 CliMessages.MESSAGES.unexpectedPackageInSelfUpdate(baseDir.toAbsolutePath().toString())));
     }
 
+    @Override
+    protected MavenSessionManager getCapturedSessionManager() throws Exception {
+        Mockito.verify(actionFactory).update(any(), mavenSessionManager.capture(), any());
+        MavenSessionManager msm = mavenSessionManager.getValue();
+        return msm;
+    }
+
+    @Override
+    protected String[] getDefaultArguments() {
+        return new String[] {CliConstants.UPDATE, CliConstants.DIR, baseDir.toString()};
+    }
+
     private Path mockGalleonInstallation(String... fps) throws IOException, javax.xml.stream.XMLStreamException {
         final ProvisionedState.Builder builder = ProvisionedState.builder();
         for (String fp : fps) {
@@ -159,6 +176,6 @@ public class UpdateCommandTest extends AbstractConsoleTest {
         ProvisionedState state = builder.build();
         final File baseDir = tempFolder.newFolder();
         ProvisionedStateXmlWriter.getInstance().write(state, baseDir.toPath().resolve(GALLEON_PROVISIONED_STATE_FILE));
-        return baseDir.toPath();
+        return baseDir.toPath().toAbsolutePath();
     }
 }
