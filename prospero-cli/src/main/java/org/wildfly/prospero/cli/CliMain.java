@@ -54,8 +54,7 @@ public class CliMain {
     public static void main(String[] args) {
         try {
             Console console = new CliConsole();
-            ActionFactory actionFactory = new ActionFactory();
-            CommandLine commandLine = createCommandLine(console, actionFactory);
+            CommandLine commandLine = createCommandLine(console);
             int exitCode = commandLine.execute(args);
             System.exit(exitCode);
         } catch (Exception e) {
@@ -63,6 +62,10 @@ public class CliMain {
             logger.error(CliMessages.MESSAGES.errorWhenProcessingCommand(), e);
             System.exit(ReturnCodes.PROCESSING_ERROR);
         }
+    }
+
+    public static CommandLine createCommandLine(Console console) {
+        return createCommandLine(console, new ActionFactory());
     }
 
     public static CommandLine createCommandLine(Console console, ActionFactory actionFactory) {

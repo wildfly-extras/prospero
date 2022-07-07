@@ -15,23 +15,7 @@
  * limitations under the License.
  */
 
-package integration;
-
-import org.wildfly.prospero.api.ArtifactChange;
-import org.wildfly.prospero.model.ChannelRef;
-import org.wildfly.prospero.actions.ProvisioningAction;
-import org.wildfly.prospero.actions.UpdateAction;
-import org.wildfly.prospero.api.ProvisioningDefinition;
-import org.wildfly.prospero.cli.CliConsole;
-import org.wildfly.prospero.model.ManifestYamlSupport;
-import org.wildfly.prospero.model.ProsperoConfig;
-import org.apache.commons.io.FileUtils;
-import org.eclipse.aether.artifact.Artifact;
-import org.eclipse.aether.artifact.DefaultArtifact;
-import org.jboss.galleon.layout.FeaturePackUpdatePlan;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
+package org.wildfly.prospero.it.commonapi;
 
 import java.io.File;
 import java.io.IOException;
@@ -44,13 +28,31 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 
+import org.apache.commons.io.FileUtils;
+import org.eclipse.aether.artifact.Artifact;
+import org.eclipse.aether.artifact.DefaultArtifact;
+import org.jboss.galleon.layout.FeaturePackUpdatePlan;
+import org.junit.After;
+import org.junit.Before;
+import org.junit.Test;
+import org.wildfly.prospero.actions.ProvisioningAction;
+import org.wildfly.prospero.actions.UpdateAction;
+import org.wildfly.prospero.api.ArtifactChange;
+import org.wildfly.prospero.api.ProvisioningDefinition;
+import org.wildfly.prospero.cli.CliConsole;
+import org.wildfly.prospero.it.AcceptingConsole;
+import org.wildfly.prospero.model.ChannelRef;
+import org.wildfly.prospero.model.ManifestYamlSupport;
+import org.wildfly.prospero.model.ProsperoConfig;
+import org.wildfly.prospero.test.MetadataTestUtils;
+
 import static org.junit.Assert.*;
 
 public class SimpleProvisionTest extends WfCoreTestBase {
 
     private static final String OUTPUT_DIR = "target/server";
     private static final Path OUTPUT_PATH = Paths.get(OUTPUT_DIR).toAbsolutePath();
-    private static final Path MANIFEST_PATH = OUTPUT_PATH.resolve(TestUtil.MANIFEST_FILE_PATH);
+    private static final Path MANIFEST_PATH = OUTPUT_PATH.resolve(MetadataTestUtils.MANIFEST_FILE_PATH);
     private final ProvisioningAction installation = new ProvisioningAction(OUTPUT_PATH, mavenSessionManager, new CliConsole());
 
     @Before
@@ -71,7 +73,7 @@ public class SimpleProvisionTest extends WfCoreTestBase {
 
     @Test
     public void installWildflyCore() throws Exception {
-        final Path provisionConfigFile = TestUtil.prepareProvisionConfig(CHANNEL_BASE_CORE_19);
+        final Path provisionConfigFile = MetadataTestUtils.prepareProvisionConfig(CHANNEL_BASE_CORE_19);
 
         final ProvisioningDefinition provisioningDefinition = defaultWfCoreDefinition()
                 .setProvisionConfig(provisionConfigFile)
@@ -89,14 +91,14 @@ public class SimpleProvisionTest extends WfCoreTestBase {
 
     @Test
     public void updateWildflyCore() throws Exception {
-        final Path provisionConfigFile = TestUtil.prepareProvisionConfig(CHANNEL_BASE_CORE_19);
+        final Path provisionConfigFile = MetadataTestUtils.prepareProvisionConfig(CHANNEL_BASE_CORE_19);
 
         final ProvisioningDefinition provisioningDefinition = defaultWfCoreDefinition()
                 .setProvisionConfig(provisionConfigFile)
                 .build();
         installation.provision(provisioningDefinition);
 
-        TestUtil.prepareProvisionConfigAsUrl(OUTPUT_PATH.resolve(TestUtil.PROVISION_CONFIG_FILE_PATH), CHANNEL_COMPONENT_UPDATES, CHANNEL_BASE_CORE_19);
+        MetadataTestUtils.prepareProvisionConfigAsUrl(OUTPUT_PATH.resolve(MetadataTestUtils.PROVISION_CONFIG_FILE_PATH), CHANNEL_COMPONENT_UPDATES, CHANNEL_BASE_CORE_19);
         new UpdateAction(OUTPUT_PATH, mavenSessionManager, new AcceptingConsole()).doUpdateAll(false);
 
         // verify manifest contains versions 17.0.1
@@ -106,14 +108,14 @@ public class SimpleProvisionTest extends WfCoreTestBase {
 
     @Test
     public void updateWildflyCoreFp() throws Exception {
-        final Path provisionConfigFile = TestUtil.prepareProvisionConfig(CHANNEL_BASE_CORE_19);
+        final Path provisionConfigFile = MetadataTestUtils.prepareProvisionConfig(CHANNEL_BASE_CORE_19);
 
         final ProvisioningDefinition provisioningDefinition = defaultWfCoreDefinition()
                 .setProvisionConfig(provisionConfigFile)
                 .build();
         installation.provision(provisioningDefinition);
 
-        TestUtil.prepareProvisionConfigAsUrl(OUTPUT_PATH.resolve(TestUtil.PROVISION_CONFIG_FILE_PATH), CHANNEL_FP_UPDATES, CHANNEL_BASE_CORE_19);
+        MetadataTestUtils.prepareProvisionConfigAsUrl(OUTPUT_PATH.resolve(MetadataTestUtils.PROVISION_CONFIG_FILE_PATH), CHANNEL_FP_UPDATES, CHANNEL_BASE_CORE_19);
         new UpdateAction(OUTPUT_PATH, mavenSessionManager, new AcceptingConsole()).doUpdateAll(false);
 
         // verify manifest contains versions 17.0.1
@@ -123,7 +125,7 @@ public class SimpleProvisionTest extends WfCoreTestBase {
 
     @Test
     public void updateWildflyCoreFp_InstalledWithGAV() throws Exception {
-        final Path provisionConfigFile = TestUtil.prepareProvisionConfig(CHANNEL_BASE_CORE_19);
+        final Path provisionConfigFile = MetadataTestUtils.prepareProvisionConfig(CHANNEL_BASE_CORE_19);
 
         final ProvisioningDefinition provisioningDefinition = defaultWfCoreDefinition()
                 .setFpl("org.wildfly.core:wildfly-core-galleon-pack")
@@ -131,7 +133,7 @@ public class SimpleProvisionTest extends WfCoreTestBase {
                 .build();
         installation.provision(provisioningDefinition);
 
-        TestUtil.prepareProvisionConfigAsUrl(OUTPUT_PATH.resolve(TestUtil.PROVISION_CONFIG_FILE_PATH), CHANNEL_FP_UPDATES, CHANNEL_BASE_CORE_19);
+        MetadataTestUtils.prepareProvisionConfigAsUrl(OUTPUT_PATH.resolve(MetadataTestUtils.PROVISION_CONFIG_FILE_PATH), CHANNEL_FP_UPDATES, CHANNEL_BASE_CORE_19);
         new UpdateAction(OUTPUT_PATH, mavenSessionManager, new AcceptingConsole()).doUpdateAll(false);
 
         // verify manifest contains versions 17.0.1
@@ -141,14 +143,14 @@ public class SimpleProvisionTest extends WfCoreTestBase {
 
     @Test
     public void updateWildflyCoreDryRun() throws Exception {
-        final Path provisionConfigFile = TestUtil.prepareProvisionConfig(CHANNEL_BASE_CORE_19);
+        final Path provisionConfigFile = MetadataTestUtils.prepareProvisionConfig(CHANNEL_BASE_CORE_19);
 
         final ProvisioningDefinition provisioningDefinition = defaultWfCoreDefinition()
                 .setProvisionConfig(provisionConfigFile)
                 .build();
         installation.provision(provisioningDefinition);
 
-        TestUtil.prepareProvisionConfigAsUrl(OUTPUT_PATH.resolve(TestUtil.PROVISION_CONFIG_FILE_PATH), CHANNEL_COMPONENT_UPDATES, CHANNEL_BASE_CORE_19);
+        MetadataTestUtils.prepareProvisionConfigAsUrl(OUTPUT_PATH.resolve(MetadataTestUtils.PROVISION_CONFIG_FILE_PATH), CHANNEL_COMPONENT_UPDATES, CHANNEL_BASE_CORE_19);
         final Set<String> updates = new HashSet<>();
         new UpdateAction(OUTPUT_PATH, mavenSessionManager, new AcceptingConsole() {
             @Override
@@ -168,7 +170,7 @@ public class SimpleProvisionTest extends WfCoreTestBase {
 
     @Test
     public void installWildflyCoreFromInstallationFile() throws Exception {
-        final Path provisionConfigFile = TestUtil.prepareProvisionConfig(CHANNEL_BASE_CORE_19);
+        final Path provisionConfigFile = MetadataTestUtils.prepareProvisionConfig(CHANNEL_BASE_CORE_19);
         final File installationFile = new File(this.getClass().getClassLoader().getResource("provisioning.xml").toURI());
         final ProsperoConfig prosperoConfig = ProsperoConfig.readConfig(provisionConfigFile);
         final List<ChannelRef> channelRefs = prosperoConfig.getChannels();

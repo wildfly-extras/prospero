@@ -15,14 +15,40 @@
  * limitations under the License.
  */
 
-package integration;
+package org.wildfly.prospero.it;
 
-import org.wildfly.prospero.cli.CliConsole;
+import java.util.Collection;
+import java.util.List;
 
-public class AcceptingConsole extends CliConsole {
+import org.jboss.galleon.layout.FeaturePackUpdatePlan;
+import org.jboss.galleon.progresstracking.ProgressCallback;
+import org.wildfly.prospero.actions.Console;
+import org.wildfly.prospero.api.ArtifactChange;
+
+public class AcceptingConsole implements Console {
+
+    @Override
+    public void installationComplete() {
+        // no op
+    }
+
+    @Override
+    public ProgressCallback<?> getProgressCallback(String id) {
+        return null;
+    }
+
+    @Override
+    public void updatesFound(Collection<FeaturePackUpdatePlan> updates, List<ArtifactChange> changes) {
+        // no op
+    }
 
     @Override
     public boolean confirmUpdates() {
         return true;
+    }
+
+    @Override
+    public void updatesComplete() {
+        // no op
     }
 }

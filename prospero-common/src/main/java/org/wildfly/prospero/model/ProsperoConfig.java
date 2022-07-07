@@ -97,7 +97,7 @@ public class ProsperoConfig {
 
     public static ProsperoConfig readConfig(Path path) throws IOException {
         final ObjectMapper objectMapper = new ObjectMapper(new YAMLFactory());
-        return objectMapper.readValue(path.toUri().toURL(), ProsperoConfig.class);
+        return objectMapper.readValue(path.toFile(), ProsperoConfig.class);
     }
 
     @JsonIgnore

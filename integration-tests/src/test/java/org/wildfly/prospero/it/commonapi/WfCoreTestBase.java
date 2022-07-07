@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-package integration;
+package org.wildfly.prospero.it.commonapi;
 
 import org.eclipse.aether.installation.InstallResult;
 import org.wildfly.prospero.api.ProvisioningDefinition;
