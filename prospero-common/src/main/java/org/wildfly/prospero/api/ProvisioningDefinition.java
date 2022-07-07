@@ -36,6 +36,7 @@ import org.jboss.galleon.ProvisioningException;
 import org.wildfly.prospero.Messages;
 import org.wildfly.prospero.api.exceptions.ArtifactResolutionException;
 import org.wildfly.prospero.model.ChannelRef;
+import org.wildfly.prospero.model.KnownFeaturePack;
 import org.wildfly.prospero.model.ProsperoConfig;
 import org.wildfly.prospero.model.RepositoryRef;
 
@@ -61,13 +62,13 @@ public class ProvisioningDefinition {
         this.includedPackages.addAll(includedPackages.orElse(Collections.emptySet()));
 
         try {
-            if (fpl.isPresent() && WellKnownFeaturePacks.isWellKnownName(fpl.get())) {
-                WellKnownFeaturePacks featurePackInfo = WellKnownFeaturePacks.getByName(fpl.get());
-                this.fpl = featurePackInfo.location;
+            if (fpl.isPresent() && KnownFeaturePacks.isWellKnownName(fpl.get())) {
+                KnownFeaturePack featurePackInfo = KnownFeaturePacks.getByName(fpl.get());
+                this.fpl = featurePackInfo.getLocation();
                 this.definition = null;
-                this.includedPackages.addAll(featurePackInfo.packages);
-                this.repositories.addAll(featurePackInfo.repositories);
-                setUpBuildEnv(overrideRemoteRepos, provisionConfigFile, channel, featurePackInfo.channelGav);
+                this.includedPackages.addAll(featurePackInfo.getPackages());
+                this.repositories.addAll(featurePackInfo.getRemoteRepositories());
+                setUpBuildEnv(overrideRemoteRepos, provisionConfigFile, channel, featurePackInfo.getChannelGav());
             } else if (provisionConfigFile.isPresent()) {
                 this.fpl = fpl.orElse(null);
                 this.definition = definition.orElse(null);
@@ -82,7 +83,7 @@ public class ProvisioningDefinition {
                 //  other options (channel, channelRepo - perhaps both should be made collections)
                 throw new IllegalArgumentException(
                         String.format("Incomplete configuration: either a predefined fpl (%s) or a provisionConfigFile must be given.",
-                                String.join(", ", WellKnownFeaturePacks.getNames())));
+                                String.join(", ", KnownFeaturePacks.getNames())));
             }
         } catch (IOException e) {
             throw new ArtifactResolutionException("Unable to resolve channel definition: " + e.getMessage(), e);

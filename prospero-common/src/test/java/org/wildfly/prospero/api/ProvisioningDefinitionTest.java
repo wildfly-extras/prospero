@@ -28,9 +28,11 @@ import static org.junit.Assert.assertEquals;
 
 public class ProvisioningDefinitionTest {
 
+    public static final String EAP_FPL = "eap-8.0-beta";
+
     @Test
     public void setChannelWithFileUrl() throws Exception {
-        final ProvisioningDefinition.Builder builder = new ProvisioningDefinition.Builder().setFpl("eap");
+        final ProvisioningDefinition.Builder builder = new ProvisioningDefinition.Builder().setFpl(EAP_FPL);
 
         builder.setChannel("file:/tmp/foo.bar");
 
@@ -39,7 +41,7 @@ public class ProvisioningDefinitionTest {
 
     @Test
     public void setChannelWithHttpUrl() throws Exception {
-        final ProvisioningDefinition.Builder builder = new ProvisioningDefinition.Builder().setFpl("eap");
+        final ProvisioningDefinition.Builder builder = new ProvisioningDefinition.Builder().setFpl(EAP_FPL);
 
         builder.setChannel("http://localhost/foo.bar");
 
@@ -48,7 +50,7 @@ public class ProvisioningDefinitionTest {
 
     @Test
     public void setChannelWithLocalFilePath() throws Exception {
-        final ProvisioningDefinition.Builder builder = new ProvisioningDefinition.Builder().setFpl("eap");
+        final ProvisioningDefinition.Builder builder = new ProvisioningDefinition.Builder().setFpl(EAP_FPL);
 
         builder.setChannel("tmp/foo.bar");
 
@@ -58,7 +60,7 @@ public class ProvisioningDefinitionTest {
     @Test
     public void overrideRemoteRepos() throws Exception {
         final ProvisioningDefinition.Builder builder = new ProvisioningDefinition.Builder()
-                .setFpl("eap")
+                .setFpl(EAP_FPL)
                 .setRemoteRepositories(Arrays.asList("http://test.repo1", "http://test.repo2"));
 
         final ProvisioningDefinition def = builder.build();

@@ -55,6 +55,7 @@ import static org.mockito.Mockito.when;
 @RunWith(MockitoJUnitRunner.class)
 public class InstallCommandTest extends AbstractMavenCommandTest {
 
+    public static final String EAP_FPL = "eap-8.0-beta";
     @Rule
     public TemporaryFolder temporaryFolder = new TemporaryFolder();
 
@@ -124,7 +125,7 @@ public class InstallCommandTest extends AbstractMavenCommandTest {
 
     @Test
     public void callProvisionOnInstallEapCommand() throws Exception {
-        int exitCode = commandLine.execute(CliConstants.Commands.INSTALL, CliConstants.DIR, "test", CliConstants.FPL, "eap");
+        int exitCode = commandLine.execute(CliConstants.Commands.INSTALL, CliConstants.DIR, "test", CliConstants.FPL, EAP_FPL);
 
         assertEquals(ReturnCodes.SUCCESS, exitCode);
         Mockito.verify(provisionAction).provision(serverDefiniton.capture());
@@ -138,7 +139,7 @@ public class InstallCommandTest extends AbstractMavenCommandTest {
         final File provisionConfigFile = temporaryFolder.newFile();
         new ProsperoConfig(channels, repositories).writeConfig(provisionConfigFile);
 
-        int exitCode = commandLine.execute(CliConstants.Commands.INSTALL, CliConstants.DIR, "test", CliConstants.FPL, "eap",
+        int exitCode = commandLine.execute(CliConstants.Commands.INSTALL, CliConstants.DIR, "test", CliConstants.FPL, EAP_FPL,
                 CliConstants.PROVISION_CONFIG, provisionConfigFile.getAbsolutePath());
 
         assertEquals(ReturnCodes.SUCCESS, exitCode);
@@ -182,7 +183,7 @@ public class InstallCommandTest extends AbstractMavenCommandTest {
     @Test
     public void passChannelReposToProvisionDef() throws Exception {
         int exitCode = commandLine.execute(CliConstants.Commands.INSTALL, CliConstants.DIR, "test",
-                CliConstants.FPL, "eap", CliConstants.REMOTE_REPOSITORIES, "http://test.repo1,http://test.repo2");
+                CliConstants.FPL, EAP_FPL, CliConstants.REMOTE_REPOSITORIES, "http://test.repo1,http://test.repo2");
 
         assertEquals(ReturnCodes.SUCCESS, exitCode);
         Mockito.verify(provisionAction).provision(serverDefiniton.capture());
@@ -202,6 +203,6 @@ public class InstallCommandTest extends AbstractMavenCommandTest {
     @Override
     protected String[] getDefaultArguments() {
         return new String[]{CliConstants.Commands.INSTALL, CliConstants.DIR, "test",
-                CliConstants.FPL, "eap"};
+                CliConstants.FPL, EAP_FPL};
     }
 }

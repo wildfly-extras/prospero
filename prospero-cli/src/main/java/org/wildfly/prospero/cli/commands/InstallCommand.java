@@ -27,7 +27,7 @@ import java.util.stream.Collectors;
 import org.wildfly.prospero.actions.Console;
 import org.wildfly.prospero.actions.ProvisioningAction;
 import org.wildfly.prospero.api.ProvisioningDefinition;
-import org.wildfly.prospero.api.WellKnownFeaturePacks;
+import org.wildfly.prospero.api.KnownFeaturePacks;
 import org.wildfly.prospero.cli.ActionFactory;
 import org.wildfly.prospero.cli.CliMessages;
 import org.wildfly.prospero.cli.ReturnCodes;
@@ -139,7 +139,7 @@ public class InstallCommand extends AbstractCommand {
     }
 
     private boolean isStandardFpl(String fpl) {
-        return !WellKnownFeaturePacks.isWellKnownName(fpl);
+        return !KnownFeaturePacks.isWellKnownName(fpl);
     }
 
 }
