@@ -32,9 +32,6 @@ public abstract class KnownFeaturePacks {
     }
 
     static {
-        //
-        // Update also the list of names in UsageMessages.properties when modifying this.
-        //
         try {
             final URL knownRepoUrl = KnownFeaturePacks.class.getClassLoader().getResource("known-repositories.yaml");
             if (knownRepoUrl == null) {

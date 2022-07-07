@@ -32,6 +32,7 @@ import org.wildfly.prospero.cli.ActionFactory;
 import org.wildfly.prospero.cli.CliMessages;
 import org.wildfly.prospero.cli.ReturnCodes;
 import org.wildfly.prospero.cli.commands.options.LocalRepoOptions;
+import org.wildfly.prospero.cli.commands.options.FeaturePackCandidates;
 import org.wildfly.prospero.wfchannel.MavenSessionManager;
 import picocli.CommandLine;
 
@@ -91,6 +92,7 @@ public class InstallCommand extends AbstractCommand {
         @CommandLine.Option(
                 names = CliConstants.FPL,
                 paramLabel = CliConstants.FEATURE_PACK_REFERENCE,
+                completionCandidates = FeaturePackCandidates.class,
                 required = true,
                 order = 1
         )
