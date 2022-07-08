@@ -104,7 +104,7 @@ public class WfCoreTestBase {
 
     private static Artifact resolveArtifact(RepositorySystem system, DefaultRepositorySystemSession session, DefaultArtifact existing) throws ArtifactResolutionException {
         final ArtifactRequest artifactRequest = new ArtifactRequest();
-        artifactRequest.setRepositories(Arrays.asList(REPOSITORY_MRRC_GA.toRemoteRepository()));
+        artifactRequest.setRepositories(Arrays.asList(REPOSITORY_MAVEN_CENTRAL.toRemoteRepository()));
         artifactRequest.setArtifact(existing);
         final ArtifactResult artifactResult = system.resolveArtifact(session, artifactRequest);
         return artifactResult.getArtifact();

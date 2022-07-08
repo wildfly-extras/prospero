@@ -32,19 +32,21 @@ public abstract class KnownFeaturePacks {
     }
 
     static {
-        try {
-            final URL knownRepoUrl = KnownFeaturePacks.class.getClassLoader().getResource("known-repositories.yaml");
-            if (knownRepoUrl == null) {
-                logger.debug("No known repositories found");
-            } else {
-                logger.debug("Loading known repositories from: " + knownRepoUrl);
-                final List<KnownFeaturePack> knownFeaturePacks = KnownFeaturePack.readConfig(knownRepoUrl);
+        final URL knownRepoUrl = KnownFeaturePacks.class.getClassLoader().getResource("prospero-known-combinations.yaml");
+        if (knownRepoUrl == null) {
+            logger.debug("No known repositories found");
+        } else {
+            logger.debug("Loading known provisioning configurations from: " + knownRepoUrl);
+            final List<KnownFeaturePack> knownFeaturePacks;
+            try {
+                knownFeaturePacks = KnownFeaturePack.readConfig(knownRepoUrl);
                 for (KnownFeaturePack fp : knownFeaturePacks) {
                     nameMap.put(fp.getName(), fp);
                 }
+            } catch (IOException e) {
+                logger.warn("Failed to load provisioning configurations from: " + knownRepoUrl);
+                logger.debug("Error parsing provisioning configurations:", e);
             }
-        } catch (IOException e) {
-            throw new IllegalStateException(e);
         }
     }
 

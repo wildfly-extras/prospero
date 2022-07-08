@@ -19,16 +19,19 @@ package org.wildfly.prospero.api;
 
 import org.eclipse.aether.repository.RemoteRepository;
 import org.junit.Test;
+import org.wildfly.prospero.api.exceptions.NoChannelException;
+import org.wildfly.prospero.model.ChannelRef;
 
 import java.nio.file.Paths;
 import java.util.Arrays;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.fail;
 
 public class ProvisioningDefinitionTest {
 
-    public static final String EAP_FPL = "eap-8.0-beta";
+    public static final String EAP_FPL = "known-fpl";
 
     @Test
     public void setChannelWithFileUrl() throws Exception {
@@ -67,7 +70,29 @@ public class ProvisioningDefinitionTest {
 
         assertThat(def.getRepositories().stream().map(RemoteRepository::getUrl)).containsExactlyInAnyOrder(
                 "http://test.repo1",
-                "http://test.repo2"
+                "http://test.repo2");
+    }
+
+    @Test
+    public void knownFplWithoutChannel() throws Exception {
+        final ProvisioningDefinition.Builder builder = new ProvisioningDefinition.Builder().setFpl("no-channel");
+
+        try {
+            builder.build();
+            fail("Building FPL without channel should fail");
+        } catch (NoChannelException e) {
+            // OK
+        }
+    }
+
+    @Test
+    public void knownFplWithMultipleChannels() throws Exception {
+        final ProvisioningDefinition.Builder builder = new ProvisioningDefinition.Builder().setFpl("multi-channel");
+
+        final ProvisioningDefinition def = builder.build();
+        assertThat(def.getChannelRefs().stream().map(ChannelRef::getGav)).contains(
+                "test:one",
+                "test:two"
         );
     }
 }

@@ -115,7 +115,6 @@ public class InstallCommand extends AbstractCommand {
     public Integer call() throws Exception {
         // following is checked by picocli, adding this to avoid IDE warnings
         assert featurePackOrDefinition.definition.isPresent() || featurePackOrDefinition.fpl.isPresent();
-
         if (featurePackOrDefinition.definition.isEmpty() && isStandardFpl(featurePackOrDefinition.fpl.get()) && provisionConfig.isEmpty()) {
             console.error(CliMessages.MESSAGES.prosperoConfigMandatoryWhenCustomFpl(), CliConstants.PROVISION_CONFIG);
             return ReturnCodes.INVALID_ARGUMENTS;

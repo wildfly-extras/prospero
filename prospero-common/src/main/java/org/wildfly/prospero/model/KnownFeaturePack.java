@@ -28,25 +28,26 @@ import org.eclipse.aether.repository.RemoteRepository;
 import java.io.File;
 import java.io.IOException;
 import java.net.URL;
+import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
 
 public class KnownFeaturePack {
     private String name;
     private String location;
-    private String channelGav;
+    private List<String> channelGavs;
     private List<String> packages;
     private List<RepositoryRef> repositories;
 
     @JsonCreator
     public KnownFeaturePack(@JsonProperty(value = "name") String name,
                             @JsonProperty(value = "location") String location,
-                            @JsonProperty(value = "channelGav") String channelGav,
+                            @JsonProperty(value = "channelGavs") List<String> channelGav,
                             @JsonProperty(value = "packages") List<String> packages,
                             @JsonProperty(value = "repositories") List<RepositoryRef> repositories) {
         this.name = name;
         this.location = location;
-        this.channelGav = channelGav;
+        this.channelGavs = channelGav;
         this.packages = packages;
         this.repositories = repositories;
     }
@@ -70,15 +71,15 @@ public class KnownFeaturePack {
     }
 
     public List<String> getPackages() {
-        return packages;
+        return packages==null?Collections.emptyList():packages;
     }
 
     public List<RepositoryRef> getRepositories() {
         return repositories;
     }
 
-    public String getChannelGav() {
-        return channelGav;
+    public List<String> getChannelGavs() {
+        return channelGavs==null?Collections.emptyList():channelGavs;
     }
 
     @JsonIgnore
