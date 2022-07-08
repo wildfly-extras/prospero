@@ -44,9 +44,10 @@ public class ChannelRefUpdater {
     private ChannelRef resolveLatest(ChannelRef channelRef, List<RemoteRepository> repositories) throws ArtifactResolutionException {
         if (channelRef.getGav() != null && !repositories.isEmpty()) {
 
-            String groupId = channelRef.getGav().split(":")[0];
-            String artifactId = channelRef.getGav().split(":")[1];
-            String version = channelRef.getGav().split(":")[2];
+            final String[] gav = channelRef.getGav().split(":");
+            String groupId = gav[0];
+            String artifactId = gav[1];
+            String version = (gav.length == 3)?gav[2]:null;
             final Artifact resolvedChannelArtifact = resolveChannelFile(
                     new DefaultArtifact(groupId, artifactId, "channel", "yaml", "[" + version + ",)"),
                     repositories);
