@@ -1,7 +1,6 @@
 package org.wildfly.prospero.cli.commands;
 
 import java.nio.file.Path;
-import java.nio.file.Paths;
 
 import org.junit.Assert;
 import org.junit.Test;
@@ -13,9 +12,7 @@ import org.mockito.junit.MockitoJUnitRunner;
 import org.wildfly.prospero.actions.Console;
 import org.wildfly.prospero.actions.InstallationHistoryAction;
 import org.wildfly.prospero.api.SavedState;
-import org.wildfly.prospero.cli.AbstractConsoleTest;
 import org.wildfly.prospero.cli.ActionFactory;
-import org.wildfly.prospero.cli.CliMessages;
 import org.wildfly.prospero.cli.ReturnCodes;
 import org.wildfly.prospero.wfchannel.MavenSessionManager;
 
@@ -26,7 +23,7 @@ import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.verify;
 
 @RunWith(MockitoJUnitRunner.class)
-public class RevertCommandTest extends AbstractConsoleTest {
+public class RevertCommandTest extends AbstractMavenCommandTest {
 
     @Mock
     private InstallationHistoryAction historyAction;
@@ -71,15 +68,6 @@ public class RevertCommandTest extends AbstractConsoleTest {
     }
 
     @Test
-    public void offlineModeRequiresLocalRepoOption() {
-        int exitCode = commandLine.execute(CliConstants.REVERT, CliConstants.DIR, "test", CliConstants.REVISION, "abcd",
-                CliConstants.OFFLINE);
-
-        assertEquals(ReturnCodes.INVALID_ARGUMENTS, exitCode);
-        assertTrue(getErrorOutput().contains(CliMessages.MESSAGES.offlineModeRequiresLocalRepo()));
-    }
-
-    @Test
     public void useOfflineMavenSessionManagerIfOfflineSet() throws Exception {
         int exitCode = commandLine.execute(CliConstants.REVERT, CliConstants.DIR, "test", CliConstants.REVISION, "abcd",
                 CliConstants.OFFLINE, CliConstants.LOCAL_REPO, "local-repo");
@@ -89,13 +77,14 @@ public class RevertCommandTest extends AbstractConsoleTest {
         assertTrue(mavenSessionManager.getValue().isOffline());
     }
 
-    @Test
-    public void useLocalMavenRepoIfParameterSet() throws Exception {
-        int exitCode = commandLine.execute(CliConstants.REVERT, CliConstants.DIR, "test", CliConstants.REVISION, "abcd",
-                CliConstants.LOCAL_REPO, "local-repo");
-
-        assertEquals(ReturnCodes.SUCCESS, exitCode);
+    @Override
+    protected MavenSessionManager getCapturedSessionManager() throws Exception {
         verify(historyAction).rollback(eq(new SavedState("abcd")), mavenSessionManager.capture());
-        assertEquals(Paths.get("local-repo").toAbsolutePath(), mavenSessionManager.getValue().getProvisioningRepo());
+        return mavenSessionManager.getValue();
+    }
+
+    @Override
+    protected String[] getDefaultArguments() {
+        return new String[]{CliConstants.REVERT, CliConstants.DIR, "test", CliConstants.REVISION, "abcd"};
     }
 }

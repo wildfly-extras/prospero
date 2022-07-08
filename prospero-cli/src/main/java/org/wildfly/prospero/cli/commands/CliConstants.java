@@ -26,7 +26,7 @@ public final class CliConstants {
     // Options:
 
     public static final String CHANNEL = "--channel";
-    public static final String CHANNEL_REPO = "--channel-repo";
+    public static final String REMOTE_REPOSITORIES = "--remote-repositories";
     public static final String DEFINITION = "--definition";
     public static final String DIR = "--dir";
     public static final String DRY_RUN = "--dry-run";
@@ -34,6 +34,7 @@ public final class CliConstants {
     public static final String H = "-h"; // shortcut for --help
     public static final String HELP = "--help";
     public static final String LOCAL_REPO = "--local-repo";
+    public static final String NO_LOCAL_MAVEN_CACHE = "--no-resolve-local-cache";
     public static final String OFFLINE = "--offline";
     public static final String PATCH_FILE = "--patch-file";
     public static final String PROVISION_CONFIG = "--provision-config";

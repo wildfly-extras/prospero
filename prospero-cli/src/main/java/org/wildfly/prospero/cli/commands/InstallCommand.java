@@ -2,8 +2,10 @@ package org.wildfly.prospero.cli.commands;
 
 import java.net.URL;
 import java.nio.file.Path;
+import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 import org.jboss.galleon.ProvisioningException;
 import org.jboss.logging.Logger;
@@ -16,6 +18,7 @@ import org.wildfly.prospero.cli.ActionFactory;
 import org.wildfly.prospero.cli.CliMain;
 import org.wildfly.prospero.cli.CliMessages;
 import org.wildfly.prospero.cli.ReturnCodes;
+import org.wildfly.prospero.cli.commands.options.LocalRepoOptions;
 import org.wildfly.prospero.wfchannel.MavenSessionManager;
 import picocli.CommandLine;
 
@@ -54,20 +57,19 @@ public class InstallCommand extends AbstractCommand {
     Optional<String> channel;
 
     @CommandLine.Option(
-            names = CliConstants.CHANNEL_REPO,
+            names = CliConstants.REMOTE_REPOSITORIES,
+            paramLabel = "url",
+            split = ",",
             order = 5
     )
-    List<URL> channelRepositories;
+    List<URL> remoteRepositories;
 
-    @CommandLine.Option(
-            names = CliConstants.LOCAL_REPO,
-            order = 6
-    )
-    Optional<Path> localRepo;
+    @CommandLine.ArgGroup(exclusive = true)
+    LocalRepoOptions localRepoOptions;
 
     @CommandLine.Option(
             names = CliConstants.OFFLINE,
-            order = 7
+            order = 8
     )
     boolean offline;
 
@@ -101,10 +103,7 @@ public class InstallCommand extends AbstractCommand {
             return ReturnCodes.INVALID_ARGUMENTS;
         }
 
-        if (offline && localRepo.isEmpty()) {
-            console.error(CliMessages.MESSAGES.offlineModeRequiresLocalRepo());
-            return ReturnCodes.INVALID_ARGUMENTS;
-        }
+        final Optional<Path> localRepo = LocalRepoOptions.getLocalRepo(localRepoOptions);
 
         try {
             final MavenSessionManager mavenSessionManager = new MavenSessionManager(localRepo, offline);
@@ -113,8 +112,7 @@ public class InstallCommand extends AbstractCommand {
                     .setFpl(featurePackOrDefinition.fpl.orElse(null))
                     .setChannel(channel.orElse(null))
                     .setProvisionConfig(provisionConfig.orElse(null))
-                    .setChannelRepo(channelRepositories == null || channelRepositories.isEmpty() ?
-                            null : channelRepositories.get(0).toString())
+                    .setRemoteRepositories(remoteRepositories ==null? Collections.emptyList() : remoteRepositories.stream().map(URL::toString).collect(Collectors.toList()))
                     .setDefinitionFile(featurePackOrDefinition.definition.orElse(null))
                     .build();
 

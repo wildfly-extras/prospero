@@ -15,6 +15,7 @@ import org.wildfly.prospero.cli.ArgumentParsingException;
 import org.wildfly.prospero.cli.CliMain;
 import org.wildfly.prospero.cli.CliMessages;
 import org.wildfly.prospero.cli.ReturnCodes;
+import org.wildfly.prospero.cli.commands.options.LocalRepoOptions;
 import org.wildfly.prospero.galleon.GalleonUtils;
 import org.wildfly.prospero.wfchannel.MavenSessionManager;
 import picocli.CommandLine;
@@ -42,8 +43,8 @@ public class UpdateCommand extends AbstractCommand {
     @CommandLine.Option(names = CliConstants.SELF)
     boolean self;
 
-    @CommandLine.Option(names = CliConstants.LOCAL_REPO)
-    Optional<Path> localRepo;
+    @CommandLine.ArgGroup(exclusive = true)
+    LocalRepoOptions localRepoOptions;
 
     @CommandLine.Option(names = CliConstants.OFFLINE)
     boolean offline;
@@ -70,13 +71,8 @@ public class UpdateCommand extends AbstractCommand {
             return ReturnCodes.INVALID_ARGUMENTS;
         }
 
-        if (offline && localRepo.isEmpty()) {
-            console.error(CliMessages.MESSAGES.offlineModeRequiresLocalRepo());
-            return ReturnCodes.INVALID_ARGUMENTS;
-        }
-
         try {
-            final MavenSessionManager mavenSessionManager = new MavenSessionManager(localRepo, offline);
+            final MavenSessionManager mavenSessionManager = new MavenSessionManager(LocalRepoOptions.getLocalRepo(localRepoOptions), offline);
 
             final Path targetPath = directory.get().toAbsolutePath();
             UpdateAction updateAction = actionFactory.update(targetPath, mavenSessionManager, console);

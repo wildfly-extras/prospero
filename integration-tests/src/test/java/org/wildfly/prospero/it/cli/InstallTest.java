@@ -37,7 +37,7 @@ public class InstallTest {
         int returnCode = commandLine.execute(CliConstants.INSTALL,
                 CliConstants.PROVISION_CONFIG, provisionConfig.getPath(),
                 CliConstants.FPL, "wildfly-core@maven(org.jboss.universe:community-universe):19.0",
-                CliConstants.CHANNEL_REPO,
+                CliConstants.REMOTE_REPOSITORIES,
                 "https://repo1.maven.org/maven2/,https://repository.jboss.org/nexus/content/groups/public-jboss",
                 CliConstants.DIR, targetDir.getAbsolutePath());
 
