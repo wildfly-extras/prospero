@@ -34,11 +34,9 @@ import picocli.CommandLine;
 
 public class CliMain {
 
-
     static {
         enableJBossLogManager();
     }
-
 
     private static void enableJBossLogManager() {
         if (System.getProperty("java.util.logging.manager") == null) {
@@ -47,9 +45,6 @@ public class CliMain {
     }
 
     private static final Logger logger = Logger.getLogger(CliMain.class);
-
-    public static final String TARGET_PATH_ARG = "dir";
-    public static final String PROVISION_CONFIG_ARG = "provision-config";
 
     public static void main(String[] args) {
         try {
@@ -85,6 +80,7 @@ public class CliMain {
 
         commandLine.setHelpFactory(new CustomHelp.CustomHelpFactory());
         commandLine.setUsageHelpAutoWidth(true);
+        commandLine.setExecutionExceptionHandler(new ExecutionExceptionHandler(console));
 
         return commandLine;
     }

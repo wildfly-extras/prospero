@@ -35,8 +35,8 @@ import java.util.Optional;
 )
 public class ApplyPatchCommand extends AbstractCommand {
 
-    @CommandLine.Option(names = CliConstants.DIR, required = true, order = 1)
-    Path directory;
+    @CommandLine.Option(names = CliConstants.DIR, order = 1)
+    Optional<Path> directory;
 
     @CommandLine.Option(names = CliConstants.PATCH_FILE, required = true, order = 2)
     Path patchArchive;
@@ -59,6 +59,7 @@ public class ApplyPatchCommand extends AbstractCommand {
 
     @Override
     public Integer call() throws Exception {
+        Path installationDirectory = determineInstallationDirectory(directory);
 
         if (!Files.exists(patchArchive)) {
             console.error(CliMessages.MESSAGES.fileDoesntExist(CliConstants.PATCH_FILE, patchArchive));
@@ -67,7 +68,7 @@ public class ApplyPatchCommand extends AbstractCommand {
 
         final MavenSessionManager mavenSessionManager = new MavenSessionManager(localRepo, offline);
 
-        final ApplyPatchAction applyPatchAction = actionFactory.applyPatch(directory, mavenSessionManager, console);
+        final ApplyPatchAction applyPatchAction = actionFactory.applyPatch(installationDirectory, mavenSessionManager, console);
         applyPatchAction.apply(patchArchive);
 
         return ReturnCodes.SUCCESS;

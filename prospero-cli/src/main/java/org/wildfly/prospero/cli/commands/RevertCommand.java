@@ -1,14 +1,12 @@
 package org.wildfly.prospero.cli.commands;
 
 import java.nio.file.Path;
+import java.util.Optional;
 
-import org.jboss.galleon.ProvisioningException;
-import org.jboss.logging.Logger;
 import org.wildfly.prospero.actions.Console;
 import org.wildfly.prospero.actions.InstallationHistoryAction;
 import org.wildfly.prospero.api.SavedState;
 import org.wildfly.prospero.cli.ActionFactory;
-import org.wildfly.prospero.cli.CliMessages;
 import org.wildfly.prospero.cli.ReturnCodes;
 import org.wildfly.prospero.cli.commands.options.LocalRepoOptions;
 import org.wildfly.prospero.wfchannel.MavenSessionManager;
@@ -20,10 +18,8 @@ import picocli.CommandLine;
 )
 public class RevertCommand extends AbstractCommand {
 
-    private final Logger logger = Logger.getLogger(this.getClass());
-
-    @CommandLine.Option(names = CliConstants.DIR, required = true)
-    Path directory;
+    @CommandLine.Option(names = CliConstants.DIR)
+    Optional<Path> directory;
 
     @CommandLine.Option(names = CliConstants.REVISION, required = true)
     String revision;
@@ -40,18 +36,11 @@ public class RevertCommand extends AbstractCommand {
 
     @Override
     public Integer call() throws Exception {
+        final Path installationDirectory = determineInstallationDirectory(directory);
+        final MavenSessionManager mavenSessionManager = new MavenSessionManager(LocalRepoOptions.getLocalRepo(localRepoOptions), offline);
 
-        try {
-            final MavenSessionManager mavenSessionManager = new MavenSessionManager(LocalRepoOptions.getLocalRepo(localRepoOptions), offline);
-
-            InstallationHistoryAction historyAction = actionFactory.history(directory.toAbsolutePath(), console);
-            historyAction.rollback(new SavedState(revision), mavenSessionManager);
-        } catch (ProvisioningException e) {
-            console.error(CliMessages.MESSAGES.errorWhileExecutingOperation(CliConstants.REVERT, e.getMessage()));
-            logger.error(CliMessages.MESSAGES.errorWhileExecutingOperation(CliConstants.INSTALL, e.getMessage()), e);
-            return ReturnCodes.PROCESSING_ERROR;
-        }
-
+        InstallationHistoryAction historyAction = actionFactory.history(installationDirectory, console);
+        historyAction.rollback(new SavedState(revision), mavenSessionManager);
         return ReturnCodes.SUCCESS;
     }
 }

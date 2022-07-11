@@ -2,6 +2,7 @@ package org.wildfly.prospero.cli.commands;
 
 import java.nio.file.Path;
 import java.util.List;
+import java.util.Optional;
 
 import org.apache.commons.lang3.StringUtils;
 import org.wildfly.prospero.actions.Console;
@@ -14,8 +15,8 @@ import picocli.CommandLine;
 @CommandLine.Command(name = CliConstants.LIST)
 public class RepositoryListCommand extends AbstractCommand {
 
-    @CommandLine.Option(names = CliConstants.DIR, required = true)
-    Path directory;
+    @CommandLine.Option(names = CliConstants.DIR)
+    Optional<Path> directory;
 
     public RepositoryListCommand(Console console, ActionFactory actionFactory) {
         super(console, actionFactory);
@@ -23,7 +24,8 @@ public class RepositoryListCommand extends AbstractCommand {
 
     @Override
     public Integer call() throws Exception {
-        MetadataAction metadataAction = actionFactory.metadataActions(directory);
+        Path installationDirectory = determineInstallationDirectory(directory);
+        MetadataAction metadataAction = actionFactory.metadataActions(installationDirectory);
         List<RepositoryRef> repositories = metadataAction.getRepositories();
 
         // calculate maximum length of repository id strings, to make the list nicely alligned

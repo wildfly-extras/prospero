@@ -7,15 +7,11 @@ import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
-import org.jboss.galleon.ProvisioningException;
-import org.jboss.logging.Logger;
 import org.wildfly.prospero.actions.Console;
 import org.wildfly.prospero.actions.ProvisioningAction;
 import org.wildfly.prospero.api.ProvisioningDefinition;
 import org.wildfly.prospero.api.WellKnownFeaturePacks;
-import org.wildfly.prospero.api.exceptions.OperationException;
 import org.wildfly.prospero.cli.ActionFactory;
-import org.wildfly.prospero.cli.CliMain;
 import org.wildfly.prospero.cli.CliMessages;
 import org.wildfly.prospero.cli.ReturnCodes;
 import org.wildfly.prospero.cli.commands.options.LocalRepoOptions;
@@ -27,8 +23,6 @@ import picocli.CommandLine;
         sortOptions = false
 )
 public class InstallCommand extends AbstractCommand {
-
-    private final Logger logger = Logger.getLogger(this.getClass());
 
     @CommandLine.Option(
             names = CliConstants.DIR,
@@ -94,38 +88,30 @@ public class InstallCommand extends AbstractCommand {
     }
 
     @Override
-    public Integer call() {
+    public Integer call() throws Exception {
         // following is checked by picocli, adding this to avoid IDE warnings
         assert featurePackOrDefinition.definition.isPresent() || featurePackOrDefinition.fpl.isPresent();
 
         if (featurePackOrDefinition.definition.isEmpty() && isStandardFpl(featurePackOrDefinition.fpl.get()) && provisionConfig.isEmpty()) {
-            console.error(CliMessages.MESSAGES.prosperoConfigMandatoryWhenCustomFpl(), CliMain.PROVISION_CONFIG_ARG);
+            console.error(CliMessages.MESSAGES.prosperoConfigMandatoryWhenCustomFpl(), CliConstants.PROVISION_CONFIG);
             return ReturnCodes.INVALID_ARGUMENTS;
         }
 
         final Optional<Path> localRepo = LocalRepoOptions.getLocalRepo(localRepoOptions);
 
-        try {
-            final MavenSessionManager mavenSessionManager = new MavenSessionManager(localRepo, offline);
+        final MavenSessionManager mavenSessionManager = new MavenSessionManager(localRepo, offline);
 
-            final ProvisioningDefinition provisioningDefinition = ProvisioningDefinition.builder()
-                    .setFpl(featurePackOrDefinition.fpl.orElse(null))
-                    .setChannel(channel.orElse(null))
-                    .setProvisionConfig(provisionConfig.orElse(null))
-                    .setRemoteRepositories(remoteRepositories ==null? Collections.emptyList() : remoteRepositories.stream().map(URL::toString).collect(Collectors.toList()))
-                    .setDefinitionFile(featurePackOrDefinition.definition.orElse(null))
-                    .build();
+        final ProvisioningDefinition provisioningDefinition = ProvisioningDefinition.builder()
+                .setFpl(featurePackOrDefinition.fpl.orElse(null))
+                .setChannel(channel.orElse(null))
+                .setProvisionConfig(provisionConfig.orElse(null))
+                .setRemoteRepositories(remoteRepositories == null ? Collections.emptyList() : remoteRepositories.stream().map(URL::toString).collect(Collectors.toList()))
+                .setDefinitionFile(featurePackOrDefinition.definition.orElse(null))
+                .build();
 
-            ProvisioningAction provisioningAction = actionFactory.install(directory.toAbsolutePath(), mavenSessionManager, console);
-            provisioningAction.provision(provisioningDefinition);
-        } catch (ProvisioningException | OperationException e) {
-            console.error(CliMessages.MESSAGES.errorWhileExecutingOperation(CliConstants.INSTALL, e.getMessage()));
-            logger.error(CliMessages.MESSAGES.errorWhileExecutingOperation(CliConstants.INSTALL, e.getMessage()), e);
-            return ReturnCodes.PROCESSING_ERROR;
-        } catch (IllegalArgumentException e) {
-            console.error(e.getMessage());
-            return ReturnCodes.INVALID_ARGUMENTS;
-        }
+        ProvisioningAction provisioningAction = actionFactory.install(directory.toAbsolutePath(), mavenSessionManager,
+                console);
+        provisioningAction.provision(provisioningDefinition);
 
         return ReturnCodes.SUCCESS;
     }

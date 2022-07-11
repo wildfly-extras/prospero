@@ -94,13 +94,10 @@ public interface CliMessages {
     String unexpectedPackageInSelfUpdate(String path);
 
     @Message("Unable to locate the installation folder to perform self-update.")
-    String unableToLocateInstallation();
+    String unableToLocateProsperoInstallation();
 
     @Message("Unable to perform self-update - unable to determine installed feature packs.")
     String unableToParseSelfUpdateData();
-
-    @Message("Using offline mode requires a local-repo parameter present.")
-    String offlineModeRequiresLocalRepo();
 
     @Message("Provisioning config argument (" + CliConstants.PROVISION_CONFIG + ") need to be set when using custom fpl")
     String prosperoConfigMandatoryWhenCustomFpl();
@@ -125,4 +122,7 @@ public interface CliMessages {
 
     @Message("File referenced by [%s] doesn't exist: %s")
     String fileDoesntExist(String optionName, Path patchArchive);
+
+    @Message("Path `%s` does not contain a server installation provisioned by prospero.")
+    IllegalArgumentException invalidInstallationDir(Path path);
 }

@@ -3,7 +3,10 @@ package org.wildfly.prospero.cli.commands;
 import java.nio.file.Path;
 
 import org.junit.Assert;
+import org.junit.Before;
+import org.junit.Rule;
 import org.junit.Test;
+import org.junit.rules.TemporaryFolder;
 import org.junit.runner.RunWith;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Captor;
@@ -13,7 +16,9 @@ import org.wildfly.prospero.actions.Console;
 import org.wildfly.prospero.actions.InstallationHistoryAction;
 import org.wildfly.prospero.api.SavedState;
 import org.wildfly.prospero.cli.ActionFactory;
+import org.wildfly.prospero.cli.CliMessages;
 import org.wildfly.prospero.cli.ReturnCodes;
+import org.wildfly.prospero.test.MetadataTestUtils;
 import org.wildfly.prospero.wfchannel.MavenSessionManager;
 
 import static org.junit.Assert.assertEquals;
@@ -31,6 +36,11 @@ public class RevertCommandTest extends AbstractMavenCommandTest {
     @Captor
     private ArgumentCaptor<MavenSessionManager> mavenSessionManager;
 
+    @Rule
+    public TemporaryFolder tempDir = new TemporaryFolder();
+
+    private Path installationDir;
+
     @Override
     protected ActionFactory createActionFactory() {
         return new ActionFactory() {
@@ -40,19 +50,26 @@ public class RevertCommandTest extends AbstractMavenCommandTest {
             }
         };
     }
+    @Before
+    public void setUp() throws Exception {
+        super.setUp();
 
+        this.installationDir = tempDir.newFolder().toPath();
+        MetadataTestUtils.createInstallationMetadata(installationDir);
+        MetadataTestUtils.createGalleonProvisionedState(installationDir);
+    }
     @Test
-    public void requireDirArgument() {
-        int exitCode = commandLine.execute(CliConstants.REVERT);
+    public void invalidInstallationDir() {
+        int exitCode = commandLine.execute(CliConstants.REVERT, CliConstants.REVISION, "abcd");
 
         Assert.assertEquals(ReturnCodes.INVALID_ARGUMENTS, exitCode);
-        assertTrue(getErrorOutput().contains(String.format(
-                "Missing required options: '%s=<directory>', '%s=<revision>'", CliConstants.DIR, CliConstants.REVISION)));
+        assertTrue(getErrorOutput().contains(CliMessages.MESSAGES.invalidInstallationDir(RevertCommand.currentDir())
+                .getMessage()));
     }
 
     @Test
     public void requireRevisionArgument() {
-        int exitCode = commandLine.execute(CliConstants.REVERT, CliConstants.DIR, "test");
+        int exitCode = commandLine.execute(CliConstants.REVERT, CliConstants.DIR, installationDir.toString());
 
         assertEquals(ReturnCodes.INVALID_ARGUMENTS, exitCode);
         assertTrue(getErrorOutput().contains(String.format(
@@ -61,7 +78,8 @@ public class RevertCommandTest extends AbstractMavenCommandTest {
 
     @Test
     public void callRevertOpertation() throws Exception {
-        int exitCode = commandLine.execute(CliConstants.REVERT, CliConstants.DIR, "test", CliConstants.REVISION, "abcd");
+        int exitCode = commandLine.execute(CliConstants.REVERT, CliConstants.DIR, installationDir.toString(),
+                CliConstants.REVISION, "abcd");
 
         assertEquals(ReturnCodes.SUCCESS, exitCode);
         verify(historyAction).rollback(eq(new SavedState("abcd")), any());
@@ -69,7 +87,8 @@ public class RevertCommandTest extends AbstractMavenCommandTest {
 
     @Test
     public void useOfflineMavenSessionManagerIfOfflineSet() throws Exception {
-        int exitCode = commandLine.execute(CliConstants.REVERT, CliConstants.DIR, "test", CliConstants.REVISION, "abcd",
+        int exitCode = commandLine.execute(CliConstants.REVERT, CliConstants.DIR, installationDir.toString(),
+                CliConstants.REVISION, "abcd",
                 CliConstants.OFFLINE, CliConstants.LOCAL_REPO, "local-repo");
 
         assertEquals(ReturnCodes.SUCCESS, exitCode);
@@ -85,6 +104,7 @@ public class RevertCommandTest extends AbstractMavenCommandTest {
 
     @Override
     protected String[] getDefaultArguments() {
-        return new String[]{CliConstants.REVERT, CliConstants.DIR, "test", CliConstants.REVISION, "abcd"};
+        return new String[]{CliConstants.REVERT, CliConstants.DIR, installationDir.toString(),
+                CliConstants.REVISION, "abcd"};
     }
 }
