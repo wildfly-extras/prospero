@@ -12,7 +12,6 @@ import org.wildfly.prospero.actions.UpdateAction;
 import org.wildfly.prospero.api.exceptions.MetadataException;
 import org.wildfly.prospero.cli.ActionFactory;
 import org.wildfly.prospero.cli.ArgumentParsingException;
-import org.wildfly.prospero.cli.CliMain;
 import org.wildfly.prospero.cli.CliMessages;
 import org.wildfly.prospero.cli.ReturnCodes;
 import org.wildfly.prospero.cli.commands.options.LocalRepoOptions;
@@ -29,8 +28,6 @@ public class UpdateCommand extends AbstractCommand {
     public static final String JBOSS_MODULE_PATH = "module.path";
     public static final String PROSPERO_FP_GA = "org.wildfly.prospero:prospero-standalone-galleon-pack";
     public static final String PROSPERO_FP_ZIP = PROSPERO_FP_GA + "::zip";
-    public static final String DIR_OR_SELF_IS_MANDATORY =
-            String.format("Target dir argument (--%s) need to be set on update command", CliMain.TARGET_PATH_ARG);
 
     private final Logger logger = Logger.getLogger(this.getClass());
 
@@ -58,24 +55,23 @@ public class UpdateCommand extends AbstractCommand {
 
     @Override
     public Integer call() throws Exception {
+        final Path installationDir;
+
         if (self) {
-            if (directory.isEmpty()) {
-                directory = Optional.of(detectInstallationPath());
+            if (directory.isPresent()) {
+                installationDir = directory.get().toAbsolutePath();
+            } else {
+                installationDir = detectProsperoInstallationPath().toAbsolutePath();
             }
-
-            verifyInstallationContainsOnlyProspero(directory.get());
-        }
-
-        if (directory.isEmpty()) {
-            console.error(DIR_OR_SELF_IS_MANDATORY, CliMain.TARGET_PATH_ARG);
-            return ReturnCodes.INVALID_ARGUMENTS;
+            verifyInstallationContainsOnlyProspero(installationDir);
+        } else {
+            installationDir = determineInstallationDirectory(directory);
         }
 
         try {
             final MavenSessionManager mavenSessionManager = new MavenSessionManager(LocalRepoOptions.getLocalRepo(localRepoOptions), offline);
 
-            final Path targetPath = directory.get().toAbsolutePath();
-            UpdateAction updateAction = actionFactory.update(targetPath, mavenSessionManager, console);
+            UpdateAction updateAction = actionFactory.update(installationDir, mavenSessionManager, console);
             if (!dryRun) {
                 updateAction.doUpdateAll(yes);
             } else {
@@ -90,7 +86,9 @@ public class UpdateCommand extends AbstractCommand {
     }
 
 
-    private void verifyInstallationContainsOnlyProspero(Path dir) throws ArgumentParsingException {
+    private static void verifyInstallationContainsOnlyProspero(Path dir) throws ArgumentParsingException {
+        verifyInstallationDirectory(dir);
+
         try {
             final List<String> fpNames = GalleonUtils.getInstalledPacks(dir.toAbsolutePath());
             if (fpNames.size() != 1) {
@@ -104,10 +102,10 @@ public class UpdateCommand extends AbstractCommand {
         }
     }
 
-    private Path detectInstallationPath() throws ArgumentParsingException {
+    private static Path detectProsperoInstallationPath() throws ArgumentParsingException {
         final String modulePath = System.getProperty(JBOSS_MODULE_PATH);
         if (modulePath == null) {
-            throw new ArgumentParsingException(CliMessages.MESSAGES.unableToLocateInstallation());
+            throw new ArgumentParsingException(CliMessages.MESSAGES.unableToLocateProsperoInstallation());
         }
         return Paths.get(modulePath).toAbsolutePath().getParent();
     }

@@ -2,6 +2,7 @@ package org.wildfly.prospero.cli.commands;
 
 import java.net.URL;
 import java.nio.file.Path;
+import java.util.Optional;
 
 import org.wildfly.prospero.actions.Console;
 import org.wildfly.prospero.actions.MetadataAction;
@@ -19,8 +20,8 @@ public class RepositoryAddCommand extends AbstractCommand {
     @CommandLine.Parameters(index = "1")
     URL url;
 
-    @CommandLine.Option(names = CliConstants.DIR, required = true)
-    Path directory;
+    @CommandLine.Option(names = CliConstants.DIR)
+    Optional<Path> directory;
 
     public RepositoryAddCommand(Console console, ActionFactory actionFactory) {
         super(console, actionFactory);
@@ -28,14 +29,10 @@ public class RepositoryAddCommand extends AbstractCommand {
 
     @Override
     public Integer call() throws Exception {
-        try {
-            MetadataAction metadataAction = actionFactory.metadataActions(directory);
-            metadataAction.addRepository(repoId, url);
-            console.println(CliMessages.MESSAGES.repositoryAdded(repoId));
-            return ReturnCodes.SUCCESS;
-        } catch (IllegalArgumentException e) {
-            console.error(e.getMessage());
-            return ReturnCodes.INVALID_ARGUMENTS;
-        }
+        Path installationDirectory = determineInstallationDirectory(directory);
+        MetadataAction metadataAction = actionFactory.metadataActions(installationDirectory);
+        metadataAction.addRepository(repoId, url);
+        console.println(CliMessages.MESSAGES.repositoryAdded(repoId));
+        return ReturnCodes.SUCCESS;
     }
 }

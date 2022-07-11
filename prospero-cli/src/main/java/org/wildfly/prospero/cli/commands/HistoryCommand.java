@@ -19,8 +19,8 @@ import picocli.CommandLine;
 )
 public class HistoryCommand extends AbstractCommand {
 
-    @CommandLine.Option(names = CliConstants.DIR, required = true)
-    Path directory;
+    @CommandLine.Option(names = CliConstants.DIR)
+    Optional<Path> directory;
 
     @CommandLine.Option(names = CliConstants.REVISION)
     Optional<String> revision;
@@ -31,7 +31,8 @@ public class HistoryCommand extends AbstractCommand {
 
     @Override
     public Integer call() throws Exception {
-        InstallationHistoryAction historyAction = actionFactory.history(directory.toAbsolutePath(), console);
+        Path installationDirectory = determineInstallationDirectory(directory);
+        InstallationHistoryAction historyAction = actionFactory.history(installationDirectory, console);
 
         if (revision.isEmpty()) {
             List<SavedState> revisions = historyAction.getRevisions();

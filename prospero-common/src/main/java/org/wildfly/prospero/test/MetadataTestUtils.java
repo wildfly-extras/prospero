@@ -12,8 +12,15 @@ import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
 
+import javax.xml.stream.XMLStreamException;
+
 import org.apache.commons.io.FileUtils;
 import org.eclipse.aether.repository.RemoteRepository;
+import org.jboss.galleon.Constants;
+import org.jboss.galleon.state.ProvisionedFeaturePack;
+import org.jboss.galleon.state.ProvisionedState;
+import org.jboss.galleon.universe.FeaturePackLocation;
+import org.jboss.galleon.xml.ProvisionedStateXmlWriter;
 import org.wildfly.channel.Channel;
 import org.wildfly.channel.Stream;
 import org.wildfly.prospero.api.InstallationMetadata;
@@ -51,6 +58,18 @@ public final class MetadataTestUtils {
         final InstallationMetadata metadata = new InstallationMetadata(installation, manifest, channels, repositories);
         metadata.writeFiles();
         return metadata;
+    }
+
+    public static ProvisionedState createGalleonProvisionedState(Path installation, String... featurePacks)
+            throws XMLStreamException, IOException {
+        final ProvisionedState.Builder builder = ProvisionedState.builder();
+        for (String fp : featurePacks) {
+            builder.addFeaturePack(ProvisionedFeaturePack.builder(FeaturePackLocation.fromString(fp).getFPID()).build());
+        }
+        ProvisionedState state = builder.build();
+        ProvisionedStateXmlWriter.getInstance().write(state,
+                installation.resolve(Constants.PROVISIONED_STATE_DIR).resolve(Constants.PROVISIONED_STATE_XML));
+        return state;
     }
 
     public static URL prepareProvisionConfigAsUrl(String channelDescriptor) throws IOException {

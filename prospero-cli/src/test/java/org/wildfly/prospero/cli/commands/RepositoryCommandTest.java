@@ -15,19 +15,22 @@
  * limitations under the License.
  */
 
-package org.wildfly.prospero.cli;
+package org.wildfly.prospero.cli.commands;
 
 import java.nio.file.Path;
 import java.util.Collections;
 
 import org.eclipse.aether.repository.RemoteRepository;
+import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
 import org.wildfly.prospero.api.InstallationMetadata;
 import org.wildfly.prospero.api.exceptions.MetadataException;
-import org.wildfly.prospero.cli.commands.CliConstants;
+import org.wildfly.prospero.cli.AbstractConsoleTest;
+import org.wildfly.prospero.cli.CliMessages;
+import org.wildfly.prospero.cli.ReturnCodes;
 import org.wildfly.prospero.model.RepositoryRef;
 import org.wildfly.prospero.test.MetadataTestUtils;
 
@@ -52,15 +55,34 @@ public class RepositoryCommandTest extends AbstractConsoleTest {
         this.dir = tempDir.newFolder().toPath();
         RemoteRepository repo = new RemoteRepository.Builder(REPO_ID, "default", REPO_URL).build();
         MetadataTestUtils.createInstallationMetadata(dir, Collections.emptyList(), Collections.singletonList(repo));
+        MetadataTestUtils.createGalleonProvisionedState(dir);
     }
 
     @Test
-    public void testListDirRequired() {
+    public void testListInvalidInstallationDir() {
         int exitCode = commandLine.execute(CliConstants.REPO, CliConstants.LIST);
 
-        assertEquals(ReturnCodes.INVALID_ARGUMENTS, exitCode);
-        assertTrue(getErrorOutput().contains(String.format("Missing required option: '%s=<directory>'",
-                CliConstants.DIR)));
+        Assert.assertEquals(ReturnCodes.INVALID_ARGUMENTS, exitCode);
+        assertTrue(getErrorOutput().contains(CliMessages.MESSAGES.invalidInstallationDir(RepositoryListCommand.currentDir())
+                .getMessage()));
+    }
+
+    @Test
+    public void testAddInvalidInstallationDir() {
+        int exitCode = commandLine.execute(CliConstants.REPO, CliConstants.ADD, "repo2", "file:/tmp/repo2");
+
+        Assert.assertEquals(ReturnCodes.INVALID_ARGUMENTS, exitCode);
+        assertTrue(getErrorOutput().contains(CliMessages.MESSAGES.invalidInstallationDir(RepositoryListCommand.currentDir())
+                .getMessage()));
+    }
+
+    @Test
+    public void testRemoveInvalidInstallationDir() {
+        int exitCode = commandLine.execute(CliConstants.REPO, CliConstants.REMOVE, REPO_ID);
+
+        Assert.assertEquals(ReturnCodes.INVALID_ARGUMENTS, exitCode);
+        assertTrue(getErrorOutput().contains(CliMessages.MESSAGES.invalidInstallationDir(RepositoryListCommand.currentDir())
+                .getMessage()));
     }
 
     @Test

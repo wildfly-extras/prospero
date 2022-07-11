@@ -1,6 +1,7 @@
 package org.wildfly.prospero.cli.commands;
 
 import java.nio.file.Path;
+import java.util.Optional;
 
 import org.wildfly.prospero.actions.Console;
 import org.wildfly.prospero.actions.MetadataAction;
@@ -15,8 +16,8 @@ public class RepositoryRemoveCommand extends AbstractCommand {
     @CommandLine.Parameters(index = "0")
     String repoId;
 
-    @CommandLine.Option(names = CliConstants.DIR, required = true)
-    Path directory;
+    @CommandLine.Option(names = CliConstants.DIR)
+    Optional<Path> directory;
 
     public RepositoryRemoveCommand(Console console, ActionFactory actionFactory) {
         super(console, actionFactory);
@@ -24,14 +25,10 @@ public class RepositoryRemoveCommand extends AbstractCommand {
 
     @Override
     public Integer call() throws Exception {
-        try {
-            MetadataAction metadataAction = actionFactory.metadataActions(directory);
-            metadataAction.removeRepository(repoId);
-            console.println(CliMessages.MESSAGES.repositoryRemoved(repoId));
-            return ReturnCodes.SUCCESS;
-        } catch (IllegalArgumentException e) {
-            console.error(e.getMessage());
-            return ReturnCodes.INVALID_ARGUMENTS;
-        }
+        Path installationDirectory = determineInstallationDirectory(directory);
+        MetadataAction metadataAction = actionFactory.metadataActions(installationDirectory);
+        metadataAction.removeRepository(repoId);
+        console.println(CliMessages.MESSAGES.repositoryRemoved(repoId));
+        return ReturnCodes.SUCCESS;
     }
 }

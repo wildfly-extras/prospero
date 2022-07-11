@@ -17,16 +17,8 @@
 
 package org.wildfly.prospero.cli.commands;
 
-import java.io.File;
-import java.io.IOException;
 import java.nio.file.Path;
-import java.nio.file.Paths;
 
-import org.jboss.galleon.Constants;
-import org.jboss.galleon.state.ProvisionedFeaturePack;
-import org.jboss.galleon.state.ProvisionedState;
-import org.jboss.galleon.universe.FeaturePackLocation;
-import org.jboss.galleon.xml.ProvisionedStateXmlWriter;
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
@@ -44,6 +36,7 @@ import org.wildfly.prospero.cli.ActionFactory;
 import org.wildfly.prospero.cli.CliMessages;
 import org.wildfly.prospero.cli.ReturnCodes;
 import org.wildfly.prospero.wfchannel.MavenSessionManager;
+import org.wildfly.prospero.test.MetadataTestUtils;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
@@ -56,7 +49,6 @@ public class UpdateCommandTest extends AbstractMavenCommandTest {
 
     public static final String A_PROSPERO_FP = UpdateCommand.PROSPERO_FP_GA + ":1.0.0";
     public static final String OTHER_FP = "com.another:galleon-pack:1.0.0";
-    public static final Path GALLEON_PROVISIONED_STATE_FILE = Paths.get(Constants.PROVISIONED_STATE_DIR, Constants.PROVISIONED_STATE_XML);
     public static final String MODULES_DIR = "modules";
 
     @Mock
@@ -70,7 +62,8 @@ public class UpdateCommandTest extends AbstractMavenCommandTest {
 
     @Rule
     public TemporaryFolder tempFolder = new TemporaryFolder();
-    private Path baseDir;
+
+    private Path installationDir;
 
     @Override
     protected ActionFactory createActionFactory() {
@@ -80,8 +73,13 @@ public class UpdateCommandTest extends AbstractMavenCommandTest {
     @Before
     public void setUp() throws Exception {
         super.setUp();
+
         when(actionFactory.update(any(), any(), any())).thenReturn(updateAction);
-        baseDir = mockGalleonInstallation(A_PROSPERO_FP);
+
+        installationDir = tempFolder.newFolder().toPath();
+
+        MetadataTestUtils.createInstallationMetadata(installationDir);
+        MetadataTestUtils.createGalleonProvisionedState(installationDir, A_PROSPERO_FP);
     }
 
     @After
@@ -90,16 +88,17 @@ public class UpdateCommandTest extends AbstractMavenCommandTest {
     }
 
     @Test
-    public void errorIfTargetPathNotPresent() {
+    public void currentDirNotValidInstallation() {
         int exitCode = commandLine.execute(CliConstants.UPDATE);
 
         Assert.assertEquals(ReturnCodes.INVALID_ARGUMENTS, exitCode);
-        assertTrue(getErrorOutput().contains(UpdateCommand.DIR_OR_SELF_IS_MANDATORY));
+        assertTrue(getErrorOutput().contains(CliMessages.MESSAGES.invalidInstallationDir(UpdateCommand.currentDir().toAbsolutePath())
+                .getMessage()));
     }
 
     @Test
     public void callUpdate() throws Exception {
-        int exitCode = commandLine.execute(CliConstants.UPDATE, CliConstants.DIR, "test");
+        int exitCode = commandLine.execute(CliConstants.UPDATE, CliConstants.DIR, installationDir.toString());
 
         assertEquals(ReturnCodes.SUCCESS, exitCode);
         Mockito.verify(updateAction).doUpdateAll(false);
@@ -109,51 +108,51 @@ public class UpdateCommandTest extends AbstractMavenCommandTest {
     public void selfUpdateRequiresModulePathProp() {
         int exitCode = commandLine.execute(CliConstants.UPDATE, CliConstants.SELF);
 
-        assertEquals(ReturnCodes.PROCESSING_ERROR, exitCode);
-        assertTrue(getErrorOutput().contains(CliMessages.MESSAGES.unableToLocateInstallation()));
+        assertEquals(ReturnCodes.INVALID_ARGUMENTS, exitCode);
+        assertTrue(getErrorOutput().contains(CliMessages.MESSAGES.unableToLocateProsperoInstallation()));
     }
 
     @Test
     public void selfUpdatePassesModulePathAsDir() throws Exception {
-        System.setProperty(UpdateCommand.JBOSS_MODULE_PATH, baseDir.resolve(MODULES_DIR).toString());
+        System.setProperty(UpdateCommand.JBOSS_MODULE_PATH, installationDir.resolve(MODULES_DIR).toString());
         int exitCode = commandLine.execute(CliConstants.UPDATE, CliConstants.SELF);
 
         assertEquals(ReturnCodes.SUCCESS, exitCode);
-        Mockito.verify(actionFactory).update(eq(baseDir.toAbsolutePath()), any(), any());
+        Mockito.verify(actionFactory).update(eq(installationDir.toAbsolutePath()), any(), any());
         Mockito.verify(updateAction).doUpdateAll(false);
     }
 
     @Test
     public void dirParameterOverridesModulePathInSelfUpdate() throws Exception {
-        System.setProperty(UpdateCommand.JBOSS_MODULE_PATH, "test");
+        System.setProperty(UpdateCommand.JBOSS_MODULE_PATH, installationDir.toString());
         int exitCode = commandLine.execute(CliConstants.UPDATE, CliConstants.SELF,
-                CliConstants.DIR, baseDir.toAbsolutePath().toString());
+                CliConstants.DIR, installationDir.toAbsolutePath().toString());
 
         assertEquals(ReturnCodes.SUCCESS, exitCode);
-        Mockito.verify(actionFactory).update(eq(baseDir.toAbsolutePath()), any(), any());
+        Mockito.verify(actionFactory).update(eq(installationDir.toAbsolutePath()), any(), any());
         Mockito.verify(updateAction).doUpdateAll(false);
     }
 
     @Test
     public void selfUpdateFailsIfMultipleFPsDetected() throws Exception {
-        final Path baseDir = mockGalleonInstallation(A_PROSPERO_FP, OTHER_FP);
+        MetadataTestUtils.createGalleonProvisionedState(installationDir, A_PROSPERO_FP, OTHER_FP);
         int exitCode = commandLine.execute(CliConstants.UPDATE, CliConstants.SELF,
-                CliConstants.DIR, baseDir.toAbsolutePath().toString());
+                CliConstants.DIR, installationDir.toAbsolutePath().toString());
 
-        assertEquals(ReturnCodes.PROCESSING_ERROR, exitCode);
+        assertEquals(ReturnCodes.INVALID_ARGUMENTS, exitCode);
         assertTrue(getErrorOutput().contains(
-                CliMessages.MESSAGES.unexpectedPackageInSelfUpdate(baseDir.toAbsolutePath().toString())));
+                CliMessages.MESSAGES.unexpectedPackageInSelfUpdate(installationDir.toAbsolutePath().toString())));
     }
 
     @Test
     public void selfUpdateFailsIfProsperoFPNotDetected() throws Exception {
-        final Path baseDir = mockGalleonInstallation(OTHER_FP);
+        MetadataTestUtils.createGalleonProvisionedState(installationDir, OTHER_FP);
         int exitCode = commandLine.execute(CliConstants.UPDATE, CliConstants.SELF,
-                CliConstants.DIR, baseDir.toAbsolutePath().toString());
+                CliConstants.DIR, installationDir.toString());
 
-        assertEquals(ReturnCodes.PROCESSING_ERROR, exitCode);
+        assertEquals(ReturnCodes.INVALID_ARGUMENTS, exitCode);
         assertTrue(getErrorOutput().contains(
-                CliMessages.MESSAGES.unexpectedPackageInSelfUpdate(baseDir.toAbsolutePath().toString())));
+                CliMessages.MESSAGES.unexpectedPackageInSelfUpdate(installationDir.toAbsolutePath().toString())));
     }
 
     @Override
@@ -165,17 +164,7 @@ public class UpdateCommandTest extends AbstractMavenCommandTest {
 
     @Override
     protected String[] getDefaultArguments() {
-        return new String[] {CliConstants.UPDATE, CliConstants.DIR, baseDir.toString()};
+        return new String[] {CliConstants.UPDATE, CliConstants.DIR, installationDir.toString()};
     }
 
-    private Path mockGalleonInstallation(String... fps) throws IOException, javax.xml.stream.XMLStreamException {
-        final ProvisionedState.Builder builder = ProvisionedState.builder();
-        for (String fp : fps) {
-            builder.addFeaturePack(ProvisionedFeaturePack.builder(FeaturePackLocation.fromString(fp).getFPID()).build());
-        }
-        ProvisionedState state = builder.build();
-        final File baseDir = tempFolder.newFolder();
-        ProvisionedStateXmlWriter.getInstance().write(state, baseDir.toPath().resolve(GALLEON_PROVISIONED_STATE_FILE));
-        return baseDir.toPath().toAbsolutePath();
-    }
 }

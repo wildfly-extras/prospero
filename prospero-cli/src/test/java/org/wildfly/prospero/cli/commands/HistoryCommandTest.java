@@ -6,7 +6,10 @@ import java.util.Arrays;
 
 import org.eclipse.aether.artifact.DefaultArtifact;
 import org.junit.Assert;
+import org.junit.Before;
+import org.junit.Rule;
 import org.junit.Test;
+import org.junit.rules.TemporaryFolder;
 import org.junit.runner.RunWith;
 import org.mockito.Mock;
 import org.mockito.junit.MockitoJUnitRunner;
@@ -16,7 +19,9 @@ import org.wildfly.prospero.api.ArtifactChange;
 import org.wildfly.prospero.api.SavedState;
 import org.wildfly.prospero.cli.AbstractConsoleTest;
 import org.wildfly.prospero.cli.ActionFactory;
+import org.wildfly.prospero.cli.CliMessages;
 import org.wildfly.prospero.cli.ReturnCodes;
+import org.wildfly.prospero.test.MetadataTestUtils;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
@@ -28,8 +33,13 @@ import static org.mockito.Mockito.when;
 @RunWith(MockitoJUnitRunner.class)
 public class HistoryCommandTest extends AbstractConsoleTest {
 
+    @Rule
+    public TemporaryFolder tempDir = new TemporaryFolder();
+
     @Mock
     private InstallationHistoryAction historyAction;
+
+    private Path installationDir;
 
     @Override
     protected ActionFactory createActionFactory() {
@@ -41,11 +51,20 @@ public class HistoryCommandTest extends AbstractConsoleTest {
         };
     }
 
+    @Before
+    public void setUp() throws Exception {
+        super.setUp();
+        installationDir = tempDir.newFolder().toPath();
+        MetadataTestUtils.createInstallationMetadata(installationDir);
+        MetadataTestUtils.createGalleonProvisionedState(installationDir);
+    }
+
     @Test
-    public void requireDirFolder() {
+    public void currentDirNotValidInstallation() {
         int exitCode = commandLine.execute(CliConstants.HISTORY);
         Assert.assertEquals(ReturnCodes.INVALID_ARGUMENTS, exitCode);
-        assertTrue(getErrorOutput().contains(String.format("Missing required option: '%s=<directory>'", CliConstants.DIR)));
+        assertTrue(getErrorOutput().contains(CliMessages.MESSAGES.invalidInstallationDir(HistoryCommand.currentDir())
+                .getMessage()));
     }
 
     @Test
@@ -53,7 +72,7 @@ public class HistoryCommandTest extends AbstractConsoleTest {
         when(historyAction.getRevisions()).thenReturn(Arrays.asList(
                 new SavedState("abcd", Instant.ofEpochSecond(System.currentTimeMillis()), SavedState.Type.INSTALL)));
 
-        int exitCode = commandLine.execute(CliConstants.HISTORY, CliConstants.DIR, "test");
+        int exitCode = commandLine.execute(CliConstants.HISTORY, CliConstants.DIR, installationDir.toString());
         assertEquals(ReturnCodes.SUCCESS, exitCode);
         verify(historyAction).getRevisions();
         assertTrue(getStandardOutput().contains("abcd"));
@@ -65,7 +84,8 @@ public class HistoryCommandTest extends AbstractConsoleTest {
                         new DefaultArtifact("foo", "bar", "jar", "1.1"),
                         new DefaultArtifact("foo", "bar", "jar", "1.2"))));
 
-        int exitCode = commandLine.execute(CliConstants.HISTORY, CliConstants.DIR, "test", CliConstants.REVISION, "abcd");
+        int exitCode = commandLine.execute(CliConstants.HISTORY, CliConstants.DIR, installationDir.toString(),
+                CliConstants.REVISION, "abcd");
         assertEquals(ReturnCodes.SUCCESS, exitCode);
         verify(historyAction).compare(eq(new SavedState("abcd")));
         assertTrue(getStandardOutput().contains("foo:bar"));
