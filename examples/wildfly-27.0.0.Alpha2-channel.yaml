@@ -17,25 +17,35 @@ streams:
 
   - groupId: "org.wildfly"
     artifactId: "wildfly-galleon-pack"
-    version: "27.0.0.Alpha1"
+    version: "27.0.0.Alpha2"
 
   - groupId: "org.wildfly"
     artifactId: "wildfly-ee-galleon-pack"
-    version: "27.0.0.Alpha1"
+    version: "27.0.0.Alpha2"
 
   - groupId: "org.wildfly.core"
     artifactId: "wildfly-core-galleon-pack"
-    version: "19.0.0.Beta6"
-
-  
+    version: "19.0.0.Beta13"
 
   - groupId: "org.wildfly.core"
     artifactId: "wildfly-version"
-    version: "19.0.0.Beta6"
+    version: "19.0.0.Beta13"
 
   - groupId: "org.wildfly.security"
     artifactId: "wildfly-elytron-jaspi"
     version: "1.19.0.Final"
+
+  - groupId: "com.carrotsearch"
+    artifactId: "hppc"
+    version: "0.8.1"
+
+  - groupId: "org.elasticsearch.client"
+    artifactId: "elasticsearch-rest-client"
+    version: "7.16.3"
+
+  - groupId: "org.elasticsearch.client"
+    artifactId: "elasticsearch-rest-client-sniffer"
+    version: "7.16.3"
 
   - groupId: "org.opensaml"
     artifactId: "opensaml-security-impl"
@@ -55,7 +65,7 @@ streams:
 
   - groupId: "org.wildfly.core"
     artifactId: "wildfly-domain-http-interface"
-    version: "19.0.0.Beta6"
+    version: "19.0.0.Beta13"
 
   - groupId: "org.jboss.spec.javax.interceptor"
     artifactId: "jboss-interceptors-api_1.2_spec"
@@ -63,11 +73,11 @@ streams:
 
   - groupId: "org.wildfly"
     artifactId: "wildfly-clustering-infinispan-client-api"
-    version: "27.0.0.Alpha1"
+    version: "27.0.0.Alpha2"
 
   - groupId: "io.netty"
     artifactId: "netty-transport-native-unix-common"
-    version: "4.1.72.Final"
+    version: "4.1.77.Final"
 
   - groupId: "org.jboss.spec.javax.xml.soap"
     artifactId: "jboss-saaj-api_1.4_spec"
@@ -79,7 +89,7 @@ streams:
 
   - groupId: "io.undertow"
     artifactId: "undertow-websockets-jsr"
-    version: "2.2.16.Final"
+    version: "2.2.17.Final"
 
   - groupId: "org.apache.wss4j"
     artifactId: "wss4j-ws-security-dom"
@@ -87,11 +97,11 @@ streams:
 
   - groupId: "org.eclipse.jgit"
     artifactId: "org.eclipse.jgit"
-    version: "5.13.0.202109080827-r"
+    version: "6.2.0.202206071550-r"
 
   - groupId: "org.jboss.ironjacamar"
     artifactId: "ironjacamar-deployers-common"
-    version: "1.5.5.Final"
+    version: "1.5.7.Final"
 
   - groupId: "org.hibernate.validator"
     artifactId: "hibernate-validator-cdi"
@@ -99,15 +109,15 @@ streams:
 
   - groupId: "org.wildfly"
     artifactId: "wildfly-clustering-singleton-server"
-    version: "27.0.0.Alpha1"
+    version: "27.0.0.Alpha2"
 
   - groupId: "org.wildfly.core"
     artifactId: "wildfly-io"
-    version: "19.0.0.Beta6"
+    version: "19.0.0.Beta13"
 
   - groupId: "org.apache.cxf.services.ws-discovery"
     artifactId: "cxf-services-ws-discovery-api"
-    version: "3.5.1"
+    version: "3.5.2"
 
   - groupId: "org.wildfly.security"
     artifactId: "wildfly-elytron-auth-server"
@@ -139,15 +149,15 @@ streams:
 
   - groupId: "org.ow2.asm"
     artifactId: "asm-util"
-    version: "9.2"
+    version: "9.3"
 
   - groupId: "org.jboss.narayana.txframework"
     artifactId: "txframework"
-    version: "5.12.5.Final"
+    version: "5.12.7.Final"
 
   - groupId: "org.wildfly.core"
     artifactId: "wildfly-process-controller"
-    version: "19.0.0.Beta6"
+    version: "19.0.0.Beta13"
 
   - groupId: "org.hibernate"
     artifactId: "hibernate-search-backend-jms"
@@ -159,11 +169,11 @@ streams:
 
   - groupId: "org.wildfly"
     artifactId: "wildfly-clustering-web-container"
-    version: "27.0.0.Alpha1"
+    version: "27.0.0.Alpha2"
 
   - groupId: "org.wildfly"
     artifactId: "wildfly-jdr"
-    version: "27.0.0.Alpha1"
+    version: "27.0.0.Alpha2"
 
   - groupId: "org.wildfly.security"
     artifactId: "wildfly-elytron-x500-cert-acme"
@@ -171,7 +181,7 @@ streams:
 
   - groupId: "org.apache.httpcomponents"
     artifactId: "httpasyncclient"
-    version: "4.1.4"
+    version: "4.1.5"
 
   - groupId: "org.jboss.threads"
     artifactId: "jboss-threads"
@@ -183,7 +193,7 @@ streams:
 
   - groupId: "org.wildfly"
     artifactId: "wildfly-weld-common"
-    version: "27.0.0.Alpha1"
+    version: "27.0.0.Alpha2"
 
   - groupId: "org.jboss"
     artifactId: "jboss-iiop-client"
@@ -191,15 +201,15 @@ streams:
 
   - groupId: "org.apache.james"
     artifactId: "apache-mime4j-dom"
-    version: "0.8.4"
+    version: "0.8.7"
 
   - groupId: "org.wildfly"
     artifactId: "jipijapa-spi"
-    version: "27.0.0.Alpha1"
+    version: "27.0.0.Alpha2"
 
   - groupId: "org.wildfly.core"
     artifactId: "wildfly-management-client-content"
-    version: "19.0.0.Beta6"
+    version: "19.0.0.Beta13"
 
   - groupId: "org.wildfly.security"
     artifactId: "wildfly-elytron-mechanism-gssapi"
@@ -211,7 +221,7 @@ streams:
 
   - groupId: "org.wildfly.core"
     artifactId: "wildfly-request-controller"
-    version: "19.0.0.Beta6"
+    version: "19.0.0.Beta13"
 
   - groupId: "org.hibernate"
     artifactId: "hibernate-search-orm"
@@ -223,7 +233,7 @@ streams:
 
   - groupId: "io.netty"
     artifactId: "netty-transport-native-epoll"
-    version: "4.1.72.Final"
+    version: "4.1.77.Final"
 
   - groupId: "org.infinispan.protostream"
     artifactId: "protostream"
@@ -243,7 +253,7 @@ streams:
 
   - groupId: "org.wildfly.core"
     artifactId: "wildfly-core-security"
-    version: "19.0.0.Beta6"
+    version: "19.0.0.Beta13"
 
   - groupId: "org.infinispan.protostream"
     artifactId: "protostream-types"
@@ -275,11 +285,11 @@ streams:
 
   - groupId: "joda-time"
     artifactId: "joda-time"
-    version: "2.10.13"
+    version: "2.10.14"
 
   - groupId: "org.wildfly"
     artifactId: "wildfly-pojo"
-    version: "27.0.0.Alpha1"
+    version: "27.0.0.Alpha2"
 
   - groupId: "com.sun.xml.fastinfoset"
     artifactId: "FastInfoset"
@@ -287,7 +297,7 @@ streams:
 
   - groupId: "org.wildfly.core"
     artifactId: "wildfly-jmx"
-    version: "19.0.0.Beta6"
+    version: "19.0.0.Beta13"
 
   - groupId: "org.wildfly.security"
     artifactId: "wildfly-elytron-credential-store"
@@ -299,7 +309,7 @@ streams:
 
   - groupId: "org.wildfly"
     artifactId: "wildfly-jsf-injection"
-    version: "27.0.0.Alpha1"
+    version: "27.0.0.Alpha2"
 
   - groupId: "org.glassfish"
     artifactId: "jakarta.el"
@@ -315,7 +325,7 @@ streams:
 
   - groupId: "org.wildfly"
     artifactId: "wildfly-client-all"
-    version: "27.0.0.Alpha1"
+    version: "27.0.0.Alpha2"
 
   - groupId: "org.hibernate"
     artifactId: "hibernate-search-engine"
@@ -323,23 +333,19 @@ streams:
 
   - groupId: "org.wildfly"
     artifactId: "wildfly-clustering-singleton-extension"
-    version: "27.0.0.Alpha1"
+    version: "27.0.0.Alpha2"
 
   - groupId: "org.wildfly"
     artifactId: "wildfly-clustering-ee-cache"
-    version: "27.0.0.Alpha1"
+    version: "27.0.0.Alpha2"
 
   - groupId: "org.projectodd.vdx"
     artifactId: "vdx-core"
     version: "1.1.6"
 
-  - groupId: "io.jaegertracing"
-    artifactId: "jaeger-thrift"
-    version: "1.6.0"
-
   - groupId: "org.wildfly"
     artifactId: "jipijapa-hibernate5-3"
-    version: "27.0.0.Alpha1"
+    version: "27.0.0.Alpha2"
 
   - groupId: "org.wildfly.security"
     artifactId: "wildfly-elytron-x500-cert"
@@ -355,18 +361,22 @@ streams:
 
   - groupId: "org.jboss.ironjacamar"
     artifactId: "ironjacamar-core-api"
-    version: "1.5.5.Final"
+    version: "1.5.7.Final"
 
   - groupId: "io.netty"
     artifactId: "netty-codec-http"
-    version: "4.1.72.Final"
+    version: "4.1.77.Final"
 
   - groupId: "org.wildfly.core"
     artifactId: "wildfly-event-logger"
-    version: "19.0.0.Beta6"
+    version: "19.0.0.Beta13"
 
   - groupId: "org.apache.lucene"
     artifactId: "lucene-misc"
+    version: "5.5.5"
+
+  - groupId: "org.apache.lucene"
+    artifactId: "lucene-join"
     version: "5.5.5"
 
   - groupId: "javax.jws"
@@ -387,7 +397,7 @@ streams:
 
   - groupId: "org.wildfly"
     artifactId: "wildfly-weld-bean-validation"
-    version: "27.0.0.Alpha1"
+    version: "27.0.0.Alpha2"
 
   - groupId: "org.javassist"
     artifactId: "javassist"
@@ -407,7 +417,7 @@ streams:
 
   - groupId: "org.ow2.asm"
     artifactId: "asm"
-    version: "9.2"
+    version: "9.3"
 
   - groupId: "org.jboss.spec.javax.xml.ws"
     artifactId: "jboss-jaxws-api_2.3_spec"
@@ -415,7 +425,7 @@ streams:
 
   - groupId: "io.undertow"
     artifactId: "undertow-core"
-    version: "2.2.16.Final"
+    version: "2.2.17.Final"
 
   - groupId: "com.github.fge"
     artifactId: "json-patch"
@@ -427,11 +437,11 @@ streams:
 
   - groupId: "org.wildfly"
     artifactId: "wildfly-mod_cluster-undertow"
-    version: "27.0.0.Alpha1"
+    version: "27.0.0.Alpha2"
 
   - groupId: "io.netty"
     artifactId: "netty-transport-classes-epoll"
-    version: "4.1.72.Final"
+    version: "4.1.77.Final"
 
   - groupId: "com.google.guava"
     artifactId: "guava"
@@ -439,11 +449,11 @@ streams:
 
   - groupId: "org.wildfly.core"
     artifactId: "wildfly-deployment-scanner"
-    version: "19.0.0.Beta6"
+    version: "19.0.0.Beta13"
 
   - groupId: "org.wildfly"
     artifactId: "wildfly-web-common"
-    version: "27.0.0.Alpha1"
+    version: "27.0.0.Alpha2"
 
   - groupId: "org.infinispan"
     artifactId: "infinispan-client-hotrod"
@@ -459,7 +469,7 @@ streams:
 
   - groupId: "org.wildfly"
     artifactId: "wildfly-xts"
-    version: "27.0.0.Alpha1"
+    version: "27.0.0.Alpha2"
 
   - groupId: "org.wildfly.security"
     artifactId: "wildfly-elytron-credential"
@@ -467,7 +477,7 @@ streams:
 
   - groupId: "io.netty"
     artifactId: "netty-resolver"
-    version: "4.1.72.Final"
+    version: "4.1.77.Final"
 
   - groupId: "org.apache.cxf.xjcplugins"
     artifactId: "cxf-xjc-bug986"
@@ -487,11 +497,11 @@ streams:
 
   - groupId: "io.netty"
     artifactId: "netty-transport-native-kqueue"
-    version: "4.1.72.Final"
+    version: "4.1.77.Final"
 
   - groupId: "org.apache.activemq"
     artifactId: "artemis-commons"
-    version: "2.19.1"
+    version: "2.23.1"
 
   - groupId: "org.wildfly.security"
     artifactId: "wildfly-elytron-http-sso"
@@ -507,7 +517,7 @@ streams:
 
   - groupId: "org.apache.activemq"
     artifactId: "artemis-dto"
-    version: "2.19.1"
+    version: "2.23.1"
 
   - groupId: "org.wildfly.security"
     artifactId: "wildfly-elytron-tool"
@@ -523,7 +533,7 @@ streams:
 
   - groupId: "org.wildfly"
     artifactId: "wildfly-clustering-ejb-extension"
-    version: "27.0.0.Alpha1"
+    version: "27.0.0.Alpha2"
 
   - groupId: "org.apache.taglibs"
     artifactId: "taglibs-standard-compat"
@@ -535,7 +545,7 @@ streams:
 
   - groupId: "org.wildfly.core"
     artifactId: "wildfly-host-controller"
-    version: "19.0.0.Beta6"
+    version: "19.0.0.Beta13"
 
   - groupId: "org.wildfly.security"
     artifactId: "wildfly-elytron-sasl-external"
@@ -543,7 +553,7 @@ streams:
 
   - groupId: "io.netty"
     artifactId: "netty-common"
-    version: "4.1.72.Final"
+    version: "4.1.77.Final"
 
   - groupId: "org.wildfly.security"
     artifactId: "wildfly-elytron-x500-cert-util"
@@ -551,7 +561,7 @@ streams:
 
   - groupId: "org.apache.sshd"
     artifactId: "sshd-core"
-    version: "2.7.0"
+    version: "2.8.0"
 
   - groupId: "org.opensaml"
     artifactId: "opensaml-security-api"
@@ -563,7 +573,7 @@ streams:
 
   - groupId: "org.apache.cxf"
     artifactId: "cxf-rt-frontend-jaxws"
-    version: "3.5.1"
+    version: "3.5.2"
 
   - groupId: "org.jboss.weld.module"
     artifactId: "weld-ejb"
@@ -571,7 +581,7 @@ streams:
 
   - groupId: "org.wildfly.core"
     artifactId: "wildfly-launcher"
-    version: "19.0.0.Beta6"
+    version: "19.0.0.Beta13"
 
   - groupId: "org.apache.httpcomponents"
     artifactId: "httpcore-nio"
@@ -579,7 +589,7 @@ streams:
 
   - groupId: "org.wildfly.core"
     artifactId: "wildfly-core-management-client"
-    version: "19.0.0.Beta6"
+    version: "19.0.0.Beta13"
 
   - groupId: "org.wildfly.security"
     artifactId: "wildfly-elytron-client"
@@ -587,23 +597,23 @@ streams:
 
   - groupId: "org.jboss.hal"
     artifactId: "hal-console"
-    version: "3.5.12.Final"
+    version: "3.6.1.Final"
 
   - groupId: "org.wildfly.core"
     artifactId: "wildfly-jar-boot"
-    version: "19.0.0.Beta6"
+    version: "19.0.0.Beta13"
 
   - groupId: "io.agroal"
     artifactId: "agroal-pool"
-    version: "1.15"
+    version: "1.16"
 
   - groupId: "org.apache.cxf"
     artifactId: "cxf-core"
-    version: "3.5.1"
+    version: "3.5.2"
 
   - groupId: "org.wildfly.core"
     artifactId: "wildfly-protocol"
-    version: "19.0.0.Beta6"
+    version: "19.0.0.Beta13"
 
   - groupId: "org.opensaml"
     artifactId: "opensaml-xacml-saml-impl"
@@ -611,7 +621,7 @@ streams:
 
   - groupId: "org.wildfly.core"
     artifactId: "wildfly-platform-mbean"
-    version: "19.0.0.Beta6"
+    version: "19.0.0.Beta13"
 
   - groupId: "org.hibernate"
     artifactId: "hibernate-search-serialization-avro"
@@ -631,7 +641,7 @@ streams:
 
   - groupId: "org.wildfly"
     artifactId: "wildfly-weld"
-    version: "27.0.0.Alpha1"
+    version: "27.0.0.Alpha2"
 
   - groupId: "org.opensaml"
     artifactId: "opensaml-xmlsec-api"
@@ -647,7 +657,7 @@ streams:
 
   - groupId: "org.wildfly"
     artifactId: "wildfly-undertow"
-    version: "27.0.0.Alpha1"
+    version: "27.0.0.Alpha2"
 
   - groupId: "org.jboss"
     artifactId: "jboss-dmr"
@@ -659,7 +669,7 @@ streams:
 
   - groupId: "org.wildfly"
     artifactId: "wildfly-clustering-ejb-infinispan"
-    version: "27.0.0.Alpha1"
+    version: "27.0.0.Alpha2"
 
   - groupId: "org.wildfly.security"
     artifactId: "wildfly-elytron-ssl"
@@ -667,7 +677,7 @@ streams:
 
   - groupId: "org.jboss.marshalling"
     artifactId: "jboss-marshalling"
-    version: "2.0.12.Final"
+    version: "2.1.0.Final"
 
   - groupId: "org.aesh"
     artifactId: "aesh"
@@ -675,7 +685,15 @@ streams:
 
   - groupId: "org.wildfly"
     artifactId: "wildfly-clustering-server-service"
-    version: "27.0.0.Alpha1"
+    version: "27.0.0.Alpha2"
+
+  - groupId: "io.jaegertracing"
+    artifactId: "jaeger-core"
+    version: "1.6.0"
+
+  - groupId: "io.jaegertracing"
+    artifactId: "jaeger-thrift"
+    version: "1.6.0"
 
   - groupId: "io.undertow.jastow"
     artifactId: "jastow"
@@ -695,7 +713,7 @@ streams:
 
   - groupId: "org.apache.commons"
     artifactId: "commons-lang3"
-    version: "3.11"
+    version: "3.12.0"
 
   - groupId: "org.opensaml"
     artifactId: "opensaml-xmlsec-impl"
@@ -709,21 +727,17 @@ streams:
     artifactId: "jakarta.persistence-api"
     version: "2.2.3"
 
-  - groupId: "io.jaegertracing"
-    artifactId: "jaeger-core"
-    version: "1.6.0"
-
   - groupId: "org.jboss.logmanager"
     artifactId: "log4j-jboss-logmanager"
     version: "1.3.0.Final"
 
   - groupId: "org.apache.cxf"
     artifactId: "cxf-rt-databinding-jaxb"
-    version: "3.5.1"
+    version: "3.5.2"
 
   - groupId: "org.wildfly"
     artifactId: "wildfly-transactions"
-    version: "27.0.0.Alpha1"
+    version: "27.0.0.Alpha2"
 
   - groupId: "org.wildfly.security"
     artifactId: "wildfly-elytron-mechanism-scram"
@@ -743,11 +757,11 @@ streams:
 
   - groupId: "org.apache.cxf"
     artifactId: "cxf-rt-security"
-    version: "3.5.1"
+    version: "3.5.2"
 
   - groupId: "org.apache.avro"
     artifactId: "avro"
-    version: "1.7.6"
+    version: "1.11.0"
 
   - groupId: "org.jboss"
     artifactId: "jboss-ejb-client"
@@ -755,7 +769,7 @@ streams:
 
   - groupId: "org.wildfly.core"
     artifactId: "wildfly-security-manager"
-    version: "19.0.0.Beta6"
+    version: "19.0.0.Beta13"
 
   - groupId: "org.jboss.logging"
     artifactId: "jul-to-slf4j-stub"
@@ -763,15 +777,15 @@ streams:
 
   - groupId: "org.jboss.ws.cxf"
     artifactId: "jbossws-cxf-jaspi"
-    version: "5.4.4.Final"
+    version: "5.5.0.Final"
 
   - groupId: "org.hibernate"
     artifactId: "hibernate-core"
-    version: "5.3.24.Final"
+    version: "5.3.27.Final"
 
   - groupId: "org.jboss.metadata"
     artifactId: "jboss-metadata-common"
-    version: "14.0.0.Final"
+    version: "15.1.0.Alpha2"
 
   - groupId: "org.jboss.mod_cluster"
     artifactId: "mod_cluster-load-spi"
@@ -791,7 +805,7 @@ streams:
 
   - groupId: "org.wildfly.core"
     artifactId: "wildfly-jar-runtime"
-    version: "19.0.0.Beta6"
+    version: "19.0.0.Beta13"
 
   - groupId: "org.glassfish.jaxb"
     artifactId: "codemodel"
@@ -799,11 +813,11 @@ streams:
 
   - groupId: "org.wildfly.core"
     artifactId: "wildfly-domain-http-error-context"
-    version: "19.0.0.Beta6"
+    version: "19.0.0.Beta13"
 
   - groupId: "org.apache.cxf"
     artifactId: "cxf-rt-databinding-aegis"
-    version: "3.5.1"
+    version: "3.5.2"
 
   - groupId: "jakarta.security.enterprise"
     artifactId: "jakarta.security.enterprise-api"
@@ -815,7 +829,7 @@ streams:
 
   - groupId: "org.jboss.marshalling"
     artifactId: "jboss-marshalling-river"
-    version: "2.0.12.Final"
+    version: "2.1.0.Final"
 
   - groupId: "org.opensaml"
     artifactId: "opensaml-profile-api"
@@ -827,7 +841,7 @@ streams:
 
   - groupId: "org.wildfly.core"
     artifactId: "wildfly-discovery"
-    version: "19.0.0.Beta6"
+    version: "19.0.0.Beta13"
 
   - groupId: "org.wildfly.security"
     artifactId: "wildfly-elytron-realm"
@@ -835,7 +849,7 @@ streams:
 
   - groupId: "org.apache.cxf"
     artifactId: "cxf-rt-wsdl"
-    version: "3.5.1"
+    version: "3.5.2"
 
   - groupId: "org.jboss.resteasy"
     artifactId: "resteasy-jackson2-provider"
@@ -843,7 +857,7 @@ streams:
 
   - groupId: "io.netty"
     artifactId: "netty-transport-native-kqueue"
-    version: "4.1.72.Final"
+    version: "4.1.77.Final"
 
   - groupId: "org.apache.taglibs"
     artifactId: "taglibs-standard-spec"
@@ -855,23 +869,23 @@ streams:
 
   - groupId: "org.jboss.narayana.rts"
     artifactId: "restat-api"
-    version: "5.12.5.Final"
+    version: "5.12.7.Final"
 
   - groupId: "org.wildfly"
     artifactId: "wildfly-clustering-infinispan-marshalling"
-    version: "27.0.0.Alpha1"
+    version: "27.0.0.Alpha2"
 
   - groupId: "org.wildfly"
     artifactId: "wildfly-clustering-web-infinispan"
-    version: "27.0.0.Alpha1"
+    version: "27.0.0.Alpha2"
 
   - groupId: "io.netty"
     artifactId: "netty-codec"
-    version: "4.1.72.Final"
+    version: "4.1.77.Final"
 
   - groupId: "org.wildfly"
     artifactId: "wildfly-jsf"
-    version: "27.0.0.Alpha1"
+    version: "27.0.0.Alpha2"
 
   - groupId: "org.wildfly.security"
     artifactId: "wildfly-elytron-x500"
@@ -899,11 +913,11 @@ streams:
 
   - groupId: "org.wildfly.openssl"
     artifactId: "wildfly-openssl-java"
-    version: "2.2.0.Final"
+    version: "2.2.1.Final"
 
   - groupId: "org.wildfly"
     artifactId: "wildfly-iiop-openjdk"
-    version: "27.0.0.Alpha1"
+    version: "27.0.0.Alpha2"
 
   - groupId: "org.jboss.weld.module"
     artifactId: "weld-web"
@@ -915,11 +929,11 @@ streams:
 
   - groupId: "org.jboss.narayana.rts"
     artifactId: "restat-integration"
-    version: "5.12.5.Final"
+    version: "5.12.7.Final"
 
   - groupId: "io.agroal"
     artifactId: "agroal-api"
-    version: "1.15"
+    version: "1.16"
 
   - groupId: "org.wildfly.security"
     artifactId: "wildfly-elytron-audit"
@@ -927,7 +941,7 @@ streams:
 
   - groupId: "org.eclipse.jgit"
     artifactId: "org.eclipse.jgit.ssh.apache"
-    version: "5.13.0.202109080827-r"
+    version: "6.2.0.202206071550-r"
 
   - groupId: "org.apache.httpcomponents"
     artifactId: "httpclient"
@@ -951,7 +965,7 @@ streams:
 
   - groupId: "org.eclipse"
     artifactId: "yasson"
-    version: "1.0.10"
+    version: "1.0.11"
 
   - groupId: "org.apache.lucene"
     artifactId: "lucene-backward-codecs"
@@ -967,11 +981,11 @@ streams:
 
   - groupId: "org.wildfly.galleon-plugins"
     artifactId: "wildfly-config-gen"
-    version: "5.2.10.Final"
+    version: "6.0.0.Alpha6"
 
   - groupId: "org.wildfly"
     artifactId: "wildfly-security"
-    version: "27.0.0.Alpha1"
+    version: "27.0.0.Alpha2"
 
   - groupId: "org.glassfish.jaxb"
     artifactId: "jaxb-runtime"
@@ -979,7 +993,7 @@ streams:
 
   - groupId: "org.apache.cxf"
     artifactId: "cxf-tools-common"
-    version: "3.5.1"
+    version: "3.5.2"
 
   - groupId: "org.jboss.openjdk-orb"
     artifactId: "openjdk-orb"
@@ -1003,7 +1017,7 @@ streams:
 
   - groupId: "org.apache.activemq"
     artifactId: "artemis-hqclient-protocol"
-    version: "2.19.1"
+    version: "2.23.1"
 
   - groupId: "org.jboss.spec.javax.ejb"
     artifactId: "jboss-ejb-api_3.2_spec"
@@ -1011,11 +1025,11 @@ streams:
 
   - groupId: "org.apache.qpid"
     artifactId: "proton-j"
-    version: "0.33.2"
+    version: "0.33.10"
 
   - groupId: "org.wildfly.core"
     artifactId: "wildfly-network"
-    version: "19.0.0.Beta6"
+    version: "19.0.0.Beta13"
 
   - groupId: "org.wildfly.security"
     artifactId: "wildfly-elytron-http"
@@ -1031,7 +1045,7 @@ streams:
 
   - groupId: "org.wildfly"
     artifactId: "wildfly-opentelemetry-api"
-    version: "27.0.0.Alpha1"
+    version: "27.0.0.Alpha2"
 
   - groupId: "org.wildfly.security"
     artifactId: "wildfly-elytron-http-util"
@@ -1039,7 +1053,7 @@ streams:
 
   - groupId: "org.wildfly"
     artifactId: "wildfly-weld-transactions"
-    version: "27.0.0.Alpha1"
+    version: "27.0.0.Alpha2"
 
   - groupId: "io.reactivex.rxjava2"
     artifactId: "rxjava"
@@ -1047,7 +1061,7 @@ streams:
 
   - groupId: "org.wildfly"
     artifactId: "wildfly-clustering-marshalling-protostream"
-    version: "27.0.0.Alpha1"
+    version: "27.0.0.Alpha2"
 
   - groupId: "org.jvnet.staxex"
     artifactId: "stax-ex"
@@ -1071,55 +1085,55 @@ streams:
 
   - groupId: "org.wildfly"
     artifactId: "wildfly-clustering-infinispan-embedded-service"
-    version: "27.0.0.Alpha1"
+    version: "27.0.0.Alpha2"
 
   - groupId: "io.netty"
     artifactId: "netty-transport"
-    version: "4.1.72.Final"
+    version: "4.1.77.Final"
 
   - groupId: "org.apache.cxf"
     artifactId: "cxf-rt-features-clustering"
-    version: "3.5.1"
+    version: "3.5.2"
 
   - groupId: "org.apache.cxf"
     artifactId: "cxf-rt-transports-http-hc"
-    version: "3.5.1"
+    version: "3.5.2"
 
   - groupId: "org.wildfly"
     artifactId: "wildfly-system-jmx"
-    version: "27.0.0.Alpha1"
+    version: "27.0.0.Alpha2"
 
   - groupId: "org.jboss.metadata"
     artifactId: "jboss-metadata-ear"
-    version: "14.0.0.Final"
+    version: "15.1.0.Alpha2"
 
   - groupId: "io.netty"
     artifactId: "netty-handler-proxy"
-    version: "4.1.72.Final"
+    version: "4.1.77.Final"
 
   - groupId: "org.wildfly"
     artifactId: "wildfly-clustering-infinispan-extension"
-    version: "27.0.0.Alpha1"
+    version: "27.0.0.Alpha2"
 
   - groupId: "org.wildfly"
     artifactId: "wildfly-clustering-infinispan-client"
-    version: "27.0.0.Alpha1"
+    version: "27.0.0.Alpha2"
 
   - groupId: "org.wildfly"
     artifactId: "wildfly-clustering-infinispan-spi"
-    version: "27.0.0.Alpha1"
+    version: "27.0.0.Alpha2"
 
   - groupId: "org.wildfly"
     artifactId: "wildfly-clustering-spi"
-    version: "27.0.0.Alpha1"
+    version: "27.0.0.Alpha2"
 
   - groupId: "org.wildfly"
     artifactId: "wildfly-clustering-api"
-    version: "27.0.0.Alpha1"
+    version: "27.0.0.Alpha2"
 
   - groupId: "org.wildfly"
     artifactId: "wildfly-clustering-server"
-    version: "27.0.0.Alpha1"
+    version: "27.0.0.Alpha2"
 
   - groupId: "commons-codec"
     artifactId: "commons-codec"
@@ -1135,19 +1149,15 @@ streams:
 
   - groupId: "org.wildfly"
     artifactId: "wildfly-naming"
-    version: "27.0.0.Alpha1"
+    version: "27.0.0.Alpha2"
 
   - groupId: "org.jboss.ws"
     artifactId: "jbossws-api"
     version: "1.1.2.Final"
 
-  - groupId: "com.github.spullara.mustache.java"
-    artifactId: "compiler"
-    version: "0.9.10"
-
   - groupId: "org.wildfly"
     artifactId: "wildfly-clustering-infinispan-embedded-spi"
-    version: "27.0.0.Alpha1"
+    version: "27.0.0.Alpha2"
 
   - groupId: "org.wildfly.discovery"
     artifactId: "wildfly-discovery-client"
@@ -1155,11 +1165,35 @@ streams:
 
   - groupId: "org.wildfly"
     artifactId: "wildfly-clustering-web-undertow"
-    version: "27.0.0.Alpha1"
+    version: "27.0.0.Alpha2"
+
+  - groupId: "org.wildfly"
+    artifactId: "wildfly-clustering-weld-web"
+    version: "27.0.0.Alpha2"
+
+  - groupId: "org.wildfly"
+    artifactId: "wildfly-clustering-weld-ejb"
+    version: "27.0.0.Alpha2"
+
+  - groupId: "org.wildfly"
+    artifactId: "wildfly-clustering-weld-core"
+    version: "27.0.0.Alpha2"
+
+  - groupId: "org.wildfly"
+    artifactId: "wildfly-clustering-faces-mojarra"
+    version: "27.0.0.Alpha2"
+
+  - groupId: "org.wildfly"
+    artifactId: "wildfly-clustering-el-glassfish"
+    version: "27.0.0.Alpha2"
+
+  - groupId: "org.wildfly"
+    artifactId: "wildfly-clustering-faces-api"
+    version: "27.0.0.Alpha2"
 
   - groupId: "org.jboss.narayana.xts"
     artifactId: "jbossxts"
-    version: "5.12.5.Final"
+    version: "5.12.7.Final"
 
   - groupId: "commons-cli"
     artifactId: "commons-cli"
@@ -1171,7 +1205,7 @@ streams:
 
   - groupId: "org.wildfly"
     artifactId: "wildfly-clustering-web-api"
-    version: "27.0.0.Alpha1"
+    version: "27.0.0.Alpha2"
 
   - groupId: "io.perfmark"
     artifactId: "perfmark-api"
@@ -1179,7 +1213,7 @@ streams:
 
   - groupId: "org.wildfly.core"
     artifactId: "wildfly-core-management-subsystem"
-    version: "19.0.0.Beta6"
+    version: "19.0.0.Beta13"
 
   - groupId: "org.apache.activemq"
     artifactId: "activemq-artemis-native"
@@ -1187,19 +1221,19 @@ streams:
 
   - groupId: "org.wildfly"
     artifactId: "wildfly-clustering-marshalling-jboss"
-    version: "27.0.0.Alpha1"
+    version: "27.0.0.Alpha2"
 
   - groupId: "org.cryptacular"
     artifactId: "cryptacular"
-    version: "1.2.4"
+    version: "1.2.5"
 
   - groupId: "com.sun.istack"
     artifactId: "istack-commons-runtime"
-    version: "3.0.11"
+    version: "3.0.12"
 
   - groupId: "org.apache.activemq"
     artifactId: "artemis-ra"
-    version: "2.19.1"
+    version: "2.23.1"
 
   - groupId: "org.wildfly.security"
     artifactId: "wildfly-elytron-sasl-entity"
@@ -1211,11 +1245,11 @@ streams:
 
   - groupId: "org.apache.cxf"
     artifactId: "cxf-rt-ws-policy"
-    version: "3.5.1"
+    version: "3.5.2"
 
   - groupId: "org.jboss.ironjacamar"
     artifactId: "ironjacamar-jdbc"
-    version: "1.5.5.Final"
+    version: "1.5.7.Final"
 
   - groupId: "org.reactivestreams"
     artifactId: "reactive-streams"
@@ -1227,11 +1261,11 @@ streams:
 
   - groupId: "org.wildfly"
     artifactId: "wildfly-messaging-activemq-subsystem"
-    version: "27.0.0.Alpha1"
+    version: "27.0.0.Alpha2"
 
   - groupId: "org.wildfly.core"
     artifactId: "wildfly-logging"
-    version: "19.0.0.Beta6"
+    version: "19.0.0.Beta13"
 
   - groupId: "io.opentelemetry"
     artifactId: "opentelemetry-sdk-logs"
@@ -1239,7 +1273,7 @@ streams:
 
   - groupId: "org.wildfly.core"
     artifactId: "wildfly-deployment-repository"
-    version: "19.0.0.Beta6"
+    version: "19.0.0.Beta13"
 
   - groupId: "com.googlecode.javaewah"
     artifactId: "JavaEWAH"
@@ -1247,11 +1281,11 @@ streams:
 
   - groupId: "org.apache.activemq"
     artifactId: "artemis-stomp-protocol"
-    version: "2.19.1"
+    version: "2.23.1"
 
   - groupId: "org.wildfly.core"
     artifactId: "wildfly-elytron-tool-wrapper"
-    version: "19.0.0.Beta6"
+    version: "19.0.0.Beta13"
 
   - groupId: "org.wildfly.security"
     artifactId: "wildfly-elytron-sasl"
@@ -1279,7 +1313,7 @@ streams:
 
   - groupId: "io.netty"
     artifactId: "netty-transport-native-epoll"
-    version: "4.1.72.Final"
+    version: "4.1.77.Final"
 
   - groupId: "org.jboss.spec.javax.servlet.jsp"
     artifactId: "jboss-jsp-api_2.3_spec"
@@ -1287,7 +1321,7 @@ streams:
 
   - groupId: "org.apache.cxf"
     artifactId: "cxf-rt-bindings-soap"
-    version: "3.5.1"
+    version: "3.5.2"
 
   - groupId: "org.bouncycastle"
     artifactId: "bcpkix-jdk18on"
@@ -1311,7 +1345,7 @@ streams:
 
   - groupId: "org.wildfly"
     artifactId: "wildfly-jacorb"
-    version: "27.0.0.Alpha1"
+    version: "27.0.0.Alpha2"
 
   - groupId: "org.wildfly.security"
     artifactId: "wildfly-elytron-http-form"
@@ -1319,7 +1353,7 @@ streams:
 
   - groupId: "org.apache.activemq"
     artifactId: "artemis-jms-server"
-    version: "2.19.1"
+    version: "2.23.1"
 
   - groupId: "org.opensaml"
     artifactId: "opensaml-core"
@@ -1331,7 +1365,7 @@ streams:
 
   - groupId: "org.apache.cxf"
     artifactId: "cxf-tools-validator"
-    version: "3.5.1"
+    version: "3.5.2"
 
   - groupId: "com.github.ben-manes.caffeine"
     artifactId: "caffeine"
@@ -1339,11 +1373,11 @@ streams:
 
   - groupId: "org.wildfly"
     artifactId: "wildfly-clustering-marshalling-spi"
-    version: "27.0.0.Alpha1"
+    version: "27.0.0.Alpha2"
 
   - groupId: "org.jboss"
     artifactId: "jandex"
-    version: "2.4.2.Final"
+    version: "2.4.3.Final"
 
   - groupId: "org.jboss.ws.cxf"
     artifactId: "jbossws-cxf-transports-udp"
@@ -1355,15 +1389,15 @@ streams:
 
   - groupId: "org.wildfly"
     artifactId: "wildfly-jaxrs"
-    version: "27.0.0.Alpha1"
+    version: "27.0.0.Alpha2"
 
   - groupId: "org.apache.cxf"
     artifactId: "cxf-rt-bindings-xml"
-    version: "3.5.1"
+    version: "3.5.2"
 
   - groupId: "org.wildfly"
     artifactId: "wildfly-clustering-jgroups-api"
-    version: "27.0.0.Alpha1"
+    version: "27.0.0.Alpha2"
 
   - groupId: "org.fusesource.jansi"
     artifactId: "jansi"
@@ -1371,7 +1405,7 @@ streams:
 
   - groupId: "org.apache.cxf"
     artifactId: "cxf-rt-ws-mex"
-    version: "3.5.1"
+    version: "3.5.2"
 
   - groupId: "org.jboss.classfilewriter"
     artifactId: "jboss-classfilewriter"
@@ -1395,7 +1429,7 @@ streams:
 
   - groupId: "org.jboss.narayana.rts"
     artifactId: "restat-util"
-    version: "5.12.5.Final"
+    version: "5.12.7.Final"
 
   - groupId: "org.opensaml"
     artifactId: "opensaml-xacml-api"
@@ -1407,7 +1441,7 @@ streams:
 
   - groupId: "org.apache.activemq"
     artifactId: "artemis-amqp-protocol"
-    version: "2.19.1"
+    version: "2.23.1"
 
   - groupId: "org.wildfly.security"
     artifactId: "wildfly-elytron-mechanism-http"
@@ -1415,11 +1449,11 @@ streams:
 
   - groupId: "org.apache.activemq"
     artifactId: "artemis-server"
-    version: "2.19.1"
+    version: "2.23.1"
 
   - groupId: "org.wildfly"
     artifactId: "wildfly-clustering-ee-spi"
-    version: "27.0.0.Alpha1"
+    version: "27.0.0.Alpha2"
 
   - groupId: "org.wildfly.security"
     artifactId: "wildfly-elytron-sasl-auth-util"
@@ -1431,11 +1465,11 @@ streams:
 
   - groupId: "org.wildfly.core"
     artifactId: "wildfly-embedded"
-    version: "19.0.0.Beta6"
+    version: "19.0.0.Beta13"
 
   - groupId: "org.wildfly"
     artifactId: "wildfly-webservices-server-integration"
-    version: "27.0.0.Alpha1"
+    version: "27.0.0.Alpha2"
 
   - groupId: "com.google.api.grpc"
     artifactId: "proto-google-common-protos"
@@ -1443,7 +1477,7 @@ streams:
 
   - groupId: "org.apache.cxf"
     artifactId: "cxf-rt-features-logging"
-    version: "3.5.1"
+    version: "3.5.2"
 
   - groupId: "org.jboss.ws.cxf"
     artifactId: "jbossws-cxf-factories"
@@ -1451,7 +1485,7 @@ streams:
 
   - groupId: "org.jboss.narayana.jts"
     artifactId: "narayana-jts-idlj"
-    version: "5.12.5.Final"
+    version: "5.12.7.Final"
 
   - groupId: "org.jsoup"
     artifactId: "jsoup"
@@ -1459,7 +1493,7 @@ streams:
 
   - groupId: "org.wildfly.core"
     artifactId: "wildfly-server"
-    version: "19.0.0.Beta6"
+    version: "19.0.0.Beta13"
 
   - groupId: "org.infinispan"
     artifactId: "infinispan-hibernate-cache-spi"
@@ -1467,7 +1501,7 @@ streams:
 
   - groupId: "org.wildfly"
     artifactId: "wildfly-ejb3"
-    version: "27.0.0.Alpha1"
+    version: "27.0.0.Alpha2"
 
   - groupId: "org.wildfly.security.elytron-web"
     artifactId: "undertow-server-servlet"
@@ -1475,11 +1509,11 @@ streams:
 
   - groupId: "org.jboss.metadata"
     artifactId: "jboss-metadata-appclient"
-    version: "14.0.0.Final"
+    version: "15.1.0.Alpha2"
 
   - groupId: "org.wildfly"
     artifactId: "wildfly-clustering-web-cache"
-    version: "27.0.0.Alpha1"
+    version: "27.0.0.Alpha2"
 
   - groupId: "org.jboss.weld"
     artifactId: "weld-spi"
@@ -1499,7 +1533,7 @@ streams:
 
   - groupId: "org.wildfly"
     artifactId: "wildfly-weld-webservices"
-    version: "27.0.0.Alpha1"
+    version: "27.0.0.Alpha2"
 
   - groupId: "org.infinispan"
     artifactId: "infinispan-component-annotations"
@@ -1519,19 +1553,19 @@ streams:
 
   - groupId: "org.apache.cxf"
     artifactId: "cxf-rt-ws-rm"
-    version: "3.5.1"
+    version: "3.5.2"
 
   - groupId: "org.wildfly.galleon-plugins"
     artifactId: "wildfly-galleon-plugins"
-    version: "5.2.10.Final"
+    version: "6.0.0.Alpha6"
 
   - groupId: "org.wildfly"
     artifactId: "jipijapa-hibernate5"
-    version: "27.0.0.Alpha1"
+    version: "27.0.0.Alpha2"
 
   - groupId: "org.wildfly"
     artifactId: "wildfly-ee"
-    version: "27.0.0.Alpha1"
+    version: "27.0.0.Alpha2"
 
   - groupId: "org.jboss.ws.cxf"
     artifactId: "jbossws-cxf-server"
@@ -1539,7 +1573,7 @@ streams:
 
   - groupId: "org.wildfly"
     artifactId: "wildfly-appclient"
-    version: "27.0.0.Alpha1"
+    version: "27.0.0.Alpha2"
 
   - groupId: "org.jboss.mod_cluster"
     artifactId: "mod_cluster-container-spi"
@@ -1547,11 +1581,11 @@ streams:
 
   - groupId: "org.jboss.narayana"
     artifactId: "jbosstxbridge"
-    version: "5.12.5.Final"
+    version: "5.12.7.Final"
 
   - groupId: "org.wildfly"
     artifactId: "wildfly-clustering-web-hotrod"
-    version: "27.0.0.Alpha1"
+    version: "27.0.0.Alpha2"
 
   - groupId: "jakarta.json"
     artifactId: "jakarta.json-api"
@@ -1563,7 +1597,7 @@ streams:
 
   - groupId: "io.netty"
     artifactId: "netty-buffer"
-    version: "4.1.72.Final"
+    version: "4.1.77.Final"
 
   - groupId: "org.wildfly.security"
     artifactId: "wildfly-elytron-security-manager-action"
@@ -1571,7 +1605,7 @@ streams:
 
   - groupId: "org.wildfly"
     artifactId: "wildfly-clustering-jgroups-extension"
-    version: "27.0.0.Alpha1"
+    version: "27.0.0.Alpha2"
 
   - groupId: "org.wildfly.security"
     artifactId: "wildfly-elytron-sasl-scram"
@@ -1579,11 +1613,11 @@ streams:
 
   - groupId: "org.wildfly"
     artifactId: "wildfly-mail"
-    version: "27.0.0.Alpha1"
+    version: "27.0.0.Alpha2"
 
   - groupId: "org.wildfly"
     artifactId: "wildfly-sar"
-    version: "27.0.0.Alpha1"
+    version: "27.0.0.Alpha2"
 
   - groupId: "org.opensaml"
     artifactId: "opensaml-xacml-saml-api"
@@ -1591,7 +1625,7 @@ streams:
 
   - groupId: "org.jboss.narayana.jts"
     artifactId: "narayana-jts-integration"
-    version: "5.12.5.Final"
+    version: "5.12.7.Final"
 
   - groupId: "org.opensaml"
     artifactId: "opensaml-saml-impl"
@@ -1603,7 +1637,7 @@ streams:
 
   - groupId: "org.apache.cxf"
     artifactId: "cxf-rt-transports-local"
-    version: "3.5.1"
+    version: "3.5.2"
 
   - groupId: "io.grpc"
     artifactId: "grpc-api"
@@ -1623,7 +1657,7 @@ streams:
 
   - groupId: "org.apache.cxf"
     artifactId: "cxf-rt-transports-http"
-    version: "3.5.1"
+    version: "3.5.2"
 
   - groupId: "org.wildfly.security"
     artifactId: "wildfly-elytron-util"
@@ -1631,7 +1665,7 @@ streams:
 
   - groupId: "org.apache.cxf"
     artifactId: "cxf-rt-frontend-simple"
-    version: "3.5.1"
+    version: "3.5.2"
 
   - groupId: "com.github.fge"
     artifactId: "btf"
@@ -1639,19 +1673,19 @@ streams:
 
   - groupId: "org.wildfly"
     artifactId: "wildfly-clustering-common"
-    version: "27.0.0.Alpha1"
+    version: "27.0.0.Alpha2"
 
   - groupId: "org.wildfly"
     artifactId: "wildfly-batch-jberet"
-    version: "27.0.0.Alpha1"
+    version: "27.0.0.Alpha2"
 
   - groupId: "org.wildfly"
     artifactId: "wildfly-weld-ejb"
-    version: "27.0.0.Alpha1"
+    version: "27.0.0.Alpha2"
 
   - groupId: "org.wildfly"
     artifactId: "wildfly-clustering-ee-hotrod"
-    version: "27.0.0.Alpha1"
+    version: "27.0.0.Alpha2"
 
   - groupId: "org.infinispan"
     artifactId: "infinispan-cachestore-jdbc"
@@ -1667,7 +1701,7 @@ streams:
 
   - groupId: "org.jboss.modules"
     artifactId: "jboss-modules"
-    version: "2.0.2.Final"
+    version: "2.0.3.Final"
 
   - groupId: "org.apache.lucene"
     artifactId: "lucene-analyzers-common"
@@ -1679,7 +1713,7 @@ streams:
 
   - groupId: "org.wildfly"
     artifactId: "wildfly-clustering-web-extension"
-    version: "27.0.0.Alpha1"
+    version: "27.0.0.Alpha2"
 
   - groupId: "com.fasterxml.jackson.jaxrs"
     artifactId: "jackson-jaxrs-json-provider"
@@ -1687,7 +1721,7 @@ streams:
 
   - groupId: "io.netty"
     artifactId: "netty-transport-native-unix-common"
-    version: "4.1.72.Final"
+    version: "4.1.77.Final"
 
   - groupId: "jakarta.validation"
     artifactId: "jakarta.validation-api"
@@ -1695,7 +1729,7 @@ streams:
 
   - groupId: "org.apache.activemq"
     artifactId: "artemis-core-client"
-    version: "2.19.1"
+    version: "2.23.1"
 
   - groupId: "org.infinispan"
     artifactId: "infinispan-hibernate-cache-v53"
@@ -1711,11 +1745,11 @@ streams:
 
   - groupId: "org.wildfly"
     artifactId: "wildfly-datasources-agroal"
-    version: "27.0.0.Alpha1"
+    version: "27.0.0.Alpha2"
 
   - groupId: "net.bytebuddy"
     artifactId: "byte-buddy"
-    version: "1.11.12"
+    version: "1.12.9"
 
   - groupId: "org.jboss.ws.projects"
     artifactId: "jaxws-undertow-httpspi"
@@ -1727,7 +1761,7 @@ streams:
 
   - groupId: "org.wildfly"
     artifactId: "wildfly-clustering-web-spi"
-    version: "27.0.0.Alpha1"
+    version: "27.0.0.Alpha2"
 
   - groupId: "org.wildfly.transaction"
     artifactId: "wildfly-transaction-client"
@@ -1739,11 +1773,11 @@ streams:
 
   - groupId: "org.wildfly"
     artifactId: "wildfly-ee-security"
-    version: "27.0.0.Alpha1"
+    version: "27.0.0.Alpha2"
 
   - groupId: "com.fasterxml.woodstox"
     artifactId: "woodstox-core"
-    version: "6.0.3"
+    version: "6.2.8"
 
   - groupId: "org.apache.santuario"
     artifactId: "xmlsec"
@@ -1751,7 +1785,7 @@ streams:
 
   - groupId: "org.apache.cxf"
     artifactId: "cxf-tools-wsdlto-databinding-jaxb"
-    version: "3.5.1"
+    version: "3.5.2"
 
   - groupId: "org.apache.wss4j"
     artifactId: "wss4j-ws-security-common"
@@ -1759,15 +1793,15 @@ streams:
 
   - groupId: "org.jboss.ironjacamar"
     artifactId: "ironjacamar-validator"
-    version: "1.5.5.Final"
+    version: "1.5.7.Final"
 
   - groupId: "org.wildfly"
     artifactId: "wildfly-clustering-server-spi"
-    version: "27.0.0.Alpha1"
+    version: "27.0.0.Alpha2"
 
   - groupId: "org.wildfly"
     artifactId: "wildfly-opentelemetry"
-    version: "27.0.0.Alpha1"
+    version: "27.0.0.Alpha2"
 
   - groupId: "org.jboss.seam.integration"
     artifactId: "jboss-seam-int-jbossas"
@@ -1775,7 +1809,7 @@ streams:
 
   - groupId: "org.jboss.remoting"
     artifactId: "jboss-remoting"
-    version: "5.0.23.Final"
+    version: "5.0.25.Final"
 
   - groupId: "org.jboss.spec.javax.el"
     artifactId: "jboss-el-api_3.0_spec"
@@ -1791,11 +1825,11 @@ streams:
 
   - groupId: "org.wildfly.core"
     artifactId: "wildfly-remoting"
-    version: "19.0.0.Beta6"
+    version: "19.0.0.Beta13"
 
   - groupId: "org.wildfly"
     artifactId: "wildfly-jpa"
-    version: "27.0.0.Alpha1"
+    version: "27.0.0.Alpha2"
 
   - groupId: "org.wildfly.security"
     artifactId: "wildfly-elytron-mechanism"
@@ -1803,7 +1837,7 @@ streams:
 
   - groupId: "org.apache.activemq"
     artifactId: "artemis-cli"
-    version: "2.19.1"
+    version: "2.23.1"
 
   - groupId: "io.grpc"
     artifactId: "grpc-core"
@@ -1827,7 +1861,7 @@ streams:
 
   - groupId: "org.jboss.ironjacamar"
     artifactId: "ironjacamar-common-spi"
-    version: "1.5.5.Final"
+    version: "1.5.7.Final"
 
   - groupId: "org.apache.cxf.xjcplugins"
     artifactId: "cxf-xjc-boolean"
@@ -1855,7 +1889,7 @@ streams:
 
   - groupId: "org.apache.activemq"
     artifactId: "artemis-journal"
-    version: "2.19.1"
+    version: "2.23.1"
 
   - groupId: "org.jboss.spec.javax.xml.rpc"
     artifactId: "jboss-jaxrpc-api_1.1_spec"
@@ -1863,11 +1897,11 @@ streams:
 
   - groupId: "org.jboss"
     artifactId: "jboss-vfs"
-    version: "3.2.16.Final"
+    version: "3.2.17.Final"
 
   - groupId: "org.apache.activemq"
     artifactId: "artemis-hornetq-protocol"
-    version: "2.19.1"
+    version: "2.23.1"
 
   - groupId: "org.jboss.spec.javax.batch"
     artifactId: "jboss-batch-api_1.0_spec"
@@ -1875,19 +1909,19 @@ streams:
 
   - groupId: "org.wildfly"
     artifactId: "wildfly-web"
-    version: "27.0.0.Alpha1"
+    version: "27.0.0.Alpha2"
 
   - groupId: "org.apache.cxf"
     artifactId: "cxf-rt-management"
-    version: "3.5.1"
+    version: "3.5.2"
 
   - groupId: "org.wildfly.core"
     artifactId: "wildfly-cli"
-    version: "19.0.0.Beta6"
+    version: "19.0.0.Beta13"
 
   - groupId: "org.wildfly"
     artifactId: "wildfly-mod_cluster-extension"
-    version: "27.0.0.Alpha1"
+    version: "27.0.0.Alpha2"
 
   - groupId: "org.wildfly.security"
     artifactId: "wildfly-elytron-auth-server-deprecated"
@@ -1919,7 +1953,7 @@ streams:
 
   - groupId: "org.wildfly"
     artifactId: "wildfly-picketlink"
-    version: "27.0.0.Alpha1"
+    version: "27.0.0.Alpha2"
 
   - groupId: "org.hibernate.validator"
     artifactId: "hibernate-validator"
@@ -1931,11 +1965,11 @@ streams:
 
   - groupId: "org.wildfly"
     artifactId: "wildfly-health"
-    version: "27.0.0.Alpha1"
+    version: "27.0.0.Alpha2"
 
   - groupId: "org.wildfly"
     artifactId: "jipijapa-eclipselink"
-    version: "27.0.0.Alpha1"
+    version: "27.0.0.Alpha2"
 
   - groupId: "org.apache.velocity"
     artifactId: "velocity-engine-core"
@@ -1943,11 +1977,11 @@ streams:
 
   - groupId: "org.wildfly"
     artifactId: "wildfly-clustering-singleton-service"
-    version: "27.0.0.Alpha1"
+    version: "27.0.0.Alpha2"
 
   - groupId: "org.apache.cxf"
     artifactId: "cxf-tools-wsdlto-core"
-    version: "3.5.1"
+    version: "3.5.2"
 
   - groupId: "com.fasterxml.jackson.jaxrs"
     artifactId: "jackson-jaxrs-base"
@@ -1959,15 +1993,15 @@ streams:
 
   - groupId: "org.wildfly"
     artifactId: "wildfly-weld-jpa"
-    version: "27.0.0.Alpha1"
+    version: "27.0.0.Alpha2"
 
   - groupId: "org.apache.james"
     artifactId: "apache-mime4j-storage"
-    version: "0.8.4"
+    version: "0.8.7"
 
   - groupId: "org.apache.cxf"
     artifactId: "cxf-rt-ws-security"
-    version: "3.5.1"
+    version: "3.5.2"
 
   - groupId: "org.jboss.logging"
     artifactId: "commons-logging-jboss-logging"
@@ -1975,11 +2009,11 @@ streams:
 
   - groupId: "org.jboss.narayana.rts"
     artifactId: "restat-bridge"
-    version: "5.12.5.Final"
+    version: "5.12.7.Final"
 
   - groupId: "io.undertow"
     artifactId: "undertow-servlet"
-    version: "2.2.16.Final"
+    version: "2.2.17.Final"
 
   - groupId: "org.glassfish"
     artifactId: "jakarta.json"
@@ -1995,7 +2029,7 @@ streams:
 
   - groupId: "org.apache.activemq"
     artifactId: "artemis-selector"
-    version: "2.19.1"
+    version: "2.23.1"
 
   - groupId: "org.wildfly.security"
     artifactId: "wildfly-elytron-auth-server-sasl"
@@ -2007,31 +2041,31 @@ streams:
 
   - groupId: "org.wildfly"
     artifactId: "wildfly-clustering-ee-infinispan"
-    version: "27.0.0.Alpha1"
+    version: "27.0.0.Alpha2"
 
   - groupId: "org.wildfly"
     artifactId: "wildfly-clustering-server-extension"
-    version: "27.0.0.Alpha1"
+    version: "27.0.0.Alpha2"
 
   - groupId: "org.wildfly.core"
     artifactId: "wildfly-controller-client"
-    version: "19.0.0.Beta6"
+    version: "19.0.0.Beta13"
 
   - groupId: "org.apache.cxf.services.sts"
     artifactId: "cxf-services-sts-core"
-    version: "3.5.1"
+    version: "3.5.2"
 
   - groupId: "org.apache.cxf"
     artifactId: "cxf-rt-security-saml"
-    version: "3.5.1"
+    version: "3.5.2"
 
   - groupId: "org.wildfly"
     artifactId: "wildfly-clustering-infinispan-embedded-api"
-    version: "27.0.0.Alpha1"
+    version: "27.0.0.Alpha2"
 
   - groupId: "org.hibernate"
     artifactId: "hibernate-envers"
-    version: "5.3.24.Final"
+    version: "5.3.27.Final"
 
   - groupId: "org.jboss"
     artifactId: "jboss-transaction-spi"
@@ -2039,27 +2073,27 @@ streams:
 
   - groupId: "org.wildfly.core"
     artifactId: "wildfly-patching"
-    version: "19.0.0.Beta6"
+    version: "19.0.0.Beta13"
 
   - groupId: "org.wildfly.core"
     artifactId: "wildfly-domain-management"
-    version: "19.0.0.Beta6"
+    version: "19.0.0.Beta13"
 
   - groupId: "org.apache.activemq"
     artifactId: "artemis-jms-client"
-    version: "2.19.1"
+    version: "2.23.1"
 
   - groupId: "io.netty"
     artifactId: "netty-transport-classes-kqueue"
-    version: "4.1.72.Final"
+    version: "4.1.77.Final"
 
   - groupId: "com.sun.istack"
     artifactId: "istack-commons-tools"
-    version: "3.0.11"
+    version: "3.0.12"
 
   - groupId: "org.apache.cxf"
     artifactId: "cxf-tools-wsdlto-frontend-jaxws"
-    version: "3.5.1"
+    version: "3.5.2"
 
   - groupId: "com.sun.activation"
     artifactId: "jakarta.activation"
@@ -2067,19 +2101,19 @@ streams:
 
   - groupId: "org.apache.cxf"
     artifactId: "cxf-tools-java2ws"
-    version: "3.5.1"
+    version: "3.5.2"
 
   - groupId: "org.jboss.ironjacamar"
     artifactId: "ironjacamar-core-impl"
-    version: "1.5.5.Final"
+    version: "1.5.7.Final"
 
   - groupId: "org.apache.james"
     artifactId: "apache-mime4j-core"
-    version: "0.8.4"
+    version: "0.8.7"
 
   - groupId: "org.wildfly"
     artifactId: "jipijapa-openjpa"
-    version: "27.0.0.Alpha1"
+    version: "27.0.0.Alpha2"
 
   - groupId: "com.fasterxml.jackson.datatype"
     artifactId: "jackson-datatype-jsr310"
@@ -2087,11 +2121,11 @@ streams:
 
   - groupId: "io.netty"
     artifactId: "netty-transport-native-unix-common"
-    version: "4.1.72.Final"
+    version: "4.1.77.Final"
 
   - groupId: "org.jboss.narayana.compensations"
     artifactId: "compensations"
-    version: "5.12.5.Final"
+    version: "5.12.7.Final"
 
   - groupId: "io.reactivex.rxjava3"
     artifactId: "rxjava"
@@ -2103,7 +2137,7 @@ streams:
 
   - groupId: "org.wildfly"
     artifactId: "wildfly-messaging-activemq-injection"
-    version: "27.0.0.Alpha1"
+    version: "27.0.0.Alpha2"
 
   - groupId: "org.jboss.resteasy"
     artifactId: "resteasy-jsapi"
@@ -2111,7 +2145,7 @@ streams:
 
   - groupId: "org.jboss.metadata"
     artifactId: "jboss-metadata-ejb"
-    version: "14.0.0.Final"
+    version: "15.1.0.Alpha2"
 
   - groupId: "org.jboss.resteasy"
     artifactId: "resteasy-core"
@@ -2119,15 +2153,15 @@ streams:
 
   - groupId: "org.wildfly"
     artifactId: "wildfly-clustering-infinispan-client-spi"
-    version: "27.0.0.Alpha1"
+    version: "27.0.0.Alpha2"
 
   - groupId: "org.apache.activemq"
     artifactId: "artemis-service-extensions"
-    version: "2.19.1"
+    version: "2.23.1"
 
   - groupId: "org.wildfly"
     artifactId: "wildfly-clustering-ejb-client"
-    version: "27.0.0.Alpha1"
+    version: "27.0.0.Alpha2"
 
   - groupId: "org.eclipse.jdt"
     artifactId: "ecj"
@@ -2163,11 +2197,11 @@ streams:
 
   - groupId: "org.wildfly"
     artifactId: "wildfly-clustering-jgroups-spi"
-    version: "27.0.0.Alpha1"
+    version: "27.0.0.Alpha2"
 
   - groupId: "org.wildfly"
     artifactId: "wildfly-connector"
-    version: "27.0.0.Alpha1"
+    version: "27.0.0.Alpha2"
 
   - groupId: "org.wildfly.security"
     artifactId: "wildfly-elytron-sasl-oauth2"
@@ -2175,11 +2209,11 @@ streams:
 
   - groupId: "org.wildfly"
     artifactId: "wildfly-clustering-server-infinispan"
-    version: "27.0.0.Alpha1"
+    version: "27.0.0.Alpha2"
 
   - groupId: "org.wildfly"
     artifactId: "wildfly-clustering-infinispan-client-service"
-    version: "27.0.0.Alpha1"
+    version: "27.0.0.Alpha2"
 
   - groupId: "com.github.fge"
     artifactId: "msg-simple"
@@ -2191,7 +2225,7 @@ streams:
 
   - groupId: "org.apache.cxf"
     artifactId: "cxf-rt-bindings-coloc"
-    version: "3.5.1"
+    version: "3.5.2"
 
   - groupId: "org.wildfly.security"
     artifactId: "wildfly-elytron-security-manager"
@@ -2203,7 +2237,7 @@ streams:
 
   - groupId: "org.jboss.narayana.xts"
     artifactId: "jbossxts"
-    version: "5.12.5.Final"
+    version: "5.12.7.Final"
 
   - groupId: "org.apache.ws.xmlschema"
     artifactId: "xmlschema-core"
@@ -2223,7 +2257,7 @@ streams:
 
   - groupId: "org.wildfly.core"
     artifactId: "wildfly-elytron-integration"
-    version: "19.0.0.Beta6"
+    version: "19.0.0.Beta13"
 
   - groupId: "org.wildfly.security"
     artifactId: "wildfly-elytron-http-stateful-basic"
@@ -2231,7 +2265,7 @@ streams:
 
   - groupId: "org.wildfly"
     artifactId: "wildfly-clustering-marshalling-api"
-    version: "27.0.0.Alpha1"
+    version: "27.0.0.Alpha2"
 
   - groupId: "org.apache.wss4j"
     artifactId: "wss4j-bindings"
@@ -2243,11 +2277,11 @@ streams:
 
   - groupId: "org.wildfly"
     artifactId: "wildfly-clustering-service"
-    version: "27.0.0.Alpha1"
+    version: "27.0.0.Alpha2"
 
   - groupId: "org.jboss.ironjacamar"
     artifactId: "ironjacamar-common-api"
-    version: "1.5.5.Final"
+    version: "1.5.7.Final"
 
   - groupId: "org.wildfly.security"
     artifactId: "wildfly-elytron-realm-jdbc"
@@ -2259,7 +2293,7 @@ streams:
 
   - groupId: "io.agroal"
     artifactId: "agroal-narayana"
-    version: "1.15"
+    version: "1.16"
 
   - groupId: "org.jctools"
     artifactId: "jctools-core"
@@ -2267,7 +2301,7 @@ streams:
 
   - groupId: "io.netty"
     artifactId: "netty-transport-native-unix-common"
-    version: "4.1.72.Final"
+    version: "4.1.77.Final"
 
   - groupId: "org.apache.wss4j"
     artifactId: "wss4j-ws-security-stax"
@@ -2279,15 +2313,15 @@ streams:
 
   - groupId: "org.wildfly"
     artifactId: "wildfly-bean-validation"
-    version: "27.0.0.Alpha1"
+    version: "27.0.0.Alpha2"
 
   - groupId: "io.netty"
     artifactId: "netty-codec-socks"
-    version: "4.1.72.Final"
+    version: "4.1.77.Final"
 
   - groupId: "org.wildfly"
     artifactId: "wildfly-jsr77"
-    version: "27.0.0.Alpha1"
+    version: "27.0.0.Alpha2"
 
   - groupId: "org.jboss.logmanager"
     artifactId: "log4j2-jboss-logmanager"
@@ -2299,15 +2333,15 @@ streams:
 
   - groupId: "org.wildfly"
     artifactId: "wildfly-rts"
-    version: "27.0.0.Alpha1"
+    version: "27.0.0.Alpha2"
 
   - groupId: "org.wildfly.core"
     artifactId: "wildfly-cli"
-    version: "19.0.0.Beta6"
+    version: "19.0.0.Beta13"
 
   - groupId: "org.wildfly"
     artifactId: "wildfly-clustering-web-service"
-    version: "27.0.0.Alpha1"
+    version: "27.0.0.Alpha2"
 
   - groupId: "org.jboss.resteasy"
     artifactId: "resteasy-json-binding-provider"
@@ -2339,7 +2373,7 @@ streams:
 
   - groupId: "org.wildfly"
     artifactId: "wildfly-metrics"
-    version: "27.0.0.Alpha1"
+    version: "27.0.0.Alpha2"
 
   - groupId: "org.hornetq"
     artifactId: "hornetq-jms-client"
@@ -2359,7 +2393,7 @@ streams:
 
   - groupId: "org.wildfly.core"
     artifactId: "wildfly-controller"
-    version: "19.0.0.Beta6"
+    version: "19.0.0.Beta13"
 
   - groupId: "org.wildfly.openssl"
     artifactId: "wildfly-openssl-macosx-x86_64"
@@ -2371,7 +2405,7 @@ streams:
 
   - groupId: "org.apache.activemq"
     artifactId: "artemis-jdbc-store"
-    version: "2.19.1"
+    version: "2.23.1"
 
   - groupId: "org.glassfish.jaxb"
     artifactId: "jaxb-xjc"
@@ -2379,15 +2413,15 @@ streams:
 
   - groupId: "org.apache.sshd"
     artifactId: "sshd-common"
-    version: "2.7.0"
+    version: "2.8.0"
 
   - groupId: "org.jboss.metadata"
     artifactId: "jboss-metadata-web"
-    version: "14.0.0.Final"
+    version: "15.1.0.Alpha2"
 
   - groupId: "org.wildfly"
     artifactId: "wildfly-clustering-server-api"
-    version: "27.0.0.Alpha1"
+    version: "27.0.0.Alpha2"
 
   - groupId: "org.opensaml"
     artifactId: "opensaml-saml-api"
@@ -2403,7 +2437,7 @@ streams:
 
   - groupId: "org.jboss.ironjacamar"
     artifactId: "ironjacamar-common-impl"
-    version: "1.5.5.Final"
+    version: "1.5.7.Final"
 
   - groupId: "org.slf4j"
     artifactId: "slf4j-api"
@@ -2411,11 +2445,11 @@ streams:
 
   - groupId: "org.wildfly"
     artifactId: "wildfly-messaging"
-    version: "27.0.0.Alpha1"
+    version: "27.0.0.Alpha2"
 
   - groupId: "org.wildfly"
     artifactId: "wildfly-weld-spi"
-    version: "27.0.0.Alpha1"
+    version: "27.0.0.Alpha2"
 
   - groupId: "org.jboss.mod_cluster"
     artifactId: "mod_cluster-core"
@@ -2431,7 +2465,7 @@ streams:
 
   - groupId: "io.netty"
     artifactId: "netty-transport-native-unix-common"
-    version: "4.1.72.Final"
+    version: "4.1.77.Final"
 
   - groupId: "org.wildfly.security"
     artifactId: "wildfly-elytron-sasl-otp"
@@ -2447,15 +2481,15 @@ streams:
 
   - groupId: "org.wildfly"
     artifactId: "wildfly-clustering-singleton-api"
-    version: "27.0.0.Alpha1"
+    version: "27.0.0.Alpha2"
 
   - groupId: "org.apache.cxf"
     artifactId: "cxf-rt-ws-addr"
-    version: "3.5.1"
+    version: "3.5.2"
 
   - groupId: "io.netty"
     artifactId: "netty-handler"
-    version: "4.1.72.Final"
+    version: "4.1.77.Final"
 
   - groupId: "org.wildfly.security"
     artifactId: "wildfly-elytron-auth-server-http"
@@ -2475,7 +2509,7 @@ streams:
 
   - groupId: "org.wildfly.core"
     artifactId: "wildfly-threads"
-    version: "19.0.0.Beta6"
+    version: "19.0.0.Beta13"
 
   - groupId: "org.jboss.resteasy"
     artifactId: "resteasy-crypto"
@@ -2503,11 +2537,11 @@ streams:
 
   - groupId: "org.wildfly"
     artifactId: "wildfly-clustering-context"
-    version: "27.0.0.Alpha1"
+    version: "27.0.0.Alpha2"
 
   - groupId: "org.wildfly"
     artifactId: "wildfly-clustering-ejb-spi"
-    version: "27.0.0.Alpha1"
+    version: "27.0.0.Alpha2"
 
   - groupId: "io.grpc"
     artifactId: "grpc-okhttp"
@@ -2519,7 +2553,7 @@ streams:
 
   - groupId: "org.apache.cxf"
     artifactId: "cxf-rt-transports-jms"
-    version: "3.5.1"
+    version: "3.5.2"
 
   - groupId: "org.wildfly.security"
     artifactId: "wildfly-elytron-digest"
@@ -2531,13 +2565,13 @@ streams:
 
   - groupId: io.netty
     artifactId: netty-codec-dns
-    version: "4.1.76.Final"
+    version: "4.1.77.Final"
   - groupId: io.netty
     artifactId: netty-codec-http2
-    version: "4.1.76.Final"
+    version: "4.1.77.Final"
   - groupId: io.netty
     artifactId: netty-resolver-dns
-    version: "4.1.76.Final"
+    version: "4.1.77.Final"
   - groupId: io.opentracing
     artifactId: opentracing-api
     version: "0.33.0"
@@ -2723,55 +2757,52 @@ streams:
     version: "1.0.3"
   - groupId: org.wildfly
     artifactId: wildfly-elytron-oidc-client-subsystem
-    version: "27.0.0.Alpha1"
+    version: "27.0.0.Alpha2"
   - groupId: org.wildfly
     artifactId: wildfly-microprofile-config-smallrye
-    version: "27.0.0.Alpha1"
+    version: "27.0.0.Alpha2"
   - groupId: org.wildfly
     artifactId: wildfly-microprofile-fault-tolerance-smallrye-executor
-    version: "27.0.0.Alpha1"
+    version: "27.0.0.Alpha2"
   - groupId: org.wildfly
     artifactId: wildfly-microprofile-fault-tolerance-smallrye-extension
-    version: "27.0.0.Alpha1"
+    version: "27.0.0.Alpha2"
   - groupId: org.wildfly
     artifactId: wildfly-microprofile-health-smallrye
-    version: "27.0.0.Alpha1"
+    version: "27.0.0.Alpha2"
   - groupId: org.wildfly
     artifactId: wildfly-microprofile-jwt-smallrye
-    version: "27.0.0.Alpha1"
+    version: "27.0.0.Alpha2"
   - groupId: org.wildfly
     artifactId: wildfly-microprofile-metrics-smallrye
-    version: "27.0.0.Alpha1"
+    version: "27.0.0.Alpha2"
   - groupId: org.wildfly
     artifactId: wildfly-microprofile-openapi-smallrye
-    version: "27.0.0.Alpha1"
+    version: "27.0.0.Alpha2"
   - groupId: org.wildfly
     artifactId: wildfly-microprofile-opentracing-extension
-    version: "27.0.0.Alpha1"
+    version: "27.0.0.Alpha2"
   - groupId: org.wildfly
     artifactId: wildfly-microprofile-opentracing-smallrye
-    version: "27.0.0.Alpha1"
+    version: "27.0.0.Alpha2"
   - groupId: org.wildfly
     artifactId: wildfly-microprofile-reactive-messaging
-    version: "27.0.0.Alpha1"
+    version: "27.0.0.Alpha2"
   - groupId: org.wildfly
     artifactId: wildfly-microprofile-reactive-messaging-common
-    version: "27.0.0.Alpha1"
+    version: "27.0.0.Alpha2"
   - groupId: org.wildfly
     artifactId: wildfly-microprofile-reactive-messaging-config
-    version: "27.0.0.Alpha1"
+    version: "27.0.0.Alpha2"
   - groupId: org.wildfly
     artifactId: wildfly-microprofile-reactive-messaging-kafka
-    version: "27.0.0.Alpha1"
+    version: "27.0.0.Alpha2"
   - groupId: org.wildfly
     artifactId: wildfly-microprofile-reactive-streams-operators
-    version: "27.0.0.Alpha1"
+    version: "27.0.0.Alpha2"
   - groupId: org.wildfly
     artifactId: wildfly-microprofile-reactive-streams-operators-cdi-provider
-    version: "27.0.0.Alpha1"
-  - groupId: org.wildfly.galleon-plugins
-    artifactId: wildfly-galleon-plugins
-    version: "6.0.0.Alpha1"
+    version: "27.0.0.Alpha2"
   - groupId: org.wildfly.security
     artifactId: wildfly-elytron-http-oidc
     version: "1.19.0.Final"
