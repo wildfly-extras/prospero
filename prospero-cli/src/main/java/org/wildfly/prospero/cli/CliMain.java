@@ -78,6 +78,8 @@ public class CliMain {
         repoCmd.addSubcommand(new RepositoryRemoveCommand(console, actionFactory));
         repoCmd.addSubcommand(new RepositoryListCommand(console, actionFactory));
 
+        CommandLine installCmd = commandLine.getSubcommands().get(CliConstants.INSTALL);
+        installCmd.setHelpFactory(new CustomHelp.CustomHelpFactory());
         commandLine.setHelpFactory(new CustomHelp.CustomHelpFactory());
         commandLine.setUsageHelpAutoWidth(true);
         commandLine.setExecutionExceptionHandler(new ExecutionExceptionHandler(console));
