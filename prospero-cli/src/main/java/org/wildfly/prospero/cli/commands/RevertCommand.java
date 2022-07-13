@@ -41,7 +41,7 @@ public class RevertCommand extends AbstractCommand {
     @CommandLine.Option(names = CliConstants.REVISION, required = true)
     String revision;
 
-    @CommandLine.ArgGroup(exclusive = true)
+    @CommandLine.ArgGroup(exclusive = true, headingKey = "localRepoOptions.heading")
     LocalRepoOptions localRepoOptions;
 
     @CommandLine.Option(names = CliConstants.OFFLINE)
