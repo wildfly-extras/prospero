@@ -27,6 +27,7 @@ import java.util.Optional;
 public class LocalRepoOptions {
     @CommandLine.Option(
             names = CliConstants.LOCAL_REPO,
+            paramLabel = CliConstants.PATH,
             order = 6
     )
     Path localRepo;

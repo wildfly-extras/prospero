@@ -41,61 +41,66 @@ import picocli.CommandLine;
 )
 public class InstallCommand extends AbstractCommand {
 
-    @CommandLine.Option(
-            names = CliConstants.DIR,
-            required = true,
-            order = 1
-    )
-    Path directory;
-
     @CommandLine.ArgGroup(
+            heading = "%nInstallation source:%n",
             exclusive = true,
             multiplicity = "1",
-            order = 2
+            order = 1
     )
     FeaturePackOrDefinition featurePackOrDefinition;
 
-    @CommandLine.Option(
-            names = CliConstants.PROVISION_CONFIG,
-            order = 3
-    )
-    Optional<Path> provisionConfig;
+        @CommandLine.Option(
+                names = CliConstants.DIR,
+                required = true,
+                order = 2
+        )
+        Path directory;
 
-    @CommandLine.Option(
-            names = CliConstants.CHANNEL,
-            order = 4
-    )
-    Optional<String> channel;
+        @CommandLine.Option(
+                names = CliConstants.PROVISION_CONFIG,
+                paramLabel = CliConstants.PATH,
+                order = 3
+        )
+        Optional<Path> provisionConfig;
 
-    @CommandLine.Option(
-            names = CliConstants.REMOTE_REPOSITORIES,
-            paramLabel = "url",
-            split = ",",
-            order = 5
-    )
-    List<URL> remoteRepositories;
+        @CommandLine.Option(
+                names = CliConstants.CHANNEL,
+                paramLabel = CliConstants.CHANNEL_REFERENCE,
+                order = 4
+        )
+        Optional<String> channel;
 
-    @CommandLine.ArgGroup(exclusive = true)
-    LocalRepoOptions localRepoOptions;
+        @CommandLine.Option(
+                names = CliConstants.REMOTE_REPOSITORIES,
+                paramLabel = CliConstants.REPO_URL,
+                split = ",",
+                order = 5
+        )
+        List<URL> remoteRepositories;
 
-    @CommandLine.Option(
-            names = CliConstants.OFFLINE,
-            order = 8
-    )
-    boolean offline;
+        @CommandLine.ArgGroup(exclusive = true, order = 6, headingKey = "localRepoOptions.heading")
+        LocalRepoOptions localRepoOptions;
+
+        @CommandLine.Option(
+                names = CliConstants.OFFLINE,
+                order = 8
+        )
+        boolean offline;
 
     static class FeaturePackOrDefinition {
         @CommandLine.Option(
                 names = CliConstants.FPL,
+                paramLabel = CliConstants.FEATURE_PACK_REFERENCE,
                 required = true,
-                order = 2
+                order = 1
         )
         Optional<String> fpl;
 
         @CommandLine.Option(
                 names = CliConstants.DEFINITION,
+                paramLabel = CliConstants.PATH,
                 required = true,
-                order = 3
+                order = 2
         )
         Optional<Path> definition;
     }

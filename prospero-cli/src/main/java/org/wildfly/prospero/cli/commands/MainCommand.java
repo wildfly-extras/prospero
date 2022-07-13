@@ -17,8 +17,10 @@
 
 package org.wildfly.prospero.cli.commands;
 
+import java.io.IOException;
 import java.net.URL;
 import java.util.Enumeration;
+import java.util.PropertyResourceBundle;
 import java.util.concurrent.Callable;
 import java.util.jar.Manifest;
 
@@ -48,9 +50,16 @@ public class MainCommand implements Callable<Integer> {
     }
 
     @Override
-    public Integer call() {
-        spec.commandLine().usage(console.getErrOut());
-        return ReturnCodes.INVALID_ARGUMENTS;
+    public Integer call() throws IOException {
+        // print welcome message - this is not printed when -h option is set
+        PropertyResourceBundle usageBundle = new PropertyResourceBundle(
+                getClass().getResourceAsStream("/UsageMessages.properties"));
+
+        console.println(CommandLine.Help.Ansi.AUTO.string(usageBundle.getString("prospero.welcomeMessage")));
+
+        // print main command usage
+        spec.commandLine().usage(console.getStdOut());
+        return ReturnCodes.SUCCESS;
     }
 
     static class VersionProvider implements CommandLine.IVersionProvider {
