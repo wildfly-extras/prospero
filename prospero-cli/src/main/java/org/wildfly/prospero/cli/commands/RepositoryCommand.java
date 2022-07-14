@@ -22,7 +22,7 @@ import org.wildfly.prospero.cli.ActionFactory;
 import org.wildfly.prospero.cli.ReturnCodes;
 import picocli.CommandLine;
 
-@CommandLine.Command(name = CliConstants.REPOSITORY, aliases = CliConstants.REPO)
+@CommandLine.Command(name = CliConstants.Commands.REPOSITORY, aliases = CliConstants.Commands.REPO)
 public class RepositoryCommand extends AbstractCommand {
 
     @CommandLine.Spec

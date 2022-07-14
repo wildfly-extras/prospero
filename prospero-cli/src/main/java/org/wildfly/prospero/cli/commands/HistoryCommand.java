@@ -31,7 +31,7 @@ import org.wildfly.prospero.cli.ReturnCodes;
 import picocli.CommandLine;
 
 @CommandLine.Command(
-        name = CliConstants.HISTORY,
+        name = CliConstants.Commands.HISTORY,
         sortOptions = false
 )
 public class HistoryCommand extends AbstractCommand {

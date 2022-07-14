@@ -70,7 +70,7 @@ public class ApplyPatchCommandTest extends AbstractConsoleTest {
 
     @Test
     public void invalidInstallationDir() {
-        int exitCode = commandLine.execute(CliConstants.APPLY_PATCH, CliConstants.PATCH_FILE, "foo");
+        int exitCode = commandLine.execute(CliConstants.Commands.APPLY_PATCH, CliConstants.PATCH_FILE, "foo");
         assertEquals(ReturnCodes.INVALID_ARGUMENTS, exitCode);
         assertTrue(getErrorOutput().contains(CliMessages.MESSAGES.invalidInstallationDir(ApplyPatchCommand.currentDir())
                 .getMessage()));
@@ -78,7 +78,7 @@ public class ApplyPatchCommandTest extends AbstractConsoleTest {
 
     @Test
     public void requirePatchFile() {
-        int exitCode = commandLine.execute(CliConstants.APPLY_PATCH, CliConstants.DIR, "foo");
+        int exitCode = commandLine.execute(CliConstants.Commands.APPLY_PATCH, CliConstants.DIR, "foo");
         assertEquals(ReturnCodes.INVALID_ARGUMENTS, exitCode);
         assertTrue(getErrorOutput().contains(String.format("Missing required option: '%s=%s'",
                 CliConstants.PATCH_FILE, CliConstants.PATH)));
@@ -87,7 +87,7 @@ public class ApplyPatchCommandTest extends AbstractConsoleTest {
     @Test
     public void callApplyPatchAction() throws Exception {
         final Path testArchive = temp.newFile().toPath();
-        int exitCode = commandLine.execute(CliConstants.APPLY_PATCH, CliConstants.DIR, installationDir.toString(),
+        int exitCode = commandLine.execute(CliConstants.Commands.APPLY_PATCH, CliConstants.DIR, installationDir.toString(),
                 CliConstants.PATCH_FILE, testArchive.toString());
         Mockito.verify(applyPatchAction).apply(testArchive);
         assertEquals(ReturnCodes.SUCCESS, exitCode);
@@ -95,7 +95,7 @@ public class ApplyPatchCommandTest extends AbstractConsoleTest {
 
     @Test
     public void dontAllowNonExistingPatchFile() {
-        int exitCode = commandLine.execute(CliConstants.APPLY_PATCH, CliConstants.DIR, installationDir.toString(),
+        int exitCode = commandLine.execute(CliConstants.Commands.APPLY_PATCH, CliConstants.DIR, installationDir.toString(),
                 CliConstants.PATCH_FILE, "doesnt-exist.zip");
         assertEquals(ReturnCodes.INVALID_ARGUMENTS, exitCode);
         assertTrue(getErrorOutput().contains(CliMessages.MESSAGES.fileDoesntExist(CliConstants.PATCH_FILE, Paths.get("doesnt-exist.zip"))));

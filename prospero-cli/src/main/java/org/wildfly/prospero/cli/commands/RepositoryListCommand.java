@@ -29,7 +29,7 @@ import org.wildfly.prospero.cli.ReturnCodes;
 import org.wildfly.prospero.model.RepositoryRef;
 import picocli.CommandLine;
 
-@CommandLine.Command(name = CliConstants.LIST)
+@CommandLine.Command(name = CliConstants.Commands.LIST)
 public class RepositoryListCommand extends AbstractCommand {
 
     @CommandLine.Option(names = CliConstants.DIR)

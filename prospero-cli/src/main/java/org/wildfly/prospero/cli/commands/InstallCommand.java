@@ -36,7 +36,7 @@ import org.wildfly.prospero.wfchannel.MavenSessionManager;
 import picocli.CommandLine;
 
 @CommandLine.Command(
-        name = CliConstants.INSTALL,
+        name = CliConstants.Commands.INSTALL,
         sortOptions = false
 )
 public class InstallCommand extends AbstractCommand {

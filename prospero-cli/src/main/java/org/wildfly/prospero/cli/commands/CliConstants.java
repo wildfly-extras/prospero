@@ -18,27 +18,34 @@
 package org.wildfly.prospero.cli.commands;
 
 /**
- * CLI commands and options names
+ * CLI string constants
  */
 public final class CliConstants {
 
     private CliConstants() {
     }
 
-    // Command names:
+    /**
+     * Command names
+     */
+    public static final class Commands {
 
-    public static final String MAIN_COMMAND = "prospero";
-    public static final String INSTALL = "install";
-    public static final String UPDATE = "update";
-    public static final String HISTORY = "history";
-    public static final String REVERT = "revert";
-    public static final String REPO = "repo";
-    public static final String REPOSITORY = "repository";
+        private Commands() {
+        }
 
-    public static final String LIST = "list";
-    public static final String ADD = "add";
-    public static final String REMOVE = "remove";
-    public static final String APPLY_PATCH = "apply-patch";
+        public static final String MAIN_COMMAND = "prospero";
+        public static final String INSTALL = "install";
+        public static final String UPDATE = "update";
+        public static final String HISTORY = "history";
+        public static final String REVERT = "revert";
+        public static final String REPO = "repo";
+        public static final String REPOSITORY = "repository";
+        public static final String APPLY_PATCH = "apply-patch";
+
+        public static final String LIST = "list";
+        public static final String ADD = "add";
+        public static final String REMOVE = "remove";
+    }
 
     // Parameter and option labels:
 

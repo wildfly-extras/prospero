@@ -78,7 +78,7 @@ public class HistoryCommandTest extends AbstractConsoleTest {
 
     @Test
     public void currentDirNotValidInstallation() {
-        int exitCode = commandLine.execute(CliConstants.HISTORY);
+        int exitCode = commandLine.execute(CliConstants.Commands.HISTORY);
         Assert.assertEquals(ReturnCodes.INVALID_ARGUMENTS, exitCode);
         assertTrue(getErrorOutput().contains(CliMessages.MESSAGES.invalidInstallationDir(HistoryCommand.currentDir())
                 .getMessage()));
@@ -89,7 +89,7 @@ public class HistoryCommandTest extends AbstractConsoleTest {
         when(historyAction.getRevisions()).thenReturn(Arrays.asList(
                 new SavedState("abcd", Instant.ofEpochSecond(System.currentTimeMillis()), SavedState.Type.INSTALL)));
 
-        int exitCode = commandLine.execute(CliConstants.HISTORY, CliConstants.DIR, installationDir.toString());
+        int exitCode = commandLine.execute(CliConstants.Commands.HISTORY, CliConstants.DIR, installationDir.toString());
         assertEquals(ReturnCodes.SUCCESS, exitCode);
         verify(historyAction).getRevisions();
         assertTrue(getStandardOutput().contains("abcd"));
@@ -101,7 +101,7 @@ public class HistoryCommandTest extends AbstractConsoleTest {
                         new DefaultArtifact("foo", "bar", "jar", "1.1"),
                         new DefaultArtifact("foo", "bar", "jar", "1.2"))));
 
-        int exitCode = commandLine.execute(CliConstants.HISTORY, CliConstants.DIR, installationDir.toString(),
+        int exitCode = commandLine.execute(CliConstants.Commands.HISTORY, CliConstants.DIR, installationDir.toString(),
                 CliConstants.REVISION, "abcd");
         assertEquals(ReturnCodes.SUCCESS, exitCode);
         verify(historyAction).compare(eq(new SavedState("abcd")));

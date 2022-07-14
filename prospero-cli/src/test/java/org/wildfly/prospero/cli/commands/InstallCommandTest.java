@@ -83,7 +83,7 @@ public class InstallCommandTest extends AbstractMavenCommandTest {
 
     @Test
     public void errorIfTargetPathIsNotPresent() {
-        int exitCode = commandLine.execute(CliConstants.INSTALL);
+        int exitCode = commandLine.execute(CliConstants.Commands.INSTALL);
         Assert.assertEquals(ReturnCodes.INVALID_ARGUMENTS, exitCode);
         assertTrue(getErrorOutput().contains(String.format("Missing required option: '--dir=<directory>'",
                 CliConstants.DIR)));
@@ -91,7 +91,7 @@ public class InstallCommandTest extends AbstractMavenCommandTest {
 
     @Test
     public void errorIfFplIsNotPresent() {
-        int exitCode = commandLine.execute(CliConstants.INSTALL, CliConstants.DIR, "test");
+        int exitCode = commandLine.execute(CliConstants.Commands.INSTALL, CliConstants.DIR, "test");
         assertEquals(ReturnCodes.INVALID_ARGUMENTS, exitCode);
         assertTrue(getErrorOutput().contains(String.format(
                 "Missing required argument (specify one of these): (%s=%s | %s=%s)",
@@ -100,7 +100,7 @@ public class InstallCommandTest extends AbstractMavenCommandTest {
 
     @Test
     public void errorIfChannelsIsNotPresentAndUsingCustomFplOnInstall() {
-        int exitCode = commandLine.execute(CliConstants.INSTALL, CliConstants.DIR, "test",
+        int exitCode = commandLine.execute(CliConstants.Commands.INSTALL, CliConstants.DIR, "test",
                 CliConstants.FPL, "foo:bar");
         assertEquals(ReturnCodes.INVALID_ARGUMENTS, exitCode);
         assertTrue("output: " + getErrorOutput(), getErrorOutput().contains(String.format(
@@ -114,7 +114,7 @@ public class InstallCommandTest extends AbstractMavenCommandTest {
         final File provisionConfigFile = temporaryFolder.newFile();
         new ProsperoConfig(channels, repositories).writeConfig(provisionConfigFile);
 
-        int exitCode = commandLine.execute(CliConstants.INSTALL, CliConstants.DIR, "test",
+        int exitCode = commandLine.execute(CliConstants.Commands.INSTALL, CliConstants.DIR, "test",
                 CliConstants.FPL, "org.wildfly:wildfly-ee-galleon-pack",
                 CliConstants.PROVISION_CONFIG, provisionConfigFile.getAbsolutePath());
         assertEquals(ReturnCodes.SUCCESS, exitCode);
@@ -124,7 +124,7 @@ public class InstallCommandTest extends AbstractMavenCommandTest {
 
     @Test
     public void callProvisionOnInstallEapCommand() throws Exception {
-        int exitCode = commandLine.execute(CliConstants.INSTALL, CliConstants.DIR, "test", CliConstants.FPL, "eap");
+        int exitCode = commandLine.execute(CliConstants.Commands.INSTALL, CliConstants.DIR, "test", CliConstants.FPL, "eap");
 
         assertEquals(ReturnCodes.SUCCESS, exitCode);
         Mockito.verify(provisionAction).provision(serverDefiniton.capture());
@@ -138,7 +138,7 @@ public class InstallCommandTest extends AbstractMavenCommandTest {
         final File provisionConfigFile = temporaryFolder.newFile();
         new ProsperoConfig(channels, repositories).writeConfig(provisionConfigFile);
 
-        int exitCode = commandLine.execute(CliConstants.INSTALL, CliConstants.DIR, "test", CliConstants.FPL, "eap",
+        int exitCode = commandLine.execute(CliConstants.Commands.INSTALL, CliConstants.DIR, "test", CliConstants.FPL, "eap",
                 CliConstants.PROVISION_CONFIG, provisionConfigFile.getAbsolutePath());
 
         assertEquals(ReturnCodes.SUCCESS, exitCode);
@@ -155,7 +155,7 @@ public class InstallCommandTest extends AbstractMavenCommandTest {
         final File provisionConfigFile = temporaryFolder.newFile();
         new ProsperoConfig(channels, repositories).writeConfig(provisionConfigFile);
 
-        int exitCode = commandLine.execute(CliConstants.INSTALL, CliConstants.DIR, "test",
+        int exitCode = commandLine.execute(CliConstants.Commands.INSTALL, CliConstants.DIR, "test",
                 CliConstants.PROVISION_CONFIG, provisionConfigFile.getAbsolutePath(),
                 CliConstants.DEFINITION, provisionDefinitionFile.getAbsolutePath());
 
@@ -171,7 +171,7 @@ public class InstallCommandTest extends AbstractMavenCommandTest {
         final File provisionDefinitionFile = temporaryFolder.newFile("provision.xml");
         final File provisionConfigFile = temporaryFolder.newFile();
 
-        int exitCode = commandLine.execute(CliConstants.INSTALL, CliConstants.DIR, "test",
+        int exitCode = commandLine.execute(CliConstants.Commands.INSTALL, CliConstants.DIR, "test",
                 CliConstants.DEFINITION, provisionDefinitionFile.getAbsolutePath(),
                 CliConstants.PROVISION_CONFIG, provisionConfigFile.getAbsolutePath(),
                 CliConstants.FPL, "test");
@@ -181,7 +181,7 @@ public class InstallCommandTest extends AbstractMavenCommandTest {
 
     @Test
     public void passChannelReposToProvisionDef() throws Exception {
-        int exitCode = commandLine.execute(CliConstants.INSTALL, CliConstants.DIR, "test",
+        int exitCode = commandLine.execute(CliConstants.Commands.INSTALL, CliConstants.DIR, "test",
                 CliConstants.FPL, "eap", CliConstants.REMOTE_REPOSITORIES, "http://test.repo1,http://test.repo2");
 
         assertEquals(ReturnCodes.SUCCESS, exitCode);
@@ -201,7 +201,7 @@ public class InstallCommandTest extends AbstractMavenCommandTest {
 
     @Override
     protected String[] getDefaultArguments() {
-        return new String[]{CliConstants.INSTALL, CliConstants.DIR, "test",
+        return new String[]{CliConstants.Commands.INSTALL, CliConstants.DIR, "test",
                 CliConstants.FPL, "eap"};
     }
 }

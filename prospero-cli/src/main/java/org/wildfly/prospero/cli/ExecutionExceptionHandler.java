@@ -45,8 +45,8 @@ public class ExecutionExceptionHandler implements CommandLine.IExecutionExceptio
             return ReturnCodes.INVALID_ARGUMENTS;
         } else if (ex instanceof ProvisioningException || ex instanceof OperationException) {
             // provisioning error
-            console.error(CliMessages.MESSAGES.errorWhileExecutingOperation(CliConstants.REVERT, ex.getMessage()));
-            logger.error(CliMessages.MESSAGES.errorWhileExecutingOperation(CliConstants.INSTALL, ex.getMessage()), ex);
+            console.error(CliMessages.MESSAGES.errorWhileExecutingOperation(CliConstants.Commands.REVERT, ex.getMessage()));
+            logger.error(CliMessages.MESSAGES.errorWhileExecutingOperation(CliConstants.Commands.INSTALL, ex.getMessage()), ex);
             return ReturnCodes.PROCESSING_ERROR;
         }
 

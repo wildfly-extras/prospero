@@ -27,7 +27,7 @@ import org.wildfly.prospero.cli.CliMessages;
 import org.wildfly.prospero.cli.ReturnCodes;
 import picocli.CommandLine;
 
-@CommandLine.Command(name = CliConstants.REMOVE)
+@CommandLine.Command(name = CliConstants.Commands.REMOVE)
 public class RepositoryRemoveCommand extends AbstractCommand {
 
     @CommandLine.Parameters(index = "0", paramLabel = CliConstants.REPO_ID, descriptionKey = "repoId")

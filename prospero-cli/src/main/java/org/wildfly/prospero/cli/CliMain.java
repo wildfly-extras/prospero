@@ -73,7 +73,7 @@ public class CliMain {
         commandLine.addSubcommand(new RevertCommand(console, actionFactory));
         commandLine.addSubcommand(new RepositoryCommand(console, actionFactory));
 
-        CommandLine repoCmd = commandLine.getSubcommands().get(CliConstants.REPOSITORY);
+        CommandLine repoCmd = commandLine.getSubcommands().get(CliConstants.Commands.REPOSITORY);
         repoCmd.addSubcommand(new RepositoryAddCommand(console, actionFactory));
         repoCmd.addSubcommand(new RepositoryRemoveCommand(console, actionFactory));
         repoCmd.addSubcommand(new RepositoryListCommand(console, actionFactory));
