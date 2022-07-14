@@ -19,8 +19,9 @@ package org.wildfly.prospero.cli;
 
 import org.jboss.logging.Logger;
 import org.wildfly.prospero.actions.Console;
-import org.wildfly.prospero.cli.commands.CliConstants;
 import org.wildfly.prospero.cli.commands.ApplyPatchCommand;
+import org.wildfly.prospero.cli.commands.ChannelCommand;
+import org.wildfly.prospero.cli.commands.CliConstants;
 import org.wildfly.prospero.cli.commands.HistoryCommand;
 import org.wildfly.prospero.cli.commands.InstallCommand;
 import org.wildfly.prospero.cli.commands.MainCommand;
@@ -72,11 +73,17 @@ public class CliMain {
         commandLine.addSubcommand(new HistoryCommand(console, actionFactory));
         commandLine.addSubcommand(new RevertCommand(console, actionFactory));
         commandLine.addSubcommand(new RepositoryCommand(console, actionFactory));
+        commandLine.addSubcommand(new ChannelCommand(console, actionFactory));
 
         CommandLine repoCmd = commandLine.getSubcommands().get(CliConstants.Commands.REPOSITORY);
         repoCmd.addSubcommand(new RepositoryAddCommand(console, actionFactory));
         repoCmd.addSubcommand(new RepositoryRemoveCommand(console, actionFactory));
         repoCmd.addSubcommand(new RepositoryListCommand(console, actionFactory));
+
+        CommandLine channelCmd = commandLine.getSubcommands().get(CliConstants.Commands.CHANNEL);
+        channelCmd.addSubcommand(new ChannelCommand.ChannelAddCommand(console, actionFactory));
+        channelCmd.addSubcommand(new ChannelCommand.ChannelRemoveCommand(console, actionFactory));
+        channelCmd.addSubcommand(new ChannelCommand.ChannelListCommand(console, actionFactory));
 
         commandLine.setUsageHelpAutoWidth(true);
         commandLine.setExecutionExceptionHandler(new ExecutionExceptionHandler(console));

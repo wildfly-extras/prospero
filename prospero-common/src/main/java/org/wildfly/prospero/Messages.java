@@ -56,11 +56,17 @@ public interface Messages {
     @Message("At least one channel reference must be given.")
     IllegalArgumentException noChannelReference();
 
-    @Message("Unknown repository '%s'")
-    IllegalArgumentException unknownRepository(String repoId);
+    @Message("Repository with ID '%s' is not present.")
+    IllegalArgumentException repositoryNotPresent(String repoId);
+
+    @Message("Channel '%s' is not present.")
+    IllegalArgumentException channelNotPresent(String urlOrGav);
 
     @Message("Repository '%s' with URL '%s' is alreay present.")
     IllegalArgumentException repositoryExists(String repoId, URL url);
+
+    @Message("Channel '%s' is alreay present.")
+    IllegalArgumentException channelExists(String urlOrGav);
 
     @Message("Installing patch %s.")
     String installingPatch(String name);

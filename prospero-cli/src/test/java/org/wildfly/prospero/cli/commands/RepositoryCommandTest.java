@@ -63,7 +63,7 @@ public class RepositoryCommandTest extends AbstractConsoleTest {
         int exitCode = commandLine.execute(CliConstants.Commands.REPO, CliConstants.Commands.LIST);
 
         Assert.assertEquals(ReturnCodes.INVALID_ARGUMENTS, exitCode);
-        assertTrue(getErrorOutput().contains(CliMessages.MESSAGES.invalidInstallationDir(RepositoryListCommand.currentDir())
+        assertTrue(getErrorOutput().contains(CliMessages.MESSAGES.invalidInstallationDir(RepositoryCommand.currentDir())
                 .getMessage()));
     }
 
@@ -72,7 +72,7 @@ public class RepositoryCommandTest extends AbstractConsoleTest {
         int exitCode = commandLine.execute(CliConstants.Commands.REPO, CliConstants.Commands.ADD, "repo2", "file:/tmp/repo2");
 
         Assert.assertEquals(ReturnCodes.INVALID_ARGUMENTS, exitCode);
-        assertTrue(getErrorOutput().contains(CliMessages.MESSAGES.invalidInstallationDir(RepositoryListCommand.currentDir())
+        assertTrue(getErrorOutput().contains(CliMessages.MESSAGES.invalidInstallationDir(RepositoryCommand.currentDir())
                 .getMessage()));
     }
 
@@ -81,7 +81,7 @@ public class RepositoryCommandTest extends AbstractConsoleTest {
         int exitCode = commandLine.execute(CliConstants.Commands.REPO, CliConstants.Commands.REMOVE, REPO_ID);
 
         Assert.assertEquals(ReturnCodes.INVALID_ARGUMENTS, exitCode);
-        assertTrue(getErrorOutput().contains(CliMessages.MESSAGES.invalidInstallationDir(RepositoryListCommand.currentDir())
+        assertTrue(getErrorOutput().contains(CliMessages.MESSAGES.invalidInstallationDir(RepositoryCommand.currentDir())
                 .getMessage()));
     }
 

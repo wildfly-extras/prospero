@@ -41,6 +41,7 @@ public final class CliConstants {
         public static final String REPO = "repo";
         public static final String REPOSITORY = "repository";
         public static final String APPLY_PATCH = "apply-patch";
+        public static final String CHANNEL = "channel";
 
         public static final String LIST = "list";
         public static final String ADD = "add";

@@ -114,11 +114,17 @@ public interface CliMessages {
     @Message("%n[*] The update list contain one or more artifacts with lower versions then currently installed. Proceed with caution.%n%n")
     String possibleDowngrade();
 
-    @Message("Repository %s removed.")
+    @Message("Repository '%s' removed.")
     String repositoryRemoved(String repoId);
 
-    @Message("Repository %s added.")
+    @Message("Repository '%s' added.")
     String repositoryAdded(String repoId);
+
+    @Message("Channel '%s' added.")
+    String channelAdded(String urlOrGav);
+
+    @Message("Channel '%s' removed.")
+    String channelRemoved(String urlOrGav);
 
     @Message("File referenced by [%s] doesn't exist: %s")
     String fileDoesntExist(String optionName, Path patchArchive);

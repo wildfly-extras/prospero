@@ -18,15 +18,19 @@
 package org.wildfly.prospero.model;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import org.apache.commons.lang3.StringUtils;
 
+import java.net.MalformedURLException;
+import java.net.URL;
 import java.util.Objects;
 
 public class ChannelRef {
 
-    private String url;
+    private final String url;
 
-    private String gav;
+    private final String gav;
 
     @JsonCreator
     public ChannelRef(@JsonProperty(value = "gav") String gav, @JsonProperty(value = "fileUrl") String fileUrl) {
@@ -40,6 +44,15 @@ public class ChannelRef {
 
     public String getGav() {
         return gav;
+    }
+
+    @JsonIgnore
+    public String getGavOrUrlString() {
+        if (StringUtils.isNotBlank(gav)) {
+            return gav;
+        } else {
+            return url;
+        }
     }
 
     @Override
@@ -59,4 +72,26 @@ public class ChannelRef {
     public int hashCode() {
         return Objects.hash(url, gav);
     }
+
+
+    public static ChannelRef fromString(String gavOrUrl) {
+        try {
+            URL url = new URL(gavOrUrl);
+            return new ChannelRef(null, url.toExternalForm());
+        } catch (MalformedURLException e) {
+            if (isValidGav(gavOrUrl)) {
+                return new ChannelRef(gavOrUrl, null);
+            }
+            throw new IllegalArgumentException(String.format("Given string is not valid Maven GAV or URL: '%s'", gavOrUrl));
+        }
+    }
+
+    private static boolean isValidGav(String gav) {
+        String[] parts = gav.split(":");
+        return parts.length == 3
+                && StringUtils.isNotBlank(parts[0])
+                && StringUtils.isNotBlank(parts[1])
+                && StringUtils.isNotBlank(parts[2]);
+    }
+
 }
