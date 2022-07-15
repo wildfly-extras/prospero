@@ -18,6 +18,7 @@
 package org.wildfly.prospero.galleon;
 
 import org.wildfly.channel.spi.ChannelResolvable;
+import org.wildfly.channel.ArtifactCoordinate;
 import org.eclipse.aether.artifact.DefaultArtifact;
 import org.jboss.galleon.universe.maven.MavenArtifact;
 import org.jboss.galleon.universe.maven.MavenUniverseException;
@@ -29,12 +30,9 @@ import org.wildfly.channel.UnresolvedMavenArtifactException;
 
 import java.nio.file.Path;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
-import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.CompletionException;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
 import java.util.regex.Pattern;
 
 public class ChannelMavenArtifactRepositoryManager implements MavenRepoManager, ChannelResolvable {
@@ -59,70 +57,83 @@ public class ChannelMavenArtifactRepositoryManager implements MavenRepoManager, 
                 result = channelSession.resolveMavenArtifact(artifact.getGroupId(), artifact.getArtifactId(), artifact.getExtension(),
                         artifact.getClassifier(), null);
             } else {
-                final DefaultArtifact gav = new DefaultArtifact(artifact.getGroupId(), artifact.getArtifactId(), artifact.getClassifier(), artifact.getExtension(), artifact.getVersion() != null ? artifact.getVersion() : artifact.getVersionRange());
-
-                Optional<DefaultArtifact> found = manifest.findStreamFor(gav.getGroupId(), gav.getArtifactId()).map(this::streamToArtifact);
+                Optional<DefaultArtifact> found = manifest.findStreamFor(artifact.getGroupId(), artifact.getArtifactId()).map(this::streamToArtifact);
 
                 if (found.isPresent()) {
                     result = channelSession.resolveDirectMavenArtifact(artifact.getGroupId(), artifact.getArtifactId(), artifact.getExtension(),
                             artifact.getClassifier(), found.get().getVersion());
-                } else if (artifact.getArtifactId().equals("community-universe") || artifact.getArtifactId().equals("wildfly-producers")) {
+                } else if (isUniverseOrProducerArtifact(artifact.getArtifactId())) {
                     result = channelSession.resolveMavenArtifact(artifact.getGroupId(), artifact.getArtifactId(), artifact.getExtension(),
                             artifact.getClassifier(), null);
                 } else {
                     throw new MavenUniverseException("Unable to resolve " + artifact);
                 }
             }
-            artifact.setVersion(result.getVersion());
-            artifact.setPath(result.getFile().toPath());
+
+            MavenArtifactMapper.resolve(artifact, result);
         } catch (UnresolvedMavenArtifactException e) {
             throw new MavenUniverseException(e.getLocalizedMessage(), e);
         }
     }
 
-    private DefaultArtifact streamToArtifact(Stream s) {
-        return new DefaultArtifact(s.getGroupId(), s.getArtifactId(), "jar", s.getVersion());
-    }
+    @Override
+    public void resolveAll(Collection<MavenArtifact> artifacts) throws MavenUniverseException {
+        final MavenArtifactMapper mapper = new MavenArtifactMapper(artifacts);
+        if (manifest == null) {
+            final List<org.wildfly.channel.MavenArtifact> channelArtifacts = channelSession.resolveMavenArtifacts(mapper.toChannelArtifacts());
 
-    public void resolveAll(List<MavenArtifact> artifacts) throws MavenUniverseException {
-        // use sync until wildfly-channel can handle async search
-        resolveSynchronously(artifacts);
-    }
+            mapper.applyResolution(channelArtifacts);
+        } else {
 
-    private void resolveSynchronously(List<MavenArtifact> artifacts) throws MavenUniverseException {
-        for (MavenArtifact artifact : artifacts) {
-            resolve(artifact);
-        }
-    }
+            List<ArtifactCoordinate> coordinates = toResolvableCoordinates(mapper.toChannelArtifacts());
 
-    private void resolveConcurrently(List<MavenArtifact> artifacts) throws MavenUniverseException {
-        final ExecutorService executorService = Executors.newWorkStealingPool(30);
-        try {
-            List<CompletableFuture<Void>> allPackages = new ArrayList<>();
+            final List<org.wildfly.channel.MavenArtifact> channelArtifacts = channelSession.resolveDirectMavenArtifacts(coordinates);
+
+            mapper.applyResolution(channelArtifacts);
 
             for (MavenArtifact artifact : artifacts) {
-                final CompletableFuture<Void> cf = new CompletableFuture<>();
-                allPackages.add(cf);
-                executorService.submit(() -> {
-                    try {
-                        resolve(artifact);
-                        cf.complete(null);
-                    } catch (Exception e) {
-                        cf.completeExceptionally(e);
-                    }
-                });
-            }
+                // workaround for when provisioning doesn't add universe artifacts
+                if (artifact.getPath() == null) {
+                    if (isUniverseOrProducerArtifact(artifact.getArtifactId())) {
+                        org.wildfly.channel.MavenArtifact result = channelSession.resolveMavenArtifact(artifact.getGroupId(), artifact.getArtifactId(), artifact.getExtension(),
+                                artifact.getClassifier(), null);
 
-            CompletableFuture.allOf(allPackages.toArray(new CompletableFuture[]{})).join();
-        } catch (CompletionException e) {
-            if (e.getCause() instanceof MavenUniverseException) {
-                throw (MavenUniverseException) e.getCause();
-            } else {
-                throw e;
+                        MavenArtifactMapper.resolve(artifact, result);
+                    } else {
+                        throw new MavenUniverseException("Unable to resolve " + artifact);
+                    }
+                }
             }
-        } finally {
-            executorService.shutdown();
         }
+    }
+
+    private List<ArtifactCoordinate> toResolvableCoordinates(List<ArtifactCoordinate> artifactCoordinates) throws MavenUniverseException {
+        List<ArtifactCoordinate> coordinates = new ArrayList<>();
+
+        for (ArtifactCoordinate coord : artifactCoordinates) {
+            Optional<DefaultArtifact> found = manifest.findStreamFor(coord.getGroupId(), coord.getArtifactId()).map(this::streamToArtifact);
+            if (found.isPresent()) {
+                coordinates.add(new ArtifactCoordinate(
+                        coord.getGroupId(),
+                        coord.getArtifactId(),
+                        coord.getExtension(),
+                        coord.getClassifier(),
+                        found.get().getVersion()
+                ));
+            } else {
+                throw new MavenUniverseException("Unable to resolve " + coord);
+            }
+        }
+
+        return coordinates;
+    }
+
+    private boolean isUniverseOrProducerArtifact(String artifactId) {
+        return artifactId.equals("community-universe") || artifactId.equals("wildfly-producers");
+    }
+
+    private DefaultArtifact streamToArtifact(Stream s) {
+        return new DefaultArtifact(s.getGroupId(), s.getArtifactId(), "jar", s.getVersion());
     }
 
     @Override
