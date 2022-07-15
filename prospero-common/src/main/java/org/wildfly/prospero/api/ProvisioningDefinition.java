@@ -42,7 +42,7 @@ import org.wildfly.prospero.model.RepositoryRef;
 public class ProvisioningDefinition {
 
     private static final String REPO_TYPE = "default";
-    public static final RepositoryPolicy DEFAULT_REPOSITORY_POLICY = new RepositoryPolicy(true, RepositoryPolicy.UPDATE_POLICY_ALWAYS, RepositoryPolicy.CHECKSUM_POLICY_WARN);
+    public static final RepositoryPolicy DEFAULT_REPOSITORY_POLICY = new RepositoryPolicy(true, RepositoryPolicy.UPDATE_POLICY_ALWAYS, RepositoryPolicy.CHECKSUM_POLICY_FAIL);
 
     private final String fpl;
     private final List<ChannelRef> channels = new ArrayList<>();

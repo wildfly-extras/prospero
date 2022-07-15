@@ -17,6 +17,7 @@
 
 package org.wildfly.prospero.patch;
 
+import org.apache.commons.codec.digest.DigestUtils;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.IOUtils;
 import org.eclipse.aether.artifact.Artifact;
@@ -113,7 +114,8 @@ public class PatchArchive {
                 entry += artifact.getVersion() + FS;
                 zos.putNextEntry(new ZipEntry(entry));
                 entry += artifact.getFile().getName();
-                zos.putNextEntry(new ZipEntry(entry));
+                String fileName = entry;
+                zos.putNextEntry(new ZipEntry(fileName));
 
                 try(FileInputStream fis = new FileInputStream(artifact.getFile())) {
                     byte[] buffer = new byte[1024];
@@ -122,6 +124,16 @@ public class PatchArchive {
                         zos.write(buffer, 0, len);
                     }
                 }
+
+                entry = fileName + ".md5";
+                zos.putNextEntry(new ZipEntry(entry));
+                final String md5 = DigestUtils.md5Hex(new FileInputStream(artifact.getFile()));
+                zos.write(md5.getBytes(), 0, md5.getBytes().length);
+
+                entry = fileName + ".sha1";
+                zos.putNextEntry(new ZipEntry(entry));
+                final String sha1 = DigestUtils.sha1Hex(new FileInputStream(artifact.getFile()));
+                zos.write(sha1.getBytes(), 0, sha1.getBytes().length);
             }
         }
 

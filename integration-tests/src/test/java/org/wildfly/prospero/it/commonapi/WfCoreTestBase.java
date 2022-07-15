@@ -96,7 +96,7 @@ public class WfCoreTestBase {
         final RepositorySystem system = msm.newRepositorySystem();
         final DefaultRepositorySystemSession session = msm.newRepositorySystemSession(system, false);
 
-        final DefaultArtifact existing = new DefaultArtifact(groupId, artifactId, null, "jar", BASE_VERSION);
+        final DefaultArtifact existing = new DefaultArtifact(groupId, artifactId, null, "jar", version);
         return resolveArtifact(system, session, existing);
     }
 
