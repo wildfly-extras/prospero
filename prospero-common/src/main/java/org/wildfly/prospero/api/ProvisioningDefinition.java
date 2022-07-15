@@ -31,6 +31,7 @@ import java.util.Set;
 import java.util.stream.Collectors;
 
 import org.eclipse.aether.repository.RemoteRepository;
+import org.eclipse.aether.repository.RepositoryPolicy;
 import org.jboss.galleon.ProvisioningException;
 import org.wildfly.prospero.Messages;
 import org.wildfly.prospero.api.exceptions.ArtifactResolutionException;
@@ -41,6 +42,7 @@ import org.wildfly.prospero.model.RepositoryRef;
 public class ProvisioningDefinition {
 
     private static final String REPO_TYPE = "default";
+    public static final RepositoryPolicy DEFAULT_REPOSITORY_POLICY = new RepositoryPolicy(true, RepositoryPolicy.UPDATE_POLICY_ALWAYS, RepositoryPolicy.CHECKSUM_POLICY_WARN);
 
     private final String fpl;
     private final List<ChannelRef> channels = new ArrayList<>();
@@ -55,10 +57,6 @@ public class ProvisioningDefinition {
         final Optional<Path> provisionConfigFile = Optional.ofNullable(builder.provisionConfigFile);
         final Optional<URL> channel = Optional.ofNullable(builder.channel);
         final Optional<Set<String>> includedPackages = Optional.ofNullable(builder.includedPackages);
-
-        if (builder.repositories != null) {
-            this.repositories.addAll(builder.repositories);
-        }
 
         this.includedPackages.addAll(includedPackages.orElse(Collections.emptySet()));
 
@@ -103,7 +101,9 @@ public class ProvisioningDefinition {
                 int i = 0;
                 for (String url : overrideRemoteRepos) {
                     String channelRepoId = "channel-" + (i++);
-                    this.repositories.add(new RemoteRepository.Builder(channelRepoId, REPO_TYPE, url).build());
+                    this.repositories.add(new RemoteRepository.Builder(channelRepoId, REPO_TYPE, url)
+                                    .setPolicy(DEFAULT_REPOSITORY_POLICY)
+                                    .build());
                 }
             }
         } else if (channel.isPresent()) {
@@ -151,13 +151,13 @@ public class ProvisioningDefinition {
         private List<String> remoteRepositories = Collections.emptyList();
         private Set<String> includedPackages;
         private URL channel;
-        private List<RemoteRepository> repositories;
 
         public ProvisioningDefinition build() throws ArtifactResolutionException {
             return new ProvisioningDefinition(this);
         }
 
         public Builder setFpl(String fpl) {
+
             this.fpl = fpl;
             return this;
         }
@@ -189,11 +189,6 @@ public class ProvisioningDefinition {
                     }
                 }
             }
-            return this;
-        }
-
-        public Builder setRepositories(List<RemoteRepository> repositories) {
-            this.repositories = repositories;
             return this;
         }
 
