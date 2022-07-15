@@ -79,19 +79,23 @@ public class ChannelRef {
             URL url = new URL(gavOrUrl);
             return new ChannelRef(null, url.toExternalForm());
         } catch (MalformedURLException e) {
-            if (isValidGav(gavOrUrl)) {
+            if (isValidCoordinate(gavOrUrl)) {
                 return new ChannelRef(gavOrUrl, null);
             }
             throw new IllegalArgumentException(String.format("Given string is not valid Maven GAV or URL: '%s'", gavOrUrl));
         }
     }
 
-    private static boolean isValidGav(String gav) {
+    private static boolean isValidCoordinate(String gav) {
         String[] parts = gav.split(":");
-        return parts.length == 3
+        return (parts.length == 3 // GAV
                 && StringUtils.isNotBlank(parts[0])
                 && StringUtils.isNotBlank(parts[1])
-                && StringUtils.isNotBlank(parts[2]);
+                && StringUtils.isNotBlank(parts[2]))
+                ||
+                (parts.length == 2 // GA
+                && StringUtils.isNotBlank(parts[0])
+                && StringUtils.isNotBlank(parts[1]));
     }
 
 }

@@ -40,6 +40,7 @@ import static org.junit.Assert.assertTrue;
 
 public class ChannelCommandTest extends AbstractConsoleTest {
 
+    private static final String GA = "g:a";
     private static final String GAV = "g:a:v";
     private static final String URL = "file:/a:b";
 
@@ -53,9 +54,11 @@ public class ChannelCommandTest extends AbstractConsoleTest {
         super.setUp();
 
         this.dir = tempDir.newFolder().toPath();
+        ChannelRef gaChannel = new ChannelRef(GA, null);
         ChannelRef gavChannel = new ChannelRef(GAV, null);
         ChannelRef urlChannel = new ChannelRef(null, URL);
-        MetadataTestUtils.createInstallationMetadata(dir, Arrays.asList(gavChannel, urlChannel), Collections.emptyList());
+        MetadataTestUtils.createInstallationMetadata(dir,
+                Arrays.asList(gaChannel, gavChannel, urlChannel), Collections.emptyList());
         MetadataTestUtils.createGalleonProvisionedState(dir);
     }
 
@@ -91,13 +94,17 @@ public class ChannelCommandTest extends AbstractConsoleTest {
         int exitCode = commandLine.execute(CliConstants.Commands.CHANNEL, CliConstants.Commands.LIST,
                 CliConstants.DIR, dir.toString());
         Assert.assertEquals(ReturnCodes.SUCCESS, exitCode);
-        Assert.assertEquals(2, getStandardOutput().lines().count());
+        Assert.assertEquals(3, getStandardOutput().lines().count());
     }
 
     @Test
     public void testAdd() throws MetadataException {
         int exitCode = commandLine.execute(CliConstants.Commands.CHANNEL, CliConstants.Commands.ADD,
                 CliConstants.DIR, dir.toString(), "g:a:v2");
+        Assert.assertEquals(ReturnCodes.SUCCESS, exitCode);
+
+        exitCode = commandLine.execute(CliConstants.Commands.CHANNEL, CliConstants.Commands.ADD,
+                CliConstants.DIR, dir.toString(), "g:a2");
         Assert.assertEquals(ReturnCodes.SUCCESS, exitCode);
 
         exitCode = commandLine.execute(CliConstants.Commands.CHANNEL, CliConstants.Commands.ADD,
@@ -109,7 +116,9 @@ public class ChannelCommandTest extends AbstractConsoleTest {
                 .extracting("gav", "url")
                 .containsExactly(
                         Tuple.tuple(null, "file:/path"),
+                        Tuple.tuple("g:a2", null),
                         Tuple.tuple("g:a:v2", null),
+                        Tuple.tuple(GA, null),
                         Tuple.tuple(GAV, null),
                         Tuple.tuple(null, URL)
                 );
@@ -119,6 +128,10 @@ public class ChannelCommandTest extends AbstractConsoleTest {
     public void testAddDuplicate() {
         int exitCode = commandLine.execute(CliConstants.Commands.CHANNEL, CliConstants.Commands.ADD,
                 CliConstants.DIR, dir.toString(), GAV);
+        Assert.assertEquals(ReturnCodes.INVALID_ARGUMENTS, exitCode);
+
+        exitCode = commandLine.execute(CliConstants.Commands.CHANNEL, CliConstants.Commands.ADD,
+                CliConstants.DIR, dir.toString(), GA);
         Assert.assertEquals(ReturnCodes.INVALID_ARGUMENTS, exitCode);
 
         exitCode = commandLine.execute(CliConstants.Commands.CHANNEL, CliConstants.Commands.ADD,
@@ -133,6 +146,10 @@ public class ChannelCommandTest extends AbstractConsoleTest {
         Assert.assertEquals(ReturnCodes.SUCCESS, exitCode);
 
         exitCode = commandLine.execute(CliConstants.Commands.CHANNEL, CliConstants.Commands.REMOVE,
+                CliConstants.DIR, dir.toString(), GA);
+        Assert.assertEquals(ReturnCodes.SUCCESS, exitCode);
+
+        exitCode = commandLine.execute(CliConstants.Commands.CHANNEL, CliConstants.Commands.REMOVE,
                 CliConstants.DIR, dir.toString(), URL);
         Assert.assertEquals(ReturnCodes.SUCCESS, exitCode);
     }
@@ -141,6 +158,10 @@ public class ChannelCommandTest extends AbstractConsoleTest {
     public void testRemoveNonExisting() {
         int exitCode = commandLine.execute(CliConstants.Commands.CHANNEL, CliConstants.Commands.REMOVE,
                 CliConstants.DIR, dir.toString(), "g:a:v2");
+        Assert.assertEquals(ReturnCodes.INVALID_ARGUMENTS, exitCode);
+
+        exitCode = commandLine.execute(CliConstants.Commands.CHANNEL, CliConstants.Commands.REMOVE,
+                CliConstants.DIR, dir.toString(), "g:a2");
         Assert.assertEquals(ReturnCodes.INVALID_ARGUMENTS, exitCode);
 
         exitCode = commandLine.execute(CliConstants.Commands.CHANNEL, CliConstants.Commands.REMOVE,
