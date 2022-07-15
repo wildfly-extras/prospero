@@ -48,23 +48,23 @@ public class UpdateCommand extends AbstractCommand {
 
     private final Logger logger = Logger.getLogger(this.getClass());
 
+    @CommandLine.Option(names = CliConstants.SELF)
+    boolean self;
+
     @CommandLine.Option(names = CliConstants.DIR)
     Optional<Path> directory;
 
     @CommandLine.Option(names = CliConstants.DRY_RUN)
     boolean dryRun;
 
-    @CommandLine.Option(names = CliConstants.SELF)
-    boolean self;
-
-    @CommandLine.ArgGroup(exclusive = true)
-    LocalRepoOptions localRepoOptions;
-
     @CommandLine.Option(names = CliConstants.OFFLINE)
     boolean offline;
 
     @CommandLine.Option(names = {CliConstants.Y, CliConstants.YES})
     boolean yes;
+
+    @CommandLine.ArgGroup(exclusive = true, headingKey = "localRepoOptions.heading")
+    LocalRepoOptions localRepoOptions;
 
     public UpdateCommand(Console console, ActionFactory actionFactory) {
         super(console, actionFactory);

@@ -38,11 +38,16 @@ public class ApplyPatchCommand extends AbstractCommand {
     @CommandLine.Option(names = CliConstants.DIR, order = 1)
     Optional<Path> directory;
 
-    @CommandLine.Option(names = CliConstants.PATCH_FILE, required = true, order = 2)
+    @CommandLine.Option(
+            names = CliConstants.PATCH_FILE,
+            paramLabel = CliConstants.PATH,
+            required = true,
+            order = 2)
     Path patchArchive;
 
     @CommandLine.Option(
             names = CliConstants.LOCAL_REPO,
+            paramLabel = CliConstants.PATH,
             order = 3
     )
     Optional<Path> localRepo;

@@ -94,8 +94,8 @@ public class InstallCommandTest extends AbstractMavenCommandTest {
         int exitCode = commandLine.execute(CliConstants.INSTALL, CliConstants.DIR, "test");
         assertEquals(ReturnCodes.INVALID_ARGUMENTS, exitCode);
         assertTrue(getErrorOutput().contains(String.format(
-                "Missing required argument (specify one of these): (%s=<fpl> | %s=<definition>)",
-                CliConstants.FPL, CliConstants.DEFINITION)));
+                "Missing required argument (specify one of these): (%s=%s | %s=%s)",
+                CliConstants.FPL, CliConstants.FEATURE_PACK_REFERENCE, CliConstants.DEFINITION, CliConstants.PATH)));
     }
 
     @Test

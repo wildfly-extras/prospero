@@ -31,10 +31,10 @@ import picocli.CommandLine;
 @CommandLine.Command(name = CliConstants.ADD)
 public class RepositoryAddCommand extends AbstractCommand {
 
-    @CommandLine.Parameters(index = "0")
+    @CommandLine.Parameters(index = "0", paramLabel = CliConstants.REPO_ID, descriptionKey = "repoId")
     String repoId;
 
-    @CommandLine.Parameters(index = "1")
+    @CommandLine.Parameters(index = "1", paramLabel = CliConstants.REPO_URL, descriptionKey = "repoUrl")
     URL url;
 
     @CommandLine.Option(names = CliConstants.DIR)

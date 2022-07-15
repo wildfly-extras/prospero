@@ -80,7 +80,8 @@ public class ApplyPatchCommandTest extends AbstractConsoleTest {
     public void requirePatchFile() {
         int exitCode = commandLine.execute(CliConstants.APPLY_PATCH, CliConstants.DIR, "foo");
         assertEquals(ReturnCodes.INVALID_ARGUMENTS, exitCode);
-        assertTrue(getErrorOutput().contains(String.format("Missing required option: '%s=<patchArchive>'", CliConstants.PATCH_FILE)));
+        assertTrue(getErrorOutput().contains(String.format("Missing required option: '%s=%s'",
+                CliConstants.PATCH_FILE, CliConstants.PATH)));
     }
 
     @Test

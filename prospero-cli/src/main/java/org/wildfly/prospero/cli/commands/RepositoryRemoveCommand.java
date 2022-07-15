@@ -30,7 +30,7 @@ import picocli.CommandLine;
 @CommandLine.Command(name = CliConstants.REMOVE)
 public class RepositoryRemoveCommand extends AbstractCommand {
 
-    @CommandLine.Parameters(index = "0")
+    @CommandLine.Parameters(index = "0", paramLabel = CliConstants.REPO_ID, descriptionKey = "repoId")
     String repoId;
 
     @CommandLine.Option(names = CliConstants.DIR)

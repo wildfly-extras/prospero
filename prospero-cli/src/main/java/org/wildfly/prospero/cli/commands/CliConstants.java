@@ -25,7 +25,7 @@ public final class CliConstants {
     private CliConstants() {
     }
 
-    // Commands:
+    // Command names:
 
     public static final String MAIN_COMMAND = "prospero";
     public static final String INSTALL = "install";
@@ -40,7 +40,15 @@ public final class CliConstants {
     public static final String REMOVE = "remove";
     public static final String APPLY_PATCH = "apply-patch";
 
-    // Options:
+    // Parameter and option labels:
+
+    public static final String CHANNEL_REFERENCE = "<channel-reference>";
+    public static final String FEATURE_PACK_REFERENCE = "<feature-pack-reference>";
+    public static final String PATH = "<path>";
+    public static final String REPO_ID = "<repo-id>";
+    public static final String REPO_URL = "<repo-url>";
+
+    // Option names:
 
     public static final String CHANNEL = "--channel";
     public static final String REMOTE_REPOSITORIES = "--remote-repositories";
@@ -48,7 +56,7 @@ public final class CliConstants {
     public static final String DIR = "--dir";
     public static final String DRY_RUN = "--dry-run";
     public static final String FPL = "--fpl";
-    public static final String H = "-h"; // shortcut for --help
+    public static final String H = "-h";
     public static final String HELP = "--help";
     public static final String LOCAL_REPO = "--local-repo";
     public static final String NO_LOCAL_MAVEN_CACHE = "--no-resolve-local-cache";
