@@ -59,7 +59,6 @@ public class InstallationHistoryActionTest extends WfCoreTestBase {
     public void listUpdates() throws Exception {
         // installCore
         provisionConfigFile = MetadataTestUtils.prepareProvisionConfig(CHANNEL_BASE_CORE_19);
-        Path installDir = Paths.get(outputPath.toString());
 
         final ProvisioningDefinition provisioningDefinition = defaultWfCoreDefinition()
                 .setProvisionConfig(provisionConfigFile)
