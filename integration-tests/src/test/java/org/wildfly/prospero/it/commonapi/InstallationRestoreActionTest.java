@@ -23,10 +23,8 @@ import org.wildfly.prospero.actions.ProvisioningAction;
 import org.wildfly.prospero.api.ProvisioningDefinition;
 import org.wildfly.prospero.it.AcceptingConsole;
 import org.wildfly.prospero.model.ManifestYamlSupport;
-import org.apache.commons.io.FileUtils;
 import org.eclipse.aether.artifact.Artifact;
 import org.eclipse.aether.artifact.DefaultArtifact;
-import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.wildfly.prospero.test.MetadataTestUtils;
@@ -40,35 +38,13 @@ import java.util.Optional;
 import static org.junit.Assert.assertEquals;
 
 public class InstallationRestoreActionTest extends WfCoreTestBase {
-    private static final String FIRST_SERVER_DIR = "target/server";
-    private static final Path FIRST_SERVER_PATH = Paths.get(FIRST_SERVER_DIR).toAbsolutePath();
-    private static final String RESTORED_SERVER_DIR = "target/restored";
-    private static final Path RESTORED_SERVER_PATH = Paths.get(RESTORED_SERVER_DIR).toAbsolutePath();
+    private Path restoredServerDir;
 
     @Before
     public void setUp() throws Exception {
-        if (FIRST_SERVER_PATH.toFile().exists()) {
-            FileUtils.deleteDirectory(FIRST_SERVER_PATH.toFile());
-            FIRST_SERVER_PATH.toFile().delete();
-        }
+        super.setUp();
 
-        if (RESTORED_SERVER_PATH.toFile().exists()) {
-            FileUtils.deleteDirectory(RESTORED_SERVER_PATH.toFile());
-            RESTORED_SERVER_PATH.toFile().delete();
-        }
-    }
-
-    @After
-    public void tearDown() throws Exception {
-        if (FIRST_SERVER_PATH.toFile().exists()) {
-            FileUtils.deleteDirectory(FIRST_SERVER_PATH.toFile());
-            FIRST_SERVER_PATH.toFile().delete();
-        }
-
-        if (RESTORED_SERVER_PATH.toFile().exists()) {
-            FileUtils.deleteDirectory(RESTORED_SERVER_PATH.toFile());
-            RESTORED_SERVER_PATH.toFile().delete();
-        }
+        restoredServerDir = temp.newFolder().toPath().resolve("restored-server");
     }
 
     @Test
@@ -78,20 +54,20 @@ public class InstallationRestoreActionTest extends WfCoreTestBase {
         final ProvisioningDefinition provisioningDefinition = defaultWfCoreDefinition()
                 .setProvisionConfig(provisionConfigFile)
                 .build();
-        new ProvisioningAction(FIRST_SERVER_PATH, mavenSessionManager, new AcceptingConsole()).provision(provisioningDefinition);
+        new ProvisioningAction(outputPath, mavenSessionManager, new AcceptingConsole()).provision(provisioningDefinition);
 
-        MetadataTestUtils.prepareProvisionConfigAsUrl(FIRST_SERVER_PATH.resolve(MetadataTestUtils.PROVISION_CONFIG_FILE_PATH), CHANNEL_COMPONENT_UPDATES, CHANNEL_BASE_CORE_19);
+        MetadataTestUtils.prepareProvisionConfigAsUrl(outputPath.resolve(MetadataTestUtils.PROVISION_CONFIG_FILE_PATH), CHANNEL_COMPONENT_UPDATES, CHANNEL_BASE_CORE_19);
 
-        new InstallationExportAction(FIRST_SERVER_PATH).export("target/bundle.zip");
+        new InstallationExportAction(outputPath).export("target/bundle.zip");
 
-        new InstallationRestoreAction(RESTORED_SERVER_PATH, mavenSessionManager, new AcceptingConsole()).restore(Paths.get("target/bundle.zip"));
+        new InstallationRestoreAction(restoredServerDir, mavenSessionManager, new AcceptingConsole()).restore(Paths.get("target/bundle.zip"));
 
         final Optional<Artifact> wildflyCliArtifact = readArtifactFromManifest("org.wildfly.core", "wildfly-cli");
         assertEquals(BASE_VERSION, wildflyCliArtifact.get().getVersion());
     }
 
     private Optional<Artifact> readArtifactFromManifest(String groupId, String artifactId) throws IOException {
-        final File manifestFile = RESTORED_SERVER_PATH.resolve(MetadataTestUtils.MANIFEST_FILE_PATH).toFile();
+        final File manifestFile = restoredServerDir.resolve(MetadataTestUtils.MANIFEST_FILE_PATH).toFile();
         return ManifestYamlSupport.parse(manifestFile).getStreams()
                 .stream().filter((a) -> a.getGroupId().equals(groupId) && a.getArtifactId().equals(artifactId))
                 .findFirst()

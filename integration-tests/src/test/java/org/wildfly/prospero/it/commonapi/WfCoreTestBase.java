@@ -18,8 +18,14 @@
 package org.wildfly.prospero.it.commonapi;
 
 import org.eclipse.aether.installation.InstallResult;
+import org.junit.Before;
+import org.junit.Rule;
+import org.junit.rules.TemporaryFolder;
+import org.wildfly.prospero.actions.ProvisioningAction;
 import org.wildfly.prospero.api.ProvisioningDefinition;
+import org.wildfly.prospero.cli.CliConsole;
 import org.wildfly.prospero.model.RepositoryRef;
+import org.wildfly.prospero.test.MetadataTestUtils;
 import org.wildfly.prospero.wfchannel.MavenSessionManager;
 import org.eclipse.aether.DefaultRepositorySystemSession;
 import org.eclipse.aether.RepositorySystem;
@@ -33,6 +39,7 @@ import org.eclipse.aether.resolution.ArtifactResult;
 import org.junit.BeforeClass;
 
 import java.io.File;
+import java.nio.file.Path;
 import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -50,9 +57,15 @@ public class WfCoreTestBase {
     public static final RepositoryRef REPOSITORY_NEXUS = new RepositoryRef("nexus", "https://repository.jboss.org/nexus/content/groups/public-jboss");
     public static final RepositoryRef REPOSITORY_MRRC_GA = new RepositoryRef("maven-redhat-ga", "https://maven.repository.redhat.com/ga");
     protected static Artifact resolvedUpgradeArtifact;
+    protected Path outputPath;
+    protected Path manifestPath;
+    protected ProvisioningAction installation;
 
     protected final List<RepositoryRef> repositories = defaultRemoteRepositories();
     protected MavenSessionManager mavenSessionManager = new MavenSessionManager(MavenSessionManager.LOCAL_MAVEN_REPO);
+
+    @Rule
+    public TemporaryFolder temp = new TemporaryFolder();
 
     @BeforeClass
     public static void deployUpgrade() throws InstallationException, ArtifactResolutionException {
@@ -62,6 +75,13 @@ public class WfCoreTestBase {
 
         installIfMissing(system, session, "org.wildfly.core", "wildfly-cli", null);
         installIfMissing(system, session, "org.wildfly.core", "wildfly-cli", "client");
+    }
+
+    @Before
+    public void setUp() throws Exception {
+        outputPath = temp.newFolder().toPath().resolve("test-server");
+        manifestPath = outputPath.resolve(MetadataTestUtils.MANIFEST_FILE_PATH);
+        installation = new ProvisioningAction(outputPath, mavenSessionManager, new CliConsole());
     }
 
     private static void installIfMissing(RepositorySystem system, DefaultRepositorySystemSession session, String groupId, String artifactId, String classifier) throws ArtifactResolutionException, InstallationException {
