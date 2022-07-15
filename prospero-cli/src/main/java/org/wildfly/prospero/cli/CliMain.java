@@ -25,10 +25,7 @@ import org.wildfly.prospero.cli.commands.CliConstants;
 import org.wildfly.prospero.cli.commands.HistoryCommand;
 import org.wildfly.prospero.cli.commands.InstallCommand;
 import org.wildfly.prospero.cli.commands.MainCommand;
-import org.wildfly.prospero.cli.commands.RepositoryAddCommand;
 import org.wildfly.prospero.cli.commands.RepositoryCommand;
-import org.wildfly.prospero.cli.commands.RepositoryListCommand;
-import org.wildfly.prospero.cli.commands.RepositoryRemoveCommand;
 import org.wildfly.prospero.cli.commands.RevertCommand;
 import org.wildfly.prospero.cli.commands.UpdateCommand;
 import picocli.CommandLine;
@@ -76,9 +73,9 @@ public class CliMain {
         commandLine.addSubcommand(new ChannelCommand(console, actionFactory));
 
         CommandLine repoCmd = commandLine.getSubcommands().get(CliConstants.Commands.REPOSITORY);
-        repoCmd.addSubcommand(new RepositoryAddCommand(console, actionFactory));
-        repoCmd.addSubcommand(new RepositoryRemoveCommand(console, actionFactory));
-        repoCmd.addSubcommand(new RepositoryListCommand(console, actionFactory));
+        repoCmd.addSubcommand(new RepositoryCommand.RepositoryAddCommand(console, actionFactory));
+        repoCmd.addSubcommand(new RepositoryCommand.RepositoryRemoveCommand(console, actionFactory));
+        repoCmd.addSubcommand(new RepositoryCommand.RepositoryListCommand(console, actionFactory));
 
         CommandLine channelCmd = commandLine.getSubcommands().get(CliConstants.Commands.CHANNEL);
         channelCmd.addSubcommand(new ChannelCommand.ChannelAddCommand(console, actionFactory));
