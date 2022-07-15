@@ -44,6 +44,7 @@ import org.wildfly.prospero.it.AcceptingConsole;
 import org.wildfly.prospero.model.ChannelRef;
 import org.wildfly.prospero.model.ManifestYamlSupport;
 import org.wildfly.prospero.model.ProsperoConfig;
+import org.wildfly.prospero.model.RepositoryRef;
 import org.wildfly.prospero.test.MetadataTestUtils;
 
 import static org.junit.Assert.*;
@@ -175,7 +176,8 @@ public class SimpleProvisionTest extends WfCoreTestBase {
         final ProsperoConfig prosperoConfig = ProsperoConfig.readConfig(provisionConfigFile);
         final List<ChannelRef> channelRefs = prosperoConfig.getChannels();
 
-        installation.provision(installationFile.toPath(), channelRefs, repositories);
+        installation.provision(installationFile.toPath(), channelRefs,
+                repositories.stream().map(RepositoryRef::toRemoteRepository).collect(Collectors.toList()));
 
         final Optional<Artifact> wildflyCliArtifact = readArtifactFromManifest("org.wildfly.core", "wildfly-cli");
         assertEquals(BASE_VERSION, wildflyCliArtifact.get().getVersion());

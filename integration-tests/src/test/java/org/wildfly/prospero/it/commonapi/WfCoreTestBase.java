@@ -20,6 +20,7 @@ package org.wildfly.prospero.it.commonapi;
 import org.eclipse.aether.installation.InstallResult;
 import org.wildfly.prospero.api.ProvisioningDefinition;
 import org.wildfly.prospero.api.WellKnownRepositories;
+import org.wildfly.prospero.model.RepositoryRef;
 import org.wildfly.prospero.wfchannel.MavenSessionManager;
 import org.eclipse.aether.DefaultRepositorySystemSession;
 import org.eclipse.aether.RepositorySystem;
@@ -27,7 +28,6 @@ import org.eclipse.aether.artifact.Artifact;
 import org.eclipse.aether.artifact.DefaultArtifact;
 import org.eclipse.aether.installation.InstallRequest;
 import org.eclipse.aether.installation.InstallationException;
-import org.eclipse.aether.repository.RemoteRepository;
 import org.eclipse.aether.resolution.ArtifactRequest;
 import org.eclipse.aether.resolution.ArtifactResolutionException;
 import org.eclipse.aether.resolution.ArtifactResult;
@@ -36,6 +36,7 @@ import org.junit.BeforeClass;
 import java.io.File;
 import java.util.Arrays;
 import java.util.List;
+import java.util.stream.Collectors;
 
 public class WfCoreTestBase {
 
@@ -48,7 +49,7 @@ public class WfCoreTestBase {
     public static final String CHANNEL_COMPONENT_UPDATES = "channels/wfcore-19-upgrade-component.yaml";
     protected static Artifact resolvedUpgradeArtifact;
 
-    protected final List<RemoteRepository> repositories = defaultRemoteRepositories();
+    protected final List<RepositoryRef> repositories = defaultRemoteRepositories();
     protected MavenSessionManager mavenSessionManager = new MavenSessionManager(MavenSessionManager.LOCAL_MAVEN_REPO);
 
     @BeforeClass
@@ -87,7 +88,7 @@ public class WfCoreTestBase {
     protected ProvisioningDefinition.Builder defaultWfCoreDefinition() {
         return ProvisioningDefinition.builder()
                 .setFpl("wildfly-core@maven(org.jboss.universe:community-universe):19.0")
-                .setRepositories(repositories);
+                .setRemoteRepositories(repositories.stream().map(RepositoryRef::getUrl).collect(Collectors.toList()));
     }
 
     protected Artifact resolveArtifact(String groupId, String artifactId, String version) throws ArtifactResolutionException {
@@ -95,7 +96,7 @@ public class WfCoreTestBase {
         final RepositorySystem system = msm.newRepositorySystem();
         final DefaultRepositorySystemSession session = msm.newRepositorySystemSession(system, false);
 
-        final DefaultArtifact existing = new DefaultArtifact(groupId, artifactId, null, "jar", BASE_VERSION);
+        final DefaultArtifact existing = new DefaultArtifact(groupId, artifactId, null, "jar", version);
         return resolveArtifact(system, session, existing);
     }
 
@@ -107,11 +108,11 @@ public class WfCoreTestBase {
         return artifactResult.getArtifact();
     }
 
-    public static List<RemoteRepository> defaultRemoteRepositories() {
+    public static List<RepositoryRef> defaultRemoteRepositories() {
         return Arrays.asList(
-                new RemoteRepository.Builder("maven-central", "default", "https://repo1.maven.org/maven2/").build(),
-                new RemoteRepository.Builder("nexus", "default", "https://repository.jboss.org/nexus/content/groups/public-jboss").build(),
-                new RemoteRepository.Builder("maven-redhat-ga", "default", "https://maven.repository.redhat.com/ga").build()
+                new RepositoryRef("maven-central", "https://repo1.maven.org/maven2/"),
+                new RepositoryRef("nexus", "https://repository.jboss.org/nexus/content/groups/public-jboss"),
+                new RepositoryRef("maven-redhat-ga", "https://maven.repository.redhat.com/ga")
         );
     }
 }

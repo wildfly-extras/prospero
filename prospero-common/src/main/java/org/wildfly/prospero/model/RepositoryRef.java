@@ -23,6 +23,8 @@ import org.eclipse.aether.repository.RemoteRepository;
 
 import java.util.Objects;
 
+import static org.wildfly.prospero.api.ProvisioningDefinition.DEFAULT_REPOSITORY_POLICY;
+
 
 public class RepositoryRef {
 
@@ -49,7 +51,9 @@ public class RepositoryRef {
     }
 
     public RemoteRepository toRemoteRepository() {
-        return new RemoteRepository.Builder(id, "default", url).build();
+        return new RemoteRepository.Builder(id, "default", url)
+                .setPolicy(DEFAULT_REPOSITORY_POLICY)
+                .build();
     }
 
     @Override
