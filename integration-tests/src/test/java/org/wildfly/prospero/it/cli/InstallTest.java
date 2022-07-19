@@ -47,7 +47,7 @@ public class InstallTest {
     public void testInstallWithProvisionConfig() throws Exception {
         URL provisionConfig = MetadataTestUtils.prepareProvisionConfigAsUrl("channels/wfcore-19-base.yaml");
 
-        ExecutionUtils.prosperoExecution(CliConstants.INSTALL,
+        ExecutionUtils.prosperoExecution(CliConstants.Commands.INSTALL,
                         CliConstants.PROVISION_CONFIG, provisionConfig.getPath(),
                         CliConstants.FPL, "wildfly-core@maven(org.jboss.universe:community-universe):19.0",
                         CliConstants.REMOTE_REPOSITORIES,

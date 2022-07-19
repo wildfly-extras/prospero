@@ -24,6 +24,7 @@ import java.util.List;
 import org.wildfly.prospero.Messages;
 import org.wildfly.prospero.api.InstallationMetadata;
 import org.wildfly.prospero.api.exceptions.MetadataException;
+import org.wildfly.prospero.model.ChannelRef;
 import org.wildfly.prospero.model.ProsperoConfig;
 import org.wildfly.prospero.model.RepositoryRef;
 
@@ -68,6 +69,37 @@ public class MetadataAction {
         InstallationMetadata installationMetadata = new InstallationMetadata(installation);
         ProsperoConfig prosperoConfig = installationMetadata.getProsperoConfig();
         return prosperoConfig.getRepositories();
+    }
+
+    /**
+     * Retrieves channels used by an installation.
+     */
+    public List<ChannelRef> getChannels() throws MetadataException {
+        InstallationMetadata installationMetadata = new InstallationMetadata(installation);
+        ProsperoConfig prosperoConfig = installationMetadata.getProsperoConfig();
+        return prosperoConfig.getChannels();
+    }
+
+    /**
+     * Adds a channel to an installation.
+     */
+    public void addChannel(String gavOrUrl) throws MetadataException {
+        InstallationMetadata installationMetadata = new InstallationMetadata(installation);
+        ProsperoConfig prosperoConfig = installationMetadata.getProsperoConfig();
+        ChannelRef channelRef = ChannelRef.fromString(gavOrUrl);
+        prosperoConfig.addChannel(channelRef);
+        installationMetadata.updateProsperoConfig(prosperoConfig);
+    }
+
+    /**
+     * Removes a remote maven repository from an installation.
+     */
+    public void removeChannel(String gavOrUrl) throws MetadataException {
+        InstallationMetadata installationMetadata = new InstallationMetadata(installation);
+        ProsperoConfig prosperoConfig = installationMetadata.getProsperoConfig();
+        ChannelRef channelRef = ChannelRef.fromString(gavOrUrl);
+        prosperoConfig.removeChannel(channelRef);
+        installationMetadata.updateProsperoConfig(prosperoConfig);
     }
 
 }

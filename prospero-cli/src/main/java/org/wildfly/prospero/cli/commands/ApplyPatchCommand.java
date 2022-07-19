@@ -30,7 +30,7 @@ import java.nio.file.Path;
 import java.util.Optional;
 
 @CommandLine.Command(
-        name = CliConstants.APPLY_PATCH,
+        name = CliConstants.Commands.APPLY_PATCH,
         sortOptions = false
 )
 public class ApplyPatchCommand extends AbstractCommand {

@@ -30,7 +30,7 @@ import org.wildfly.prospero.wfchannel.MavenSessionManager;
 import picocli.CommandLine;
 
 @CommandLine.Command(
-        name = CliConstants.REVERT,
+        name = CliConstants.Commands.REVERT,
         sortOptions = false
 )
 public class RevertCommand extends AbstractCommand {

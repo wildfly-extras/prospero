@@ -22,6 +22,7 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
+import org.apache.commons.lang3.StringUtils;
 import org.eclipse.aether.repository.RemoteRepository;
 import org.wildfly.prospero.Messages;
 
@@ -52,7 +53,34 @@ public class ProsperoConfig {
     }
 
     public void addChannel(ChannelRef channelRef) {
+        // Check that neither GAV nor URL of added channel is equal to GAVs or URLs of existing channels.
+        if (StringUtils.isNotBlank(channelRef.getGav())) {
+            Optional<ChannelRef> found = channels.stream().filter(c -> channelRef.getGav().equals(c.getGav())).findAny();
+            if (found.isPresent()) {
+                throw Messages.MESSAGES.channelExists(channelRef.getGav());
+            }
+        }
+        if (StringUtils.isNotBlank(channelRef.getUrl())) {
+            Optional<ChannelRef> found = channels.stream().filter(c -> channelRef.getUrl().equals(c.getUrl())).findAny();
+            if (found.isPresent()) {
+                throw Messages.MESSAGES.channelExists(channelRef.getUrl());
+            }
+        }
         channels.add(0, channelRef);
+    }
+
+    public void removeChannel(ChannelRef channelRef) {
+        Optional<ChannelRef> found = Optional.empty();
+        if (StringUtils.isNotBlank(channelRef.getGav())) {
+            found = channels.stream().filter(c -> channelRef.getGav().equals(c.getGav())).findFirst();
+        }
+        if (found.isEmpty() && StringUtils.isNotBlank(channelRef.getUrl())) {
+            found = channels.stream().filter(c -> channelRef.getUrl().equals(c.getUrl())).findFirst();
+        }
+        if (found.isEmpty()) {
+            throw Messages.MESSAGES.channelNotPresent(channelRef.getGavOrUrlString());
+        }
+        channels.remove(found.get());
     }
 
     /**
@@ -87,7 +115,7 @@ public class ProsperoConfig {
         if (repo.isPresent()) {
             repositories.remove(repo.get());
         } else {
-            throw Messages.MESSAGES.unknownRepository(id);
+            throw Messages.MESSAGES.repositoryNotPresent(id);
         }
     }
 

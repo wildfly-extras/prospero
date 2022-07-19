@@ -31,21 +31,21 @@ public class CliMainTest extends AbstractConsoleTest {
 
     @Test
     public void errorIfArgNameDoesntStartWithDoubleHyphens() {
-        int exitCode = commandLine.execute(CliConstants.INSTALL, CliConstants.DIR + "=test", "dir=test");
+        int exitCode = commandLine.execute(CliConstants.Commands.INSTALL, CliConstants.DIR + "=test", "dir=test");
         assertEquals(ReturnCodes.INVALID_ARGUMENTS, exitCode);
         assertTrue(getErrorOutput().contains("Unmatched argument at index 2: 'dir=test'"));
     }
 
     @Test
     public void errorIfArgumentHasNoValue() {
-        int exitCode = commandLine.execute(CliConstants.INSTALL, CliConstants.DIR);
+        int exitCode = commandLine.execute(CliConstants.Commands.INSTALL, CliConstants.DIR);
         assertEquals(ReturnCodes.INVALID_ARGUMENTS, exitCode);
         assertTrue(getErrorOutput(), getErrorOutput().contains("Missing required parameter for option '--dir'"));
     }
 
     @Test
     public void errorOnUnknownArgument() {
-        int exitCode = commandLine.execute(CliConstants.INSTALL, CliConstants.DIR, "test", "--foo=bar");
+        int exitCode = commandLine.execute(CliConstants.Commands.INSTALL, CliConstants.DIR, "test", "--foo=bar");
         assertEquals(ReturnCodes.INVALID_ARGUMENTS, exitCode);
         assertTrue(getErrorOutput().contains("Unknown option: '--foo=bar'"));
     }

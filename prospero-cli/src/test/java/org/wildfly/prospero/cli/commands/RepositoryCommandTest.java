@@ -60,34 +60,34 @@ public class RepositoryCommandTest extends AbstractConsoleTest {
 
     @Test
     public void testListInvalidInstallationDir() {
-        int exitCode = commandLine.execute(CliConstants.REPO, CliConstants.LIST);
+        int exitCode = commandLine.execute(CliConstants.Commands.REPO, CliConstants.Commands.LIST);
 
         Assert.assertEquals(ReturnCodes.INVALID_ARGUMENTS, exitCode);
-        assertTrue(getErrorOutput().contains(CliMessages.MESSAGES.invalidInstallationDir(RepositoryListCommand.currentDir())
+        assertTrue(getErrorOutput().contains(CliMessages.MESSAGES.invalidInstallationDir(RepositoryCommand.currentDir())
                 .getMessage()));
     }
 
     @Test
     public void testAddInvalidInstallationDir() {
-        int exitCode = commandLine.execute(CliConstants.REPO, CliConstants.ADD, "repo2", "file:/tmp/repo2");
+        int exitCode = commandLine.execute(CliConstants.Commands.REPO, CliConstants.Commands.ADD, "repo2", "file:/tmp/repo2");
 
         Assert.assertEquals(ReturnCodes.INVALID_ARGUMENTS, exitCode);
-        assertTrue(getErrorOutput().contains(CliMessages.MESSAGES.invalidInstallationDir(RepositoryListCommand.currentDir())
+        assertTrue(getErrorOutput().contains(CliMessages.MESSAGES.invalidInstallationDir(RepositoryCommand.currentDir())
                 .getMessage()));
     }
 
     @Test
     public void testRemoveInvalidInstallationDir() {
-        int exitCode = commandLine.execute(CliConstants.REPO, CliConstants.REMOVE, REPO_ID);
+        int exitCode = commandLine.execute(CliConstants.Commands.REPO, CliConstants.Commands.REMOVE, REPO_ID);
 
         Assert.assertEquals(ReturnCodes.INVALID_ARGUMENTS, exitCode);
-        assertTrue(getErrorOutput().contains(CliMessages.MESSAGES.invalidInstallationDir(RepositoryListCommand.currentDir())
+        assertTrue(getErrorOutput().contains(CliMessages.MESSAGES.invalidInstallationDir(RepositoryCommand.currentDir())
                 .getMessage()));
     }
 
     @Test
     public void testList() {
-        int exitCode = commandLine.execute(CliConstants.REPO, CliConstants.LIST, CliConstants.DIR, dir.toString());
+        int exitCode = commandLine.execute(CliConstants.Commands.REPO, CliConstants.Commands.LIST, CliConstants.DIR, dir.toString());
 
         assertEquals(ReturnCodes.SUCCESS, exitCode);
         assertTrue(getStandardOutput().contains(REPO_ID));
@@ -96,15 +96,15 @@ public class RepositoryCommandTest extends AbstractConsoleTest {
 
     @Test
     public void testAddInvalidArguments() {
-        assertEquals(ReturnCodes.INVALID_ARGUMENTS, commandLine.execute(CliConstants.REPO, CliConstants.ADD, "repo2", "file:/tmp/repo2"));
-        assertEquals(ReturnCodes.INVALID_ARGUMENTS, commandLine.execute(CliConstants.REPO, CliConstants.ADD, CliConstants.DIR, dir.toString()));
-        assertEquals(ReturnCodes.INVALID_ARGUMENTS, commandLine.execute(CliConstants.REPO, CliConstants.ADD, CliConstants.DIR, dir.toString(), "repo2"));
-        assertEquals(ReturnCodes.INVALID_ARGUMENTS, commandLine.execute(CliConstants.REPO, CliConstants.ADD, CliConstants.DIR, dir.toString(), "repo2", "invalid url"));
+        assertEquals(ReturnCodes.INVALID_ARGUMENTS, commandLine.execute(CliConstants.Commands.REPO, CliConstants.Commands.ADD, "repo2", "file:/tmp/repo2"));
+        assertEquals(ReturnCodes.INVALID_ARGUMENTS, commandLine.execute(CliConstants.Commands.REPO, CliConstants.Commands.ADD, CliConstants.DIR, dir.toString()));
+        assertEquals(ReturnCodes.INVALID_ARGUMENTS, commandLine.execute(CliConstants.Commands.REPO, CliConstants.Commands.ADD, CliConstants.DIR, dir.toString(), "repo2"));
+        assertEquals(ReturnCodes.INVALID_ARGUMENTS, commandLine.execute(CliConstants.Commands.REPO, CliConstants.Commands.ADD, CliConstants.DIR, dir.toString(), "repo2", "invalid url"));
     }
 
     @Test
     public void testAdd() throws MetadataException {
-        int exitCode = commandLine.execute(CliConstants.REPO, CliConstants.ADD, CliConstants.DIR, dir.toString(),
+        int exitCode = commandLine.execute(CliConstants.Commands.REPO, CliConstants.Commands.ADD, CliConstants.DIR, dir.toString(),
                 "repo2", "file:/tmp/repo2");
 
         assertEquals(ReturnCodes.SUCCESS, exitCode);
@@ -117,15 +117,15 @@ public class RepositoryCommandTest extends AbstractConsoleTest {
 
     @Test
     public void testRemoveInvalidArguments() {
-        assertEquals(ReturnCodes.INVALID_ARGUMENTS, commandLine.execute(CliConstants.REPO, CliConstants.REMOVE));
-        assertEquals(ReturnCodes.INVALID_ARGUMENTS, commandLine.execute(CliConstants.REPO, CliConstants.REMOVE, CliConstants.DIR, dir.toString()));
-        assertEquals(ReturnCodes.INVALID_ARGUMENTS, commandLine.execute(CliConstants.REPO, CliConstants.REMOVE, CliConstants.DIR, dir.toString(), "repo2"));
-        assertEquals(ReturnCodes.INVALID_ARGUMENTS, commandLine.execute(CliConstants.REPO, CliConstants.REMOVE, CliConstants.DIR, dir.toString(), "repo1", "invalid param"));
+        assertEquals(ReturnCodes.INVALID_ARGUMENTS, commandLine.execute(CliConstants.Commands.REPO, CliConstants.Commands.REMOVE));
+        assertEquals(ReturnCodes.INVALID_ARGUMENTS, commandLine.execute(CliConstants.Commands.REPO, CliConstants.Commands.REMOVE, CliConstants.DIR, dir.toString()));
+        assertEquals(ReturnCodes.INVALID_ARGUMENTS, commandLine.execute(CliConstants.Commands.REPO, CliConstants.Commands.REMOVE, CliConstants.DIR, dir.toString(), "repo2"));
+        assertEquals(ReturnCodes.INVALID_ARGUMENTS, commandLine.execute(CliConstants.Commands.REPO, CliConstants.Commands.REMOVE, CliConstants.DIR, dir.toString(), "repo1", "invalid param"));
     }
 
     @Test
     public void testRemove() throws MetadataException {
-        int exitCode = commandLine.execute(CliConstants.REPO, CliConstants.REMOVE, CliConstants.DIR, dir.toString(),
+        int exitCode = commandLine.execute(CliConstants.Commands.REPO, CliConstants.Commands.REMOVE, CliConstants.DIR, dir.toString(),
                 REPO_ID);
 
         assertEquals(ReturnCodes.SUCCESS, exitCode);

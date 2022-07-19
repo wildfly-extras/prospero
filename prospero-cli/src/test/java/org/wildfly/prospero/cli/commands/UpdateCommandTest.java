@@ -89,7 +89,7 @@ public class UpdateCommandTest extends AbstractMavenCommandTest {
 
     @Test
     public void currentDirNotValidInstallation() {
-        int exitCode = commandLine.execute(CliConstants.UPDATE);
+        int exitCode = commandLine.execute(CliConstants.Commands.UPDATE);
 
         Assert.assertEquals(ReturnCodes.INVALID_ARGUMENTS, exitCode);
         assertTrue(getErrorOutput().contains(CliMessages.MESSAGES.invalidInstallationDir(UpdateCommand.currentDir().toAbsolutePath())
@@ -98,7 +98,7 @@ public class UpdateCommandTest extends AbstractMavenCommandTest {
 
     @Test
     public void callUpdate() throws Exception {
-        int exitCode = commandLine.execute(CliConstants.UPDATE, CliConstants.DIR, installationDir.toString());
+        int exitCode = commandLine.execute(CliConstants.Commands.UPDATE, CliConstants.DIR, installationDir.toString());
 
         assertEquals(ReturnCodes.SUCCESS, exitCode);
         Mockito.verify(updateAction).doUpdateAll(false);
@@ -106,7 +106,7 @@ public class UpdateCommandTest extends AbstractMavenCommandTest {
 
     @Test
     public void selfUpdateRequiresModulePathProp() {
-        int exitCode = commandLine.execute(CliConstants.UPDATE, CliConstants.SELF);
+        int exitCode = commandLine.execute(CliConstants.Commands.UPDATE, CliConstants.SELF);
 
         assertEquals(ReturnCodes.INVALID_ARGUMENTS, exitCode);
         assertTrue(getErrorOutput().contains(CliMessages.MESSAGES.unableToLocateProsperoInstallation()));
@@ -115,7 +115,7 @@ public class UpdateCommandTest extends AbstractMavenCommandTest {
     @Test
     public void selfUpdatePassesModulePathAsDir() throws Exception {
         System.setProperty(UpdateCommand.JBOSS_MODULE_PATH, installationDir.resolve(MODULES_DIR).toString());
-        int exitCode = commandLine.execute(CliConstants.UPDATE, CliConstants.SELF);
+        int exitCode = commandLine.execute(CliConstants.Commands.UPDATE, CliConstants.SELF);
 
         assertEquals(ReturnCodes.SUCCESS, exitCode);
         Mockito.verify(actionFactory).update(eq(installationDir.toAbsolutePath()), any(), any());
@@ -125,7 +125,7 @@ public class UpdateCommandTest extends AbstractMavenCommandTest {
     @Test
     public void dirParameterOverridesModulePathInSelfUpdate() throws Exception {
         System.setProperty(UpdateCommand.JBOSS_MODULE_PATH, installationDir.toString());
-        int exitCode = commandLine.execute(CliConstants.UPDATE, CliConstants.SELF,
+        int exitCode = commandLine.execute(CliConstants.Commands.UPDATE, CliConstants.SELF,
                 CliConstants.DIR, installationDir.toAbsolutePath().toString());
 
         assertEquals(ReturnCodes.SUCCESS, exitCode);
@@ -136,7 +136,7 @@ public class UpdateCommandTest extends AbstractMavenCommandTest {
     @Test
     public void selfUpdateFailsIfMultipleFPsDetected() throws Exception {
         MetadataTestUtils.createGalleonProvisionedState(installationDir, A_PROSPERO_FP, OTHER_FP);
-        int exitCode = commandLine.execute(CliConstants.UPDATE, CliConstants.SELF,
+        int exitCode = commandLine.execute(CliConstants.Commands.UPDATE, CliConstants.SELF,
                 CliConstants.DIR, installationDir.toAbsolutePath().toString());
 
         assertEquals(ReturnCodes.INVALID_ARGUMENTS, exitCode);
@@ -147,7 +147,7 @@ public class UpdateCommandTest extends AbstractMavenCommandTest {
     @Test
     public void selfUpdateFailsIfProsperoFPNotDetected() throws Exception {
         MetadataTestUtils.createGalleonProvisionedState(installationDir, OTHER_FP);
-        int exitCode = commandLine.execute(CliConstants.UPDATE, CliConstants.SELF,
+        int exitCode = commandLine.execute(CliConstants.Commands.UPDATE, CliConstants.SELF,
                 CliConstants.DIR, installationDir.toString());
 
         assertEquals(ReturnCodes.INVALID_ARGUMENTS, exitCode);
@@ -164,7 +164,7 @@ public class UpdateCommandTest extends AbstractMavenCommandTest {
 
     @Override
     protected String[] getDefaultArguments() {
-        return new String[] {CliConstants.UPDATE, CliConstants.DIR, installationDir.toString()};
+        return new String[] {CliConstants.Commands.UPDATE, CliConstants.DIR, installationDir.toString()};
     }
 
 }

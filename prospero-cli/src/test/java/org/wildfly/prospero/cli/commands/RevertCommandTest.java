@@ -77,7 +77,7 @@ public class RevertCommandTest extends AbstractMavenCommandTest {
     }
     @Test
     public void invalidInstallationDir() {
-        int exitCode = commandLine.execute(CliConstants.REVERT, CliConstants.REVISION, "abcd");
+        int exitCode = commandLine.execute(CliConstants.Commands.REVERT, CliConstants.REVISION, "abcd");
 
         Assert.assertEquals(ReturnCodes.INVALID_ARGUMENTS, exitCode);
         assertTrue(getErrorOutput().contains(CliMessages.MESSAGES.invalidInstallationDir(RevertCommand.currentDir())
@@ -86,7 +86,7 @@ public class RevertCommandTest extends AbstractMavenCommandTest {
 
     @Test
     public void requireRevisionArgument() {
-        int exitCode = commandLine.execute(CliConstants.REVERT, CliConstants.DIR, installationDir.toString());
+        int exitCode = commandLine.execute(CliConstants.Commands.REVERT, CliConstants.DIR, installationDir.toString());
 
         assertEquals(ReturnCodes.INVALID_ARGUMENTS, exitCode);
         assertTrue(getErrorOutput().contains(String.format(
@@ -95,7 +95,7 @@ public class RevertCommandTest extends AbstractMavenCommandTest {
 
     @Test
     public void callRevertOpertation() throws Exception {
-        int exitCode = commandLine.execute(CliConstants.REVERT, CliConstants.DIR, installationDir.toString(),
+        int exitCode = commandLine.execute(CliConstants.Commands.REVERT, CliConstants.DIR, installationDir.toString(),
                 CliConstants.REVISION, "abcd");
 
         assertEquals(ReturnCodes.SUCCESS, exitCode);
@@ -104,7 +104,7 @@ public class RevertCommandTest extends AbstractMavenCommandTest {
 
     @Test
     public void useOfflineMavenSessionManagerIfOfflineSet() throws Exception {
-        int exitCode = commandLine.execute(CliConstants.REVERT, CliConstants.DIR, installationDir.toString(),
+        int exitCode = commandLine.execute(CliConstants.Commands.REVERT, CliConstants.DIR, installationDir.toString(),
                 CliConstants.REVISION, "abcd",
                 CliConstants.OFFLINE, CliConstants.LOCAL_REPO, "local-repo");
 
@@ -121,7 +121,7 @@ public class RevertCommandTest extends AbstractMavenCommandTest {
 
     @Override
     protected String[] getDefaultArguments() {
-        return new String[]{CliConstants.REVERT, CliConstants.DIR, installationDir.toString(),
+        return new String[]{CliConstants.Commands.REVERT, CliConstants.DIR, installationDir.toString(),
                 CliConstants.REVISION, "abcd"};
     }
 }

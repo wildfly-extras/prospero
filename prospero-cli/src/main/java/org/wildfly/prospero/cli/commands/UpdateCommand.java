@@ -37,7 +37,7 @@ import org.wildfly.prospero.wfchannel.MavenSessionManager;
 import picocli.CommandLine;
 
 @CommandLine.Command(
-        name = CliConstants.UPDATE,
+        name = CliConstants.Commands.UPDATE,
         sortOptions = false
 )
 public class UpdateCommand extends AbstractCommand {
@@ -95,8 +95,8 @@ public class UpdateCommand extends AbstractCommand {
                 updateAction.listUpdates();
             }
         } catch (MetadataException | ProvisioningException e) {
-            console.error(CliMessages.MESSAGES.errorWhileExecutingOperation(CliConstants.UPDATE, e.getMessage()));
-            logger.error(CliMessages.MESSAGES.errorWhileExecutingOperation(CliConstants.INSTALL, e.getMessage()), e);
+            console.error(CliMessages.MESSAGES.errorWhileExecutingOperation(CliConstants.Commands.UPDATE, e.getMessage()));
+            logger.error(CliMessages.MESSAGES.errorWhileExecutingOperation(CliConstants.Commands.INSTALL, e.getMessage()), e);
             return ReturnCodes.PROCESSING_ERROR;
         }
         return ReturnCodes.SUCCESS;

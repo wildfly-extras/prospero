@@ -17,27 +17,25 @@
 
 package org.wildfly.prospero.cli.commands;
 
-import java.net.URL;
 import java.nio.file.Path;
 import java.util.List;
 import java.util.Optional;
 
-import org.apache.commons.lang3.StringUtils;
 import org.wildfly.prospero.actions.Console;
 import org.wildfly.prospero.actions.MetadataAction;
 import org.wildfly.prospero.cli.ActionFactory;
 import org.wildfly.prospero.cli.CliMessages;
 import org.wildfly.prospero.cli.ReturnCodes;
-import org.wildfly.prospero.model.RepositoryRef;
+import org.wildfly.prospero.model.ChannelRef;
 import picocli.CommandLine;
 
-@CommandLine.Command(name = CliConstants.Commands.REPOSITORY, aliases = CliConstants.Commands.REPO)
-public class RepositoryCommand extends AbstractCommand {
+@CommandLine.Command(name = CliConstants.Commands.CHANNEL)
+public class ChannelCommand extends AbstractCommand {
 
     @CommandLine.Spec
     protected CommandLine.Model.CommandSpec spec;
 
-    public RepositoryCommand(Console console, ActionFactory actionFactory) {
+    public ChannelCommand(Console console, ActionFactory actionFactory) {
         super(console, actionFactory);
     }
 
@@ -47,13 +45,14 @@ public class RepositoryCommand extends AbstractCommand {
         return ReturnCodes.INVALID_ARGUMENTS;
     }
 
+
     @CommandLine.Command(name = CliConstants.Commands.LIST)
-    public static class RepositoryListCommand extends AbstractCommand {
+    public static class ChannelListCommand extends AbstractCommand {
 
         @CommandLine.Option(names = CliConstants.DIR)
         Optional<Path> directory;
 
-        public RepositoryListCommand(Console console, ActionFactory actionFactory) {
+        public ChannelListCommand(Console console, ActionFactory actionFactory) {
             super(console, actionFactory);
         }
 
@@ -61,34 +60,26 @@ public class RepositoryCommand extends AbstractCommand {
         public Integer call() throws Exception {
             Path installationDirectory = determineInstallationDirectory(directory);
             MetadataAction metadataAction = actionFactory.metadataActions(installationDirectory);
-            List<RepositoryRef> repositories = metadataAction.getRepositories();
+            List<ChannelRef> channels = metadataAction.getChannels();
 
-            // calculate maximum length of repository id strings, to make the list nicely alligned
-            int maxRepoIdLength = repositories.stream()
-                    .map(r -> r.getId().length())
-                    .max(Integer::compareTo)
-                    .orElse(0);
-
-            for (RepositoryRef repo: repositories) {
-                console.println("%s\t%s", StringUtils.rightPad(repo.getId(), maxRepoIdLength), repo.getUrl());
+            for (ChannelRef channel: channels) {
+                console.println(channel.getGavOrUrlString());
             }
+
             return ReturnCodes.SUCCESS;
         }
     }
 
     @CommandLine.Command(name = CliConstants.Commands.ADD)
-    public static class RepositoryAddCommand extends AbstractCommand {
+    public static class ChannelAddCommand extends AbstractCommand {
 
-        @CommandLine.Parameters(index = "0")
-        String repoId;
-
-        @CommandLine.Parameters(index = "1")
-        URL url;
+        @CommandLine.Parameters(index = "0", paramLabel = "gav-or-url")
+        String gavOrUrl;
 
         @CommandLine.Option(names = CliConstants.DIR)
         Optional<Path> directory;
 
-        public RepositoryAddCommand(Console console, ActionFactory actionFactory) {
+        public ChannelAddCommand(Console console, ActionFactory actionFactory) {
             super(console, actionFactory);
         }
 
@@ -96,22 +87,22 @@ public class RepositoryCommand extends AbstractCommand {
         public Integer call() throws Exception {
             Path installationDirectory = determineInstallationDirectory(directory);
             MetadataAction metadataAction = actionFactory.metadataActions(installationDirectory);
-            metadataAction.addRepository(repoId, url);
-            console.println(CliMessages.MESSAGES.repositoryAdded(repoId));
+            metadataAction.addChannel(gavOrUrl);
+            console.println(CliMessages.MESSAGES.channelAdded(gavOrUrl));
             return ReturnCodes.SUCCESS;
         }
     }
 
     @CommandLine.Command(name = CliConstants.Commands.REMOVE)
-    public static class RepositoryRemoveCommand extends AbstractCommand {
+    public static class ChannelRemoveCommand extends AbstractCommand {
 
-        @CommandLine.Parameters(index = "0")
-        String repoId;
+        @CommandLine.Parameters(index = "0", paramLabel = "gav-or-url")
+        String gavOrUrl;
 
         @CommandLine.Option(names = CliConstants.DIR)
         Optional<Path> directory;
 
-        public RepositoryRemoveCommand(Console console, ActionFactory actionFactory) {
+        public ChannelRemoveCommand(Console console, ActionFactory actionFactory) {
             super(console, actionFactory);
         }
 
@@ -119,8 +110,8 @@ public class RepositoryCommand extends AbstractCommand {
         public Integer call() throws Exception {
             Path installationDirectory = determineInstallationDirectory(directory);
             MetadataAction metadataAction = actionFactory.metadataActions(installationDirectory);
-            metadataAction.removeRepository(repoId);
-            console.println(CliMessages.MESSAGES.repositoryRemoved(repoId));
+            metadataAction.removeChannel(gavOrUrl);
+            console.println(CliMessages.MESSAGES.channelRemoved(gavOrUrl));
             return ReturnCodes.SUCCESS;
         }
     }
