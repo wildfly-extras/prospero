@@ -35,7 +35,9 @@ import org.eclipse.aether.repository.RepositoryPolicy;
 import org.jboss.galleon.ProvisioningException;
 import org.wildfly.prospero.Messages;
 import org.wildfly.prospero.api.exceptions.ArtifactResolutionException;
+import org.wildfly.prospero.api.exceptions.NoChannelException;
 import org.wildfly.prospero.model.ChannelRef;
+import org.wildfly.prospero.model.KnownFeaturePack;
 import org.wildfly.prospero.model.ProsperoConfig;
 import org.wildfly.prospero.model.RepositoryRef;
 
@@ -50,7 +52,7 @@ public class ProvisioningDefinition {
     private final List<RemoteRepository> repositories = new ArrayList<>();
     private final Path definition;
 
-    private ProvisioningDefinition(Builder builder) throws ArtifactResolutionException {
+    private ProvisioningDefinition(Builder builder) throws ArtifactResolutionException, NoChannelException {
         final Optional<String> fpl = Optional.ofNullable(builder.fpl);
         final Optional<Path> definition = Optional.ofNullable(builder.definitionFile);
         final List<String> overrideRemoteRepos = builder.remoteRepositories;
@@ -61,13 +63,13 @@ public class ProvisioningDefinition {
         this.includedPackages.addAll(includedPackages.orElse(Collections.emptySet()));
 
         try {
-            if (fpl.isPresent() && WellKnownFeaturePacks.isWellKnownName(fpl.get())) {
-                WellKnownFeaturePacks featurePackInfo = WellKnownFeaturePacks.getByName(fpl.get());
-                this.fpl = featurePackInfo.location;
+            if (fpl.isPresent() && KnownFeaturePacks.isWellKnownName(fpl.get())) {
+                KnownFeaturePack featurePackInfo = KnownFeaturePacks.getByName(fpl.get());
+                this.fpl = featurePackInfo.getLocation();
                 this.definition = null;
-                this.includedPackages.addAll(featurePackInfo.packages);
-                this.repositories.addAll(featurePackInfo.repositories);
-                setUpBuildEnv(overrideRemoteRepos, provisionConfigFile, channel, featurePackInfo.channelGav);
+                this.includedPackages.addAll(featurePackInfo.getPackages());
+                this.repositories.addAll(featurePackInfo.getRemoteRepositories());
+                setUpBuildEnv(overrideRemoteRepos, provisionConfigFile, channel, featurePackInfo.getChannelGavs());
             } else if (provisionConfigFile.isPresent()) {
                 this.fpl = fpl.orElse(null);
                 this.definition = definition.orElse(null);
@@ -82,20 +84,27 @@ public class ProvisioningDefinition {
                 //  other options (channel, channelRepo - perhaps both should be made collections)
                 throw new IllegalArgumentException(
                         String.format("Incomplete configuration: either a predefined fpl (%s) or a provisionConfigFile must be given.",
-                                String.join(", ", WellKnownFeaturePacks.getNames())));
+                                String.join(", ", KnownFeaturePacks.getNames())));
             }
         } catch (IOException e) {
             throw new ArtifactResolutionException("Unable to resolve channel definition: " + e.getMessage(), e);
         }
 
         if (channels.isEmpty()) {
-            throw Messages.MESSAGES.noChannelReference();
+            if (fpl.isPresent() && KnownFeaturePacks.isWellKnownName(fpl.get())) {
+                throw Messages.MESSAGES.fplDefinitionDoesntContainChannel(fpl.get());
+            } else {
+                throw Messages.MESSAGES.noChannelReference();
+            }
         }
     }
 
-    private void setUpBuildEnv(List<String> overrideRemoteRepos, Optional<Path> provisionConfigFile, Optional<URL> channel, String channelGA) throws IOException {
+    private void setUpBuildEnv(List<String> overrideRemoteRepos, Optional<Path> provisionConfigFile,
+                               Optional<URL> channel, List<String> channelGAs) throws IOException {
         if (!provisionConfigFile.isPresent() && !channel.isPresent()) {
-            this.channels.add(new ChannelRef(channelGA, null));
+            if (channelGAs != null) {
+                channelGAs.forEach(c -> this.channels.add(new ChannelRef(c, null)));
+            }
             if (!overrideRemoteRepos.isEmpty()) {
                 this.repositories.clear();
                 int i = 0;
@@ -152,7 +161,7 @@ public class ProvisioningDefinition {
         private Set<String> includedPackages;
         private URL channel;
 
-        public ProvisioningDefinition build() throws ArtifactResolutionException {
+        public ProvisioningDefinition build() throws ArtifactResolutionException, NoChannelException {
             return new ProvisioningDefinition(this);
         }
 

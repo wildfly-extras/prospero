@@ -19,7 +19,6 @@ package org.wildfly.prospero.it.commonapi;
 
 import org.eclipse.aether.installation.InstallResult;
 import org.wildfly.prospero.api.ProvisioningDefinition;
-import org.wildfly.prospero.api.WellKnownRepositories;
 import org.wildfly.prospero.model.RepositoryRef;
 import org.wildfly.prospero.wfchannel.MavenSessionManager;
 import org.eclipse.aether.DefaultRepositorySystemSession;
@@ -47,6 +46,9 @@ public class WfCoreTestBase {
     public static final String CHANNEL_BASE_CORE_19 = "channels/wfcore-19-base.yaml";
     public static final String CHANNEL_FP_UPDATES = "channels/wfcore-19-upgrade-fp.yaml";
     public static final String CHANNEL_COMPONENT_UPDATES = "channels/wfcore-19-upgrade-component.yaml";
+    public static final RepositoryRef REPOSITORY_MAVEN_CENTRAL = new RepositoryRef("maven-central", "https://repo1.maven.org/maven2/");
+    public static final RepositoryRef REPOSITORY_NEXUS = new RepositoryRef("nexus", "https://repository.jboss.org/nexus/content/groups/public-jboss");
+    public static final RepositoryRef REPOSITORY_MRRC_GA = new RepositoryRef("maven-redhat-ga", "https://maven.repository.redhat.com/ga");
     protected static Artifact resolvedUpgradeArtifact;
 
     protected final List<RepositoryRef> repositories = defaultRemoteRepositories();
@@ -102,7 +104,7 @@ public class WfCoreTestBase {
 
     private static Artifact resolveArtifact(RepositorySystem system, DefaultRepositorySystemSession session, DefaultArtifact existing) throws ArtifactResolutionException {
         final ArtifactRequest artifactRequest = new ArtifactRequest();
-        artifactRequest.setRepositories(Arrays.asList(WellKnownRepositories.CENTRAL.get()));
+        artifactRequest.setRepositories(Arrays.asList(REPOSITORY_MAVEN_CENTRAL.toRemoteRepository()));
         artifactRequest.setArtifact(existing);
         final ArtifactResult artifactResult = system.resolveArtifact(session, artifactRequest);
         return artifactResult.getArtifact();
@@ -110,9 +112,9 @@ public class WfCoreTestBase {
 
     public static List<RepositoryRef> defaultRemoteRepositories() {
         return Arrays.asList(
-                new RepositoryRef("maven-central", "https://repo1.maven.org/maven2/"),
-                new RepositoryRef("nexus", "https://repository.jboss.org/nexus/content/groups/public-jboss"),
-                new RepositoryRef("maven-redhat-ga", "https://maven.repository.redhat.com/ga")
+                REPOSITORY_MAVEN_CENTRAL,
+                REPOSITORY_NEXUS,
+                REPOSITORY_MRRC_GA
         );
     }
 }

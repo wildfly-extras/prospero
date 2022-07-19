@@ -1,0 +1,29 @@
+---
+- name: "no-channel"
+  location: "wildfly@maven(org.jboss.universe:community-universe):current"
+  repositories:
+  - id: "central"
+    url: "https://repo1.maven.org/maven2/"
+  - id: "jboss-public"
+    url: "https://repository.jboss.org/nexus/content/groups/public/"
+- name: "multi-channel"
+  location: "wildfly@maven(org.jboss.universe:community-universe):current"
+  channelGavs:
+  - "test:one"
+  - "test:two"
+  repositories:
+  - id: "central"
+    url: "https://repo1.maven.org/maven2/"
+  - id: "jboss-public"
+    url: "https://repository.jboss.org/nexus/content/groups/public/"
+- name: "known-fpl"
+  location: "org.wildfly:wildfly-core-galleon-pack"
+  channelGavs:
+  - "org.wildfly.channels:wildfly-core:26.1.0"
+  packages:
+  - "docs.examples.configs"
+  repositories:
+  - id: "central"
+    url: "https://repo1.maven.org/maven2/"
+  - id: "jboss-public"
+    url: "https://repository.jboss.org/nexus/content/groups/public/"

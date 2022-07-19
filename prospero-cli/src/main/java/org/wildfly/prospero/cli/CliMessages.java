@@ -131,4 +131,7 @@ public interface CliMessages {
 
     @Message("Path `%s` does not contain a server installation provisioned by prospero.")
     IllegalArgumentException invalidInstallationDir(Path path);
+
+    @Message("Add required channels using [%s] argument")
+    String addChannels(String channel);
 }

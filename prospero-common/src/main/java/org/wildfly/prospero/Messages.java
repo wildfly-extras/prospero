@@ -26,6 +26,7 @@ import org.jboss.logging.annotations.Message;
 import org.jboss.logging.annotations.MessageBundle;
 import org.wildfly.prospero.api.exceptions.ArtifactResolutionException;
 import org.wildfly.prospero.api.exceptions.MetadataException;
+import org.wildfly.prospero.api.exceptions.NoChannelException;
 
 @MessageBundle(projectCode = "PRSP")
 public interface Messages {
@@ -54,7 +55,10 @@ public interface Messages {
     ArtifactResolutionException artifactNotFound(String g, String a, @Cause Exception e);
 
     @Message("At least one channel reference must be given.")
-    IllegalArgumentException noChannelReference();
+    NoChannelException noChannelReference();
+
+    @Message("[%s] doesn't specify any channels and no additional channels are selected.")
+    NoChannelException fplDefinitionDoesntContainChannel(String fpl);
 
     @Message("Repository with ID '%s' is not present.")
     IllegalArgumentException repositoryNotPresent(String repoId);

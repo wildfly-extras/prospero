@@ -27,11 +27,12 @@ import java.util.stream.Collectors;
 import org.wildfly.prospero.actions.Console;
 import org.wildfly.prospero.actions.ProvisioningAction;
 import org.wildfly.prospero.api.ProvisioningDefinition;
-import org.wildfly.prospero.api.WellKnownFeaturePacks;
+import org.wildfly.prospero.api.KnownFeaturePacks;
 import org.wildfly.prospero.cli.ActionFactory;
 import org.wildfly.prospero.cli.CliMessages;
 import org.wildfly.prospero.cli.ReturnCodes;
 import org.wildfly.prospero.cli.commands.options.LocalRepoOptions;
+import org.wildfly.prospero.cli.commands.options.FeaturePackCandidates;
 import org.wildfly.prospero.wfchannel.MavenSessionManager;
 import picocli.CommandLine;
 
@@ -91,6 +92,7 @@ public class InstallCommand extends AbstractCommand {
         @CommandLine.Option(
                 names = CliConstants.FPL,
                 paramLabel = CliConstants.FEATURE_PACK_REFERENCE,
+                completionCandidates = FeaturePackCandidates.class,
                 required = true,
                 order = 1
         )
@@ -113,7 +115,6 @@ public class InstallCommand extends AbstractCommand {
     public Integer call() throws Exception {
         // following is checked by picocli, adding this to avoid IDE warnings
         assert featurePackOrDefinition.definition.isPresent() || featurePackOrDefinition.fpl.isPresent();
-
         if (featurePackOrDefinition.definition.isEmpty() && isStandardFpl(featurePackOrDefinition.fpl.get()) && provisionConfig.isEmpty()) {
             console.error(CliMessages.MESSAGES.prosperoConfigMandatoryWhenCustomFpl(), CliConstants.PROVISION_CONFIG);
             return ReturnCodes.INVALID_ARGUMENTS;
@@ -139,7 +140,7 @@ public class InstallCommand extends AbstractCommand {
     }
 
     private boolean isStandardFpl(String fpl) {
-        return !WellKnownFeaturePacks.isWellKnownName(fpl);
+        return !KnownFeaturePacks.isWellKnownName(fpl);
     }
 
 }
