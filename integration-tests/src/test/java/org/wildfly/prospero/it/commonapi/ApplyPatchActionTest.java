@@ -17,18 +17,11 @@
 
 package org.wildfly.prospero.it.commonapi;
 
-import org.apache.commons.io.FileUtils;
 import org.eclipse.aether.artifact.Artifact;
 import org.eclipse.aether.artifact.DefaultArtifact;
 import org.eclipse.aether.resolution.ArtifactResolutionException;
-import org.jboss.galleon.ProvisioningException;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Rule;
 import org.junit.Test;
-import org.junit.rules.TemporaryFolder;
 import org.wildfly.prospero.actions.ApplyPatchAction;
-import org.wildfly.prospero.actions.ProvisioningAction;
 import org.wildfly.prospero.api.InstallationMetadata;
 import org.wildfly.prospero.api.ProvisioningDefinition;
 import org.wildfly.prospero.it.AcceptingConsole;
@@ -43,7 +36,6 @@ import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.util.Collections;
 import java.util.Optional;
 
@@ -58,29 +50,7 @@ public class ApplyPatchActionTest extends WfCoreTestBase {
     public static final String PATCHED_ARTIFACT_GROUP = "org.wildfly.core";
     public static final String PATCHED_ARTIFACT_VERSION = "123.1.1";
     public static final String PATCHED_ARTIFACT_FILENAME = String.format("%s-%s.jar", PATCHED_ARTIFACT_ID, PATCHED_ARTIFACT_VERSION);
-    @Rule
-    public TemporaryFolder temp = new TemporaryFolder();
-
-    private static final String OUTPUT_DIR = "target/server";
-    private static final Path OUTPUT_PATH = Paths.get(OUTPUT_DIR).toAbsolutePath();
-    private final ProvisioningAction installation = new ProvisioningAction(OUTPUT_PATH, mavenSessionManager, new AcceptingConsole());
     private Path provisionConfigFile;
-
-    @Before
-    public void setUp() throws Exception {
-        if (OUTPUT_PATH.toFile().exists()) {
-            FileUtils.deleteDirectory(OUTPUT_PATH.toFile());
-            OUTPUT_PATH.toFile().delete();
-        }
-    }
-
-    @After
-    public void tearDown() throws Exception {
-        if (OUTPUT_PATH.toFile().exists()) {
-            FileUtils.deleteDirectory(OUTPUT_PATH.toFile());
-            OUTPUT_PATH.toFile().delete();
-        }
-    }
 
     @Test
     public void testInstallSimplePatch() throws Exception {
@@ -96,10 +66,6 @@ public class ApplyPatchActionTest extends WfCoreTestBase {
 
         // installCore
         provisionConfigFile = MetadataTestUtils.prepareProvisionConfig(CHANNEL_BASE_CORE_19);
-        Path installDir = Paths.get(OUTPUT_PATH.toString());
-        if (Files.exists(installDir)) {
-            throw new ProvisioningException("Installation dir " + installDir + " already exists");
-        }
 
         final ProvisioningDefinition provisioningDefinition = defaultWfCoreDefinition()
                 .setProvisionConfig(provisionConfigFile)
@@ -107,19 +73,19 @@ public class ApplyPatchActionTest extends WfCoreTestBase {
         installation.provision(provisioningDefinition);
 
         // apply patch
-        final ApplyPatchAction applyPatchAction = new ApplyPatchAction(OUTPUT_PATH, mavenSessionManager, new AcceptingConsole());
+        final ApplyPatchAction applyPatchAction = new ApplyPatchAction(outputPath, mavenSessionManager, new AcceptingConsole());
         applyPatchAction.apply(patchArchive.toPath());
 
         // verify config changed - patch channel & local repository
-        final Path metadataDir = installDir.resolve(InstallationMetadata.METADATA_DIR);
+        final Path metadataDir = outputPath.resolve(InstallationMetadata.METADATA_DIR);
         final ProsperoConfig prosperoConfig = ProsperoConfig.readConfig(metadataDir.resolve(InstallationMetadata.PROSPERO_CONFIG_FILE_NAME));
         assertThat(prosperoConfig.getChannels()).containsExactly(
-                new ChannelRef(null, installDir.resolve(".patches").resolve("patch-test00001-channel.yaml").toUri().toURL().toString()),
+                new ChannelRef(null, outputPath.resolve(".patches").resolve("patch-test00001-channel.yaml").toUri().toURL().toString()),
                 new ChannelRef(null, ApplyPatchActionTest.class.getClassLoader().getResource(CHANNEL_BASE_CORE_19).toString())
         );
 
         assertThat(prosperoConfig.getRepositories()).contains(
-                new RepositoryRef(PATCH_REPO_NAME, installDir.resolve(PATCHES_REPO_PATH).toUri().toURL().toString())
+                new RepositoryRef(PATCH_REPO_NAME, outputPath.resolve(PATCHES_REPO_PATH).toUri().toURL().toString())
         );
         // verify artifact changed in manifest
         final Optional<Artifact> wildflyCliArtifact = readArtifactFromManifest(metadataDir.resolve(InstallationMetadata.MANIFEST_FILE_NAME),
