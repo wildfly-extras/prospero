@@ -1,5 +1,12 @@
 #!/bin/bash
 
+if [ -n "${DEBUG}" ];
+then
+  JAVA_OPTS='-agentlib:jdwp=transport=dt_socket,server=y,suspend=y,address=*:8787'
+else
+  JAVA_OPTS=''
+fi
+
 if [ -z "${PROSPERO_HOME}" ];
 then
  full_path=$(realpath $0)
@@ -7,4 +14,4 @@ then
 fi
 CLASSPATH=( "${PROSPERO_HOME}/prospero-cli/target/"prospero-cli-*-shaded.jar )
 
-java -jar "${CLASSPATH}" "$@"
+java ${JAVA_OPTS} -jar "${CLASSPATH}" "$@"
