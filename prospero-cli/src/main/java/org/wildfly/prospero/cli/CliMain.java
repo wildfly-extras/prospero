@@ -27,6 +27,9 @@ import org.wildfly.prospero.cli.commands.MainCommand;
 import org.wildfly.prospero.cli.commands.RepositoryCommand;
 import org.wildfly.prospero.cli.commands.RevertCommand;
 import org.wildfly.prospero.cli.commands.UpdateCommand;
+import org.wildfly.prospero.cli.commands.patch.PatchCommand;
+import org.wildfly.prospero.cli.commands.patch.PatchInitChannelCommand;
+import org.wildfly.prospero.cli.commands.patch.PatchPromoteCommand;
 import picocli.CommandLine;
 
 public class CliMain {
@@ -69,6 +72,7 @@ public class CliMain {
         commandLine.addSubcommand(new RevertCommand(console, actionFactory));
         commandLine.addSubcommand(new RepositoryCommand(console, actionFactory));
         commandLine.addSubcommand(new ChannelCommand(console, actionFactory));
+        commandLine.addSubcommand(new PatchCommand(console, actionFactory));
 
         CommandLine repoCmd = commandLine.getSubcommands().get(CliConstants.Commands.REPOSITORY);
         repoCmd.addSubcommand(new RepositoryCommand.RepositoryAddCommand(console, actionFactory));
@@ -82,6 +86,10 @@ public class CliMain {
 
         commandLine.setUsageHelpAutoWidth(true);
         commandLine.setExecutionExceptionHandler(new ExecutionExceptionHandler(console));
+
+        CommandLine patchCmd = commandLine.getSubcommands().get("patch");
+        patchCmd.addSubcommand(new PatchInitChannelCommand(console, actionFactory));
+        patchCmd.addSubcommand(new PatchPromoteCommand(console, actionFactory));
 
         return commandLine;
     }

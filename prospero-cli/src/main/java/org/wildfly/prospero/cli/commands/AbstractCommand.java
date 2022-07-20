@@ -47,7 +47,7 @@ public abstract class AbstractCommand implements Callable<Integer> {
         this.actionFactory = actionFactory;
     }
 
-    static Path determineInstallationDirectory(Optional<Path> directoryOption) {
+    protected static Path determineInstallationDirectory(Optional<Path> directoryOption) {
         Path installationDirectory = directoryOption.orElse(currentDir()).toAbsolutePath();
         verifyInstallationDirectory(installationDirectory);
         return installationDirectory;

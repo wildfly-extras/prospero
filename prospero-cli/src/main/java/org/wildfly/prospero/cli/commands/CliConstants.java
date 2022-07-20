@@ -46,6 +46,7 @@ public final class CliConstants {
         public static final String LIST = "list";
         public static final String ADD = "add";
         public static final String REMOVE = "remove";
+        public static final String PATCH = "patch";
     }
 
     // Parameter and option labels:
@@ -77,4 +78,9 @@ public final class CliConstants {
     public static final String VERSION = "--version";
     public static final String Y = "-y";
     public static final String YES = "--yes";
+
+    // Patch options and sub-command:
+    public static final String PATCH_INIT_CHANNEL = "init-channel";
+    public static final String PATCH_CHANNEL_NAME = "--channel-name";
+    public static final String PATCH_REPOSITORY_URL = "--repository-url";
 }
