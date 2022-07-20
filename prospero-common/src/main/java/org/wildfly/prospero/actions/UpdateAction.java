@@ -63,7 +63,7 @@ public class UpdateAction {
 
         applyUpdates();
 
-        metadata.writeFiles();
+        metadata.recordProvision();
 
         console.updatesComplete();
     }

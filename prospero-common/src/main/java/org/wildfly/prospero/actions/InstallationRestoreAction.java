@@ -68,6 +68,6 @@ public class InstallationRestoreAction {
 
     private void writeProsperoMetadata(ChannelMavenArtifactRepositoryManager maven, List<ChannelRef> channelRefs, List<RemoteRepository> repositories)
             throws MetadataException {
-        new InstallationMetadata(installDir, maven.resolvedChannel(), channelRefs, repositories).writeFiles();
+        new InstallationMetadata(installDir, maven.resolvedChannel(), channelRefs, repositories).recordProvision();
     }
 }

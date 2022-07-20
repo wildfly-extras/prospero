@@ -73,7 +73,7 @@ public final class MetadataTestUtils {
             List<RemoteRepository> repositories) throws MetadataException {
         Runtime.getRuntime().addShutdownHook(new Thread(() -> FileUtils.deleteQuietly(installation.toFile())));
         final InstallationMetadata metadata = new InstallationMetadata(installation, manifest, channels, repositories);
-        metadata.writeFiles();
+        metadata.recordProvision();
         return metadata;
     }
 

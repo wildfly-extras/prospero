@@ -29,6 +29,7 @@ import org.junit.Test;
 import org.wildfly.channel.Channel;
 import org.wildfly.channel.Stream;
 import org.wildfly.prospero.actions.UpdateAction;
+import org.wildfly.prospero.api.InstallationMetadata;
 import org.wildfly.prospero.api.ProvisioningDefinition;
 import org.wildfly.prospero.it.AcceptingConsole;
 import org.wildfly.prospero.model.ChannelRef;
@@ -41,6 +42,9 @@ import org.wildfly.prospero.wfchannel.MavenSessionManager;
 import java.io.File;
 import java.io.IOException;
 import java.net.MalformedURLException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.StandardOpenOption;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -48,6 +52,7 @@ import java.util.Optional;
 import java.util.stream.Collectors;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 
 public class UpdateTest extends WfCoreTestBase {
 
@@ -83,6 +88,33 @@ public class UpdateTest extends WfCoreTestBase {
 
         wildflyCliArtifact = readArtifactFromManifest("org.wildfly.core", "wildfly-cli");
         assertEquals(UPGRADE_VERSION, wildflyCliArtifact.get().getVersion());
+    }
+
+    @Test
+    public void updateWildflyCoreIgnoreChangesInProsperoConfig() throws Exception {
+        final Path prosperoConfigFile = outputPath.resolve(InstallationMetadata.METADATA_DIR)
+                .resolve(InstallationMetadata.PROSPERO_CONFIG_FILE_NAME);
+
+        // deploy channel file
+        File channelFile = new File(MetadataTestUtils.class.getClassLoader().getResource(CHANNEL_BASE_CORE_19).toURI());
+        deployChannelFile(channelFile, "1.0.0");
+
+        // provision using channel gav
+        final ProvisioningDefinition provisioningDefinition = defaultWfCoreDefinition()
+                .setProvisionConfig(buildConfigWithMockRepo().toPath())
+                .build();
+        installation.provision(provisioningDefinition);
+
+        Files.writeString(prosperoConfigFile, "# test comment", StandardOpenOption.APPEND);
+
+        // update channel file
+        final File updatedChannel = upgradeTestArtifactIn(channelFile);
+        deployChannelFile(updatedChannel, "1.0.1");
+
+        // update installation
+        new UpdateAction(outputPath, mavenSessionManager, new AcceptingConsole()).doUpdateAll(false);
+
+        assertTrue(Files.readString(prosperoConfigFile).contains("# test comment"));
     }
 
     private File upgradeTestArtifactIn(File channelFile) throws IOException {

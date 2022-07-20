@@ -127,7 +127,7 @@ public class ProvisioningAction {
                                        List<RemoteRepository> repositories) throws MetadataException {
         final Channel channel = maven.resolvedChannel();
 
-        new InstallationMetadata(home, channel, channelRefs, repositories).writeFiles();
+        new InstallationMetadata(home, channel, channelRefs, repositories).recordProvision();
     }
 
     private static void verifyInstallDir(Path directory) {

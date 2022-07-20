@@ -23,10 +23,8 @@ import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import org.apache.commons.lang3.StringUtils;
 
-import java.io.File;
 import java.net.MalformedURLException;
 import java.net.URL;
-import java.util.Arrays;
 import java.util.Objects;
 
 @JsonInclude(JsonInclude.Include.NON_NULL)
@@ -110,10 +108,5 @@ public class ChannelRef {
                 (parts.length == 2 // GA
                 && StringUtils.isNotBlank(parts[0])
                 && StringUtils.isNotBlank(parts[1]));
-    }
-
-    public static void main(String[] args) throws Exception {
-        final ChannelRef cr = new ChannelRef("foo", null);
-        new ProsperoConfig(Arrays.asList(cr), null).writeConfig(new File("test.yaml"));
     }
 }
