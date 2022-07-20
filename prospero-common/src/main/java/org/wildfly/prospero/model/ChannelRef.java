@@ -19,13 +19,17 @@ package org.wildfly.prospero.model;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import org.apache.commons.lang3.StringUtils;
 
+import java.io.File;
 import java.net.MalformedURLException;
 import java.net.URL;
+import java.util.Arrays;
 import java.util.Objects;
 
+@JsonInclude(JsonInclude.Include.NON_NULL)
 public class ChannelRef {
 
     private final String url;
@@ -36,6 +40,16 @@ public class ChannelRef {
     public ChannelRef(@JsonProperty(value = "gav") String gav, @JsonProperty(value = "fileUrl") String fileUrl) {
         this.gav = gav;
         this.url = fileUrl;
+    }
+
+    public ChannelRef(ChannelRef other) {
+        if (other.getGav() != null && !other.getGav().isEmpty()) {
+            this.gav = other.getGav();
+            this.url = null;
+        } else {
+            this.gav = null;
+            this.url = other.getUrl();
+        }
     }
 
     public String getUrl() {
@@ -98,4 +112,8 @@ public class ChannelRef {
                 && StringUtils.isNotBlank(parts[1]));
     }
 
+    public static void main(String[] args) throws Exception {
+        final ChannelRef cr = new ChannelRef("foo", null);
+        new ProsperoConfig(Arrays.asList(cr), null).writeConfig(new File("test.yaml"));
+    }
 }
