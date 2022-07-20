@@ -56,10 +56,9 @@ public class PatchArchive implements AutoCloseable {
     }
 
     @Override
-    public void close() throws Exception {
+    public void close() {
         FileUtils.deleteQuietly(extracted.toFile());
     }
-
 
     public static PatchArchive extract(Path patchArchive) throws IOException {
         Path extracted = null;
