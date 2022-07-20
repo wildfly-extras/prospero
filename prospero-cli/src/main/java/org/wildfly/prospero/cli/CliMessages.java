@@ -22,6 +22,7 @@ import org.jboss.logging.annotations.Message;
 import org.jboss.logging.annotations.MessageBundle;
 import org.wildfly.prospero.cli.commands.CliConstants;
 
+import java.net.URL;
 import java.nio.file.Path;
 
 @MessageBundle(projectCode = "PRSP-CLI")
@@ -143,4 +144,19 @@ public interface CliMessages {
 
     @Message("Only one of %s and %s can be set.")
     IllegalArgumentException exclusiveOptions(String option1, String option2);
+
+    @Message("Patch repository `%s` already exist.")
+    String patchesRepoExist(String patchesRepoId);
+
+    @Message("Channel `%s` needs to have a groupId:artifactId format")
+    String illegalChannel(String name);
+
+    @Message("Unable to create a repository at `%s`.")
+    String unableToCreateLocalRepository(URL url);
+
+    @Message("Repository path `%s` is a file not a directory.")
+    String repositoryIsNotDirectory(URL url);
+
+    @Message("Channel coordinate must be provided in `groupId:artifactId` format")
+    String wrongChannelCoordinateFormat();
 }

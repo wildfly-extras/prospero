@@ -26,6 +26,7 @@ import org.jboss.galleon.ProvisioningException;
 import org.wildfly.prospero.actions.Console;
 import org.wildfly.prospero.actions.InstallationHistoryAction;
 import org.wildfly.prospero.actions.MetadataAction;
+import org.wildfly.prospero.actions.PromotePatchAction;
 import org.wildfly.prospero.actions.ProvisioningAction;
 import org.wildfly.prospero.actions.UpdateAction;
 import org.wildfly.prospero.api.exceptions.OperationException;
@@ -59,4 +60,7 @@ public class ActionFactory {
         return new MetadataAction(targetPath);
     }
 
+    public PromotePatchAction promoter(Console console) {
+        return new PromotePatchAction(console);
+    }
 }
