@@ -19,72 +19,54 @@ package org.wildfly.prospero.patch;
 
 import org.apache.commons.codec.digest.DigestUtils;
 import org.apache.commons.io.FileUtils;
-import org.apache.commons.io.IOUtils;
 import org.eclipse.aether.artifact.Artifact;
-import org.wildfly.channel.Channel;
-import org.wildfly.channel.ChannelMapper;
-import org.wildfly.channel.Stream;
-import org.wildfly.prospero.actions.ApplyPatchAction;
-import org.wildfly.prospero.api.exceptions.MetadataException;
+import org.wildfly.channel.ArtifactCoordinate;
 
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
-import java.io.FileReader;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
-import java.nio.file.FileVisitResult;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.SimpleFileVisitor;
 import java.nio.file.StandardCopyOption;
-import java.nio.file.attribute.BasicFileAttributes;
 import java.util.List;
+import java.util.Objects;
 import java.util.stream.Collectors;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
 import java.util.zip.ZipOutputStream;
 
-public class PatchArchive {
+public class PatchArchive implements AutoCloseable {
 
-    public static final String CHANNEL_SUFFIX = "-channel.yaml";
     public static final String PATCH_REPO_FOLDER = "repository";
     public static final String FS = "/";
-    private final Path patchArchive;
+    private final Path extracted;
 
-    public PatchArchive(Path patchArchive) {
-        this.patchArchive = patchArchive;
+    private PatchArchive(Path extracted) {
+        this.extracted = extracted;
     }
 
-    public String getName() {
-        // TODO: the patch name should be based on the channel name not archive
-        final String archiveName = patchArchive.getFileName().toString();
-        return archiveName.substring(0, archiveName.lastIndexOf('.'));
+    public List<ArtifactCoordinate> getArtifactList() throws IOException {
+        return ArtifactList.readFrom(extracted.resolve("artifact-list.yaml")).getArtifactCoordinates();
     }
 
-    /**
-     *
-     * @param server
-     * @return path of extracted patch channel definition
-     * @throws IOException
-     * @throws MetadataException
-     */
-    public Patch extract(Path server) throws IOException, MetadataException {
+    public Path getRepository() {
+        return extracted.resolve(PATCH_REPO_FOLDER);
+    }
+
+    @Override
+    public void close() throws Exception {
+        FileUtils.deleteQuietly(extracted.toFile());
+    }
+
+
+    public static PatchArchive extract(Path patchArchive) throws IOException {
         Path extracted = null;
         try {
-            extracted = unzipArchive(patchArchive.toFile());
+            // TODO: validate content??
 
-            // TODO: validate??
-
-            if (!Files.exists(server.resolve(ApplyPatchAction.PATCHES_FOLDER))) {
-                Files.createDirectory(server.resolve(ApplyPatchAction.PATCHES_FOLDER));
-            }
-
-            final Path cachedPatchFile = cachePatchChannel(server, extracted);
-
-            cacheRepositoryContent(server, extracted);
-
-            return new Patch(server, cachedPatchFile.getFileName().toString());
+            return new PatchArchive(unzipArchive(patchArchive.toFile()));
         } finally {
             if (extracted != null) {
                 FileUtils.deleteQuietly(extracted.toFile());
@@ -92,15 +74,19 @@ public class PatchArchive {
         }
     }
 
-    public static Path createPatchArchive(List<? extends Artifact> artifacts, File archive, String patchName) throws IOException {
-        Channel channel = new Channel(patchName, null, null, null,
-                artifacts.stream().map(a-> new Stream(a.getGroupId(), a.getArtifactId(), a.getVersion())).collect(Collectors.toList()));
+    public static Path createPatchArchive(List<? extends Artifact> artifacts, File archive) throws IOException {
+        Objects.requireNonNull(artifacts);
+        Objects.requireNonNull(archive);
+
+        if (artifacts.isEmpty()) {
+            throw new IllegalArgumentException("Cannot create bundle without artifacts.");
+        }
 
         try (ZipOutputStream zos = new ZipOutputStream(new FileOutputStream(archive))) {
-            zos.putNextEntry(new ZipEntry(patchName + CHANNEL_SUFFIX));
-            String channelStr = ChannelMapper.toYaml(channel);
-            zos.write(channelStr.getBytes(StandardCharsets.UTF_8), 0, channelStr.length());
-
+            zos.putNextEntry(new ZipEntry("artifact-list.yaml"));
+            final ArtifactList artifactList = new ArtifactList(artifacts.stream().map(a->org.wildfly.prospero.patch.Artifact.from(a)).collect(Collectors.toList()));
+            final String listYaml = artifactList.writeToString();
+            zos.write(listYaml.getBytes(StandardCharsets.UTF_8), 0, listYaml.length());
 
             zos.putNextEntry(new ZipEntry(PATCH_REPO_FOLDER + FS));
             for (Artifact artifact : artifacts) {
@@ -140,43 +126,7 @@ public class PatchArchive {
         return archive.toPath();
     }
 
-    private void cacheRepositoryContent(Path server, Path extracted) throws IOException {
-        final Path extractedRepository = extracted.resolve(PATCH_REPO_FOLDER);
-        Files.walkFileTree(extractedRepository, new SimpleFileVisitor<>() {
-            @Override
-            public FileVisitResult preVisitDirectory(Path dir, BasicFileAttributes attrs) throws IOException {
-                final Path targetDir = server.resolve(ApplyPatchAction.PATCHES_FOLDER).resolve(extracted.relativize(dir));
-                if (!Files.exists(targetDir)) {
-                    Files.copy(dir, targetDir);
-                }
-                return FileVisitResult.CONTINUE;
-            }
-
-            @Override
-            public FileVisitResult visitFile(Path file, BasicFileAttributes attrs) throws IOException {
-                final Path targetFile = server.resolve(ApplyPatchAction.PATCHES_FOLDER).resolve(extracted.relativize(file));
-                if (!Files.exists(targetFile)) {
-                    Files.copy(file, targetFile);
-                } else if (!IOUtils.contentEquals(new FileReader(file.toFile()), new FileReader(targetFile.toFile()))) {
-                    throw new IllegalArgumentException(String.format("File %s differs from existing artifact with the same name", file));
-                }
-                return FileVisitResult.CONTINUE;
-            }
-        });
-    }
-
-    private Path cachePatchChannel(Path server, Path extracted) throws IOException {
-        final List<Path> patchFiles = Files.list(extracted).filter(p -> p.getFileName().toString().endsWith(CHANNEL_SUFFIX)).collect(Collectors.toList());
-        if (patchFiles.size() != 1) {
-            throw new IllegalArgumentException("The patch archive can have only a single channel file");
-        }
-        final Path patchFile = patchFiles.get(0);
-        final Path cachedPatchFile = server.resolve(ApplyPatchAction.PATCHES_FOLDER).resolve(patchFile.getFileName());
-        Files.copy(patchFile, cachedPatchFile);
-        return cachedPatchFile;
-    }
-
-    private Path unzipArchive(File patchArchive) throws IOException {
+    private static Path unzipArchive(File patchArchive) throws IOException {
         final Path extracted = Files.createTempDirectory("patch");
         try (ZipInputStream zis = new ZipInputStream(new FileInputStream(patchArchive))) {
 
@@ -191,5 +141,4 @@ public class PatchArchive {
         }
         return extracted;
     }
-
 }

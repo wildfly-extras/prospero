@@ -18,121 +18,60 @@
 package org.wildfly.prospero.patch;
 
 import org.eclipse.aether.artifact.DefaultArtifact;
-import org.junit.Assert;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
-import org.wildfly.prospero.model.ChannelRef;
-import org.wildfly.prospero.model.ProsperoConfig;
-
-import java.io.IOException;
+import org.wildfly.channel.ArtifactCoordinate;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.nio.file.StandardOpenOption;
-import java.util.ArrayList;
 import java.util.Collections;
-import java.util.List;
 
-import static org.junit.Assert.assertEquals;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
-import static org.wildfly.prospero.actions.ApplyPatchAction.PATCHES_REPO_PATH;
-import static org.wildfly.prospero.api.InstallationMetadata.METADATA_DIR;
-import static org.wildfly.prospero.api.InstallationMetadata.PROSPERO_CONFIG_FILE_NAME;
 
 public class PatchArchiveTest {
 
     @Rule
     public TemporaryFolder temp = new TemporaryFolder();
 
-
     @Test
-    public void extractPatchFileIntoServer() throws Exception {
-        // mock up server
-        final Path server = mockUpServer();
-
+    public void createAndExtractPatchBundle() throws Exception {
         // create archive
         final Path patchArchive = createPatchArchive();
-        final PatchArchive archive = new PatchArchive(patchArchive);
 
         // install
-        final Patch patchFile = archive.extract(server);
-
-        // should have .patches/channels with channel file and .patches/repository with the repository content
-        assertTrue(Files.exists(new Patch(server, "patch-test00001-channel.yaml").getChannelFilePath()));
-        assertEquals(new Patch(server, "patch-test00001-channel.yaml").getChannelFilePath(), patchFile.getChannelFilePath());
-        assertTrue(Files.exists(server.resolve(PATCHES_REPO_PATH).resolve(Paths.get("foo/bar/test/1.2.3/test-1.2.3.jar"))));
-    }
-
-    @Test
-    public void extractPatchFileIntoServerWithExistingPatchRepository() throws Exception {
-        // mock up server
-        final Path server = mockUpServer();
-        Files.createDirectories(server.resolve(PATCHES_REPO_PATH).resolve(Paths.get("existing/artifact/1.2.3")));
-        Files.createFile(server.resolve(PATCHES_REPO_PATH).resolve(Paths.get("existing/artifact/1.2.3")).resolve("artifact-1.2.3.jar"));
-
-        // create archive
-        final Path patchArchive = createPatchArchive();
-        final PatchArchive archive = new PatchArchive(patchArchive);
-
-        // install
-        archive.extract(server);
-
-        assertTrue(Files.exists(server.resolve(PATCHES_REPO_PATH).resolve(Paths.get("foo/bar/test/1.2.3/test-1.2.3.jar"))));
-        assertTrue(Files.exists(server.resolve(PATCHES_REPO_PATH).resolve(Paths.get("existing/artifact/1.2.3/artifact-1.2.3.jar"))));
-    }
-
-    @Test
-    public void testExistingArtifactIsAcceptedIfTheSame() throws Exception {
-        // mock up server
-        final Path server = mockUpServer();
-        Files.createDirectories(server.resolve(PATCHES_REPO_PATH).resolve(Paths.get("foo/bar/test/1.2.3")));
-        Files.createFile(server.resolve(PATCHES_REPO_PATH).resolve(Paths.get("foo/bar/test/1.2.3")).resolve("test-1.2.3.jar"));
-
-        // create archive
-        final Path patchArchive = createPatchArchive();
-        final PatchArchive archive = new PatchArchive(patchArchive);
-
-        // install
-        archive.extract(server);
-
-        assertTrue(Files.exists(server.resolve(PATCHES_REPO_PATH).resolve(Paths.get("foo/bar/test/1.2.3/test-1.2.3.jar"))));
-    }
-
-    @Test
-    public void testThrowExceptionIfExistingArtifactIsDifferentFromNew() throws Exception {
-        // mock up server
-        final Path server = mockUpServer();
-        Files.createDirectories(server.resolve(PATCHES_REPO_PATH).resolve(Paths.get("foo/bar/test/1.2.3")));
-        Files.writeString(server.resolve(PATCHES_REPO_PATH).resolve(Paths.get("foo/bar/test/1.2.3")).resolve("test-1.2.3.jar"),
-                "foo", StandardOpenOption.CREATE_NEW);
-
-        // create archive
-        final Path patchArchive = createPatchArchive();
-        final PatchArchive archive = new PatchArchive(patchArchive);
-
-        // install
-        try {
-            archive.extract(server);
-            Assert.fail("Cannot extract with conflicting artifacts in repository");
-        } catch (IllegalArgumentException e) {
-            // OK, ignore
+        try (final PatchArchive patchFile = PatchArchive.extract(patchArchive)) {
+            // should have .patches/channels with channel file and .patches/repository with the repository content
+            assertThat(patchFile.getArtifactList()).containsOnly(
+                    new ArtifactCoordinate("foo.bar", "test", "", "", "1.2.3")
+            );
+            assertTrue(Files.exists(patchFile.getRepository().resolve(Paths.get("foo/bar/test/1.2.3/test-1.2.3.jar"))));
         }
     }
 
-    private Path mockUpServer() throws IOException {
-        final Path server = temp.newFolder("server-base").toPath();
-        Files.createDirectory(server.resolve(METADATA_DIR));
-        final List<ChannelRef> channels = new ArrayList<>();
-        channels.add(new ChannelRef("foo:bar", null));
-        ProsperoConfig config = new ProsperoConfig(channels, new ArrayList<>());
-        config.writeConfig(server.resolve(METADATA_DIR).resolve(PROSPERO_CONFIG_FILE_NAME).toFile());
-        return server;
+    @Test
+    public void removeTemporaryFolderOnClose() throws Exception {
+        final Path patchArchive = createPatchArchive();
+
+        final Path parent;
+        try (final PatchArchive patchFile = PatchArchive.extract(patchArchive)) {
+            parent = patchFile.getRepository().getParent();
+        }
+        assertFalse(Files.exists(parent));
     }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void createArchiveWithNoArtifacts() throws Exception {
+        PatchArchive.createPatchArchive(Collections.emptyList(), temp.newFile("patch.zip"));
+    }
+
+    // TODO: createArchiveWithArtifactWithoutFile
 
     private Path createPatchArchive() throws Exception {
         final DefaultArtifact testArtifact = new DefaultArtifact("foo.bar", "test", null, null, "1.2.3", null, temp.newFile("test-1.2.3.jar"));
-        return PatchArchive.createPatchArchive(Collections.singletonList(testArtifact), temp.newFile("patch.zip"), "patch-test00001");
+        return PatchArchive.createPatchArchive(Collections.singletonList(testArtifact), temp.newFile("patch.zip"));
     }
 
 
