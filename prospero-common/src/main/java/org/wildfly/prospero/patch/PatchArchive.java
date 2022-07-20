@@ -42,14 +42,17 @@ public class PatchArchive implements AutoCloseable {
     public static final String PATCH_REPO_FOLDER = "repository";
     public static final String FS = "/";
     private final Path extracted;
+    private List<ArtifactCoordinate> artifactCoordinates;
 
-    private PatchArchive(Path extracted) {
+    private PatchArchive(Path extracted) throws IOException {
         this.extracted = extracted;
+        this.artifactCoordinates = ArtifactList.readFrom(extracted.resolve("artifact-list.yaml")).getArtifactCoordinates();
     }
 
-    public List<ArtifactCoordinate> getArtifactList() throws IOException {
-        return ArtifactList.readFrom(extracted.resolve("artifact-list.yaml")).getArtifactCoordinates();
+    public List<ArtifactCoordinate> getArtifactList() {
+        return artifactCoordinates;
     }
+
 
     public Path getRepository() {
         return extracted.resolve(PATCH_REPO_FOLDER);

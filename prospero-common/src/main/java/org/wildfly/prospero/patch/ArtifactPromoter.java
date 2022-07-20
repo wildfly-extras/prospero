@@ -62,9 +62,13 @@ public class ArtifactPromoter {
         this.system = system;
         this.session = session;
         this.targetRepository = targetRepository;
+
+        if (!targetRepository.getProtocol().equals("file")) {
+            throw new IllegalArgumentException("Promoting to non-file repositories is not currently supported");
+        }
     }
 
-    public void promote(List<ArtifactCoordinate> artifacts, ChannelCoordinate coordinate, RemoteRepository sourceRepository) throws IOException, ArtifactResolutionException, DeploymentException {
+    public void promote(List<ArtifactCoordinate> artifacts, ChannelCoordinate coordinate, RemoteRepository sourceRepository) throws ArtifactResolutionException, DeploymentException, IOException {
         Objects.requireNonNull(artifacts);
         Objects.requireNonNull(coordinate);
 
