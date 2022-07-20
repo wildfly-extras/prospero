@@ -93,6 +93,6 @@ public class ApplyPatchAction {
 
         metadata.setChannel(galleonEnv.getRepositoryManager().resolvedChannel());
 
-        metadata.writeFiles();
+        metadata.recordProvision();
     }
 }

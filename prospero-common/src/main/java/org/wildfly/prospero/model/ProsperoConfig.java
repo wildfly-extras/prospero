@@ -19,6 +19,7 @@ package org.wildfly.prospero.model;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
@@ -33,6 +34,7 @@ import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
+@JsonInclude(JsonInclude.Include.NON_NULL)
 public class ProsperoConfig {
     private final List<ChannelRef> channels;
     private final List<RepositoryRef> repositories;
@@ -120,7 +122,8 @@ public class ProsperoConfig {
     }
 
     public void writeConfig(File configFile) throws IOException {
-        new ObjectMapper(new YAMLFactory()).writeValue(configFile, this);
+        ProsperoConfig toWrite = new ProsperoConfig(this.getChannels().stream().map(ChannelRef::new).collect(Collectors.toList()), this.getRepositories());
+        new ObjectMapper(new YAMLFactory()).writeValue(configFile, toWrite);
     }
 
     public static ProsperoConfig readConfig(Path path) throws IOException {
