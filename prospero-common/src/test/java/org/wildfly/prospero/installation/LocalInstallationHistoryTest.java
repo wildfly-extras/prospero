@@ -129,7 +129,7 @@ public class LocalInstallationHistoryTest {
         final Channel channel = new Channel("test", "", null, null,
                 Arrays.asList(new Stream("foo", "bar", "1.1.2", null)));
         metadata.setChannel(channel);
-        metadata.recordProvision();
+        metadata.recordProvision(true);
     }
 
     private InstallationMetadata mockInstallation() throws Exception {

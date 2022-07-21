@@ -38,7 +38,8 @@ import java.nio.file.StandardOpenOption;
 import java.util.Arrays;
 import java.util.Collections;
 
-import static org.junit.Assert.*;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.Assert.assertEquals;
 import static org.mockito.Mockito.verify;
 
 @RunWith(MockitoJUnitRunner.class)
@@ -49,10 +50,11 @@ public class InstallationMetadataTest {
     @Mock
     private GitStorage gitStorage;
     private InstallationMetadata installationMetadata;
+    private Path base;
 
     @Before
     public void setUp() throws Exception {
-        final Path base = mockServer();
+        base = mockServer();
         installationMetadata = new InstallationMetadata(base, gitStorage);
     }
 
@@ -72,6 +74,42 @@ public class InstallationMetadataTest {
         assertEquals(1, updatedConfig.getRepositories().size());
         assertEquals(new RepositoryRef("test", "file://foo.bar"), updatedConfig.getRepositories().get(0));
         verify(gitStorage).recordConfigChange();
+    }
+
+    @Test
+    public void dontOverrideProsperoConfigIfItExist() throws Exception {
+        final ProsperoConfig config = installationMetadata.getProsperoConfig();
+        config.addChannel(new ChannelRef("new:channel", null));
+
+        installationMetadata.recordProvision(false);
+
+        final ProsperoConfig newConfig = ProsperoConfig.readConfig(base.resolve(InstallationMetadata.METADATA_DIR)
+                .resolve(InstallationMetadata.PROSPERO_CONFIG_FILE_NAME));
+        assertThat(newConfig.getChannels()).doesNotContain(
+                new ChannelRef("new:channel", null)
+        );
+    }
+
+    @Test
+    public void writeProsperoConfigIfItDoesNotExist() throws Exception {
+        // throw away mocked installation from setup
+        base = temp.newFolder().toPath();
+        installationMetadata = new InstallationMetadata(base,
+                new Channel(null, null, null, null, null),
+                Arrays.asList(new ChannelRef("new:channel", null)),
+                Arrays.asList(new RepositoryRef("test", "file://foo.bar").toRemoteRepository())
+        );
+
+        installationMetadata.recordProvision(false);
+
+        final ProsperoConfig newConfig = ProsperoConfig.readConfig(base.resolve(InstallationMetadata.METADATA_DIR)
+                .resolve(InstallationMetadata.PROSPERO_CONFIG_FILE_NAME));
+        assertThat(newConfig.getChannels()).contains(
+                new ChannelRef("new:channel", null)
+        );
+        assertThat(newConfig.getRepositories()).contains(
+                new RepositoryRef("test", "file://foo.bar")
+        );
     }
 
     private Path mockServer() throws IOException {

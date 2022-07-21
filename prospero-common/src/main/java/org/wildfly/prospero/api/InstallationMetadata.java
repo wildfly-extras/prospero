@@ -198,13 +198,14 @@ public class InstallationMetadata {
         return galleonProvisioningConfig;
     }
 
-    public void recordProvision() throws MetadataException {
+    public void recordProvision(boolean overrideProsperoConfig) throws MetadataException {
         try {
             ManifestYamlSupport.write(this.manifest, this.manifestFile);
         } catch (IOException e) {
             throw new MetadataException("Unable to save manifest in installation", e);
         }
-        if (!Files.exists(this.prosperoConfigFile)) {
+
+        if (overrideProsperoConfig || !Files.exists(this.prosperoConfigFile)) {
             writeProsperoConfig();
         }
 
