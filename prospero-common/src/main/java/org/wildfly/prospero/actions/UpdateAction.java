@@ -63,7 +63,7 @@ public class UpdateAction {
 
         applyUpdates();
 
-        metadata.recordProvision();
+        metadata.recordProvision(false);
 
         console.updatesComplete();
     }
