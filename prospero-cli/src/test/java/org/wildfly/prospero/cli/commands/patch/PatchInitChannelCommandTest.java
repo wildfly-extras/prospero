@@ -36,10 +36,17 @@ import org.wildfly.prospero.test.MetadataTestUtils;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import static org.assertj.core.api.AssertionsForInterfaceTypes.assertThat;
+import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
+import static org.wildfly.prospero.cli.commands.patch.PatchInitChannelCommand.CUSTOM_CHANNELS_GROUP_ID;
+import static org.wildfly.prospero.cli.commands.patch.PatchInitChannelCommand.DEFAULT_CUSTOMIZATION_REPOSITORY;
 import static org.wildfly.prospero.cli.commands.patch.PatchInitChannelCommand.PATCHES_REPO_ID;
 
 public class PatchInitChannelCommandTest extends AbstractConsoleTest {
@@ -118,7 +125,7 @@ public class PatchInitChannelCommandTest extends AbstractConsoleTest {
         Assert.assertEquals(ReturnCodes.INVALID_ARGUMENTS, exitCode);
         assertTrue(getErrorOutput().contains(CliMessages.MESSAGES.illegalChannel("org.test.patches")));
         assertThat(actualRepositories()).doesNotContain(
-                new RepositoryRef(CliConstants.PATCH_REPOSITORY_URL, patchesRepoUrl)
+                new RepositoryRef(PATCHES_REPO_ID, patchesRepoUrl)
         );
     }
 
@@ -154,7 +161,7 @@ public class PatchInitChannelCommandTest extends AbstractConsoleTest {
 
             Assert.assertEquals(ReturnCodes.PROCESSING_ERROR, exitCode);
             assertThat(actualRepositories()).doesNotContain(
-                    new RepositoryRef(CliConstants.PATCH_REPOSITORY_URL, patchesRepoUrl)
+                    new RepositoryRef(PATCHES_REPO_ID, patchesRepoUrl)
             );
             assertThat(actualChannels()).doesNotContain(
                     new ChannelRef("org.test:patches", null)
@@ -179,10 +186,66 @@ public class PatchInitChannelCommandTest extends AbstractConsoleTest {
 
         Assert.assertEquals(ReturnCodes.PROCESSING_ERROR, exitCode);
         assertThat(actualRepositories()).doesNotContain(
-                new RepositoryRef(CliConstants.PATCH_REPOSITORY_URL, patchesRepoUrl)
+                new RepositoryRef(PATCHES_REPO_ID, patchesRepoUrl)
         );
         assertThat(actualChannels()).doesNotContain(
                 new ChannelRef("org.test:patches", null)
+        );
+    }
+
+    @Test
+    public void initDefaultRepositoryIfNoUrlProvided() throws Exception {
+        int exitCode = commandLine.execute(
+                CliConstants.Commands.PATCH, CliConstants.PATCH_INIT_CHANNEL,
+                CliConstants.DIR, installationDir.toString(),
+                CliConstants.PATCH_CHANNEL_NAME, "org.test:patches");
+
+        Assert.assertEquals(ReturnCodes.SUCCESS, exitCode);
+        assertThat(actualRepositories()).contains(
+                new RepositoryRef(PATCHES_REPO_ID,
+                        installationDir.resolve(InstallationMetadata.METADATA_DIR).resolve(DEFAULT_CUSTOMIZATION_REPOSITORY).toUri().toURL().toString())
+        );
+        assertThat(actualChannels()).contains(
+                new ChannelRef("org.test:patches", null)
+        );
+    }
+
+    @Test
+    public void initDefaultChannelIfNoChannelNameProvided() throws Exception {
+        int exitCode = commandLine.execute(
+                CliConstants.Commands.PATCH, CliConstants.PATCH_INIT_CHANNEL,
+                CliConstants.DIR, installationDir.toString());
+
+        Assert.assertEquals(ReturnCodes.SUCCESS, exitCode);
+        final Matcher matcher = Pattern.compile("Registering custom channel `(.*)`").matcher(getStandardOutput());
+        assertTrue(matcher.find());
+        final String channelName = matcher.group(1);
+        assertNotNull(channelName);
+
+        assertThat(actualRepositories()).contains(
+                new RepositoryRef(PATCHES_REPO_ID,
+                        installationDir.resolve(InstallationMetadata.METADATA_DIR).resolve(DEFAULT_CUSTOMIZATION_REPOSITORY).toUri().toURL().toString())
+        );
+        assertThat(actualChannels()).contains(
+                new ChannelRef(channelName, null)
+        );
+    }
+
+    @Test
+    public void onlyOneDefaultChannelCanBeCreated() throws Exception {
+        new ProsperoConfig(Arrays.asList(new ChannelRef(CUSTOM_CHANNELS_GROUP_ID + ":existing", null)),
+                Collections.emptyList())
+                .writeConfig(installationDir.resolve(InstallationMetadata.METADATA_DIR).resolve(InstallationMetadata.PROSPERO_CONFIG_FILE_NAME).toFile());
+        int exitCode = commandLine.execute(
+                CliConstants.Commands.PATCH, CliConstants.PATCH_INIT_CHANNEL,
+                CliConstants.PATCH_REPOSITORY_URL, "http://test.repo2",
+                CliConstants.DIR, installationDir.toString());
+
+        Assert.assertEquals(ReturnCodes.PROCESSING_ERROR, exitCode);
+
+        assertThat(actualRepositories()).isEmpty();
+        assertThat(actualChannels()).containsOnly(
+                new ChannelRef(CUSTOM_CHANNELS_GROUP_ID + ":existing", null)
         );
     }
 
@@ -193,8 +256,4 @@ public class PatchInitChannelCommandTest extends AbstractConsoleTest {
     private List<RepositoryRef> actualRepositories() throws MetadataException {
         return new InstallationMetadata(installationDir).getProsperoConfig().getRepositories();
     }
-
-    // TODO: test
-    //  autogenerate channel-name
-    //  default to local repo (create one) if not provided
 }

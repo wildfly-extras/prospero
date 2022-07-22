@@ -75,6 +75,9 @@ public interface Messages {
     @Message("Installing patch %s.")
     String installingPatch(String name);
 
+    @Message("Promoting artifacts to %s:")
+    String promotingArtifacts(URL targetRepository);
+
     @Message("Provided FPL has invalid format `%s`.")
     String invalidFpl(String fplText);
 }

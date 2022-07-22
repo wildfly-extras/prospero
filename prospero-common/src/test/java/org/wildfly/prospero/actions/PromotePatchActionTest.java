@@ -75,6 +75,11 @@ public class PromotePatchActionTest {
         }
 
         @Override
+        public boolean confirm(String prompt, String accepted, String cancelled) {
+            return false;
+        }
+
+        @Override
         public void updatesComplete() {
 
         }
