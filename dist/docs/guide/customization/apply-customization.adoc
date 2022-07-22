@@ -1,0 +1,14 @@
+### Apply changes to the server
+
+After promoting artifacts to the channel, the changes can be applied to targeted servers.
+
+Promoted changes are treated as any updates, so `prospero update` command can be used to apply them.
+
+```
+prospero update --dir=<PATH/TO/SERVER>
+Feature-packs resolved.
+Updates found:
+  foo:bar                             1.2.3         ==>  1.2.3-patch0001
+```
+
+NOTE: During update, the latest artifacts available in all registered channels are chosen. If the main channel is updated with newer version of artifact then available in the custom channel, the customized artifact will be removed from the server.

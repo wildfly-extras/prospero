@@ -1,0 +1,44 @@
+### Promoting custom artifacts
+
+The fist step to apply changes from a bundle to a server, is to promote the customized artifacts into the custom channel.
+
+Promoting is a two-step process:
+
+ . all artifacts from a bundle are deployed in the custom Maven repository.
+ . update the channel file with new versions of customized artifacts and deploy it in the repository with incremented version.
+
+#### Register custom channel
+*Single server channel*
+
+```
+prospero channel initialize --dir=<PATH/TO/SERVER>
+```
+A server can use a filesystem repository and auto-generated channel to provide customizations. This command will create a Maven repository in `<PATH/TO/SERVER>/.installation/` folder and generate empty customization channel. Both the repository and channel will be then added to the server's configuration. This channel should only be used with a single server.
+
+*Shared channel*
+
+```
+prospero channel initialize --dir=<PATH/TO/SERVER> --repository-url=<URL_OF_REPOSITORY> --channel-name=<groupId:artifactId>
+```
+If a shared repository - either filesystem or web-based - is available, it can be used for customizations. This command will add the provided repository and channel-name to the server configuration.
+
+NOTE: If using the channel across multiple servers, the chanel-name has to be provided by the user, as otherwise random name will be chosen.
+
+#### Promote artifact bundle
+*Single server channel*
+
+If the changes need to be applied only to a single server, a simplified command can be used:
+```
+prospero channel promote --archive=<bundle.zip> --dir=<PATH/TO/SERVER>
+```
+The artifacts will be added to a local filesystem repository and new version of channel file will be created.
+
+*Shared channel*
+
+When a channel is shared between multiple servers, the promote command has to include the URL of the repository and the channel information.
+```
+prospero customization promote --archive=<bundle.zip> --channel-name=<groupId:artifactId> --repository-url=<URL_OF_REPOSITORY>
+```
+If the repository contains a channel file already, it will be updated with promoted artifacts, and it's version will be incremented before being redeployed into the repository.
+
+NOTE: Currently, this operation requires filesystem access to the repository.

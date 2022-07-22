@@ -53,7 +53,8 @@ public class ChannelPromoteCommand extends AbstractCommand {
     private Path archive;
 
     @CommandLine.Option(
-            names = CliConstants.CUSTOMIZATION_REPOSITORY_URL
+            names = CliConstants.CUSTOMIZATION_REPOSITORY_URL,
+            descriptionKey = "target-repository-url"
     )
     private Optional<URL> url;
 

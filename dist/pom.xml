@@ -22,6 +22,7 @@
         <module>standalone-galleon-pack</module>
         <module>wildfly-galleon-pack</module>
         <module>build</module>
+        <module>docs</module>
     </modules>
 
 </project>
