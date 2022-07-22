@@ -8,7 +8,7 @@ import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
 import org.wildfly.prospero.api.ArtifactChange;
 import org.wildfly.prospero.model.ChannelRef;
-import org.wildfly.prospero.patch.PatchArchive;
+import org.wildfly.prospero.promotion.ArtifactBundle;
 
 import java.net.URL;
 import java.nio.file.Files;
@@ -21,7 +21,7 @@ import java.util.List;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
-public class PromotePatchActionTest {
+public class PromoteArtifactBundleActionTest {
 
     @Rule
     public TemporaryFolder temp = new TemporaryFolder();
@@ -29,7 +29,7 @@ public class PromotePatchActionTest {
     @Test
     public void channelCoordinateMustHaveGA() throws Exception {
         try {
-            new PromotePatchAction(new TestConsole()).promote(createPatchArchive(), new URL("file://test/test-repo"),
+            new PromoteArtifactBundleAction(new TestConsole()).promote(createCustomArchive(), new URL("file://test/test-repo"),
                     ChannelRef.fromString("file://test/test.zip"));
             fail("URL Channel GA should not be allowed");
         } catch (IllegalArgumentException e) {
@@ -39,17 +39,17 @@ public class PromotePatchActionTest {
 
     @Test
     public void promoteArtifactsFromArchive() throws Exception {
-        final PromotePatchAction action = new PromotePatchAction(new TestConsole());
+        final PromoteArtifactBundleAction action = new PromoteArtifactBundleAction(new TestConsole());
         final Path targetRepo = temp.newFolder().toPath();
 
-        action.promote(createPatchArchive(), targetRepo.toUri().toURL(), ChannelRef.fromString("org.test:test-channel"));
+        action.promote(createCustomArchive(), targetRepo.toUri().toURL(), ChannelRef.fromString("org.test:test-channel"));
 
         assertTrue(Files.exists(targetRepo.resolve(Paths.get("foo", "bar", "test", "1.2.3", "test-1.2.3.jar"))));
     }
 
-    private Path createPatchArchive() throws Exception {
+    private Path createCustomArchive() throws Exception {
         final DefaultArtifact testArtifact = new DefaultArtifact("foo.bar", "test", null, null, "1.2.3", null, temp.newFile("test-1.2.3.jar"));
-        return PatchArchive.createPatchArchive(Collections.singletonList(testArtifact), temp.newFile("patch.zip"));
+        return ArtifactBundle.createCustomizationArchive(Collections.singletonList(testArtifact), temp.newFile("archive.zip"));
     }
 
     private class TestConsole implements Console {

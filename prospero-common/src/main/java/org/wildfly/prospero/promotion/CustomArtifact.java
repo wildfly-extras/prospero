@@ -15,14 +15,14 @@
  * limitations under the License.
  */
 
-package org.wildfly.prospero.patch;
+package org.wildfly.prospero.promotion;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import org.wildfly.channel.ArtifactCoordinate;
 
-public class Artifact {
+public class CustomArtifact {
 
     private String groupId;
     private String artifactId;
@@ -31,11 +31,11 @@ public class Artifact {
     private String extension;
 
     @JsonCreator
-    public Artifact(@JsonProperty(value="groupId") String groupId,
-                    @JsonProperty(value="artifactId") String artifactId,
-                    @JsonProperty(value="classifier") String classifier,
-                    @JsonProperty(value="extension") String extension,
-                    @JsonProperty(value="version") String version) {
+    public CustomArtifact(@JsonProperty(value="groupId") String groupId,
+                          @JsonProperty(value="artifactId") String artifactId,
+                          @JsonProperty(value="classifier") String classifier,
+                          @JsonProperty(value="extension") String extension,
+                          @JsonProperty(value="version") String version) {
         this.groupId = groupId;
         this.artifactId = artifactId;
         this.version = version;
@@ -43,8 +43,8 @@ public class Artifact {
         this.extension = extension==null?"jar":extension;
     }
 
-    public static Artifact from(org.eclipse.aether.artifact.Artifact a) {
-        return new Artifact(a.getGroupId(), a.getArtifactId(), a.getClassifier(), a.getExtension(), a.getVersion());
+    public static CustomArtifact from(org.eclipse.aether.artifact.Artifact a) {
+        return new CustomArtifact(a.getGroupId(), a.getArtifactId(), a.getClassifier(), a.getExtension(), a.getVersion());
     }
 
     public String getGroupId() {

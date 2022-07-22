@@ -15,27 +15,39 @@
  * limitations under the License.
  */
 
-package org.wildfly.prospero.cli.commands.patch;
+package org.wildfly.prospero.cli.commands.channel;
 
 import org.wildfly.prospero.actions.Console;
+import org.wildfly.prospero.actions.MetadataAction;
 import org.wildfly.prospero.cli.ActionFactory;
+import org.wildfly.prospero.cli.CliMessages;
 import org.wildfly.prospero.cli.ReturnCodes;
 import org.wildfly.prospero.cli.commands.AbstractCommand;
+import org.wildfly.prospero.cli.commands.CliConstants;
 import picocli.CommandLine;
 
-@CommandLine.Command(name = "patch")
-public class PatchCommand extends AbstractCommand {
+import java.nio.file.Path;
+import java.util.Optional;
 
-    @CommandLine.Spec
-    protected CommandLine.Model.CommandSpec spec;
+@CommandLine.Command(name = CliConstants.Commands.ADD)
+public class ChannelAddCommand extends AbstractCommand {
 
-    public PatchCommand(Console console, ActionFactory actionFactory) {
+    @CommandLine.Parameters(index = "0", paramLabel = "gav-or-url")
+    String gavOrUrl;
+
+    @CommandLine.Option(names = CliConstants.DIR)
+    Optional<Path> directory;
+
+    public ChannelAddCommand(Console console, ActionFactory actionFactory) {
         super(console, actionFactory);
     }
 
     @Override
     public Integer call() throws Exception {
-        spec.commandLine().usage(console.getErrOut());
-        return ReturnCodes.INVALID_ARGUMENTS;
+        Path installationDirectory = determineInstallationDirectory(directory);
+        MetadataAction metadataAction = actionFactory.metadataActions(installationDirectory);
+        metadataAction.addChannel(gavOrUrl);
+        console.println(CliMessages.MESSAGES.channelAdded(gavOrUrl));
+        return ReturnCodes.SUCCESS;
     }
 }

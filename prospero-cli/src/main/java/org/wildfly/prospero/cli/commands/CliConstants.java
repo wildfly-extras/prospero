@@ -40,13 +40,11 @@ public final class CliConstants {
         public static final String REVERT = "revert";
         public static final String REPO = "repo";
         public static final String REPOSITORY = "repository";
-        public static final String APPLY_PATCH = "apply-patch";
         public static final String CHANNEL = "channel";
 
         public static final String LIST = "list";
         public static final String ADD = "add";
         public static final String REMOVE = "remove";
-        public static final String PATCH = "patch";
     }
 
     // Parameter and option labels:
@@ -70,7 +68,6 @@ public final class CliConstants {
     public static final String LOCAL_REPO = "--local-repo";
     public static final String NO_LOCAL_MAVEN_CACHE = "--no-resolve-local-cache";
     public static final String OFFLINE = "--offline";
-    public static final String PATCH_FILE = "--patch-file";
     public static final String PROVISION_CONFIG = "--provision-config";
     public static final String REVISION = "--revision";
     public static final String SELF = "--self";
@@ -80,8 +77,9 @@ public final class CliConstants {
     public static final String YES = "--yes";
 
     // Patch options and sub-command:
-    public static final String PATCH_INIT_CHANNEL = "init-channel";
-    public static final String PATCH_CHANNEL_NAME = "--channel-name";
-    public static final String PATCH_REPOSITORY_URL = "--repository-url";
-    public static final String PATCH_ARCHIVE = "--archive";
+    public static final String CUSTOMIZATION_INIT_CHANNEL = "initialize";
+    public static final String CUSTOMIZATION_PROMOTE = "promote";
+    public static final String CUSTOMIZATION_CHANNEL_NAME = "--channel-name";
+    public static final String CUSTOMIZATION_REPOSITORY_URL = "--repository-url";
+    public static final String CUSTOMIZATION_ARCHIVE = "--archive";
 }

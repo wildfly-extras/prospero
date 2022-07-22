@@ -22,7 +22,6 @@ import org.jboss.logging.annotations.Message;
 import org.jboss.logging.annotations.MessageBundle;
 import org.wildfly.prospero.cli.commands.CliConstants;
 
-import java.net.URL;
 import java.nio.file.Path;
 
 @MessageBundle(projectCode = "PRSP-CLI")
@@ -127,9 +126,6 @@ public interface CliMessages {
     @Message("Channel '%s' removed.")
     String channelRemoved(String urlOrGav);
 
-    @Message("File referenced by [%s] doesn't exist: %s")
-    String fileDoesntExist(String optionName, Path patchArchive);
-
     @Message("Path `%s` does not contain a server installation provisioned by prospero.")
     IllegalArgumentException invalidInstallationDir(Path path);
 
@@ -145,14 +141,14 @@ public interface CliMessages {
     @Message("Only one of %s and %s can be set.")
     IllegalArgumentException exclusiveOptions(String option1, String option2);
 
-    @Message("Patch repository `%s` already exist.")
-    String patchesRepoExist(String patchesRepoId);
+    @Message("Custom repository `%s` already exist.")
+    String customizationRepoExist(String repositoryId);
 
     @Message("Channel `%s` needs to have a groupId:artifactId format")
     String illegalChannel(String name);
 
     @Message("Unable to create a repository at `%s`.")
-    String unableToCreateLocalRepository(Path repo);
+    String unableToCreateLocalRepository(Path repositoryPath);
 
     @Message("Repository path `%s` is a file not a directory.")
     String repositoryIsNotDirectory(Path repo);
@@ -160,16 +156,10 @@ public interface CliMessages {
     @Message("Channel coordinate must be provided in `groupId:artifactId` format")
     String wrongChannelCoordinateFormat();
 
-    @Message("Missing required option: '%s'")
-    String missingParameter(String patchRepositoryUrl);
-
-    @Message("Found existing customization channel: `%s` and repository `%s`.")
-    String foundCustomizationConfig(String channel, URL repositoryUrl);
-
-    @Message("Unable to determine customization channel and repository.%nUse `%s` and `%s` to provide correct values.")
+    @Message("Unable to determine custom channel and repository.%nUse `%s` and `%s` to provide correct values.")
     String noCustomizationConfigFound(String channelParam, String repoParam);
 
-    @Message("Continue with promoting artifacts: [y/N]")
+    @Message("Continue with promoting artifacts: [y/N]: ")
     String continuePromote();
 
     @Message("Promoting artifacts.")
@@ -178,7 +168,7 @@ public interface CliMessages {
     @Message("Operation cancelled.")
     String continuePromoteRejected();
 
-    @Message("Customization channel already exists.")
+    @Message("Custom channel already exists.")
     String customizationChannelAlreadyExists();
 
     @Message("Registering custom channel `%s`")

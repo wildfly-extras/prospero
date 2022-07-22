@@ -24,7 +24,6 @@ import java.util.Optional;
 import org.wildfly.prospero.actions.Console;
 import org.wildfly.prospero.actions.MetadataAction;
 import org.wildfly.prospero.cli.ActionFactory;
-import org.wildfly.prospero.cli.CliMessages;
 import org.wildfly.prospero.cli.ReturnCodes;
 import org.wildfly.prospero.model.ChannelRef;
 import picocli.CommandLine;
@@ -66,52 +65,6 @@ public class ChannelCommand extends AbstractCommand {
                 console.println(channel.getGavOrUrlString());
             }
 
-            return ReturnCodes.SUCCESS;
-        }
-    }
-
-    @CommandLine.Command(name = CliConstants.Commands.ADD)
-    public static class ChannelAddCommand extends AbstractCommand {
-
-        @CommandLine.Parameters(index = "0", paramLabel = "gav-or-url")
-        String gavOrUrl;
-
-        @CommandLine.Option(names = CliConstants.DIR)
-        Optional<Path> directory;
-
-        public ChannelAddCommand(Console console, ActionFactory actionFactory) {
-            super(console, actionFactory);
-        }
-
-        @Override
-        public Integer call() throws Exception {
-            Path installationDirectory = determineInstallationDirectory(directory);
-            MetadataAction metadataAction = actionFactory.metadataActions(installationDirectory);
-            metadataAction.addChannel(gavOrUrl);
-            console.println(CliMessages.MESSAGES.channelAdded(gavOrUrl));
-            return ReturnCodes.SUCCESS;
-        }
-    }
-
-    @CommandLine.Command(name = CliConstants.Commands.REMOVE)
-    public static class ChannelRemoveCommand extends AbstractCommand {
-
-        @CommandLine.Parameters(index = "0", paramLabel = "gav-or-url")
-        String gavOrUrl;
-
-        @CommandLine.Option(names = CliConstants.DIR)
-        Optional<Path> directory;
-
-        public ChannelRemoveCommand(Console console, ActionFactory actionFactory) {
-            super(console, actionFactory);
-        }
-
-        @Override
-        public Integer call() throws Exception {
-            Path installationDirectory = determineInstallationDirectory(directory);
-            MetadataAction metadataAction = actionFactory.metadataActions(installationDirectory);
-            metadataAction.removeChannel(gavOrUrl);
-            console.println(CliMessages.MESSAGES.channelRemoved(gavOrUrl));
             return ReturnCodes.SUCCESS;
         }
     }

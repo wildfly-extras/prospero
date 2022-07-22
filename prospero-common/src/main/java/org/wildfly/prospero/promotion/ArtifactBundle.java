@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-package org.wildfly.prospero.patch;
+package org.wildfly.prospero.promotion;
 
 import org.apache.commons.codec.digest.DigestUtils;
 import org.apache.commons.io.FileUtils;
@@ -37,16 +37,17 @@ import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
 import java.util.zip.ZipOutputStream;
 
-public class PatchArchive implements AutoCloseable {
+public class ArtifactBundle implements AutoCloseable {
 
-    public static final String PATCH_REPO_FOLDER = "repository";
+    public static final String BUNDLE_REPO_FOLDER = "repository";
     public static final String FS = "/";
+    public static final String ARTIFACT_LIST_YAML = "artifact-list.yaml";
     private final Path extracted;
     private List<ArtifactCoordinate> artifactCoordinates;
 
-    private PatchArchive(Path extracted) throws IOException {
+    private ArtifactBundle(Path extracted) throws IOException {
         this.extracted = extracted;
-        this.artifactCoordinates = ArtifactList.readFrom(extracted.resolve("artifact-list.yaml")).getArtifactCoordinates();
+        this.artifactCoordinates = CustomArtifactList.readFrom(extracted.resolve(ARTIFACT_LIST_YAML)).getArtifactCoordinates();
     }
 
     public List<ArtifactCoordinate> getArtifactList() {
@@ -55,7 +56,7 @@ public class PatchArchive implements AutoCloseable {
 
 
     public Path getRepository() {
-        return extracted.resolve(PATCH_REPO_FOLDER);
+        return extracted.resolve(BUNDLE_REPO_FOLDER);
     }
 
     @Override
@@ -63,12 +64,12 @@ public class PatchArchive implements AutoCloseable {
         FileUtils.deleteQuietly(extracted.toFile());
     }
 
-    public static PatchArchive extract(Path patchArchive) throws IOException {
+    public static ArtifactBundle extract(Path archivePath) throws IOException {
         Path extracted = null;
         try {
             // TODO: validate content??
 
-            return new PatchArchive(unzipArchive(patchArchive.toFile()));
+            return new ArtifactBundle(unzipArchive(archivePath.toFile()));
         } finally {
             if (extracted != null) {
                 FileUtils.deleteQuietly(extracted.toFile());
@@ -76,7 +77,7 @@ public class PatchArchive implements AutoCloseable {
         }
     }
 
-    public static Path createPatchArchive(List<? extends Artifact> artifacts, File archive) throws IOException {
+    public static Path createCustomizationArchive(List<? extends Artifact> artifacts, File archive) throws IOException {
         Objects.requireNonNull(artifacts);
         Objects.requireNonNull(archive);
 
@@ -85,14 +86,14 @@ public class PatchArchive implements AutoCloseable {
         }
 
         try (ZipOutputStream zos = new ZipOutputStream(new FileOutputStream(archive))) {
-            zos.putNextEntry(new ZipEntry("artifact-list.yaml"));
-            final ArtifactList artifactList = new ArtifactList(artifacts.stream().map(a->org.wildfly.prospero.patch.Artifact.from(a)).collect(Collectors.toList()));
+            zos.putNextEntry(new ZipEntry(ARTIFACT_LIST_YAML));
+            final CustomArtifactList artifactList = new CustomArtifactList(artifacts.stream().map(a-> CustomArtifact.from(a)).collect(Collectors.toList()));
             final String listYaml = artifactList.writeToString();
             zos.write(listYaml.getBytes(StandardCharsets.UTF_8), 0, listYaml.length());
 
-            zos.putNextEntry(new ZipEntry(PATCH_REPO_FOLDER + FS));
+            zos.putNextEntry(new ZipEntry(BUNDLE_REPO_FOLDER + FS));
             for (Artifact artifact : artifacts) {
-                String entry = PATCH_REPO_FOLDER + FS;
+                String entry = BUNDLE_REPO_FOLDER + FS;
                 for (String dir : artifact.getGroupId().split("\\.")) {
                     entry += dir + FS;
                     zos.putNextEntry(new ZipEntry(entry));
@@ -128,9 +129,9 @@ public class PatchArchive implements AutoCloseable {
         return archive.toPath();
     }
 
-    private static Path unzipArchive(File patchArchive) throws IOException {
-        final Path extracted = Files.createTempDirectory("patch");
-        try (ZipInputStream zis = new ZipInputStream(new FileInputStream(patchArchive))) {
+    private static Path unzipArchive(File archivePath) throws IOException {
+        final Path extracted = Files.createTempDirectory("customization");
+        try (ZipInputStream zis = new ZipInputStream(new FileInputStream(archivePath))) {
 
             ZipEntry entry;
             while ((entry = zis.getNextEntry()) != null) {

@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-package org.wildfly.prospero.patch;
+package org.wildfly.prospero.promotion;
 
 import org.eclipse.aether.DefaultRepositorySystemSession;
 import org.eclipse.aether.RepositorySystem;
@@ -80,11 +80,11 @@ public class ArtifactPromoterTest {
 
     @Test
     public void testPromoteSingleArtifactIntoEmptyChannel() throws Exception {
-        final Artifact artifact = new Artifact("foo", "bar", null, "jar", "1.2.3");
+        final CustomArtifact artifact = new CustomArtifact("foo", "bar", null, "jar", "1.2.3");
         mockDeployArtifact(artifact, sourceRepositoryPath);
 
         final ChannelCoordinate channelGa = new ChannelCoordinate("test", "channel");
-        final ArtifactList artifactList = new ArtifactList(Arrays.asList(artifact));
+        final CustomArtifactList artifactList = new CustomArtifactList(Arrays.asList(artifact));
         promote(artifactList, channelGa);
 
         assertArtifactInRepository(artifact);
@@ -93,21 +93,21 @@ public class ArtifactPromoterTest {
 
     @Test
     public void testPromoteSingleArtifactIntoPreExistingChannel() throws Exception {
-        final Artifact artifact = new Artifact("stream", "two", null, "jar", "1.2.3");
+        final CustomArtifact artifact = new CustomArtifact("stream", "two", null, "jar", "1.2.3");
         mockDeployArtifact(artifact, sourceRepositoryPath);
 
         List<Stream> streams = Arrays.asList(new Stream("stream", "one", "1.2.3"));
-        mockDeployedChannel(streams, "1.0.0.Final-patch00000001");
+        mockDeployedChannel(streams, "1.0.0.Final-rev00000001");
 
         final ChannelCoordinate channelGa = new ChannelCoordinate("test", "channel");
-        promote(new ArtifactList(Arrays.asList(artifact)), channelGa);
+        promote(new CustomArtifactList(Arrays.asList(artifact)), channelGa);
 
         assertArtifactInRepository(artifact);
         assertStreamMatches("stream", "two", "1.2.3", channelGa);
         assertStreamMatches("stream", "one", "1.2.3", channelGa);
     }
 
-    private void mockDeployArtifact(Artifact artifact, Path sourceRepositoryPath) throws IOException {
+    private void mockDeployArtifact(CustomArtifact artifact, Path sourceRepositoryPath) throws IOException {
         Files.createDirectories(artifactPath(artifact, sourceRepositoryPath).getParent());
         Files.createFile(artifactPath(artifact, sourceRepositoryPath));
     }
@@ -115,17 +115,17 @@ public class ArtifactPromoterTest {
     @Test
     public void testPromoteNoArtifacts() throws Exception {
         final ChannelCoordinate channelGa = new ChannelCoordinate("test", "channel");
-        final ArtifactList artifactList = new ArtifactList(Collections.emptyList());
+        final CustomArtifactList artifactList = new CustomArtifactList(Collections.emptyList());
         promote(artifactList, channelGa);
 
         assertChannelFileNotCreated(channelGa);
     }
 
     @Test
-    public void testArtifactNotAvailableInPatchFile() throws Exception {
-        final Artifact artifact = new Artifact("foo", "bar", null, "jar", "1.2.3");
+    public void testArtifactNotAvailableInArchive() throws Exception {
+        final CustomArtifact artifact = new CustomArtifact("foo", "bar", null, "jar", "1.2.3");
         final ChannelCoordinate channelGa = new ChannelCoordinate("test", "channel");
-        final ArtifactList artifactList = new ArtifactList(Arrays.asList(artifact));
+        final CustomArtifactList artifactList = new CustomArtifactList(Arrays.asList(artifact));
         try {
             promote(artifactList, channelGa);
             fail("Should fail to resolve non-existing artifact");
@@ -138,12 +138,12 @@ public class ArtifactPromoterTest {
 
     @Test
     public void testPromoteAlreadyExistingArtifactIntoEmptyChannel() throws Exception {
-        final Artifact artifact = new Artifact("foo", "bar", null, "jar", "1.2.3");
+        final CustomArtifact artifact = new CustomArtifact("foo", "bar", null, "jar", "1.2.3");
         mockDeployArtifact(artifact, sourceRepositoryPath);
         mockDeployArtifact(artifact, targetRepositoryPath);
 
         final ChannelCoordinate channelGa = new ChannelCoordinate("test", "channel");
-        final ArtifactList artifactList = new ArtifactList(Arrays.asList(artifact));
+        final CustomArtifactList artifactList = new CustomArtifactList(Arrays.asList(artifact));
         promote(artifactList, channelGa);
 
         assertArtifactInRepository(artifact);
@@ -152,45 +152,45 @@ public class ArtifactPromoterTest {
 
     @Test
     public void testPromoteArtifactNoChangesInChannel() throws Exception {
-        final Artifact artifact = new Artifact("stream", "one", null, "jar", "1.2.3");
+        final CustomArtifact artifact = new CustomArtifact("stream", "one", null, "jar", "1.2.3");
         mockDeployArtifact(artifact, sourceRepositoryPath);
         mockDeployArtifact(artifact, targetRepositoryPath);
 
         List<Stream> streams = Arrays.asList(new Stream("stream", "one", "1.2.3"));
-        mockDeployedChannel(streams, "1.0.0.Final-patch00000001");
+        mockDeployedChannel(streams, "1.0.0.Final-rev00000001");
 
         final ChannelCoordinate channelGa = new ChannelCoordinate("test", "channel");
-        promote(new ArtifactList(Arrays.asList(artifact)), channelGa);
+        promote(new CustomArtifactList(Arrays.asList(artifact)), channelGa);
 
         final VersionRangeRequest request = new VersionRangeRequest(
                 new DefaultArtifact("test", "channel",  "channel", "yaml", "[0,)"),
                 Arrays.asList(targetRepository), null);
         VersionRangeResult versions = system.resolveVersionRange(session, request);
         assertThat(versions.getVersions().stream().map(Version::toString)).containsOnly(
-                "1.0.0.Final-patch00000001"
+                "1.0.0.Final-rev00000001"
         );
     }
 
     @Test
     public void testTooManyChannelVersions() throws Exception {
-        final Artifact artifact = new Artifact("stream", "two", null, "jar", "1.2.3");
+        final CustomArtifact artifact = new CustomArtifact("stream", "two", null, "jar", "1.2.3");
         mockDeployArtifact(artifact, sourceRepositoryPath);
 
         List<Stream> streams = Arrays.asList(new Stream("stream", "one", "1.2.3"));
-        mockDeployedChannel(streams, "1.0.0.Final-patch99999999");
+        mockDeployedChannel(streams, "1.0.0.Final-rev99999999");
 
         final ChannelCoordinate channelGa = new ChannelCoordinate("test", "channel");
         try {
-            promote(new ArtifactList(Arrays.asList(artifact)), channelGa);
+            promote(new CustomArtifactList(Arrays.asList(artifact)), channelGa);
             fail("Should not be possible to create another channel version");
         } catch (IllegalArgumentException e) {
-            assertTrue(e.getMessage().contains("Patch version exceeded limit"));
+            assertTrue(e.getMessage().contains("Custom channel version exceeded limit"));
         }
     }
 
     @Test
     public void testExistingChannelHasUnexpectedVersionFormat() throws Exception {
-        final Artifact artifact = new Artifact("stream", "two", null, "jar", "1.2.3");
+        final CustomArtifact artifact = new CustomArtifact("stream", "two", null, "jar", "1.2.3");
         mockDeployArtifact(artifact, sourceRepositoryPath);
 
         List<Stream> streams = Arrays.asList(new Stream("stream", "one", "1.2.3"));
@@ -198,16 +198,16 @@ public class ArtifactPromoterTest {
 
         final ChannelCoordinate channelGa = new ChannelCoordinate("test", "channel");
         try {
-            promote(new ArtifactList(Arrays.asList(artifact)), channelGa);
+            promote(new CustomArtifactList(Arrays.asList(artifact)), channelGa);
             fail("Should not be possible to create another channel version");
         } catch (IllegalArgumentException e) {
-            assertTrue(e.getMessage(), e.getMessage().contains("Wrong format of patch channel version"));
+            assertTrue(e.getMessage(), e.getMessage().contains("Wrong format of custom channel version"));
         }
     }
 
     private void mockDeployedChannel(List<Stream> streams, String version) throws IOException {
-        Channel channel = new Channel("patch-channel", null, null, null, streams);
-        final Artifact existingChannel = new Artifact("test", "channel",  "channel", "yaml", version);
+        Channel channel = new Channel("custom-channel", null, null, null, streams);
+        final CustomArtifact existingChannel = new CustomArtifact("test", "channel",  "channel", "yaml", version);
         Files.createDirectories(artifactPath(existingChannel, targetRepositoryPath).getParent());
 
         final Path file = Files.createFile(artifactPath(existingChannel, targetRepositoryPath));
@@ -248,13 +248,13 @@ public class ArtifactPromoterTest {
                 .resolveChannels(Arrays.asList(channelGa));
     }
 
-    private void assertArtifactInRepository(Artifact artifactCoordinate) throws IOException {
+    private void assertArtifactInRepository(CustomArtifact artifactCoordinate) throws IOException {
         Path artifactPath = artifactPath(artifactCoordinate, targetRepositoryPath);
 
         assertTrue(Files.exists(artifactPath));
     }
 
-    private Path artifactPath(Artifact artifactCoordinate, Path repository) {
+    private Path artifactPath(CustomArtifact artifactCoordinate, Path repository) {
         return repository
                 .resolve(artifactCoordinate.getGroupId().replace(".", File.separator))
                 .resolve(artifactCoordinate.getArtifactId())
@@ -264,7 +264,7 @@ public class ArtifactPromoterTest {
                         artifactCoordinate.getExtension()));
     }
 
-    private void promote(ArtifactList artifacts, ChannelCoordinate coordinate) throws IOException, ArtifactResolutionException, DeploymentException {
+    private void promote(CustomArtifactList artifacts, ChannelCoordinate coordinate) throws IOException, ArtifactResolutionException, DeploymentException {
         final ArtifactPromoter artifactPromoter = new ArtifactPromoter(system, session, targetRepository);
         artifactPromoter.promote(artifacts.getArtifactCoordinates(), coordinate, sourceRepository);
     }

@@ -28,8 +28,8 @@ import org.wildfly.channel.maven.ChannelCoordinate;
 import org.wildfly.prospero.Messages;
 import org.wildfly.prospero.api.exceptions.ArtifactPromoteException;
 import org.wildfly.prospero.model.ChannelRef;
-import org.wildfly.prospero.patch.ArtifactPromoter;
-import org.wildfly.prospero.patch.PatchArchive;
+import org.wildfly.prospero.promotion.ArtifactPromoter;
+import org.wildfly.prospero.promotion.ArtifactBundle;
 import org.wildfly.prospero.wfchannel.MavenSessionManager;
 
 import java.io.IOException;
@@ -37,16 +37,16 @@ import java.net.URL;
 import java.nio.file.Path;
 import java.util.Objects;
 
-public class PromotePatchAction {
+public class PromoteArtifactBundleAction {
 
     private final Console console;
 
-    public PromotePatchAction(Console console) {
+    public PromoteArtifactBundleAction(Console console) {
         this.console = console;
     }
 
-    public void promote(Path patchArchive, URL targetRepository, ChannelRef coordinate) throws ProvisioningException, ArtifactPromoteException {
-        Objects.requireNonNull(patchArchive);
+    public void promote(Path archive, URL targetRepository, ChannelRef coordinate) throws ProvisioningException, ArtifactPromoteException {
+        Objects.requireNonNull(archive);
         Objects.requireNonNull(targetRepository);
         Objects.requireNonNull(coordinate);
 
@@ -54,17 +54,17 @@ public class PromotePatchAction {
             throw new IllegalArgumentException("Channel reference has to use Maven GA.");
         }
 
-        try (final PatchArchive extracted = PatchArchive.extract(patchArchive)) {
+        try (final ArtifactBundle extracted = ArtifactBundle.extract(archive)) {
             console.println(Messages.MESSAGES.promotingArtifacts(targetRepository));
             for (ArtifactCoordinate artifact : extracted.getArtifactList()) {
-                console.println("  * " + artifact.toString());
+                console.println("  * " + String.format("%s:%s:%s", artifact.getGroupId(), artifact.getArtifactId(), artifact.getVersion()));
             }
             final MavenSessionManager msm = new MavenSessionManager();
             final RepositorySystem system = msm.newRepositorySystem();
             final DefaultRepositorySystemSession session = msm.newRepositorySystemSession(system);
 
-            RemoteRepository sourceRepo = new RemoteRepository.Builder("source-patch-repo", "default", extracted.getRepository().toUri().toURL().toString()).build();
-            RemoteRepository targetRepo = new RemoteRepository.Builder("patch-repo", "default", targetRepository.toString()).build();
+            RemoteRepository sourceRepo = new RemoteRepository.Builder("source-repo", "default", extracted.getRepository().toUri().toURL().toString()).build();
+            RemoteRepository targetRepo = new RemoteRepository.Builder("target-repo", "default", targetRepository.toString()).build();
 
             final ArtifactPromoter promoter = new ArtifactPromoter(system, session, targetRepo);
             try {
