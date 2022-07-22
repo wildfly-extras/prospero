@@ -25,6 +25,7 @@ import org.eclipse.aether.resolution.ArtifactResolutionException;
 import org.jboss.galleon.ProvisioningException;
 import org.wildfly.channel.ArtifactCoordinate;
 import org.wildfly.channel.maven.ChannelCoordinate;
+import org.wildfly.prospero.Messages;
 import org.wildfly.prospero.api.exceptions.ArtifactPromoteException;
 import org.wildfly.prospero.model.ChannelRef;
 import org.wildfly.prospero.patch.ArtifactPromoter;
@@ -54,7 +55,7 @@ public class PromotePatchAction {
         }
 
         try (final PatchArchive extracted = PatchArchive.extract(patchArchive)) {
-            console.println(String.format("Promoting artifacts to %s:", targetRepository));
+            console.println(Messages.MESSAGES.promotingArtifacts(targetRepository));
             for (ArtifactCoordinate artifact : extracted.getArtifactList()) {
                 console.println("  * " + artifact.toString());
             }

@@ -83,4 +83,5 @@ public final class CliConstants {
     public static final String PATCH_INIT_CHANNEL = "init-channel";
     public static final String PATCH_CHANNEL_NAME = "--channel-name";
     public static final String PATCH_REPOSITORY_URL = "--repository-url";
+    public static final String PATCH_ARCHIVE = "--archive";
 }

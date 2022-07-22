@@ -152,11 +152,38 @@ public interface CliMessages {
     String illegalChannel(String name);
 
     @Message("Unable to create a repository at `%s`.")
-    String unableToCreateLocalRepository(URL url);
+    String unableToCreateLocalRepository(Path repo);
 
     @Message("Repository path `%s` is a file not a directory.")
-    String repositoryIsNotDirectory(URL url);
+    String repositoryIsNotDirectory(Path repo);
 
     @Message("Channel coordinate must be provided in `groupId:artifactId` format")
     String wrongChannelCoordinateFormat();
+
+    @Message("Missing required option: '%s'")
+    String missingParameter(String patchRepositoryUrl);
+
+    @Message("Found existing customization channel: `%s` and repository `%s`.")
+    String foundCustomizationConfig(String channel, URL repositoryUrl);
+
+    @Message("Unable to determine customization channel and repository.%nUse `%s` and `%s` to provide correct values.")
+    String noCustomizationConfigFound(String channelParam, String repoParam);
+
+    @Message("Continue with promoting artifacts: [y/N]")
+    String continuePromote();
+
+    @Message("Promoting artifacts.")
+    String continuePromoteAccepted();
+
+    @Message("Operation cancelled.")
+    String continuePromoteRejected();
+
+    @Message("Customization channel already exists.")
+    String customizationChannelAlreadyExists();
+
+    @Message("Registering custom channel `%s`")
+    String registeringCustomChannel(String name);
+
+    @Message("Registering custom repository `%s`")
+    String registeringCustomRepository(String name);
 }

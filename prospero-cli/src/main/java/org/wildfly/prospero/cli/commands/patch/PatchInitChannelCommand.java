@@ -17,8 +17,10 @@
 
 package org.wildfly.prospero.cli.commands.patch;
 
+import org.apache.commons.lang3.RandomStringUtils;
 import org.wildfly.prospero.actions.Console;
 import org.wildfly.prospero.actions.MetadataAction;
+import org.wildfly.prospero.api.InstallationMetadata;
 import org.wildfly.prospero.api.exceptions.MetadataException;
 import org.wildfly.prospero.cli.ActionFactory;
 import org.wildfly.prospero.cli.CliMessages;
@@ -34,6 +36,7 @@ import java.net.URISyntaxException;
 import java.net.URL;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.Optional;
 
 @CommandLine.Command(
@@ -42,15 +45,17 @@ import java.util.Optional;
 )
 public class PatchInitChannelCommand extends AbstractCommand {
     public static final String PATCHES_REPO_ID = "patches-repository";
+    public static final String CUSTOM_CHANNELS_GROUP_ID = "custom.channels";
+    public static final String DEFAULT_CUSTOMIZATION_REPOSITORY = "customization-repository";
     @CommandLine.Option(
             names = CliConstants.PATCH_CHANNEL_NAME
     )
-    private String name;
+    private Optional<String> name;
 
     @CommandLine.Option(
             names = CliConstants.PATCH_REPOSITORY_URL
     )
-    private URL url;
+    private Optional<URL> repositoryUrl;
 
     @CommandLine.Option(names = CliConstants.DIR)
     Optional<Path> directory;
@@ -69,16 +74,37 @@ public class PatchInitChannelCommand extends AbstractCommand {
             return ReturnCodes.INVALID_ARGUMENTS;
         }
 
-        if (url.getProtocol().equals("file")) {
-            if (!createLocalRepository()) {
+        final URL url;
+        if (repositoryUrl.isPresent()) {
+            url = repositoryUrl.get();
+            if (repositoryUrl.get().getProtocol().equals("file")) {
+                if (!createLocalRepository(Paths.get(repositoryUrl.get().toURI()))) {
+                    return ReturnCodes.PROCESSING_ERROR;
+                }
+            }
+        } else {
+            final Path defaultLocalRepoPath = installationDirectory.resolve(InstallationMetadata.METADATA_DIR)
+                    .resolve(DEFAULT_CUSTOMIZATION_REPOSITORY);
+            if (!createLocalRepository(defaultLocalRepoPath)) {
                 return ReturnCodes.PROCESSING_ERROR;
             }
+            url = defaultLocalRepoPath.toUri().toURL();
+        }
+
+        if (name.isEmpty()) {
+            if (metadataAction.getChannels().stream().anyMatch(c->c.getGav()!=null && c.getGav().startsWith(CUSTOM_CHANNELS_GROUP_ID + ":"))) {
+                console.error(CliMessages.MESSAGES.customizationChannelAlreadyExists());
+                return ReturnCodes.PROCESSING_ERROR;
+            }
+            name = Optional.of(CUSTOM_CHANNELS_GROUP_ID + ":" + RandomStringUtils.randomAlphanumeric(8));
         }
 
         // add new channel
-        metadataAction.addChannel(name);
+        console.println(CliMessages.MESSAGES.registeringCustomChannel(name.get()));
+        metadataAction.addChannel(name.get());
 
         // add new repository
+        console.println(CliMessages.MESSAGES.registeringCustomRepository(url.toString()));
         metadataAction.addRepository(PATCHES_REPO_ID, url);
         console.println(CliMessages.MESSAGES.repositoryAdded(PATCHES_REPO_ID));
 
@@ -87,14 +113,14 @@ public class PatchInitChannelCommand extends AbstractCommand {
         return ReturnCodes.SUCCESS;
     }
 
-    private boolean createLocalRepository() throws URISyntaxException {
-        final File file = new File(url.toURI());
+    private boolean createLocalRepository(Path localRepository) throws URISyntaxException {
+        final File file = localRepository.toFile();
         if (!isWritable(file)) {
-            console.println(CliMessages.MESSAGES.unableToCreateLocalRepository(url));
+            console.error(CliMessages.MESSAGES.unableToCreateLocalRepository(localRepository));
             return false;
         }
         if (file.exists() && !Files.isDirectory(file.toPath())) {
-            console.println(CliMessages.MESSAGES.repositoryIsNotDirectory(url));
+            console.error(CliMessages.MESSAGES.repositoryIsNotDirectory(localRepository));
             return false;
         }
 
@@ -102,7 +128,7 @@ public class PatchInitChannelCommand extends AbstractCommand {
             try {
                 Files.createDirectories(file.toPath());
             } catch (IOException e) {
-                console.error(CliMessages.MESSAGES.unableToCreateLocalRepository(url));
+                console.error(CliMessages.MESSAGES.unableToCreateLocalRepository(localRepository));
                 console.error(e.getLocalizedMessage());
                 return false;
             }
@@ -121,14 +147,17 @@ public class PatchInitChannelCommand extends AbstractCommand {
     }
 
     private boolean validateChannel() {
+        if (name.isEmpty()) {
+            return true;
+        }
         try {
-            final ChannelRef channelRef = ChannelRef.fromString(name);
+            final ChannelRef channelRef = ChannelRef.fromString(name.get());
             if (channelRef.getGav() == null) {
-                console.error(CliMessages.MESSAGES.illegalChannel(name));
+                console.error(CliMessages.MESSAGES.illegalChannel(name.get()));
                 return false;
             }
         } catch (IllegalArgumentException e) {
-            console.error(CliMessages.MESSAGES.illegalChannel(name));
+            console.error(CliMessages.MESSAGES.illegalChannel(name.get()));
             return false;
         }
         return true;
