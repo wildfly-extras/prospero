@@ -1,0 +1,15 @@
+## Custom channels
+
+Sometimes a server (or group of servers) need to be updated with different versions of components than other servers. To achieve that, a server can subscribe to a custom channel on top of normal channels. This channel will define modified versions of components.
+
+For example if the main channel defines component `foo:bar:1.2.3`, the custom channel could contain `foo:bar:1.2.3-patch0001`. During any update operations, the most recent version of the `foo:bar` across both channels will be applied to the server.
+
+The custom channel needs to be hosted in a Maven repository - either a local, filesystem repository on the same system as the server, or a web repository shared between a group of servers. The repository is used to host a versioned channel definition and all customized artifacts.
+
+include::registering-channel.adoc[]
+
+include::customization-bundle.adoc[]
+
+include::promote-customization.adoc[]
+
+include::apply-customization.adoc[]

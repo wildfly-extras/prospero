@@ -54,7 +54,8 @@ public class ChannelInitializeCommand extends AbstractCommand {
     private Optional<String> name;
 
     @CommandLine.Option(
-            names = CliConstants.CUSTOMIZATION_REPOSITORY_URL
+            names = CliConstants.CUSTOMIZATION_REPOSITORY_URL,
+            descriptionKey = "customization-repository"
     )
     private Optional<URL> repositoryUrl;
 
