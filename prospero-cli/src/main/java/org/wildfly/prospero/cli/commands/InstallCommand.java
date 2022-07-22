@@ -113,6 +113,8 @@ public class InstallCommand extends AbstractCommand {
 
     @Override
     public Integer call() throws Exception {
+        final long startTime = System.currentTimeMillis();
+
         // following is checked by picocli, adding this to avoid IDE warnings
         assert featurePackOrDefinition.definition.isPresent() || featurePackOrDefinition.fpl.isPresent();
         if (featurePackOrDefinition.definition.isEmpty() && isStandardFpl(featurePackOrDefinition.fpl.get()) && provisionConfig.isEmpty()) {
@@ -135,6 +137,9 @@ public class InstallCommand extends AbstractCommand {
         ProvisioningAction provisioningAction = actionFactory.install(directory.toAbsolutePath(), mavenSessionManager,
                 console);
         provisioningAction.provision(provisioningDefinition);
+
+        final float totalTime = (System.currentTimeMillis() - startTime) / 1000f;
+        console.println(CliMessages.MESSAGES.installationCompleted(totalTime));
 
         return ReturnCodes.SUCCESS;
     }
