@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-package org.wildfly.prospero.cli.commands.patch;
+package org.wildfly.prospero.cli.commands.channel;
 
 import org.apache.commons.lang3.RandomStringUtils;
 import org.wildfly.prospero.actions.Console;
@@ -40,20 +40,21 @@ import java.nio.file.Paths;
 import java.util.Optional;
 
 @CommandLine.Command(
-        name = CliConstants.PATCH_INIT_CHANNEL,
+        name = CliConstants.Commands.CUSTOMIZATION_INITIALIZE_CHANNEL,
+        aliases = {CliConstants.Commands.CUSTOMIZATION_INIT_CHANNEL},
         sortOptions = false
 )
-public class PatchInitChannelCommand extends AbstractCommand {
-    public static final String PATCHES_REPO_ID = "patches-repository";
+public class ChannelInitializeCommand extends AbstractCommand {
+    public static final String CUSTOMIZATION_REPO_ID = "customization-repository";
     public static final String CUSTOM_CHANNELS_GROUP_ID = "custom.channels";
     public static final String DEFAULT_CUSTOMIZATION_REPOSITORY = "customization-repository";
     @CommandLine.Option(
-            names = CliConstants.PATCH_CHANNEL_NAME
+            names = CliConstants.CUSTOMIZATION_CHANNEL_NAME
     )
     private Optional<String> name;
 
     @CommandLine.Option(
-            names = CliConstants.PATCH_REPOSITORY_URL
+            names = CliConstants.CUSTOMIZATION_REPOSITORY_URL
     )
     private Optional<URL> repositoryUrl;
 
@@ -61,7 +62,7 @@ public class PatchInitChannelCommand extends AbstractCommand {
     Optional<Path> directory;
 
 
-    public PatchInitChannelCommand(Console console, ActionFactory actionFactory) {
+    public ChannelInitializeCommand(Console console, ActionFactory actionFactory) {
         super(console, actionFactory);
     }
 
@@ -105,10 +106,8 @@ public class PatchInitChannelCommand extends AbstractCommand {
 
         // add new repository
         console.println(CliMessages.MESSAGES.registeringCustomRepository(url.toString()));
-        metadataAction.addRepository(PATCHES_REPO_ID, url);
-        console.println(CliMessages.MESSAGES.repositoryAdded(PATCHES_REPO_ID));
-
-        // if the url is local folder, make sure it's created
+        metadataAction.addRepository(CUSTOMIZATION_REPO_ID, url);
+        console.println(CliMessages.MESSAGES.repositoryAdded(CUSTOMIZATION_REPO_ID));
 
         return ReturnCodes.SUCCESS;
     }
@@ -164,8 +163,8 @@ public class PatchInitChannelCommand extends AbstractCommand {
     }
 
     private boolean validateRepository(MetadataAction metadataAction) throws MetadataException {
-        if (metadataAction.getRepositories().stream().anyMatch(r->r.getId().equals(PATCHES_REPO_ID))) {
-            console.error(CliMessages.MESSAGES.patchesRepoExist(PATCHES_REPO_ID));
+        if (metadataAction.getRepositories().stream().anyMatch(r->r.getId().equals(CUSTOMIZATION_REPO_ID))) {
+            console.error(CliMessages.MESSAGES.customizationRepoExist(CUSTOMIZATION_REPO_ID));
             return false;
         }
         return true;

@@ -15,9 +15,10 @@
  * limitations under the License.
  */
 
-package org.wildfly.prospero.cli.commands.patch;
+package org.wildfly.prospero.cli.commands.channel;
 
 import org.junit.Assert;
+import org.junit.Assume;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
@@ -43,13 +44,14 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import static org.assertj.core.api.AssertionsForInterfaceTypes.assertThat;
+import static org.jboss.galleon.util.PropertyUtils.isWindows;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
-import static org.wildfly.prospero.cli.commands.patch.PatchInitChannelCommand.CUSTOM_CHANNELS_GROUP_ID;
-import static org.wildfly.prospero.cli.commands.patch.PatchInitChannelCommand.DEFAULT_CUSTOMIZATION_REPOSITORY;
-import static org.wildfly.prospero.cli.commands.patch.PatchInitChannelCommand.PATCHES_REPO_ID;
+import static org.wildfly.prospero.cli.commands.channel.ChannelInitializeCommand.CUSTOM_CHANNELS_GROUP_ID;
+import static org.wildfly.prospero.cli.commands.channel.ChannelInitializeCommand.DEFAULT_CUSTOMIZATION_REPOSITORY;
+import static org.wildfly.prospero.cli.commands.channel.ChannelInitializeCommand.CUSTOMIZATION_REPO_ID;
 
-public class PatchInitChannelCommandTest extends AbstractConsoleTest {
+public class ChannelInitializeCommandTest extends AbstractConsoleTest {
 
     @Rule
     public TemporaryFolder tempFolder = new TemporaryFolder();
@@ -67,7 +69,7 @@ public class PatchInitChannelCommandTest extends AbstractConsoleTest {
 
     @Test
     public void currentDirNotValidInstallation() {
-        int exitCode = commandLine.execute("patch", "init-channel");
+        int exitCode = commandLine.execute(CliConstants.Commands.CHANNEL, CliConstants.Commands.CUSTOMIZATION_INIT_CHANNEL);
 
         Assert.assertEquals(ReturnCodes.INVALID_ARGUMENTS, exitCode);
         assertTrue(getErrorOutput().contains(CliMessages.MESSAGES.invalidInstallationDir(Paths.get(".").toAbsolutePath().toAbsolutePath())
@@ -75,96 +77,98 @@ public class PatchInitChannelCommandTest extends AbstractConsoleTest {
     }
 
     @Test
-    public void initPatchChannelAddsChannelAndRepo() throws Exception {
-        final String patchesRepoUrl = tempFolder.newFolder().toURI().toURL().toString();
+    public void initCustomChannelAddsChannelAndRepo() throws Exception {
+        final String customRepoUrl = tempFolder.newFolder().toURI().toURL().toString();
         int exitCode = commandLine.execute(
-                CliConstants.Commands.PATCH, CliConstants.PATCH_INIT_CHANNEL,
+                CliConstants.Commands.CHANNEL, CliConstants.Commands.CUSTOMIZATION_INIT_CHANNEL,
                 CliConstants.DIR, installationDir.toString(),
-                CliConstants.PATCH_CHANNEL_NAME, "org.test:patches",
-                CliConstants.PATCH_REPOSITORY_URL, patchesRepoUrl);
+                CliConstants.CUSTOMIZATION_CHANNEL_NAME, "org.test:custom-channel",
+                CliConstants.CUSTOMIZATION_REPOSITORY_URL, customRepoUrl);
         Assert.assertEquals(ReturnCodes.SUCCESS, exitCode);
         assertThat(actualChannels()).contains(
-                new ChannelRef("org.test:patches", null)
+                new ChannelRef("org.test:custom-channel", null)
         );
         assertThat(actualRepositories()).contains(
-                new RepositoryRef(PATCHES_REPO_ID, patchesRepoUrl)
+                new RepositoryRef(CUSTOMIZATION_REPO_ID, customRepoUrl)
         );
     }
 
     @Test
-    public void patchRepositoryAlreadyExists() throws Exception {
-        final String patchesRepoUrl = tempFolder.newFolder().toURI().toURL().toString();
+    public void customRepositoryAlreadyExists() throws Exception {
+        final String customRepoUrl = tempFolder.newFolder().toURI().toURL().toString();
         final InstallationMetadata im = new InstallationMetadata(installationDir);
         final ProsperoConfig prosperoConfig = im.getProsperoConfig();
-        prosperoConfig.addRepository(new RepositoryRef(PATCHES_REPO_ID, patchesRepoUrl));
+        prosperoConfig.addRepository(new RepositoryRef(CUSTOMIZATION_REPO_ID, customRepoUrl));
         im.updateProsperoConfig(prosperoConfig);
 
         int exitCode = commandLine.execute(
-                CliConstants.Commands.PATCH, CliConstants.PATCH_INIT_CHANNEL,
+                CliConstants.Commands.CHANNEL, CliConstants.Commands.CUSTOMIZATION_INIT_CHANNEL,
                 CliConstants.DIR, installationDir.toString(),
-                CliConstants.PATCH_CHANNEL_NAME, "org.test:patches",
-                CliConstants.PATCH_REPOSITORY_URL, patchesRepoUrl);
+                CliConstants.CUSTOMIZATION_CHANNEL_NAME, "org.test:custom-channel",
+                CliConstants.CUSTOMIZATION_REPOSITORY_URL, customRepoUrl);
 
         Assert.assertEquals(ReturnCodes.INVALID_ARGUMENTS, exitCode);
-        assertTrue(getErrorOutput().contains(CliMessages.MESSAGES.patchesRepoExist(PATCHES_REPO_ID)));
+        assertTrue(getErrorOutput().contains(CliMessages.MESSAGES.customizationRepoExist(CUSTOMIZATION_REPO_ID)));
         assertThat(actualChannels()).doesNotContain(
-                new ChannelRef("org.test:patches", null)
+                new ChannelRef("org.test:custom-channel", null)
         );
     }
 
     @Test
     public void illegalChannelName() throws Exception {
-        final String patchesRepoUrl = tempFolder.newFolder().toURI().toURL().toString();
+        final String customRepoUrl = tempFolder.newFolder().toURI().toURL().toString();
 
         int exitCode = commandLine.execute(
-                CliConstants.Commands.PATCH, CliConstants.PATCH_INIT_CHANNEL,
+                CliConstants.Commands.CHANNEL, CliConstants.Commands.CUSTOMIZATION_INIT_CHANNEL,
                 CliConstants.DIR, installationDir.toString(),
-                CliConstants.PATCH_CHANNEL_NAME, "org.test.patches",
-                CliConstants.PATCH_REPOSITORY_URL, patchesRepoUrl);
+                CliConstants.CUSTOMIZATION_CHANNEL_NAME, "org.test.custom-channel",
+                CliConstants.CUSTOMIZATION_REPOSITORY_URL, customRepoUrl);
 
         Assert.assertEquals(ReturnCodes.INVALID_ARGUMENTS, exitCode);
-        assertTrue(getErrorOutput().contains(CliMessages.MESSAGES.illegalChannel("org.test.patches")));
+        assertTrue(getErrorOutput().contains(CliMessages.MESSAGES.illegalChannel("org.test.custom-channel")));
         assertThat(actualRepositories()).doesNotContain(
-                new RepositoryRef(PATCHES_REPO_ID, patchesRepoUrl)
+                new RepositoryRef(CUSTOMIZATION_REPO_ID, customRepoUrl)
         );
     }
 
     @Test
-    public void localPatchRepoDirIsCreated() throws Exception {
+    public void localCustomRepoDirIsCreated() throws Exception {
         final Path base = tempFolder.newFolder().toPath();
         final Path repositoryPath = base.resolve("test-dir").resolve("repository");
-        final String patchesRepoUrl = repositoryPath.toUri().toURL().toString();
+        final String customRepoUrl = repositoryPath.toUri().toURL().toString();
 
         int exitCode = commandLine.execute(
-                CliConstants.Commands.PATCH, CliConstants.PATCH_INIT_CHANNEL,
+                CliConstants.Commands.CHANNEL, CliConstants.Commands.CUSTOMIZATION_INIT_CHANNEL,
                 CliConstants.DIR, installationDir.toString(),
-                CliConstants.PATCH_CHANNEL_NAME, "org.test:patches",
-                CliConstants.PATCH_REPOSITORY_URL, patchesRepoUrl);
+                CliConstants.CUSTOMIZATION_CHANNEL_NAME, "org.test:custom-channel",
+                CliConstants.CUSTOMIZATION_REPOSITORY_URL, customRepoUrl);
 
         Assert.assertEquals(ReturnCodes.SUCCESS, exitCode);
         assertTrue(Files.exists(repositoryPath));
     }
 
     @Test
-    public void localPatchRepoDirIsWriteProtected() throws Exception {
+    public void localCustomRepoDirIsWriteProtected() throws Exception {
+        Assume.assumeFalse("Direcotry cannot be readonly on Windows", isWindows());
+
         final Path base = tempFolder.newFolder().toPath();
         try {
             base.toFile().setWritable(false);
             final Path repositoryPath = base.resolve("test-dir").resolve("repository");
-            final String patchesRepoUrl = repositoryPath.toUri().toURL().toString();
+            final String customRepoUrl = repositoryPath.toUri().toURL().toString();
 
             int exitCode = commandLine.execute(
-                    CliConstants.Commands.PATCH, CliConstants.PATCH_INIT_CHANNEL,
+                    CliConstants.Commands.CHANNEL, CliConstants.Commands.CUSTOMIZATION_INIT_CHANNEL,
                     CliConstants.DIR, installationDir.toString(),
-                    CliConstants.PATCH_CHANNEL_NAME, "org.test:patches",
-                    CliConstants.PATCH_REPOSITORY_URL, patchesRepoUrl);
+                    CliConstants.CUSTOMIZATION_CHANNEL_NAME, "org.test:custom-channel",
+                    CliConstants.CUSTOMIZATION_REPOSITORY_URL, customRepoUrl);
 
             Assert.assertEquals(ReturnCodes.PROCESSING_ERROR, exitCode);
             assertThat(actualRepositories()).doesNotContain(
-                    new RepositoryRef(PATCHES_REPO_ID, patchesRepoUrl)
+                    new RepositoryRef(CUSTOMIZATION_REPO_ID, customRepoUrl)
             );
             assertThat(actualChannels()).doesNotContain(
-                    new ChannelRef("org.test:patches", null)
+                    new ChannelRef("org.test:custom-channel", null)
             );
         } finally {
             base.toFile().setWritable(true);
@@ -172,48 +176,48 @@ public class PatchInitChannelCommandTest extends AbstractConsoleTest {
     }
 
     @Test
-    public void localPatchRepoPointsToFile() throws Exception {
+    public void localCustomRepoPointsToFile() throws Exception {
         final Path base = tempFolder.newFolder().toPath();
         final Path repositoryPath = base.resolve("test.txt");
         Files.createFile(repositoryPath);
-        final String patchesRepoUrl = repositoryPath.toUri().toURL().toString();
+        final String customRepoUrl = repositoryPath.toUri().toURL().toString();
 
         int exitCode = commandLine.execute(
-                CliConstants.Commands.PATCH, CliConstants.PATCH_INIT_CHANNEL,
+                CliConstants.Commands.CHANNEL, CliConstants.Commands.CUSTOMIZATION_INIT_CHANNEL,
                 CliConstants.DIR, installationDir.toString(),
-                CliConstants.PATCH_CHANNEL_NAME, "org.test:patches",
-                CliConstants.PATCH_REPOSITORY_URL, patchesRepoUrl);
+                CliConstants.CUSTOMIZATION_CHANNEL_NAME, "org.test:custom-channel",
+                CliConstants.CUSTOMIZATION_REPOSITORY_URL, customRepoUrl);
 
         Assert.assertEquals(ReturnCodes.PROCESSING_ERROR, exitCode);
         assertThat(actualRepositories()).doesNotContain(
-                new RepositoryRef(PATCHES_REPO_ID, patchesRepoUrl)
+                new RepositoryRef(CUSTOMIZATION_REPO_ID, customRepoUrl)
         );
         assertThat(actualChannels()).doesNotContain(
-                new ChannelRef("org.test:patches", null)
+                new ChannelRef("org.test:custom-channel", null)
         );
     }
 
     @Test
     public void initDefaultRepositoryIfNoUrlProvided() throws Exception {
         int exitCode = commandLine.execute(
-                CliConstants.Commands.PATCH, CliConstants.PATCH_INIT_CHANNEL,
+                CliConstants.Commands.CHANNEL, CliConstants.Commands.CUSTOMIZATION_INIT_CHANNEL,
                 CliConstants.DIR, installationDir.toString(),
-                CliConstants.PATCH_CHANNEL_NAME, "org.test:patches");
+                CliConstants.CUSTOMIZATION_CHANNEL_NAME, "org.test:custom-channel");
 
         Assert.assertEquals(ReturnCodes.SUCCESS, exitCode);
         assertThat(actualRepositories()).contains(
-                new RepositoryRef(PATCHES_REPO_ID,
+                new RepositoryRef(CUSTOMIZATION_REPO_ID,
                         installationDir.resolve(InstallationMetadata.METADATA_DIR).resolve(DEFAULT_CUSTOMIZATION_REPOSITORY).toUri().toURL().toString())
         );
         assertThat(actualChannels()).contains(
-                new ChannelRef("org.test:patches", null)
+                new ChannelRef("org.test:custom-channel", null)
         );
     }
 
     @Test
     public void initDefaultChannelIfNoChannelNameProvided() throws Exception {
         int exitCode = commandLine.execute(
-                CliConstants.Commands.PATCH, CliConstants.PATCH_INIT_CHANNEL,
+                CliConstants.Commands.CHANNEL, CliConstants.Commands.CUSTOMIZATION_INIT_CHANNEL,
                 CliConstants.DIR, installationDir.toString());
 
         Assert.assertEquals(ReturnCodes.SUCCESS, exitCode);
@@ -223,7 +227,7 @@ public class PatchInitChannelCommandTest extends AbstractConsoleTest {
         assertNotNull(channelName);
 
         assertThat(actualRepositories()).contains(
-                new RepositoryRef(PATCHES_REPO_ID,
+                new RepositoryRef(CUSTOMIZATION_REPO_ID,
                         installationDir.resolve(InstallationMetadata.METADATA_DIR).resolve(DEFAULT_CUSTOMIZATION_REPOSITORY).toUri().toURL().toString())
         );
         assertThat(actualChannels()).contains(
@@ -237,8 +241,8 @@ public class PatchInitChannelCommandTest extends AbstractConsoleTest {
                 Collections.emptyList())
                 .writeConfig(installationDir.resolve(InstallationMetadata.METADATA_DIR).resolve(InstallationMetadata.PROSPERO_CONFIG_FILE_NAME).toFile());
         int exitCode = commandLine.execute(
-                CliConstants.Commands.PATCH, CliConstants.PATCH_INIT_CHANNEL,
-                CliConstants.PATCH_REPOSITORY_URL, "http://test.repo2",
+                CliConstants.Commands.CHANNEL, CliConstants.Commands.CUSTOMIZATION_INIT_CHANNEL,
+                CliConstants.CUSTOMIZATION_REPOSITORY_URL, "http://test.repo2",
                 CliConstants.DIR, installationDir.toString());
 
         Assert.assertEquals(ReturnCodes.PROCESSING_ERROR, exitCode);

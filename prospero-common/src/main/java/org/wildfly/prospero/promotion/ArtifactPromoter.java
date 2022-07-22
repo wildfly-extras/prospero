@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-package org.wildfly.prospero.patch;
+package org.wildfly.prospero.promotion;
 
 import org.eclipse.aether.DefaultRepositorySystemSession;
 import org.eclipse.aether.RepositorySystem;
@@ -154,7 +154,7 @@ public class ArtifactPromoter {
         try {
             log.debugf("Writing new customization channel to %s", tempFile);
             Files.writeString(tempFile, ChannelMapper.toYaml(channel));
-            String newVersion = incrementVersion(version.orElse("1.0.0.Final-patch00000001"));
+            String newVersion = incrementVersion(version.orElse("1.0.0.Final-rev00000001"));
 
 
             log.debugf("Deploying new customization channel as version %s to %s", newVersion, targetRepository);
@@ -172,20 +172,20 @@ public class ArtifactPromoter {
     }
 
     private String incrementVersion(String baseVersion) {
-        final Pattern patchFormat = Pattern.compile(".*-patch\\d{8}");
-        if (!patchFormat.matcher(baseVersion).matches()) {
-            throw new IllegalArgumentException("Wrong format of patch channel version " + baseVersion);
+        final Pattern versionSuffixFormat = Pattern.compile(".*-rev\\d{8}");
+        if (!versionSuffixFormat.matcher(baseVersion).matches()) {
+            throw new IllegalArgumentException("Wrong format of custom channel version " + baseVersion);
         }
 
-        final String suffix = "-patch";
+        final String suffix = "-rev";
         final int suffixIndex = baseVersion.lastIndexOf(suffix) + suffix.length();
-        final String patchVersion = baseVersion.substring(suffixIndex);
+        final String suffixVersion = baseVersion.substring(suffixIndex);
         final String coreVersion = baseVersion.substring(0, suffixIndex);
 
-        int currentVersion = Integer.parseInt(patchVersion);
+        int currentVersion = Integer.parseInt(suffixVersion);
 
         if (currentVersion == 99_999_999) {
-            throw new IllegalArgumentException("Patch version exceeded limit " + baseVersion);
+            throw new IllegalArgumentException("Custom channel version exceeded limit " + baseVersion);
         }
 
         return String.format("%s%08d", coreVersion, (currentVersion + 1));

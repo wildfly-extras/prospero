@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-package org.wildfly.prospero.patch;
+package org.wildfly.prospero.promotion;
 
 import org.eclipse.aether.artifact.DefaultArtifact;
 import org.junit.Rule;
@@ -31,47 +31,46 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
-public class PatchArchiveTest {
+public class ArtifactBundleTest {
 
     @Rule
     public TemporaryFolder temp = new TemporaryFolder();
 
     @Test
-    public void createAndExtractPatchBundle() throws Exception {
+    public void createAndExtractCustomizationBundle() throws Exception {
         // create archive
-        final Path patchArchive = createPatchArchive();
+        final Path archiveFile = createCustomizationArchive();
 
         // install
-        try (final PatchArchive patchFile = PatchArchive.extract(patchArchive)) {
-            // should have .patches/channels with channel file and .patches/repository with the repository content
-            assertThat(patchFile.getArtifactList()).containsOnly(
+        try (final ArtifactBundle archive = ArtifactBundle.extract(archiveFile)) {
+            assertThat(archive.getArtifactList()).containsOnly(
                     new ArtifactCoordinate("foo.bar", "test", "", "", "1.2.3")
             );
-            assertTrue(Files.exists(patchFile.getRepository().resolve(Paths.get("foo/bar/test/1.2.3/test-1.2.3.jar"))));
+            assertTrue(Files.exists(archive.getRepository().resolve(Paths.get("foo/bar/test/1.2.3/test-1.2.3.jar"))));
         }
     }
 
     @Test
     public void removeTemporaryFolderOnClose() throws Exception {
-        final Path patchArchive = createPatchArchive();
+        final Path archiveFile = createCustomizationArchive();
 
         final Path parent;
-        try (final PatchArchive patchFile = PatchArchive.extract(patchArchive)) {
-            parent = patchFile.getRepository().getParent();
+        try (final ArtifactBundle archive = ArtifactBundle.extract(archiveFile)) {
+            parent = archive.getRepository().getParent();
         }
         assertFalse(Files.exists(parent));
     }
 
     @Test(expected = IllegalArgumentException.class)
     public void createArchiveWithNoArtifacts() throws Exception {
-        PatchArchive.createPatchArchive(Collections.emptyList(), temp.newFile("patch.zip"));
+        ArtifactBundle.createCustomizationArchive(Collections.emptyList(), temp.newFile("archive.zip"));
     }
 
     // TODO: createArchiveWithArtifactWithoutFile
 
-    private Path createPatchArchive() throws Exception {
+    private Path createCustomizationArchive() throws Exception {
         final DefaultArtifact testArtifact = new DefaultArtifact("foo.bar", "test", null, null, "1.2.3", null, temp.newFile("test-1.2.3.jar"));
-        return PatchArchive.createPatchArchive(Collections.singletonList(testArtifact), temp.newFile("patch.zip"));
+        return ArtifactBundle.createCustomizationArchive(Collections.singletonList(testArtifact), temp.newFile("archive.zip"));
     }
 
 

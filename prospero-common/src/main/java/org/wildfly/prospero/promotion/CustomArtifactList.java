@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-package org.wildfly.prospero.patch;
+package org.wildfly.prospero.promotion;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonIgnore;
@@ -30,27 +30,27 @@ import java.nio.file.Path;
 import java.util.List;
 import java.util.stream.Collectors;
 
-public class ArtifactList {
+public class CustomArtifactList {
 
-    private List<Artifact> artifacts;
+    private List<CustomArtifact> artifacts;
 
     @JsonCreator
-    public ArtifactList(@JsonProperty(value = "artifacts") List<Artifact> artifacts) {
+    public CustomArtifactList(@JsonProperty(value = "artifacts") List<CustomArtifact> artifacts) {
         this.artifacts = artifacts;
     }
 
-    public List<Artifact> getArtifacts() {
+    public List<CustomArtifact> getArtifacts() {
         return artifacts;
     }
 
     @JsonIgnore
     public List<ArtifactCoordinate> getArtifactCoordinates() {
-        return artifacts.stream().map(Artifact::toCoordinate).collect(Collectors.toList());
+        return artifacts.stream().map(CustomArtifact::toCoordinate).collect(Collectors.toList());
     }
 
-    public static ArtifactList readFrom(Path path) throws IOException {
+    public static CustomArtifactList readFrom(Path path) throws IOException {
         final ObjectMapper objectMapper = new ObjectMapper(new YAMLFactory());
-        return objectMapper.readValue(path.toUri().toURL(), ArtifactList.class);
+        return objectMapper.readValue(path.toUri().toURL(), CustomArtifactList.class);
     }
 
     @JsonIgnore
