@@ -19,7 +19,7 @@ package org.wildfly.prospero.cli.commands;
 
 import java.net.URL;
 import java.nio.file.Path;
-import java.util.Collections;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
@@ -77,7 +77,7 @@ public class InstallCommand extends AbstractCommand {
                 split = ",",
                 order = 5
         )
-        List<URL> remoteRepositories;
+        List<URL> remoteRepositories = new ArrayList<>();
 
         @CommandLine.ArgGroup(exclusive = true, order = 6, headingKey = "localRepoOptions.heading")
         LocalRepoOptions localRepoOptions;
@@ -118,8 +118,15 @@ public class InstallCommand extends AbstractCommand {
         // following is checked by picocli, adding this to avoid IDE warnings
         assert featurePackOrDefinition.definition.isPresent() || featurePackOrDefinition.fpl.isPresent();
         if (featurePackOrDefinition.definition.isEmpty() && isStandardFpl(featurePackOrDefinition.fpl.get()) && provisionConfig.isEmpty()) {
-            console.error(CliMessages.MESSAGES.prosperoConfigMandatoryWhenCustomFpl(), CliConstants.PROVISION_CONFIG);
-            return ReturnCodes.INVALID_ARGUMENTS;
+            throw CliMessages.MESSAGES.prosperoConfigMandatoryWhenCustomFpl();
+        }
+
+        if (provisionConfig.isPresent() && channel.isPresent()) {
+            throw CliMessages.MESSAGES.exclusiveOptions(CliConstants.PROVISION_CONFIG, CliConstants.CHANNEL);
+        }
+
+        if (provisionConfig.isPresent() && !remoteRepositories.isEmpty()) {
+            throw CliMessages.MESSAGES.exclusiveOptions(CliConstants.PROVISION_CONFIG, CliConstants.REMOTE_REPOSITORIES);
         }
 
         final Optional<Path> localRepo = LocalRepoOptions.getLocalRepo(localRepoOptions);
@@ -130,7 +137,7 @@ public class InstallCommand extends AbstractCommand {
                 .setFpl(featurePackOrDefinition.fpl.orElse(null))
                 .setChannel(channel.orElse(null))
                 .setProvisionConfig(provisionConfig.orElse(null))
-                .setRemoteRepositories(remoteRepositories == null ? Collections.emptyList() : remoteRepositories.stream().map(URL::toString).collect(Collectors.toList()))
+                .setRemoteRepositories(remoteRepositories.stream().map(URL::toString).collect(Collectors.toList()))
                 .setDefinitionFile(featurePackOrDefinition.definition.orElse(null))
                 .build();
 

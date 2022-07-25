@@ -18,6 +18,7 @@
 package org.wildfly.prospero.cli.commands;
 
 import java.io.File;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -105,7 +106,7 @@ public class InstallCommandTest extends AbstractMavenCommandTest {
                 CliConstants.FPL, "foo:bar");
         assertEquals(ReturnCodes.INVALID_ARGUMENTS, exitCode);
         assertTrue("output: " + getErrorOutput(), getErrorOutput().contains(String.format(
-                CliMessages.MESSAGES.prosperoConfigMandatoryWhenCustomFpl(), CliConstants.PROVISION_CONFIG)));
+                CliMessages.MESSAGES.prosperoConfigMandatoryWhenCustomFpl().getMessage(), CliConstants.PROVISION_CONFIG)));
     }
 
     @Test
@@ -191,6 +192,34 @@ public class InstallCommandTest extends AbstractMavenCommandTest {
                 "http://test.repo1",
                 "http://test.repo2"
         );
+    }
+
+    @Test
+    public void provisionConfigAndChannelSet() throws IOException {
+        final File provisionConfigFile = temporaryFolder.newFile();
+
+        int exitCode = commandLine.execute(CliConstants.Commands.INSTALL, CliConstants.DIR, "test",
+                CliConstants.PROVISION_CONFIG, provisionConfigFile.getAbsolutePath(),
+                CliConstants.CHANNEL, "g:a:v",
+                CliConstants.FPL, "test");
+
+        assertEquals(ReturnCodes.INVALID_ARGUMENTS, exitCode);
+        assertTrue(getErrorOutput().contains(CliMessages.MESSAGES
+                .exclusiveOptions(CliConstants.PROVISION_CONFIG, CliConstants.CHANNEL).getMessage()));
+    }
+
+    @Test
+    public void provisionConfigAndRemoteRepoSet() throws IOException {
+        final File provisionConfigFile = temporaryFolder.newFile();
+
+        int exitCode = commandLine.execute(CliConstants.Commands.INSTALL, CliConstants.DIR, "test",
+                CliConstants.PROVISION_CONFIG, provisionConfigFile.getAbsolutePath(),
+                CliConstants.REMOTE_REPOSITORIES, "file:/test",
+                CliConstants.FPL, "test");
+
+        assertEquals(ReturnCodes.INVALID_ARGUMENTS, exitCode);
+        assertTrue(getErrorOutput().contains(CliMessages.MESSAGES
+                .exclusiveOptions(CliConstants.PROVISION_CONFIG, CliConstants.REMOTE_REPOSITORIES).getMessage()));
     }
 
     @Override

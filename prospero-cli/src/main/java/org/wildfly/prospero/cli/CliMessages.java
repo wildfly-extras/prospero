@@ -100,7 +100,7 @@ public interface CliMessages {
     String unableToParseSelfUpdateData();
 
     @Message("Provisioning config argument (" + CliConstants.PROVISION_CONFIG + ") need to be set when using custom fpl")
-    String prosperoConfigMandatoryWhenCustomFpl();
+    IllegalArgumentException prosperoConfigMandatoryWhenCustomFpl();
 
     @Message("Error while executing operation '%s': %s")
     String errorWhileExecutingOperation(String op, String exceptionMessage);
@@ -140,4 +140,7 @@ public interface CliMessages {
 
     @Message("Update completed in %.2f seconds.")
     String updateCompleted(float time);
+
+    @Message("Only one of %s and %s can be set.")
+    IllegalArgumentException exclusiveOptions(String option1, String option2);
 }

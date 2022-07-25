@@ -25,6 +25,7 @@ import org.apache.commons.lang3.StringUtils;
 
 import java.net.MalformedURLException;
 import java.net.URL;
+import java.nio.file.Paths;
 import java.util.Objects;
 
 @JsonInclude(JsonInclude.Include.NON_NULL)
@@ -86,15 +87,22 @@ public class ChannelRef {
     }
 
 
-    public static ChannelRef fromString(String gavOrUrl) {
+    public static ChannelRef fromString(String urlGavOrPath) {
         try {
-            URL url = new URL(gavOrUrl);
+            URL url = new URL(urlGavOrPath);
             return new ChannelRef(null, url.toExternalForm());
         } catch (MalformedURLException e) {
-            if (isValidCoordinate(gavOrUrl)) {
-                return new ChannelRef(gavOrUrl, null);
+            if (isValidCoordinate(urlGavOrPath)) {
+                return new ChannelRef(urlGavOrPath, null);
+            } else {
+                // assume the string is a path
+                try {
+                    return new ChannelRef(null,
+                            Paths.get(urlGavOrPath).toAbsolutePath().toUri().toURL().toExternalForm());
+                } catch (MalformedURLException e2) {
+                    throw new IllegalArgumentException("Can't convert path to URL", e2);
+                }
             }
-            throw new IllegalArgumentException(String.format("Given string is not valid Maven GAV or URL: '%s'", gavOrUrl));
         }
     }
 
