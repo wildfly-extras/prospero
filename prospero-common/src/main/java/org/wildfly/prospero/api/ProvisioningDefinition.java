@@ -18,10 +18,7 @@
 package org.wildfly.prospero.api;
 
 import java.io.IOException;
-import java.net.MalformedURLException;
-import java.net.URL;
 import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashSet;
@@ -32,7 +29,6 @@ import java.util.stream.Collectors;
 
 import org.eclipse.aether.repository.RemoteRepository;
 import org.eclipse.aether.repository.RepositoryPolicy;
-import org.jboss.galleon.ProvisioningException;
 import org.wildfly.prospero.Messages;
 import org.wildfly.prospero.api.exceptions.ArtifactResolutionException;
 import org.wildfly.prospero.api.exceptions.NoChannelException;
@@ -57,7 +53,7 @@ public class ProvisioningDefinition {
         final Optional<Path> definition = Optional.ofNullable(builder.definitionFile);
         final List<String> overrideRemoteRepos = builder.remoteRepositories;
         final Optional<Path> provisionConfigFile = Optional.ofNullable(builder.provisionConfigFile);
-        final Optional<URL> channel = Optional.ofNullable(builder.channel);
+        final Optional<ChannelRef> channel = Optional.ofNullable(builder.channel);
         final Optional<Set<String>> includedPackages = Optional.ofNullable(builder.includedPackages);
 
         this.includedPackages.addAll(includedPackages.orElse(Collections.emptySet()));
@@ -100,7 +96,7 @@ public class ProvisioningDefinition {
     }
 
     private void setUpBuildEnv(List<String> overrideRemoteRepos, Optional<Path> provisionConfigFile,
-                               Optional<URL> channel, List<String> channelGAs) throws IOException {
+                               Optional<ChannelRef> channel, List<String> channelGAs) throws IOException {
         if (!provisionConfigFile.isPresent() && !channel.isPresent()) {
             if (channelGAs != null) {
                 channelGAs.forEach(c -> this.channels.add(new ChannelRef(c, null)));
@@ -116,7 +112,7 @@ public class ProvisioningDefinition {
                 }
             }
         } else if (channel.isPresent()) {
-            this.channels.add(new ChannelRef(null, channel.get().toString()));
+            this.channels.add(channel.get());
         } else {
             final ProsperoConfig record = ProsperoConfig.readConfig(provisionConfigFile.get());
             this.channels.addAll(record.getChannels());
@@ -159,7 +155,7 @@ public class ProvisioningDefinition {
         private Path definitionFile;
         private List<String> remoteRepositories = Collections.emptyList();
         private Set<String> includedPackages;
-        private URL channel;
+        private ChannelRef channel;
 
         public ProvisioningDefinition build() throws ArtifactResolutionException, NoChannelException {
             return new ProvisioningDefinition(this);
@@ -186,17 +182,9 @@ public class ProvisioningDefinition {
             return this;
         }
 
-        public Builder setChannel(String channel) throws ProvisioningException {
+        public Builder setChannel(String channel) {
             if (channel != null) {
-                try {
-                    this.channel = new URL(channel);
-                } catch (MalformedURLException e) {
-                    try {
-                        this.channel = Paths.get(channel).toAbsolutePath().toUri().toURL();
-                    } catch (MalformedURLException ex) {
-                        throw new ProvisioningException("Unrecognized path to channels file", ex);
-                    }
-                }
+                this.channel = ChannelRef.fromString(channel);
             }
             return this;
         }
