@@ -105,7 +105,7 @@ public class InstallCommandTest extends AbstractMavenCommandTest {
                 CliConstants.FPL, "foo:bar");
         assertEquals(ReturnCodes.INVALID_ARGUMENTS, exitCode);
         assertTrue("output: " + getErrorOutput(), getErrorOutput().contains(String.format(
-                CliMessages.MESSAGES.prosperoConfigMandatoryWhenCustomFpl(), CliConstants.PROVISION_CONFIG)));
+                CliMessages.MESSAGES.prosperoConfigMandatoryWhenCustomFpl().getMessage(), CliConstants.PROVISION_CONFIG)));
     }
 
     @Test
