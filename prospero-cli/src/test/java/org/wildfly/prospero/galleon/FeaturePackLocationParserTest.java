@@ -63,6 +63,11 @@ public class FeaturePackLocationParserTest {
         assertEquals("current", resolveFplVersion("wildfly@maven(community-universe):current").getChannelName());
     }
 
+    @Test(expected = IllegalArgumentException.class)
+    public void requireGroupAndArtifactIds() throws Exception {
+        resolveFplVersion("illegalname");
+    }
+
     private FeaturePackLocation resolveFplVersion(String fplText) throws MavenUniverseException {
         return parser.resolveFpl(fplText);
     }

@@ -22,6 +22,7 @@ import org.jboss.galleon.universe.UniverseSpec;
 import org.jboss.galleon.universe.maven.MavenArtifact;
 import org.jboss.galleon.universe.maven.MavenUniverseException;
 import org.jboss.galleon.universe.maven.repo.MavenRepoManager;
+import org.wildfly.prospero.Messages;
 
 public class FeaturePackLocationParser {
 
@@ -39,9 +40,14 @@ public class FeaturePackLocationParser {
             return fpl;
         }
 
+        final String[] parts = fplText.split(":");
+        if (parts.length == 1) {
+            throw new IllegalArgumentException(Messages.MESSAGES.invalidFpl(fplText));
+        }
+
         MavenArtifact artifact = new MavenArtifact();
-        artifact.setGroupId(fpl.getProducerName());
-        artifact.setArtifactId(fpl.getChannelName());
+        artifact.setGroupId(parts[0]);
+        artifact.setArtifactId(parts[1]);
         artifact.setVersion(null);
         artifact.setExtension("zip");
 
