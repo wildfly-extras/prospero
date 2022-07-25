@@ -72,6 +72,7 @@ public class UpdateCommand extends AbstractCommand {
 
     @Override
     public Integer call() throws Exception {
+        final long startTime = System.currentTimeMillis();
         final Path installationDir;
 
         if (self) {
@@ -99,6 +100,10 @@ public class UpdateCommand extends AbstractCommand {
             logger.error(CliMessages.MESSAGES.errorWhileExecutingOperation(CliConstants.Commands.INSTALL, e.getMessage()), e);
             return ReturnCodes.PROCESSING_ERROR;
         }
+
+        final float totalTime = (System.currentTimeMillis() - startTime) / 1000f;
+        console.println(CliMessages.MESSAGES.updateCompleted(totalTime));
+
         return ReturnCodes.SUCCESS;
     }
 
