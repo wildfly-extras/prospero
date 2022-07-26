@@ -63,6 +63,11 @@ public class ChannelPromoteCommand extends AbstractCommand {
     )
     private Optional<Path> directory;
 
+    @CommandLine.Option(
+            names = {CliConstants.Y, CliConstants.YES}
+    )
+    private boolean noPrompt;
+
 
     public ChannelPromoteCommand(Console console, ActionFactory actionFactory) {
         super(console, actionFactory);
@@ -109,8 +114,14 @@ public class ChannelPromoteCommand extends AbstractCommand {
         // TODO: support remote repositories
         final ChannelRef coordinate = ChannelRef.fromString(name.get());
 
-        boolean accepted = console.confirm(CliMessages.MESSAGES.continuePromote(), CliMessages.MESSAGES.continuePromoteAccepted(),
-                CliMessages.MESSAGES.continuePromoteRejected());
+        final boolean accepted;
+        if (!noPrompt) {
+            accepted = console.confirm(CliMessages.MESSAGES.continuePromote(), CliMessages.MESSAGES.continuePromoteAccepted(),
+                    CliMessages.MESSAGES.continuePromoteRejected());
+        } else {
+            accepted = true;
+        }
+
         if (accepted) {
             actionFactory.promoter(console).promote(archive.normalize().toAbsolutePath(), url.get(), coordinate);
         }
