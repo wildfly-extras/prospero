@@ -127,6 +127,9 @@ public class MavenSessionManager {
         session.setRepositoryListener(new AbstractRepositoryListener() {
             @Override
             public void artifactResolved(RepositoryEvent event) {
+                if (event.getFile() == null || event.getRepository() instanceof LocalRepository) {
+                    return;
+                }
                 final InstallRequest request = new InstallRequest();
                 request.addArtifact(event.getArtifact());
                 try {
