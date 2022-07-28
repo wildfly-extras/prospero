@@ -45,6 +45,10 @@ public final class CliConstants {
         public static final String LIST = "list";
         public static final String ADD = "add";
         public static final String REMOVE = "remove";
+
+        public static final String CUSTOMIZATION_INIT_CHANNEL = "init";
+        public static final String CUSTOMIZATION_INITIALIZE_CHANNEL = "initialize";
+        public static final String CUSTOMIZATION_PROMOTE = "promote";
     }
 
     // Parameter and option labels:
@@ -76,9 +80,6 @@ public final class CliConstants {
     public static final String Y = "-y";
     public static final String YES = "--yes";
 
-    // Patch options and sub-command:
-    public static final String CUSTOMIZATION_INIT_CHANNEL = "initialize";
-    public static final String CUSTOMIZATION_PROMOTE = "promote";
     public static final String CUSTOMIZATION_CHANNEL_NAME = "--channel-name";
     public static final String CUSTOMIZATION_REPOSITORY_URL = "--repository-url";
     public static final String CUSTOMIZATION_ARCHIVE = "--archive";

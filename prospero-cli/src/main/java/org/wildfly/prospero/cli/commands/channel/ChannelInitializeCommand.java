@@ -40,7 +40,8 @@ import java.nio.file.Paths;
 import java.util.Optional;
 
 @CommandLine.Command(
-        name = CliConstants.CUSTOMIZATION_INIT_CHANNEL,
+        name = CliConstants.Commands.CUSTOMIZATION_INITIALIZE_CHANNEL,
+        aliases = {CliConstants.Commands.CUSTOMIZATION_INIT_CHANNEL},
         sortOptions = false
 )
 public class ChannelInitializeCommand extends AbstractCommand {
@@ -108,8 +109,6 @@ public class ChannelInitializeCommand extends AbstractCommand {
         console.println(CliMessages.MESSAGES.registeringCustomRepository(url.toString()));
         metadataAction.addRepository(CUSTOMIZATION_REPO_ID, url);
         console.println(CliMessages.MESSAGES.repositoryAdded(CUSTOMIZATION_REPO_ID));
-
-        // if the url is local folder, make sure it's created
 
         return ReturnCodes.SUCCESS;
     }

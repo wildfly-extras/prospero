@@ -1,0 +1,27 @@
+### Register custom channel
+
+In order for the server to receive updates from a custom channel, the server needs to be subscribed to the channel and associated repositories.
+
+The channel can be hosted either in an internal installation repository, serving a single server or in a shared repository. To configure the server with a custom channel following commands can be used:
+
+*Single server channel*
+
+```
+prospero channel initialize --dir=<PATH/TO/SERVER>
+```
+A server can use a filesystem repository and auto-generated channel to provide customizations. This command will create a Maven repository in `<PATH/TO/SERVER>/.installation/` folder and generate empty customization channel. Both the repository and channel will be then added to the server's configuration. This channel should only be used with a single server.
+
+
+*Shared channel*
+
+```
+prospero channel initialize --dir=<PATH/TO/SERVER> --repository-url=<URL_OF_REPOSITORY> --channel-name=<groupId:artifactId>
+```
+If a shared repository - either filesystem or web-based - is available, it can be used for customizations. This command will add the provided repository and channel-name to the server configuration.
+
+NOTE: If using the channel across multiple servers, the chanel-name has to be provided by the user, as otherwise random name will be chosen.
+
+#### Manual configuration
+While `prospero channel initialize` supports common use cases, in more complicated scenarios a combination of `prospero channel add|remove|list` and `prospero repo add|remove|list` can be used to set up channels and repositories. For example, if the custom channel is hosted in a repository that the server is already subscribed to, server can be subscribed to using:
+
+`prospero channel add --dir=<PATH/TO/SERVER> <groupId:artifactId>`

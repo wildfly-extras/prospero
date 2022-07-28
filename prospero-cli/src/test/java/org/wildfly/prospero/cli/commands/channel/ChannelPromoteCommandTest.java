@@ -27,7 +27,7 @@ import static org.junit.Assert.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
-import static org.wildfly.prospero.cli.commands.CliConstants.CUSTOMIZATION_PROMOTE;
+import static org.wildfly.prospero.cli.commands.CliConstants.Commands.CUSTOMIZATION_PROMOTE;
 import static org.wildfly.prospero.cli.commands.channel.ChannelInitializeCommand.CUSTOM_CHANNELS_GROUP_ID;
 import static org.wildfly.prospero.cli.commands.channel.ChannelInitializeCommand.CUSTOMIZATION_REPO_ID;
 

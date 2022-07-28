@@ -67,7 +67,7 @@ public class ChannelInitializeCommandTest extends AbstractConsoleTest {
 
     @Test
     public void currentDirNotValidInstallation() {
-        int exitCode = commandLine.execute(CliConstants.Commands.CHANNEL, CliConstants.CUSTOMIZATION_INIT_CHANNEL);
+        int exitCode = commandLine.execute(CliConstants.Commands.CHANNEL, CliConstants.Commands.CUSTOMIZATION_INIT_CHANNEL);
 
         Assert.assertEquals(ReturnCodes.INVALID_ARGUMENTS, exitCode);
         assertTrue(getErrorOutput().contains(CliMessages.MESSAGES.invalidInstallationDir(Paths.get(".").toAbsolutePath().toAbsolutePath())
@@ -78,7 +78,7 @@ public class ChannelInitializeCommandTest extends AbstractConsoleTest {
     public void initCustomChannelAddsChannelAndRepo() throws Exception {
         final String customRepoUrl = tempFolder.newFolder().toURI().toURL().toString();
         int exitCode = commandLine.execute(
-                CliConstants.Commands.CHANNEL, CliConstants.CUSTOMIZATION_INIT_CHANNEL,
+                CliConstants.Commands.CHANNEL, CliConstants.Commands.CUSTOMIZATION_INIT_CHANNEL,
                 CliConstants.DIR, installationDir.toString(),
                 CliConstants.CUSTOMIZATION_CHANNEL_NAME, "org.test:custom-channel",
                 CliConstants.CUSTOMIZATION_REPOSITORY_URL, customRepoUrl);
@@ -100,7 +100,7 @@ public class ChannelInitializeCommandTest extends AbstractConsoleTest {
         im.updateProsperoConfig(prosperoConfig);
 
         int exitCode = commandLine.execute(
-                CliConstants.Commands.CHANNEL, CliConstants.CUSTOMIZATION_INIT_CHANNEL,
+                CliConstants.Commands.CHANNEL, CliConstants.Commands.CUSTOMIZATION_INIT_CHANNEL,
                 CliConstants.DIR, installationDir.toString(),
                 CliConstants.CUSTOMIZATION_CHANNEL_NAME, "org.test:custom-channel",
                 CliConstants.CUSTOMIZATION_REPOSITORY_URL, customRepoUrl);
@@ -117,7 +117,7 @@ public class ChannelInitializeCommandTest extends AbstractConsoleTest {
         final String customRepoUrl = tempFolder.newFolder().toURI().toURL().toString();
 
         int exitCode = commandLine.execute(
-                CliConstants.Commands.CHANNEL, CliConstants.CUSTOMIZATION_INIT_CHANNEL,
+                CliConstants.Commands.CHANNEL, CliConstants.Commands.CUSTOMIZATION_INIT_CHANNEL,
                 CliConstants.DIR, installationDir.toString(),
                 CliConstants.CUSTOMIZATION_CHANNEL_NAME, "org.test.custom-channel",
                 CliConstants.CUSTOMIZATION_REPOSITORY_URL, customRepoUrl);
@@ -136,7 +136,7 @@ public class ChannelInitializeCommandTest extends AbstractConsoleTest {
         final String customRepoUrl = repositoryPath.toUri().toURL().toString();
 
         int exitCode = commandLine.execute(
-                CliConstants.Commands.CHANNEL, CliConstants.CUSTOMIZATION_INIT_CHANNEL,
+                CliConstants.Commands.CHANNEL, CliConstants.Commands.CUSTOMIZATION_INIT_CHANNEL,
                 CliConstants.DIR, installationDir.toString(),
                 CliConstants.CUSTOMIZATION_CHANNEL_NAME, "org.test:custom-channel",
                 CliConstants.CUSTOMIZATION_REPOSITORY_URL, customRepoUrl);
@@ -154,7 +154,7 @@ public class ChannelInitializeCommandTest extends AbstractConsoleTest {
             final String customRepoUrl = repositoryPath.toUri().toURL().toString();
 
             int exitCode = commandLine.execute(
-                    CliConstants.Commands.CHANNEL, CliConstants.CUSTOMIZATION_INIT_CHANNEL,
+                    CliConstants.Commands.CHANNEL, CliConstants.Commands.CUSTOMIZATION_INIT_CHANNEL,
                     CliConstants.DIR, installationDir.toString(),
                     CliConstants.CUSTOMIZATION_CHANNEL_NAME, "org.test:custom-channel",
                     CliConstants.CUSTOMIZATION_REPOSITORY_URL, customRepoUrl);
@@ -179,7 +179,7 @@ public class ChannelInitializeCommandTest extends AbstractConsoleTest {
         final String customRepoUrl = repositoryPath.toUri().toURL().toString();
 
         int exitCode = commandLine.execute(
-                CliConstants.Commands.CHANNEL, CliConstants.CUSTOMIZATION_INIT_CHANNEL,
+                CliConstants.Commands.CHANNEL, CliConstants.Commands.CUSTOMIZATION_INIT_CHANNEL,
                 CliConstants.DIR, installationDir.toString(),
                 CliConstants.CUSTOMIZATION_CHANNEL_NAME, "org.test:custom-channel",
                 CliConstants.CUSTOMIZATION_REPOSITORY_URL, customRepoUrl);
@@ -196,7 +196,7 @@ public class ChannelInitializeCommandTest extends AbstractConsoleTest {
     @Test
     public void initDefaultRepositoryIfNoUrlProvided() throws Exception {
         int exitCode = commandLine.execute(
-                CliConstants.Commands.CHANNEL, CliConstants.CUSTOMIZATION_INIT_CHANNEL,
+                CliConstants.Commands.CHANNEL, CliConstants.Commands.CUSTOMIZATION_INIT_CHANNEL,
                 CliConstants.DIR, installationDir.toString(),
                 CliConstants.CUSTOMIZATION_CHANNEL_NAME, "org.test:custom-channel");
 
@@ -213,7 +213,7 @@ public class ChannelInitializeCommandTest extends AbstractConsoleTest {
     @Test
     public void initDefaultChannelIfNoChannelNameProvided() throws Exception {
         int exitCode = commandLine.execute(
-                CliConstants.Commands.CHANNEL, CliConstants.CUSTOMIZATION_INIT_CHANNEL,
+                CliConstants.Commands.CHANNEL, CliConstants.Commands.CUSTOMIZATION_INIT_CHANNEL,
                 CliConstants.DIR, installationDir.toString());
 
         Assert.assertEquals(ReturnCodes.SUCCESS, exitCode);
@@ -237,7 +237,7 @@ public class ChannelInitializeCommandTest extends AbstractConsoleTest {
                 Collections.emptyList())
                 .writeConfig(installationDir.resolve(InstallationMetadata.METADATA_DIR).resolve(InstallationMetadata.PROSPERO_CONFIG_FILE_NAME).toFile());
         int exitCode = commandLine.execute(
-                CliConstants.Commands.CHANNEL, CliConstants.CUSTOMIZATION_INIT_CHANNEL,
+                CliConstants.Commands.CHANNEL, CliConstants.Commands.CUSTOMIZATION_INIT_CHANNEL,
                 CliConstants.CUSTOMIZATION_REPOSITORY_URL, "http://test.repo2",
                 CliConstants.DIR, installationDir.toString());
 

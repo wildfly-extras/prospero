@@ -49,7 +49,6 @@ import java.nio.file.Paths;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.Optional;
-import java.util.concurrent.TimeUnit;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
@@ -81,9 +80,8 @@ public class PatchingTest {
         installCore();
 
         // init-channel
-        ExecutionUtils.prosperoExecution(CliConstants.Commands.CHANNEL, CliConstants.CUSTOMIZATION_INIT_CHANNEL,
+        ExecutionUtils.prosperoExecution(CliConstants.Commands.CHANNEL, CliConstants.Commands.CUSTOMIZATION_INIT_CHANNEL,
                         CliConstants.DIR, targetDir.getAbsolutePath())
-                .withTimeLimit(10, TimeUnit.MINUTES)
                 .execute()
                 .assertReturnCode(ReturnCodes.SUCCESS);
 
@@ -91,11 +89,10 @@ public class PatchingTest {
         final Path customizationArchive = createCustomizationArchive();
 
         // promote bundle
-        ExecutionUtils.prosperoExecution(CliConstants.Commands.CHANNEL, CliConstants.CUSTOMIZATION_PROMOTE,
+        ExecutionUtils.prosperoExecution(CliConstants.Commands.CHANNEL, CliConstants.Commands.CUSTOMIZATION_PROMOTE,
                         CliConstants.DIR, targetDir.getAbsolutePath(),
                         CliConstants.Y,
                         CliConstants.CUSTOMIZATION_ARCHIVE, customizationArchive.toString())
-                .withTimeLimit(10, TimeUnit.MINUTES)
                 .execute()
                 .assertReturnCode(ReturnCodes.SUCCESS);
 
@@ -103,7 +100,6 @@ public class PatchingTest {
         ExecutionUtils.prosperoExecution(CliConstants.Commands.UPDATE,
                         CliConstants.DIR, targetDir.getAbsolutePath(),
                         CliConstants.Y)
-                .withTimeLimit(10, TimeUnit.MINUTES)
                 .execute()
                 .assertReturnCode(ReturnCodes.SUCCESS);
 
@@ -139,11 +135,10 @@ public class PatchingTest {
             installCore();
 
             // init-channel
-            ExecutionUtils.prosperoExecution(CliConstants.Commands.CHANNEL, CliConstants.CUSTOMIZATION_INIT_CHANNEL,
+            ExecutionUtils.prosperoExecution(CliConstants.Commands.CHANNEL, CliConstants.Commands.CUSTOMIZATION_INIT_CHANNEL,
                             CliConstants.DIR, targetDir.getAbsolutePath(),
                             CliConstants.CUSTOMIZATION_REPOSITORY_URL, repositoryUrl,
                             CliConstants.CUSTOMIZATION_CHANNEL_NAME, TEST_CUSTOM_CHANNEL)
-                    .withTimeLimit(10, TimeUnit.MINUTES)
                     .execute()
                     .assertReturnCode(ReturnCodes.SUCCESS);
 
@@ -151,12 +146,11 @@ public class PatchingTest {
             final Path customizationArchive = createCustomizationArchive();
 
             // promote bundle
-            ExecutionUtils.prosperoExecution(CliConstants.Commands.CHANNEL, CliConstants.CUSTOMIZATION_PROMOTE,
+            ExecutionUtils.prosperoExecution(CliConstants.Commands.CHANNEL, CliConstants.Commands.CUSTOMIZATION_PROMOTE,
                             CliConstants.Y,
                             CliConstants.CUSTOMIZATION_ARCHIVE, customizationArchive.toString(),
                             CliConstants.CUSTOMIZATION_REPOSITORY_URL, repositoryPath.toUri().toURL().toString(),
                             CliConstants.CUSTOMIZATION_CHANNEL_NAME, TEST_CUSTOM_CHANNEL)
-                    .withTimeLimit(10, TimeUnit.MINUTES)
                     .execute()
                     .assertReturnCode(ReturnCodes.SUCCESS);
 
@@ -164,7 +158,6 @@ public class PatchingTest {
             ExecutionUtils.prosperoExecution(CliConstants.Commands.UPDATE,
                             CliConstants.DIR, targetDir.getAbsolutePath(),
                             CliConstants.Y)
-                    .withTimeLimit(10, TimeUnit.MINUTES)
                     .execute()
                     .assertReturnCode(ReturnCodes.SUCCESS);
 
@@ -191,7 +184,6 @@ public class PatchingTest {
                         CliConstants.PROVISION_CONFIG, provisionConfig.getPath(),
                         CliConstants.FPL, "wildfly-core@maven(org.jboss.universe:community-universe):19.0",
                         CliConstants.DIR, targetDir.getAbsolutePath())
-                .withTimeLimit(10, TimeUnit.MINUTES)
                 .execute()
                 .assertReturnCode(ReturnCodes.SUCCESS);
     }
