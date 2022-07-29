@@ -19,7 +19,7 @@ package org.wildfly.prospero.it.cli;
 
 import java.io.File;
 import java.io.IOException;
-import java.net.URL;
+import java.nio.file.Path;
 import java.util.concurrent.TimeUnit;
 
 import org.junit.Before;
@@ -45,10 +45,10 @@ public class InstallTest {
 
     @Test
     public void testInstallWithProvisionConfig() throws Exception {
-        URL provisionConfig = MetadataTestUtils.prepareProvisionConfigAsUrl("channels/wfcore-19-base.yaml");
+        Path provisionConfig = MetadataTestUtils.prepareProvisionConfig("channels/wfcore-19-base.yaml");
 
         ExecutionUtils.prosperoExecution(CliConstants.Commands.INSTALL,
-                        CliConstants.PROVISION_CONFIG, provisionConfig.getPath(),
+                        CliConstants.PROVISION_CONFIG, provisionConfig.toString(),
                         CliConstants.FPL, "wildfly-core@maven(org.jboss.universe:community-universe):19.0",
                         CliConstants.DIR, targetDir.getAbsolutePath())
                 .withTimeLimit(10, TimeUnit.MINUTES)

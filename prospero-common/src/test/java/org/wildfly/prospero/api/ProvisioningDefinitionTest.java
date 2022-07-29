@@ -57,7 +57,7 @@ public class ProvisioningDefinitionTest {
 
         builder.setChannel("tmp/foo.bar");
 
-        assertEquals("file:" + Paths.get("tmp/foo.bar").toAbsolutePath(), builder.build().getChannelRefs().get(0).getUrl());
+        assertEquals(Paths.get("tmp/foo.bar").toAbsolutePath().toUri().toURL().toString(), builder.build().getChannelRefs().get(0).getUrl());
     }
 
     @Test
