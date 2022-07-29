@@ -106,7 +106,7 @@ public class ChannelRef {
         }
     }
 
-    private static boolean isValidCoordinate(String gav) {
+    public static boolean isValidCoordinate(String gav) {
         String[] parts = gav.split(":");
         return (parts.length == 3 // GAV
                 && StringUtils.isNotBlank(parts[0])

@@ -1,0 +1,26 @@
+### Distributing custom artifacts
+
+The customized artifacts can be distributed as bundles. Each bundle is a ZIP archive containing an `artifact-list.yaml` file and a `repository` directory.
+
+```
+|-artifact-list.yaml
+|-repository
+  |- org
+    |-custom
+      |-artifact-one
+        |-1.2.3
+          |-artifact-one-1.2.3.jar
+      |-artifact-two
+        |-2.3.4
+          |-artifact-two-2.3.4.jar
+```
+
+The `artifact-list.yaml` lists all artifacts included in the bundle using following syntax:
+```
+artifacts:
+  - groupId: "org.custom"
+    artifactId: "artifact-one"
+    version: "1.2.3"
+    packaging: "jar"
+    extension: ""
+```

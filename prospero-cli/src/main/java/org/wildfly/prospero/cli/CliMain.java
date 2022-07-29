@@ -19,7 +19,6 @@ package org.wildfly.prospero.cli;
 
 import org.jboss.logging.Logger;
 import org.wildfly.prospero.actions.Console;
-import org.wildfly.prospero.cli.commands.ApplyPatchCommand;
 import org.wildfly.prospero.cli.commands.ChannelCommand;
 import org.wildfly.prospero.cli.commands.CliConstants;
 import org.wildfly.prospero.cli.commands.HistoryCommand;
@@ -28,6 +27,10 @@ import org.wildfly.prospero.cli.commands.MainCommand;
 import org.wildfly.prospero.cli.commands.RepositoryCommand;
 import org.wildfly.prospero.cli.commands.RevertCommand;
 import org.wildfly.prospero.cli.commands.UpdateCommand;
+import org.wildfly.prospero.cli.commands.channel.ChannelAddCommand;
+import org.wildfly.prospero.cli.commands.channel.ChannelInitializeCommand;
+import org.wildfly.prospero.cli.commands.channel.ChannelPromoteCommand;
+import org.wildfly.prospero.cli.commands.channel.ChannelRemoveCommand;
 import picocli.CommandLine;
 
 public class CliMain {
@@ -66,7 +69,6 @@ public class CliMain {
 
         commandLine.addSubcommand(new InstallCommand(console, actionFactory));
         commandLine.addSubcommand(new UpdateCommand(console, actionFactory));
-        commandLine.addSubcommand(new ApplyPatchCommand(console, actionFactory));
         commandLine.addSubcommand(new HistoryCommand(console, actionFactory));
         commandLine.addSubcommand(new RevertCommand(console, actionFactory));
         commandLine.addSubcommand(new RepositoryCommand(console, actionFactory));
@@ -78,9 +80,11 @@ public class CliMain {
         repoCmd.addSubcommand(new RepositoryCommand.RepositoryListCommand(console, actionFactory));
 
         CommandLine channelCmd = commandLine.getSubcommands().get(CliConstants.Commands.CHANNEL);
-        channelCmd.addSubcommand(new ChannelCommand.ChannelAddCommand(console, actionFactory));
-        channelCmd.addSubcommand(new ChannelCommand.ChannelRemoveCommand(console, actionFactory));
+        channelCmd.addSubcommand(new ChannelAddCommand(console, actionFactory));
+        channelCmd.addSubcommand(new ChannelRemoveCommand(console, actionFactory));
         channelCmd.addSubcommand(new ChannelCommand.ChannelListCommand(console, actionFactory));
+        channelCmd.addSubcommand(new ChannelInitializeCommand(console, actionFactory));
+        channelCmd.addSubcommand(new ChannelPromoteCommand(console, actionFactory));
 
         commandLine.setUsageHelpAutoWidth(true);
         commandLine.setExecutionExceptionHandler(new ExecutionExceptionHandler(console));

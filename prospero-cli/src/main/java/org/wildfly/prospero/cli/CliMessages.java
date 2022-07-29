@@ -126,9 +126,6 @@ public interface CliMessages {
     @Message("Channel '%s' removed.")
     String channelRemoved(String urlOrGav);
 
-    @Message("File referenced by [%s] doesn't exist: %s")
-    String fileDoesntExist(String optionName, Path patchArchive);
-
     @Message("Path `%s` does not contain a server installation provisioned by prospero.")
     IllegalArgumentException invalidInstallationDir(Path path);
 
@@ -143,4 +140,40 @@ public interface CliMessages {
 
     @Message("Only one of %s and %s can be set.")
     IllegalArgumentException exclusiveOptions(String option1, String option2);
+
+    @Message("Custom repository `%s` already exist.")
+    String customizationRepoExist(String repositoryId);
+
+    @Message("Channel `%s` needs to have a groupId:artifactId format")
+    String illegalChannel(String name);
+
+    @Message("Unable to create a repository at `%s`.")
+    String unableToCreateLocalRepository(Path repositoryPath);
+
+    @Message("Repository path `%s` is a file not a directory.")
+    String repositoryIsNotDirectory(Path repo);
+
+    @Message("Channel coordinate must be provided in `groupId:artifactId` format")
+    String wrongChannelCoordinateFormat();
+
+    @Message("Unable to determine custom channel and repository.%nUse `%s` and `%s` to provide correct values.")
+    String noCustomizationConfigFound(String channelParam, String repoParam);
+
+    @Message("Continue with promoting artifacts: [y/N]: ")
+    String continuePromote();
+
+    @Message("Promoting artifacts.")
+    String continuePromoteAccepted();
+
+    @Message("Operation cancelled.")
+    String continuePromoteRejected();
+
+    @Message("Custom channel already exists.")
+    String customizationChannelAlreadyExists();
+
+    @Message("Registering custom channel `%s`")
+    String registeringCustomChannel(String name);
+
+    @Message("Registering custom repository `%s`")
+    String registeringCustomRepository(String name);
 }

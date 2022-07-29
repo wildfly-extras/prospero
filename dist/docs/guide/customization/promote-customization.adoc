@@ -1,0 +1,31 @@
+### Promoting custom artifacts
+
+To make the changes available to the servers, they need to be made available in a custom channel. This process is called *promoting artifacts*. Promoted artifacts can come from a different channel (eg. promoting artifacts between STAGE and PROD channels) or from an artifact bundle.
+
+If the custom channel is empty, the first promotion will populate it with new artifacts. If the channel already contains artifacts, it will update it - adding new artifacts if they're missing and updating to newer versions if they already exist.
+
+Promotion is a two-step process:
+
+. publish artifacts which the channel references in a Maven repository (or make sure they can be consumed from a public Maven repository),
+. publish a channel file (or a new version of the channel file) in a Maven repository.
+
+The repository (or repositories) containing the artifacts and the channel file needs to be accessible when provisioning or updating server installations. The latest available version of the channel file is used when provisioning or updating a server installation.
+
+#### Promote artifact bundle
+*Single server channel*
+
+If the changes need to be applied only to a single server, a simplified command can be used:
+```
+prospero channel promote --archive=<bundle.zip> --dir=<PATH/TO/SERVER>
+```
+The artifacts will be added to an internal installation repository and a new version of channel file will be created.
+
+*Shared channel*
+
+When a channel is shared between multiple servers, the promote command has to include the URL of the repository and the channel information.
+```
+prospero channel promote --archive=<bundle.zip> --channel-name=<groupId:artifactId> --repository-url=<URL_OF_REPOSITORY>
+```
+If the repository contains a channel file already, it will be updated with promoted artifacts, and it's version will be incremented before being redeployed into the repository.
+
+NOTE: Currently, this operation requires filesystem access to the repository.

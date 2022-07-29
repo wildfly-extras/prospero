@@ -1,0 +1,3 @@
+= Prospero documentation
+
+include::customization/index.adoc[]
