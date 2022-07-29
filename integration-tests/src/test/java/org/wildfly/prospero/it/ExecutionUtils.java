@@ -2,6 +2,7 @@ package org.wildfly.prospero.it;
 
 import java.nio.file.Paths;
 import java.util.Arrays;
+import java.util.Locale;
 import java.util.concurrent.TimeUnit;
 
 import org.assertj.core.api.Assertions;
@@ -16,7 +17,9 @@ import static org.assertj.core.api.Assertions.assertThat;
  */
 public class ExecutionUtils {
 
-    private static final String PROSPERO_SCRIPT_PATH = Paths.get("..", "prospero").toString();
+    private static final String PROSPERO_SCRIPT_PATH = isWindows()?
+            Paths.get("..", "prospero.bat").toString():
+            Paths.get("..", "prospero").toString();
 
     public static Execution prosperoExecution(String... args) {
         return new Execution(args);
@@ -38,6 +41,10 @@ public class ExecutionUtils {
         String[] finalArray = Arrays.copyOf(a1, a1.length + a2.length);
         System.arraycopy(a2, 0, finalArray, a1.length, a2.length);
         return finalArray;
+    }
+
+    private static boolean isWindows() {
+        return System.getProperty("os.name").toLowerCase(Locale.ENGLISH).contains("windows");
     }
 
     /**

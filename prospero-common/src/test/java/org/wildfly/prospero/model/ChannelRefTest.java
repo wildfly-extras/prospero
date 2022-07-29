@@ -19,34 +19,39 @@ package org.wildfly.prospero.model;
 
 import java.net.MalformedURLException;
 import java.net.URL;
+import java.nio.file.Path;
 import java.nio.file.Paths;
 
-import org.junit.Assert;
 import org.junit.Test;
+
+import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 
 public class ChannelRefTest {
 
     @Test
     public void fromString() throws MalformedURLException {
         ChannelRef channelRef = ChannelRef.fromString("file:/test");
-        Assert.assertNull(channelRef.getGav());
-        Assert.assertEquals(new URL("file:/test").toExternalForm(), channelRef.getUrl());
+        assertNull(channelRef.getGav());
+        assertEquals(new URL("file:/test").toExternalForm(), channelRef.getUrl());
 
         ChannelRef.fromString("file:///test");
-        Assert.assertNull(channelRef.getGav());
-        Assert.assertEquals(new URL("file:/test").toExternalForm(), channelRef.getUrl());
+        assertNull(channelRef.getGav());
+        assertEquals(new URL("file:/test").toExternalForm(), channelRef.getUrl());
 
         channelRef = ChannelRef.fromString("g:a");
-        Assert.assertEquals("g:a", channelRef.getGav());
-        Assert.assertNull(channelRef.getUrl());
+        assertEquals("g:a", channelRef.getGav());
+        assertNull(channelRef.getUrl());
 
         channelRef = ChannelRef.fromString("g:a:v");
-        Assert.assertEquals("g:a:v", channelRef.getGav());
-        Assert.assertNull(channelRef.getUrl());
+        assertEquals("g:a:v", channelRef.getGav());
+        assertNull(channelRef.getUrl());
 
         channelRef = ChannelRef.fromString("a/path");
-        Assert.assertNull(channelRef.getGav());
-        String cwd = Paths.get("").toAbsolutePath().toString();
-        Assert.assertEquals("file:" + cwd + "/a/path", channelRef.getUrl());
+        assertNull(channelRef.getGav());
+        Path cwd = Paths.get("a/path").toAbsolutePath();
+        assertEquals(cwd.toUri().toURL().toString(), channelRef.getUrl());
+        assertTrue(channelRef.getUrl().startsWith("file:"));
     }
 }
