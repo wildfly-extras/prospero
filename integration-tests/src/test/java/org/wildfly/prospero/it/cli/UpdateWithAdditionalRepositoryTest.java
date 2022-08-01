@@ -35,6 +35,7 @@ import org.wildfly.prospero.test.MetadataTestUtils;
 
 import java.io.File;
 import java.net.URL;
+import java.nio.file.Path;
 import java.util.Optional;
 import java.util.concurrent.TimeUnit;
 
@@ -52,7 +53,7 @@ public class UpdateWithAdditionalRepositoryTest extends WfCoreTestBase {
 
     @Test
     public void updateCli() throws Exception {
-        URL provisionConfig = MetadataTestUtils.prepareProvisionConfigAsUrl("channels/wfcore-19-base.yaml");
+        Path provisionConfig = MetadataTestUtils.prepareProvisionConfig("channels/wfcore-19-base.yaml");
 
         install(provisionConfig);
 
@@ -94,9 +95,9 @@ public class UpdateWithAdditionalRepositoryTest extends WfCoreTestBase {
         return repoUrl;
     }
 
-    private void install(URL provisionConfig) throws Exception {
+    private void install(Path provisionConfig) throws Exception {
         ExecutionUtils.prosperoExecution(CliConstants.Commands.INSTALL,
-                        CliConstants.PROVISION_CONFIG, provisionConfig.getPath(),
+                        CliConstants.PROVISION_CONFIG, provisionConfig.toString(),
                         CliConstants.FPL, "wildfly-core@maven(org.jboss.universe:community-universe):19.0",
                         CliConstants.DIR, targetDir.getAbsolutePath())
                 .withTimeLimit(10, TimeUnit.MINUTES)

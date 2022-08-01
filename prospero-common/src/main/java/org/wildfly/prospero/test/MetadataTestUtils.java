@@ -98,7 +98,7 @@ public final class MetadataTestUtils {
     }
 
     public static Path prepareProvisionConfig(String channelDescriptor) throws IOException {
-        final Path provisionConfigFile = Files.createTempFile("channels", "yaml");
+        final Path provisionConfigFile = Files.createTempFile("channels", "yaml").toAbsolutePath();
         provisionConfigFile.toFile().deleteOnExit();
 
         return prepareProvisionConfigAsUrl(provisionConfigFile, channelDescriptor);
