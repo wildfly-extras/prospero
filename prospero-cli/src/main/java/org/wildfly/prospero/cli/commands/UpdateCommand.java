@@ -17,8 +17,10 @@
 
 package org.wildfly.prospero.cli.commands;
 
+import java.net.URL;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
@@ -66,6 +68,17 @@ public class UpdateCommand extends AbstractCommand {
     @CommandLine.ArgGroup(exclusive = true, headingKey = "localRepoOptions.heading")
     LocalRepoOptions localRepoOptions;
 
+    // Option for BETA update support
+    // TODO: evaluate in GA - replace by repository:add / custom channels?
+    @CommandLine.Option(
+            names = CliConstants.REMOTE_REPOSITORIES,
+            paramLabel = CliConstants.REPO_URL,
+            descriptionKey = "update.remote-repositories",
+            split = ",",
+            order = 5
+    )
+    List<URL> remoteRepositories = new ArrayList<>();
+
     public UpdateCommand(Console console, ActionFactory actionFactory) {
         super(console, actionFactory);
     }
@@ -89,7 +102,7 @@ public class UpdateCommand extends AbstractCommand {
         try {
             final MavenSessionManager mavenSessionManager = new MavenSessionManager(LocalRepoOptions.getLocalRepo(localRepoOptions), offline);
 
-            UpdateAction updateAction = actionFactory.update(installationDir, mavenSessionManager, console);
+            UpdateAction updateAction = actionFactory.update(installationDir, mavenSessionManager, console, remoteRepositories);
             if (!dryRun) {
                 updateAction.doUpdateAll(yes);
             } else {

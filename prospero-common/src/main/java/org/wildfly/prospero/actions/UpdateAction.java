@@ -17,7 +17,12 @@
 
 package org.wildfly.prospero.actions;
 
+import java.net.URL;
 import java.nio.file.Path;
+import java.util.Collections;
+import java.util.List;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 import org.wildfly.prospero.api.InstallationMetadata;
 import org.wildfly.prospero.api.exceptions.MetadataException;
@@ -25,6 +30,8 @@ import org.wildfly.prospero.api.exceptions.ArtifactResolutionException;
 import org.wildfly.prospero.api.exceptions.OperationException;
 import org.wildfly.prospero.galleon.GalleonEnvironment;
 import org.wildfly.prospero.galleon.GalleonUtils;
+import org.wildfly.prospero.model.ProsperoConfig;
+import org.wildfly.prospero.model.RepositoryRef;
 import org.wildfly.prospero.updates.UpdateFinder;
 import org.wildfly.prospero.updates.UpdateSet;
 import org.wildfly.prospero.wfchannel.MavenSessionManager;
@@ -40,13 +47,34 @@ public class UpdateAction {
     private final GalleonEnvironment galleonEnv;
 
     public UpdateAction(Path installDir, MavenSessionManager mavenSessionManager, Console console) throws ProvisioningException, OperationException {
+        this(installDir, mavenSessionManager, console, Collections.emptyList());
+    }
+
+    // Option for BETA update support
+    // TODO: evaluate in GA - replace by repository:add / custom channels?
+    public UpdateAction(Path installDir, MavenSessionManager mavenSessionManager, Console console, List<URL> additionalRepositories)
+            throws ProvisioningException, OperationException {
         this.metadata = new InstallationMetadata(installDir);
+
+        final ProsperoConfig prosperoConfig = addTemporaryRepositories(additionalRepositories);
         galleonEnv = GalleonEnvironment
-                .builder(installDir, metadata.getProsperoConfig(), mavenSessionManager)
+                .builder(installDir, prosperoConfig, mavenSessionManager)
                 .setConsole(console)
                 .build();
         this.mavenSessionManager = mavenSessionManager;
         this.console = console;
+    }
+
+    private ProsperoConfig addTemporaryRepositories(List<URL> additionalRepositories) {
+        final ProsperoConfig prosperoConfig = metadata.getProsperoConfig();
+        int i = 0;
+        final Set<String> existingRepos = prosperoConfig.getRepositories().stream().map(RepositoryRef::getUrl).collect(Collectors.toSet());
+        for (URL additionalRepository : additionalRepositories) {
+            if (!existingRepos.contains(additionalRepository.toString())) {
+                prosperoConfig.addRepository(new RepositoryRef("temp-repo-" + i++, additionalRepository.toString()));
+            }
+        }
+        return prosperoConfig;
     }
 
     public void doUpdateAll(boolean confirmed) throws ProvisioningException, MetadataException, ArtifactResolutionException {

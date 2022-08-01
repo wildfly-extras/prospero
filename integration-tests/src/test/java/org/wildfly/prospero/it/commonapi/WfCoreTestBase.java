@@ -57,6 +57,7 @@ public class WfCoreTestBase {
     public static final RepositoryRef REPOSITORY_NEXUS = new RepositoryRef("nexus", "https://repository.jboss.org/nexus/content/groups/public-jboss");
     public static final RepositoryRef REPOSITORY_MRRC_GA = new RepositoryRef("maven-redhat-ga", "https://maven.repository.redhat.com/ga");
     protected static Artifact resolvedUpgradeArtifact;
+    protected static Artifact resolvedUpgradeClientArtifact;
     protected Path outputPath;
     protected Path manifestPath;
     protected ProvisioningAction installation;
@@ -73,8 +74,8 @@ public class WfCoreTestBase {
         final RepositorySystem system = msm.newRepositorySystem();
         final DefaultRepositorySystemSession session = msm.newRepositorySystemSession(system, false);
 
-        installIfMissing(system, session, "org.wildfly.core", "wildfly-cli", null);
-        installIfMissing(system, session, "org.wildfly.core", "wildfly-cli", "client");
+        resolvedUpgradeArtifact = installIfMissing(system, session, "org.wildfly.core", "wildfly-cli", null);
+        resolvedUpgradeClientArtifact = installIfMissing(system, session, "org.wildfly.core", "wildfly-cli", "client");
     }
 
     @Before
@@ -84,7 +85,7 @@ public class WfCoreTestBase {
         installation = new ProvisioningAction(outputPath, mavenSessionManager, new CliConsole());
     }
 
-    private static void installIfMissing(RepositorySystem system, DefaultRepositorySystemSession session, String groupId, String artifactId, String classifier) throws ArtifactResolutionException, InstallationException {
+    private static Artifact installIfMissing(RepositorySystem system, DefaultRepositorySystemSession session, String groupId, String artifactId, String classifier) throws ArtifactResolutionException, InstallationException {
         final ArtifactRequest artifactRequest = new ArtifactRequest();
         Artifact updateCli = new DefaultArtifact(groupId, artifactId, classifier, "jar", UPGRADE_VERSION);
         artifactRequest.setArtifact(updateCli);
@@ -99,7 +100,7 @@ public class WfCoreTestBase {
             final InstallResult result = system.install(session, installRequest);
             upgradeArtifact = result.getArtifacts().stream().findFirst().get();
         }
-        resolvedUpgradeArtifact = upgradeArtifact;
+        return upgradeArtifact;
     }
 
     private static File resolveExistingCliArtifact(RepositorySystem system, DefaultRepositorySystemSession session, String groupId, String artifactId, String classifier) throws ArtifactResolutionException {
