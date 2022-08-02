@@ -18,7 +18,9 @@
 package org.wildfly.prospero.cli;
 
 
+import java.net.URL;
 import java.nio.file.Path;
+import java.util.List;
 
 import org.jboss.galleon.ProvisioningException;
 import org.wildfly.prospero.actions.ApplyPatchAction;
@@ -36,9 +38,18 @@ public class ActionFactory {
         return new ProvisioningAction(targetPath, mavenSessionManager, console);
     }
 
-    public UpdateAction update(Path targetPath, MavenSessionManager mavenSessionManager, Console console) throws OperationException,
+    public UpdateAction update(Path targetPath, MavenSessionManager mavenSessionManager, Console console)
+            throws OperationException,
             ProvisioningException {
         return new UpdateAction(targetPath, mavenSessionManager, console);
+    }
+
+    // Option for BETA update support
+    // TODO: evaluate in GA - replace by repository:add / custom channels?
+    public UpdateAction update(Path targetPath, MavenSessionManager mavenSessionManager, Console console, List<URL> additionalRepositories)
+            throws OperationException,
+            ProvisioningException {
+        return new UpdateAction(targetPath, mavenSessionManager, console, additionalRepositories);
     }
 
     public InstallationHistoryAction history(Path targetPath, Console console) {

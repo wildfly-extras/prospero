@@ -74,7 +74,7 @@ public class UpdateCommandTest extends AbstractMavenCommandTest {
     public void setUp() throws Exception {
         super.setUp();
 
-        when(actionFactory.update(any(), any(), any())).thenReturn(updateAction);
+        when(actionFactory.update(any(), any(), any(), any())).thenReturn(updateAction);
 
         installationDir = tempFolder.newFolder().toPath();
 
@@ -118,7 +118,7 @@ public class UpdateCommandTest extends AbstractMavenCommandTest {
         int exitCode = commandLine.execute(CliConstants.Commands.UPDATE, CliConstants.SELF);
 
         assertEquals(ReturnCodes.SUCCESS, exitCode);
-        Mockito.verify(actionFactory).update(eq(installationDir.toAbsolutePath()), any(), any());
+        Mockito.verify(actionFactory).update(eq(installationDir.toAbsolutePath()), any(), any(), any());
         Mockito.verify(updateAction).doUpdateAll(false);
     }
 
@@ -129,7 +129,7 @@ public class UpdateCommandTest extends AbstractMavenCommandTest {
                 CliConstants.DIR, installationDir.toAbsolutePath().toString());
 
         assertEquals(ReturnCodes.SUCCESS, exitCode);
-        Mockito.verify(actionFactory).update(eq(installationDir.toAbsolutePath()), any(), any());
+        Mockito.verify(actionFactory).update(eq(installationDir.toAbsolutePath()), any(), any(), any());
         Mockito.verify(updateAction).doUpdateAll(false);
     }
 
@@ -157,7 +157,7 @@ public class UpdateCommandTest extends AbstractMavenCommandTest {
 
     @Override
     protected MavenSessionManager getCapturedSessionManager() throws Exception {
-        Mockito.verify(actionFactory).update(any(), mavenSessionManager.capture(), any());
+        Mockito.verify(actionFactory).update(any(), mavenSessionManager.capture(), any(), any());
         MavenSessionManager msm = mavenSessionManager.getValue();
         return msm;
     }
