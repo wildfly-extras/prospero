@@ -108,7 +108,7 @@ public class UpdateAction {
         }
     }
 
-    protected void applyUpdates() throws ProvisioningException {
+    protected void applyUpdates() throws ProvisioningException, ArtifactResolutionException {
         final ProvisioningManager provMgr = galleonEnv.getProvisioningManager();
         GalleonUtils.executeGalleon(options -> provMgr.provision(provMgr.getProvisioningConfig(), options),
                 mavenSessionManager.getProvisioningRepo().toAbsolutePath());

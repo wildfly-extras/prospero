@@ -18,8 +18,9 @@
 package org.wildfly.prospero.cli;
 
 import org.jboss.galleon.ProvisioningException;
-import org.jboss.logging.Logger;
 import org.wildfly.prospero.actions.Console;
+import org.wildfly.prospero.api.exceptions.ArtifactResolutionException;
+import org.wildfly.prospero.api.exceptions.ChannelDefinitionException;
 import org.wildfly.prospero.api.exceptions.NoChannelException;
 import org.wildfly.prospero.api.exceptions.OperationException;
 import org.wildfly.prospero.cli.commands.CliConstants;
@@ -29,8 +30,6 @@ import picocli.CommandLine;
  * Handles exceptions that happen during command executions.
  */
 public class ExecutionExceptionHandler implements CommandLine.IExecutionExceptionHandler {
-
-    private final Logger logger = Logger.getLogger(this.getClass());
     private final Console console;
 
     public ExecutionExceptionHandler(Console console) {
@@ -41,18 +40,28 @@ public class ExecutionExceptionHandler implements CommandLine.IExecutionExceptio
     public int handleExecutionException(Exception ex, CommandLine commandLine, CommandLine.ParseResult parseResult)
             throws Exception {
         if (ex instanceof NoChannelException) {
-            console.error(ex.getMessage());
+            console.error("ERROR: " + ex.getMessage());
             console.error(CliMessages.MESSAGES.addChannels(CliConstants.CHANNEL));
             return ReturnCodes.INVALID_ARGUMENTS;
         }
         if (ex instanceof IllegalArgumentException || ex instanceof ArgumentParsingException) {
             // used to indicate invalid arguments
-            console.error(ex.getMessage());
+            console.error("ERROR: " + ex.getMessage());
             return ReturnCodes.INVALID_ARGUMENTS;
-        } else if (ex instanceof ProvisioningException || ex instanceof OperationException) {
-            // provisioning error
-            console.error(CliMessages.MESSAGES.errorWhileExecutingOperation(CliConstants.Commands.REVERT, ex.getMessage()));
-            logger.error(CliMessages.MESSAGES.errorWhileExecutingOperation(CliConstants.Commands.INSTALL, ex.getMessage()), ex);
+        } else if (ex instanceof OperationException) {
+            if (ex instanceof ArtifactResolutionException) {
+                // new line to return from last provisioning progress line
+                console.error("\n");
+            }
+            console.error("ERROR: " + ex.getMessage());
+            if (ex instanceof ChannelDefinitionException) {
+                console.error(((ChannelDefinitionException) ex).getValidationMessages());
+            }
+            return ReturnCodes.PROCESSING_ERROR;
+        } else if (ex instanceof ProvisioningException) {
+            // new line to return from last provisioning progress line
+            console.error("\n");
+            console.error("ERROR: " + ex.getMessage());
             return ReturnCodes.PROCESSING_ERROR;
         }
 

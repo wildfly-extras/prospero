@@ -28,7 +28,6 @@ import org.jboss.galleon.ProvisioningException;
 import org.jboss.logging.Logger;
 import org.wildfly.prospero.actions.Console;
 import org.wildfly.prospero.actions.UpdateAction;
-import org.wildfly.prospero.api.exceptions.MetadataException;
 import org.wildfly.prospero.cli.ActionFactory;
 import org.wildfly.prospero.cli.ArgumentParsingException;
 import org.wildfly.prospero.cli.CliMessages;
@@ -99,19 +98,13 @@ public class UpdateCommand extends AbstractCommand {
             installationDir = determineInstallationDirectory(directory);
         }
 
-        try {
-            final MavenSessionManager mavenSessionManager = new MavenSessionManager(LocalRepoOptions.getLocalRepo(localRepoOptions), offline);
+        final MavenSessionManager mavenSessionManager = new MavenSessionManager(LocalRepoOptions.getLocalRepo(localRepoOptions), offline);
 
-            UpdateAction updateAction = actionFactory.update(installationDir, mavenSessionManager, console, remoteRepositories);
-            if (!dryRun) {
-                updateAction.doUpdateAll(yes);
-            } else {
-                updateAction.listUpdates();
-            }
-        } catch (MetadataException | ProvisioningException e) {
-            console.error(CliMessages.MESSAGES.errorWhileExecutingOperation(CliConstants.Commands.UPDATE, e.getMessage()));
-            logger.error(CliMessages.MESSAGES.errorWhileExecutingOperation(CliConstants.Commands.INSTALL, e.getMessage()), e);
-            return ReturnCodes.PROCESSING_ERROR;
+        UpdateAction updateAction = actionFactory.update(installationDir, mavenSessionManager, console, remoteRepositories);
+        if (!dryRun) {
+            updateAction.doUpdateAll(yes);
+        } else {
+            updateAction.listUpdates();
         }
 
         final float totalTime = (System.currentTimeMillis() - startTime) / 1000f;
