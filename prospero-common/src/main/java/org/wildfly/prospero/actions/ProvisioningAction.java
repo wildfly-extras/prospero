@@ -33,7 +33,6 @@ import java.nio.file.Path;
 import java.util.List;
 import java.util.stream.Collectors;
 
-import org.wildfly.prospero.galleon.GalleonProvisioningConfigUpdater;
 import org.wildfly.prospero.model.ChannelRef;
 import org.wildfly.prospero.model.ProsperoConfig;
 import org.wildfly.prospero.model.RepositoryRef;
@@ -87,8 +86,7 @@ public class ProvisioningAction {
             }
             config = ProvisioningConfig.builder().addFeaturePackDep(configBuilder.build()).build();
         } else {
-            final ProvisioningConfig provisioningConfig = ProvisioningXmlParser.parse(provisioningDefinition.getDefinition());
-            config = new GalleonProvisioningConfigUpdater(repositoryManager).updateFPs(provisioningConfig);
+            config = ProvisioningXmlParser.parse(provisioningDefinition.getDefinition());
         }
 
         GalleonUtils.executeGalleon(options->galleonEnv.getProvisioningManager().provision(config, options),
