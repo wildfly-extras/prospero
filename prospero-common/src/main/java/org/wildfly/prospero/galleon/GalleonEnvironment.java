@@ -25,10 +25,10 @@ import org.jboss.galleon.layout.ProvisioningLayoutFactory;
 import org.wildfly.channel.Channel;
 import org.wildfly.channel.ChannelMapper;
 import org.wildfly.channel.ChannelSession;
+import org.wildfly.channel.InvalidChannelException;
 import org.wildfly.channel.maven.VersionResolverFactory;
 import org.wildfly.prospero.Messages;
 import org.wildfly.prospero.actions.Console;
-import org.wildfly.prospero.api.exceptions.MetadataException;
 import org.wildfly.prospero.api.exceptions.OperationException;
 import org.wildfly.prospero.model.ChannelRef;
 import org.wildfly.prospero.model.ProsperoConfig;
@@ -82,13 +82,15 @@ public class GalleonEnvironment {
         }
     }
 
-    private List<Channel> mapToChannels(List<ChannelRef> channelRefs) throws MetadataException {
+    private List<Channel> mapToChannels(List<ChannelRef> channelRefs) throws OperationException {
         final List<Channel> channels = new ArrayList<>();
         for (ChannelRef ref : channelRefs) {
             try {
                 channels.add(ChannelMapper.from(new URL(ref.getUrl())));
             } catch (MalformedURLException e) {
                 throw Messages.MESSAGES.unableToResolveChannelConfiguration(e);
+            } catch (InvalidChannelException e) {
+                throw Messages.MESSAGES.unableToParseChannel(ref.getGavOrUrlString(), e);
             }
         }
         return channels;

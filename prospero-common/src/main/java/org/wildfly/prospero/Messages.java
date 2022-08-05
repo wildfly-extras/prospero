@@ -24,7 +24,9 @@ import org.jboss.galleon.ProvisioningException;
 import org.jboss.logging.annotations.Cause;
 import org.jboss.logging.annotations.Message;
 import org.jboss.logging.annotations.MessageBundle;
+import org.wildfly.channel.InvalidChannelException;
 import org.wildfly.prospero.api.exceptions.ArtifactResolutionException;
+import org.wildfly.prospero.api.exceptions.ChannelDefinitionException;
 import org.wildfly.prospero.api.exceptions.MetadataException;
 import org.wildfly.prospero.api.exceptions.NoChannelException;
 
@@ -77,4 +79,10 @@ public interface Messages {
 
     @Message("Provided FPL has invalid format `%s`.")
     String invalidFpl(String fplText);
+
+    @Message("Invalid channel definition found at '%s'")
+    ChannelDefinitionException unableToParseChannel(String ref, @Cause InvalidChannelException e);
+
+    @Message("Unable to parse server configuration at '%s'")
+    MetadataException unableToParseConfiguration(String path, @Cause Exception e);
 }

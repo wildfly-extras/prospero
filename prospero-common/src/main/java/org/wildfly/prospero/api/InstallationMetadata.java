@@ -17,6 +17,7 @@
 
 package org.wildfly.prospero.api;
 
+import org.wildfly.prospero.Messages;
 import org.wildfly.prospero.api.exceptions.MetadataException;
 import org.wildfly.prospero.installation.git.GitStorage;
 import org.wildfly.prospero.model.ChannelRef;
@@ -107,13 +108,21 @@ public class InstallationMetadata {
     private void doInit(Path manifestFile, Path provisionConfig, Path provisioningFile) throws MetadataException {
         try {
             this.manifest = ManifestYamlSupport.parse(manifestFile.toFile());
+        } catch (IOException e) {
+            throw Messages.MESSAGES.unableToParseConfiguration(manifestFile.toString(), e);
+        }
+        try {
             final ProsperoConfig prosperoConfig = ProsperoConfig.readConfig(provisionConfig);
             this.channelRefs = prosperoConfig.getChannels();
             this.repositories = prosperoConfig.getRepositories()
                     .stream().map(r -> r.toRemoteRepository()).collect(Collectors.toList());
+        } catch (IOException e) {
+            throw Messages.MESSAGES.unableToParseConfiguration(provisionConfig.toString(), e);
+        }
+        try {
             this.galleonProvisioningConfig = ProvisioningXmlParser.parse(provisioningFile);
-        } catch (IOException | ProvisioningException e) {
-            throw new MetadataException("Error when parsing installation metadata", e);
+        } catch (ProvisioningException e) {
+            throw Messages.MESSAGES.unableToParseConfiguration(provisioningFile.toString(), e);
         }
     }
 
