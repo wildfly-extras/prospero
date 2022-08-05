@@ -15,33 +15,10 @@
  * limitations under the License.
  */
 
-package org.wildfly.prospero.patch;
+package org.wildfly.prospero.api.exceptions;
 
-import java.net.MalformedURLException;
-import java.net.URL;
-import java.nio.file.Path;
-
-import static org.wildfly.prospero.actions.ApplyPatchAction.PATCHES_FOLDER;
-
-public class Patch {
-
-    private final String fileName;
-    private final Path server;
-
-    public Patch(Path server, String fileName) {
-        this.server = server;
-        this.fileName = fileName;
-    }
-
-    public Path getChannelFilePath() {
-        return server.resolve(PATCHES_FOLDER).resolve(fileName);
-    }
-
-    public URL getChannelFileUrl() {
-        try {
-            return getChannelFilePath().toUri().toURL();
-        } catch (MalformedURLException e) {
-            throw new IllegalArgumentException("Unable to convert patch file path to URL: " + fileName);
-        }
+public class ArtifactPromoteException extends OperationException {
+    public ArtifactPromoteException(String msg, Throwable e) {
+        super(msg, e);
     }
 }

@@ -48,6 +48,11 @@ public class AcceptingConsole implements Console {
     }
 
     @Override
+    public boolean confirm(String prompt, String accepted, String cancelled) {
+        return true;
+    }
+
+    @Override
     public void updatesComplete() {
         // no op
     }

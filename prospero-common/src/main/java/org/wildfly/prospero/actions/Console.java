@@ -41,6 +41,8 @@ public interface Console {
 
     boolean confirmUpdates();
 
+    boolean confirm(String prompt, String accepted, String cancelled);
+
     void updatesComplete();
 
     default void println(String text) {

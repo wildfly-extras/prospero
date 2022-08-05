@@ -35,7 +35,12 @@ public class AbstractConsoleTest {
 
     @Before
     public void setUp() throws Exception {
-        CliConsole console = new CliConsole();
+        CliConsole console = new CliConsole() {
+            @Override
+            public boolean confirm(String prompt, String accepted, String cancelled) {
+                return true;
+            }
+        };
         commandLine = CliMain.createCommandLine(console, createActionFactory());
     }
 
