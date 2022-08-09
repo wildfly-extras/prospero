@@ -151,23 +151,9 @@ public class CliConsole implements Console {
 
     @Override
     public boolean confirmUpdates() {
-        confirm(CliMessages.MESSAGES.continueWithUpdate(),
+        return confirm(CliMessages.MESSAGES.continueWithUpdate(),
                 CliMessages.MESSAGES.applyingUpdates(),
                 CliMessages.MESSAGES.updateCancelled());
-        getStdOut().print(CliMessages.MESSAGES.continueWithUpdate());
-        Scanner sc = new Scanner(getInput());
-        while (true) {
-            String resp = sc.nextLine();
-            if (resp.equalsIgnoreCase(CliMessages.MESSAGES.noShortcut()) || resp.isBlank()) {
-                println(CliMessages.MESSAGES.updateCancelled());
-                return false;
-            } else if (resp.equalsIgnoreCase(CliMessages.MESSAGES.yesShortcut())) {
-                println(CliMessages.MESSAGES.applyingUpdates());
-                return true;
-            } else {
-                getStdOut().print(CliMessages.MESSAGES.chooseYN());
-            }
-        }
     }
 
     @Override
