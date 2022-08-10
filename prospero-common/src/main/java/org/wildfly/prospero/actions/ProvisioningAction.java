@@ -17,8 +17,10 @@
 
 package org.wildfly.prospero.actions;
 
+import org.wildfly.channel.UnresolvedMavenArtifactException;
 import org.wildfly.prospero.Messages;
 import org.wildfly.prospero.api.InstallationMetadata;
+import org.wildfly.prospero.api.exceptions.ArtifactResolutionException;
 import org.wildfly.prospero.api.exceptions.MetadataException;
 import org.wildfly.prospero.api.ProvisioningDefinition;
 import org.wildfly.prospero.api.exceptions.OperationException;
@@ -89,8 +91,12 @@ public class ProvisioningAction {
             config = ProvisioningXmlParser.parse(provisioningDefinition.getDefinition());
         }
 
-        GalleonUtils.executeGalleon(options->galleonEnv.getProvisioningManager().provision(config, options),
-                mavenSessionManager.getProvisioningRepo().toAbsolutePath());
+        try {
+            GalleonUtils.executeGalleon(options -> galleonEnv.getProvisioningManager().provision(config, options),
+                    mavenSessionManager.getProvisioningRepo().toAbsolutePath());
+        } catch (UnresolvedMavenArtifactException e) {
+            throw new ArtifactResolutionException(e, repositories, mavenSessionManager.isOffline());
+        }
 
         writeProsperoMetadata(installDir, repositoryManager, galleonEnv.getUpdatedRefs(), repositories);
     }
@@ -115,8 +121,12 @@ public class ProvisioningAction {
                 .setConsole(console)
                 .build();
 
-        GalleonUtils.executeGalleon(options->galleonEnv.getProvisioningManager().provision(installationFile, options),
-                mavenSessionManager.getProvisioningRepo().toAbsolutePath());
+        try {
+            GalleonUtils.executeGalleon(options->galleonEnv.getProvisioningManager().provision(installationFile, options),
+                    mavenSessionManager.getProvisioningRepo().toAbsolutePath());
+        } catch (UnresolvedMavenArtifactException e) {
+            throw new ArtifactResolutionException(e, repositories, mavenSessionManager.isOffline());
+        }
 
         writeProsperoMetadata(installDir, galleonEnv.getRepositoryManager(), channelRefs, repositories);
     }

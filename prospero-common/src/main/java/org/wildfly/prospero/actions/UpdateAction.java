@@ -24,6 +24,7 @@ import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
 
+import org.wildfly.channel.UnresolvedMavenArtifactException;
 import org.wildfly.prospero.api.InstallationMetadata;
 import org.wildfly.prospero.api.exceptions.MetadataException;
 import org.wildfly.prospero.api.exceptions.ArtifactResolutionException;
@@ -45,6 +46,7 @@ public class UpdateAction {
     private final Console console;
     private final MavenSessionManager mavenSessionManager;
     private final GalleonEnvironment galleonEnv;
+    private final ProsperoConfig prosperoConfig;
 
     public UpdateAction(Path installDir, MavenSessionManager mavenSessionManager, Console console) throws ProvisioningException, OperationException {
         this(installDir, mavenSessionManager, console, Collections.emptyList());
@@ -56,7 +58,7 @@ public class UpdateAction {
             throws ProvisioningException, OperationException {
         this.metadata = new InstallationMetadata(installDir);
 
-        final ProsperoConfig prosperoConfig = addTemporaryRepositories(additionalRepositories);
+        this.prosperoConfig = addTemporaryRepositories(additionalRepositories);
         galleonEnv = GalleonEnvironment
                 .builder(installDir, prosperoConfig, mavenSessionManager)
                 .setConsole(console)
@@ -110,8 +112,12 @@ public class UpdateAction {
 
     protected void applyUpdates() throws ProvisioningException, ArtifactResolutionException {
         final ProvisioningManager provMgr = galleonEnv.getProvisioningManager();
-        GalleonUtils.executeGalleon(options -> provMgr.provision(provMgr.getProvisioningConfig(), options),
-                mavenSessionManager.getProvisioningRepo().toAbsolutePath());
+        try {
+            GalleonUtils.executeGalleon(options -> provMgr.provision(provMgr.getProvisioningConfig(), options),
+                    mavenSessionManager.getProvisioningRepo().toAbsolutePath());
+        } catch (UnresolvedMavenArtifactException e) {
+            throw new ArtifactResolutionException(e, prosperoConfig.getRemoteRepositories(), mavenSessionManager.isOffline());
+        }
 
         metadata.setChannel(galleonEnv.getRepositoryManager().resolvedChannel());
     }

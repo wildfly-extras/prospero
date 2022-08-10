@@ -24,7 +24,6 @@ import org.jboss.galleon.universe.maven.repo.MavenRepoManager;
 import org.jboss.galleon.util.PathsUtils;
 import org.jboss.galleon.xml.ProvisionedStateXmlParser;
 import org.wildfly.channel.UnresolvedMavenArtifactException;
-import org.wildfly.prospero.api.exceptions.ArtifactResolutionException;
 
 import java.nio.file.Path;
 import java.util.Collection;
@@ -44,8 +43,9 @@ public class GalleonUtils {
     public static final String PRINT_ONLY_CONFLICTS_PROPERTY = "print-only-conflicts";
     public static final String PRINT_ONLY_CONFLICTS_VALUE = "true";
 
-    public static void executeGalleon(GalleonExecution execution, Path localRepository) throws ProvisioningException, ArtifactResolutionException {
+    public static void executeGalleon(GalleonExecution execution, Path localRepository) throws ProvisioningException, UnresolvedMavenArtifactException {
         final String modulePathProperty = System.getProperty(MODULE_PATH_PROPERTY);
+
         try {
             System.setProperty(MAVEN_REPO_LOCAL, localRepository.toString());
             if (modulePathProperty != null) {
@@ -55,12 +55,7 @@ public class GalleonUtils {
             options.put(GalleonUtils.JBOSS_FORK_EMBEDDED_PROPERTY, GalleonUtils.JBOSS_FORK_EMBEDDED_VALUE);
             options.put(GalleonUtils.JBOSS_BULK_RESOLVE_PROPERTY, GalleonUtils.JBOSS_BULK_RESOLVE_VALUE);
             options.put(GalleonUtils.PRINT_ONLY_CONFLICTS_PROPERTY, GalleonUtils.PRINT_ONLY_CONFLICTS_VALUE);
-            try {
-
-                execution.execute(options);
-            } catch (UnresolvedMavenArtifactException e) {
-                throw new ArtifactResolutionException(e.getMessage(), e);
-            }
+            execution.execute(options);
         } finally {
             System.clearProperty(MAVEN_REPO_LOCAL);
             if (modulePathProperty != null) {

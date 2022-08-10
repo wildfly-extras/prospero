@@ -48,7 +48,7 @@ public class MavenSessionManager {
 
     public static final Path LOCAL_MAVEN_REPO = Paths.get(System.getProperty("user.home"), ".m2", "repository");
     private static final String AETHER_OFFLINE_PROTOCOLS_PROPERTY = "aether.offline.protocols";
-    private static final String AETHER_OFFLINE_PROTOCOLS_VALUE = "file";
+    public static final String AETHER_OFFLINE_PROTOCOLS_VALUE = "file";
     private final Path provisioningRepo;
     private boolean offline;
 
