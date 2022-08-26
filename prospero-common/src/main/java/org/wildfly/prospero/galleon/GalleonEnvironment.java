@@ -54,12 +54,8 @@ public class GalleonEnvironment {
         Optional<Console> console = Optional.ofNullable(builder.console);
         Optional<Channel> restoreManifest = Optional.ofNullable(builder.manifest);
 
-        if (builder.skipUpdateChannel) {
-            effectiveChannelRefs = builder.prosperoConfig.getChannels();
-        } else {
-            effectiveChannelRefs = new ChannelRefUpdater(builder.mavenSessionManager)
-                    .resolveLatest(builder.prosperoConfig.getChannels(), builder.prosperoConfig.getRemoteRepositories());
-        }
+        effectiveChannelRefs = new ChannelRefUpdater(builder.mavenSessionManager)
+                .resolveLatest(builder.prosperoConfig.getChannels(), builder.prosperoConfig.getRemoteRepositories());
         final List<Channel> channels = mapToChannels(effectiveChannelRefs);
 
         final RepositorySystem system = builder.mavenSessionManager.newRepositorySystem();
@@ -127,7 +123,6 @@ public class GalleonEnvironment {
         private final MavenSessionManager mavenSessionManager;
         private Console console;
         private Channel manifest;
-        private boolean skipUpdateChannel;
 
         private Builder(Path installDir, ProsperoConfig prosperoConfig, MavenSessionManager mavenSessionManager) {
             this.installDir = installDir;
@@ -142,11 +137,6 @@ public class GalleonEnvironment {
 
         public Builder setRestoreManifest(Channel manifest) {
             this.manifest = manifest;
-            return this;
-        }
-
-        public Builder skipUpdateChannel(boolean skipUpdateChannel) {
-            this.skipUpdateChannel = skipUpdateChannel;
             return this;
         }
 

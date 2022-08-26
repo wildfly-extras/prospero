@@ -58,7 +58,6 @@ public class InstallationRestoreAction {
                 .builder(installDir, prosperoConfig, mavenSessionManager)
                 .setConsole(console)
                 .setRestoreManifest(metadataBundle.getManifest())
-                .skipUpdateChannel(true)
                 .build();
 
         GalleonUtils.executeGalleon(options -> galleonEnv.getProvisioningManager().provision(metadataBundle.getGalleonProvisioningConfig(), options),
