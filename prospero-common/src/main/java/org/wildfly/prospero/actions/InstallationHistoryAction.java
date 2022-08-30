@@ -60,7 +60,6 @@ public class InstallationHistoryAction {
                 .builder(installation, prosperoConfig, mavenSessionManager)
                 .setConsole(console)
                 .setRestoreManifest(metadata.getManifest())
-                .skipUpdateChannel(true)
                 .build();
 
         try {
