@@ -17,6 +17,7 @@
 
 package org.wildfly.prospero.installation.git;
 
+import org.eclipse.jgit.lib.StoredConfig;
 import org.wildfly.prospero.api.InstallationMetadata;
 import org.wildfly.prospero.api.exceptions.MetadataException;
 import org.wildfly.prospero.api.SavedState;
@@ -186,6 +187,9 @@ public class GitStorage implements AutoCloseable {
         Git git;
         if (!base.resolve(".git").toFile().exists()) {
             git = Git.init().setDirectory(base.toFile()).call();
+            final StoredConfig config = git.getRepository().getConfig();
+            config.setBoolean("commit", null, "gpgsign", false);
+            config.save();
         } else {
             git = Git.open(base.toFile());
         }
