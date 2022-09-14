@@ -17,15 +17,23 @@
 
 package org.wildfly.prospero.cli.commands.options;
 
+import org.junit.Assert;
+import org.junit.Rule;
 import org.junit.Test;
+import org.junit.rules.TemporaryFolder;
+import org.wildfly.prospero.cli.ArgumentParsingException;
 import org.wildfly.prospero.wfchannel.MavenSessionManager;
 
-import java.nio.file.Paths;
+import java.io.File;
+import java.nio.file.Path;
 import java.util.Optional;
 
 import static org.junit.Assert.assertEquals;
 
 public class LocalRepoOptionsTest {
+
+    @Rule
+    public TemporaryFolder temp = new TemporaryFolder();
 
     @Test
     public void defaultLocalPathIfNoOptionsSpecified() throws Exception {
@@ -43,9 +51,19 @@ public class LocalRepoOptionsTest {
     @Test
     public void customLocalPathIfLocalRepoSpecified() throws Exception {
         final LocalRepoOptions localRepoParam = new LocalRepoOptions();
-        localRepoParam.localRepo = Paths.get("test");
+        final Path localRepo = temp.newFolder().toPath();
+        localRepoParam.localRepo = localRepo;
 
-        assertEquals(Optional.of(Paths.get("test")), LocalRepoOptions.getLocalRepo(localRepoParam));
+        assertEquals(Optional.of(localRepo), LocalRepoOptions.getLocalRepo(localRepoParam));
     }
 
+    @Test
+    public void localRepoPointsAtFile() throws Exception {
+        final LocalRepoOptions localRepoParam = new LocalRepoOptions();
+        File file = temp.newFile();
+        localRepoParam.localRepo = file.toPath();
+        Assert.assertThrows(ArgumentParsingException.class, () ->
+                LocalRepoOptions.getLocalRepo(localRepoParam)
+        );
+    }
 }
