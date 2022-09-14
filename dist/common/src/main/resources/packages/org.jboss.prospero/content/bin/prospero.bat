@@ -119,7 +119,6 @@ if "x%JAVA_HOME%" == "x" (
        echo "%JAVA_HOME%\bin\java.exe" does not exist
        goto END_NO_PAUSE
      )
-      echo Setting JAVA property to "%JAVA_HOME%\bin\java"
     set "JAVA=%JAVA_HOME%\bin\java"
   )
 )
