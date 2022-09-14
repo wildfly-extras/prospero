@@ -17,10 +17,13 @@
 
 package org.wildfly.prospero.cli.commands.options;
 
+import org.wildfly.prospero.cli.ArgumentParsingException;
+import org.wildfly.prospero.cli.CliMessages;
 import org.wildfly.prospero.cli.commands.CliConstants;
 import org.wildfly.prospero.wfchannel.MavenSessionManager;
 import picocli.CommandLine;
 
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Optional;
 
@@ -38,12 +41,15 @@ public class LocalRepoOptions {
     )
     boolean noLocalCache;
 
-    public static Optional<Path> getLocalRepo(LocalRepoOptions localRepoParam) {
+    public static Optional<Path> getLocalRepo(LocalRepoOptions localRepoParam) throws ArgumentParsingException {
         if (localRepoParam == null) {
             return Optional.of(MavenSessionManager.LOCAL_MAVEN_REPO);
         } else if (localRepoParam.noLocalCache) {
             return Optional.empty();
         } else {
+            if (Files.exists(localRepoParam.localRepo) && !Files.isDirectory(localRepoParam.localRepo)) {
+                throw new ArgumentParsingException(CliMessages.MESSAGES.repositoryIsNotDirectory(localRepoParam.localRepo));
+            }
             return Optional.of(localRepoParam.localRepo);
         }
     }
