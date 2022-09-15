@@ -21,7 +21,7 @@
         <version.org.apache.maven.resolver.provider>3.8.6</version.org.apache.maven.resolver.provider>
         <version.org.apache.logging.log4j>2.14.1</version.org.apache.logging.log4j>
         <version.commons.io>2.11.0</version.commons.io>
-        <version.org.jboss.galleon>5.0.4.Final</version.org.jboss.galleon>
+        <version.org.jboss.galleon>5.0.5.Final</version.org.jboss.galleon>
         <version.org.eclipse.jgit>5.13.0.202109080827-r</version.org.eclipse.jgit>
         <version.com.fasterxml.jackson>2.12.3</version.com.fasterxml.jackson>
         <version.com.networknt.json-schema-validator>1.0.61</version.com.networknt.json-schema-validator>
@@ -31,7 +31,7 @@
         <version.org.jboss.logging.jboss-logging-processor>2.2.1.Final</version.org.jboss.logging.jboss-logging-processor>
         <version.org.jboss.modules>2.0.2.Final</version.org.jboss.modules>
         <version.org.jboss.xnio>3.8.7.Final</version.org.jboss.xnio>
-        <version.org.wildfly.galleon-plugins>6.0.0.Alpha2</version.org.wildfly.galleon-plugins>
+        <version.org.wildfly.galleon-plugins>6.0.0.Final</version.org.wildfly.galleon-plugins>
         <version.org.mockito>3.12.4</version.org.mockito>
         <version.junit>4.13.2</version.junit>
         <version.maven-shade-plugin>2.3</version.maven-shade-plugin>
