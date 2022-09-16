@@ -7,21 +7,24 @@ The channel can be hosted either in an internal installation repository, serving
 *Single server channel*
 
 ```
-prospero channel initialize --dir=<PATH/TO/SERVER>
+prospero channel add \
+  --channel-name customizations \
+  --repositories file:/path/to/local/repository \
+  --manifest org.wildfly.prospero:customizations
 ```
-A server can use a filesystem repository and auto-generated channel to provide customizations. This command will create a Maven repository in `<PATH/TO/SERVER>/.installation/` folder and generate empty customization channel. Both the repository and channel will be then added to the server's configuration. This channel should only be used with a single server.
+A server can use a filesystem repository and auto-generated channel to provide customizations. This command will register the server to recieve updates from a Maven repository in `/path/to/local/repository` folder.
 
+The customized artifacts should be listed in a manifest file deployed to the above repository as `org.wildfly.prospero:customizations:manifest:yaml:<VERSION>`
 
 *Shared channel*
 
+An online repository can be used to distribute the customizations among multiple servers. Each server has to be subscribed to the repository using:
+
 ```
-prospero channel initialize --dir=<PATH/TO/SERVER> --repository-url=<URL_OF_REPOSITORY> --channel-name=<groupId:artifactId>
+prospero channel add \
+  --channel-name customizations \
+  --repositories http://repository.host/path \
+  --manifest=org.wildfly.prospero:customizations
 ```
-If a shared repository - either filesystem or web-based - is available, it can be used for customizations. This command will add the provided repository and channel-name to the server configuration.
 
-NOTE: If using the channel across multiple servers, the chanel-name has to be provided by the user, as otherwise random name will be chosen.
-
-#### Manual configuration
-While `prospero channel initialize` supports common use cases, in more complicated scenarios a combination of `prospero channel add|remove|list` and `prospero repo add|remove|list` can be used to set up channels and repositories. For example, if the custom channel is hosted in a repository that the server is already subscribed to, server can be subscribed to using:
-
-`prospero channel add --dir=<PATH/TO/SERVER> <groupId:artifactId>`
+NOTE: The repository can be used to host customizations applicable to a different group of servers. In that case each set of customizations would have a separate manifest deployed under unique Maven `groupId:artifactId` coordinates.

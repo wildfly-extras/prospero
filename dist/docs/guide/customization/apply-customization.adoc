@@ -1,6 +1,6 @@
 ### Apply changes to the server
 
-After promoting artifacts to the channel, the changes can be applied to targeted servers.
+After promoting artifacts to the channel, the changes can be applied to subscribed servers.
 
 Promoted changes are treated as any updates, so `prospero update` command can be used to apply them.
 

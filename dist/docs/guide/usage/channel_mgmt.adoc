@@ -1,0 +1,54 @@
+### Channel management
+
+The server subscribes to the channels to receive updates from them. The list of subscriptions can be managed using `prospero channel` subcommands.
+
+#### Listing channels
+
+Command `prospero channel list` prints a summary of subscribed channels.
+
+[bash, source]
+----
+$ ./prospero.sh channel list --dir wfly-27
+Server /tmp/wfly-27 is subscribed to following channels:
+
+-------
+# channel-0
+  manifest: org.wildfly.channel:wfly-27
+  repositories:
+    id: central
+    url: https://repo1.maven.org/maven2/
+-------
+----
+
+#### Subscribing to a channel
+
+Command `prospero channel add` subscribes the server to receive updates from additional channels. Each channel has to have a unique name, a manifest and a list of repositories. The channel's artifacts will be used to resolve artifacts during next `update`.
+
+[bash, source]
+----
+$ ./prospero.sh channel add \
+   --channel-name dev-channel \
+   --manifest org.prospero.channel:wfly-27-dev \ # <1>
+   --repositories file:/tmp/dev-repository \ # <2>
+   --dir wfly-27
+Subscribing /tmp/wfly-27 to channel dev-channel
+
+Channel 'dev-channel' added.
+----
+<1> The Maven coordinates (groupId:artifactId) of the new channel's manifest
+<2> The Maven repository where the manifest and artifacts can be found in
+
+#### Unsubscribing from a channel
+
+Command `channel remove` unsubscribes the server from a selected channel, stopping it from receiving updates from that channel. The artifacts previously installed from that channel will be replaced with artifacts available in remaining channel during next `update` operation.
+
+[bash, source]
+----
+$ ./prospero.sh channel remove \
+   --channel-name dev-channel \
+   --dir installation-dir
+Unsubscribing /tmp/wfly-27 from channel dev-channel
+
+Channel 'dev-channel' removed.
+----
+

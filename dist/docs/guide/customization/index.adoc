@@ -1,10 +1,16 @@
 ## Custom channels
 
-Sometimes a server (or group of servers) need to be updated with different versions of components than other servers. To achieve that, a server can subscribe to a custom channel on top of normal channels. This channel will define modified versions of components.
+Sometimes a server needs to be updated with different versions of components than other servers. To achieve that, a server can subscribe to a custom channel on top of its normal channels. This channel will define modified versions of components.
 
 For example if the main channel defines component `foo:bar:1.2.3`, the custom channel could contain `foo:bar:1.2.3-patch0001`. During any update operations, the most recent version of the `foo:bar` across both channels will be applied to the server.
 
-The custom channel needs to be hosted in a Maven repository - either a local, filesystem repository on the same system as the server, or a web repository shared between a group of servers. The repository is used to host a versioned channel definition and all customized artifacts.
+The custom channel needs to be hosted in a Maven repository - either a local filesystem repository on the same system as the server, or a web repository shared between a group of servers. The repository is used to host a versioned channel definition and all customized artifacts.
+
+### Custom artifact versioning
+
+When multiple versions of the same artifact are available from different channels, Prospero will always choose the latest available version of this artifact.
+
+Therefore, the customized artifacts have to always have higher versions than artifacts they are replacing. For instance, if a server includes `my:artifact:1.1.0`, the customization channel can provide a version `my:artifact:1.1.0-path-00001` or `my:artifact:1.1.1`, but not `my:artifact:1.0.9`.
 
 include::registering-channel.adoc[]
 

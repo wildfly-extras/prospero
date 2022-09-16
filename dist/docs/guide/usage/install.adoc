@@ -1,0 +1,95 @@
+### Installation
+
+To provision a server, Prospero requires following information:
+
+* manifest definition
+* location of channel's Maven repositories
+* server provisioning configuration
+
+#### Installing predefined server profile
+
+Prospero provides a set of predefined profiles providing a simple way to install standard servers.
+
+[source, bash]
+----
+$ ./prospero.sh install \
+      --dir wfly-27 \
+      --profile wildfly \
+      --manifest /path/to/wildfly-manifest.yaml
+----
+
+The profile defines a feature-pack name and required repositories. It can also provide manifest information, if that manifest is published in a Maven repository.
+
+#### Installing a feature pack
+
+If a desired server configuration is not provided by one of the profiles, Prospero can provision a feature pack based on its Maven coordinates (groupId:artifactId). The resulting server will have a default configuration provided by that feature pack.
+
+[source, bash]
+----
+$ ./prospero.sh install \
+      --dir wfly-27 \ # <1>
+      --fpl org.wildfly:wildfly-ee-galleon-pack \ #<2>
+      --manifest /path/to/wildfly-manifest.yaml \ #<3>
+      --repositories https://repo1.maven.org/maven2/,https://repository.jboss.org/nexus/content/groups/public/ #<4>
+----
+<1> directory to place provisioned server in
+<2> Maven `<groupId>:<artifactId>` coordinates of the feature pack to be installed
+<3> Path to the manifest file
+<4> List of Maven repositories containing components listed in the channel file.
+
+NOTE: An example Wildfly manifest file is available in examples directory.
+
+#### Installing a customized feature pack
+
+Galleon feature packs consist of https://docs.wildfly.org/galleon/#_layers[layers] and https://docs.wildfly.org/galleon/#_feature_pack_packages[packages] that can be excluded or included to generate customized server.
+
+In order to create a customized installation, the required provisioning configuration need to be described in `provisioning.xml` file. For example, following file adds configuration examples to the generated server.
+
+[source, xml]
+----
+<?xml version="1.0" ?>
+<installation xmlns="urn:jboss:galleon:provisioning:3.0">
+    <feature-pack location="org.wildfly:wildfly-galleon-pack::zip">
+      <packages>
+        <include name="docs.examples.configs"/>
+      </packages>
+    </feature-pack>
+</installation>
+----
+
+The provisioning definition can then be used to create a server:
+
+[source, bash]
+----
+$ ./prospero.sh install \
+      --dir wfly-27 \
+      --definition provisioning.xml \
+      --manifest /path/to/wildfly-manifest.yaml
+      --repositories https://repo1.maven.org/maven2/,https://repository.jboss.org/nexus/content/groups/public/
+----
+
+#### Using offline or mirrored repositories
+
+By default, any artifacts required to provision the server, will be resolved using public repositories. If the system on which the installation is performed doesn't have access to the required repositories, alternative repositories need to provided using the `--repositories` argument.
+
+The specified repositories can either be mirrors of public repositories, or local filesystem copies of the repositories. One way to generate such repository is installing the server on an online system using `--local-cache` argument:
+
+[source, bash]
+----
+$ ./prospero.sh install \ #<1>
+      --dir wfly-27 \
+      --profile wildfly \
+      --manifest /path/to/wildfly-manifest.yaml \
+      --local-cache /path/to/local_repo
+
+$ ./prospero.sh install \ #<2>
+      --dir offline-wfly-27 \
+      --profile wildfly \
+      --manifest /path/to/wildfly-manifest.yaml \
+      --repositories /path/to/local_repo \
+      --offline
+----
+<1> Generates a repository at `/path/to/local_repo`
+<2> Installs the server using content of `/path/to/local_repo` instead of default repositories
+
+NOTE: When using a <groupId>:<artifactId> to resolve manifest from a repository, the manifest artifact has to have accompanying Maven metadata (maven-metadata.xml).

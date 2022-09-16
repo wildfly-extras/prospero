@@ -1,0 +1,62 @@
+### Replicating installation
+
+Sometimes it might be needed to provision a copy of the server, with the same components as the original, in a different environment. To achieve that, Prospero requires following information:
+
+* a list of component versions used to provision the server,
+* a list of channels used during provisioning,
+* a list of Galleon feature packs used.
+
+This information can be obtained from any provisioned server using `clone export` command:
+
+[source, bash]
+----
+$ ./prospero.sh clone export --dir wfly-27 --path snapshot.zip
+Exporting /tmp/wfly-27 installation details to /tmp/snapshot.zip
+Export complete
+----
+
+The generated archive contains following files:
+[source, bash]
+----
+Archive:  snapshot.zip
+  Length      Date    Time    Name
+---------  ---------- -----   ----
+    68301  05-26-2023 15:59   manifest.yaml
+      476  05-26-2023 15:59   installer-channels.yaml
+      606  05-26-2023 15:59   provisioning.xml
+---------                     -------
+    69383                     3 files
+----
+
+The archive can be used to rebuild the server:
+[source,bash]
+----
+$ ./prospero clone recreate --dir cloned --path export.zip
+Recreating a server in /tmp/cloned based on /tmp/export.zip
+
+Provisioning configuration:
+ * org.wildfly:wildfly-galleon-pack:zip
+Subscribed channels:
+# wildfly
+  manifest: org.wildfly.channel:wfly-27
+  repositories:
+    id: central
+    url: https://repo1.maven.org/maven2/
+    id: jboss-public
+    url: https://repository.jboss.org/nexus/content/groups/public/
+    id: mrrc
+    url: https://maven.repository.redhat.com/ga/
+    id: local-repo
+    url: file:/Users/spyrkob/workspaces/set/prospero/prospero/test-repo
+
+Feature-packs resolved.
+Packages installed.
+Downloaded artifacts.
+JBoss modules installed.
+Configurations generated.
+
+Server installation was restored.
+Operation completed in 28.12 seconds.
+----
+
+NOTE: The user changes made to the original server are not applied to the clone.
