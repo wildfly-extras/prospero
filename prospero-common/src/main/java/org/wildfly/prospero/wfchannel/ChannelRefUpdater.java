@@ -17,12 +17,6 @@
 
 package org.wildfly.prospero.wfchannel;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.stream.Collectors;
-
-import org.wildfly.prospero.model.ChannelRef;
-import org.wildfly.prospero.api.exceptions.ArtifactResolutionException;
 import org.eclipse.aether.DefaultRepositorySystemSession;
 import org.eclipse.aether.RepositorySystem;
 import org.eclipse.aether.artifact.Artifact;
@@ -32,6 +26,13 @@ import org.eclipse.aether.resolution.ArtifactRequest;
 import org.eclipse.aether.resolution.VersionRangeRequest;
 import org.eclipse.aether.resolution.VersionRangeResolutionException;
 import org.eclipse.aether.resolution.VersionRangeResult;
+import org.wildfly.channel.version.VersionMatcher;
+import org.wildfly.prospero.api.exceptions.ArtifactResolutionException;
+import org.wildfly.prospero.model.ChannelRef;
+
+import java.util.ArrayList;
+import java.util.List;
+import java.util.stream.Collectors;
 
 public class ChannelRefUpdater {
 
@@ -83,19 +84,22 @@ public class ChannelRefUpdater {
         } catch (VersionRangeResolutionException e) {
             throw new ArtifactResolutionException("Unable to resolve versions for " + artifact, e);
         }
-        // TODO: pick latest version using Comparator
-        if (versionRangeResult.getHighestVersion() == null && versionRangeResult.getVersions().isEmpty()) {
-            final String delimiter = "\n  * ";
-            String remoteRepositoriesString = request.getRepositories()
-                    .stream()
-                    .map(RemoteRepository::getUrl)
-                    .collect(Collectors.joining(delimiter, delimiter, ""));
-            String localRepositoryString = this.mavenSessionManager.getProvisioningRepo().toString();
-            throw new ArtifactResolutionException(
-                    String.format("Unable to resolve versions of %s\n  remote repositories: %s\n  local repository: %s",
-                            artifact, remoteRepositoriesString, localRepositoryString));
-        }
-        final Artifact latestArtifact = artifact.setVersion(versionRangeResult.getHighestVersion().toString());
+        final String latestVersion = versionRangeResult.getVersions().stream()
+                .map(v -> v.toString())
+                .sorted(VersionMatcher.COMPARATOR.reversed())
+                .findFirst()
+                .orElseThrow(() -> {
+                    final String delimiter = "\n  * ";
+                    String remoteRepositoriesString = request.getRepositories()
+                            .stream()
+                            .map(RemoteRepository::getUrl)
+                            .collect(Collectors.joining(delimiter, delimiter, ""));
+                    String localRepositoryString = this.mavenSessionManager.getProvisioningRepo().toString();
+                    return new ArtifactResolutionException(
+                                    String.format("Unable to resolve versions of %s\n  remote repositories: %s\n  local repository: %s",
+                                            artifact, remoteRepositoriesString, localRepositoryString));
+                        });
+        final Artifact latestArtifact = artifact.setVersion(latestVersion);
 
         final ArtifactRequest artifactRequest = new ArtifactRequest(latestArtifact, repositories, null);
         try {

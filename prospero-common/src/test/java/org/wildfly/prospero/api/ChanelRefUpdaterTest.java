@@ -83,6 +83,32 @@ public class ChanelRefUpdaterTest {
         assertEquals("test:channel-one:1.0.1", resolved.get(0).getGav());
     }
 
+    @Test
+    public void testIssue155() throws Exception {
+        final RemoteRepository testRepo = new RemoteRepository.Builder("test", "default", temp.newFolder().toURI().toURL().toString()).build();
+        final File channelFile = temp.newFile("test.yaml");
+        Files.writeString(channelFile.toPath(), ChannelMapper.toYaml(new Channel("test", null, null, null, null)));
+
+        MavenSessionManager msm = new MavenSessionManager();
+        final RepositorySystem system = msm.newRepositorySystem();
+        final DefaultRepositorySystemSession session = msm.newRepositorySystemSession(system, false);
+
+        DeployRequest req = new DeployRequest();
+        req.setRepository(testRepo);
+
+        req.setArtifacts(Arrays.asList(new DefaultArtifact("test", "channel-one", "channel", "yaml", "1.0.0.Beta-redhat-00001", null, channelFile)));
+        system.deploy(session, req);
+        req.setArtifacts(Arrays.asList(new DefaultArtifact("test", "channel-one", "channel", "yaml", "1.0.0.Beta1-redhat-20220915", null, channelFile)));
+        system.deploy(session, req);
+        req.setArtifacts(Arrays.asList(new DefaultArtifact("test", "channel-one", "channel", "yaml", "1.0.0.Beta1-redhat-20220926", null, channelFile)));
+        system.deploy(session, req);
+
+        final List<ChannelRef> channels = Arrays.asList(new ChannelRef("test:channel-one", null));
+        final List<ChannelRef> resolved = new ChannelRefUpdater(new MavenSessionManager()).resolveLatest(channels, Arrays.asList(testRepo));
+        assertEquals(1, resolved.size());
+        assertEquals("test:channel-one:1.0.0.Beta1-redhat-20220926", resolved.get(0).getGav());
+    }
+
     private void deployMockChannel(RemoteRepository testRepo, File channelFile) throws ProvisioningException, DeploymentException {
         MavenSessionManager msm = new MavenSessionManager();
         final RepositorySystem system = msm.newRepositorySystem();
