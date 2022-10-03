@@ -92,7 +92,7 @@ public class ProvisioningAction {
         GalleonUtils.executeGalleon(options->galleonEnv.getProvisioningManager().provision(config, options),
                 mavenSessionManager.getProvisioningRepo().toAbsolutePath());
 
-        writeProsperoMetadata(installDir, repositoryManager, galleonEnv.getUpdatedRefs(), repositories);
+        writeProsperoMetadata(installDir, repositoryManager, galleonEnv.getChannelRefs(), repositories);
     }
 
     /**
