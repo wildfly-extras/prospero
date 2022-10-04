@@ -17,7 +17,22 @@
 
 package org.wildfly.prospero.api.exceptions;
 
+import org.eclipse.aether.repository.RemoteRepository;
+import org.wildfly.channel.ArtifactCoordinate;
+import org.wildfly.channel.UnresolvedMavenArtifactException;
+import org.wildfly.prospero.model.RepositoryRef;
+import org.wildfly.prospero.wfchannel.MavenSessionManager;
+
+import java.util.List;
+import java.util.Set;
+import java.util.stream.Collectors;
+
 public class ArtifactResolutionException extends OperationException {
+
+    private static final Set<String> OFFLINE_REPOSITORIES = Set.of(MavenSessionManager.AETHER_OFFLINE_PROTOCOLS_VALUE.split(","));
+
+    private List<RemoteRepository> repositories;
+    private boolean offline;
 
     public ArtifactResolutionException(String msg, Throwable e) {
         super(msg, e);
@@ -29,5 +44,40 @@ public class ArtifactResolutionException extends OperationException {
 
     public ArtifactResolutionException(Throwable e) {
         super(e);
+    }
+
+    public ArtifactResolutionException(UnresolvedMavenArtifactException e, List<RemoteRepository> repositories, boolean offline) {
+        super(e.getLocalizedMessage(), e);
+        this.repositories = repositories;
+        this.offline = offline;
+    }
+
+    public Set<RepositoryRef> attemptedRepositories() {
+        return repositories.stream()
+                // TODO: handle multiple values
+                .filter(r->!offline || isOfflineRepo(r))
+                .map(RepositoryRef::new)
+                .collect(Collectors.toSet());
+    }
+
+    public Set<RepositoryRef> offlineRepositories() {
+        return repositories.stream()
+                // TODO: handle multiple values
+                .filter(r->offline && !isOfflineRepo(r))
+                .map(RepositoryRef::new)
+                .collect(Collectors.toSet());
+    }
+
+    private boolean isOfflineRepo(RemoteRepository r) {
+        for (String offlineProtocol : OFFLINE_REPOSITORIES) {
+            if (r.getUrl().startsWith(offlineProtocol)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    public Set<ArtifactCoordinate> failedArtifacts() {
+        return Set.copyOf(((UnresolvedMavenArtifactException)getCause()).getUnresolvedArtifacts());
     }
 }

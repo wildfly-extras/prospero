@@ -17,7 +17,9 @@
 
 package org.wildfly.prospero.actions;
 
+import org.wildfly.channel.UnresolvedMavenArtifactException;
 import org.wildfly.prospero.Messages;
+import org.wildfly.prospero.api.exceptions.ArtifactResolutionException;
 import org.wildfly.prospero.api.exceptions.OperationException;
 import org.wildfly.prospero.galleon.GalleonEnvironment;
 import org.wildfly.prospero.model.ChannelRef;
@@ -60,8 +62,13 @@ public class InstallationRestoreAction {
                 .setRestoreManifest(metadataBundle.getManifest())
                 .build();
 
-        GalleonUtils.executeGalleon(options -> galleonEnv.getProvisioningManager().provision(metadataBundle.getGalleonProvisioningConfig(), options),
-                mavenSessionManager.getProvisioningRepo().toAbsolutePath());
+        try {
+            GalleonUtils.executeGalleon(options -> galleonEnv.getProvisioningManager().provision(metadataBundle.getGalleonProvisioningConfig(), options),
+                    mavenSessionManager.getProvisioningRepo().toAbsolutePath());
+        } catch (UnresolvedMavenArtifactException e) {
+            throw new ArtifactResolutionException(e, prosperoConfig.getRemoteRepositories(), mavenSessionManager.isOffline());
+        }
+
         writeProsperoMetadata(galleonEnv.getRepositoryManager(), prosperoConfig.getChannels(), prosperoConfig.getRemoteRepositories());
     }
 
