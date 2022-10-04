@@ -85,4 +85,7 @@ public interface Messages {
 
     @Message("Unable to parse server configuration at '%s'")
     MetadataException unableToParseConfiguration(String path, @Cause Exception e);
+
+    @Message("Unable to close the update store.")
+    MetadataException unableToCloseStore(@Cause Exception e);
 }
