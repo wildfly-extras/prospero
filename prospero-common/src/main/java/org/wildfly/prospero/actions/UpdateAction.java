@@ -39,7 +39,7 @@ import org.wildfly.prospero.wfchannel.MavenSessionManager;
 import org.jboss.galleon.ProvisioningException;
 import org.jboss.galleon.ProvisioningManager;
 
-public class UpdateAction {
+public class UpdateAction implements AutoCloseable {
 
     private final InstallationMetadata metadata;
 
@@ -122,4 +122,8 @@ public class UpdateAction {
         metadata.setChannel(galleonEnv.getRepositoryManager().resolvedChannel());
     }
 
+    @Override
+    public void close() throws Exception {
+        metadata.close();
+    }
 }

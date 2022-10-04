@@ -100,11 +100,12 @@ public class UpdateCommand extends AbstractCommand {
 
         final MavenSessionManager mavenSessionManager = new MavenSessionManager(LocalRepoOptions.getLocalRepo(localRepoOptions), offline);
 
-        UpdateAction updateAction = actionFactory.update(installationDir, mavenSessionManager, console, remoteRepositories);
-        if (!dryRun) {
-            updateAction.doUpdateAll(yes);
-        } else {
-            updateAction.listUpdates();
+        try (UpdateAction updateAction = actionFactory.update(installationDir, mavenSessionManager, console, remoteRepositories)) {
+            if (!dryRun) {
+                updateAction.doUpdateAll(yes);
+            } else {
+                updateAction.listUpdates();
+            }
         }
 
         final float totalTime = (System.currentTimeMillis() - startTime) / 1000f;

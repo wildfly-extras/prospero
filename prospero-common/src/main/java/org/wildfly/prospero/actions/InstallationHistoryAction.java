@@ -54,19 +54,20 @@ public class InstallationHistoryAction {
 
     public void rollback(SavedState savedState, MavenSessionManager mavenSessionManager) throws OperationException, ProvisioningException {
         InstallationMetadata metadata = new InstallationMetadata(installation);
-        metadata = metadata.rollback(savedState);
-        final ProsperoConfig prosperoConfig = metadata.getProsperoConfig();
-        final GalleonEnvironment galleonEnv = GalleonEnvironment
-                .builder(installation, prosperoConfig, mavenSessionManager)
-                .setConsole(console)
-                .setRestoreManifest(metadata.getManifest())
-                .build();
-
         try {
+            metadata = metadata.rollback(savedState);
+            final ProsperoConfig prosperoConfig = metadata.getProsperoConfig();
+            final GalleonEnvironment galleonEnv = GalleonEnvironment
+                    .builder(installation, prosperoConfig, mavenSessionManager)
+                    .setConsole(console)
+                    .setRestoreManifest(metadata.getManifest())
+                    .build();
+
             System.setProperty(MAVEN_REPO_LOCAL, mavenSessionManager.getProvisioningRepo().toAbsolutePath().toString());
             galleonEnv.getProvisioningManager().provision(metadata.getGalleonProvisioningConfig());
         } finally {
             System.clearProperty(MAVEN_REPO_LOCAL);
+            metadata.close();
         }
 
         // TODO: handle errors - write final state? revert rollback?

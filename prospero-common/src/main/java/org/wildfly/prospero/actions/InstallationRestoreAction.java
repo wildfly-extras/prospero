@@ -54,26 +54,29 @@ public class InstallationRestoreAction {
             throw Messages.MESSAGES.installationDirAlreadyExists(installDir);
         }
 
-        final InstallationMetadata metadataBundle = InstallationMetadata.importMetadata(metadataBundleZip);
-        final ProsperoConfig prosperoConfig = metadataBundle.getProsperoConfig();
-        final GalleonEnvironment galleonEnv = GalleonEnvironment
-                .builder(installDir, prosperoConfig, mavenSessionManager)
-                .setConsole(console)
-                .setRestoreManifest(metadataBundle.getManifest())
-                .build();
+        try (final InstallationMetadata metadataBundle = InstallationMetadata.importMetadata(metadataBundleZip)) {
+            final ProsperoConfig prosperoConfig = metadataBundle.getProsperoConfig();
+            final GalleonEnvironment galleonEnv = GalleonEnvironment
+                    .builder(installDir, prosperoConfig, mavenSessionManager)
+                    .setConsole(console)
+                    .setRestoreManifest(metadataBundle.getManifest())
+                    .build();
 
-        try {
-            GalleonUtils.executeGalleon(options -> galleonEnv.getProvisioningManager().provision(metadataBundle.getGalleonProvisioningConfig(), options),
-                    mavenSessionManager.getProvisioningRepo().toAbsolutePath());
-        } catch (UnresolvedMavenArtifactException e) {
-            throw new ArtifactResolutionException(e, prosperoConfig.getRemoteRepositories(), mavenSessionManager.isOffline());
+            try {
+                GalleonUtils.executeGalleon(options -> galleonEnv.getProvisioningManager().provision(metadataBundle.getGalleonProvisioningConfig(), options),
+                        mavenSessionManager.getProvisioningRepo().toAbsolutePath());
+            } catch (UnresolvedMavenArtifactException e) {
+                throw new ArtifactResolutionException(e, prosperoConfig.getRemoteRepositories(), mavenSessionManager.isOffline());
+            }
+
+            writeProsperoMetadata(galleonEnv.getRepositoryManager(), prosperoConfig.getChannels(), prosperoConfig.getRemoteRepositories());
         }
-
-        writeProsperoMetadata(galleonEnv.getRepositoryManager(), prosperoConfig.getChannels(), prosperoConfig.getRemoteRepositories());
     }
 
     private void writeProsperoMetadata(ChannelMavenArtifactRepositoryManager maven, List<ChannelRef> channelRefs, List<RemoteRepository> repositories)
             throws MetadataException {
-        new InstallationMetadata(installDir, maven.resolvedChannel(), channelRefs, repositories).recordProvision(true);
+        try (final InstallationMetadata installationMetadata = new InstallationMetadata(installDir, maven.resolvedChannel(), channelRefs, repositories)) {
+            installationMetadata.recordProvision(true);
+        }
     }
 }

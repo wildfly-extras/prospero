@@ -43,12 +43,13 @@ public class MetadataAction {
      * Adds a remote maven repository to an installation.
      */
     public void addRepository(String name, URL url) throws MetadataException {
-        InstallationMetadata installationMetadata = new InstallationMetadata(installation);
-        ProsperoConfig prosperoConfig = installationMetadata.getProsperoConfig();
-        if (prosperoConfig.addRepository(new RepositoryRef(name, url.toString()))) {
-            installationMetadata.updateProsperoConfig(prosperoConfig);
-        } else {
-            throw Messages.MESSAGES.repositoryExists(name, url);
+        try (final InstallationMetadata installationMetadata = new InstallationMetadata(installation)) {
+            ProsperoConfig prosperoConfig = installationMetadata.getProsperoConfig();
+            if (prosperoConfig.addRepository(new RepositoryRef(name, url.toString()))) {
+                installationMetadata.updateProsperoConfig(prosperoConfig);
+            } else {
+                throw Messages.MESSAGES.repositoryExists(name, url);
+            }
         }
     }
 
@@ -56,50 +57,54 @@ public class MetadataAction {
      * Removes a remote maven repository from an installation.
      */
     public void removeRepository(String id) throws MetadataException {
-        InstallationMetadata installationMetadata = new InstallationMetadata(installation);
-        ProsperoConfig prosperoConfig = installationMetadata.getProsperoConfig();
-        prosperoConfig.removeRepository(id);
-        installationMetadata.updateProsperoConfig(prosperoConfig);
+        try (final InstallationMetadata installationMetadata = new InstallationMetadata(installation)) {
+            ProsperoConfig prosperoConfig = installationMetadata.getProsperoConfig();
+            prosperoConfig.removeRepository(id);
+            installationMetadata.updateProsperoConfig(prosperoConfig);
+        }
     }
 
     /**
      * Retrieves maven remote repositories used by an installation.
      */
     public List<RepositoryRef> getRepositories() throws MetadataException {
-        InstallationMetadata installationMetadata = new InstallationMetadata(installation);
-        ProsperoConfig prosperoConfig = installationMetadata.getProsperoConfig();
-        return prosperoConfig.getRepositories();
+        try (final InstallationMetadata installationMetadata = new InstallationMetadata(installation)) {
+            ProsperoConfig prosperoConfig = installationMetadata.getProsperoConfig();
+            return prosperoConfig.getRepositories();
+        }
     }
 
     /**
      * Retrieves channels used by an installation.
      */
     public List<ChannelRef> getChannels() throws MetadataException {
-        InstallationMetadata installationMetadata = new InstallationMetadata(installation);
-        ProsperoConfig prosperoConfig = installationMetadata.getProsperoConfig();
-        return prosperoConfig.getChannels();
+        try (final InstallationMetadata installationMetadata = new InstallationMetadata(installation)) {
+            ProsperoConfig prosperoConfig = installationMetadata.getProsperoConfig();
+            return prosperoConfig.getChannels();
+        }
     }
 
     /**
      * Adds a channel to an installation.
      */
     public void addChannel(String gavOrUrl) throws MetadataException {
-        InstallationMetadata installationMetadata = new InstallationMetadata(installation);
-        ProsperoConfig prosperoConfig = installationMetadata.getProsperoConfig();
-        ChannelRef channelRef = ChannelRef.fromString(gavOrUrl);
-        prosperoConfig.addChannel(channelRef);
-        installationMetadata.updateProsperoConfig(prosperoConfig);
+        try (final InstallationMetadata installationMetadata = new InstallationMetadata(installation)) {
+            ProsperoConfig prosperoConfig = installationMetadata.getProsperoConfig();
+            ChannelRef channelRef = ChannelRef.fromString(gavOrUrl);
+            prosperoConfig.addChannel(channelRef);
+            installationMetadata.updateProsperoConfig(prosperoConfig);
+        }
     }
 
     /**
      * Removes a remote maven repository from an installation.
      */
     public void removeChannel(String gavOrUrl) throws MetadataException {
-        InstallationMetadata installationMetadata = new InstallationMetadata(installation);
-        ProsperoConfig prosperoConfig = installationMetadata.getProsperoConfig();
-        ChannelRef channelRef = ChannelRef.fromString(gavOrUrl);
-        prosperoConfig.removeChannel(channelRef);
-        installationMetadata.updateProsperoConfig(prosperoConfig);
+        try (final InstallationMetadata installationMetadata = new InstallationMetadata(installation)) {
+            ProsperoConfig prosperoConfig = installationMetadata.getProsperoConfig();
+            ChannelRef channelRef = ChannelRef.fromString(gavOrUrl);
+            prosperoConfig.removeChannel(channelRef);
+            installationMetadata.updateProsperoConfig(prosperoConfig);
+        }
     }
-
 }
