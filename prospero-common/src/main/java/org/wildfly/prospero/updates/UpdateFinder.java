@@ -96,7 +96,7 @@ public class UpdateFinder implements AutoCloseable {
             latestVersion = channelSession.findLatestMavenArtifactVersion(artifact.getGroupId(),
                     artifact.getArtifactId(), artifact.getExtension(), artifact.getClassifier(), null);
         } catch (UnresolvedMavenArtifactException e) {
-            throw Messages.MESSAGES.artifactNotFound(artifact.getGroupId(), artifact.getArtifactId(), e);
+            return Optional.of(new ArtifactChange(artifact, null));
         }
         final Artifact latest = new DefaultArtifact(artifact.getGroupId(), artifact.getArtifactId(), artifact.getExtension(), latestVersion);
 
