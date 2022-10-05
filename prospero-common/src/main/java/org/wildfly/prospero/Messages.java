@@ -80,7 +80,7 @@ public interface Messages {
     @Message("Provided FPL has invalid format `%s`.")
     String invalidFpl(String fplText);
 
-    @Message("Invalid channel definition found at '%s'")
+    @Message("Invalid channel definition found in one of channel manifests [%s].")
     ChannelDefinitionException unableToParseChannel(String ref, @Cause InvalidChannelException e);
 
     @Message("Unable to parse server configuration at '%s'")

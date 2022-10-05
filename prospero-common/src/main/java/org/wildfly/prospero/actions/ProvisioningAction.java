@@ -98,7 +98,7 @@ public class ProvisioningAction {
             throw new ArtifactResolutionException(e, repositories, mavenSessionManager.isOffline());
         }
 
-        writeProsperoMetadata(installDir, repositoryManager, galleonEnv.getUpdatedRefs(), repositories);
+        writeProsperoMetadata(installDir, repositoryManager, galleonEnv.getChannelRefs(), repositories);
     }
 
     /**

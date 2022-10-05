@@ -23,22 +23,16 @@ import org.jboss.galleon.ProvisioningException;
 import org.jboss.galleon.ProvisioningManager;
 import org.jboss.galleon.layout.ProvisioningLayoutFactory;
 import org.wildfly.channel.Channel;
-import org.wildfly.channel.ChannelMapper;
 import org.wildfly.channel.ChannelSession;
-import org.wildfly.channel.InvalidChannelException;
 import org.wildfly.channel.maven.VersionResolverFactory;
-import org.wildfly.prospero.Messages;
 import org.wildfly.prospero.actions.Console;
 import org.wildfly.prospero.api.exceptions.OperationException;
 import org.wildfly.prospero.model.ChannelRef;
 import org.wildfly.prospero.model.ProsperoConfig;
-import org.wildfly.prospero.wfchannel.ChannelRefUpdater;
+import org.wildfly.prospero.wfchannel.ChannelRefMapper;
 import org.wildfly.prospero.wfchannel.MavenSessionManager;
 
-import java.net.MalformedURLException;
-import java.net.URL;
 import java.nio.file.Path;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
@@ -48,19 +42,17 @@ public class GalleonEnvironment {
     private final ProvisioningManager provisioningManager;
     private final ChannelMavenArtifactRepositoryManager repositoryManager;
     private final ChannelSession channelSession;
-    private final List<ChannelRef> effectiveChannelRefs;
+    private final List<ChannelRef> channelRefs;
 
     private GalleonEnvironment(Builder builder) throws ProvisioningException, OperationException {
         Optional<Console> console = Optional.ofNullable(builder.console);
         Optional<Channel> restoreManifest = Optional.ofNullable(builder.manifest);
-
-        effectiveChannelRefs = new ChannelRefUpdater(builder.mavenSessionManager)
-                .resolveLatest(builder.prosperoConfig.getChannels(), builder.prosperoConfig.getRemoteRepositories());
-        final List<Channel> channels = mapToChannels(effectiveChannelRefs);
+        channelRefs = builder.prosperoConfig.getChannels();
 
         final RepositorySystem system = builder.mavenSessionManager.newRepositorySystem();
         final DefaultRepositorySystemSession session = builder.mavenSessionManager.newRepositorySystemSession(system);
         final VersionResolverFactory factory = new VersionResolverFactory(system, session, builder.prosperoConfig.getRemoteRepositories());
+        final List<Channel> channels = new ChannelRefMapper(factory).mapToChannel(builder.prosperoConfig.getChannels());
         channelSession = new ChannelSession(channels, factory);
         if (restoreManifest.isEmpty()) {
             repositoryManager = new ChannelMavenArtifactRepositoryManager(channelSession);
@@ -78,20 +70,6 @@ public class GalleonEnvironment {
         }
     }
 
-    private List<Channel> mapToChannels(List<ChannelRef> channelRefs) throws OperationException {
-        final List<Channel> channels = new ArrayList<>();
-        for (ChannelRef ref : channelRefs) {
-            try {
-                channels.add(ChannelMapper.from(new URL(ref.getUrl())));
-            } catch (MalformedURLException e) {
-                throw Messages.MESSAGES.unableToResolveChannelConfiguration(e);
-            } catch (InvalidChannelException e) {
-                throw Messages.MESSAGES.unableToParseChannel(ref.getGavOrUrlString(), e);
-            }
-        }
-        return channels;
-    }
-
     public ProvisioningManager getProvisioningManager() {
         return provisioningManager;
     }
@@ -104,8 +82,8 @@ public class GalleonEnvironment {
         return channelSession;
     }
 
-    public List<ChannelRef> getUpdatedRefs() {
-        return effectiveChannelRefs;
+    public List<ChannelRef> getChannelRefs() {
+        return channelRefs;
     }
 
     public static Builder builder(Path installDir, ProsperoConfig prosperoConfig, MavenSessionManager mavenSessionManager) {

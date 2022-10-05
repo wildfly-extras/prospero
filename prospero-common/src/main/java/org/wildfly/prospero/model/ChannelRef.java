@@ -22,6 +22,7 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import org.apache.commons.lang3.StringUtils;
+import org.wildfly.channel.maven.ChannelCoordinate;
 
 import java.net.MalformedURLException;
 import java.net.URL;
@@ -65,6 +66,21 @@ public class ChannelRef {
             return gav;
         } else {
             return url;
+        }
+    }
+
+    @JsonIgnore
+    public ChannelCoordinate toChannelCoordinate() {
+        if (StringUtils.isNotBlank(gav)) {
+            final String[] splitGav = gav.split(":");
+            return new ChannelCoordinate(splitGav[0], splitGav[1]);
+        } else {
+            try {
+                return new ChannelCoordinate(new URL(url));
+            } catch (MalformedURLException e) {
+                // TODO: handle proper
+                throw new RuntimeException(e);
+            }
         }
     }
 
