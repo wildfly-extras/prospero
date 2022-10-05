@@ -38,12 +38,6 @@ public class ActionFactory {
         return new ProvisioningAction(targetPath, mavenSessionManager, console);
     }
 
-    public UpdateAction update(Path targetPath, MavenSessionManager mavenSessionManager, Console console)
-            throws OperationException,
-            ProvisioningException {
-        return new UpdateAction(targetPath, mavenSessionManager, console);
-    }
-
     // Option for BETA update support
     // TODO: evaluate in GA - replace by repository:add / custom channels?
     public UpdateAction update(Path targetPath, MavenSessionManager mavenSessionManager, Console console, List<URL> additionalRepositories)

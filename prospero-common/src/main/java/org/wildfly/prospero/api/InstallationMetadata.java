@@ -46,7 +46,7 @@ import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
 import java.util.zip.ZipOutputStream;
 
-public class InstallationMetadata {
+public class InstallationMetadata implements AutoCloseable {
 
     public static final String METADATA_DIR = ".installation";
     public static final String MANIFEST_FILE_NAME = "manifest.yaml";
@@ -75,6 +75,8 @@ public class InstallationMetadata {
 
     public InstallationMetadata(Path base) throws MetadataException {
         this(base, new GitStorage(base));
+
+        doInit(manifestFile, prosperoConfigFile, provisioningFile);
     }
 
     protected InstallationMetadata(Path base, GitStorage gitStorage) throws MetadataException {
@@ -282,4 +284,14 @@ public class InstallationMetadata {
         gitStorage.recordConfigChange();
     }
 
+    @Override
+    public void close() {
+        if (gitStorage != null) {
+            try {
+                gitStorage.close();
+            } catch (Exception e) {
+                throw new RuntimeException(e);
+            }
+        }
+    }
 }

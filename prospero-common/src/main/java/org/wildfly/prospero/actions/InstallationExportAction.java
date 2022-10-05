@@ -45,8 +45,9 @@ public class InstallationExportAction {
             throw Messages.MESSAGES.installationDirDoesNotExist(installationDir);
         }
 
-        final InstallationMetadata metadataBundle = new InstallationMetadata(installationDir);
+        try (final InstallationMetadata metadataBundle = new InstallationMetadata(installationDir)) {
 
-        metadataBundle.exportMetadataBundle(Paths.get(exportName));
+            metadataBundle.exportMetadataBundle(Paths.get(exportName));
+        }
     }
 }
