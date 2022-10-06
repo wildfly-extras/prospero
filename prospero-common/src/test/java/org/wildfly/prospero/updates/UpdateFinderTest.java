@@ -25,9 +25,11 @@ import org.junit.runner.RunWith;
 import org.mockito.Mock;
 import org.mockito.junit.MockitoJUnitRunner;
 import org.wildfly.channel.ChannelSession;
+import org.wildfly.channel.UnresolvedMavenArtifactException;
 
 import java.util.Arrays;
 import java.util.List;
+import java.util.Optional;
 
 import static org.junit.Assert.*;
 import static org.mockito.Mockito.when;
@@ -82,6 +84,23 @@ public class UpdateFinderTest {
         assertEquals(1, updates.getArtifactUpdates().size());
         assertEquals("org.foo:bar", updates.getArtifactUpdates().get(0).getArtifactName());
         assertEquals("1.0.1", updates.getArtifactUpdates().get(0).getNewVersion().get());
+        assertEquals("1.0.0", updates.getArtifactUpdates().get(0).getOldVersion().get());
+    }
+
+    @Test
+    public void testRemoval() throws Exception {
+        when(channelSession.findLatestMavenArtifactVersion("org.foo", "bar", "jar", "", null))
+                .thenThrow(new UnresolvedMavenArtifactException());
+
+        UpdateFinder finder = new UpdateFinder(channelSession, provMgr);
+        final List<Artifact> artifacts = Arrays.asList(
+                new DefaultArtifact("org.foo", "bar", "jar", "1.0.0")
+        );
+        final UpdateSet updates = finder.findUpdates(artifacts);
+
+        assertEquals(1, updates.getArtifactUpdates().size());
+        assertEquals("org.foo:bar", updates.getArtifactUpdates().get(0).getArtifactName());
+        assertEquals(Optional.empty(), updates.getArtifactUpdates().get(0).getNewVersion());
         assertEquals("1.0.0", updates.getArtifactUpdates().get(0).getOldVersion().get());
     }
 }

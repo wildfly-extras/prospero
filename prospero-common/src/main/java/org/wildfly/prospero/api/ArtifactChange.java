@@ -17,8 +17,8 @@
 
 package org.wildfly.prospero.api;
 
-import org.apache.maven.artifact.versioning.ComparableVersion;
 import org.eclipse.aether.artifact.Artifact;
+import org.wildfly.channel.version.VersionMatcher;
 
 import java.util.Optional;
 
@@ -71,7 +71,7 @@ public class ArtifactChange {
 
     public boolean isDowngrade() {
         if (getNewVersion().isPresent() && getOldVersion().isPresent()) {
-            return new ComparableVersion(getNewVersion().get()).compareTo(new ComparableVersion(getOldVersion().get())) < 0;
+            return VersionMatcher.COMPARATOR.compare(getNewVersion().get(), getOldVersion().get()) < 0;
         } else {
             return false;
         }
