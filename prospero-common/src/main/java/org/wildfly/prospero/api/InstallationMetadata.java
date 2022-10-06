@@ -290,7 +290,8 @@ public class InstallationMetadata implements AutoCloseable {
             try {
                 gitStorage.close();
             } catch (Exception e) {
-                throw new RuntimeException(e);
+                // log and ignore
+                Messages.MESSAGES.unableToCloseStore(e);
             }
         }
     }
