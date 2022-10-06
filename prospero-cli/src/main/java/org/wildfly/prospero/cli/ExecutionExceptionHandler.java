@@ -98,7 +98,7 @@ public class ExecutionExceptionHandler implements CommandLine.IExecutionExceptio
     private String shortName(ArtifactCoordinate coord) {
         StringBuilder sb = new StringBuilder();
         sb.append(coord.getGroupId()).append(":").append(coord.getArtifactId());
-        sb.append(coord.getVersion());
+        sb.append(":").append(coord.getVersion());
         return sb.toString();
     }
 }
