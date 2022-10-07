@@ -22,6 +22,7 @@ import org.wildfly.prospero.cli.AbstractConsoleTest;
 import org.wildfly.prospero.cli.ReturnCodes;
 import org.wildfly.prospero.wfchannel.MavenSessionManager;
 
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
@@ -65,8 +66,13 @@ public abstract class AbstractMavenCommandTest extends AbstractConsoleTest {
         assertEquals(ReturnCodes.SUCCESS, exitCode);
         MavenSessionManager msm = getCapturedSessionManager();
         final Path provisioningRepo = msm.getProvisioningRepo();
-        final Path defaultTempPath = Paths.get(System.getProperty("java.io.tmpdir"));
-        assertTrue(provisioningRepo.toString(), provisioningRepo.startsWith(defaultTempPath));
+
+        // JDK 17 reads the java.io.tmpdir property before it's altered by mvn
+        final Path test = Files.createTempDirectory("test");
+        final Path defaultTempPath = test.getParent();
+        Files.delete(test);
+
+        assertTrue(provisioningRepo.toString() + " should start with  " + defaultTempPath, provisioningRepo.startsWith(defaultTempPath));
     }
 
     @Test
