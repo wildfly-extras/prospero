@@ -132,7 +132,7 @@ public class GitStorageTest {
         // TODO: replace with gitStorage API for reading config changes
         HashSet<String> storedPaths = getPathsInCommit();
 
-        assertEquals(new HashSet<>(Arrays.asList("manifest.yaml", "prospero-config.yaml")), storedPaths);
+        assertEquals(new HashSet<>(Arrays.asList("manifest.yaml", InstallationMetadata.PROSPERO_CONFIG_FILE_NAME)), storedPaths);
     }
 
     private HashSet<String> getPathsInCommit() throws IOException, GitAPIException {
