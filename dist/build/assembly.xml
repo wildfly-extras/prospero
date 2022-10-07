@@ -12,7 +12,7 @@
             <directory>target</directory>
             <outputDirectory/>
             <includes>
-                <include>prospero-${project.version}/**</include>
+                <include>${prospero.dist.name}-${project.version}/**</include>
             </includes>
         </fileSet>
     </fileSets>

@@ -4,8 +4,8 @@ rem JBoss Bootstrap Script for Windows
 rem -------------------------------------------------------------------------
 
 rem Use --debug to activate debug mode with an optional argument to specify the port
-rem Usage : prospero.bat --debug
-rem         prospero.bat --debug 9797
+rem Usage : ${prospero.dist.name}.bat --debug
+rem         ${prospero.dist.name}.bat --debug 9797
 
 @if not "%ECHO%" == ""  echo %ECHO%
 setlocal

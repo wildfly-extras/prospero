@@ -20,7 +20,7 @@
     </dependencies>
 
     <build>
-        <finalName>prospero-${project.version}</finalName>
+        <finalName>${prospero.dist.name}-${project.version}</finalName>
         <plugins>
             <plugin>
                 <groupId>org.jboss.galleon</groupId>
@@ -87,7 +87,7 @@
                                 <descriptor>assembly.xml</descriptor>
                             </descriptors>
                             <recompressZippedFiles>true</recompressZippedFiles>
-                            <finalName>${project.build.finalName}</finalName>
+                            <finalName>${prospero.dist.name}-${project.version}</finalName>
                             <appendAssemblyId>false</appendAssemblyId>
                             <outputDirectory>${project.build.directory}</outputDirectory>
                             <workDirectory>${project.build.directory}/assembly/work</workDirectory>

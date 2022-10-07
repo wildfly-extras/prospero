@@ -50,7 +50,7 @@ public class InstallationMetadata implements AutoCloseable {
 
     public static final String METADATA_DIR = ".installation";
     public static final String MANIFEST_FILE_NAME = "manifest.yaml";
-    public static final String PROSPERO_CONFIG_FILE_NAME = "prospero-config.yaml";
+    public static final String PROSPERO_CONFIG_FILE_NAME = "installer-config.yaml";
     public static final String PROVISIONING_FILE_NAME = "provisioning.xml";
     public static final String GALLEON_INSTALLATION_DIR = ".galleon";
     private final Path manifestFile;
@@ -75,8 +75,6 @@ public class InstallationMetadata implements AutoCloseable {
 
     public InstallationMetadata(Path base) throws MetadataException {
         this(base, new GitStorage(base));
-
-        doInit(manifestFile, prosperoConfigFile, provisioningFile);
     }
 
     protected InstallationMetadata(Path base, GitStorage gitStorage) throws MetadataException {

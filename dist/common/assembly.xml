@@ -7,7 +7,7 @@
     <includeBaseDirectory>false</includeBaseDirectory>
     <fileSets>
         <fileSet>
-            <directory>src/main/resources</directory>
+            <directory>${project.build.directory}/classes/</directory>
             <outputDirectory/>
         </fileSet>
     </fileSets>

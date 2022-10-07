@@ -14,7 +14,7 @@
     <packaging>pom</packaging>
 
     <properties>
-        <common.resources.directory>${basedir}/../common/src/main/resources</common.resources.directory>
+        <common.resources.directory>${basedir}/../common/target/classes</common.resources.directory>
     </properties>
 
     <modules>
