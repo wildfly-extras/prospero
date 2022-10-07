@@ -146,7 +146,7 @@ public class InstallCommand extends AbstractCommand {
         provisioningAction.provision(provisioningDefinition);
 
         final float totalTime = (System.currentTimeMillis() - startTime) / 1000f;
-        console.println(CliMessages.MESSAGES.installationCompleted(totalTime));
+        console.println(CliMessages.MESSAGES.operationCompleted(totalTime));
 
         return ReturnCodes.SUCCESS;
     }

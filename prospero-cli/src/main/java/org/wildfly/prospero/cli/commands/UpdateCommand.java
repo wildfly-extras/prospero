@@ -109,7 +109,7 @@ public class UpdateCommand extends AbstractCommand {
         }
 
         final float totalTime = (System.currentTimeMillis() - startTime) / 1000f;
-        console.println(CliMessages.MESSAGES.updateCompleted(totalTime));
+        console.println(CliMessages.MESSAGES.operationCompleted(totalTime));
 
         return ReturnCodes.SUCCESS;
     }

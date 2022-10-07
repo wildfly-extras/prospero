@@ -51,6 +51,6 @@
     </resources>
 
     <dependencies>
-      <module name="org.jboss.prospero-dep"/>
+      <module name="org.jboss.prospero-dep" export="true" services="import"/>
     </dependencies>
 </module>

@@ -132,11 +132,8 @@ public interface CliMessages {
     @Message("Add required channels using [%s] argument.")
     String addChannels(String channel);
 
-    @Message("Installation completed in %.2f seconds.")
-    String installationCompleted(float time);
-
-    @Message("Update completed in %.2f seconds.")
-    String updateCompleted(float time);
+    @Message("Operation completed in %.2f seconds.")
+    String operationCompleted(float time);
 
     @Message("Only one of %s and %s can be set.")
     IllegalArgumentException exclusiveOptions(String option1, String option2);
