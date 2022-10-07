@@ -17,12 +17,16 @@
 
 package org.wildfly.prospero.actions;
 
+import org.jboss.galleon.ProvisioningManager;
+import org.wildfly.channel.UnresolvedMavenArtifactException;
 import org.wildfly.prospero.api.ArtifactChange;
+import org.wildfly.prospero.api.exceptions.ArtifactResolutionException;
 import org.wildfly.prospero.api.exceptions.OperationException;
 import org.wildfly.prospero.api.InstallationMetadata;
 import org.wildfly.prospero.api.exceptions.MetadataException;
 import org.wildfly.prospero.api.SavedState;
 import org.wildfly.prospero.galleon.GalleonEnvironment;
+import org.wildfly.prospero.galleon.GalleonUtils;
 import org.wildfly.prospero.model.ProsperoConfig;
 import org.wildfly.prospero.wfchannel.MavenSessionManager;
 import org.jboss.galleon.ProvisioningException;
@@ -64,7 +68,13 @@ public class InstallationHistoryAction {
                     .build();
 
             System.setProperty(MAVEN_REPO_LOCAL, mavenSessionManager.getProvisioningRepo().toAbsolutePath().toString());
-            galleonEnv.getProvisioningManager().provision(metadata.getGalleonProvisioningConfig());
+            final ProvisioningManager provMgr = galleonEnv.getProvisioningManager();
+            try {
+                GalleonUtils.executeGalleon(options -> provMgr.provision(provMgr.getProvisioningConfig(), options),
+                        mavenSessionManager.getProvisioningRepo().toAbsolutePath());
+            } catch (UnresolvedMavenArtifactException e) {
+                throw new ArtifactResolutionException(e, prosperoConfig.getRemoteRepositories(), mavenSessionManager.isOffline());
+            }
         } finally {
             System.clearProperty(MAVEN_REPO_LOCAL);
             metadata.close();
