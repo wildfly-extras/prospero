@@ -25,7 +25,6 @@ import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -39,12 +38,13 @@ import org.jboss.galleon.state.ProvisionedState;
 import org.jboss.galleon.universe.FeaturePackLocation;
 import org.jboss.galleon.xml.ProvisionedStateXmlWriter;
 import org.wildfly.channel.Channel;
+import org.wildfly.channel.ChannelMapper;
+import org.wildfly.channel.ChannelManifest;
+import org.wildfly.channel.ChannelManifestCoordinate;
+import org.wildfly.channel.Repository;
 import org.wildfly.channel.Stream;
 import org.wildfly.prospero.api.InstallationMetadata;
 import org.wildfly.prospero.api.exceptions.MetadataException;
-import org.wildfly.prospero.model.ChannelRef;
-import org.wildfly.prospero.model.ProsperoConfig;
-import org.wildfly.prospero.model.RepositoryRef;
 
 public final class MetadataTestUtils {
 
@@ -56,23 +56,20 @@ public final class MetadataTestUtils {
     private MetadataTestUtils() {
     }
 
-    public static Channel createManifest(Collection<Stream> streams) {
-        return new Channel("manifest", null, null, null, streams);
+    public static ChannelManifest createManifest(Collection<Stream> streams) {
+        return new ChannelManifest("manifest", null, streams);
     }
 
     public static InstallationMetadata createInstallationMetadata(Path installation) throws MetadataException {
-        return createInstallationMetadata(installation, createManifest(null), Collections.emptyList(), Collections.emptyList());
+        return createInstallationMetadata(installation, createManifest(null),
+                List.of(new Channel("", "", null, null,
+                        List.of(new Repository("test", "http://test.org")),
+                        new ChannelManifestCoordinate("org.test","test"))));
     }
 
-    public static InstallationMetadata createInstallationMetadata(Path installation, List<ChannelRef> channels,
-            List<RemoteRepository> repositories) throws MetadataException {
-        return createInstallationMetadata(installation, createManifest(null), channels, repositories);
-    }
-
-    public static InstallationMetadata createInstallationMetadata(Path installation, Channel manifest, List<ChannelRef> channels,
-            List<RemoteRepository> repositories) throws MetadataException {
+    public static InstallationMetadata createInstallationMetadata(Path installation, ChannelManifest manifest, List<Channel> channels) throws MetadataException {
         Runtime.getRuntime().addShutdownHook(new Thread(() -> FileUtils.deleteQuietly(installation.toFile())));
-        final InstallationMetadata metadata = new InstallationMetadata(installation, manifest, channels, repositories);
+        final InstallationMetadata metadata = new InstallationMetadata(installation, manifest, channels);
         metadata.recordProvision(true);
         return metadata;
     }
@@ -106,13 +103,14 @@ public final class MetadataTestUtils {
     }
 
     public static void prepareProvisionConfig(Path provisionConfigFile, List<URL> channelUrls) throws IOException {
-        List<ChannelRef> channels = new ArrayList<>();
-        List<RepositoryRef> repositories = defaultRemoteRepositories().stream()
-                .map(r->new RepositoryRef(r.getId(), r.getUrl())).collect(Collectors.toList());
-        for (int i = 0; i< channelUrls.size(); i++) {
-            channels.add(new ChannelRef(null, channelUrls.get(i).toString()));
+        List<Channel> channels = new ArrayList<>();
+        List<Repository> repositories = defaultRemoteRepositories().stream()
+                .map(r->new Repository(r.getId(), r.getUrl())).collect(Collectors.toList());
+        for (int i=0; i<channelUrls.size(); i++) {
+            channels.add(new Channel("", "", null, null, repositories,
+                    new ChannelManifestCoordinate(channelUrls.get(i))));
         }
-        new ProsperoConfig(channels, repositories).writeConfig(provisionConfigFile.toFile());
+        Files.writeString(provisionConfigFile, ChannelMapper.toYaml(channels));
     }
 
     public static List<RemoteRepository> defaultRemoteRepositories() {

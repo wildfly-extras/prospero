@@ -17,13 +17,13 @@
 
 package org.wildfly.prospero.galleon;
 
+import org.wildfly.channel.ChannelManifest;
 import org.wildfly.channel.spi.ChannelResolvable;
 import org.wildfly.channel.ArtifactCoordinate;
 import org.eclipse.aether.artifact.DefaultArtifact;
 import org.jboss.galleon.universe.maven.MavenArtifact;
 import org.jboss.galleon.universe.maven.MavenUniverseException;
 import org.jboss.galleon.universe.maven.repo.MavenRepoManager;
-import org.wildfly.channel.Channel;
 import org.wildfly.channel.ChannelSession;
 import org.wildfly.channel.Stream;
 import org.wildfly.channel.UnresolvedMavenArtifactException;
@@ -37,14 +37,14 @@ import java.util.regex.Pattern;
 
 public class ChannelMavenArtifactRepositoryManager implements MavenRepoManager, ChannelResolvable {
     private final ChannelSession channelSession;
-    private final Channel manifest;
+    private final ChannelManifest manifest;
 
     public ChannelMavenArtifactRepositoryManager(ChannelSession channelSession) {
         this.channelSession = channelSession;
         this.manifest = null;
     }
 
-    public ChannelMavenArtifactRepositoryManager(ChannelSession channelSession, Channel manifest) {
+    public ChannelMavenArtifactRepositoryManager(ChannelSession channelSession, ChannelManifest manifest) {
         this.channelSession = channelSession;
         this.manifest = manifest;
     }
@@ -193,7 +193,7 @@ public class ChannelMavenArtifactRepositoryManager implements MavenRepoManager, 
         throw new UnsupportedOperationException("Not yet implemented");
     }
 
-    public Channel resolvedChannel() {
+    public ChannelManifest resolvedChannel() {
         return channelSession.getRecordedChannel();
     }
 }

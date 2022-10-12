@@ -18,13 +18,14 @@
 package org.wildfly.prospero.it.commonapi;
 
 import org.eclipse.aether.installation.InstallResult;
+import org.eclipse.aether.repository.RemoteRepository;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.rules.TemporaryFolder;
+import org.wildfly.channel.Repository;
 import org.wildfly.prospero.actions.ProvisioningAction;
 import org.wildfly.prospero.api.ProvisioningDefinition;
 import org.wildfly.prospero.cli.CliConsole;
-import org.wildfly.prospero.model.RepositoryRef;
 import org.wildfly.prospero.test.MetadataTestUtils;
 import org.wildfly.prospero.wfchannel.MavenSessionManager;
 import org.eclipse.aether.DefaultRepositorySystemSession;
@@ -53,16 +54,16 @@ public class WfCoreTestBase {
     public static final String CHANNEL_BASE_CORE_19 = "channels/wfcore-19-base.yaml";
     public static final String CHANNEL_FP_UPDATES = "channels/wfcore-19-upgrade-fp.yaml";
     public static final String CHANNEL_COMPONENT_UPDATES = "channels/wfcore-19-upgrade-component.yaml";
-    public static final RepositoryRef REPOSITORY_MAVEN_CENTRAL = new RepositoryRef("maven-central", "https://repo1.maven.org/maven2/");
-    public static final RepositoryRef REPOSITORY_NEXUS = new RepositoryRef("nexus", "https://repository.jboss.org/nexus/content/groups/public-jboss");
-    public static final RepositoryRef REPOSITORY_MRRC_GA = new RepositoryRef("maven-redhat-ga", "https://maven.repository.redhat.com/ga");
+    public static final Repository REPOSITORY_MAVEN_CENTRAL = new Repository("maven-central", "https://repo1.maven.org/maven2/");
+    public static final Repository REPOSITORY_NEXUS = new Repository("nexus", "https://repository.jboss.org/nexus/content/groups/public-jboss");
+    public static final Repository REPOSITORY_MRRC_GA = new Repository("maven-redhat-ga", "https://maven.repository.redhat.com/ga");
     protected static Artifact resolvedUpgradeArtifact;
     protected static Artifact resolvedUpgradeClientArtifact;
     protected Path outputPath;
     protected Path manifestPath;
     protected ProvisioningAction installation;
 
-    protected final List<RepositoryRef> repositories = defaultRemoteRepositories();
+    protected final List<Repository> repositories = defaultRemoteRepositories();
     protected MavenSessionManager mavenSessionManager = new MavenSessionManager(MavenSessionManager.LOCAL_MAVEN_REPO);
 
     @Rule
@@ -111,7 +112,7 @@ public class WfCoreTestBase {
     protected ProvisioningDefinition.Builder defaultWfCoreDefinition() {
         return ProvisioningDefinition.builder()
                 .setFpl("wildfly-core@maven(org.jboss.universe:community-universe):19.0")
-                .setRemoteRepositories(repositories.stream().map(RepositoryRef::getUrl).collect(Collectors.toList()));
+                .setRemoteRepositories(repositories.stream().map(Repository::getUrl).collect(Collectors.toList()));
     }
 
     protected Artifact resolveArtifact(String groupId, String artifactId, String version) throws ArtifactResolutionException {
@@ -125,13 +126,21 @@ public class WfCoreTestBase {
 
     private static Artifact resolveArtifact(RepositorySystem system, DefaultRepositorySystemSession session, DefaultArtifact existing) throws ArtifactResolutionException {
         final ArtifactRequest artifactRequest = new ArtifactRequest();
-        artifactRequest.setRepositories(Arrays.asList(REPOSITORY_MAVEN_CENTRAL.toRemoteRepository()));
+        artifactRequest.setRepositories(Arrays.asList(toRemoteRepository(REPOSITORY_MAVEN_CENTRAL)));
         artifactRequest.setArtifact(existing);
         final ArtifactResult artifactResult = system.resolveArtifact(session, artifactRequest);
         return artifactResult.getArtifact();
     }
 
-    public static List<RepositoryRef> defaultRemoteRepositories() {
+    private static Object toRemoteRepository() {
+        return toRemoteRepository(REPOSITORY_MAVEN_CENTRAL);
+    }
+
+    public static RemoteRepository toRemoteRepository(Repository repo) {
+        return new RemoteRepository.Builder(repo.getId(), "default", repo.getUrl()).build();
+    }
+
+    public static List<Repository> defaultRemoteRepositories() {
         return Arrays.asList(
                 REPOSITORY_MAVEN_CENTRAL,
                 REPOSITORY_NEXUS,

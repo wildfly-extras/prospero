@@ -20,6 +20,7 @@ package org.wildfly.prospero.cli.commands.channel;
 import org.junit.Assert;
 import org.junit.Assume;
 import org.junit.Before;
+import org.junit.Ignore;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
@@ -51,6 +52,7 @@ import static org.wildfly.prospero.cli.commands.channel.ChannelInitializeCommand
 import static org.wildfly.prospero.cli.commands.channel.ChannelInitializeCommand.DEFAULT_CUSTOMIZATION_REPOSITORY;
 import static org.wildfly.prospero.cli.commands.channel.ChannelInitializeCommand.CUSTOMIZATION_REPO_ID;
 
+@Ignore
 public class ChannelInitializeCommandTest extends AbstractConsoleTest {
 
     @Rule

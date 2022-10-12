@@ -20,8 +20,8 @@ package org.wildfly.prospero.api;
 import org.eclipse.aether.repository.RemoteRepository;
 import org.junit.Test;
 import org.wildfly.prospero.api.exceptions.NoChannelException;
-import org.wildfly.prospero.model.ChannelRef;
 
+import java.net.URL;
 import java.nio.file.Paths;
 import java.util.Arrays;
 
@@ -39,7 +39,7 @@ public class ProvisioningDefinitionTest {
 
         builder.setChannel("file:/tmp/foo.bar");
 
-        assertEquals("file:/tmp/foo.bar", builder.build().getChannelRefs().get(0).getUrl());
+        assertEquals(new URL("file:/tmp/foo.bar"), builder.build().getChannels().get(0).getManifestRef().getUrl());
     }
 
     @Test
@@ -48,7 +48,7 @@ public class ProvisioningDefinitionTest {
 
         builder.setChannel("http://localhost/foo.bar");
 
-        assertEquals("http://localhost/foo.bar", builder.build().getChannelRefs().get(0).getUrl());
+        assertEquals(new URL("http://localhost/foo.bar"), builder.build().getChannels().get(0).getManifestRef().getUrl());
     }
 
     @Test
@@ -57,7 +57,7 @@ public class ProvisioningDefinitionTest {
 
         builder.setChannel("tmp/foo.bar");
 
-        assertEquals(Paths.get("tmp/foo.bar").toAbsolutePath().toUri().toURL().toString(), builder.build().getChannelRefs().get(0).getUrl());
+        assertEquals(Paths.get("tmp/foo.bar").toAbsolutePath().toUri().toURL(), builder.build().getChannels().get(0).getManifestRef().getUrl());
     }
 
     @Test
@@ -90,7 +90,7 @@ public class ProvisioningDefinitionTest {
         final ProvisioningDefinition.Builder builder = new ProvisioningDefinition.Builder().setFpl("multi-channel");
 
         final ProvisioningDefinition def = builder.build();
-        assertThat(def.getChannelRefs().stream().map(ChannelRef::getGav)).contains(
+        assertThat(def.getChannels().stream().map(c->c.getManifestRef().getGav())).contains(
                 "test:one",
                 "test:two"
         );

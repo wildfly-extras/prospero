@@ -18,6 +18,7 @@
 package org.wildfly.prospero.installation.git;
 
 import org.eclipse.jgit.lib.StoredConfig;
+import org.wildfly.channel.ChannelManifest;
 import org.wildfly.prospero.api.InstallationMetadata;
 import org.wildfly.prospero.api.exceptions.MetadataException;
 import org.wildfly.prospero.api.SavedState;
@@ -31,7 +32,6 @@ import org.eclipse.jgit.api.errors.GitAPIException;
 import org.eclipse.jgit.lib.Constants;
 import org.eclipse.jgit.lib.PersonIdent;
 import org.eclipse.jgit.revwalk.RevCommit;
-import org.wildfly.channel.Channel;
 import org.wildfly.channel.Stream;
 
 import java.io.IOException;
@@ -130,8 +130,8 @@ public class GitStorage implements AutoCloseable {
                     .setStartPoint(savedState.getName())
                     .addPath(InstallationMetadata.MANIFEST_FILE_NAME)
                     .call();
-            final Channel parseOld = ManifestYamlSupport.parse(hist.resolve(InstallationMetadata.MANIFEST_FILE_NAME).toFile());
-            final Channel parseCurrent = ManifestYamlSupport.parse(base.resolve(InstallationMetadata.MANIFEST_FILE_NAME).toFile());
+            final ChannelManifest parseOld = ManifestYamlSupport.parse(hist.resolve(InstallationMetadata.MANIFEST_FILE_NAME).toFile());
+            final ChannelManifest parseCurrent = ManifestYamlSupport.parse(base.resolve(InstallationMetadata.MANIFEST_FILE_NAME).toFile());
 
             final Map<String, Artifact> oldArtifacts = toMap(parseOld.getStreams());
             final Map<String, Artifact> currentArtifacts = toMap(parseCurrent.getStreams());

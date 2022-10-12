@@ -17,72 +17,47 @@
 
 package org.wildfly.prospero.model;
 
-import com.fasterxml.jackson.annotation.JsonCreator;
-import com.fasterxml.jackson.annotation.JsonIgnore;
-import com.fasterxml.jackson.annotation.JsonInclude;
-import com.fasterxml.jackson.annotation.JsonProperty;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
-import org.apache.commons.lang3.StringUtils;
 import org.eclipse.aether.repository.RemoteRepository;
-import org.wildfly.prospero.Messages;
+import org.wildfly.channel.Channel;
 
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Path;
 import java.util.List;
-import java.util.Optional;
-import java.util.stream.Collectors;
 
-@JsonInclude(JsonInclude.Include.NON_NULL)
 public class ProsperoConfig {
-    private final List<ChannelRef> channels;
-    private final List<RepositoryRef> repositories;
+    private List<ChannelRef> channels;
+    private List<RepositoryRef> repositories;
+    private List<Channel> wfChannels;
 
-    @JsonCreator
-    public ProsperoConfig(@JsonProperty(value = "channels") List<ChannelRef> channels,
-                          @JsonProperty(value = "repositories") List<RepositoryRef> repositories) {
+    public ProsperoConfig(List<ChannelRef> channels,
+                          List<RepositoryRef> repositories) {
         this.channels = channels;
         this.repositories = repositories;
     }
 
+    public ProsperoConfig(List<Channel> channels) {
+        wfChannels = channels;
+    }
+
+    public List<Channel> getWfChannels() {
+        return wfChannels;
+    }
+
     public List<ChannelRef> getChannels() {
-        return channels;
+        return null;
     }
 
     public List<RepositoryRef> getRepositories() {
-        return repositories;
+        return null;
     }
 
     public void addChannel(ChannelRef channelRef) {
-        // Check that neither GAV nor URL of added channel is equal to GAVs or URLs of existing channels.
-        if (StringUtils.isNotBlank(channelRef.getGav())) {
-            Optional<ChannelRef> found = channels.stream().filter(c -> channelRef.getGav().equals(c.getGav())).findAny();
-            if (found.isPresent()) {
-                throw Messages.MESSAGES.channelExists(channelRef.getGav());
-            }
-        }
-        if (StringUtils.isNotBlank(channelRef.getUrl())) {
-            Optional<ChannelRef> found = channels.stream().filter(c -> channelRef.getUrl().equals(c.getUrl())).findAny();
-            if (found.isPresent()) {
-                throw Messages.MESSAGES.channelExists(channelRef.getUrl());
-            }
-        }
-        channels.add(0, channelRef);
+
     }
 
     public void removeChannel(ChannelRef channelRef) {
-        Optional<ChannelRef> found = Optional.empty();
-        if (StringUtils.isNotBlank(channelRef.getGav())) {
-            found = channels.stream().filter(c -> channelRef.getGav().equals(c.getGav())).findFirst();
-        }
-        if (found.isEmpty() && StringUtils.isNotBlank(channelRef.getUrl())) {
-            found = channels.stream().filter(c -> channelRef.getUrl().equals(c.getUrl())).findFirst();
-        }
-        if (found.isEmpty()) {
-            throw Messages.MESSAGES.channelNotPresent(channelRef.getGavOrUrlString());
-        }
-        channels.remove(found.get());
+
     }
 
     /**
@@ -93,15 +68,7 @@ public class ProsperoConfig {
      * @return true if the repository was added, false if the repository already exists
      */
     public boolean addRepository(RepositoryRef repository) {
-        final Optional<RepositoryRef> matched = repositories.stream().filter(r -> r.getId().equals(repository.getId())).findFirst();
-        if (matched.isPresent())
-            if (matched.get().getUrl().equals(repository.getUrl())) {
-                return false;
-            } else {
-                throw new IllegalArgumentException(String.format("Repository %s already exists with different url", repository.getId()));
-            }
-        repositories.add(repository);
-        return true;
+        return false;
     }
 
     /**
@@ -111,28 +78,18 @@ public class ProsperoConfig {
      * @throws IllegalArgumentException if a repository with given id is not present
      */
     public void removeRepository(String id) {
-        Optional<RepositoryRef> repo = repositories.stream()
-                .filter(r -> id.equals(r.getId()))
-                .findFirst();
-        if (repo.isPresent()) {
-            repositories.remove(repo.get());
-        } else {
-            throw Messages.MESSAGES.repositoryNotPresent(id);
-        }
+
     }
 
     public void writeConfig(File configFile) throws IOException {
-        ProsperoConfig toWrite = new ProsperoConfig(this.getChannels().stream().map(ChannelRef::new).collect(Collectors.toList()), this.getRepositories());
-        new ObjectMapper(new YAMLFactory()).writeValue(configFile, toWrite);
+
     }
 
     public static ProsperoConfig readConfig(Path path) throws IOException {
-        final ObjectMapper objectMapper = new ObjectMapper(new YAMLFactory());
-        return objectMapper.readValue(path.toFile(), ProsperoConfig.class);
+        return null;
     }
 
-    @JsonIgnore
     public List<RemoteRepository> getRemoteRepositories() {
-        return repositories.stream().map(RepositoryRef::toRemoteRepository).collect(Collectors.toList());
+        return null;
     }
 }

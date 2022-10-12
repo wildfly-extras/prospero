@@ -18,6 +18,8 @@
 package org.wildfly.prospero.api;
 
 import java.io.IOException;
+import java.nio.file.Files;
+import java.net.MalformedURLException;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -29,13 +31,16 @@ import java.util.stream.Collectors;
 
 import org.eclipse.aether.repository.RemoteRepository;
 import org.eclipse.aether.repository.RepositoryPolicy;
+import org.wildfly.channel.Channel;
+import org.wildfly.channel.ChannelMapper;
+import org.wildfly.channel.ChannelManifestCoordinate;
+import org.wildfly.channel.Repository;
 import org.wildfly.prospero.Messages;
 import org.wildfly.prospero.api.exceptions.ArtifactResolutionException;
 import org.wildfly.prospero.api.exceptions.NoChannelException;
 import org.wildfly.prospero.model.ChannelRef;
 import org.wildfly.prospero.model.KnownFeaturePack;
 import org.wildfly.prospero.model.ProsperoConfig;
-import org.wildfly.prospero.model.RepositoryRef;
 
 public class ProvisioningDefinition {
 
@@ -43,7 +48,7 @@ public class ProvisioningDefinition {
     public static final RepositoryPolicy DEFAULT_REPOSITORY_POLICY = new RepositoryPolicy(true, RepositoryPolicy.UPDATE_POLICY_ALWAYS, RepositoryPolicy.CHECKSUM_POLICY_FAIL);
 
     private final String fpl;
-    private final List<ChannelRef> channels = new ArrayList<>();
+    private final List<Channel> channels = new ArrayList<>();
     private final Set<String> includedPackages = new HashSet<>();
     private final List<RemoteRepository> repositories = new ArrayList<>();
     private final Path definition;
@@ -69,12 +74,9 @@ public class ProvisioningDefinition {
             } else if (provisionConfigFile.isPresent()) {
                 this.fpl = fpl.orElse(null);
                 this.definition = definition.orElse(null);
-                final ProsperoConfig record = ProsperoConfig.readConfig(provisionConfigFile.get());
-                if (record.getChannels() != null) {
-                    this.channels.addAll(record.getChannels());
-                }
+                this.channels.addAll(ChannelMapper.fromString(Files.readString(provisionConfigFile.get())));
                 this.repositories.clear();
-                this.repositories.addAll(record.getRepositories().stream().map(RepositoryRef::toRemoteRepository).collect(Collectors.toList()));
+                this.repositories.addAll(Collections.emptyList());
             } else {
                 // TODO: provisionConfigFile needn't be mandatory, we could still collect all required data from the
                 //  other options (channel, channelRepo - perhaps both should be made collections)
@@ -96,11 +98,8 @@ public class ProvisioningDefinition {
     }
 
     private void setUpBuildEnv(List<String> overrideRemoteRepos, Optional<Path> provisionConfigFile,
-                               Optional<ChannelRef> channel, List<String> channelGAs) throws IOException {
-        if (!provisionConfigFile.isPresent() && !channel.isPresent()) {
-            if (channelGAs != null) {
-                channelGAs.forEach(c -> this.channels.add(new ChannelRef(c, null)));
-            }
+                               Optional<ChannelRef> channelRef, List<String> channelGAs) throws IOException {
+        if (!provisionConfigFile.isPresent() && !channelRef.isPresent()) {
             if (!overrideRemoteRepos.isEmpty()) {
                 this.repositories.clear();
                 int i = 0;
@@ -111,13 +110,25 @@ public class ProvisioningDefinition {
                                     .build());
                 }
             }
-        } else if (channel.isPresent()) {
-            this.channels.add(channel.get());
+            if (channelGAs != null) {
+                channelGAs.forEach(c -> {
+                    try {
+                        this.channels.add(new Channel("", "", null, null,
+                                this.repositories.stream().map(r->new Repository(r.getId(), r.getUrl())).collect(Collectors.toList()),
+                                ChannelManifestCoordinate.create(null, c)));
+                    } catch (MalformedURLException e) {
+                        throw new RuntimeException(e);
+                    }
+                });
+            }
+        } else if (channelRef.isPresent()) {
+            this.channels.add(new Channel("", "", null, null,
+                    this.repositories.stream().map(r->new Repository(r.getId(), r.getUrl())).collect(Collectors.toList()),
+                    channelRef.get().toManifest()));
         } else {
-            final ProsperoConfig record = ProsperoConfig.readConfig(provisionConfigFile.get());
-            this.channels.addAll(record.getChannels());
+            this.channels.addAll(ChannelMapper.fromString(Files.readString(provisionConfigFile.get())));
             this.repositories.clear();
-            this.repositories.addAll(record.getRepositories().stream().map(RepositoryRef::toRemoteRepository).collect(Collectors.toList()));
+            this.repositories.addAll(Collections.emptyList());
         }
     }
 
@@ -134,6 +145,10 @@ public class ProvisioningDefinition {
     }
 
     public List<ChannelRef> getChannelRefs() {
+        return null;
+    }
+
+    public List<Channel> getChannels() {
         return channels;
     }
 
@@ -146,7 +161,7 @@ public class ProvisioningDefinition {
     }
 
     public ProsperoConfig getProsperoConfig() {
-        return new ProsperoConfig(channels, repositories.stream().map(RepositoryRef::new).collect(Collectors.toList()));
+        return new ProsperoConfig(channels);
     }
 
     public static class Builder {

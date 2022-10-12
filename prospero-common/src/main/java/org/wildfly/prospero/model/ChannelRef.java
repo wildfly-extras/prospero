@@ -22,6 +22,7 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import org.apache.commons.lang3.StringUtils;
+import org.wildfly.channel.ChannelManifestCoordinate;
 import org.wildfly.channel.maven.ChannelCoordinate;
 
 import java.net.MalformedURLException;
@@ -81,6 +82,19 @@ public class ChannelRef {
                 // TODO: handle proper
                 throw new RuntimeException(e);
             }
+        }
+    }
+
+    @JsonIgnore
+    public ChannelManifestCoordinate toManifest() {
+        try {
+            if (StringUtils.isNotBlank(gav)) {
+                return ChannelManifestCoordinate.create(null, gav);
+            } else {
+                return ChannelManifestCoordinate.create(url, null);
+            }
+        } catch (MalformedURLException e) {
+            throw new RuntimeException(e);
         }
     }
 

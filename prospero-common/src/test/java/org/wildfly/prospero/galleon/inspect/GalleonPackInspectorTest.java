@@ -17,6 +17,7 @@
 
 package org.wildfly.prospero.galleon.inspect;
 
+import org.wildfly.channel.ChannelManifest;
 import org.wildfly.prospero.api.InstallationMetadata;
 import org.wildfly.prospero.wfchannel.MavenSessionManager;
 import org.eclipse.aether.DefaultRepositorySystemSession;
@@ -30,7 +31,6 @@ import org.eclipse.aether.resolution.ArtifactResult;
 import org.jboss.galleon.ProvisioningException;
 import org.junit.Before;
 import org.junit.Test;
-import org.wildfly.channel.Channel;
 import org.wildfly.channel.Stream;
 
 import java.nio.file.Files;
@@ -59,9 +59,8 @@ public class GalleonPackInspectorTest {
         Files.createDirectories(undertowModulePath);
         Files.createFile(undertowModulePath.resolve("undertow-core-1.2.3.Final.jar"));
 
-        final Channel channel = new Channel("test", "", null, null,
-                Arrays.asList(new Stream("io.undertow", "undertow-core", "1.2.3.Final", null)));
-        installationMetadata = new InstallationMetadata(basePath, channel, null, null);
+        final ChannelManifest manifest = new ChannelManifest("test", "", Arrays.asList(new Stream("io.undertow", "undertow-core", "1.2.3.Final", null)));
+        installationMetadata = new InstallationMetadata(basePath, manifest, null, null);
 
         wildflyCoreFP = downloadFeaturePack("org.wildfly.core:wildfly-core-galleon-pack:zip:17.0.0.Final");
     }
