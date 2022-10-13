@@ -95,7 +95,7 @@ public class ChannelPromoteCommand extends AbstractCommand {
         }
 
         if (name.isEmpty()) {
-            final Optional<String> res = readSetting(a->a.getChannels().stream()
+            final Optional<String> res = readSetting(a->a.getChannelRefs().stream()
                     .filter(c -> c.getGav() != null && c.getGav().startsWith(CUSTOM_CHANNELS_GROUP_ID + ":"))
                     .map(ChannelRef::getGav)
                     .findFirst());

@@ -18,7 +18,6 @@
 package org.wildfly.prospero.api;
 
 import org.junit.Before;
-import org.junit.Ignore;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
@@ -34,13 +33,11 @@ import org.wildfly.channel.Repository;
 import org.wildfly.prospero.installation.git.GitStorage;
 import org.wildfly.prospero.model.ChannelRef;
 import org.wildfly.prospero.model.ProsperoConfig;
-import org.wildfly.prospero.model.RepositoryRef;
 
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardOpenOption;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 
@@ -49,7 +46,6 @@ import static org.junit.Assert.assertEquals;
 import static org.mockito.Mockito.verify;
 
 @RunWith(MockitoJUnitRunner.class)
-@Ignore
 public class InstallationMetadataTest {
 
     @Rule
@@ -68,55 +64,64 @@ public class InstallationMetadataTest {
     @Test
     public void testUpdateProsperoConfig() throws Exception {
         final ProsperoConfig config = installationMetadata.getProsperoConfig();
-        config.addChannel(new ChannelRef("new:channel", null));
-        config.addRepository(new RepositoryRef("test", "file://foo.bar"));
+        Channel channel = new Channel(null, null, null, null,
+                List.of(new Repository("test", "file://foo.bar")),
+                ChannelRef.manifestFromString("new:channel"));
+        config.getWfChannels().add(channel);
 
         installationMetadata.updateProsperoConfig(config);
 
         // verify new Channel and Repo in there
         final ProsperoConfig updatedConfig = installationMetadata.getProsperoConfig();
-        assertEquals(2, updatedConfig.getChannels().size());
+        assertEquals(2, updatedConfig.getWfChannels().size());
         assertEquals("new channel should be added in first place",
-                new ChannelRef("new:channel", null), updatedConfig.getChannels().get(0));
-        assertEquals(1, updatedConfig.getRepositories().size());
-        assertEquals(new RepositoryRef("test", "file://foo.bar"), updatedConfig.getRepositories().get(0));
+                "new:channel", updatedConfig.getWfChannels().get(1).getManifestRef().getGav());
+        assertEquals("test", updatedConfig.getWfChannels().get(1).getRepositories().get(0).getId());
+        assertEquals("file://foo.bar", updatedConfig.getWfChannels().get(1).getRepositories().get(0).getUrl());
         verify(gitStorage).recordConfigChange();
     }
 
     @Test
     public void dontOverrideProsperoConfigIfItExist() throws Exception {
         final ProsperoConfig config = installationMetadata.getProsperoConfig();
-        config.addChannel(new ChannelRef("new:channel", null));
+        Channel channel = new Channel(null, null, null, null,
+                List.of(new Repository("test", "file://foo.bar")),
+                ChannelRef.manifestFromString("new:channel"));
+        config.getWfChannels().add(channel);
 
         installationMetadata.recordProvision(false);
 
-        final ProsperoConfig newConfig = ProsperoConfig.readConfig(base.resolve(InstallationMetadata.METADATA_DIR)
-                .resolve(InstallationMetadata.PROSPERO_CONFIG_FILE_NAME));
-        assertThat(newConfig.getChannels()).doesNotContain(
-                new ChannelRef("new:channel", null)
-        );
+        try (final InstallationMetadata im = new InstallationMetadata(base)) {
+            final ProsperoConfig newConfig = im.getProsperoConfig();
+            assertThat(newConfig.getWfChannels())
+                .map(channel1 -> channel1.getManifestRef().getGav())
+                .doesNotContain(
+                    "new:channel"
+            );
+        }
     }
 
     @Test
     public void writeProsperoConfigIfItDoesNotExist() throws Exception {
         // throw away mocked installation from setup
         base = temp.newFolder().toPath();
+        final Channel channel = new Channel("", "", null, null,
+                List.of(new Repository("test", "file://foo.bar")),
+                new ChannelManifestCoordinate("new", "channel"));
         installationMetadata = new InstallationMetadata(base,
                 new ChannelManifest(null, null, null),
-                Arrays.asList(new ChannelRef("new:channel", null)),
-                Arrays.asList(new RepositoryRef("test", "file://foo.bar").toRemoteRepository())
+                List.of(channel)
         );
 
         installationMetadata.recordProvision(false);
 
-        final ProsperoConfig newConfig = ProsperoConfig.readConfig(base.resolve(InstallationMetadata.METADATA_DIR)
-                .resolve(InstallationMetadata.PROSPERO_CONFIG_FILE_NAME));
-        assertThat(newConfig.getChannels()).contains(
-                new ChannelRef("new:channel", null)
-        );
-        assertThat(newConfig.getRepositories()).contains(
-                new RepositoryRef("test", "file://foo.bar")
-        );
+        try (final InstallationMetadata im = new InstallationMetadata(base)) {
+            final ProsperoConfig newConfig = im.getProsperoConfig();
+            assertEquals(1, newConfig.getWfChannels().size());
+            assertEquals("new:channel", newConfig.getWfChannels().get(0).getManifestRef().getGav());
+            assertEquals("file://foo.bar", newConfig.getWfChannels().get(0).getRepositories().get(0).getUrl());
+            assertEquals("test", newConfig.getWfChannels().get(0).getRepositories().get(0).getId());
+        }
     }
 
     private Path mockServer() throws IOException {

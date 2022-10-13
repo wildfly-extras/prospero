@@ -83,4 +83,8 @@ public final class CliConstants {
     public static final String CUSTOMIZATION_CHANNEL_NAME = "--channel-name";
     public static final String CUSTOMIZATION_REPOSITORY_URL = "--repository-url";
     public static final String CUSTOMIZATION_ARCHIVE = "--archive";
+
+    public static final String REPOSITORY = "repository";
+
+    public static final String MANIFEST = "manifest";
 }

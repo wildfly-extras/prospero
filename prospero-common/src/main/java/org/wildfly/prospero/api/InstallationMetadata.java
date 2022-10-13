@@ -26,7 +26,6 @@ import org.wildfly.prospero.installation.git.GitStorage;
 import org.wildfly.prospero.model.ChannelRef;
 import org.wildfly.prospero.model.ManifestYamlSupport;
 import org.wildfly.prospero.model.ProsperoConfig;
-import org.wildfly.prospero.model.RepositoryRef;
 import org.eclipse.aether.artifact.Artifact;
 import org.eclipse.aether.artifact.DefaultArtifact;
 import org.eclipse.aether.repository.RemoteRepository;
@@ -42,6 +41,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
 import java.util.zip.ZipEntry;
@@ -135,7 +135,12 @@ public class InstallationMetadata implements AutoCloseable {
             throw Messages.MESSAGES.unableToParseConfiguration(manifestFile.toString(), e);
         }
         try {
-            this.channels = ChannelMapper.fromString(Files.readString(provisionConfig));
+            final String yamlContent = Files.readString(provisionConfig);
+            if (yamlContent.isEmpty()) {
+                this.channels = Collections.emptyList();
+            } else {
+                this.channels = ChannelMapper.fromString(yamlContent);
+            }
         } catch (IOException e) {
             throw Messages.MESSAGES.unableToParseConfiguration(provisionConfig.toString(), e);
         }
@@ -292,8 +297,9 @@ public class InstallationMetadata implements AutoCloseable {
     }
 
     public void updateProsperoConfig(ProsperoConfig config) throws MetadataException {
-        this.channelRefs = new ArrayList<>(config.getChannels());
-        this.repositories = config.getRepositories().stream().map(RepositoryRef::toRemoteRepository).collect(Collectors.toList());
+        this.channels = config.getWfChannels();
+//        this.channelRefs = new ArrayList<>(config.getChannels());
+//        this.repositories = config.getRepositories().stream().map(RepositoryRef::toRemoteRepository).collect(Collectors.toList());
 
         writeProsperoConfig();
 

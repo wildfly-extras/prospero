@@ -134,7 +134,7 @@ public class ChannelPromoteCommandTest extends AbstractConsoleTest {
 
         when(actionFactory.promoter(any())).thenReturn(promoter);
         when(actionFactory.metadataActions(any())).thenReturn(metadataAction);
-        when(metadataAction.getChannels()).thenReturn(Arrays.asList(new ChannelRef(CUSTOM_CHANNELS_GROUP_ID + ":test1", null)));
+        when(metadataAction.getChannelRefs()).thenReturn(Arrays.asList(new ChannelRef(CUSTOM_CHANNELS_GROUP_ID + ":test1", null)));
         when(metadataAction.getRepositories()).thenReturn(Arrays.asList(new RepositoryRef(CUSTOMIZATION_REPO_ID, "file:///test/test")));
 
         int exitCode = commandLine.execute(
@@ -175,7 +175,7 @@ public class ChannelPromoteCommandTest extends AbstractConsoleTest {
 
         when(actionFactory.promoter(any())).thenReturn(promoter);
         when(actionFactory.metadataActions(any())).thenReturn(metadataAction);
-        when(metadataAction.getChannels()).thenReturn(Arrays.asList(new ChannelRef(CUSTOM_CHANNELS_GROUP_ID + ":test1", null)));
+        when(metadataAction.getChannelRefs()).thenReturn(Arrays.asList(new ChannelRef(CUSTOM_CHANNELS_GROUP_ID + ":test1", null)));
 
         int exitCode = commandLine.execute(
                 CliConstants.Commands.CHANNEL, CUSTOMIZATION_PROMOTE,

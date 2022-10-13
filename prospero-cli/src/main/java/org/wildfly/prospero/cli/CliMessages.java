@@ -173,4 +173,7 @@ public interface CliMessages {
 
     @Message("Registering custom repository `%s`")
     String registeringCustomRepository(String name);
+
+    @Message("Repository definition [%s] is invalid. The definition format should be [id::url]")
+    ArgumentParsingException invalidRepositoryDefinition(String repoKey);
 }

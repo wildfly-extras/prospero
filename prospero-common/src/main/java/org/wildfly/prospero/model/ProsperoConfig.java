@@ -19,9 +19,11 @@ package org.wildfly.prospero.model;
 
 import org.eclipse.aether.repository.RemoteRepository;
 import org.wildfly.channel.Channel;
+import org.wildfly.channel.ChannelMapper;
 
 import java.io.File;
 import java.io.IOException;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
 
@@ -44,10 +46,12 @@ public class ProsperoConfig {
         return wfChannels;
     }
 
+    @Deprecated
     public List<ChannelRef> getChannels() {
         return null;
     }
 
+    @Deprecated
     public List<RepositoryRef> getRepositories() {
         return null;
     }
@@ -82,7 +86,7 @@ public class ProsperoConfig {
     }
 
     public void writeConfig(File configFile) throws IOException {
-
+        Files.writeString(configFile.toPath(), ChannelMapper.toYaml(wfChannels));
     }
 
     public static ProsperoConfig readConfig(Path path) throws IOException {

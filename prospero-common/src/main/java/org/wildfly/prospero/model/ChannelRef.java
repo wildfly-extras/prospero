@@ -136,6 +136,28 @@ public class ChannelRef {
         }
     }
 
+    public static ChannelManifestCoordinate manifestFromString(String urlGavOrPath) {
+        try {
+            URL url = new URL(urlGavOrPath);
+            return new ChannelManifestCoordinate(url);
+        } catch (MalformedURLException e) {
+            if (isValidCoordinate(urlGavOrPath)) {
+                try {
+                    return ChannelManifestCoordinate.create(null, urlGavOrPath);
+                } catch (MalformedURLException ex) {
+                    throw new RuntimeException(ex);
+                }
+            } else {
+                // assume the string is a path
+                try {
+                    return new ChannelManifestCoordinate(Paths.get(urlGavOrPath).toAbsolutePath().toUri().toURL());
+                } catch (MalformedURLException e2) {
+                    throw new IllegalArgumentException("Can't convert path to URL", e2);
+                }
+            }
+        }
+    }
+
     public static boolean isValidCoordinate(String gav) {
         String[] parts = gav.split(":");
         return (parts.length == 3 // GAV

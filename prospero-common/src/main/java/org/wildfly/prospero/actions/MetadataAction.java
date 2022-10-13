@@ -19,8 +19,10 @@ package org.wildfly.prospero.actions;
 
 import java.net.URL;
 import java.nio.file.Path;
+import java.util.ArrayList;
 import java.util.List;
 
+import org.wildfly.channel.Channel;
 import org.wildfly.prospero.Messages;
 import org.wildfly.prospero.api.InstallationMetadata;
 import org.wildfly.prospero.api.exceptions.MetadataException;
@@ -39,9 +41,51 @@ public class MetadataAction {
         this.installation = installation;
     }
 
+    // channels clash if they define the same manifest & repositories
+    public void addChannel(Channel channel) throws MetadataException {
+        try (final InstallationMetadata installationMetadata = new InstallationMetadata(installation)) {
+            final ProsperoConfig prosperoConfig = installationMetadata.getProsperoConfig();
+            final List<Channel> channels = prosperoConfig.getWfChannels();
+            // TODO: check for duplicates
+            channels.add(channel);
+            installationMetadata.updateProsperoConfig(prosperoConfig);
+        }
+    }
+
+    public void removeChannel(int index) throws MetadataException {
+        try (final InstallationMetadata installationMetadata = new InstallationMetadata(installation)) {
+            final ProsperoConfig prosperoConfig = installationMetadata.getProsperoConfig();
+            final List<Channel> channels = prosperoConfig.getWfChannels();
+            // TODO: check for duplicates
+            channels.remove(index);
+            installationMetadata.updateProsperoConfig(prosperoConfig);
+        }
+    }
+
+    public List<Channel> getChannels() throws MetadataException {
+        try (final InstallationMetadata installationMetadata = new InstallationMetadata(installation)) {
+            return new ArrayList<>(installationMetadata.getProsperoConfig().getWfChannels());
+        }
+    }
+
+    public Channel getChannel(int index) throws MetadataException {
+        if (index < 0) {
+            return null;
+        }
+        try (final InstallationMetadata installationMetadata = new InstallationMetadata(installation)) {
+            final ProsperoConfig prosperoConfig = installationMetadata.getProsperoConfig();
+            final List<Channel> channels = prosperoConfig.getWfChannels();
+            if (channels.size() <= index) {
+                return null;
+            }
+            return channels.get(index);
+        }
+    }
+
     /**
      * Adds a remote maven repository to an installation.
      */
+    @Deprecated
     public void addRepository(String name, URL url) throws MetadataException {
         try (final InstallationMetadata installationMetadata = new InstallationMetadata(installation)) {
             ProsperoConfig prosperoConfig = installationMetadata.getProsperoConfig();
@@ -56,6 +100,7 @@ public class MetadataAction {
     /**
      * Removes a remote maven repository from an installation.
      */
+    @Deprecated
     public void removeRepository(String id) throws MetadataException {
         try (final InstallationMetadata installationMetadata = new InstallationMetadata(installation)) {
             ProsperoConfig prosperoConfig = installationMetadata.getProsperoConfig();
@@ -67,6 +112,7 @@ public class MetadataAction {
     /**
      * Retrieves maven remote repositories used by an installation.
      */
+    @Deprecated
     public List<RepositoryRef> getRepositories() throws MetadataException {
         try (final InstallationMetadata installationMetadata = new InstallationMetadata(installation)) {
             ProsperoConfig prosperoConfig = installationMetadata.getProsperoConfig();
@@ -77,7 +123,8 @@ public class MetadataAction {
     /**
      * Retrieves channels used by an installation.
      */
-    public List<ChannelRef> getChannels() throws MetadataException {
+    @Deprecated
+    public List<ChannelRef> getChannelRefs() throws MetadataException {
         try (final InstallationMetadata installationMetadata = new InstallationMetadata(installation)) {
             ProsperoConfig prosperoConfig = installationMetadata.getProsperoConfig();
             return prosperoConfig.getChannels();
@@ -87,6 +134,7 @@ public class MetadataAction {
     /**
      * Adds a channel to an installation.
      */
+    @Deprecated
     public void addChannel(String gavOrUrl) throws MetadataException {
         try (final InstallationMetadata installationMetadata = new InstallationMetadata(installation)) {
             ProsperoConfig prosperoConfig = installationMetadata.getProsperoConfig();
@@ -99,6 +147,7 @@ public class MetadataAction {
     /**
      * Removes a remote maven repository from an installation.
      */
+    @Deprecated
     public void removeChannel(String gavOrUrl) throws MetadataException {
         try (final InstallationMetadata installationMetadata = new InstallationMetadata(installation)) {
             ProsperoConfig prosperoConfig = installationMetadata.getProsperoConfig();
