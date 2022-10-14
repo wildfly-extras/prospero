@@ -54,7 +54,7 @@ public class ProvisioningDefinition {
         final Optional<Path> definition = Optional.ofNullable(builder.definitionFile);
         final List<String> overrideRemoteRepos = builder.remoteRepositories;
         final Optional<Path> provisionConfigFile = Optional.ofNullable(builder.provisionConfigFile);
-        final Optional<ChannelManifestCoordinate> channel = Optional.ofNullable(builder.manifest);
+        final Optional<ChannelManifestCoordinate> manifest = Optional.ofNullable(builder.manifest);
         final Optional<Set<String>> includedPackages = Optional.ofNullable(builder.includedPackages);
 
         this.includedPackages.addAll(includedPackages.orElse(Collections.emptySet()));
@@ -66,7 +66,7 @@ public class ProvisioningDefinition {
                 this.definition = null;
                 this.includedPackages.addAll(featurePackInfo.getPackages());
                 this.repositories.addAll(featurePackInfo.getRemoteRepositories());
-                setUpBuildEnv(overrideRemoteRepos, provisionConfigFile, channel, featurePackInfo.getChannels());
+                setUpBuildEnv(overrideRemoteRepos, provisionConfigFile, manifest, featurePackInfo.getChannels());
             } else if (provisionConfigFile.isPresent()) {
                 this.fpl = fpl.orElse(null);
                 this.definition = definition.orElse(null);
@@ -101,28 +101,41 @@ public class ProvisioningDefinition {
                                Optional<ChannelManifestCoordinate> manifestRef, List<Channel> channels) throws IOException {
         if (!provisionConfigFile.isPresent() && !manifestRef.isPresent()) {
             if (!overrideRemoteRepos.isEmpty()) {
-                this.repositories.clear();
-                int i = 0;
-                for (String url : overrideRemoteRepos) {
-                    String channelRepoId = "channel-" + (i++);
-                    this.repositories.add(new RemoteRepository.Builder(channelRepoId, REPO_TYPE, url)
-                                    .setPolicy(DEFAULT_REPOSITORY_POLICY)
-                                    .build());
+                for (Channel channel : channels) {
+                    final Channel c2 = new Channel(channel.getSchemaVersion(), channel.getName(), channel.getDescription(),
+                            channel.getVendor(), channel.getChannelRequirements(), mapOverrideRepos(overrideRemoteRepos),
+                            channel.getManifestRef());
+                    this.channels.add(c2);
                 }
-            }
-            if (channels != null) {
+            } else {
                 this.channels.addAll(channels);
             }
         } else if (manifestRef.isPresent()) {
-            // TODO: how to handle manifest-ref? require repositories? replace existing manifest?
-            this.channels.add(new Channel("", "", null, null,
-                    this.repositories.stream().map(r->new Repository(r.getId(), r.getUrl())).collect(Collectors.toList()),
-                    manifestRef.get()));
+            final List<Repository> repos;
+            if (overrideRemoteRepos.isEmpty()) {
+                // aggregate all channels' repositories
+                repos = new ArrayList<>(channels.stream().flatMap(c -> c.getRepositories().stream()).collect(Collectors.toSet()));
+            } else {
+                repos = mapOverrideRepos(overrideRemoteRepos);
+            }
+            final Channel channel = new Channel("", "", null, null,
+                    repos, manifestRef.get());
+            this.channels.add(channel);
         } else {
             this.channels.addAll(ProsperoConfig.readConfig(provisionConfigFile.get()).getChannels());
             this.repositories.clear();
             this.repositories.addAll(Collections.emptyList());
         }
+    }
+
+    private List<Repository> mapOverrideRepos(List<String> overrideRemoteRepos) {
+        ArrayList<Repository> repos = new ArrayList<>();
+        for (int i = 0; i < overrideRemoteRepos.size(); i++) {
+            String url = overrideRemoteRepos.get(i);
+            final String channelRepoId = "repo-" + (i);
+            repos.add(new Repository(channelRepoId, url));
+        }
+        return repos;
     }
 
     public static Builder builder() {
