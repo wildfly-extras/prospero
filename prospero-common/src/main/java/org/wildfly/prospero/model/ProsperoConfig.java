@@ -25,35 +25,19 @@ import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.Collection;
 import java.util.List;
+import java.util.stream.Collectors;
 
 public class ProsperoConfig {
-    private List<ChannelRef> channels;
-    private List<RepositoryRef> repositories;
-    private List<Channel> wfChannels;
-
-    public ProsperoConfig(List<ChannelRef> channels,
-                          List<RepositoryRef> repositories) {
-        this.channels = channels;
-        this.repositories = repositories;
-    }
+    private List<Channel> channels;
 
     public ProsperoConfig(List<Channel> channels) {
-        wfChannels = channels;
+        this.channels = channels;
     }
 
-    public List<Channel> getWfChannels() {
-        return wfChannels;
-    }
-
-    @Deprecated
-    public List<ChannelRef> getChannels() {
-        return null;
-    }
-
-    @Deprecated
-    public List<RepositoryRef> getRepositories() {
-        return null;
+    public List<Channel> getChannels() {
+        return channels;
     }
 
     public void addChannel(ChannelRef channelRef) {
@@ -64,36 +48,18 @@ public class ProsperoConfig {
 
     }
 
-    /**
-     * Adds a repository to the config. If the repository already exists ({@code id} and {@code url} matches), it is not added.
-     * Adding a repository with existing {@code id} but different {@code url} causes {@code IllegalArgumentException}
-     * @param repository
-     * @throws IllegalArgumentException if a repository with given id but different URL is already present
-     * @return true if the repository was added, false if the repository already exists
-     */
-    public boolean addRepository(RepositoryRef repository) {
-        return false;
-    }
-
-    /**
-     * Removes a remote maven repository with given id from the config.
-     *
-     * @param id repository id
-     * @throws IllegalArgumentException if a repository with given id is not present
-     */
-    public void removeRepository(String id) {
-
-    }
-
     public void writeConfig(File configFile) throws IOException {
-        Files.writeString(configFile.toPath(), ChannelMapper.toYaml(wfChannels));
+        Files.writeString(configFile.toPath(), ChannelMapper.toYaml(channels));
     }
 
     public static ProsperoConfig readConfig(Path path) throws IOException {
         return null;
     }
 
-    public List<RemoteRepository> getRemoteRepositories() {
-        return null;
+    public Collection<RemoteRepository> listAllRepositories() {
+        return channels.stream()
+                .flatMap(c->c.getRepositories().stream())
+                .map(r->new RemoteRepository.Builder(r.getId(), "default", r.getUrl()).build())
+                .collect(Collectors.toSet());
     }
 }

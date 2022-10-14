@@ -106,7 +106,7 @@ public class ChannelInitializeCommandTest extends AbstractConsoleTest {
                 List.of(new Repository(CUSTOMIZATION_REPO_ID, customRepoUrl)),
                 new ChannelManifestCoordinate("org.test", "test"));
         final ProsperoConfig prosperoConfig = im.getProsperoConfig();
-        prosperoConfig.getWfChannels().add(channel);
+        prosperoConfig.getChannels().add(channel);
         im.updateProsperoConfig(prosperoConfig);
 
         int exitCode = commandLine.execute(
@@ -290,12 +290,12 @@ public class ChannelInitializeCommandTest extends AbstractConsoleTest {
     }
 
     private List<Channel> actualChannels() throws MetadataException {
-        return new InstallationMetadata(installationDir).getProsperoConfig().getWfChannels();
+        return new InstallationMetadata(installationDir).getProsperoConfig().getChannels();
     }
 
     private List<Repository> actualRepositories() throws MetadataException {
         return new InstallationMetadata(installationDir).getProsperoConfig()
-                .getWfChannels().stream()
+                .getChannels().stream()
                 .flatMap((Channel channel) -> channel.getRepositories().stream())
                 .collect(Collectors.toList());
     }

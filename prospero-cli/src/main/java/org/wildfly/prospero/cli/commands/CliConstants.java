@@ -38,8 +38,6 @@ public final class CliConstants {
         public static final String UPDATE = "update";
         public static final String HISTORY = "history";
         public static final String REVERT = "revert";
-        public static final String REPO = "repo";
-        public static final String REPOSITORY = "repository";
         public static final String CHANNEL = "channel";
 
         public static final String LIST = "list";
@@ -56,7 +54,6 @@ public final class CliConstants {
     public static final String CHANNEL_REFERENCE = "<channel-reference>";
     public static final String FEATURE_PACK_REFERENCE = "<feature-pack-reference>";
     public static final String PATH = "<path>";
-    public static final String REPO_ID = "<repo-id>";
     public static final String REPO_URL = "<repo-url>";
 
     // Option names:

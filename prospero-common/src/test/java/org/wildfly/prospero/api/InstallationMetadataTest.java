@@ -67,17 +67,17 @@ public class InstallationMetadataTest {
         Channel channel = new Channel(null, null, null, null,
                 List.of(new Repository("test", "file://foo.bar")),
                 ChannelRef.manifestFromString("new:channel"));
-        config.getWfChannels().add(channel);
+        config.getChannels().add(channel);
 
         installationMetadata.updateProsperoConfig(config);
 
         // verify new Channel and Repo in there
         final ProsperoConfig updatedConfig = installationMetadata.getProsperoConfig();
-        assertEquals(2, updatedConfig.getWfChannels().size());
+        assertEquals(2, updatedConfig.getChannels().size());
         assertEquals("new channel should be added in first place",
-                "new:channel", updatedConfig.getWfChannels().get(1).getManifestRef().getGav());
-        assertEquals("test", updatedConfig.getWfChannels().get(1).getRepositories().get(0).getId());
-        assertEquals("file://foo.bar", updatedConfig.getWfChannels().get(1).getRepositories().get(0).getUrl());
+                "new:channel", updatedConfig.getChannels().get(1).getManifestRef().getGav());
+        assertEquals("test", updatedConfig.getChannels().get(1).getRepositories().get(0).getId());
+        assertEquals("file://foo.bar", updatedConfig.getChannels().get(1).getRepositories().get(0).getUrl());
         verify(gitStorage).recordConfigChange();
     }
 
@@ -87,13 +87,13 @@ public class InstallationMetadataTest {
         Channel channel = new Channel(null, null, null, null,
                 List.of(new Repository("test", "file://foo.bar")),
                 ChannelRef.manifestFromString("new:channel"));
-        config.getWfChannels().add(channel);
+        config.getChannels().add(channel);
 
         installationMetadata.recordProvision(false);
 
         try (final InstallationMetadata im = new InstallationMetadata(base)) {
             final ProsperoConfig newConfig = im.getProsperoConfig();
-            assertThat(newConfig.getWfChannels())
+            assertThat(newConfig.getChannels())
                 .map(channel1 -> channel1.getManifestRef().getGav())
                 .doesNotContain(
                     "new:channel"
@@ -117,10 +117,10 @@ public class InstallationMetadataTest {
 
         try (final InstallationMetadata im = new InstallationMetadata(base)) {
             final ProsperoConfig newConfig = im.getProsperoConfig();
-            assertEquals(1, newConfig.getWfChannels().size());
-            assertEquals("new:channel", newConfig.getWfChannels().get(0).getManifestRef().getGav());
-            assertEquals("file://foo.bar", newConfig.getWfChannels().get(0).getRepositories().get(0).getUrl());
-            assertEquals("test", newConfig.getWfChannels().get(0).getRepositories().get(0).getId());
+            assertEquals(1, newConfig.getChannels().size());
+            assertEquals("new:channel", newConfig.getChannels().get(0).getManifestRef().getGav());
+            assertEquals("file://foo.bar", newConfig.getChannels().get(0).getRepositories().get(0).getUrl());
+            assertEquals("test", newConfig.getChannels().get(0).getRepositories().get(0).getId());
         }
     }
 

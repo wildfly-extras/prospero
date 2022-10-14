@@ -297,7 +297,7 @@ public class InstallationMetadata implements AutoCloseable {
     }
 
     public void updateProsperoConfig(ProsperoConfig config) throws MetadataException {
-        this.channels = config.getWfChannels();
+        this.channels = config.getChannels();
 //        this.channelRefs = new ArrayList<>(config.getChannels());
 //        this.repositories = config.getRepositories().stream().map(RepositoryRef::toRemoteRepository).collect(Collectors.toList());
 

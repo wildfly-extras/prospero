@@ -47,7 +47,7 @@ public class GalleonEnvironment {
     private GalleonEnvironment(Builder builder) throws ProvisioningException, OperationException {
         Optional<Console> console = Optional.ofNullable(builder.console);
         Optional<ChannelManifest> restoreManifest = Optional.ofNullable(builder.manifest);
-        channels = builder.prosperoConfig.getWfChannels();
+        channels = builder.prosperoConfig.getChannels();
 
         final RepositorySystem system = builder.mavenSessionManager.newRepositorySystem();
         final DefaultRepositorySystemSession session = builder.mavenSessionManager.newRepositorySystemSession(system);

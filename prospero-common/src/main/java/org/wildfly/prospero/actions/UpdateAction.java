@@ -70,7 +70,7 @@ public class UpdateAction implements AutoCloseable {
 
     private ProsperoConfig addTemporaryRepositories(List<URL> additionalRepositories) {
         final ProsperoConfig prosperoConfig = metadata.getProsperoConfig();
-        for (Channel channel : prosperoConfig.getWfChannels()) {
+        for (Channel channel : prosperoConfig.getChannels()) {
             int i = 0;
             final Set<String> existingRepos = channel.getRepositories().stream().map(Repository::getUrl).collect(Collectors.toSet());
             for (URL additionalRepository : additionalRepositories) {
@@ -119,7 +119,7 @@ public class UpdateAction implements AutoCloseable {
             GalleonUtils.executeGalleon(options -> provMgr.provision(provMgr.getProvisioningConfig(), options),
                     mavenSessionManager.getProvisioningRepo().toAbsolutePath());
         } catch (UnresolvedMavenArtifactException e) {
-            throw new ArtifactResolutionException(e, prosperoConfig.getRemoteRepositories(), mavenSessionManager.isOffline());
+            throw new ArtifactResolutionException(e, prosperoConfig.listAllRepositories(), mavenSessionManager.isOffline());
         }
 
         metadata.setManifest(galleonEnv.getRepositoryManager().resolvedChannel());

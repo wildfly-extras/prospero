@@ -139,7 +139,7 @@ public class ChannelCommandTest extends AbstractConsoleTest {
         Assert.assertEquals(ReturnCodes.SUCCESS, exitCode);
 
         InstallationMetadata installationMetadata = new InstallationMetadata(dir);
-        assertThat(installationMetadata.getProsperoConfig().getWfChannels())
+        assertThat(installationMetadata.getProsperoConfig().getChannels())
                 .flatMap(c->c.getRepositories())
                 .map(r->Tuple.tuple(r.getId(), r.getUrl()))
                 .containsExactly(
@@ -150,7 +150,7 @@ public class ChannelCommandTest extends AbstractConsoleTest {
                         Tuple.tuple("test_repo", "http://test.te"),
                         Tuple.tuple("test_repo", "http://test.te")
                 );
-        assertThat(installationMetadata.getProsperoConfig().getWfChannels())
+        assertThat(installationMetadata.getProsperoConfig().getChannels())
                 .map(c->c.getManifestRef())
                 .map(r->Tuple.tuple(r.getGav(), r.getUrl()))
                 .containsExactly(
@@ -212,7 +212,7 @@ public class ChannelCommandTest extends AbstractConsoleTest {
                 CliConstants.DIR, dir.toString(), "1");
         Assert.assertEquals(ReturnCodes.SUCCESS, exitCode);
         try (InstallationMetadata installationMetadata = new InstallationMetadata(dir)) {
-            assertThat(installationMetadata.getProsperoConfig().getWfChannels())
+            assertThat(installationMetadata.getProsperoConfig().getChannels())
                     .map(c->c.getManifestRef())
                     .map(r->Tuple.tuple(r.getGav(), r.getUrl()))
                     .containsExactly(
@@ -225,7 +225,7 @@ public class ChannelCommandTest extends AbstractConsoleTest {
                 CliConstants.DIR, dir.toString(), "0");
         Assert.assertEquals(ReturnCodes.SUCCESS, exitCode);
         try (InstallationMetadata installationMetadata = new InstallationMetadata(dir)) {
-            assertThat(installationMetadata.getProsperoConfig().getWfChannels())
+            assertThat(installationMetadata.getProsperoConfig().getChannels())
                     .map(c->c.getManifestRef())
                     .map(r->Tuple.tuple(r.getGav(), r.getUrl()))
                     .containsExactly(
@@ -237,7 +237,7 @@ public class ChannelCommandTest extends AbstractConsoleTest {
                 CliConstants.DIR, dir.toString(), "0");
         Assert.assertEquals(ReturnCodes.SUCCESS, exitCode);
         try (InstallationMetadata installationMetadata = new InstallationMetadata(dir)) {
-            assertThat(installationMetadata.getProsperoConfig().getWfChannels())
+            assertThat(installationMetadata.getProsperoConfig().getChannels())
                     .map(c->c.getManifestRef())
                     .map(r->Tuple.tuple(r.getGav(), r.getUrl()))
                     .isEmpty();

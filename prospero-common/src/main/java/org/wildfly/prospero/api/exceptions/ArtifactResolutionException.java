@@ -23,7 +23,7 @@ import org.wildfly.channel.UnresolvedMavenArtifactException;
 import org.wildfly.prospero.model.RepositoryRef;
 import org.wildfly.prospero.wfchannel.MavenSessionManager;
 
-import java.util.List;
+import java.util.Collection;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -31,7 +31,7 @@ public class ArtifactResolutionException extends OperationException {
 
     private static final Set<String> OFFLINE_REPOSITORIES = Set.of(MavenSessionManager.AETHER_OFFLINE_PROTOCOLS_VALUE.split(","));
 
-    private List<RemoteRepository> repositories;
+    private Collection<RemoteRepository> repositories;
     private boolean offline;
 
     public ArtifactResolutionException(String msg, Throwable e) {
@@ -46,7 +46,7 @@ public class ArtifactResolutionException extends OperationException {
         super(e);
     }
 
-    public ArtifactResolutionException(UnresolvedMavenArtifactException e, List<RemoteRepository> repositories, boolean offline) {
+    public ArtifactResolutionException(UnresolvedMavenArtifactException e, Collection<RemoteRepository> repositories, boolean offline) {
         super(e.getLocalizedMessage(), e);
         this.repositories = repositories;
         this.offline = offline;
