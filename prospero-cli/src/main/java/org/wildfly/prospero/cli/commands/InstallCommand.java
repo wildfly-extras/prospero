@@ -135,7 +135,7 @@ public class InstallCommand extends AbstractCommand {
 
         final ProvisioningDefinition provisioningDefinition = ProvisioningDefinition.builder()
                 .setFpl(featurePackOrDefinition.fpl.orElse(null))
-                .setChannel(channel.orElse(null))
+                .setManifest(channel.orElse(null))
                 .setProvisionConfig(provisionConfig.orElse(null))
                 .setRemoteRepositories(remoteRepositories.stream().map(URL::toString).collect(Collectors.toList()))
                 .setDefinitionFile(featurePackOrDefinition.definition.orElse(null))

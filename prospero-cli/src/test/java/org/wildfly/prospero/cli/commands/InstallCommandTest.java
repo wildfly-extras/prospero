@@ -19,8 +19,6 @@ package org.wildfly.prospero.cli.commands;
 
 import java.io.File;
 import java.io.IOException;
-import java.nio.file.Files;
-import java.util.Arrays;
 import java.util.List;
 
 import org.eclipse.aether.repository.RemoteRepository;
@@ -36,7 +34,6 @@ import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.junit.MockitoJUnitRunner;
 import org.wildfly.channel.Channel;
-import org.wildfly.channel.ChannelMapper;
 import org.wildfly.channel.ChannelManifestCoordinate;
 import org.wildfly.channel.Repository;
 import org.wildfly.prospero.actions.ProvisioningAction;
@@ -44,8 +41,7 @@ import org.wildfly.prospero.api.ProvisioningDefinition;
 import org.wildfly.prospero.cli.ActionFactory;
 import org.wildfly.prospero.cli.CliMessages;
 import org.wildfly.prospero.cli.ReturnCodes;
-import org.wildfly.prospero.model.ChannelRef;
-import org.wildfly.prospero.model.RepositoryRef;
+import org.wildfly.prospero.model.ProsperoConfig;
 import org.wildfly.prospero.wfchannel.MavenSessionManager;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -117,7 +113,7 @@ public class InstallCommandTest extends AbstractMavenCommandTest {
         Channel channel = new Channel("", "", null, null,
                 List.of(new Repository("test", "http://test.org")),
                 new ChannelManifestCoordinate("org.test", "test"));
-        Files.writeString(provisionConfigFile.toPath(), ChannelMapper.toYaml(channel));
+        new ProsperoConfig(List.of(channel)).writeConfig(provisionConfigFile.toPath());
 
         int exitCode = commandLine.execute(CliConstants.Commands.INSTALL, CliConstants.DIR, "test",
                 CliConstants.FPL, "org.wildfly:wildfly-ee-galleon-pack",
@@ -138,13 +134,11 @@ public class InstallCommandTest extends AbstractMavenCommandTest {
 
     @Test
     public void callProvisionOnInstallKnownFplOverrideChannelsCommand() throws Exception {
-        List<ChannelRef> channels = Arrays.asList(new ChannelRef("org.wildfly:wildfly-channel", null));
-        List<RepositoryRef> repositories = Arrays.asList(new RepositoryRef("dev", "http://test.test"));
         final File provisionConfigFile = temporaryFolder.newFile();
         Channel channel = new Channel("", "", null, null,
                 List.of(new Repository("dev", "http://test.test")),
                 new ChannelManifestCoordinate("org.wildfly", "wildfly-channel"));
-        Files.writeString(provisionConfigFile.toPath(), ChannelMapper.toYaml(channel));
+        new ProsperoConfig(List.of(channel)).writeConfig(provisionConfigFile.toPath());
 
         int exitCode = commandLine.execute(CliConstants.Commands.INSTALL, CliConstants.DIR, "test", CliConstants.FPL, KNOWN_FPL,
                 CliConstants.PROVISION_CONFIG, provisionConfigFile.getAbsolutePath());
@@ -162,7 +156,7 @@ public class InstallCommandTest extends AbstractMavenCommandTest {
         Channel channel = new Channel("", "", null, null,
                 List.of(new Repository("dev", "http://test.test")),
                 new ChannelManifestCoordinate("org.wildfly", "wildfly-channel"));
-        Files.writeString(provisionConfigFile.toPath(), ChannelMapper.toYaml(channel));
+        new ProsperoConfig(List.of(channel)).writeConfig(provisionConfigFile.toPath());
 
         int exitCode = commandLine.execute(CliConstants.Commands.INSTALL, CliConstants.DIR, "test",
                 CliConstants.PROVISION_CONFIG, provisionConfigFile.getAbsolutePath(),

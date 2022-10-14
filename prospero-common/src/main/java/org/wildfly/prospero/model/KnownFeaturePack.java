@@ -24,6 +24,7 @@ import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
 import org.eclipse.aether.repository.RemoteRepository;
+import org.wildfly.prospero.api.RepositoryUtils;
 
 import java.io.File;
 import java.io.IOException;
@@ -84,7 +85,7 @@ public class KnownFeaturePack {
 
     @JsonIgnore
     public List<RemoteRepository> getRemoteRepositories() {
-        return repositories.stream().map(RepositoryRef::toRemoteRepository).collect(Collectors.toList());
+        return repositories.stream().map(r-> RepositoryUtils.toRemoteRepository(r.getId(), r.getUrl())).collect(Collectors.toList());
     }
 
     @Override

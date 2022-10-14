@@ -19,9 +19,11 @@ package org.wildfly.prospero.cli.commands.channel;
 
 import org.apache.commons.lang3.RandomStringUtils;
 import org.wildfly.channel.Channel;
+import org.wildfly.channel.ChannelManifestCoordinate;
 import org.wildfly.channel.Repository;
 import org.wildfly.prospero.actions.Console;
 import org.wildfly.prospero.actions.MetadataAction;
+import org.wildfly.prospero.api.ArtifactUtils;
 import org.wildfly.prospero.api.InstallationMetadata;
 import org.wildfly.prospero.api.exceptions.MetadataException;
 import org.wildfly.prospero.cli.ActionFactory;
@@ -29,7 +31,6 @@ import org.wildfly.prospero.cli.CliMessages;
 import org.wildfly.prospero.cli.ReturnCodes;
 import org.wildfly.prospero.cli.commands.AbstractCommand;
 import org.wildfly.prospero.cli.commands.CliConstants;
-import org.wildfly.prospero.model.ChannelRef;
 import picocli.CommandLine;
 
 import java.io.File;
@@ -108,7 +109,7 @@ public class ChannelInitializeCommand extends AbstractCommand {
         console.println(CliMessages.MESSAGES.registeringCustomChannel(name.get()));
         Channel channel = new Channel("customization", null, null, null,
                 List.of(new Repository(CUSTOMIZATION_REPO_ID, url.toExternalForm())),
-                ChannelRef.manifestFromString(name.get()));
+                ArtifactUtils.manifestFromString(name.get()));
         metadataAction.addChannel(channel);
 
         return ReturnCodes.SUCCESS;
@@ -158,8 +159,8 @@ public class ChannelInitializeCommand extends AbstractCommand {
             return true;
         }
         try {
-            final ChannelRef channelRef = ChannelRef.fromString(name.get());
-            if (channelRef.getGav() == null) {
+            final ChannelManifestCoordinate manifestRef = ArtifactUtils.manifestFromString(name.get());
+            if (manifestRef.getGav() == null) {
                 console.error(CliMessages.MESSAGES.illegalChannel(name.get()));
                 return false;
             }

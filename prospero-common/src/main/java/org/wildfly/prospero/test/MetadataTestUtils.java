@@ -38,13 +38,13 @@ import org.jboss.galleon.state.ProvisionedState;
 import org.jboss.galleon.universe.FeaturePackLocation;
 import org.jboss.galleon.xml.ProvisionedStateXmlWriter;
 import org.wildfly.channel.Channel;
-import org.wildfly.channel.ChannelMapper;
 import org.wildfly.channel.ChannelManifest;
 import org.wildfly.channel.ChannelManifestCoordinate;
 import org.wildfly.channel.Repository;
 import org.wildfly.channel.Stream;
 import org.wildfly.prospero.api.InstallationMetadata;
 import org.wildfly.prospero.api.exceptions.MetadataException;
+import org.wildfly.prospero.model.ProsperoConfig;
 
 public final class MetadataTestUtils {
 
@@ -110,7 +110,8 @@ public final class MetadataTestUtils {
             channels.add(new Channel("", "", null, null, repositories,
                     new ChannelManifestCoordinate(channelUrls.get(i))));
         }
-        Files.writeString(provisionConfigFile, ChannelMapper.toYaml(channels));
+
+        new ProsperoConfig(channels).writeConfig(provisionConfigFile);
     }
 
     public static List<RemoteRepository> defaultRemoteRepositories() {

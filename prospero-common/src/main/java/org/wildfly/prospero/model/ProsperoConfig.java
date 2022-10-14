@@ -21,11 +21,11 @@ import org.eclipse.aether.repository.RemoteRepository;
 import org.wildfly.channel.Channel;
 import org.wildfly.channel.ChannelMapper;
 
-import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -40,20 +40,17 @@ public class ProsperoConfig {
         return channels;
     }
 
-    public void addChannel(ChannelRef channelRef) {
-
-    }
-
-    public void removeChannel(ChannelRef channelRef) {
-
-    }
-
-    public void writeConfig(File configFile) throws IOException {
-        Files.writeString(configFile.toPath(), ChannelMapper.toYaml(channels));
+    public void writeConfig(Path configFile) throws IOException {
+        Files.writeString(configFile, ChannelMapper.toYaml(channels));
     }
 
     public static ProsperoConfig readConfig(Path path) throws IOException {
-        return null;
+        final String yamlContent = Files.readString(path);
+        if (yamlContent.isEmpty()) {
+            return new ProsperoConfig(Collections.emptyList());
+        } else {
+            return new ProsperoConfig(ChannelMapper.fromString(yamlContent));
+        }
     }
 
     public Collection<RemoteRepository> listAllRepositories() {

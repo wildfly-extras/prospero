@@ -27,7 +27,6 @@ import org.jboss.galleon.ProvisioningException;
 import org.junit.Before;
 import org.junit.Test;
 import org.wildfly.channel.Channel;
-import org.wildfly.channel.ChannelMapper;
 import org.wildfly.channel.ChannelManifest;
 import org.wildfly.channel.ChannelManifestCoordinate;
 import org.wildfly.channel.Repository;
@@ -35,9 +34,10 @@ import org.wildfly.channel.Stream;
 import org.wildfly.prospero.actions.UpdateAction;
 import org.wildfly.prospero.api.InstallationMetadata;
 import org.wildfly.prospero.api.ProvisioningDefinition;
+import org.wildfly.prospero.api.RepositoryUtils;
 import org.wildfly.prospero.it.AcceptingConsole;
 import org.wildfly.prospero.model.ManifestYamlSupport;
-import org.wildfly.prospero.model.RepositoryRef;
+import org.wildfly.prospero.model.ProsperoConfig;
 import org.wildfly.prospero.test.MetadataTestUtils;
 import org.wildfly.prospero.wfchannel.MavenSessionManager;
 
@@ -140,7 +140,7 @@ public class UpdateTest extends WfCoreTestBase {
         repositories.add(new Repository("test-repo", mockRepo.toURI().toURL().toString()));
         Channel channel = new Channel("test", "", null, null, repositories,
                 new ChannelManifestCoordinate("test", "channel"));
-        Files.writeString(configFile.toPath(), ChannelMapper.toYaml(channel));
+        new ProsperoConfig(List.of(channel)).writeConfig(configFile.toPath());
         return configFile;
     }
 
@@ -149,7 +149,7 @@ public class UpdateTest extends WfCoreTestBase {
         final RepositorySystem system = msm.newRepositorySystem();
         final DefaultRepositorySystemSession session = msm.newRepositorySystemSession(system);
         final DeployRequest request = new DeployRequest();
-        request.setRepository(new RepositoryRef("test-repo", mockRepo.toURI().toURL().toString()).toRemoteRepository());
+        request.setRepository(RepositoryUtils.toRemoteRepository("test-repo", mockRepo.toURI().toURL().toString()));
         request.setArtifacts(Arrays.asList(new DefaultArtifact("test", "channel",
                 ChannelManifest.CLASSIFIER, ChannelManifest.EXTENSION, version,
                 null, channelFile)));

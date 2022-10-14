@@ -18,17 +18,14 @@
 package org.wildfly.prospero.api;
 
 import org.wildfly.channel.Channel;
-import org.wildfly.channel.ChannelMapper;
 import org.wildfly.channel.ChannelManifest;
 import org.wildfly.prospero.Messages;
 import org.wildfly.prospero.api.exceptions.MetadataException;
 import org.wildfly.prospero.installation.git.GitStorage;
-import org.wildfly.prospero.model.ChannelRef;
 import org.wildfly.prospero.model.ManifestYamlSupport;
 import org.wildfly.prospero.model.ProsperoConfig;
 import org.eclipse.aether.artifact.Artifact;
 import org.eclipse.aether.artifact.DefaultArtifact;
-import org.eclipse.aether.repository.RemoteRepository;
 import org.jboss.galleon.ProvisioningException;
 import org.jboss.galleon.xml.ProvisioningXmlParser;
 import org.wildfly.channel.Stream;
@@ -41,7 +38,6 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
 import java.util.zip.ZipEntry;
@@ -60,9 +56,7 @@ public class InstallationMetadata implements AutoCloseable {
     private final Path provisioningFile;
     private ChannelManifest manifest;
     private org.jboss.galleon.config.ProvisioningConfig galleonProvisioningConfig;
-    private List<ChannelRef> channelRefs;
     private List<Channel> channels;
-    private List<RemoteRepository> repositories;
     private final GitStorage gitStorage;
     private final Path base;
 
@@ -90,26 +84,7 @@ public class InstallationMetadata implements AutoCloseable {
         doInit(manifestFile, prosperoConfigFile, provisioningFile);
     }
 
-    public InstallationMetadata(Path base, ChannelManifest manifest, List<ChannelRef> channelRefs,
-                                List<RemoteRepository> repositories) throws MetadataException {
-        this.base = base;
-        this.gitStorage = new GitStorage(base);
-        this.manifestFile = base.resolve(METADATA_DIR).resolve(InstallationMetadata.MANIFEST_FILE_NAME);
-        this.prosperoConfigFile = base.resolve(METADATA_DIR).resolve(InstallationMetadata.PROSPERO_CONFIG_FILE_NAME);
-        this.provisioningFile = base.resolve(GALLEON_INSTALLATION_DIR).resolve(InstallationMetadata.PROVISIONING_FILE_NAME);
-
-        this.manifest = manifest;
-        this.channelRefs = channelRefs;
-        this.repositories = repositories;
-        try {
-            this.galleonProvisioningConfig = ProvisioningXmlParser.parse(provisioningFile);
-        } catch (ProvisioningException e) {
-            throw new MetadataException("Error when parsing installation metadata", e);
-        }
-    }
-
     public InstallationMetadata(Path base, ChannelManifest manifest, List<Channel> channels) throws MetadataException {
-
         this.base = base;
         this.gitStorage = new GitStorage(base);
         this.manifestFile = base.resolve(METADATA_DIR).resolve(InstallationMetadata.MANIFEST_FILE_NAME);
@@ -117,8 +92,6 @@ public class InstallationMetadata implements AutoCloseable {
         this.provisioningFile = base.resolve(GALLEON_INSTALLATION_DIR).resolve(InstallationMetadata.PROVISIONING_FILE_NAME);
 
         this.manifest = manifest;
-        this.channelRefs = null;
-        this.repositories = null;
         this.channels = channels;
 
         try {
@@ -135,12 +108,7 @@ public class InstallationMetadata implements AutoCloseable {
             throw Messages.MESSAGES.unableToParseConfiguration(manifestFile.toString(), e);
         }
         try {
-            final String yamlContent = Files.readString(provisionConfig);
-            if (yamlContent.isEmpty()) {
-                this.channels = Collections.emptyList();
-            } else {
-                this.channels = ChannelMapper.fromString(yamlContent);
-            }
+            this.channels = ProsperoConfig.readConfig(provisionConfig).getChannels();
         } catch (IOException e) {
             throw Messages.MESSAGES.unableToParseConfiguration(provisionConfig.toString(), e);
         }
@@ -248,7 +216,7 @@ public class InstallationMetadata implements AutoCloseable {
 
     private void writeProsperoConfig() throws MetadataException {
         try {
-            Files.writeString(this.prosperoConfigFile, ChannelMapper.toYaml(channels));
+            getProsperoConfig().writeConfig(this.prosperoConfigFile);
         } catch (IOException e) {
             throw new MetadataException("Unable to save channel list in installation", e);
         }

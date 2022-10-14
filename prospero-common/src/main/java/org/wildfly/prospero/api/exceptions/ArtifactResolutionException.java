@@ -19,8 +19,9 @@ package org.wildfly.prospero.api.exceptions;
 
 import org.eclipse.aether.repository.RemoteRepository;
 import org.wildfly.channel.ArtifactCoordinate;
+import org.wildfly.channel.Repository;
 import org.wildfly.channel.UnresolvedMavenArtifactException;
-import org.wildfly.prospero.model.RepositoryRef;
+import org.wildfly.prospero.api.RepositoryUtils;
 import org.wildfly.prospero.wfchannel.MavenSessionManager;
 
 import java.util.Collection;
@@ -52,19 +53,19 @@ public class ArtifactResolutionException extends OperationException {
         this.offline = offline;
     }
 
-    public Set<RepositoryRef> attemptedRepositories() {
+    public Set<Repository> attemptedRepositories() {
         return repositories.stream()
                 // TODO: handle multiple values
                 .filter(r->!offline || isOfflineRepo(r))
-                .map(RepositoryRef::new)
+                .map(RepositoryUtils::toChannelRepository)
                 .collect(Collectors.toSet());
     }
 
-    public Set<RepositoryRef> offlineRepositories() {
+    public Set<Repository> offlineRepositories() {
         return repositories.stream()
                 // TODO: handle multiple values
                 .filter(r->offline && !isOfflineRepo(r))
-                .map(RepositoryRef::new)
+                .map(RepositoryUtils::toChannelRepository)
                 .collect(Collectors.toSet());
     }
 

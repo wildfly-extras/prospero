@@ -23,7 +23,6 @@ import org.eclipse.jgit.api.errors.GitAPIException;
 import org.eclipse.jgit.revwalk.RevCommit;
 import org.eclipse.jgit.treewalk.TreeWalk;
 import org.wildfly.channel.Channel;
-import org.wildfly.channel.ChannelMapper;
 import org.wildfly.channel.ChannelManifest;
 import org.wildfly.prospero.api.ArtifactChange;
 import org.wildfly.prospero.api.InstallationMetadata;
@@ -34,9 +33,9 @@ import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
 import org.wildfly.channel.Stream;
+import org.wildfly.prospero.model.ProsperoConfig;
 
 import java.io.IOException;
-import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -124,8 +123,8 @@ public class GitStorageTest {
         final GitStorage gitStorage = new GitStorage(base.getParent());
         final ChannelManifest manifest = new ChannelManifest("test", "", new ArrayList<>());
         ManifestYamlSupport.write(manifest, base.resolve(InstallationMetadata.MANIFEST_FILE_NAME));
-        Files.writeString(base.resolve(InstallationMetadata.PROSPERO_CONFIG_FILE_NAME),
-                ChannelMapper.toYaml(new Channel("", "", null, null, null, null)));
+        new ProsperoConfig(List.of(new Channel("", "", null, null, null, null)))
+                .writeConfig(base.resolve(InstallationMetadata.PROSPERO_CONFIG_FILE_NAME));
 
         gitStorage.record();
 

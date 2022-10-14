@@ -28,12 +28,12 @@ import org.wildfly.channel.ChannelManifestCoordinate;
 import org.wildfly.channel.Repository;
 import org.wildfly.prospero.actions.MetadataAction;
 import org.wildfly.prospero.actions.PromoteArtifactBundleAction;
+import org.wildfly.prospero.api.ArtifactUtils;
 import org.wildfly.prospero.cli.AbstractConsoleTest;
 import org.wildfly.prospero.cli.ActionFactory;
 import org.wildfly.prospero.cli.CliMessages;
 import org.wildfly.prospero.cli.ReturnCodes;
 import org.wildfly.prospero.cli.commands.CliConstants;
-import org.wildfly.prospero.model.ChannelRef;
 import org.wildfly.prospero.test.MetadataTestUtils;
 
 import java.net.URL;
@@ -80,7 +80,7 @@ public class ChannelPromoteCommandTest extends AbstractConsoleTest {
 
         assertEquals(ReturnCodes.SUCCESS, exitCode);
         verify(promoter).promote(Paths.get("test/archive.zip").toAbsolutePath(), new URL("file:///test/test"),
-                ChannelRef.fromString("org.test:custom-channel"));
+                ArtifactUtils.manifestFromString("org.test:custom-channel"));
     }
 
     @Test
@@ -149,7 +149,7 @@ public class ChannelPromoteCommandTest extends AbstractConsoleTest {
                 );
         assertEquals(ReturnCodes.SUCCESS, exitCode);
         verify(promoter).promote(Paths.get("test/archive.zip").toAbsolutePath(), new URL("file:///test/test"),
-                ChannelRef.fromString(CUSTOM_CHANNELS_GROUP_ID + ":test1"));
+                ArtifactUtils.manifestFromString(CUSTOM_CHANNELS_GROUP_ID + ":test1"));
     }
 
     @Test
@@ -169,7 +169,7 @@ public class ChannelPromoteCommandTest extends AbstractConsoleTest {
         );
         assertEquals(ReturnCodes.SUCCESS, exitCode);
         verify(promoter).promote(Paths.get("test/archive.zip").toAbsolutePath(), new URL("http://test.repo"),
-                ChannelRef.fromString("org.custom:test"));
+                ArtifactUtils.manifestFromString("org.custom:test"));
     }
 
     @Test
@@ -194,6 +194,6 @@ public class ChannelPromoteCommandTest extends AbstractConsoleTest {
         );
         assertEquals(ReturnCodes.SUCCESS, exitCode);
         verify(promoter).promote(Paths.get("test/archive.zip").toAbsolutePath(), new URL("http://test.repo"),
-                ChannelRef.fromString(CUSTOM_CHANNELS_GROUP_ID + ":test1"));
+                ArtifactUtils.manifestFromString(CUSTOM_CHANNELS_GROUP_ID + ":test1"));
     }
 }

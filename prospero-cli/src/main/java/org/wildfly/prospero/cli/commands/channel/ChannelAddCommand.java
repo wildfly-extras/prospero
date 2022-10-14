@@ -23,12 +23,12 @@ import org.wildfly.channel.ChannelManifestCoordinate;
 import org.wildfly.channel.Repository;
 import org.wildfly.prospero.actions.Console;
 import org.wildfly.prospero.actions.MetadataAction;
+import org.wildfly.prospero.api.ArtifactUtils;
 import org.wildfly.prospero.cli.ActionFactory;
 import org.wildfly.prospero.cli.CliMessages;
 import org.wildfly.prospero.cli.ReturnCodes;
 import org.wildfly.prospero.cli.commands.AbstractCommand;
 import org.wildfly.prospero.cli.commands.CliConstants;
-import org.wildfly.prospero.model.ChannelRef;
 import picocli.CommandLine;
 
 import java.nio.file.Path;
@@ -67,7 +67,7 @@ public class ChannelAddCommand extends AbstractCommand {
             }
             repositories.add(new Repository(splitRepoKey[0], splitRepoKey[1]));
         }
-        ChannelManifestCoordinate manifest = ChannelRef.manifestFromString(gavOrUrl);
+        ChannelManifestCoordinate manifest = ArtifactUtils.manifestFromString(gavOrUrl);
         Channel channel = new Channel(null, null, null, null, repositories, manifest);
         metadataAction.addChannel(channel);
         console.println(CliMessages.MESSAGES.channelAdded(gavOrUrl));

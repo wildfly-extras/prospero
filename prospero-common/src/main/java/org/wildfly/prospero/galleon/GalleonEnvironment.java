@@ -28,7 +28,6 @@ import org.wildfly.channel.ChannelSession;
 import org.wildfly.channel.maven.VersionResolverFactory;
 import org.wildfly.prospero.actions.Console;
 import org.wildfly.prospero.api.exceptions.OperationException;
-import org.wildfly.prospero.model.ChannelRef;
 import org.wildfly.prospero.model.ProsperoConfig;
 import org.wildfly.prospero.wfchannel.MavenSessionManager;
 
@@ -79,10 +78,6 @@ public class GalleonEnvironment {
 
     public ChannelSession getChannelSession() {
         return channelSession;
-    }
-
-    public List<ChannelRef> getChannelRefs() {
-        return null;
     }
 
     public List<Channel> getChannels() {

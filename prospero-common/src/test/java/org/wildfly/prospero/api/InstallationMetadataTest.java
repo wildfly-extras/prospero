@@ -25,13 +25,11 @@ import org.junit.runner.RunWith;
 import org.mockito.Mock;
 import org.mockito.junit.MockitoJUnitRunner;
 import org.wildfly.channel.Channel;
-import org.wildfly.channel.ChannelMapper;
 import org.wildfly.channel.ChannelManifest;
 import org.wildfly.channel.ChannelManifestCoordinate;
 import org.wildfly.channel.ChannelManifestMapper;
 import org.wildfly.channel.Repository;
 import org.wildfly.prospero.installation.git.GitStorage;
-import org.wildfly.prospero.model.ChannelRef;
 import org.wildfly.prospero.model.ProsperoConfig;
 
 import java.io.IOException;
@@ -66,7 +64,7 @@ public class InstallationMetadataTest {
         final ProsperoConfig config = installationMetadata.getProsperoConfig();
         Channel channel = new Channel(null, null, null, null,
                 List.of(new Repository("test", "file://foo.bar")),
-                ChannelRef.manifestFromString("new:channel"));
+                ArtifactUtils.manifestFromString("new:channel"));
         config.getChannels().add(channel);
 
         installationMetadata.updateProsperoConfig(config);
@@ -86,7 +84,7 @@ public class InstallationMetadataTest {
         final ProsperoConfig config = installationMetadata.getProsperoConfig();
         Channel channel = new Channel(null, null, null, null,
                 List.of(new Repository("test", "file://foo.bar")),
-                ChannelRef.manifestFromString("new:channel"));
+                ArtifactUtils.manifestFromString("new:channel"));
         config.getChannels().add(channel);
 
         installationMetadata.recordProvision(false);
@@ -135,7 +133,7 @@ public class InstallationMetadataTest {
         final Channel channel = new Channel("", "", null, null,
                 List.of(new Repository("test", "file://foo.bar")),
         new ChannelManifestCoordinate("foo","bar"));
-        Files.writeString(metadataDir.resolve(InstallationMetadata.PROSPERO_CONFIG_FILE_NAME), ChannelMapper.toYaml(channel));
+        new ProsperoConfig(List.of(channel)).writeConfig(metadataDir.resolve(InstallationMetadata.PROSPERO_CONFIG_FILE_NAME));
         return base;
     }
 
