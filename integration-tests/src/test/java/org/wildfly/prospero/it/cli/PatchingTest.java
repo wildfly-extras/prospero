@@ -27,7 +27,6 @@ import org.eclipse.aether.resolution.ArtifactResolutionException;
 import org.eclipse.aether.resolution.ArtifactResult;
 import org.jboss.galleon.ProvisioningException;
 import org.junit.Before;
-import org.junit.Ignore;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
@@ -56,7 +55,6 @@ import static org.junit.Assert.assertTrue;
 import static org.wildfly.prospero.it.commonapi.WfCoreTestBase.REPOSITORY_MAVEN_CENTRAL;
 import static io.undertow.Handlers.resource;
 
-@Ignore
 public class PatchingTest {
 
     public static final String PATCHED_GROUP_ID = "io.undertow";
