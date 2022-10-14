@@ -17,13 +17,13 @@
 
 package org.wildfly.prospero.api;
 
-import org.eclipse.aether.repository.RemoteRepository;
+//import org.eclipse.aether.repository.RemoteRepository;
 import org.junit.Test;
 import org.wildfly.prospero.api.exceptions.NoChannelException;
 
 import java.net.URL;
 import java.nio.file.Paths;
-import java.util.Arrays;
+//import java.util.Arrays;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.Assert.assertEquals;
@@ -60,18 +60,18 @@ public class ProvisioningDefinitionTest {
         assertEquals(Paths.get("tmp/foo.bar").toAbsolutePath().toUri().toURL(), builder.build().getChannels().get(0).getManifestRef().getUrl());
     }
 
-    @Test
-    public void overrideRemoteRepos() throws Exception {
-        final ProvisioningDefinition.Builder builder = new ProvisioningDefinition.Builder()
-                .setFpl(EAP_FPL)
-                .setRemoteRepositories(Arrays.asList("http://test.repo1", "http://test.repo2"));
-
-        final ProvisioningDefinition def = builder.build();
-
-        assertThat(def.getRepositories().stream().map(RemoteRepository::getUrl)).containsExactlyInAnyOrder(
-                "http://test.repo1",
-                "http://test.repo2");
-    }
+//    @Test
+//    public void overrideRemoteRepos() throws Exception {
+//        final ProvisioningDefinition.Builder builder = new ProvisioningDefinition.Builder()
+//                .setFpl(EAP_FPL)
+//                .setRemoteRepositories(Arrays.asList("http://test.repo1", "http://test.repo2"));
+//
+//        final ProvisioningDefinition def = builder.build();
+//
+//        assertThat(def.getRepositories().stream().map(RemoteRepository::getUrl)).containsExactlyInAnyOrder(
+//                "http://test.repo1",
+//                "http://test.repo2");
+//    }
 
     @Test
     public void knownFplWithoutChannel() throws Exception {

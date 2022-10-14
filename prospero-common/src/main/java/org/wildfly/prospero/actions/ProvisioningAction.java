@@ -22,6 +22,7 @@ import org.wildfly.channel.ChannelManifest;
 import org.wildfly.channel.UnresolvedMavenArtifactException;
 import org.wildfly.prospero.Messages;
 import org.wildfly.prospero.api.InstallationMetadata;
+import org.wildfly.prospero.api.RepositoryUtils;
 import org.wildfly.prospero.api.exceptions.ArtifactResolutionException;
 import org.wildfly.prospero.api.exceptions.MetadataException;
 import org.wildfly.prospero.api.ProvisioningDefinition;
@@ -35,6 +36,7 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
+import java.util.stream.Collectors;
 
 import org.wildfly.prospero.model.ProsperoConfig;
 import org.wildfly.prospero.wfchannel.MavenSessionManager;
@@ -67,7 +69,6 @@ public class ProvisioningAction {
      * @throws MetadataException
      */
     public void provision(ProvisioningDefinition provisioningDefinition) throws ProvisioningException, OperationException {
-        final List<RemoteRepository> repositories = provisioningDefinition.getRepositories();
         final GalleonEnvironment galleonEnv = GalleonEnvironment
                 .builder(installDir, provisioningDefinition.getProsperoConfig(), mavenSessionManager)
                 .setConsole(console)
@@ -93,6 +94,10 @@ public class ProvisioningAction {
             GalleonUtils.executeGalleon(options -> galleonEnv.getProvisioningManager().provision(config, options),
                     mavenSessionManager.getProvisioningRepo().toAbsolutePath());
         } catch (UnresolvedMavenArtifactException e) {
+            final List<RemoteRepository> repositories = galleonEnv.getChannels().stream()
+                    .flatMap(c -> c.getRepositories().stream())
+                    .map(r -> RepositoryUtils.toRemoteRepository(r.getId(), r.getUrl()))
+                    .collect(Collectors.toList());
             throw new ArtifactResolutionException(e, repositories, mavenSessionManager.isOffline());
         }
 

@@ -18,7 +18,6 @@
 package org.wildfly.prospero.api;
 
 import java.io.IOException;
-import java.net.MalformedURLException;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -67,7 +66,7 @@ public class ProvisioningDefinition {
                 this.definition = null;
                 this.includedPackages.addAll(featurePackInfo.getPackages());
                 this.repositories.addAll(featurePackInfo.getRemoteRepositories());
-                setUpBuildEnv(overrideRemoteRepos, provisionConfigFile, channel, featurePackInfo.getChannelGavs());
+                setUpBuildEnv(overrideRemoteRepos, provisionConfigFile, channel, featurePackInfo.getChannels());
             } else if (provisionConfigFile.isPresent()) {
                 this.fpl = fpl.orElse(null);
                 this.definition = definition.orElse(null);
@@ -85,7 +84,7 @@ public class ProvisioningDefinition {
             throw new ArtifactResolutionException("Unable to resolve channel definition: " + e.getMessage(), e);
         }
 
-        if (channels.isEmpty()) {
+        if (channels.isEmpty() || channelsMissingManifest()) {
             if (fpl.isPresent() && KnownFeaturePacks.isWellKnownName(fpl.get())) {
                 throw Messages.MESSAGES.fplDefinitionDoesntContainChannel(fpl.get());
             } else {
@@ -94,8 +93,12 @@ public class ProvisioningDefinition {
         }
     }
 
+    private boolean channelsMissingManifest() {
+        return channels.stream().anyMatch(c->c.getManifestRef() == null);
+    }
+
     private void setUpBuildEnv(List<String> overrideRemoteRepos, Optional<Path> provisionConfigFile,
-                               Optional<ChannelManifestCoordinate> manifestRef, List<String> channelGAs) throws IOException {
+                               Optional<ChannelManifestCoordinate> manifestRef, List<Channel> channels) throws IOException {
         if (!provisionConfigFile.isPresent() && !manifestRef.isPresent()) {
             if (!overrideRemoteRepos.isEmpty()) {
                 this.repositories.clear();
@@ -107,18 +110,11 @@ public class ProvisioningDefinition {
                                     .build());
                 }
             }
-            if (channelGAs != null) {
-                channelGAs.forEach(c -> {
-                    try {
-                        this.channels.add(new Channel("", "", null, null,
-                                this.repositories.stream().map(r->new Repository(r.getId(), r.getUrl())).collect(Collectors.toList()),
-                                ChannelManifestCoordinate.create(null, c)));
-                    } catch (MalformedURLException e) {
-                        throw new RuntimeException(e);
-                    }
-                });
+            if (channels != null) {
+                this.channels.addAll(channels);
             }
         } else if (manifestRef.isPresent()) {
+            // TODO: how to handle manifest-ref? require repositories? replace existing manifest?
             this.channels.add(new Channel("", "", null, null,
                     this.repositories.stream().map(r->new Repository(r.getId(), r.getUrl())).collect(Collectors.toList()),
                     manifestRef.get()));
@@ -143,10 +139,6 @@ public class ProvisioningDefinition {
 
     public List<Channel> getChannels() {
         return channels;
-    }
-
-    public List<RemoteRepository> getRepositories() {
-        return repositories;
     }
 
     public Path getDefinition() {

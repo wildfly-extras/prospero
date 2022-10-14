@@ -21,7 +21,6 @@ import java.io.File;
 import java.io.IOException;
 import java.util.List;
 
-import org.eclipse.aether.repository.RemoteRepository;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Rule;
@@ -44,7 +43,6 @@ import org.wildfly.prospero.cli.ReturnCodes;
 import org.wildfly.prospero.model.ProsperoConfig;
 import org.wildfly.prospero.wfchannel.MavenSessionManager;
 
-import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
@@ -182,18 +180,18 @@ public class InstallCommandTest extends AbstractMavenCommandTest {
         assertEquals(ReturnCodes.INVALID_ARGUMENTS, exitCode);
     }
 
-    @Test
-    public void passChannelReposToProvisionDef() throws Exception {
-        int exitCode = commandLine.execute(CliConstants.Commands.INSTALL, CliConstants.DIR, "test",
-                CliConstants.FPL, KNOWN_FPL, CliConstants.REMOTE_REPOSITORIES, "http://test.repo1,http://test.repo2");
-
-        assertEquals(ReturnCodes.SUCCESS, exitCode);
-        Mockito.verify(provisionAction).provision(serverDefiniton.capture());
-        assertThat(serverDefiniton.getValue().getRepositories().stream().map(RemoteRepository::getUrl)).contains(
-                "http://test.repo1",
-                "http://test.repo2"
-        );
-    }
+//    @Test
+//    public void passChannelReposToProvisionDef() throws Exception {
+//        int exitCode = commandLine.execute(CliConstants.Commands.INSTALL, CliConstants.DIR, "test",
+//                CliConstants.FPL, KNOWN_FPL, CliConstants.REMOTE_REPOSITORIES, "http://test.repo1,http://test.repo2");
+//
+//        assertEquals(ReturnCodes.SUCCESS, exitCode);
+//        Mockito.verify(provisionAction).provision(serverDefiniton.capture());
+//        assertThat(serverDefiniton.getValue().getRepositories().stream().map(RemoteRepository::getUrl)).contains(
+//                "http://test.repo1",
+//                "http://test.repo2"
+//        );
+//    }
 
     @Test
     public void provisionConfigAndChannelSet() throws IOException {
