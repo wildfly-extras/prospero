@@ -16,12 +16,13 @@ on:
 
 jobs:
   build:
-    name: ${{ matrix.os }}
+    name: ${{ matrix.os }}-${{ matrix.jdk }}
     runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
       matrix:
         os: [ ubuntu-latest, windows-latest ]
+        jdk: [ 11, 17 ]
     steps:
       - uses: actions/checkout@v2
         with:
@@ -32,10 +33,10 @@ jobs:
           key: ${{ runner.os }}-maven-${{ hashFiles('**/pom.xml') }}
           restore-keys: |
             ${{ runner.os }}-maven-
-      - name: Set up JDK 11
+      - name: Set up JDK ${{ matrix.jdk }}
         uses: actions/setup-java@v2
         with:
-          java-version: '11'
+          java-version: ${{ matrix.jdk }}
           distribution: 'adopt'
           cache: maven
       - name: Build and test
