@@ -1,13 +1,13 @@
-/**
- * Licensed to the Apache Software Foundation (ASF) under one or more
- * contributor license agreements. See the NOTICE file distributed with
- * this work for additional information regarding copyright ownership.
- * The ASF licenses this file to You under the Apache License, Version 2.0
- * (the "License"); you may not use this file except in compliance with
- * the License. You may obtain a copy of the License at
- * <p>
- * http://www.apache.org/licenses/LICENSE-2.0
- * <p>
+/*
+ * Copyright 2022 Red Hat, Inc. and/or its affiliates
+ * and other contributors as indicated by the @author tags.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *   http://www.apache.org/licenses/LICENSE-2.0
+ *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -30,6 +30,7 @@ import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 public class GalleonUtils {
@@ -56,12 +57,23 @@ public class GalleonUtils {
             options.put(GalleonUtils.JBOSS_BULK_RESOLVE_PROPERTY, GalleonUtils.JBOSS_BULK_RESOLVE_VALUE);
             options.put(GalleonUtils.PRINT_ONLY_CONFLICTS_PROPERTY, GalleonUtils.PRINT_ONLY_CONFLICTS_VALUE);
             execution.execute(options);
+        } catch (ProvisioningException e) {
+            throw extractMavenException(e).orElseThrow(()->e);
         } finally {
             System.clearProperty(MAVEN_REPO_LOCAL);
             if (modulePathProperty != null) {
                 System.setProperty(MODULE_PATH_PROPERTY, modulePathProperty);
             }
         }
+    }
+
+    private static Optional<UnresolvedMavenArtifactException> extractMavenException(Throwable e) {
+        if (e instanceof UnresolvedMavenArtifactException) {
+            return Optional.of((UnresolvedMavenArtifactException) e);
+        } else if (e.getCause() != null) {
+            return extractMavenException(e.getCause());
+        }
+        return Optional.empty();
     }
 
     public interface GalleonExecution {
