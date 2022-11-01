@@ -1,13 +1,13 @@
-/**
- * Licensed to the Apache Software Foundation (ASF) under one or more
- * contributor license agreements. See the NOTICE file distributed with
- * this work for additional information regarding copyright ownership.
- * The ASF licenses this file to You under the Apache License, Version 2.0
- * (the "License"); you may not use this file except in compliance with
- * the License. You may obtain a copy of the License at
- * <p>
- * http://www.apache.org/licenses/LICENSE-2.0
- * <p>
+/*
+ * Copyright 2022 Red Hat, Inc. and/or its affiliates
+ * and other contributors as indicated by the @author tags.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *   http://www.apache.org/licenses/LICENSE-2.0
+ *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -114,6 +114,33 @@ public class MavenArtifactMapperTest {
         final MavenArtifact resolvedArtifact = new MavenArtifact("foo.bar", "test1", "jar", "", "1.2.3", null);
 
         MavenArtifactMapper.resolve(originalArtifact, resolvedArtifact);
+    }
+
+    @Test
+    public void testResolveArtifactUpdatesDuplicatedGA() throws Exception {
+        final List<org.jboss.galleon.universe.maven.MavenArtifact> galleonArtifacts = Arrays.asList(
+                galleonArtifact("foo.bar", "test1", "jar").setVersion("1.2.3"),
+                galleonArtifact("foo.bar", "test1", "jar").setVersion("1.2.4"));
+
+        final File file1 = temporaryFolder.newFile();
+        final List<MavenArtifact> channelArtifacts = Arrays.asList(
+                new MavenArtifact("foo.bar", "test1", "jar", "", "1.2.5", file1),
+                new MavenArtifact("foo.bar", "test1", "jar", "", "1.2.5", file1)
+        );
+
+        final MavenArtifactMapper mavenArtifactMapper = new MavenArtifactMapper(galleonArtifacts);
+
+        List<org.jboss.galleon.universe.maven.MavenArtifact> mappedArtifacts =
+                (List<org.jboss.galleon.universe.maven.MavenArtifact>) mavenArtifactMapper.applyResolution(channelArtifacts);
+
+        assertNotNull(mappedArtifacts);
+        assertEquals(2, mappedArtifacts.size());
+        assertEquals("test1", mappedArtifacts.get(0).getArtifactId());
+        assertEquals("1.2.5", mappedArtifacts.get(0).getVersion());
+        assertEquals(file1.toPath(), mappedArtifacts.get(0).getPath());
+        assertEquals("test1", mappedArtifacts.get(1).getArtifactId());
+        assertEquals(file1.toPath(), mappedArtifacts.get(1).getPath());
+        assertEquals("1.2.5", mappedArtifacts.get(1).getVersion());
     }
 
     private org.jboss.galleon.universe.maven.MavenArtifact galleonArtifact(String groupId, String artifactId, String extension) {

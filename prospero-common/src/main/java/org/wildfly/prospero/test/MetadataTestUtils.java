@@ -89,30 +89,23 @@ public final class MetadataTestUtils {
         return state;
     }
 
-    public static URL prepareProvisionConfigAsUrl(String channelDescriptor) throws IOException {
-        final Path provisionConfigFile = Files.createTempFile("channels", "yaml");
-        provisionConfigFile.toFile().deleteOnExit();
-
-        final Path path = prepareProvisionConfigAsUrl(provisionConfigFile, channelDescriptor);
-        return path.toUri().toURL();
-    }
-
     public static Path prepareProvisionConfig(String channelDescriptor) throws IOException {
         final Path provisionConfigFile = Files.createTempFile("channels", "yaml").toAbsolutePath();
         provisionConfigFile.toFile().deleteOnExit();
 
-        return prepareProvisionConfigAsUrl(provisionConfigFile, channelDescriptor);
+        prepareProvisionConfig(provisionConfigFile, channelDescriptor);
+        return provisionConfigFile;
     }
 
-    public static Path prepareProvisionConfigAsUrl(Path provisionConfigFile, String... channelDescriptor)
+    public static void prepareProvisionConfig(Path provisionConfigFile, String... channelDescriptor)
             throws IOException {
         List<URL> channelUrls = Arrays.stream(channelDescriptor)
                 .map(d->MetadataTestUtils.class.getClassLoader().getResource(d))
                 .collect(Collectors.toList());
-        return prepareProvisionConfigAsUrl(provisionConfigFile, channelUrls);
+        prepareProvisionConfig(provisionConfigFile, channelUrls);
     }
 
-    public static Path prepareProvisionConfigAsUrl(Path provisionConfigFile, List<URL> channelUrls) throws IOException {
+    public static void prepareProvisionConfig(Path provisionConfigFile, List<URL> channelUrls) throws IOException {
         List<ChannelRef> channels = new ArrayList<>();
         List<RepositoryRef> repositories = defaultRemoteRepositories().stream()
                 .map(r->new RepositoryRef(r.getId(), r.getUrl())).collect(Collectors.toList());
@@ -120,8 +113,6 @@ public final class MetadataTestUtils {
             channels.add(new ChannelRef(null, channelUrls.get(i).toString()));
         }
         new ProsperoConfig(channels, repositories).writeConfig(provisionConfigFile.toFile());
-
-        return provisionConfigFile;
     }
 
     public static List<RemoteRepository> defaultRemoteRepositories() {

@@ -1,13 +1,13 @@
-/**
- * Licensed to the Apache Software Foundation (ASF) under one or more
- * contributor license agreements. See the NOTICE file distributed with
- * this work for additional information regarding copyright ownership.
- * The ASF licenses this file to You under the Apache License, Version 2.0
- * (the "License"); you may not use this file except in compliance with
- * the License. You may obtain a copy of the License at
- * <p>
- * http://www.apache.org/licenses/LICENSE-2.0
- * <p>
+/*
+ * Copyright 2022 Red Hat, Inc. and/or its affiliates
+ * and other contributors as indicated by the @author tags.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *   http://www.apache.org/licenses/LICENSE-2.0
+ *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -20,6 +20,7 @@ package org.wildfly.prospero.galleon;
 import org.wildfly.channel.ArtifactCoordinate;
 import org.wildfly.channel.MavenArtifact;
 
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
@@ -29,13 +30,18 @@ import java.util.stream.Collectors;
 public class MavenArtifactMapper {
 
     private final Collection<org.jboss.galleon.universe.maven.MavenArtifact> galleonArtifacts;
-    private final HashMap<String, org.jboss.galleon.universe.maven.MavenArtifact> artifactMap = new HashMap<>();
+    private final HashMap<String, List<org.jboss.galleon.universe.maven.MavenArtifact>> artifactMap = new HashMap<>();
 
     public MavenArtifactMapper(Collection<org.jboss.galleon.universe.maven.MavenArtifact> galleonArtifacts) {
         this.galleonArtifacts = galleonArtifacts;
 
         for (org.jboss.galleon.universe.maven.MavenArtifact a : galleonArtifacts) {
-            artifactMap.put(coordString(a.getGroupId(), a.getArtifactId(), a.getExtension(), a.getClassifier()), a);
+            final String key = coordString(a.getGroupId(), a.getArtifactId(), a.getExtension(), a.getClassifier());
+            if (!artifactMap.containsKey(key)) {
+                artifactMap.put(key, new ArrayList<>());
+            }
+
+            artifactMap.get(key).add(a);
         }
     }
 
@@ -66,7 +72,9 @@ public class MavenArtifactMapper {
             if (!artifactMap.containsKey(key)) {
                 throw new IllegalArgumentException("Unknown artifact: " + key);
             }
-            resolve(artifactMap.get(key), channelArtifact);
+            for (org.jboss.galleon.universe.maven.MavenArtifact a : artifactMap.get(key)) {
+                resolve(a, channelArtifact);
+            }
         }
         return galleonArtifacts;
     }

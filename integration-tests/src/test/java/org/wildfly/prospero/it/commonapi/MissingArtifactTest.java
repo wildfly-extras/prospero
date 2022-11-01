@@ -54,8 +54,8 @@ public class MissingArtifactTest extends WfCoreTestBase {
                         .collect(Collectors.toList()));
         final Path channelFile = temporaryFolder.newFile().toPath();
         Files.writeString(channelFile, ChannelMapper.toYaml(target));
-        final Path installationFile = temporaryFolder.newFile().toPath();
-        final Path provisionConfigFile = MetadataTestUtils.prepareProvisionConfigAsUrl(installationFile, List.of(channelFile.toUri().toURL()));
+        final Path provisionConfigFile = temporaryFolder.newFile().toPath();
+        MetadataTestUtils.prepareProvisionConfig(provisionConfigFile, List.of(channelFile.toUri().toURL()));
 
         final ProvisioningDefinition provisioningDefinition = defaultWfCoreDefinition()
                 .setProvisionConfig(provisionConfigFile)
@@ -78,8 +78,8 @@ public class MissingArtifactTest extends WfCoreTestBase {
                         .collect(Collectors.toList()));
         final Path channelFile = temporaryFolder.newFile().toPath();
         Files.writeString(channelFile, ChannelMapper.toYaml(target));
-        final Path installationFile = temporaryFolder.newFile().toPath();
-        final Path provisionConfigFile = MetadataTestUtils.prepareProvisionConfigAsUrl(installationFile, List.of(channelFile.toUri().toURL()));
+        final Path provisionConfigFile = temporaryFolder.newFile().toPath();
+        MetadataTestUtils.prepareProvisionConfig(provisionConfigFile, List.of(channelFile.toUri().toURL()));
 
         final ProvisioningDefinition provisioningDefinition = defaultWfCoreDefinition()
                 .setProvisionConfig(provisionConfigFile)
