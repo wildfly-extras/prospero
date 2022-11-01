@@ -22,6 +22,19 @@
       <groupId>org.wildfly.prospero</groupId>
       <artifactId>prospero-cli</artifactId>
     </dependency>
+
+    <dependency>
+      <groupId>org.wildfly.prospero</groupId>
+      <artifactId>prospero-dist-common</artifactId>
+      <version>${project.version}</version>
+      <scope>provided</scope>
+      <exclusions>
+        <exclusion>
+          <groupId>*</groupId>
+          <artifactId>*</artifactId>
+        </exclusion>
+      </exclusions>
+    </dependency>
   </dependencies>
 
   <build>
@@ -86,6 +99,7 @@
             <configuration>
               <resources-dir>${basedir}/target/resources</resources-dir>
               <generate-channel>true</generate-channel>
+              <add-feature-packs-as-required-channels>false</add-feature-packs-as-required-channels>
             </configuration>
           </execution>
         </executions>

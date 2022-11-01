@@ -1,5 +1,6 @@
 package org.wildfly.prospero.it;
 
+import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Arrays;
 import java.util.Locale;
@@ -17,16 +18,20 @@ import static org.assertj.core.api.Assertions.assertThat;
  */
 public class ExecutionUtils {
 
-    private static final String PROSPERO_SCRIPT_PATH = isWindows()?
-            Paths.get("..", "prospero.bat").toString():
-            Paths.get("..", "prospero").toString();
+    private static final Path PROSPERO_SCRIPT_PATH = isWindows()?
+            Paths.get("..", "prospero.bat"):
+            Paths.get("..", "prospero");
 
     public static Execution prosperoExecution(String... args) {
         return new Execution(args);
     }
 
     private static ExecutionResult execute(Execution execution) throws Exception {
-        String[] execArray = mergeArrays(new String[] {PROSPERO_SCRIPT_PATH}, execution.args);
+        return execute(PROSPERO_SCRIPT_PATH, execution);
+    }
+
+    private static ExecutionResult execute(Path script, Execution execution) throws Exception {
+        String[] execArray = mergeArrays(new String[] {script.toString()}, execution.args);
         Process process = Runtime.getRuntime().exec(execArray);
 
         if (!process.waitFor(execution.timeLimit, execution.timeUnit)) {
@@ -43,7 +48,7 @@ public class ExecutionUtils {
         return finalArray;
     }
 
-    private static boolean isWindows() {
+    public static boolean isWindows() {
         return System.getProperty("os.name").toLowerCase(Locale.ENGLISH).contains("windows");
     }
 
@@ -71,6 +76,10 @@ public class ExecutionUtils {
 
         public ExecutionResult execute() throws Exception {
             return ExecutionUtils.execute(this);
+        }
+
+        public ExecutionResult execute(Path script) throws Exception {
+            return ExecutionUtils.execute(script, this);
         }
     }
 

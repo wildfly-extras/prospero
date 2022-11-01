@@ -1,0 +1,6 @@
+<?xml version="1.0" ?>
+
+<installation xmlns="urn:jboss:galleon:provisioning:3.0">
+    <feature-pack location="wildfly@maven(org.jboss.universe:community-universe):current#17.0.0.Final"/>
+    <feature-pack location="org.wildfly.prospero:prospero-wildfly-galleon-pack:1.0.0.Beta1-SNAPSHOT"/>
+</installation>

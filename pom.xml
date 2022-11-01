@@ -324,6 +324,11 @@
     </build>
     <profiles>
         <profile>
+            <activation>
+                <property>
+                    <name>allTests</name>
+                </property>
+            </activation>
             <id>dist</id>
             <modules>
                 <module>dist</module>
