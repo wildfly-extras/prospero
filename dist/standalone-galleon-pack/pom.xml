@@ -3,7 +3,7 @@
     <parent>
         <groupId>org.wildfly.prospero</groupId>
         <artifactId>prospero-dist</artifactId>
-        <version>1.0.0.Beta1-SNAPSHOT</version>
+        <version>1.0.0.Beta4-SNAPSHOT</version>
     </parent>
 
     <modelVersion>4.0.0</modelVersion>
@@ -13,13 +13,13 @@
 
     <dependencies>
         <dependency>
-            <groupId>org.wildfly.prospero</groupId>
-            <artifactId>prospero-cli</artifactId>
-        </dependency>
-        <dependency>
             <groupId>org.wildfly.galleon-plugins</groupId>
             <artifactId>wildfly-galleon-plugins</artifactId>
             <scope>provided</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.wildfly.prospero</groupId>
+            <artifactId>prospero-cli</artifactId>
         </dependency>
         <dependency>
             <groupId>org.jboss.modules</groupId>
