@@ -14,7 +14,6 @@
         <dependency>
             <groupId>org.wildfly.prospero</groupId>
             <artifactId>prospero-standalone-galleon-pack</artifactId>
-            <version>${project.version}</version>
             <type>zip</type>
         </dependency>
     </dependencies>

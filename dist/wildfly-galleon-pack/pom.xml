@@ -26,7 +26,6 @@
     <dependency>
       <groupId>org.wildfly.prospero</groupId>
       <artifactId>prospero-dist-common</artifactId>
-      <version>${project.version}</version>
       <scope>provided</scope>
       <exclusions>
         <exclusion>

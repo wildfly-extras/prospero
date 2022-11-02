@@ -29,7 +29,6 @@
         <dependency>
             <groupId>org.wildfly.prospero</groupId>
             <artifactId>prospero-common</artifactId>
-            <version>${project.version}</version>
         </dependency>
 
         <dependency>
@@ -110,7 +109,6 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-shade-plugin</artifactId>
-                <version>${version.maven-shade-plugin}</version>
                 <configuration>
                     <shadedArtifactAttached>true</shadedArtifactAttached>
                     <createDependencyReducedPom>false</createDependencyReducedPom>
@@ -141,12 +139,6 @@
                         </configuration>
                     </execution>
                 </executions>
-            </plugin>
-
-            <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-compiler-plugin</artifactId>
-                <version>${version.maven-compiler-plugin}</version>
             </plugin>
         </plugins>
     </build>

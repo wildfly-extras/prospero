@@ -25,4 +25,20 @@
         <module>docs</module>
     </modules>
 
+    <dependencyManagement>
+        <dependencies>
+            <dependency>
+                <groupId>org.wildfly.prospero</groupId>
+                <artifactId>prospero-dist-common</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.wildfly.prospero</groupId>
+                <artifactId>prospero-standalone-galleon-pack</artifactId>
+                <version>${project.version}</version>
+                <type>zip</type>
+            </dependency>
+        </dependencies>
+    </dependencyManagement>
+
 </project>
