@@ -143,7 +143,7 @@ public class InstallCommand extends AbstractCommand {
 
         ProvisioningAction provisioningAction = actionFactory.install(directory.toAbsolutePath(), mavenSessionManager,
                 console);
-        provisioningAction.provision(provisioningDefinition);
+        provisioningAction.provision(provisioningDefinition.toProvisioningConfig(), provisioningDefinition.getChannels());
 
         final float totalTime = (System.currentTimeMillis() - startTime) / 1000f;
         console.println(CliMessages.MESSAGES.operationCompleted(totalTime));

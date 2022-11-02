@@ -20,19 +20,11 @@ package org.wildfly.prospero.galleon;
 import org.jboss.galleon.universe.FeaturePackLocation;
 import org.jboss.galleon.universe.UniverseSpec;
 import org.jboss.galleon.universe.maven.MavenArtifact;
-import org.jboss.galleon.universe.maven.MavenUniverseException;
-import org.jboss.galleon.universe.maven.repo.MavenRepoManager;
 import org.wildfly.prospero.Messages;
 
 public class FeaturePackLocationParser {
 
-    private final MavenRepoManager repoManager;
-
-    public FeaturePackLocationParser(MavenRepoManager repoManager) {
-        this.repoManager = repoManager;
-    }
-
-    public FeaturePackLocation resolveFpl(String fplText) throws MavenUniverseException {
+    public static FeaturePackLocation resolveFpl(String fplText) {
         final FeaturePackLocation fpl = FeaturePackLocation.fromString(fplText);
 
         // full GAV
@@ -52,6 +44,6 @@ public class FeaturePackLocationParser {
         artifact.setExtension("zip");
 
         return new FeaturePackLocation(UniverseSpec.fromString("maven"), fpl.getProducerName() + ":" + fpl.getChannelName() + "::zip",
-                null, null, repoManager.getLatestVersion(artifact));
+                null, null, artifact.getVersion());
     }
 }

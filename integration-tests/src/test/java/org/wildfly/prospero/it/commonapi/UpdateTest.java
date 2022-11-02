@@ -77,7 +77,7 @@ public class UpdateTest extends WfCoreTestBase {
         final ProvisioningDefinition provisioningDefinition = defaultWfCoreDefinition()
                 .setProvisionConfig(buildConfigWithMockRepo().toPath())
                 .build();
-        installation.provision(provisioningDefinition);
+        installation.provision(provisioningDefinition.toProvisioningConfig(), provisioningDefinition.getChannels());
 
         Optional<Artifact> wildflyCliArtifact = readArtifactFromManifest("org.wildfly.core", "wildfly-cli");
         assertEquals(BASE_VERSION, wildflyCliArtifact.get().getVersion());
@@ -107,7 +107,7 @@ public class UpdateTest extends WfCoreTestBase {
         final ProvisioningDefinition provisioningDefinition = defaultWfCoreDefinition()
                 .setProvisionConfig(buildConfigWithMockRepo().toPath())
                 .build();
-        installation.provision(provisioningDefinition);
+        installation.provision(provisioningDefinition.toProvisioningConfig(), provisioningDefinition.getChannels());
 
         Files.writeString(prosperoConfigFile, "# test comment", StandardOpenOption.APPEND);
 

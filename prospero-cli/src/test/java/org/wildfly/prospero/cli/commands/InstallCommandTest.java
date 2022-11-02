@@ -21,6 +21,9 @@ import java.io.File;
 import java.io.IOException;
 import java.util.List;
 
+import org.jboss.galleon.config.ProvisioningConfig;
+import org.jboss.galleon.universe.FeaturePackLocation;
+import org.jboss.galleon.xml.ProvisioningXmlWriter;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Rule;
@@ -36,15 +39,14 @@ import org.wildfly.channel.Channel;
 import org.wildfly.channel.ChannelManifestCoordinate;
 import org.wildfly.channel.Repository;
 import org.wildfly.prospero.actions.ProvisioningAction;
-import org.wildfly.prospero.api.ProvisioningDefinition;
 import org.wildfly.prospero.cli.ActionFactory;
 import org.wildfly.prospero.cli.CliMessages;
 import org.wildfly.prospero.cli.ReturnCodes;
 import org.wildfly.prospero.model.ProsperoConfig;
 import org.wildfly.prospero.wfchannel.MavenSessionManager;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.when;
@@ -63,7 +65,10 @@ public class InstallCommandTest extends AbstractMavenCommandTest {
     private ProvisioningAction provisionAction;
 
     @Captor
-    private ArgumentCaptor<ProvisioningDefinition> serverDefiniton;
+    private ArgumentCaptor<ProvisioningConfig> configCaptor;
+
+    @Captor
+    private ArgumentCaptor<List<Channel>> channelCaptor;
 
     @Captor
     private ArgumentCaptor<MavenSessionManager> mavenSessionManager;
@@ -117,8 +122,10 @@ public class InstallCommandTest extends AbstractMavenCommandTest {
                 CliConstants.FPL, "org.wildfly:wildfly-ee-galleon-pack",
                 CliConstants.PROVISION_CONFIG, provisionConfigFile.getAbsolutePath());
         assertEquals(ReturnCodes.SUCCESS, exitCode);
-        Mockito.verify(provisionAction).provision(serverDefiniton.capture());
-        assertEquals("org.wildfly:wildfly-ee-galleon-pack", serverDefiniton.getValue().getFpl());
+        Mockito.verify(provisionAction).provision(configCaptor.capture(), channelCaptor.capture());
+        assertThat(configCaptor.getValue().getFeaturePackDeps())
+                .map(fp->fp.getLocation().getProducerName())
+                .containsExactly("org.wildfly:wildfly-ee-galleon-pack::zip");
     }
 
     @Test
@@ -126,8 +133,10 @@ public class InstallCommandTest extends AbstractMavenCommandTest {
         int exitCode = commandLine.execute(CliConstants.Commands.INSTALL, CliConstants.DIR, "test", CliConstants.FPL, KNOWN_FPL);
 
         assertEquals(ReturnCodes.SUCCESS, exitCode);
-        Mockito.verify(provisionAction).provision(serverDefiniton.capture());
-        assertEquals("org.wildfly.core:wildfly-core-galleon-pack", serverDefiniton.getValue().getFpl());
+        Mockito.verify(provisionAction).provision(configCaptor.capture(), channelCaptor.capture());
+        assertThat(configCaptor.getValue().getFeaturePackDeps())
+                .map(fp->fp.getLocation().getProducerName())
+                .containsExactly("org.wildfly.core:wildfly-core-galleon-pack::zip");
     }
 
     @Test
@@ -142,14 +151,24 @@ public class InstallCommandTest extends AbstractMavenCommandTest {
                 CliConstants.PROVISION_CONFIG, provisionConfigFile.getAbsolutePath());
 
         assertEquals(ReturnCodes.SUCCESS, exitCode);
-        Mockito.verify(provisionAction).provision(serverDefiniton.capture());
-        assertEquals("org.wildfly.core:wildfly-core-galleon-pack", serverDefiniton.getValue().getFpl());
-        assertEquals("dev", serverDefiniton.getValue().getChannels().get(0).getRepositories().get(0).getId());
+        Mockito.verify(provisionAction).provision(configCaptor.capture(), channelCaptor.capture());
+        assertThat(configCaptor.getValue().getFeaturePackDeps())
+                .map(fp->fp.getLocation().getProducerName())
+                .containsExactly("org.wildfly.core:wildfly-core-galleon-pack::zip");
+        assertThat(channelCaptor.getValue())
+                .flatMap(c->c.getRepositories())
+                .map(r->r.getId())
+                .containsExactly("dev");
     }
 
     @Test
     public void usingProvisionDefinitonRequiresChannel() throws Exception {
         final File provisionDefinitionFile = temporaryFolder.newFile("provision.xml");
+        ProvisioningXmlWriter.getInstance().write(ProvisioningConfig.builder()
+                        .addFeaturePackDep(FeaturePackLocation.fromString("org.wildfly.core:wildfly-core-galleon-pack::zip"))
+                        .build(),
+                provisionDefinitionFile.toPath());
+
         final File provisionConfigFile = temporaryFolder.newFile();
         Channel channel = new Channel("", "", null, null,
                 List.of(new Repository("dev", "http://test.test")),
@@ -161,10 +180,14 @@ public class InstallCommandTest extends AbstractMavenCommandTest {
                 CliConstants.DEFINITION, provisionDefinitionFile.getAbsolutePath());
 
         assertEquals(ReturnCodes.SUCCESS, exitCode);
-        Mockito.verify(provisionAction).provision(serverDefiniton.capture());
-        assertNull("org.wildfly:wildfly-ee-galleon-pack", serverDefiniton.getValue().getFpl());
-        assertEquals("dev", serverDefiniton.getValue().getChannels().get(0).getRepositories().get(0).getId());
-        assertEquals(provisionDefinitionFile.toPath(), serverDefiniton.getValue().getDefinition());
+        Mockito.verify(provisionAction).provision(configCaptor.capture(), channelCaptor.capture());
+        assertThat(configCaptor.getValue().getFeaturePackDeps())
+                .map(fp->fp.getLocation().getProducerName())
+                .containsExactly("org.wildfly.core:wildfly-core-galleon-pack::zip");
+        assertThat(channelCaptor.getValue())
+                .flatMap(c->c.getRepositories())
+                .map(r->r.getId())
+                .containsExactly("dev");
     }
 
     @Test

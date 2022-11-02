@@ -25,15 +25,11 @@ import org.wildfly.prospero.api.InstallationMetadata;
 import org.wildfly.prospero.api.RepositoryUtils;
 import org.wildfly.prospero.api.exceptions.ArtifactResolutionException;
 import org.wildfly.prospero.api.exceptions.MetadataException;
-import org.wildfly.prospero.api.ProvisioningDefinition;
 import org.wildfly.prospero.api.exceptions.OperationException;
-import org.wildfly.prospero.galleon.FeaturePackLocationParser;
 import org.wildfly.prospero.galleon.GalleonEnvironment;
 import org.wildfly.prospero.galleon.GalleonUtils;
 import org.wildfly.prospero.galleon.ChannelMavenArtifactRepositoryManager;
 
-import java.io.IOException;
-import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -42,10 +38,7 @@ import org.wildfly.prospero.model.ProsperoConfig;
 import org.wildfly.prospero.wfchannel.MavenSessionManager;
 import org.eclipse.aether.repository.RemoteRepository;
 import org.jboss.galleon.ProvisioningException;
-import org.jboss.galleon.config.FeaturePackConfig;
 import org.jboss.galleon.config.ProvisioningConfig;
-import org.jboss.galleon.universe.FeaturePackLocation;
-import org.jboss.galleon.xml.ProvisioningXmlParser;
 
 public class ProvisioningAction {
 
@@ -64,60 +57,16 @@ public class ProvisioningAction {
      * Installs feature pack defined by {@code fpl} in {@code installDir}. If {@code fpl} doesn't include version,
      * the newest available version will be used.
      *
-     * @param provisioningDefinition
+     * @param config
+     * @param channels
      * @throws ProvisioningException
      * @throws MetadataException
      */
-    public void provision(ProvisioningDefinition provisioningDefinition) throws ProvisioningException, OperationException {
-        final GalleonEnvironment galleonEnv = GalleonEnvironment
-                .builder(installDir, provisioningDefinition.getProsperoConfig(), mavenSessionManager)
-                .setConsole(console)
-                .build();
-
-        final ChannelMavenArtifactRepositoryManager repositoryManager = galleonEnv.getRepositoryManager();
-        final ProvisioningConfig config;
-        if (provisioningDefinition.getFpl() != null) {
-            FeaturePackLocation loc = new FeaturePackLocationParser(repositoryManager).resolveFpl(provisioningDefinition.getFpl());
-
-            console.println(Messages.MESSAGES.installingFpl(loc.toString()));
-
-            final FeaturePackConfig.Builder configBuilder = FeaturePackConfig.builder(loc);
-            for (String includedPackage : provisioningDefinition.getIncludedPackages()) {
-                configBuilder.includePackage(includedPackage);
-            }
-            config = ProvisioningConfig.builder().addFeaturePackDep(configBuilder.build()).build();
-        } else {
-            config = ProvisioningXmlParser.parse(provisioningDefinition.getDefinition());
-        }
-
-        try {
-            GalleonUtils.executeGalleon(options -> galleonEnv.getProvisioningManager().provision(config, options),
-                    mavenSessionManager.getProvisioningRepo().toAbsolutePath());
-        } catch (UnresolvedMavenArtifactException e) {
-            final List<RemoteRepository> repositories = galleonEnv.getChannels().stream()
-                    .flatMap(c -> c.getRepositories().stream())
-                    .map(r -> RepositoryUtils.toRemoteRepository(r.getId(), r.getUrl()))
-                    .collect(Collectors.toList());
-            throw new ArtifactResolutionException(e, repositories, mavenSessionManager.isOffline());
-        }
-
-        writeProsperoMetadata(installDir, repositoryManager, galleonEnv.getChannels());
+    public void provision(ProvisioningConfig config, List<Channel> channels) throws ProvisioningException, OperationException {
+        doProvision((pm,options)->pm.provision(config, options), channels);
     }
 
-    /**
-     * Installs feature pack based on Galleon installation file
-     *
-     * @param installationFile
-     * @param channels
-     * @param repositories
-     * @throws ProvisioningException
-     * @throws IOException
-     * @throws MetadataException
-     */
-    public void provision(Path installationFile, List<Channel> channels, List<RemoteRepository> repositories) throws ProvisioningException, OperationException {
-        if (Files.exists(installDir)) {
-            throw Messages.MESSAGES.installationDirAlreadyExists(installDir);
-        }
+    private void doProvision(GalleonUtils.ProvisioningManagerExecution galleonOp, List<Channel> channels) throws ProvisioningException, OperationException {
         final ProsperoConfig prosperoConfig = new ProsperoConfig(channels);
         final GalleonEnvironment galleonEnv = GalleonEnvironment
                 .builder(installDir, prosperoConfig, mavenSessionManager)
@@ -125,9 +74,13 @@ public class ProvisioningAction {
                 .build();
 
         try {
-            GalleonUtils.executeGalleon(options->galleonEnv.getProvisioningManager().provision(installationFile, options),
+            GalleonUtils.executeGalleon(options -> galleonOp.execute(galleonEnv.getProvisioningManager(), options),
                     mavenSessionManager.getProvisioningRepo().toAbsolutePath());
         } catch (UnresolvedMavenArtifactException e) {
+            final List<RemoteRepository> repositories = galleonEnv.getChannels().stream()
+                    .flatMap(c -> c.getRepositories().stream())
+                    .map(r -> RepositoryUtils.toRemoteRepository(r.getId(), r.getUrl()))
+                    .collect(Collectors.toList());
             throw new ArtifactResolutionException(e, repositories, mavenSessionManager.isOffline());
         }
 

@@ -54,7 +54,8 @@ public class InstallationRestoreActionTest extends WfCoreTestBase {
         final ProvisioningDefinition provisioningDefinition = defaultWfCoreDefinition()
                 .setProvisionConfig(provisionConfigFile)
                 .build();
-        new ProvisioningAction(outputPath, mavenSessionManager, new AcceptingConsole()).provision(provisioningDefinition);
+        new ProvisioningAction(outputPath, mavenSessionManager, new AcceptingConsole())
+                .provision(provisioningDefinition.toProvisioningConfig(), provisioningDefinition.getChannels());
 
         MetadataTestUtils.prepareProvisionConfig(outputPath.resolve(MetadataTestUtils.PROVISION_CONFIG_FILE_PATH), CHANNEL_COMPONENT_UPDATES, CHANNEL_BASE_CORE_19);
 
