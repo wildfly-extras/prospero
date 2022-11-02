@@ -49,6 +49,7 @@ import java.nio.file.Path;
 import java.nio.file.StandardOpenOption;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
@@ -86,7 +87,8 @@ public class UpdateTest extends WfCoreTestBase {
         deployManifestFile(updatedManifest, "1.0.1");
 
         // update installation
-        new UpdateAction(outputPath, mavenSessionManager, new AcceptingConsole()).doUpdateAll(false);
+        new UpdateAction(outputPath, mavenSessionManager, new AcceptingConsole(), Collections.emptyList())
+                .performUpdate();
 
         wildflyCliArtifact = readArtifactFromManifest("org.wildfly.core", "wildfly-cli");
         assertEquals(UPGRADE_VERSION, wildflyCliArtifact.get().getVersion());
@@ -114,7 +116,8 @@ public class UpdateTest extends WfCoreTestBase {
         deployManifestFile(updatedChannel, "1.0.1");
 
         // update installation
-        new UpdateAction(outputPath, mavenSessionManager, new AcceptingConsole()).doUpdateAll(false);
+        new UpdateAction(outputPath, mavenSessionManager, new AcceptingConsole(), Collections.emptyList())
+                .performUpdate();
 
         assertTrue(Files.readString(prosperoConfigFile).contains("# test comment"));
     }

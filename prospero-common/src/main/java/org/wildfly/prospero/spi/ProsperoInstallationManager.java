@@ -6,10 +6,12 @@ import org.wildfly.installationmanager.MavenOptions;
 import org.wildfly.installationmanager.spi.InstallationManager;
 import org.wildfly.prospero.Messages;
 import org.wildfly.prospero.actions.InstallationHistoryAction;
+import org.wildfly.prospero.actions.UpdateAction;
 import org.wildfly.prospero.api.ArtifactChange;
 import org.wildfly.prospero.api.InstallationMetadata;
 import org.wildfly.prospero.api.SavedState;
 import org.wildfly.prospero.api.exceptions.MetadataException;
+import org.wildfly.prospero.updates.UpdateSet;
 import org.wildfly.prospero.wfchannel.MavenSessionManager;
 
 import java.io.File;
@@ -63,6 +65,18 @@ public class ProsperoInstallationManager implements InstallationManager {
                     return new HistoryRevisionResult(c.getOldVersion().get(), c.getNewVersion().get(), c.getOldGav().get(), c.getNewGav().get(), HistoryRevisionResult.Status.UPDATED);
                 }
             }).collect(Collectors.toList());
+        }
+    }
+
+    public void update() throws Exception {
+        try (final UpdateAction updateAction = new UpdateAction(server, mavenSessionManager, null, Collections.emptyList())) {
+            updateAction.performUpdate();
+        }
+    }
+
+    public UpdateSet findUpdates() throws Exception {
+        try (final UpdateAction updateAction = new UpdateAction(server, mavenSessionManager, null, Collections.emptyList())) {
+            return updateAction.findUpdates();
         }
     }
 

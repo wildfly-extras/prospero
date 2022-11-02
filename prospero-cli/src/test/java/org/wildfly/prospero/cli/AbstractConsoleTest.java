@@ -33,15 +33,27 @@ public class AbstractConsoleTest {
 
     protected CommandLine commandLine;
 
+    private boolean denyConfirm = false;
+    protected int askedConfirmation = 0;
+
     @Before
     public void setUp() throws Exception {
         CliConsole console = new CliConsole() {
             @Override
             public boolean confirm(String prompt, String accepted, String cancelled) {
-                return true;
+                askedConfirmation++;
+                return !denyConfirm;
             }
         };
         commandLine = CliMain.createCommandLine(console, createActionFactory());
+    }
+
+    protected void setDenyConfirm(boolean denyConfirm) {
+        this.denyConfirm = denyConfirm;
+    }
+
+    protected int getAskedConfirmation() {
+        return askedConfirmation;
     }
 
     protected ActionFactory createActionFactory() {
