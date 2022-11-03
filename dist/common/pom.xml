@@ -1,9 +1,8 @@
-<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-  xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
   <parent>
     <groupId>org.wildfly.prospero</groupId>
     <artifactId>prospero-dist</artifactId>
-    <version>1.0.0.Beta4-SNAPSHOT</version>
+    <version>1.0.0.Beta4</version>
   </parent>
 
   <modelVersion>4.0.0</modelVersion>
@@ -49,9 +48,9 @@
                         <phase>compile</phase>
                         <configuration>
                             <target>
-                                <move file="${project.build.outputDirectory}/${prospero.script.path}/prospero.sh" tofile="${project.build.outputDirectory}/${prospero.script.path}/${prospero.dist.name}.sh"/>
-                                <move file="${project.build.outputDirectory}/${prospero.script.path}/prospero.bat" tofile="${project.build.outputDirectory}/${prospero.script.path}/${prospero.dist.name}.bat"/>
-                                <move file="${project.build.outputDirectory}/${prospero.script.path}/prospero-logging.properties" tofile="${project.build.outputDirectory}/${prospero.script.path}/${prospero.dist.name}-logging.properties"/>
+                                <move file="${project.build.outputDirectory}/${prospero.script.path}/prospero.sh" tofile="${project.build.outputDirectory}/${prospero.script.path}/${prospero.dist.name}.sh" />
+                                <move file="${project.build.outputDirectory}/${prospero.script.path}/prospero.bat" tofile="${project.build.outputDirectory}/${prospero.script.path}/${prospero.dist.name}.bat" />
+                                <move file="${project.build.outputDirectory}/${prospero.script.path}/prospero-logging.properties" tofile="${project.build.outputDirectory}/${prospero.script.path}/${prospero.dist.name}-logging.properties" />
                             </target>
                         </configuration>
                         <goals>
