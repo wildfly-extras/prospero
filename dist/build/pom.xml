@@ -3,7 +3,7 @@
     <parent>
         <groupId>org.wildfly.prospero</groupId>
         <artifactId>prospero-dist</artifactId>
-        <version>1.0.0.Beta1-SNAPSHOT</version>
+        <version>1.0.0.Beta4-SNAPSHOT</version>
     </parent>
 
     <modelVersion>4.0.0</modelVersion>
@@ -14,7 +14,6 @@
         <dependency>
             <groupId>org.wildfly.prospero</groupId>
             <artifactId>prospero-standalone-galleon-pack</artifactId>
-            <version>${project.version}</version>
             <type>zip</type>
         </dependency>
     </dependencies>

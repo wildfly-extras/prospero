@@ -5,7 +5,7 @@
     <parent>
         <artifactId>prospero</artifactId>
         <groupId>org.wildfly.prospero</groupId>
-        <version>1.0.0.Beta1-SNAPSHOT</version>
+        <version>1.0.0.Beta4-SNAPSHOT</version>
     </parent>
     <modelVersion>4.0.0</modelVersion>
 
@@ -20,12 +20,10 @@
         <dependency>
             <groupId>${project.groupId}</groupId>
             <artifactId>prospero-common</artifactId>
-            <version>${project.version}</version>
         </dependency>
         <dependency>
             <groupId>${project.groupId}</groupId>
             <artifactId>prospero-cli</artifactId>
-            <version>${project.version}</version>
         </dependency>
 
         <dependency>
@@ -97,7 +95,6 @@
                     <plugin>
                         <groupId>org.apache.maven.plugins</groupId>
                         <artifactId>maven-dependency-plugin</artifactId>
-                        <version>3.1.2</version>
                         <executions>
                             <execution>
                                 <id>copy-prospero-channel</id>

@@ -1,0 +1,35 @@
+name: WildFly Prospero Release
+
+on:
+  pull_request:
+    types: [closed]
+    paths:
+      - '.github/project.yml'
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    name: release
+    if: ${{github.event.pull_request.merged == true}}
+    steps:
+      - uses: radcortez/project-metadata-action@main
+        name: retrieve project metadata
+        id: metadata
+        with:
+          github-token: ${{secrets.GITHUB_TOKEN}}
+          metadata-file-path: '.github/project.yml'
+      - uses: actions/checkout@v2
+      - uses: actions/setup-java@v1
+        with:
+          java-version: 11
+      - name: maven release ${{steps.metadata.outputs.current-version}}
+        run: |
+          java -version
+          git config --global user.name "WildFly Prospero CI"
+          git config --global user.email "wildfly-dev@lists.jboss.org"
+          git checkout -b release
+          mvn -B release:prepare -Pdist,jboss-release -DreleaseVersion=${{steps.metadata.outputs.current-version}} -DdevelopmentVersion=${{steps.metadata.outputs.next-version}}
+          git checkout ${{github.base_ref}}
+          git rebase release
+          git push
+          git push --tags
