@@ -23,27 +23,28 @@ import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
+import org.wildfly.channel.Channel;
+import org.wildfly.channel.ChannelManifestCoordinate;
+import org.wildfly.channel.Repository;
 import org.wildfly.prospero.api.InstallationMetadata;
 import org.wildfly.prospero.api.exceptions.MetadataException;
 import org.wildfly.prospero.cli.AbstractConsoleTest;
 import org.wildfly.prospero.cli.CliMessages;
 import org.wildfly.prospero.cli.ReturnCodes;
 import org.wildfly.prospero.cli.commands.CliConstants;
-import org.wildfly.prospero.model.ChannelRef;
 import org.wildfly.prospero.model.ProsperoConfig;
-import org.wildfly.prospero.model.RepositoryRef;
 import org.wildfly.prospero.test.MetadataTestUtils;
 
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.Arrays;
-import java.util.Collections;
 import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 
 import static org.assertj.core.api.AssertionsForInterfaceTypes.assertThat;
+import static org.assertj.core.groups.Tuple.*;
 import static org.jboss.galleon.util.PropertyUtils.isWindows;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
@@ -85,20 +86,27 @@ public class ChannelInitializeCommandTest extends AbstractConsoleTest {
                 CliConstants.CUSTOMIZATION_CHANNEL_NAME, "org.test:custom-channel",
                 CliConstants.CUSTOMIZATION_REPOSITORY_URL, customRepoUrl);
         Assert.assertEquals(ReturnCodes.SUCCESS, exitCode);
-        assertThat(actualChannels()).contains(
-                new ChannelRef("org.test:custom-channel", null)
-        );
-        assertThat(actualRepositories()).contains(
-                new RepositoryRef(CUSTOMIZATION_REPO_ID, customRepoUrl)
-        );
+        assertThat(actualChannels())
+                .map(c -> c.getManifestRef().getGav())
+                .contains(
+                    "org.test:custom-channel"
+                );
+        assertThat(actualRepositories())
+                .map(r-> tuple(r.getId(), r.getUrl()))
+                .contains(
+                        tuple(CUSTOMIZATION_REPO_ID, customRepoUrl)
+                );
     }
 
     @Test
     public void customRepositoryAlreadyExists() throws Exception {
         final String customRepoUrl = tempFolder.newFolder().toURI().toURL().toString();
         final InstallationMetadata im = new InstallationMetadata(installationDir);
+        Channel channel = new Channel("Customization channel", null, null, null,
+                List.of(new Repository(CUSTOMIZATION_REPO_ID, customRepoUrl)),
+                new ChannelManifestCoordinate("org.test", "test"));
         final ProsperoConfig prosperoConfig = im.getProsperoConfig();
-        prosperoConfig.addRepository(new RepositoryRef(CUSTOMIZATION_REPO_ID, customRepoUrl));
+        prosperoConfig.getChannels().add(channel);
         im.updateProsperoConfig(prosperoConfig);
 
         int exitCode = commandLine.execute(
@@ -109,9 +117,11 @@ public class ChannelInitializeCommandTest extends AbstractConsoleTest {
 
         Assert.assertEquals(ReturnCodes.INVALID_ARGUMENTS, exitCode);
         assertTrue(getErrorOutput().contains(CliMessages.MESSAGES.customizationRepoExist(CUSTOMIZATION_REPO_ID)));
-        assertThat(actualChannels()).doesNotContain(
-                new ChannelRef("org.test:custom-channel", null)
-        );
+        assertThat(actualChannels())
+                .map(c -> c.getManifestRef().getGav())
+                .doesNotContain(
+                    "org.test:custom-channel"
+                );
     }
 
     @Test
@@ -126,9 +136,11 @@ public class ChannelInitializeCommandTest extends AbstractConsoleTest {
 
         Assert.assertEquals(ReturnCodes.INVALID_ARGUMENTS, exitCode);
         assertTrue(getErrorOutput().contains(CliMessages.MESSAGES.illegalChannel("org.test.custom-channel")));
-        assertThat(actualRepositories()).doesNotContain(
-                new RepositoryRef(CUSTOMIZATION_REPO_ID, customRepoUrl)
-        );
+        assertThat(actualRepositories())
+                .map(r-> tuple(r.getId(), r.getUrl()))
+                .doesNotContain(
+                        tuple(CUSTOMIZATION_REPO_ID, customRepoUrl)
+                );
     }
 
     @Test
@@ -164,12 +176,16 @@ public class ChannelInitializeCommandTest extends AbstractConsoleTest {
                     CliConstants.CUSTOMIZATION_REPOSITORY_URL, customRepoUrl);
 
             Assert.assertEquals(ReturnCodes.PROCESSING_ERROR, exitCode);
-            assertThat(actualRepositories()).doesNotContain(
-                    new RepositoryRef(CUSTOMIZATION_REPO_ID, customRepoUrl)
-            );
-            assertThat(actualChannels()).doesNotContain(
-                    new ChannelRef("org.test:custom-channel", null)
-            );
+            assertThat(actualRepositories())
+                    .map(r-> tuple(r.getId(), r.getUrl()))
+                    .doesNotContain(
+                            tuple(CUSTOMIZATION_REPO_ID, customRepoUrl)
+                    );
+            assertThat(actualChannels())
+                    .map(c -> c.getManifestRef().getGav())
+                    .doesNotContain(
+                        "org.test:custom-channel"
+                    );
         } finally {
             base.toFile().setWritable(true);
         }
@@ -189,12 +205,16 @@ public class ChannelInitializeCommandTest extends AbstractConsoleTest {
                 CliConstants.CUSTOMIZATION_REPOSITORY_URL, customRepoUrl);
 
         Assert.assertEquals(ReturnCodes.PROCESSING_ERROR, exitCode);
-        assertThat(actualRepositories()).doesNotContain(
-                new RepositoryRef(CUSTOMIZATION_REPO_ID, customRepoUrl)
-        );
-        assertThat(actualChannels()).doesNotContain(
-                new ChannelRef("org.test:custom-channel", null)
-        );
+        assertThat(actualRepositories())
+                .map(r-> tuple(r.getId(), r.getUrl()))
+                .doesNotContain(
+                        tuple(CUSTOMIZATION_REPO_ID, customRepoUrl)
+                );
+        assertThat(actualChannels())
+                .map(c -> c.getManifestRef().getGav())
+                .doesNotContain(
+                    "org.test:custom-channel"
+                );
     }
 
     @Test
@@ -205,13 +225,17 @@ public class ChannelInitializeCommandTest extends AbstractConsoleTest {
                 CliConstants.CUSTOMIZATION_CHANNEL_NAME, "org.test:custom-channel");
 
         Assert.assertEquals(ReturnCodes.SUCCESS, exitCode);
-        assertThat(actualRepositories()).contains(
-                new RepositoryRef(CUSTOMIZATION_REPO_ID,
+        assertThat(actualRepositories())
+                .map(r-> tuple(r.getId(), r.getUrl()))
+                .contains(
+                    tuple(CUSTOMIZATION_REPO_ID,
                         installationDir.resolve(InstallationMetadata.METADATA_DIR).resolve(DEFAULT_CUSTOMIZATION_REPOSITORY).toUri().toURL().toString())
-        );
-        assertThat(actualChannels()).contains(
-                new ChannelRef("org.test:custom-channel", null)
-        );
+                );
+        assertThat(actualChannels())
+                .map(c -> c.getManifestRef().getGav())
+                .contains(
+                    "org.test:custom-channel"
+                );
     }
 
     @Test
@@ -226,20 +250,26 @@ public class ChannelInitializeCommandTest extends AbstractConsoleTest {
         final String channelName = matcher.group(1);
         assertNotNull(channelName);
 
-        assertThat(actualRepositories()).contains(
-                new RepositoryRef(CUSTOMIZATION_REPO_ID,
+        assertThat(actualRepositories())
+                .map(r-> tuple(r.getId(), r.getUrl()))
+                .contains(
+                    tuple(CUSTOMIZATION_REPO_ID,
                         installationDir.resolve(InstallationMetadata.METADATA_DIR).resolve(DEFAULT_CUSTOMIZATION_REPOSITORY).toUri().toURL().toString())
         );
-        assertThat(actualChannels()).contains(
-                new ChannelRef(channelName, null)
-        );
+        assertThat(actualChannels())
+                .map(c -> c.getManifestRef().getGav())
+                .contains(
+                    channelName
+                );
     }
 
     @Test
     public void onlyOneDefaultChannelCanBeCreated() throws Exception {
-        new ProsperoConfig(Arrays.asList(new ChannelRef(CUSTOM_CHANNELS_GROUP_ID + ":existing", null)),
-                Collections.emptyList())
-                .writeConfig(installationDir.resolve(InstallationMetadata.METADATA_DIR).resolve(InstallationMetadata.PROSPERO_CONFIG_FILE_NAME).toFile());
+        Channel channel = new Channel(null, null, null, null,
+                List.of(new Repository("test", "http://test.org/repo")),
+                new ChannelManifestCoordinate(CUSTOM_CHANNELS_GROUP_ID, "existing"));
+        new ProsperoConfig(List.of(channel))
+                .writeConfig(installationDir.resolve(InstallationMetadata.METADATA_DIR).resolve(InstallationMetadata.PROSPERO_CONFIG_FILE_NAME));
         int exitCode = commandLine.execute(
                 CliConstants.Commands.CHANNEL, CliConstants.Commands.CUSTOMIZATION_INIT_CHANNEL,
                 CliConstants.CUSTOMIZATION_REPOSITORY_URL, "http://test.repo2",
@@ -247,17 +277,26 @@ public class ChannelInitializeCommandTest extends AbstractConsoleTest {
 
         Assert.assertEquals(ReturnCodes.PROCESSING_ERROR, exitCode);
 
-        assertThat(actualRepositories()).isEmpty();
-        assertThat(actualChannels()).containsOnly(
-                new ChannelRef(CUSTOM_CHANNELS_GROUP_ID + ":existing", null)
-        );
+        assertThat(actualRepositories())
+                .map(r-> tuple(r.getId(), r.getUrl()))
+                .containsOnly(
+                        tuple("test", "http://test.org/repo")
+                );
+        assertThat(actualChannels())
+                .map(c -> c.getManifestRef().getGav())
+                .containsOnly(
+                    CUSTOM_CHANNELS_GROUP_ID + ":existing"
+                );
     }
 
-    private List<ChannelRef> actualChannels() throws MetadataException {
+    private List<Channel> actualChannels() throws MetadataException {
         return new InstallationMetadata(installationDir).getProsperoConfig().getChannels();
     }
 
-    private List<RepositoryRef> actualRepositories() throws MetadataException {
-        return new InstallationMetadata(installationDir).getProsperoConfig().getRepositories();
+    private List<Repository> actualRepositories() throws MetadataException {
+        return new InstallationMetadata(installationDir).getProsperoConfig()
+                .getChannels().stream()
+                .flatMap((Channel channel) -> channel.getRepositories().stream())
+                .collect(Collectors.toList());
     }
 }

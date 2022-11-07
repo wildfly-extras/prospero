@@ -17,13 +17,21 @@
 
 package org.wildfly.prospero.api;
 
-import org.eclipse.aether.repository.RemoteRepository;
+import org.assertj.core.groups.Tuple;
+import org.junit.Rule;
 import org.junit.Test;
+import org.junit.rules.TemporaryFolder;
+import org.wildfly.channel.Channel;
+import org.wildfly.channel.ChannelManifestCoordinate;
+import org.wildfly.channel.Repository;
 import org.wildfly.prospero.api.exceptions.NoChannelException;
-import org.wildfly.prospero.model.ChannelRef;
+import org.wildfly.prospero.model.ProsperoConfig;
 
+import java.net.URL;
+import java.io.File;
 import java.nio.file.Paths;
 import java.util.Arrays;
+import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.Assert.assertEquals;
@@ -31,33 +39,61 @@ import static org.junit.Assert.fail;
 
 public class ProvisioningDefinitionTest {
 
+    @Rule
+    public TemporaryFolder temp = new TemporaryFolder();
+
     public static final String EAP_FPL = "known-fpl";
+    private static final Tuple CENTRAL_REPO = Tuple.tuple("central", "https://repo1.maven.org/maven2/");
 
     @Test
     public void setChannelWithFileUrl() throws Exception {
         final ProvisioningDefinition.Builder builder = new ProvisioningDefinition.Builder().setFpl(EAP_FPL);
 
-        builder.setChannel("file:/tmp/foo.bar");
+        builder.setManifest("file:/tmp/foo.bar");
+        final ProvisioningDefinition definition = builder.build();
 
-        assertEquals("file:/tmp/foo.bar", builder.build().getChannelRefs().get(0).getUrl());
+        assertEquals(new URL("file:/tmp/foo.bar"), definition.getChannels().get(0).getManifestRef().getUrl());
+        assertEquals(1, definition.getChannels().size());
+        assertThat(definition.getChannels().get(0).getRepositories())
+                .map(r-> Tuple.tuple(r.getId(), r.getUrl()))
+                .containsOnly(
+                        CENTRAL_REPO
+                );
+        assertEquals("org.wildfly:wildfly-core-galleon-pack", definition.getFpl());
     }
 
     @Test
     public void setChannelWithHttpUrl() throws Exception {
         final ProvisioningDefinition.Builder builder = new ProvisioningDefinition.Builder().setFpl(EAP_FPL);
 
-        builder.setChannel("http://localhost/foo.bar");
+        builder.setManifest("http://localhost/foo.bar");
+        final ProvisioningDefinition definition = builder.build();
 
-        assertEquals("http://localhost/foo.bar", builder.build().getChannelRefs().get(0).getUrl());
+        assertEquals(new URL("http://localhost/foo.bar"), definition.getChannels().get(0).getManifestRef().getUrl());
+        assertEquals(1, definition.getChannels().size());
+        assertThat(definition.getChannels().get(0).getRepositories())
+                .map(r-> Tuple.tuple(r.getId(), r.getUrl()))
+                .containsOnly(
+                        CENTRAL_REPO
+                );
+        assertEquals("org.wildfly:wildfly-core-galleon-pack", definition.getFpl());
     }
 
     @Test
     public void setChannelWithLocalFilePath() throws Exception {
         final ProvisioningDefinition.Builder builder = new ProvisioningDefinition.Builder().setFpl(EAP_FPL);
 
-        builder.setChannel("tmp/foo.bar");
+        builder.setManifest("tmp/foo.bar");
+        final ProvisioningDefinition definition = builder.build();
 
-        assertEquals(Paths.get("tmp/foo.bar").toAbsolutePath().toUri().toURL().toString(), builder.build().getChannelRefs().get(0).getUrl());
+        assertEquals(Paths.get("tmp/foo.bar").toAbsolutePath().toUri().toURL(), definition.getChannels().get(0).getManifestRef().getUrl());
+        assertEquals(1, definition.getChannels().size());
+        assertThat(definition.getChannels().get(0).getRepositories())
+                .map(r-> Tuple.tuple(r.getId(), r.getUrl()))
+                .containsOnly(
+                        CENTRAL_REPO
+                );
+        assertEquals("org.wildfly:wildfly-core-galleon-pack", definition.getFpl());
     }
 
     @Test
@@ -68,9 +104,13 @@ public class ProvisioningDefinitionTest {
 
         final ProvisioningDefinition def = builder.build();
 
-        assertThat(def.getRepositories().stream().map(RemoteRepository::getUrl)).containsExactlyInAnyOrder(
-                "http://test.repo1",
-                "http://test.repo2");
+        assertThat(def.getChannels())
+                .flatMap(Channel::getRepositories)
+                .map(r-> Tuple.tuple(r.getId(), r.getUrl()))
+                .containsExactlyInAnyOrder(
+                Tuple.tuple("repo-0" ,"http://test.repo1"),
+                        Tuple.tuple("repo-1" ,"http://test.repo2")
+                );
     }
 
     @Test
@@ -90,9 +130,53 @@ public class ProvisioningDefinitionTest {
         final ProvisioningDefinition.Builder builder = new ProvisioningDefinition.Builder().setFpl("multi-channel");
 
         final ProvisioningDefinition def = builder.build();
-        assertThat(def.getChannelRefs().stream().map(ChannelRef::getGav)).contains(
+        assertThat(def.getChannels().stream().map(c->c.getManifestRef().getGav())).contains(
                 "test:one",
                 "test:two"
         );
+    }
+
+    @Test
+    public void knownFplWithBothManifestAndRepositories() throws Exception {
+        final ProvisioningDefinition.Builder builder = new ProvisioningDefinition.Builder()
+                .setFpl("multi-channel")
+                .setManifest("file:/tmp/foo.bar")
+                .setRemoteRepositories(Arrays.asList("http://test.repo1", "http://test.repo2"));
+
+        final ProvisioningDefinition def = builder.build();
+
+        assertEquals(1, def.getChannels().size());
+        final Channel channel = def.getChannels().get(0);
+        assertEquals(new URL("file:/tmp/foo.bar"), channel.getManifestRef().getUrl());
+        assertThat(channel.getRepositories())
+                .map(r-> Tuple.tuple(r.getId(), r.getUrl()))
+                .containsExactlyInAnyOrder(
+                        Tuple.tuple("repo-0" ,"http://test.repo1"),
+                        Tuple.tuple("repo-1" ,"http://test.repo2")
+                );
+    }
+
+    @Test
+    public void knownFplWithConfig() throws Exception {
+        final File file = temp.newFile();
+
+        new ProsperoConfig(List.of(new Channel("test", null, null, null,
+                List.of(new Repository("test_repo", "http://custom.repo")),
+                new ChannelManifestCoordinate("new.test", "gav")))).writeConfig(file.toPath());
+
+        final ProvisioningDefinition.Builder builder = new ProvisioningDefinition.Builder()
+                .setFpl("multi-channel")
+                .setProvisionConfig(file.toPath());
+
+        final ProvisioningDefinition def = builder.build();
+
+        assertEquals(1, def.getChannels().size());
+        final Channel channel = def.getChannels().get(0);
+        assertEquals("new.test:gav", channel.getManifestRef().getGav());
+        assertThat(channel.getRepositories())
+                .map(r-> Tuple.tuple(r.getId(), r.getUrl()))
+                .containsExactlyInAnyOrder(
+                        Tuple.tuple("test_repo" ,"http://custom.repo")
+                );
     }
 }

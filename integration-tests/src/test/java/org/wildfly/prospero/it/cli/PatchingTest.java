@@ -35,6 +35,7 @@ import org.wildfly.prospero.api.InstallationMetadata;
 import org.wildfly.prospero.api.exceptions.MetadataException;
 import org.wildfly.prospero.cli.ReturnCodes;
 import org.wildfly.prospero.cli.commands.CliConstants;
+import org.wildfly.prospero.it.commonapi.WfCoreTestBase;
 import org.wildfly.prospero.promotion.ArtifactBundle;
 import org.wildfly.prospero.it.ExecutionUtils;
 import org.wildfly.prospero.test.MetadataTestUtils;
@@ -203,7 +204,7 @@ public class PatchingTest {
         final DefaultRepositorySystemSession session = msm.newRepositorySystemSession(system);
         final ArtifactRequest req = new ArtifactRequest();
         req.setArtifact(new DefaultArtifact(PATCHED_GROUP_ID, PATCHED_ARTIFACT_ID, "jar", BASE_VERSION));
-        req.setRepositories(Arrays.asList(REPOSITORY_MAVEN_CENTRAL.toRemoteRepository()));
+        req.setRepositories(Arrays.asList(WfCoreTestBase.toRemoteRepository(REPOSITORY_MAVEN_CENTRAL)));
         final ArtifactResult res = system.resolveArtifact(session, req);
         final File resolvedFile = res.getArtifact().getFile();
         return resolvedFile;

@@ -23,13 +23,12 @@ import org.jboss.galleon.ProvisioningException;
 import org.jboss.galleon.ProvisioningManager;
 import org.jboss.galleon.layout.ProvisioningLayoutFactory;
 import org.wildfly.channel.Channel;
+import org.wildfly.channel.ChannelManifest;
 import org.wildfly.channel.ChannelSession;
 import org.wildfly.channel.maven.VersionResolverFactory;
 import org.wildfly.prospero.actions.Console;
 import org.wildfly.prospero.api.exceptions.OperationException;
-import org.wildfly.prospero.model.ChannelRef;
 import org.wildfly.prospero.model.ProsperoConfig;
-import org.wildfly.prospero.wfchannel.ChannelRefMapper;
 import org.wildfly.prospero.wfchannel.MavenSessionManager;
 
 import java.nio.file.Path;
@@ -42,17 +41,16 @@ public class GalleonEnvironment {
     private final ProvisioningManager provisioningManager;
     private final ChannelMavenArtifactRepositoryManager repositoryManager;
     private final ChannelSession channelSession;
-    private final List<ChannelRef> channelRefs;
+    private final List<Channel> channels;
 
     private GalleonEnvironment(Builder builder) throws ProvisioningException, OperationException {
         Optional<Console> console = Optional.ofNullable(builder.console);
-        Optional<Channel> restoreManifest = Optional.ofNullable(builder.manifest);
-        channelRefs = builder.prosperoConfig.getChannels();
+        Optional<ChannelManifest> restoreManifest = Optional.ofNullable(builder.manifest);
+        channels = builder.prosperoConfig.getChannels();
 
         final RepositorySystem system = builder.mavenSessionManager.newRepositorySystem();
         final DefaultRepositorySystemSession session = builder.mavenSessionManager.newRepositorySystemSession(system);
-        final VersionResolverFactory factory = new VersionResolverFactory(system, session, builder.prosperoConfig.getRemoteRepositories());
-        final List<Channel> channels = new ChannelRefMapper(factory).mapToChannel(builder.prosperoConfig.getChannels());
+        final VersionResolverFactory factory = new VersionResolverFactory(system, session);
         channelSession = new ChannelSession(channels, factory);
         if (restoreManifest.isEmpty()) {
             repositoryManager = new ChannelMavenArtifactRepositoryManager(channelSession);
@@ -82,8 +80,8 @@ public class GalleonEnvironment {
         return channelSession;
     }
 
-    public List<ChannelRef> getChannelRefs() {
-        return channelRefs;
+    public List<Channel> getChannels() {
+        return channels;
     }
 
     public static Builder builder(Path installDir, ProsperoConfig prosperoConfig, MavenSessionManager mavenSessionManager) {
@@ -100,7 +98,7 @@ public class GalleonEnvironment {
         private final ProsperoConfig prosperoConfig;
         private final MavenSessionManager mavenSessionManager;
         private Console console;
-        private Channel manifest;
+        private ChannelManifest manifest;
 
         private Builder(Path installDir, ProsperoConfig prosperoConfig, MavenSessionManager mavenSessionManager) {
             this.installDir = installDir;
@@ -113,7 +111,7 @@ public class GalleonEnvironment {
             return this;
         }
 
-        public Builder setRestoreManifest(Channel manifest) {
+        public Builder setRestoreManifest(ChannelManifest manifest) {
             this.manifest = manifest;
             return this;
         }

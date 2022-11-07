@@ -34,7 +34,6 @@ import org.eclipse.aether.RepositorySystem;
 import org.eclipse.aether.connector.basic.BasicRepositoryConnectorFactory;
 import org.eclipse.aether.impl.DefaultServiceLocator;
 import org.eclipse.aether.repository.LocalRepository;
-import org.eclipse.aether.repository.RemoteRepository;
 import org.eclipse.aether.spi.connector.RepositoryConnectorFactory;
 import org.eclipse.aether.spi.connector.transport.TransporterFactory;
 import org.eclipse.aether.transport.http.HttpTransporterFactory;
@@ -42,6 +41,7 @@ import org.wildfly.channel.Channel;
 import org.wildfly.channel.ChannelMapper;
 import org.wildfly.channel.ChannelSession;
 import org.wildfly.channel.MavenArtifact;
+import org.wildfly.channel.Repository;
 import org.wildfly.channel.Stream;
 import org.wildfly.channel.UnresolvedMavenArtifactException;
 import org.wildfly.channel.maven.VersionResolverFactory;
@@ -69,12 +69,11 @@ public class BootstrapUpdater {
 
     private List<Path> downloadAllDeps(Path installerLib, Optional<String> channelRepo) throws BootstrapException {
         try {
-            final RemoteRepository repo = new RemoteRepository.Builder("mrrc", "default", channelRepo.orElse("https://maven.repository.redhat.com/ga/")).build();
             final RepositorySystem system = newRepositorySystem();
             final DefaultRepositorySystemSession repoSession = newRepositorySystemSession(system, true);
-            final MavenVersionsResolver.Factory factory = new VersionResolverFactory(system, repoSession, Arrays.asList(repo));
+            final MavenVersionsResolver.Factory factory = new VersionResolverFactory(system, repoSession);
 
-            final MavenVersionsResolver mavenResolver = factory.create();
+            final MavenVersionsResolver mavenResolver = factory.create(Arrays.asList(new Repository("mrrc", "https://maven.repository.redhat.com/ga/")));
             final Set<String> allVersions = mavenResolver.getAllVersions("org.wildfly.channels", "installer", "yaml", "channel");
             if (allVersions.isEmpty()) {
                 throw new BootstrapException("Unable to find installer channel definition");
@@ -90,7 +89,7 @@ public class BootstrapUpdater {
             final ChannelSession channelSession = session;
 
             List<Path> previousVersions = new ArrayList<>();
-            for (Stream stream : channel.getStreams()) {
+            for (Stream stream : channel.getManifest().getStreams()) {
                 final String groupId = stream.getGroupId();
                 final String artifactId = stream.getArtifactId();
                 final String extension = "jar";

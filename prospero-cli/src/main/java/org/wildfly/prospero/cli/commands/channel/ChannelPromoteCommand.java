@@ -17,15 +17,17 @@
 
 package org.wildfly.prospero.cli.commands.channel;
 
+import org.wildfly.channel.Channel;
+import org.wildfly.channel.ChannelManifestCoordinate;
 import org.wildfly.prospero.actions.Console;
 import org.wildfly.prospero.actions.MetadataAction;
+import org.wildfly.prospero.api.ArtifactUtils;
 import org.wildfly.prospero.api.exceptions.MetadataException;
 import org.wildfly.prospero.cli.ActionFactory;
 import org.wildfly.prospero.cli.CliMessages;
 import org.wildfly.prospero.cli.ReturnCodes;
 import org.wildfly.prospero.cli.commands.AbstractCommand;
 import org.wildfly.prospero.cli.commands.CliConstants;
-import org.wildfly.prospero.model.ChannelRef;
 import picocli.CommandLine;
 
 import java.net.MalformedURLException;
@@ -76,8 +78,9 @@ public class ChannelPromoteCommand extends AbstractCommand {
     @Override
     public Integer call() throws Exception {
         if (url.isEmpty()) {
-            final Optional<URL> res = readSetting(a->a.getRepositories().stream()
-                    .filter(r -> r.getId().equals(CUSTOMIZATION_REPO_ID))
+            final Optional<URL> res = readSetting(a->a.getChannels().stream()
+                    .flatMap(c -> c.getRepositories().stream())
+                    .filter(c -> c.getId().equals(CUSTOMIZATION_REPO_ID))
                     .map(r-> {
                         try {
                             return new URL(r.getUrl());
@@ -96,8 +99,9 @@ public class ChannelPromoteCommand extends AbstractCommand {
 
         if (name.isEmpty()) {
             final Optional<String> res = readSetting(a->a.getChannels().stream()
-                    .filter(c -> c.getGav() != null && c.getGav().startsWith(CUSTOM_CHANNELS_GROUP_ID + ":"))
-                    .map(ChannelRef::getGav)
+                    .map(Channel::getManifestRef)
+                    .filter(m -> m.getGav() != null && m.getGav().startsWith(CUSTOM_CHANNELS_GROUP_ID + ":"))
+                    .map(ChannelManifestCoordinate::getGav)
                     .findFirst());
             if (res.isPresent()) {
                 this.name = res;
@@ -107,12 +111,12 @@ public class ChannelPromoteCommand extends AbstractCommand {
             }
         }
 
-        if (!isValidChannelCoordinate()) {
+        if (!isValidManifestCoordinate()) {
             console.error(CliMessages.MESSAGES.wrongChannelCoordinateFormat());
             return ReturnCodes.INVALID_ARGUMENTS;
         }
         // TODO: support remote repositories
-        final ChannelRef coordinate = ChannelRef.fromString(name.get());
+        final ChannelManifestCoordinate coordinate = ArtifactUtils.manifestFromString(name.get());
 
         final boolean accepted;
         if (!noPrompt) {
@@ -146,8 +150,8 @@ public class ChannelPromoteCommand extends AbstractCommand {
         }
     }
 
-    private boolean isValidChannelCoordinate() {
-        return name.get() != null && !name.get().isEmpty() && ChannelRef.isValidCoordinate(name.get());
+    private boolean isValidManifestCoordinate() {
+        return name.get() != null && !name.get().isEmpty() && ArtifactUtils.isValidCoordinate(name.get());
     }
 
     interface ThrowableFunction<T,R> {

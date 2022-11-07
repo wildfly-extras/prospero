@@ -31,14 +31,13 @@ import org.eclipse.aether.artifact.Artifact;
 import org.eclipse.aether.artifact.DefaultArtifact;
 import org.jboss.galleon.layout.FeaturePackUpdatePlan;
 import org.junit.Test;
+import org.wildfly.channel.Channel;
 import org.wildfly.prospero.actions.UpdateAction;
 import org.wildfly.prospero.api.ArtifactChange;
 import org.wildfly.prospero.api.ProvisioningDefinition;
 import org.wildfly.prospero.it.AcceptingConsole;
-import org.wildfly.prospero.model.ChannelRef;
 import org.wildfly.prospero.model.ManifestYamlSupport;
 import org.wildfly.prospero.model.ProsperoConfig;
-import org.wildfly.prospero.model.RepositoryRef;
 import org.wildfly.prospero.test.MetadataTestUtils;
 
 import static org.junit.Assert.assertEquals;
@@ -60,8 +59,6 @@ public class SimpleProvisionTest extends WfCoreTestBase {
         // verify manifest contains versions 17.0.1
         final Optional<Artifact> wildflyCliArtifact = readArtifactFromManifest("org.wildfly.core", "wildfly-cli");
         assertEquals(BASE_VERSION, wildflyCliArtifact.get().getVersion());
-
-
     }
 
     @Test
@@ -147,11 +144,10 @@ public class SimpleProvisionTest extends WfCoreTestBase {
     public void installWildflyCoreFromInstallationFile() throws Exception {
         final Path provisionConfigFile = MetadataTestUtils.prepareProvisionConfig(CHANNEL_BASE_CORE_19);
         final File installationFile = new File(this.getClass().getClassLoader().getResource("provisioning.xml").toURI());
-        final ProsperoConfig prosperoConfig = ProsperoConfig.readConfig(provisionConfigFile);
-        final List<ChannelRef> channelRefs = prosperoConfig.getChannels();
+        final List<Channel> channels = ProsperoConfig.readConfig(provisionConfigFile).getChannels();
 
-        installation.provision(installationFile.toPath(), channelRefs,
-                repositories.stream().map(RepositoryRef::toRemoteRepository).collect(Collectors.toList()));
+        installation.provision(installationFile.toPath(), channels,
+                repositories.stream().map(WfCoreTestBase::toRemoteRepository).collect(Collectors.toList()));
 
         final Optional<Artifact> wildflyCliArtifact = readArtifactFromManifest("org.wildfly.core", "wildfly-cli");
         assertEquals(BASE_VERSION, wildflyCliArtifact.get().getVersion());

@@ -24,6 +24,8 @@ import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
 
+import org.wildfly.channel.Channel;
+import org.wildfly.channel.Repository;
 import org.wildfly.channel.UnresolvedMavenArtifactException;
 import org.wildfly.prospero.api.InstallationMetadata;
 import org.wildfly.prospero.api.exceptions.MetadataException;
@@ -32,7 +34,6 @@ import org.wildfly.prospero.api.exceptions.OperationException;
 import org.wildfly.prospero.galleon.GalleonEnvironment;
 import org.wildfly.prospero.galleon.GalleonUtils;
 import org.wildfly.prospero.model.ProsperoConfig;
-import org.wildfly.prospero.model.RepositoryRef;
 import org.wildfly.prospero.updates.UpdateFinder;
 import org.wildfly.prospero.updates.UpdateSet;
 import org.wildfly.prospero.wfchannel.MavenSessionManager;
@@ -69,11 +70,13 @@ public class UpdateAction implements AutoCloseable {
 
     private ProsperoConfig addTemporaryRepositories(List<URL> additionalRepositories) {
         final ProsperoConfig prosperoConfig = metadata.getProsperoConfig();
-        int i = 0;
-        final Set<String> existingRepos = prosperoConfig.getRepositories().stream().map(RepositoryRef::getUrl).collect(Collectors.toSet());
-        for (URL additionalRepository : additionalRepositories) {
-            if (!existingRepos.contains(additionalRepository.toString())) {
-                prosperoConfig.addRepository(new RepositoryRef("temp-repo-" + i++, additionalRepository.toString()));
+        for (Channel channel : prosperoConfig.getChannels()) {
+            int i = 0;
+            final Set<String> existingRepos = channel.getRepositories().stream().map(Repository::getUrl).collect(Collectors.toSet());
+            for (URL additionalRepository : additionalRepositories) {
+                if (!existingRepos.contains(additionalRepository.toString())) {
+                    channel.getRepositories().add(new Repository("temp-repo-"+i++, additionalRepository.toString()));
+                }
             }
         }
         return prosperoConfig;
@@ -116,10 +119,10 @@ public class UpdateAction implements AutoCloseable {
             GalleonUtils.executeGalleon(options -> provMgr.provision(provMgr.getProvisioningConfig(), options),
                     mavenSessionManager.getProvisioningRepo().toAbsolutePath());
         } catch (UnresolvedMavenArtifactException e) {
-            throw new ArtifactResolutionException(e, prosperoConfig.getRemoteRepositories(), mavenSessionManager.isOffline());
+            throw new ArtifactResolutionException(e, prosperoConfig.listAllRepositories(), mavenSessionManager.isOffline());
         }
 
-        metadata.setChannel(galleonEnv.getRepositoryManager().resolvedChannel());
+        metadata.setManifest(galleonEnv.getRepositoryManager().resolvedChannel());
     }
 
     @Override

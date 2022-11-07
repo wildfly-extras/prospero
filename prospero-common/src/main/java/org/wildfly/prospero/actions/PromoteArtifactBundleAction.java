@@ -24,10 +24,10 @@ import org.eclipse.aether.repository.RemoteRepository;
 import org.eclipse.aether.resolution.ArtifactResolutionException;
 import org.jboss.galleon.ProvisioningException;
 import org.wildfly.channel.ArtifactCoordinate;
+import org.wildfly.channel.ChannelManifestCoordinate;
 import org.wildfly.channel.maven.ChannelCoordinate;
 import org.wildfly.prospero.Messages;
 import org.wildfly.prospero.api.exceptions.ArtifactPromoteException;
-import org.wildfly.prospero.model.ChannelRef;
 import org.wildfly.prospero.promotion.ArtifactPromoter;
 import org.wildfly.prospero.promotion.ArtifactBundle;
 import org.wildfly.prospero.wfchannel.MavenSessionManager;
@@ -45,7 +45,7 @@ public class PromoteArtifactBundleAction {
         this.console = console;
     }
 
-    public void promote(Path archive, URL targetRepository, ChannelRef coordinate) throws ProvisioningException, ArtifactPromoteException {
+    public void promote(Path archive, URL targetRepository, ChannelManifestCoordinate coordinate) throws ProvisioningException, ArtifactPromoteException {
         Objects.requireNonNull(archive);
         Objects.requireNonNull(targetRepository);
         Objects.requireNonNull(coordinate);

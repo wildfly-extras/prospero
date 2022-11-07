@@ -27,15 +27,17 @@ import org.jboss.galleon.ProvisioningException;
 import org.junit.Before;
 import org.junit.Test;
 import org.wildfly.channel.Channel;
+import org.wildfly.channel.ChannelManifest;
+import org.wildfly.channel.ChannelManifestCoordinate;
+import org.wildfly.channel.Repository;
 import org.wildfly.channel.Stream;
 import org.wildfly.prospero.actions.UpdateAction;
 import org.wildfly.prospero.api.InstallationMetadata;
 import org.wildfly.prospero.api.ProvisioningDefinition;
+import org.wildfly.prospero.api.RepositoryUtils;
 import org.wildfly.prospero.it.AcceptingConsole;
-import org.wildfly.prospero.model.ChannelRef;
 import org.wildfly.prospero.model.ManifestYamlSupport;
 import org.wildfly.prospero.model.ProsperoConfig;
-import org.wildfly.prospero.model.RepositoryRef;
 import org.wildfly.prospero.test.MetadataTestUtils;
 import org.wildfly.prospero.wfchannel.MavenSessionManager;
 
@@ -66,9 +68,9 @@ public class UpdateTest extends WfCoreTestBase {
 
     @Test
     public void updateWildflyCoreWithNewChannel() throws Exception {
-        // deploy channel file
-        File channelFile = new File(MetadataTestUtils.class.getClassLoader().getResource(CHANNEL_BASE_CORE_19).toURI());
-        deployChannelFile(channelFile, "1.0.0");
+        // deploy manifest file
+        File manifestFile = new File(MetadataTestUtils.class.getClassLoader().getResource(CHANNEL_BASE_CORE_19).toURI());
+        deployManifestFile(manifestFile, "1.0.0");
 
         // provision using channel gav
         final ProvisioningDefinition provisioningDefinition = defaultWfCoreDefinition()
@@ -79,9 +81,9 @@ public class UpdateTest extends WfCoreTestBase {
         Optional<Artifact> wildflyCliArtifact = readArtifactFromManifest("org.wildfly.core", "wildfly-cli");
         assertEquals(BASE_VERSION, wildflyCliArtifact.get().getVersion());
 
-        // update channel file
-        final File updatedChannel = upgradeTestArtifactIn(channelFile);
-        deployChannelFile(updatedChannel, "1.0.1");
+        // update manifest file
+        final File updatedManifest = upgradeTestArtifactIn(manifestFile);
+        deployManifestFile(updatedManifest, "1.0.1");
 
         // update installation
         new UpdateAction(outputPath, mavenSessionManager, new AcceptingConsole()).doUpdateAll(false);
@@ -95,11 +97,11 @@ public class UpdateTest extends WfCoreTestBase {
         final Path prosperoConfigFile = outputPath.resolve(InstallationMetadata.METADATA_DIR)
                 .resolve(InstallationMetadata.PROSPERO_CONFIG_FILE_NAME);
 
-        // deploy channel file
-        File channelFile = new File(MetadataTestUtils.class.getClassLoader().getResource(CHANNEL_BASE_CORE_19).toURI());
-        deployChannelFile(channelFile, "1.0.0");
+        // deploy manifest file
+        File manifestFile = new File(MetadataTestUtils.class.getClassLoader().getResource(CHANNEL_BASE_CORE_19).toURI());
+        deployManifestFile(manifestFile, "1.0.0");
 
-        // provision using channel gav
+        // provision using manifest gav
         final ProvisioningDefinition provisioningDefinition = defaultWfCoreDefinition()
                 .setProvisionConfig(buildConfigWithMockRepo().toPath())
                 .build();
@@ -107,9 +109,9 @@ public class UpdateTest extends WfCoreTestBase {
 
         Files.writeString(prosperoConfigFile, "# test comment", StandardOpenOption.APPEND);
 
-        // update channel file
-        final File updatedChannel = upgradeTestArtifactIn(channelFile);
-        deployChannelFile(updatedChannel, "1.0.1");
+        // update manifest file
+        final File updatedChannel = upgradeTestArtifactIn(manifestFile);
+        deployManifestFile(updatedChannel, "1.0.1");
 
         // update installation
         new UpdateAction(outputPath, mavenSessionManager, new AcceptingConsole()).doUpdateAll(false);
@@ -118,8 +120,8 @@ public class UpdateTest extends WfCoreTestBase {
     }
 
     private File upgradeTestArtifactIn(File channelFile) throws IOException {
-        final Channel channel = ManifestYamlSupport.parse(channelFile);
-        final List<Stream> streams = channel.getStreams().stream().map(s -> {
+        final ChannelManifest manifest = ManifestYamlSupport.parse(channelFile);
+        final List<Stream> streams = manifest.getStreams().stream().map(s -> {
             if (s.getGroupId().equals("org.wildfly.core") && s.getArtifactId().equals("wildfly-cli")) {
                 return new Stream(s.getGroupId(), s.getArtifactId(), UPGRADE_VERSION);
             }
@@ -127,26 +129,29 @@ public class UpdateTest extends WfCoreTestBase {
         }).collect(Collectors.toList());
 
         final File file = temp.newFile("test-channel.yaml");
-        ManifestYamlSupport.write(new Channel(channel.getSchemaVersion(), channel.getName(), null, null, null, streams),
+        ManifestYamlSupport.write(new ChannelManifest(manifest.getSchemaVersion(), manifest.getName(), null, streams),
                 file.toPath());
         return file;
     }
 
     private File buildConfigWithMockRepo() throws IOException {
-        final List<RepositoryRef> repositories = new ArrayList<>(defaultRemoteRepositories());
+        final List<Repository> repositories = new ArrayList<>(defaultRemoteRepositories());
         final File configFile = temp.newFile(InstallationMetadata.PROSPERO_CONFIG_FILE_NAME);
-        repositories.add(new RepositoryRef("test-repo", mockRepo.toURI().toURL().toString()));
-        new ProsperoConfig(Arrays.asList(new ChannelRef("test:channel", null)), repositories).writeConfig(configFile);
+        repositories.add(new Repository("test-repo", mockRepo.toURI().toURL().toString()));
+        Channel channel = new Channel("test", "", null, null, repositories,
+                new ChannelManifestCoordinate("test", "channel"));
+        new ProsperoConfig(List.of(channel)).writeConfig(configFile.toPath());
         return configFile;
     }
 
-    private void deployChannelFile(File channelFile, String version) throws ProvisioningException, MalformedURLException, DeploymentException {
+    private void deployManifestFile(File channelFile, String version) throws ProvisioningException, MalformedURLException, DeploymentException {
         final MavenSessionManager msm = new MavenSessionManager();
         final RepositorySystem system = msm.newRepositorySystem();
         final DefaultRepositorySystemSession session = msm.newRepositorySystemSession(system);
         final DeployRequest request = new DeployRequest();
-        request.setRepository(new RepositoryRef("test-repo", mockRepo.toURI().toURL().toString()).toRemoteRepository());
-        request.setArtifacts(Arrays.asList(new DefaultArtifact("test", "channel", "channel", "yaml", version,
+        request.setRepository(RepositoryUtils.toRemoteRepository("test-repo", mockRepo.toURI().toURL().toString()));
+        request.setArtifacts(Arrays.asList(new DefaultArtifact("test", "channel",
+                ChannelManifest.CLASSIFIER, ChannelManifest.EXTENSION, version,
                 null, channelFile)));
         system.deploy(session, request);
     }

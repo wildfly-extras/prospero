@@ -24,6 +24,8 @@ import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
 import org.eclipse.aether.repository.RemoteRepository;
+import org.wildfly.channel.Channel;
+import org.wildfly.prospero.api.RepositoryUtils;
 
 import java.io.File;
 import java.io.IOException;
@@ -35,21 +37,18 @@ import java.util.stream.Collectors;
 public class KnownFeaturePack {
     private String name;
     private String location;
-    private List<String> channelGavs;
+    private List<Channel> channels;
     private List<String> packages;
-    private List<RepositoryRef> repositories;
 
     @JsonCreator
     public KnownFeaturePack(@JsonProperty(value = "name") String name,
                             @JsonProperty(value = "location") String location,
-                            @JsonProperty(value = "channelGavs") List<String> channelGav,
                             @JsonProperty(value = "packages") List<String> packages,
-                            @JsonProperty(value = "repositories") List<RepositoryRef> repositories) {
+                            @JsonProperty(value = "channels") List<Channel> channels) {
         this.name = name;
         this.location = location;
-        this.channelGavs = channelGav;
+        this.channels = channels;
         this.packages = packages;
-        this.repositories = repositories;
     }
 
     public static void write(List<KnownFeaturePack> packs, File configFile) throws IOException {
@@ -74,26 +73,26 @@ public class KnownFeaturePack {
         return packages==null?Collections.emptyList():packages;
     }
 
-    public List<RepositoryRef> getRepositories() {
-        return repositories;
-    }
-
-    public List<String> getChannelGavs() {
-        return channelGavs==null?Collections.emptyList():channelGavs;
+    public List<Channel> getChannels() {
+        return channels;
     }
 
     @JsonIgnore
     public List<RemoteRepository> getRemoteRepositories() {
-        return repositories.stream().map(RepositoryRef::toRemoteRepository).collect(Collectors.toList());
+        final List<RemoteRepository> repositories = channels.stream()
+                .flatMap(c -> c.getRepositories().stream())
+                .map(r -> RepositoryUtils.toRemoteRepository(r.getId(), r.getUrl()))
+                .collect(Collectors.toList());
+        return repositories.stream().map(r-> RepositoryUtils.toRemoteRepository(r.getId(), r.getUrl())).collect(Collectors.toList());
     }
 
     @Override
     public String toString() {
-        return "SupportedFpls{" +
+        return "KnownFeaturePack{" +
                 "name='" + name + '\'' +
                 ", location='" + location + '\'' +
+                ", channels=" + channels +
                 ", packages=" + packages +
-                ", repositories=" + repositories +
                 '}';
     }
 }

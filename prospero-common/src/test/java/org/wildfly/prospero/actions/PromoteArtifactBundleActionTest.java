@@ -24,7 +24,7 @@ import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
 import org.wildfly.prospero.api.ArtifactChange;
-import org.wildfly.prospero.model.ChannelRef;
+import org.wildfly.prospero.api.ArtifactUtils;
 import org.wildfly.prospero.promotion.ArtifactBundle;
 
 import java.net.URL;
@@ -47,7 +47,7 @@ public class PromoteArtifactBundleActionTest {
     public void channelCoordinateMustHaveGA() throws Exception {
         try {
             new PromoteArtifactBundleAction(new TestConsole()).promote(createCustomArchive(), new URL("file://test/test-repo"),
-                    ChannelRef.fromString("file://test/test.zip"));
+                    ArtifactUtils.manifestFromString("file://test/test.zip"));
             fail("URL Channel GA should not be allowed");
         } catch (IllegalArgumentException e) {
             assertTrue(e.getMessage().contains("Channel reference has to use Maven GA."));
@@ -59,7 +59,7 @@ public class PromoteArtifactBundleActionTest {
         final PromoteArtifactBundleAction action = new PromoteArtifactBundleAction(new TestConsole());
         final Path targetRepo = temp.newFolder().toPath();
 
-        action.promote(createCustomArchive(), targetRepo.toUri().toURL(), ChannelRef.fromString("org.test:test-channel"));
+        action.promote(createCustomArchive(), targetRepo.toUri().toURL(), ArtifactUtils.manifestFromString("org.test:test-channel"));
 
         assertTrue(Files.exists(targetRepo.resolve(Paths.get("foo", "bar", "test", "1.2.3", "test-1.2.3.jar"))));
     }

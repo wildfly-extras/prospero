@@ -20,6 +20,7 @@ package org.wildfly.prospero.actions;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Collections;
+import java.util.List;
 
 import org.eclipse.aether.artifact.DefaultArtifact;
 import org.jboss.galleon.ProvisioningException;
@@ -34,10 +35,14 @@ import org.mockito.Mockito;
 import org.mockito.internal.verification.Times;
 import org.mockito.junit.MockitoJUnitRunner;
 import org.wildfly.channel.Channel;
-import org.wildfly.channel.ChannelMapper;
+import org.wildfly.channel.ChannelManifest;
+import org.wildfly.channel.ChannelManifestCoordinate;
+import org.wildfly.channel.ChannelManifestMapper;
+import org.wildfly.channel.Repository;
 import org.wildfly.prospero.api.ArtifactChange;
 import org.wildfly.prospero.api.InstallationMetadata;
 import org.wildfly.prospero.api.exceptions.OperationException;
+import org.wildfly.prospero.model.ProsperoConfig;
 import org.wildfly.prospero.updates.UpdateSet;
 import org.wildfly.prospero.wfchannel.MavenSessionManager;
 
@@ -82,14 +87,18 @@ public class UpdateActionConfirmationTest {
         Mockito.when(console.confirmUpdates()).thenReturn(false);
 
         // create mocked installation directory, needed to create Update instance
-        Channel channel = new Channel("test", null, null, null, null);
-        String channelYaml = ChannelMapper.toYaml(channel);
+        ChannelManifest manifest = new ChannelManifest("test", null, null);
+        String channelYaml = ChannelManifestMapper.toYaml(manifest);
         installDir = tempDir.newFolder().toPath();
         installDir.resolve(InstallationMetadata.METADATA_DIR).toFile().mkdir();
         Files.writeString(installDir.resolve(InstallationMetadata.METADATA_DIR)
                 .resolve(InstallationMetadata.MANIFEST_FILE_NAME), channelYaml);
-        Files.writeString(installDir.resolve(InstallationMetadata.METADATA_DIR)
-                .resolve(InstallationMetadata.PROSPERO_CONFIG_FILE_NAME), "channels: []\nrepositories: []");
+        final Channel channel = new Channel("", "", null, null,
+                List.of(new Repository("test", "http://repo.org/test")),
+                new ChannelManifestCoordinate(installDir.resolve(InstallationMetadata.METADATA_DIR)
+                        .resolve(InstallationMetadata.MANIFEST_FILE_NAME).toUri().toURL()));
+        new ProsperoConfig(List.of(channel)).writeConfig(installDir.resolve(InstallationMetadata.METADATA_DIR)
+                .resolve(InstallationMetadata.PROSPERO_CONFIG_FILE_NAME));
 
         installDir.resolve(".galleon").toFile().mkdir();
     }

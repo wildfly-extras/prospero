@@ -22,20 +22,23 @@ import org.eclipse.aether.RepositorySystem;
 import org.eclipse.aether.deployment.DeployRequest;
 import org.junit.Before;
 import org.junit.Test;
+import org.wildfly.channel.Channel;
+import org.wildfly.channel.ChannelManifestCoordinate;
+import org.wildfly.channel.Repository;
 import org.wildfly.channel.Stream;
+import org.wildfly.prospero.api.RepositoryUtils;
 import org.wildfly.prospero.cli.ReturnCodes;
 import org.wildfly.prospero.cli.commands.CliConstants;
 import org.wildfly.prospero.it.ExecutionUtils;
 import org.wildfly.prospero.it.commonapi.WfCoreTestBase;
-import org.wildfly.prospero.model.ChannelRef;
 import org.wildfly.prospero.model.ManifestYamlSupport;
 import org.wildfly.prospero.model.ProsperoConfig;
-import org.wildfly.prospero.model.RepositoryRef;
 import org.wildfly.prospero.test.MetadataTestUtils;
 
 import java.io.File;
 import java.net.URL;
 import java.nio.file.Path;
+import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.TimeUnit;
 
@@ -57,11 +60,14 @@ public class UpdateWithAdditionalRepositoryTest extends WfCoreTestBase {
 
         install(provisionConfig);
 
-        final ProsperoConfig prosperoConfig = ProsperoConfig.readConfig(targetDir.toPath().resolve(MetadataTestUtils.PROVISION_CONFIG_FILE_PATH));
+        final List<Channel> channels = ProsperoConfig.readConfig(targetDir.toPath().resolve(MetadataTestUtils.PROVISION_CONFIG_FILE_PATH)).getChannels();
+
         // TODO: replace with GA channel
         final URL modifiedChannel = this.getClass().getClassLoader().getResource("channels/wfcore-19-upgrade-component.yaml");
-        prosperoConfig.addChannel(new ChannelRef(null, modifiedChannel.toString()));
-        prosperoConfig.writeConfig(targetDir.toPath().resolve(MetadataTestUtils.PROVISION_CONFIG_FILE_PATH).toFile());
+        channels.add(new Channel("", "", null, null,
+                List.of(new Repository("maven-central", "https://repo1.maven.org/maven2/")),
+                new ChannelManifestCoordinate(modifiedChannel)));
+        new ProsperoConfig(channels).writeConfig(targetDir.toPath().resolve(MetadataTestUtils.PROVISION_CONFIG_FILE_PATH));
         URL internalRepo = mockInternalRepo();
 
         ExecutionUtils.prosperoExecution(CliConstants.Commands.UPDATE,
@@ -89,7 +95,7 @@ public class UpdateWithAdditionalRepositoryTest extends WfCoreTestBase {
         final DeployRequest deployRequest = new DeployRequest();
         deployRequest.addArtifact(resolvedUpgradeArtifact);
         deployRequest.addArtifact(resolvedUpgradeClientArtifact);
-        deployRequest.setRepository(new RepositoryRef("test", repoUrl.toString()).toRemoteRepository());
+        deployRequest.setRepository(RepositoryUtils.toRemoteRepository("test", repoUrl.toString()));
         system.deploy(session, deployRequest);
 
         return repoUrl;

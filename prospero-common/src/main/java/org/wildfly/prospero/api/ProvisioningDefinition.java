@@ -29,13 +29,14 @@ import java.util.stream.Collectors;
 
 import org.eclipse.aether.repository.RemoteRepository;
 import org.eclipse.aether.repository.RepositoryPolicy;
+import org.wildfly.channel.Channel;
+import org.wildfly.channel.ChannelManifestCoordinate;
+import org.wildfly.channel.Repository;
 import org.wildfly.prospero.Messages;
 import org.wildfly.prospero.api.exceptions.ArtifactResolutionException;
 import org.wildfly.prospero.api.exceptions.NoChannelException;
-import org.wildfly.prospero.model.ChannelRef;
 import org.wildfly.prospero.model.KnownFeaturePack;
 import org.wildfly.prospero.model.ProsperoConfig;
-import org.wildfly.prospero.model.RepositoryRef;
 
 public class ProvisioningDefinition {
 
@@ -43,7 +44,7 @@ public class ProvisioningDefinition {
     public static final RepositoryPolicy DEFAULT_REPOSITORY_POLICY = new RepositoryPolicy(true, RepositoryPolicy.UPDATE_POLICY_ALWAYS, RepositoryPolicy.CHECKSUM_POLICY_FAIL);
 
     private final String fpl;
-    private final List<ChannelRef> channels = new ArrayList<>();
+    private final List<Channel> channels = new ArrayList<>();
     private final Set<String> includedPackages = new HashSet<>();
     private final List<RemoteRepository> repositories = new ArrayList<>();
     private final Path definition;
@@ -53,7 +54,7 @@ public class ProvisioningDefinition {
         final Optional<Path> definition = Optional.ofNullable(builder.definitionFile);
         final List<String> overrideRemoteRepos = builder.remoteRepositories;
         final Optional<Path> provisionConfigFile = Optional.ofNullable(builder.provisionConfigFile);
-        final Optional<ChannelRef> channel = Optional.ofNullable(builder.channel);
+        final Optional<ChannelManifestCoordinate> manifest = Optional.ofNullable(builder.manifest);
         final Optional<Set<String>> includedPackages = Optional.ofNullable(builder.includedPackages);
 
         this.includedPackages.addAll(includedPackages.orElse(Collections.emptySet()));
@@ -65,16 +66,13 @@ public class ProvisioningDefinition {
                 this.definition = null;
                 this.includedPackages.addAll(featurePackInfo.getPackages());
                 this.repositories.addAll(featurePackInfo.getRemoteRepositories());
-                setUpBuildEnv(overrideRemoteRepos, provisionConfigFile, channel, featurePackInfo.getChannelGavs());
+                setUpBuildEnv(overrideRemoteRepos, provisionConfigFile, manifest, featurePackInfo.getChannels());
             } else if (provisionConfigFile.isPresent()) {
                 this.fpl = fpl.orElse(null);
                 this.definition = definition.orElse(null);
-                final ProsperoConfig record = ProsperoConfig.readConfig(provisionConfigFile.get());
-                if (record.getChannels() != null) {
-                    this.channels.addAll(record.getChannels());
-                }
+                this.channels.addAll(ProsperoConfig.readConfig(provisionConfigFile.get()).getChannels());
                 this.repositories.clear();
-                this.repositories.addAll(record.getRepositories().stream().map(RepositoryRef::toRemoteRepository).collect(Collectors.toList()));
+                this.repositories.addAll(Collections.emptyList());
             } else {
                 // TODO: provisionConfigFile needn't be mandatory, we could still collect all required data from the
                 //  other options (channel, channelRepo - perhaps both should be made collections)
@@ -86,7 +84,7 @@ public class ProvisioningDefinition {
             throw new ArtifactResolutionException("Unable to resolve channel definition: " + e.getMessage(), e);
         }
 
-        if (channels.isEmpty()) {
+        if (channels.isEmpty() || channelsMissingManifest()) {
             if (fpl.isPresent() && KnownFeaturePacks.isWellKnownName(fpl.get())) {
                 throw Messages.MESSAGES.fplDefinitionDoesntContainChannel(fpl.get());
             } else {
@@ -95,30 +93,49 @@ public class ProvisioningDefinition {
         }
     }
 
+    private boolean channelsMissingManifest() {
+        return channels.stream().anyMatch(c->c.getManifestRef() == null);
+    }
+
     private void setUpBuildEnv(List<String> overrideRemoteRepos, Optional<Path> provisionConfigFile,
-                               Optional<ChannelRef> channel, List<String> channelGAs) throws IOException {
-        if (!provisionConfigFile.isPresent() && !channel.isPresent()) {
-            if (channelGAs != null) {
-                channelGAs.forEach(c -> this.channels.add(new ChannelRef(c, null)));
-            }
+                               Optional<ChannelManifestCoordinate> manifestRef, List<Channel> channels) throws IOException {
+        if (!provisionConfigFile.isPresent() && !manifestRef.isPresent()) {
             if (!overrideRemoteRepos.isEmpty()) {
-                this.repositories.clear();
-                int i = 0;
-                for (String url : overrideRemoteRepos) {
-                    String channelRepoId = "channel-" + (i++);
-                    this.repositories.add(new RemoteRepository.Builder(channelRepoId, REPO_TYPE, url)
-                                    .setPolicy(DEFAULT_REPOSITORY_POLICY)
-                                    .build());
+                for (Channel channel : channels) {
+                    final Channel c2 = new Channel(channel.getSchemaVersion(), channel.getName(), channel.getDescription(),
+                            channel.getVendor(), channel.getChannelRequirements(), mapOverrideRepos(overrideRemoteRepos),
+                            channel.getManifestRef());
+                    this.channels.add(c2);
                 }
+            } else {
+                this.channels.addAll(channels);
             }
-        } else if (channel.isPresent()) {
-            this.channels.add(channel.get());
+        } else if (manifestRef.isPresent()) {
+            final List<Repository> repos;
+            if (overrideRemoteRepos.isEmpty()) {
+                // aggregate all channels' repositories
+                repos = new ArrayList<>(channels.stream().flatMap(c -> c.getRepositories().stream()).collect(Collectors.toSet()));
+            } else {
+                repos = mapOverrideRepos(overrideRemoteRepos);
+            }
+            final Channel channel = new Channel("", "", null, null,
+                    repos, manifestRef.get());
+            this.channels.add(channel);
         } else {
-            final ProsperoConfig record = ProsperoConfig.readConfig(provisionConfigFile.get());
-            this.channels.addAll(record.getChannels());
+            this.channels.addAll(ProsperoConfig.readConfig(provisionConfigFile.get()).getChannels());
             this.repositories.clear();
-            this.repositories.addAll(record.getRepositories().stream().map(RepositoryRef::toRemoteRepository).collect(Collectors.toList()));
+            this.repositories.addAll(Collections.emptyList());
         }
+    }
+
+    private List<Repository> mapOverrideRepos(List<String> overrideRemoteRepos) {
+        ArrayList<Repository> repos = new ArrayList<>();
+        for (int i = 0; i < overrideRemoteRepos.size(); i++) {
+            String url = overrideRemoteRepos.get(i);
+            final String channelRepoId = "repo-" + (i);
+            repos.add(new Repository(channelRepoId, url));
+        }
+        return repos;
     }
 
     public static Builder builder() {
@@ -133,12 +150,8 @@ public class ProvisioningDefinition {
         return fpl;
     }
 
-    public List<ChannelRef> getChannelRefs() {
+    public List<Channel> getChannels() {
         return channels;
-    }
-
-    public List<RemoteRepository> getRepositories() {
-        return repositories;
     }
 
     public Path getDefinition() {
@@ -146,7 +159,7 @@ public class ProvisioningDefinition {
     }
 
     public ProsperoConfig getProsperoConfig() {
-        return new ProsperoConfig(channels, repositories.stream().map(RepositoryRef::new).collect(Collectors.toList()));
+        return new ProsperoConfig(channels);
     }
 
     public static class Builder {
@@ -155,7 +168,7 @@ public class ProvisioningDefinition {
         private Path definitionFile;
         private List<String> remoteRepositories = Collections.emptyList();
         private Set<String> includedPackages;
-        private ChannelRef channel;
+        private ChannelManifestCoordinate manifest;
 
         public ProvisioningDefinition build() throws ArtifactResolutionException, NoChannelException {
             return new ProvisioningDefinition(this);
@@ -182,9 +195,9 @@ public class ProvisioningDefinition {
             return this;
         }
 
-        public Builder setChannel(String channel) {
-            if (channel != null) {
-                this.channel = ChannelRef.fromString(channel);
+        public Builder setManifest(String manifest) {
+            if (manifest != null) {
+                this.manifest = ArtifactUtils.manifestFromString(manifest);
             }
             return this;
         }

@@ -15,14 +15,21 @@
  * limitations under the License.
  */
 
-package org.wildfly.prospero.model;
+package org.wildfly.prospero.api;
 
-import org.junit.Ignore;
+import org.eclipse.aether.repository.RemoteRepository;
+import org.wildfly.channel.Repository;
 
-@Ignore
-public class ProsperoConfigTest {
+import static org.wildfly.prospero.api.ProvisioningDefinition.DEFAULT_REPOSITORY_POLICY;
 
-    // TODO:
+public class RepositoryUtils {
+    public static Repository toChannelRepository(RemoteRepository r) {
+        return new Repository(r.getId(), r.getUrl());
+    }
 
-
+    public static RemoteRepository toRemoteRepository(String id, String url) {
+        return new RemoteRepository.Builder(id, "default", url)
+                .setPolicy(DEFAULT_REPOSITORY_POLICY)
+                .build();
+    }
 }

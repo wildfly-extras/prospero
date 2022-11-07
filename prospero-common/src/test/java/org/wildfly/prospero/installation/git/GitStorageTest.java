@@ -17,20 +17,21 @@
 
 package org.wildfly.prospero.installation.git;
 
+import org.assertj.core.api.Assertions;
 import org.eclipse.jgit.api.Git;
 import org.eclipse.jgit.api.errors.GitAPIException;
 import org.eclipse.jgit.revwalk.RevCommit;
 import org.eclipse.jgit.treewalk.TreeWalk;
+import org.wildfly.channel.Channel;
+import org.wildfly.channel.ChannelManifest;
 import org.wildfly.prospero.api.ArtifactChange;
 import org.wildfly.prospero.api.InstallationMetadata;
 import org.wildfly.prospero.api.SavedState;
-import org.wildfly.prospero.model.ChannelRef;
 import org.wildfly.prospero.model.ManifestYamlSupport;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
-import org.wildfly.channel.Channel;
 import org.wildfly.channel.Stream;
 import org.wildfly.prospero.model.ProsperoConfig;
 
@@ -42,7 +43,8 @@ import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 
 public class GitStorageTest {
 
@@ -58,13 +60,12 @@ public class GitStorageTest {
     @Test
     public void testChangedArtifactVersion() throws Exception {
         final GitStorage gitStorage = new GitStorage(base.getParent());
-        final Channel channel = new Channel("test", "", null, null,
-                new ArrayList<>());
+        final ChannelManifest manifest = new ChannelManifest("test", "", new ArrayList<>());
 
-        setArtifact(channel, "org.test:test:1.2.3");
+        setArtifact(manifest, "org.test:test:1.2.3");
         gitStorage.record();
 
-        setArtifact(channel, "org.test:test:1.2.4");
+        setArtifact(manifest, "org.test:test:1.2.4");
         gitStorage.record();
 
         final List<SavedState> revisions = gitStorage.getRevisions();
@@ -79,14 +80,13 @@ public class GitStorageTest {
     @Test
     public void testRemovedArtifact() throws Exception {
         final GitStorage gitStorage = new GitStorage(base.getParent());
-        final Channel channel = new Channel("test", "", null, null,
-                new ArrayList<>());
+        final ChannelManifest manifest = new ChannelManifest("test", "", new ArrayList<>());
 
-        setArtifact(channel, "org.test:test:1.2.3");
+        setArtifact(manifest, "org.test:test:1.2.3");
         gitStorage.record();
 
-        setArtifact(channel, null);
-        ManifestYamlSupport.write(channel, base.resolve(InstallationMetadata.MANIFEST_FILE_NAME));
+        setArtifact(manifest, null);
+        ManifestYamlSupport.write(manifest, base.resolve(InstallationMetadata.MANIFEST_FILE_NAME));
         gitStorage.record();
 
         final List<SavedState> revisions = gitStorage.getRevisions();
@@ -101,13 +101,12 @@ public class GitStorageTest {
     @Test
     public void testAddedArtifact() throws Exception {
         final GitStorage gitStorage = new GitStorage(base.getParent());
-        final Channel channel = new Channel("test", "", null, null,
-                new ArrayList<>());
+        final ChannelManifest manifest = new ChannelManifest("test", "", new ArrayList<>());
 
-        ManifestYamlSupport.write(channel, base.resolve(InstallationMetadata.MANIFEST_FILE_NAME));
+        ManifestYamlSupport.write(manifest, base.resolve(InstallationMetadata.MANIFEST_FILE_NAME));
         gitStorage.record();
 
-        setArtifact(channel, "org.test:test:1.2.3");
+        setArtifact(manifest, "org.test:test:1.2.3");
         gitStorage.record();
 
         final List<SavedState> revisions = gitStorage.getRevisions();
@@ -122,17 +121,17 @@ public class GitStorageTest {
     @Test
     public void initialRecordStoresConfigState() throws Exception {
         final GitStorage gitStorage = new GitStorage(base.getParent());
-        final Channel channel = new Channel("test", "", null, null,
-                new ArrayList<>());
-        ManifestYamlSupport.write(channel, base.resolve(InstallationMetadata.MANIFEST_FILE_NAME));
-        new ProsperoConfig(Arrays.asList(new ChannelRef("foo:bar", null)), Collections.emptyList()).writeConfig(base.resolve(InstallationMetadata.PROSPERO_CONFIG_FILE_NAME).toFile());
+        final ChannelManifest manifest = new ChannelManifest("test", "", new ArrayList<>());
+        ManifestYamlSupport.write(manifest, base.resolve(InstallationMetadata.MANIFEST_FILE_NAME));
+        new ProsperoConfig(List.of(new Channel("", "", null, null, null, null)))
+                .writeConfig(base.resolve(InstallationMetadata.PROSPERO_CONFIG_FILE_NAME));
 
         gitStorage.record();
 
         // TODO: replace with gitStorage API for reading config changes
         HashSet<String> storedPaths = getPathsInCommit();
 
-        assertEquals(new HashSet<>(Arrays.asList("manifest.yaml", InstallationMetadata.PROSPERO_CONFIG_FILE_NAME)), storedPaths);
+        Assertions.assertThat(storedPaths).containsExactlyInAnyOrder("manifest.yaml", InstallationMetadata.PROSPERO_CONFIG_FILE_NAME);
     }
 
     private HashSet<String> getPathsInCommit() throws IOException, GitAPIException {
@@ -150,16 +149,13 @@ public class GitStorageTest {
     }
 
 
-    private void setArtifact(Channel manifest, String gav) throws IOException {
-        final Channel channel;
+    private void setArtifact(ChannelManifest manifest, String gav) throws IOException {
         if (gav == null) {
-            channel = new Channel("test", "", null, null,
-                    Collections.emptyList());
+            manifest = new ChannelManifest(manifest.getName(), manifest.getDescription(), Collections.emptyList());
         } else {
             final String[] splitGav = gav.split(":");
-            channel = new Channel("test", "", null, null,
-                    Arrays.asList(new Stream(splitGav[0], splitGav[1], splitGav[2], null)));
+            manifest = new ChannelManifest(manifest.getName(), manifest.getDescription(), Arrays.asList(new Stream(splitGav[0], splitGav[1], splitGav[2], null)));
         }
-        ManifestYamlSupport.write(channel, base.resolve("manifest.yaml"));
+        ManifestYamlSupport.write(manifest, base.resolve("manifest.yaml"));
     }
 }
