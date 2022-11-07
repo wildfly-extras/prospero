@@ -76,4 +76,24 @@ public class ArtifactChange {
             return false;
         }
     }
+
+    public boolean isInstalled() {
+        return oldVersion == null;
+    }
+
+    public boolean isRemoved() {
+        return newVersion == null;
+    }
+
+    public boolean isUpdated() {
+        return newVersion != null && oldVersion != null;
+    }
+
+    public Optional<String> getOldGav() {
+        return oldVersion == null ? Optional.empty() : Optional.of(toGav(oldVersion));
+    }
+
+    public Optional<String> getNewGav() {
+        return newVersion == null ? Optional.empty() : Optional.of(toGav(newVersion));
+    }
 }

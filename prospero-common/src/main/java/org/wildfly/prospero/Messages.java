@@ -88,4 +88,7 @@ public interface Messages {
 
     @Message("Unable to close the update store.")
     MetadataException unableToCloseStore(@Cause Exception e);
+
+    @Message("Path `%s` does not contain a server installation provisioned by prospero.")
+    IllegalArgumentException invalidInstallationDir(Path path);
 }
