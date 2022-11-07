@@ -47,21 +47,22 @@ public class ChannelRemoveCommand extends AbstractCommand {
     @Override
     public Integer call() throws Exception {
         Path installationDirectory = determineInstallationDirectory(directory);
-        MetadataAction metadataAction = actionFactory.metadataActions(installationDirectory);
-        final Channel channel = metadataAction.getChannel(index);
-        if (channel != null) {
-            metadataAction.removeChannel(index);
-            final String name;
-            if (StringUtils.isNotEmpty(channel.getManifestRef().getGav())) {
-                name = channel.getManifestRef().getGav();
+        try (final MetadataAction metadataAction = actionFactory.metadataActions(installationDirectory)) {
+            final Channel channel = metadataAction.getChannel(index);
+            if (channel != null) {
+                metadataAction.removeChannel(index);
+                final String name;
+                if (StringUtils.isNotEmpty(channel.getManifestRef().getGav())) {
+                    name = channel.getManifestRef().getGav();
+                } else {
+                    name = channel.getManifestRef().getUrl().toExternalForm();
+                }
+                console.println(CliMessages.MESSAGES.channelRemoved(name));
+                return ReturnCodes.SUCCESS;
             } else {
-                name = channel.getManifestRef().getUrl().toExternalForm();
+                console.println("The requested channel doesn't exist");
+                return ReturnCodes.INVALID_ARGUMENTS;
             }
-            console.println(CliMessages.MESSAGES.channelRemoved(name));
-            return ReturnCodes.SUCCESS;
-        } else {
-            console.println("The requested channel doesn't exist");
-            return ReturnCodes.INVALID_ARGUMENTS;
         }
     }
 }

@@ -30,6 +30,7 @@ import org.wildfly.prospero.actions.PromoteArtifactBundleAction;
 import org.wildfly.prospero.actions.ProvisioningAction;
 import org.wildfly.prospero.actions.UpdateAction;
 import org.wildfly.prospero.api.exceptions.OperationException;
+import org.wildfly.prospero.api.exceptions.MetadataException;
 import org.wildfly.prospero.wfchannel.MavenSessionManager;
 
 public class ActionFactory {
@@ -50,7 +51,7 @@ public class ActionFactory {
         return new InstallationHistoryAction(targetPath, console);
     }
 
-    public MetadataAction metadataActions(Path targetPath) {
+    public MetadataAction metadataActions(Path targetPath) throws MetadataException {
         return new MetadataAction(targetPath);
     }
 
