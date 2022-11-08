@@ -93,13 +93,9 @@ public class ProsperoInstallationManager implements InstallationManager {
     }
 
     @Override
-    public void removeChannel(Channel channel) throws OperationException {
+    public void removeChannel(String channelName) throws OperationException {
         try (final MetadataAction metadataAction = new MetadataAction(server)) {
-            final int index = map(metadataAction.getChannels(), ProsperoInstallationManager::mapChannel).indexOf(channel);
-            if (index < 0) {
-                throw new MetadataException("Required channel cannot be found.");
-            }
-            metadataAction.removeChannel(index);
+            metadataAction.removeChannel(channelName);
         }
     }
 
@@ -111,13 +107,9 @@ public class ProsperoInstallationManager implements InstallationManager {
     }
 
     @Override
-    public void changeChannel(Channel oldChannel, Channel newChannel) throws OperationException {
+    public void changeChannel(String channelName, Channel newChannel) throws OperationException {
         try (final MetadataAction metadataAction = new MetadataAction(server)) {
-            final int index = map(metadataAction.getChannels(), ProsperoInstallationManager::mapChannel).indexOf(oldChannel);
-            if (index < 0) {
-                throw new MetadataException("Required channel cannot be found.");
-            }
-            metadataAction.changeChannel(index, mapChannel(newChannel));
+            metadataAction.changeChannel(channelName, mapChannel(newChannel));
         }
     }
 

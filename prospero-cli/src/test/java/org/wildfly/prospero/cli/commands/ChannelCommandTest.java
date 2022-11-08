@@ -62,10 +62,10 @@ public class ChannelCommandTest extends AbstractConsoleTest {
         Channel gaChannel = new Channel("test1", "", null, null,
                 List.of(new Repository("test", "http://test.org")),
                 ChannelManifestCoordinate.create(null, GA));
-        Channel gavChannel = new Channel("test1", "", null, null,
+        Channel gavChannel = new Channel("test2", "", null, null,
                 List.of(new Repository("test", "http://test.org")),
                 ChannelManifestCoordinate.create(null, GAV));
-        Channel urlChannel = new Channel("test1", "", null, null,
+        Channel urlChannel = new Channel("test3", "", null, null,
                 List.of(new Repository("test", "http://test.org")),
                 ChannelManifestCoordinate.create(URL, null));
         MetadataTestUtils.createInstallationMetadata(dir, new ChannelManifest(null, null, null),
@@ -208,6 +208,9 @@ public class ChannelCommandTest extends AbstractConsoleTest {
 
     @Test
     public void testRemove() throws Exception {
+        try (InstallationMetadata installationMetadata = new InstallationMetadata(dir)) {
+            installationMetadata.getProsperoConfig().getChannels().forEach(System.out::println);
+        }
         int exitCode = commandLine.execute(CliConstants.Commands.CHANNEL, CliConstants.Commands.REMOVE,
                 CliConstants.DIR, dir.toString(), "1");
         Assert.assertEquals(ReturnCodes.SUCCESS, exitCode);

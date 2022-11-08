@@ -51,7 +51,7 @@ public class ChannelOpsTest extends WfCoreTestBase {
         final Collection<Channel> channels = manager.listChannels();
 
         assertThat(channels).containsExactly(
-                new Channel("", List.of(new Repository("maven-central", "https://repo1.maven.org/maven2/"),
+                new Channel("channel-0", List.of(new Repository("maven-central", "https://repo1.maven.org/maven2/"),
                         new Repository("nexus", "https://repository.jboss.org/nexus/content/groups/public-jboss"),
                         new Repository("maven-redhat-ga", "https://maven.repository.redhat.com/ga")),
                         ChannelOpsTest.class.getClassLoader().getResource(CHANNEL_BASE_CORE_19))
@@ -62,7 +62,7 @@ public class ChannelOpsTest extends WfCoreTestBase {
                 "foo:bar"));
 
         assertThat(manager.listChannels()).containsExactly(
-                new Channel("", List.of(new Repository("maven-central", "https://repo1.maven.org/maven2/"),
+                new Channel("channel-0", List.of(new Repository("maven-central", "https://repo1.maven.org/maven2/"),
                         new Repository("nexus", "https://repository.jboss.org/nexus/content/groups/public-jboss"),
                         new Repository("maven-redhat-ga", "https://maven.repository.redhat.com/ga")),
                         ChannelOpsTest.class.getClassLoader().getResource(CHANNEL_BASE_CORE_19)),
@@ -71,13 +71,12 @@ public class ChannelOpsTest extends WfCoreTestBase {
         );
 
         // edit channel
-        manager.changeChannel(new Channel("test", List.of(new Repository("test-repo", "http://test.te/repo")),
-                "foo:bar"),
+        manager.changeChannel("test",
                 new Channel("test", List.of(new Repository("test-repo2", "http://test.te/repo")),
                         "foo:bar2"));
 
         assertThat(manager.listChannels()).containsExactly(
-                new Channel("", List.of(new Repository("maven-central", "https://repo1.maven.org/maven2/"),
+                new Channel("channel-0", List.of(new Repository("maven-central", "https://repo1.maven.org/maven2/"),
                         new Repository("nexus", "https://repository.jboss.org/nexus/content/groups/public-jboss"),
                         new Repository("maven-redhat-ga", "https://maven.repository.redhat.com/ga")),
                         ChannelOpsTest.class.getClassLoader().getResource(CHANNEL_BASE_CORE_19)),
@@ -86,10 +85,9 @@ public class ChannelOpsTest extends WfCoreTestBase {
         );
 
         // remove channel
-        manager.removeChannel(new Channel("test", List.of(new Repository("test-repo2", "http://test.te/repo")),
-                "foo:bar2"));
+        manager.removeChannel("test");
         assertThat(channels).containsExactly(
-                new Channel("", List.of(new Repository("maven-central", "https://repo1.maven.org/maven2/"),
+                new Channel("channel-0", List.of(new Repository("maven-central", "https://repo1.maven.org/maven2/"),
                         new Repository("nexus", "https://repository.jboss.org/nexus/content/groups/public-jboss"),
                         new Repository("maven-redhat-ga", "https://maven.repository.redhat.com/ga")),
                         ChannelOpsTest.class.getClassLoader().getResource(CHANNEL_BASE_CORE_19))

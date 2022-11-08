@@ -20,6 +20,7 @@ package org.wildfly.prospero.actions;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 
 import org.wildfly.channel.Channel;
 import org.wildfly.prospero.api.InstallationMetadata;
@@ -50,23 +51,25 @@ public class MetadataAction implements AutoCloseable {
         installationMetadata.updateProsperoConfig(prosperoConfig);
     }
 
-    public void removeChannel(int index) throws MetadataException {
+    public void removeChannel(String channelName) throws MetadataException {
         final ProsperoConfig prosperoConfig = installationMetadata.getProsperoConfig();
         final List<Channel> channels = prosperoConfig.getChannels();
-        if (index < 0 || index >= channels.size()) {
-            throw new MetadataException("No channel can be found at requested index " + index);
+        final Optional<Channel> removedChannel = channels.stream().filter(c -> c.getName().equals(channelName)).findAny();
+        if (removedChannel.isEmpty()) {
+            throw new MetadataException("No channel can be found with name [" + channelName + "]");
         }
-        channels.remove(index);
+        channels.remove(removedChannel.get());
         installationMetadata.updateProsperoConfig(prosperoConfig);
     }
 
-    public void changeChannel(int index, Channel newChannel) throws MetadataException {
+    public void changeChannel(String channelName, Channel newChannel) throws MetadataException {
         final ProsperoConfig prosperoConfig = installationMetadata.getProsperoConfig();
         final List<Channel> channels = prosperoConfig.getChannels();
-        if (index < 0 || index >= channels.size()) {
-            throw new MetadataException("No channel can be found at requested index " + index);
+        final Optional<Channel> modifiedChannel = channels.stream().filter(c -> c.getName().equals(channelName)).findAny();
+        if (modifiedChannel.isEmpty()) {
+            throw new MetadataException("No channel can be found with name [" + channelName + "]");
         }
-        channels.set(index, newChannel);
+        channels.set(channels.indexOf(modifiedChannel.get()), newChannel);
         installationMetadata.updateProsperoConfig(prosperoConfig);
     }
 
