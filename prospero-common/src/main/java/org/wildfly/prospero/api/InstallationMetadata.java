@@ -17,6 +17,7 @@
 
 package org.wildfly.prospero.api;
 
+import org.apache.commons.io.FileUtils;
 import org.wildfly.prospero.Messages;
 import org.wildfly.prospero.api.exceptions.MetadataException;
 import org.wildfly.prospero.installation.git.GitStorage;
@@ -36,6 +37,7 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
@@ -50,10 +52,14 @@ public class InstallationMetadata implements AutoCloseable {
 
     public static final String METADATA_DIR = ".installation";
     public static final String MANIFEST_FILE_NAME = "manifest.yaml";
+
+    public static final String README_FILE_NAME = "README.txt";
+    private static final String WARNING_MESSAGE = "WARNING: The files in .installation directory should be only edited by the provisioning tool.";
     public static final String PROSPERO_CONFIG_FILE_NAME = "installer-config.yaml";
     public static final String PROVISIONING_FILE_NAME = "provisioning.xml";
     public static final String GALLEON_INSTALLATION_DIR = ".galleon";
     private final Path manifestFile;
+    private final Path readmeFile;
     private final Path prosperoConfigFile;
     private final Path provisioningFile;
     private Channel manifest;
@@ -67,6 +73,7 @@ public class InstallationMetadata implements AutoCloseable {
         this.base = manifestFile.getParent();
         this.gitStorage = null;
         this.manifestFile = manifestFile;
+        this.readmeFile = base.resolve(METADATA_DIR).resolve(InstallationMetadata.README_FILE_NAME);
         this.prosperoConfigFile = prosperoConfigFile;
         this.provisioningFile = provisioningFile;
 
@@ -81,6 +88,7 @@ public class InstallationMetadata implements AutoCloseable {
         this.base = base;
         this.gitStorage = gitStorage;
         this.manifestFile = base.resolve(METADATA_DIR).resolve(InstallationMetadata.MANIFEST_FILE_NAME);
+        this.readmeFile = base.resolve(METADATA_DIR).resolve(InstallationMetadata.README_FILE_NAME);
         this.prosperoConfigFile = base.resolve(METADATA_DIR).resolve(InstallationMetadata.PROSPERO_CONFIG_FILE_NAME);
         this.provisioningFile = base.resolve(GALLEON_INSTALLATION_DIR).resolve(InstallationMetadata.PROVISIONING_FILE_NAME);
 
@@ -92,6 +100,7 @@ public class InstallationMetadata implements AutoCloseable {
         this.base = base;
         this.gitStorage = new GitStorage(base);
         this.manifestFile = base.resolve(METADATA_DIR).resolve(InstallationMetadata.MANIFEST_FILE_NAME);
+        this.readmeFile = base.resolve(METADATA_DIR).resolve(InstallationMetadata.README_FILE_NAME);
         this.prosperoConfigFile = base.resolve(METADATA_DIR).resolve(InstallationMetadata.PROSPERO_CONFIG_FILE_NAME);
         this.provisioningFile = base.resolve(GALLEON_INSTALLATION_DIR).resolve(InstallationMetadata.PROVISIONING_FILE_NAME);
 
@@ -212,6 +221,14 @@ public class InstallationMetadata implements AutoCloseable {
             ManifestYamlSupport.write(this.manifest, this.manifestFile);
         } catch (IOException e) {
             throw new MetadataException("Unable to save manifest in installation", e);
+        }
+        // Add README.txt file to .installation directory to warn the files should not be edited.
+        if (!Files.exists(readmeFile)) {
+            try {
+                FileUtils.writeStringToFile(new File(readmeFile.toString()), WARNING_MESSAGE , StandardCharsets.UTF_8);
+            } catch (IOException e) {
+                throw new MetadataException("Unable to create README.txt in installation", e);
+            }
         }
 
         if (overrideProsperoConfig || !Files.exists(this.prosperoConfigFile)) {
