@@ -60,6 +60,16 @@ public class MetadataAction implements AutoCloseable {
         installationMetadata.updateProsperoConfig(prosperoConfig);
     }
 
+    public void changeChannel(int index, Channel newChannel) throws MetadataException {
+        final ProsperoConfig prosperoConfig = installationMetadata.getProsperoConfig();
+        final List<Channel> channels = prosperoConfig.getChannels();
+        if (index < 0 || index >= channels.size()) {
+            throw new MetadataException("No channel can be found at requested index " + index);
+        }
+        channels.set(index, newChannel);
+        installationMetadata.updateProsperoConfig(prosperoConfig);
+    }
+
     public List<Channel> getChannels() throws MetadataException {
         return new ArrayList<>(installationMetadata.getProsperoConfig().getChannels());
     }
