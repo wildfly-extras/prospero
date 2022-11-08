@@ -136,7 +136,7 @@ public class LocalInstallationHistoryTest {
     private InstallationMetadata mockInstallation() throws Exception {
         final ChannelManifest manifest = MetadataTestUtils.createManifest(Arrays.asList(new Stream("foo", "bar", "1.1.1", null)));
         InstallationMetadata installationMetadata = MetadataTestUtils.createInstallationMetadata(installation, manifest,
-                List.of(new Channel("", "", null, null,
+                List.of(new Channel("test", "", null, null,
                         List.of(new Repository("test", "file://test.org/test")),
                         new ChannelManifestCoordinate("org.test", "manifest"))));
         return installationMetadata;

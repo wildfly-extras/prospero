@@ -17,6 +17,9 @@
 
 package org.wildfly.prospero.it.commonapi;
 
+import org.wildfly.channel.Channel;
+import org.wildfly.channel.ChannelManifestCoordinate;
+import org.wildfly.channel.Repository;
 import org.wildfly.prospero.actions.InstallationExportAction;
 import org.wildfly.prospero.actions.InstallationRestoreAction;
 import org.wildfly.prospero.actions.ProvisioningAction;
@@ -27,13 +30,19 @@ import org.eclipse.aether.artifact.Artifact;
 import org.eclipse.aether.artifact.DefaultArtifact;
 import org.junit.Before;
 import org.junit.Test;
+import org.wildfly.prospero.model.ProsperoConfig;
 import org.wildfly.prospero.test.MetadataTestUtils;
 
 import java.io.File;
 import java.io.IOException;
+import java.net.URL;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 import static org.junit.Assert.assertEquals;
 
@@ -54,9 +63,10 @@ public class InstallationRestoreActionTest extends WfCoreTestBase {
         final ProvisioningDefinition provisioningDefinition = defaultWfCoreDefinition()
                 .setProvisionConfig(provisionConfigFile)
                 .build();
-        new ProvisioningAction(outputPath, mavenSessionManager, new AcceptingConsole()).provision(provisioningDefinition);
+        new ProvisioningAction(outputPath, mavenSessionManager, new AcceptingConsole())
+                .provision(provisioningDefinition.toProvisioningConfig(), provisioningDefinition.getChannels());
 
-        MetadataTestUtils.prepareProvisionConfig(outputPath.resolve(MetadataTestUtils.PROVISION_CONFIG_FILE_PATH), CHANNEL_COMPONENT_UPDATES, CHANNEL_BASE_CORE_19);
+        prepareInstallerConfig(outputPath.resolve(MetadataTestUtils.PROVISION_CONFIG_FILE_PATH), CHANNEL_COMPONENT_UPDATES, CHANNEL_BASE_CORE_19);
 
         new InstallationExportAction(outputPath).export("target/bundle.zip");
 
@@ -73,4 +83,22 @@ public class InstallationRestoreActionTest extends WfCoreTestBase {
                 .findFirst()
                 .map(s->new DefaultArtifact(s.getGroupId(), s.getArtifactId(), "jar", s.getVersion()));
     }
+
+    // config including correct channel names
+    private static void prepareInstallerConfig(Path provisionConfigFile, String... channelDescriptor)
+            throws IOException {
+        List<URL> channelUrls = Arrays.stream(channelDescriptor)
+                .map(d->InstallationRestoreActionTest.class.getClassLoader().getResource(d))
+                .collect(Collectors.toList());
+        List<Channel> channels = new ArrayList<>();
+        List<Repository> repositories1 = defaultRemoteRepositories().stream()
+                .map(r->new Repository(r.getId(), r.getUrl())).collect(Collectors.toList());
+        for (int i = 0; i< channelUrls.size(); i++) {
+            channels.add(new Channel("channel-" + i, "", null, null, repositories1,
+                    new ChannelManifestCoordinate(channelUrls.get(i))));
+        }
+
+        new ProsperoConfig(channels).writeConfig(provisionConfigFile);
+    }
+
 }

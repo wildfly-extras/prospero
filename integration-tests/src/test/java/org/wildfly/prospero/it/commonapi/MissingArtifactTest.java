@@ -60,7 +60,8 @@ public class MissingArtifactTest extends WfCoreTestBase {
         final ProvisioningDefinition provisioningDefinition = defaultWfCoreDefinition()
                 .setProvisionConfig(provisionConfigFile)
                 .build();
-        assertThrows(ArtifactResolutionException.class, () -> installation.provision(provisioningDefinition));
+        assertThrows(ArtifactResolutionException.class,
+                () -> installation.provision(provisioningDefinition.toProvisioningConfig(), provisioningDefinition.getChannels()));
     }
 
     @Test
@@ -84,6 +85,7 @@ public class MissingArtifactTest extends WfCoreTestBase {
         final ProvisioningDefinition provisioningDefinition = defaultWfCoreDefinition()
                 .setProvisionConfig(provisionConfigFile)
                 .build();
-        assertThrows(ArtifactResolutionException.class, () -> installation.provision(provisioningDefinition));
+        assertThrows(ArtifactResolutionException.class,
+                () -> installation.provision(provisioningDefinition.toProvisioningConfig(), provisioningDefinition.getChannels()));
     }
 }

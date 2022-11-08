@@ -59,8 +59,10 @@ public class ChannelCommand extends AbstractCommand {
         @Override
         public Integer call() throws Exception {
             Path installationDirectory = determineInstallationDirectory(directory);
-            MetadataAction metadataAction = actionFactory.metadataActions(installationDirectory);
-            List<Channel> channels = metadataAction.getChannels();
+            List<Channel> channels;
+            try (MetadataAction metadataAction = actionFactory.metadataActions(installationDirectory)) {
+                channels = metadataAction.getChannels();
+            }
 
             int i=0;
             console.println("-------");

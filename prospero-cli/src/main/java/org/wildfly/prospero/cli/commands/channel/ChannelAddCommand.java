@@ -55,7 +55,6 @@ public class ChannelAddCommand extends AbstractCommand {
     @Override
     public Integer call() throws Exception {
         Path installationDirectory = determineInstallationDirectory(directory);
-        MetadataAction metadataAction = actionFactory.metadataActions(installationDirectory);
         List<Repository> repositories = new ArrayList<>();
         for (String repoKey : repository) {
             if (StringUtils.isEmpty(repoKey)) {
@@ -69,7 +68,9 @@ public class ChannelAddCommand extends AbstractCommand {
         }
         ChannelManifestCoordinate manifest = ArtifactUtils.manifestFromString(gavOrUrl);
         Channel channel = new Channel(null, null, null, null, repositories, manifest);
-        metadataAction.addChannel(channel);
+        try (final MetadataAction metadataAction = actionFactory.metadataActions(installationDirectory)) {
+            metadataAction.addChannel(channel);
+        }
         console.println(CliMessages.MESSAGES.channelAdded(gavOrUrl));
         return ReturnCodes.SUCCESS;
     }

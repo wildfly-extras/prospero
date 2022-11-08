@@ -62,7 +62,7 @@ public class InstallationMetadataTest {
     @Test
     public void testUpdateProsperoConfig() throws Exception {
         final ProsperoConfig config = installationMetadata.getProsperoConfig();
-        Channel channel = new Channel(null, null, null, null,
+        Channel channel = new Channel("test", null, null, null,
                 List.of(new Repository("test", "file://foo.bar")),
                 ArtifactUtils.manifestFromString("new:channel"));
         config.getChannels().add(channel);
@@ -82,7 +82,7 @@ public class InstallationMetadataTest {
     @Test
     public void dontOverrideProsperoConfigIfItExist() throws Exception {
         final ProsperoConfig config = installationMetadata.getProsperoConfig();
-        Channel channel = new Channel(null, null, null, null,
+        Channel channel = new Channel("test", null, null, null,
                 List.of(new Repository("test", "file://foo.bar")),
                 ArtifactUtils.manifestFromString("new:channel"));
         config.getChannels().add(channel);
@@ -103,7 +103,7 @@ public class InstallationMetadataTest {
     public void writeProsperoConfigIfItDoesNotExist() throws Exception {
         // throw away mocked installation from setup
         base = temp.newFolder().toPath();
-        final Channel channel = new Channel("", "", null, null,
+        final Channel channel = new Channel("test", "", null, null,
                 List.of(new Repository("test", "file://foo.bar")),
                 new ChannelManifestCoordinate("new", "channel"));
         installationMetadata = new InstallationMetadata(base,
@@ -130,7 +130,7 @@ public class InstallationMetadataTest {
         Files.writeString(metadataDir.resolve(InstallationMetadata.MANIFEST_FILE_NAME),
                 ChannelManifestMapper.toYaml(new ChannelManifest(null, null, Collections.emptyList())),
                 StandardOpenOption.CREATE_NEW);
-        final Channel channel = new Channel("", "", null, null,
+        final Channel channel = new Channel("test", "", null, null,
                 List.of(new Repository("test", "file://foo.bar")),
         new ChannelManifestCoordinate("foo","bar"));
         new ProsperoConfig(List.of(channel)).writeConfig(metadataDir.resolve(InstallationMetadata.PROSPERO_CONFIG_FILE_NAME));

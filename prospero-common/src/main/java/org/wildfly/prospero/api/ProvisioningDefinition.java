@@ -29,12 +29,18 @@ import java.util.stream.Collectors;
 
 import org.eclipse.aether.repository.RemoteRepository;
 import org.eclipse.aether.repository.RepositoryPolicy;
+import org.jboss.galleon.ProvisioningException;
+import org.jboss.galleon.config.FeaturePackConfig;
+import org.jboss.galleon.config.ProvisioningConfig;
+import org.jboss.galleon.universe.FeaturePackLocation;
+import org.jboss.galleon.xml.ProvisioningXmlParser;
 import org.wildfly.channel.Channel;
 import org.wildfly.channel.ChannelManifestCoordinate;
 import org.wildfly.channel.Repository;
 import org.wildfly.prospero.Messages;
 import org.wildfly.prospero.api.exceptions.ArtifactResolutionException;
 import org.wildfly.prospero.api.exceptions.NoChannelException;
+import org.wildfly.prospero.galleon.FeaturePackLocationParser;
 import org.wildfly.prospero.model.KnownFeaturePack;
 import org.wildfly.prospero.model.ProsperoConfig;
 
@@ -142,10 +148,6 @@ public class ProvisioningDefinition {
         return new Builder();
     }
 
-    public Set<String> getIncludedPackages() {
-        return includedPackages;
-    }
-
     public String getFpl() {
         return fpl;
     }
@@ -160,6 +162,20 @@ public class ProvisioningDefinition {
 
     public ProsperoConfig getProsperoConfig() {
         return new ProsperoConfig(channels);
+    }
+
+    public ProvisioningConfig toProvisioningConfig() throws ProvisioningException {
+        if (getFpl() != null) {
+            FeaturePackLocation loc = FeaturePackLocationParser.resolveFpl(getFpl());
+
+            final FeaturePackConfig.Builder configBuilder = FeaturePackConfig.builder(loc);
+            for (String includedPackage : includedPackages) {
+                configBuilder.includePackage(includedPackage);
+            }
+            return ProvisioningConfig.builder().addFeaturePackDep(configBuilder.build()).build();
+        } else {
+            return ProvisioningXmlParser.parse(getDefinition());
+        }
     }
 
     public static class Builder {

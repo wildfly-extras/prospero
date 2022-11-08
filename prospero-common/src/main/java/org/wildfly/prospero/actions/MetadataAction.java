@@ -29,52 +29,55 @@ import org.wildfly.prospero.model.ProsperoConfig;
 /**
  * Metadata related actions wrapper.
  */
-public class MetadataAction {
+public class MetadataAction implements AutoCloseable {
+    private final InstallationMetadata installationMetadata;
 
-    private final Path installation;
-
-    public MetadataAction(Path installation) {
-        this.installation = installation;
+    public MetadataAction(Path installation) throws MetadataException {
+        this.installationMetadata = new InstallationMetadata(installation);
     }
+
+    protected MetadataAction(InstallationMetadata installationMetadata) {
+        this.installationMetadata = installationMetadata;
+    }
+
 
     // channels clash if they define the same manifest & repositories
     public void addChannel(Channel channel) throws MetadataException {
-        try (final InstallationMetadata installationMetadata = new InstallationMetadata(installation)) {
-            final ProsperoConfig prosperoConfig = installationMetadata.getProsperoConfig();
-            final List<Channel> channels = prosperoConfig.getChannels();
-            // TODO: check for duplicates
-            channels.add(channel);
-            installationMetadata.updateProsperoConfig(prosperoConfig);
-        }
+        final ProsperoConfig prosperoConfig = installationMetadata.getProsperoConfig();
+        final List<Channel> channels = prosperoConfig.getChannels();
+        // TODO: check for duplicates
+        channels.add(channel);
+        installationMetadata.updateProsperoConfig(prosperoConfig);
     }
 
     public void removeChannel(int index) throws MetadataException {
-        try (final InstallationMetadata installationMetadata = new InstallationMetadata(installation)) {
-            final ProsperoConfig prosperoConfig = installationMetadata.getProsperoConfig();
-            final List<Channel> channels = prosperoConfig.getChannels();
-            // TODO: check for duplicates
-            channels.remove(index);
-            installationMetadata.updateProsperoConfig(prosperoConfig);
+        final ProsperoConfig prosperoConfig = installationMetadata.getProsperoConfig();
+        final List<Channel> channels = prosperoConfig.getChannels();
+        if (index < 0 || index >= channels.size()) {
+            throw new MetadataException("No channel can be found at requested index " + index);
         }
+        channels.remove(index);
+        installationMetadata.updateProsperoConfig(prosperoConfig);
     }
 
     public List<Channel> getChannels() throws MetadataException {
-        try (final InstallationMetadata installationMetadata = new InstallationMetadata(installation)) {
-            return new ArrayList<>(installationMetadata.getProsperoConfig().getChannels());
-        }
+        return new ArrayList<>(installationMetadata.getProsperoConfig().getChannels());
     }
 
     public Channel getChannel(int index) throws MetadataException {
         if (index < 0) {
             return null;
         }
-        try (final InstallationMetadata installationMetadata = new InstallationMetadata(installation)) {
-            final ProsperoConfig prosperoConfig = installationMetadata.getProsperoConfig();
-            final List<Channel> channels = prosperoConfig.getChannels();
-            if (channels.size() <= index) {
-                return null;
-            }
-            return channels.get(index);
+        final ProsperoConfig prosperoConfig = installationMetadata.getProsperoConfig();
+        final List<Channel> channels = prosperoConfig.getChannels();
+        if (channels.size() <= index) {
+            return null;
         }
+        return channels.get(index);
+    }
+
+    @Override
+    public void close() {
+        this.installationMetadata.close();
     }
 }

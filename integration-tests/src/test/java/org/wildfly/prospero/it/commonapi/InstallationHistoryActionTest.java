@@ -66,7 +66,7 @@ public class InstallationHistoryActionTest extends WfCoreTestBase {
         final ProvisioningDefinition provisioningDefinition = defaultWfCoreDefinition()
                 .setProvisionConfig(provisionConfigFile)
                 .build();
-        installation.provision(provisioningDefinition);
+        installation.provision(provisioningDefinition.toProvisioningConfig(), provisioningDefinition.getChannels());
 
         // updateCore
         MetadataTestUtils.prepareProvisionConfig(outputPath.resolve(MetadataTestUtils.PROVISION_CONFIG_FILE_PATH), CHANNEL_COMPONENT_UPDATES, CHANNEL_BASE_CORE_19);
@@ -88,7 +88,7 @@ public class InstallationHistoryActionTest extends WfCoreTestBase {
         final ProvisioningDefinition provisioningDefinition = defaultWfCoreDefinition()
                 .setProvisionConfig(provisionConfigFile)
                 .build();
-        installation.provision(provisioningDefinition);
+        installation.provision(provisioningDefinition.toProvisioningConfig(), provisioningDefinition.getChannels());
 
         MetadataTestUtils.prepareProvisionConfig(outputPath.resolve(MetadataTestUtils.PROVISION_CONFIG_FILE_PATH), CHANNEL_COMPONENT_UPDATES, CHANNEL_BASE_CORE_19);
         updateAction().performUpdate();
@@ -114,7 +114,7 @@ public class InstallationHistoryActionTest extends WfCoreTestBase {
         final ProvisioningDefinition provisioningDefinition = defaultWfCoreDefinition()
                 .setProvisionConfig(provisionConfigFile)
                 .build();
-        installation.provision(provisioningDefinition);
+        installation.provision(provisioningDefinition.toProvisioningConfig(), provisioningDefinition.getChannels());
 
         MetadataTestUtils.prepareProvisionConfig(outputPath.resolve(MetadataTestUtils.PROVISION_CONFIG_FILE_PATH), CHANNEL_COMPONENT_UPDATES, CHANNEL_BASE_CORE_19);
         updateAction().performUpdate();

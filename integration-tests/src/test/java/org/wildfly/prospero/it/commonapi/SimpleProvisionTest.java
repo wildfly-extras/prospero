@@ -29,6 +29,7 @@ import java.util.stream.Collectors;
 import org.eclipse.aether.artifact.Artifact;
 import org.eclipse.aether.artifact.DefaultArtifact;
 import org.jboss.galleon.ProvisioningException;
+import org.jboss.galleon.xml.ProvisioningXmlParser;
 import org.junit.Test;
 import org.wildfly.channel.Channel;
 import org.wildfly.prospero.actions.UpdateAction;
@@ -52,7 +53,7 @@ public class SimpleProvisionTest extends WfCoreTestBase {
         final ProvisioningDefinition provisioningDefinition = defaultWfCoreDefinition()
                 .setProvisionConfig(provisionConfigFile)
                 .build();
-        installation.provision(provisioningDefinition);
+        installation.provision(provisioningDefinition.toProvisioningConfig(), provisioningDefinition.getChannels());
 
         // verify installation with manifest file is present
         assertTrue(manifestPath.toFile().exists());
@@ -68,7 +69,7 @@ public class SimpleProvisionTest extends WfCoreTestBase {
         final ProvisioningDefinition provisioningDefinition = defaultWfCoreDefinition()
                 .setProvisionConfig(provisionConfigFile)
                 .build();
-        installation.provision(provisioningDefinition);
+        installation.provision(provisioningDefinition.toProvisioningConfig(), provisioningDefinition.getChannels());
 
         MetadataTestUtils.prepareProvisionConfig(outputPath.resolve(MetadataTestUtils.PROVISION_CONFIG_FILE_PATH), CHANNEL_COMPONENT_UPDATES, CHANNEL_BASE_CORE_19);
         getUpdateAction().performUpdate();
@@ -85,7 +86,7 @@ public class SimpleProvisionTest extends WfCoreTestBase {
         final ProvisioningDefinition provisioningDefinition = defaultWfCoreDefinition()
                 .setProvisionConfig(provisionConfigFile)
                 .build();
-        installation.provision(provisioningDefinition);
+        installation.provision(provisioningDefinition.toProvisioningConfig(), provisioningDefinition.getChannels());
 
         MetadataTestUtils.prepareProvisionConfig(outputPath.resolve(MetadataTestUtils.PROVISION_CONFIG_FILE_PATH), CHANNEL_FP_UPDATES, CHANNEL_BASE_CORE_19);
         getUpdateAction().performUpdate();
@@ -103,7 +104,7 @@ public class SimpleProvisionTest extends WfCoreTestBase {
                 .setFpl("org.wildfly.core:wildfly-core-galleon-pack")
                 .setProvisionConfig(provisionConfigFile)
                 .build();
-        installation.provision(provisioningDefinition);
+        installation.provision(provisioningDefinition.toProvisioningConfig(), provisioningDefinition.getChannels());
 
         MetadataTestUtils.prepareProvisionConfig(outputPath.resolve(MetadataTestUtils.PROVISION_CONFIG_FILE_PATH), CHANNEL_FP_UPDATES, CHANNEL_BASE_CORE_19);
         getUpdateAction().performUpdate();
@@ -120,7 +121,7 @@ public class SimpleProvisionTest extends WfCoreTestBase {
         final ProvisioningDefinition provisioningDefinition = defaultWfCoreDefinition()
                 .setProvisionConfig(provisionConfigFile)
                 .build();
-        installation.provision(provisioningDefinition);
+        installation.provision(provisioningDefinition.toProvisioningConfig(), provisioningDefinition.getChannels());
 
         MetadataTestUtils.prepareProvisionConfig(outputPath.resolve(MetadataTestUtils.PROVISION_CONFIG_FILE_PATH), CHANNEL_COMPONENT_UPDATES, CHANNEL_BASE_CORE_19);
         final Set<String> updates = new UpdateAction(outputPath, mavenSessionManager, new AcceptingConsole(), Collections.emptyList())
@@ -141,8 +142,7 @@ public class SimpleProvisionTest extends WfCoreTestBase {
         final File installationFile = new File(this.getClass().getClassLoader().getResource("provisioning.xml").toURI());
         final List<Channel> channels = ProsperoConfig.readConfig(provisionConfigFile).getChannels();
 
-        installation.provision(installationFile.toPath(), channels,
-                repositories.stream().map(WfCoreTestBase::toRemoteRepository).collect(Collectors.toList()));
+        installation.provision(ProvisioningXmlParser.parse(installationFile.toPath()), channels);
 
         final Optional<Artifact> wildflyCliArtifact = readArtifactFromManifest("org.wildfly.core", "wildfly-cli");
         assertEquals(BASE_VERSION, wildflyCliArtifact.get().getVersion());

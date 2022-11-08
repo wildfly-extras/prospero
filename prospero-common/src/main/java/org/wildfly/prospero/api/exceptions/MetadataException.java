@@ -21,6 +21,10 @@ package org.wildfly.prospero.api.exceptions;
  * Represents metadata read/write operations exceptions
  */
 public class MetadataException extends OperationException {
+    public MetadataException(String msg) {
+        super(msg);
+    }
+
     public MetadataException(String msg, Exception e) {
         super(msg, e);
     }

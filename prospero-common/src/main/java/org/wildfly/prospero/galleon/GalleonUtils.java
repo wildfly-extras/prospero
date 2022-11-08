@@ -80,6 +80,10 @@ public class GalleonUtils {
         void execute(Map<String, String> options) throws ProvisioningException;
     }
 
+    public interface ProvisioningManagerExecution {
+        void execute(ProvisioningManager provMgr, Map<String, String> options) throws ProvisioningException;
+    }
+
     public static ProvisioningManager getProvisioningManager(Path installDir, MavenRepoManager maven) throws ProvisioningException {
         ProvisioningManager provMgr = ProvisioningManager.builder().addArtifactResolver(maven)
                 .setInstallationHome(installDir).build();

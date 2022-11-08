@@ -62,7 +62,7 @@ public final class MetadataTestUtils {
 
     public static InstallationMetadata createInstallationMetadata(Path installation) throws MetadataException {
         return createInstallationMetadata(installation, createManifest(null),
-                List.of(new Channel("", "", null, null,
+                List.of(new Channel("test-channel", "", null, null,
                         List.of(new Repository("test", "http://test.org")),
                         new ChannelManifestCoordinate("org.test","test"))));
     }
