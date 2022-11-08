@@ -22,17 +22,30 @@ package org.wildfly.prospero.spi;
 import org.wildfly.installationmanager.MavenOptions;
 import org.wildfly.installationmanager.spi.InstallationManager;
 import org.wildfly.installationmanager.spi.InstallationManagerFactory;
+import org.wildfly.prospero.Messages;
+import org.wildfly.prospero.api.InstallationMetadata;
 
+import java.io.File;
 import java.nio.file.Path;
 
 public class ProsperoInstallationManagerFactory implements InstallationManagerFactory {
     @Override
     public InstallationManager create(Path installationDir, MavenOptions mavenOptions) throws Exception {
+        verifyInstallationDirectory(installationDir);
         return new ProsperoInstallationManager(installationDir, mavenOptions);
     }
 
     @Override
     public String getName() {
         return "prospero";
+    }
+
+    private void verifyInstallationDirectory(Path path) {
+        File dotGalleonDir = path.resolve(InstallationMetadata.GALLEON_INSTALLATION_DIR).toFile();
+        File prosperoConfigFile = path.resolve(InstallationMetadata.METADATA_DIR)
+                .resolve(InstallationMetadata.PROSPERO_CONFIG_FILE_NAME).toFile();
+        if (!dotGalleonDir.isDirectory() || !prosperoConfigFile.isFile()) {
+            throw Messages.MESSAGES.invalidInstallationDir(path);
+        }
     }
 }
