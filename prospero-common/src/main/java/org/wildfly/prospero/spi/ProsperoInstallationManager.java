@@ -7,19 +7,20 @@ import org.wildfly.installationmanager.HistoryResult;
 import org.wildfly.installationmanager.MavenOptions;
 import org.wildfly.installationmanager.Repository;
 import org.wildfly.installationmanager.spi.InstallationManager;
-import org.wildfly.prospero.Messages;
+import org.wildfly.prospero.actions.InstallationExportAction;
 import org.wildfly.prospero.actions.InstallationHistoryAction;
 import org.wildfly.prospero.actions.MetadataAction;
 import org.wildfly.prospero.actions.UpdateAction;
-import org.wildfly.prospero.api.InstallationMetadata;
 import org.wildfly.prospero.api.SavedState;
 import org.wildfly.prospero.api.exceptions.MetadataException;
 import org.wildfly.prospero.api.exceptions.OperationException;
 import org.wildfly.prospero.updates.UpdateSet;
 import org.wildfly.prospero.wfchannel.MavenSessionManager;
 
-import java.io.File;
+import java.nio.file.Files;
 import java.nio.file.Path;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -42,7 +43,6 @@ public class ProsperoInstallationManager implements InstallationManager {
 
     @Override
     public List<HistoryResult> history() throws Exception {
-        verifyInstallationDirectory(this.server);
         final InstallationHistoryAction historyAction = new InstallationHistoryAction(this.server, null);
         final List<SavedState> revisions = historyAction.getRevisions();
         final List<HistoryResult> results = new ArrayList<>();
@@ -113,6 +113,29 @@ public class ProsperoInstallationManager implements InstallationManager {
         }
     }
 
+    @Override
+    public Path createSnapshot(Path targetPath) throws Exception {
+        final Path snapshotPath;
+        if (!Files.exists(targetPath)) {
+            if (targetPath.endsWith(".zip")) {
+                snapshotPath = targetPath.toAbsolutePath();
+            } else {
+                String timestamp = LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyyMMddHHmmss"));
+                snapshotPath = targetPath.resolve("im-snapshot-" + timestamp + ".zip").toAbsolutePath();
+            }
+        } else if (Files.isDirectory(targetPath)) {
+            String timestamp = LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyyMMddHHmmss"));
+            snapshotPath = targetPath.resolve("im-snapshot-" + timestamp + ".zip").toAbsolutePath();
+        } else {
+            throw new OperationException("The file already exists: " + targetPath);
+        }
+
+        final InstallationExportAction installationExportAction = new InstallationExportAction(server);
+        installationExportAction.export(snapshotPath.toString());
+
+        return snapshotPath;
+    }
+
     private static Channel mapChannel(org.wildfly.channel.Channel channel) {
         if (channel.getManifestRef().getUrl() != null) {
             return new Channel(channel.getName(), map(channel.getRepositories(), ProsperoInstallationManager::mapRepository), channel.getManifestRef().getUrl());
@@ -158,15 +181,6 @@ public class ProsperoInstallationManager implements InstallationManager {
             return new ArtifactChange(c.getOldVersion().get(), null, c.getArtifactName(), ArtifactChange.Status.REMOVED);
         } else {
             return new ArtifactChange(c.getOldVersion().get(), c.getNewVersion().get(), c.getArtifactName(), ArtifactChange.Status.UPDATED);
-        }
-    }
-
-    private void verifyInstallationDirectory(Path path) {
-        File dotGalleonDir = path.resolve(InstallationMetadata.GALLEON_INSTALLATION_DIR).toFile();
-        File prosperoConfigFile = path.resolve(InstallationMetadata.METADATA_DIR)
-                .resolve(InstallationMetadata.PROSPERO_CONFIG_FILE_NAME).toFile();
-        if (!dotGalleonDir.isDirectory() || !prosperoConfigFile.isFile()) {
-            throw Messages.MESSAGES.invalidInstallationDir(path);
         }
     }
 }
