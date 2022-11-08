@@ -40,6 +40,7 @@ import java.util.Collections;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 import static org.mockito.Mockito.verify;
 
 @RunWith(MockitoJUnitRunner.class)
@@ -110,6 +111,21 @@ public class InstallationMetadataTest {
         assertThat(newConfig.getRepositories()).contains(
                 new RepositoryRef("test", "file://foo.bar")
         );
+    }
+
+    @Test
+    public void testWriteReadmeFile() throws Exception {
+        // throw away mocked installation from setup
+        base = temp.newFolder().toPath();
+        installationMetadata = new InstallationMetadata(base,
+                new Channel(null, null, null, null, null),
+                Arrays.asList(new ChannelRef("new:channel", null)),
+                Arrays.asList(new RepositoryRef("test", "file://foo.bar").toRemoteRepository())
+        );
+
+        installationMetadata.recordProvision(false);
+
+        assertTrue("README.txt file should exist.", Files.exists(base.resolve(InstallationMetadata.METADATA_DIR).resolve(InstallationMetadata.README_FILE_NAME)));
     }
 
     private Path mockServer() throws IOException {
