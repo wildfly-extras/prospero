@@ -28,12 +28,15 @@ import org.jboss.galleon.ProvisioningException;
 import org.jboss.logging.Logger;
 import org.wildfly.prospero.actions.Console;
 import org.wildfly.prospero.actions.UpdateAction;
+import org.wildfly.prospero.api.exceptions.ArtifactResolutionException;
+import org.wildfly.prospero.api.exceptions.MetadataException;
 import org.wildfly.prospero.cli.ActionFactory;
 import org.wildfly.prospero.cli.ArgumentParsingException;
 import org.wildfly.prospero.cli.CliMessages;
 import org.wildfly.prospero.cli.ReturnCodes;
 import org.wildfly.prospero.cli.commands.options.LocalRepoOptions;
 import org.wildfly.prospero.galleon.GalleonUtils;
+import org.wildfly.prospero.updates.UpdateSet;
 import org.wildfly.prospero.wfchannel.MavenSessionManager;
 import picocli.CommandLine;
 
@@ -102,9 +105,11 @@ public class UpdateCommand extends AbstractCommand {
 
         try (UpdateAction updateAction = actionFactory.update(installationDir, mavenSessionManager, console, remoteRepositories)) {
             if (!dryRun) {
-                updateAction.doUpdateAll(yes);
+                performUpdate(updateAction);
             } else {
-                updateAction.listUpdates();
+                final UpdateSet updateSet = updateAction.findUpdates();
+
+                console.updatesFound(updateSet.getFpUpdates().getUpdates(), updateSet.getArtifactUpdates());
             }
         }
 
@@ -112,6 +117,23 @@ public class UpdateCommand extends AbstractCommand {
         console.println(CliMessages.MESSAGES.operationCompleted(totalTime));
 
         return ReturnCodes.SUCCESS;
+    }
+
+    private void performUpdate(UpdateAction updateAction) throws ArtifactResolutionException, ProvisioningException, MetadataException {
+        final UpdateSet updateSet = updateAction.findUpdates();
+
+        console.updatesFound(updateSet.getFpUpdates().getUpdates(), updateSet.getArtifactUpdates());
+        if (updateSet.isEmpty()) {
+            return;
+        }
+
+        if (!yes && !console.confirmUpdates()) {
+            return;
+        }
+
+        updateAction.performUpdate();
+
+        console.updatesComplete();
     }
 
 

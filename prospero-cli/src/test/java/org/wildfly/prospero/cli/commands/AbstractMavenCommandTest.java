@@ -36,6 +36,7 @@ public abstract class AbstractMavenCommandTest extends AbstractConsoleTest {
 
     @Test
     public void defaultMavenRepoIsUsedIfLocalRepoParameterNotUsed() throws Exception {
+        doLocalMock();
         int exitCode = commandLine.execute(getArgs());
 
         assertEquals(ReturnCodes.SUCCESS, exitCode);
@@ -45,6 +46,8 @@ public abstract class AbstractMavenCommandTest extends AbstractConsoleTest {
 
     @Test
     public void overrideMavenRepoIfLocalRepoParameterPresent() throws Exception {
+        doLocalMock();
+
         int exitCode = commandLine.execute(getArgs(CliConstants.LOCAL_REPO, "test-path"));
 
         assertEquals(ReturnCodes.SUCCESS, exitCode);
@@ -61,6 +64,7 @@ public abstract class AbstractMavenCommandTest extends AbstractConsoleTest {
 
     @Test
     public void useTemporaryMavenRepoIfNoLocalCacheParameterPresent() throws Exception {
+        doLocalMock();
         int exitCode = commandLine.execute(getArgs(CliConstants.NO_LOCAL_MAVEN_CACHE));
 
         assertEquals(ReturnCodes.SUCCESS, exitCode);
@@ -85,4 +89,8 @@ public abstract class AbstractMavenCommandTest extends AbstractConsoleTest {
     protected abstract MavenSessionManager getCapturedSessionManager() throws Exception;
 
     protected abstract String[] getDefaultArguments();
+
+    protected void doLocalMock() throws Exception {
+
+    }
 }

@@ -88,12 +88,4 @@ public class ArtifactChange {
     public boolean isUpdated() {
         return newVersion != null && oldVersion != null;
     }
-
-    public Optional<String> getOldGav() {
-        return oldVersion == null ? Optional.empty() : Optional.of(toGav(oldVersion));
-    }
-
-    public Optional<String> getNewGav() {
-        return newVersion == null ? Optional.empty() : Optional.of(toGav(newVersion));
-    }
 }

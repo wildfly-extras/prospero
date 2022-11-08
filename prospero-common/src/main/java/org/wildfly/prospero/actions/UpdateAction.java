@@ -19,7 +19,6 @@ package org.wildfly.prospero.actions;
 
 import java.net.URL;
 import java.nio.file.Path;
-import java.util.Collections;
 import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -43,18 +42,10 @@ import org.jboss.galleon.ProvisioningManager;
 public class UpdateAction implements AutoCloseable {
 
     private final InstallationMetadata metadata;
-
-    private final Console console;
     private final MavenSessionManager mavenSessionManager;
     private final GalleonEnvironment galleonEnv;
     private final ProsperoConfig prosperoConfig;
 
-    public UpdateAction(Path installDir, MavenSessionManager mavenSessionManager, Console console) throws ProvisioningException, OperationException {
-        this(installDir, mavenSessionManager, console, Collections.emptyList());
-    }
-
-    // Option for BETA update support
-    // TODO: evaluate in GA - replace by repository:add / custom channels?
     public UpdateAction(Path installDir, MavenSessionManager mavenSessionManager, Console console, List<URL> additionalRepositories)
             throws ProvisioningException, OperationException {
         this.metadata = new InstallationMetadata(installDir);
@@ -65,7 +56,27 @@ public class UpdateAction implements AutoCloseable {
                 .setConsole(console)
                 .build();
         this.mavenSessionManager = mavenSessionManager;
-        this.console = console;
+    }
+
+    public void performUpdate() throws ProvisioningException, MetadataException, ArtifactResolutionException {
+        if (findUpdates().isEmpty()) {
+            return;
+        }
+
+        applyUpdates();
+
+        metadata.recordProvision(false);
+    }
+
+    public UpdateSet findUpdates() throws ArtifactResolutionException, ProvisioningException {
+        try (final UpdateFinder updateFinder = new UpdateFinder(galleonEnv.getChannelSession(), galleonEnv.getProvisioningManager())) {
+            return updateFinder.findUpdates(metadata.getArtifacts());
+        }
+    }
+
+    @Override
+    public void close() {
+        metadata.close();
     }
 
     private ProsperoConfig addTemporaryRepositories(List<URL> additionalRepositories) {
@@ -82,38 +93,7 @@ public class UpdateAction implements AutoCloseable {
         return prosperoConfig;
     }
 
-    public void doUpdateAll(boolean confirmed) throws ProvisioningException, MetadataException, ArtifactResolutionException {
-        final UpdateSet updateSet = findUpdates();
-
-        console.updatesFound(updateSet.getFpUpdates().getUpdates(), updateSet.getArtifactUpdates());
-        if (updateSet.isEmpty()) {
-            return;
-        }
-
-        if (!confirmed && !console.confirmUpdates()) {
-            return;
-        }
-
-        applyUpdates();
-
-        metadata.recordProvision(false);
-
-        console.updatesComplete();
-    }
-
-    public void listUpdates() throws ArtifactResolutionException, ProvisioningException {
-        final UpdateSet updateSet = findUpdates();
-
-        console.updatesFound(updateSet.getFpUpdates().getUpdates(), updateSet.getArtifactUpdates());
-    }
-
-    protected UpdateSet findUpdates() throws ArtifactResolutionException, ProvisioningException {
-        try (final UpdateFinder updateFinder = new UpdateFinder(galleonEnv.getChannelSession(), galleonEnv.getProvisioningManager())) {
-            return updateFinder.findUpdates(metadata.getArtifacts());
-        }
-    }
-
-    protected void applyUpdates() throws ProvisioningException, ArtifactResolutionException {
+    private void applyUpdates() throws ProvisioningException, ArtifactResolutionException {
         final ProvisioningManager provMgr = galleonEnv.getProvisioningManager();
         try {
             GalleonUtils.executeGalleon(options -> provMgr.provision(provMgr.getProvisioningConfig(), options),
@@ -123,10 +103,5 @@ public class UpdateAction implements AutoCloseable {
         }
 
         metadata.setManifest(galleonEnv.getRepositoryManager().resolvedChannel());
-    }
-
-    @Override
-    public void close() throws Exception {
-        metadata.close();
     }
 }
