@@ -1,13 +1,12 @@
 package org.wildfly.prospero.spi;
 
+import org.wildfly.installationmanager.ArtifactChange;
 import org.wildfly.installationmanager.HistoryResult;
-import org.wildfly.installationmanager.HistoryRevisionResult;
 import org.wildfly.installationmanager.MavenOptions;
 import org.wildfly.installationmanager.spi.InstallationManager;
 import org.wildfly.prospero.Messages;
 import org.wildfly.prospero.actions.InstallationHistoryAction;
 import org.wildfly.prospero.actions.UpdateAction;
-import org.wildfly.prospero.api.ArtifactChange;
 import org.wildfly.prospero.api.InstallationMetadata;
 import org.wildfly.prospero.api.SavedState;
 import org.wildfly.prospero.api.exceptions.MetadataException;
@@ -48,35 +47,42 @@ public class ProsperoInstallationManager implements InstallationManager {
     }
 
     @Override
-    public List<HistoryRevisionResult> revisionDetails(String revision) throws MetadataException {
+    public List<ArtifactChange> revisionDetails(String revision) throws MetadataException {
         Objects.requireNonNull(revision);
         final InstallationHistoryAction historyAction = new InstallationHistoryAction(this.server, null);
-        final List<ArtifactChange> changes = historyAction.compare(new SavedState(revision));
+        final List<org.wildfly.prospero.api.ArtifactChange> changes = historyAction.compare(new SavedState(revision));
 
         if (changes.isEmpty()) {
             return Collections.EMPTY_LIST;
         } else {
-            return changes.stream().map(c -> {
-                if (c.isInstalled()) {
-                    return new HistoryRevisionResult(null, c.getNewVersion().get(), null, c.getNewGav().get(), HistoryRevisionResult.Status.INSTALLED);
-                } else if (c.isRemoved()) {
-                    return new HistoryRevisionResult(c.getOldVersion().get(), null, c.getOldGav().get(), null, HistoryRevisionResult.Status.REMOVED);
-                } else {
-                    return new HistoryRevisionResult(c.getOldVersion().get(), c.getNewVersion().get(), c.getOldGav().get(), c.getNewGav().get(), HistoryRevisionResult.Status.UPDATED);
-                }
-            }).collect(Collectors.toList());
+            return changes.stream().map(ProsperoInstallationManager::mapChange).collect(Collectors.toList());
         }
     }
 
+    @Override
     public void update() throws Exception {
         try (final UpdateAction updateAction = new UpdateAction(server, mavenSessionManager, null, Collections.emptyList())) {
             updateAction.performUpdate();
         }
     }
 
-    public UpdateSet findUpdates() throws Exception {
+    @Override
+    public List<ArtifactChange> findUpdates() throws Exception {
         try (final UpdateAction updateAction = new UpdateAction(server, mavenSessionManager, null, Collections.emptyList())) {
-            return updateAction.findUpdates();
+            final UpdateSet updates = updateAction.findUpdates();
+            return updates.getArtifactUpdates().stream()
+                    .map(ProsperoInstallationManager::mapChange)
+                    .collect(Collectors.toList());
+        }
+    }
+
+    private static ArtifactChange mapChange(org.wildfly.prospero.api.ArtifactChange c) {
+        if (c.isInstalled()) {
+            return new ArtifactChange(null, c.getNewVersion().get(), c.getArtifactName(), ArtifactChange.Status.INSTALLED);
+        } else if (c.isRemoved()) {
+            return new ArtifactChange(c.getOldVersion().get(), null, c.getArtifactName(), ArtifactChange.Status.REMOVED);
+        } else {
+            return new ArtifactChange(c.getOldVersion().get(), c.getNewVersion().get(), c.getArtifactName(), ArtifactChange.Status.UPDATED);
         }
     }
 
