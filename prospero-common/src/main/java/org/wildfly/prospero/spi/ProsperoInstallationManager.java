@@ -30,7 +30,7 @@ public class ProsperoInstallationManager implements InstallationManager {
     public ProsperoInstallationManager(Path installationDir, MavenOptions mavenOptions) throws Exception {
         this.server = installationDir;
         mavenSessionManager = new MavenSessionManager(
-                Optional.of(mavenOptions.getLocalRepository()), mavenOptions.isOffline());
+                Optional.ofNullable(mavenOptions.getLocalRepository()), mavenOptions.isOffline());
     }
 
     @Override
