@@ -17,6 +17,7 @@
 
 package org.wildfly.prospero.api;
 
+import org.apache.commons.lang3.StringUtils;
 import org.wildfly.channel.Channel;
 import org.wildfly.channel.ChannelManifest;
 import org.wildfly.prospero.Messages;
@@ -93,6 +94,10 @@ public class InstallationMetadata implements AutoCloseable {
 
         this.manifest = manifest;
         this.channels = channels;
+
+        if (channels != null && channels.stream().filter(c-> StringUtils.isEmpty(c.getName())).findAny().isPresent()) {
+            throw new MetadataException("Channel names cannot be empty");
+        }
 
         try {
             this.galleonProvisioningConfig = ProvisioningXmlParser.parse(provisioningFile);

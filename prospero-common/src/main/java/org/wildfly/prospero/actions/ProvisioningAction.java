@@ -17,6 +17,7 @@
 
 package org.wildfly.prospero.actions;
 
+import org.apache.commons.lang3.StringUtils;
 import org.wildfly.channel.Channel;
 import org.wildfly.channel.ChannelManifest;
 import org.wildfly.channel.UnresolvedMavenArtifactException;
@@ -32,6 +33,7 @@ import org.wildfly.prospero.galleon.ChannelMavenArtifactRepositoryManager;
 
 import java.nio.file.Path;
 import java.util.List;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 
 import org.wildfly.prospero.model.ProsperoConfig;
@@ -42,6 +44,7 @@ import org.jboss.galleon.config.ProvisioningConfig;
 
 public class ProvisioningAction {
 
+    private static final String CHANNEL_NAME_PREFIX = "channel-";
     private final MavenSessionManager mavenSessionManager;
     private final Path installDir;
     private final Console console;
@@ -63,7 +66,7 @@ public class ProvisioningAction {
      * @throws MetadataException
      */
     public void provision(ProvisioningConfig config, List<Channel> channels) throws ProvisioningException, OperationException {
-        doProvision((pm,options)->pm.provision(config, options), channels);
+        doProvision((pm,options)->pm.provision(config, options), enforceChannelNames(channels));
     }
 
     private void doProvision(GalleonUtils.ProvisioningManagerExecution galleonOp, List<Channel> channels) throws ProvisioningException, OperationException {
@@ -93,6 +96,19 @@ public class ProvisioningAction {
         try (final InstallationMetadata installationMetadata = new InstallationMetadata(home, manifest, channels)) {
             installationMetadata.recordProvision(true);
         }
+    }
+
+    private List<Channel> enforceChannelNames(List<Channel> newChannels) {
+        final AtomicInteger channelCounter = new AtomicInteger(0);
+        return newChannels.stream().map(c->{
+            if (StringUtils.isEmpty(c.getName())) {
+                return new Channel(c.getSchemaVersion(), CHANNEL_NAME_PREFIX + channelCounter.getAndIncrement(), c.getDescription(),
+                        c.getVendor(), c.getChannelRequirements(), c.getRepositories(),
+                        c.getManifestRef());
+            } else {
+                return c;
+            }
+        }).collect(Collectors.toList());
     }
 
     private static void verifyInstallDir(Path directory) {
