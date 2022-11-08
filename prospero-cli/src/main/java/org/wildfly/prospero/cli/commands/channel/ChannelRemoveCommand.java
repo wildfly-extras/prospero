@@ -50,7 +50,7 @@ public class ChannelRemoveCommand extends AbstractCommand {
         try (final MetadataAction metadataAction = actionFactory.metadataActions(installationDirectory)) {
             final Channel channel = metadataAction.getChannel(index);
             if (channel != null) {
-                metadataAction.removeChannel(index);
+                metadataAction.removeChannel(channel.getName());
                 final String name;
                 if (StringUtils.isNotEmpty(channel.getManifestRef().getGav())) {
                     name = channel.getManifestRef().getGav();

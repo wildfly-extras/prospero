@@ -44,6 +44,6 @@ public class MetadataActionTest {
 
         when(metadata.getProsperoConfig()).thenReturn(new ProsperoConfig(Collections.emptyList()));
 
-        assertThrows(MetadataException.class, () -> metadataAction.removeChannel(0));
+        assertThrows(MetadataException.class, () -> metadataAction.removeChannel("idontexist"));
     }
 }
