@@ -66,7 +66,7 @@ public final class CliConstants {
     public static final String FPL = "--fpl";
     public static final String H = "-h";
     public static final String HELP = "--help";
-    public static final String LOCAL_REPO = "--local-repo";
+    public static final String LOCAL_CACHE = "--local-cache";
     public static final String NO_LOCAL_MAVEN_CACHE = "--no-resolve-local-cache";
     public static final String OFFLINE = "--offline";
     public static final String PROVISION_CONFIG = "--provision-config";

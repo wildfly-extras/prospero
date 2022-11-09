@@ -17,6 +17,8 @@
 
 package org.wildfly.prospero.it.commonapi;
 
+import org.apache.commons.io.IOUtils;
+import org.eclipse.aether.deployment.DeployRequest;
 import org.eclipse.aether.installation.InstallResult;
 import org.eclipse.aether.repository.RemoteRepository;
 import org.junit.Before;
@@ -25,6 +27,7 @@ import org.junit.rules.TemporaryFolder;
 import org.wildfly.channel.Repository;
 import org.wildfly.prospero.actions.ProvisioningAction;
 import org.wildfly.prospero.api.ProvisioningDefinition;
+import org.wildfly.prospero.api.RepositoryUtils;
 import org.wildfly.prospero.cli.CliConsole;
 import org.wildfly.prospero.test.MetadataTestUtils;
 import org.wildfly.prospero.wfchannel.MavenSessionManager;
@@ -40,10 +43,18 @@ import org.eclipse.aether.resolution.ArtifactResult;
 import org.junit.BeforeClass;
 
 import java.io.File;
+import java.io.FileInputStream;
+import java.net.URL;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
 import java.util.Arrays;
+import java.util.HashMap;
+import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
+import java.util.zip.ZipEntry;
+import java.util.zip.ZipInputStream;
 
 public class WfCoreTestBase {
 
@@ -112,7 +123,7 @@ public class WfCoreTestBase {
     protected ProvisioningDefinition.Builder defaultWfCoreDefinition() {
         return ProvisioningDefinition.builder()
                 .setFpl("wildfly-core@maven(org.jboss.universe:community-universe):19.0")
-                .setRemoteRepositories(repositories.stream().map(Repository::getUrl).collect(Collectors.toList()));
+                .setAdditionalRepositories(repositories.stream().map(Repository::getUrl).collect(Collectors.toList()));
     }
 
     protected Artifact resolveArtifact(String groupId, String artifactId, String version) throws ArtifactResolutionException {
@@ -146,5 +157,92 @@ public class WfCoreTestBase {
                 REPOSITORY_NEXUS,
                 REPOSITORY_MRRC_GA
         );
+    }
+
+    protected URL mockTemporaryRepo() throws Exception {
+        final RepositorySystem system = mavenSessionManager.newRepositorySystem();
+        final DefaultRepositorySystemSession session = mavenSessionManager.newRepositorySystemSession(system);
+
+        final File repo = populateTestRepo(system, session).toFile();
+        final URL repoUrl = repo.toURI().toURL();
+
+
+        final DeployRequest deployRequest = new DeployRequest();
+        deployRequest.addArtifact(resolvedUpgradeArtifact);
+        deployRequest.addArtifact(resolvedUpgradeClientArtifact);
+        deployRequest.setRepository(RepositoryUtils.toRemoteRepository("test", repoUrl.toString()));
+        system.deploy(session, deployRequest);
+
+        return repoUrl;
+    }
+
+    private Path populateTestRepo(RepositorySystem system, DefaultRepositorySystemSession session) throws Exception {
+        final List<RemoteRepository> remoteRepositories = defaultRemoteRepositories().stream().map(r -> toRemoteRepository(r)).collect(Collectors.toList());
+
+        // resolve wildfly-core galleon pack zip
+        ArtifactRequest request = new ArtifactRequest(
+                new DefaultArtifact("org.wildfly.core", "wildfly-core-galleon-pack", "zip", BASE_VERSION),
+                remoteRepositories, null);
+        final ArtifactResult galleonPackArtifact = system.resolveArtifact(session, request);
+
+        // extract artifact list
+        File galleonPackZip = galleonPackArtifact.getArtifact().getFile();
+        Map<String, String> artifacts = null;
+        try (ZipInputStream zis = new ZipInputStream(new FileInputStream(galleonPackZip))) {
+            ZipEntry entry;
+            while ((entry = zis.getNextEntry()) != null) {
+                if(entry.getName().endsWith("artifact-versions.properties")) {
+                    artifacts = parseArtifactList(IOUtils.toString(zis, StandardCharsets.UTF_8).lines());
+                }
+            }
+        }
+
+        // additional artifacts not included in galleon-pack
+        artifacts.put("community-universe", "org.jboss.universe:community-universe:1.2.0.Final::jar");
+        artifacts.put("wildfly-producer", "org.jboss.universe.producer:wildfly-producers:1.3.4.Final::jar");
+        artifacts.put("galleon-pack", "org.wildfly.core:wildfly-core-galleon-pack:19.0.0.Beta11::zip");
+        artifacts.put("galleon-plugins", "org.wildfly.galleon-plugins:wildfly-galleon-plugins:6.0.0.Alpha6::jar");
+
+        // resolve all dependencies
+        final List<ArtifactRequest> requests = artifacts.values().stream()
+                .map(s-> parseGav(s))
+                .map(a -> new ArtifactRequest(a,
+                        remoteRepositories,
+                        null))
+                .collect(Collectors.toList());
+
+        final List<ArtifactResult> artifactResults = system.resolveArtifacts(session, requests);
+
+        // deploy resolved artifacts to a temporary folder
+        final DeployRequest deployRequest = new DeployRequest();
+        for (ArtifactResult artifactResult : artifactResults) {
+            deployRequest.addArtifact(artifactResult.getArtifact());
+        }
+        final Path path = temp.newFolder().toPath();
+        deployRequest.setRepository(RepositoryUtils.toRemoteRepository("test", path.toUri().toURL().toExternalForm()));
+        system.deploy(session, deployRequest);
+        return path;
+    }
+
+    private static Map<String, String> parseArtifactList(java.util.stream.Stream<String> lines) {
+        Map<String, String> variables = new HashMap<>();
+        final Iterator<String> iterator = lines.iterator();
+        while (iterator.hasNext()) {
+            final String line = iterator.next();
+            final int i = line.indexOf('=');
+            if (i < 0) {
+                throw new IllegalArgumentException("Failed to locate '=' character in " + line);
+            }
+            variables.put(line.substring(0, i), line.substring(i + 1));
+        }
+        return variables;
+    }
+
+    private DefaultArtifact parseGav(String gavString) {
+        final String[] gav = gavString.split(":");
+        if (gav.length < 3) {
+            throw new IllegalArgumentException("Wrong format " + gavString);
+        }
+        return new DefaultArtifact(gav[0], gav[1], gav[3], gav[4], gav[2]);
     }
 }

@@ -17,16 +17,11 @@
 
 package org.wildfly.prospero.it.cli;
 
-import org.eclipse.aether.DefaultRepositorySystemSession;
-import org.eclipse.aether.RepositorySystem;
-import org.eclipse.aether.deployment.DeployRequest;
 import org.junit.Before;
 import org.junit.Test;
 import org.wildfly.channel.Channel;
-import org.wildfly.channel.ChannelManifestCoordinate;
 import org.wildfly.channel.Repository;
 import org.wildfly.channel.Stream;
-import org.wildfly.prospero.api.RepositoryUtils;
 import org.wildfly.prospero.cli.ReturnCodes;
 import org.wildfly.prospero.cli.commands.CliConstants;
 import org.wildfly.prospero.it.ExecutionUtils;
@@ -42,7 +37,9 @@ import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.TimeUnit;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.Assert.assertEquals;
+import static org.wildfly.prospero.test.MetadataTestUtils.upgradeStreamInManifest;
 
 public class UpdateWithAdditionalRepositoryTest extends WfCoreTestBase {
 
@@ -56,22 +53,19 @@ public class UpdateWithAdditionalRepositoryTest extends WfCoreTestBase {
 
     @Test
     public void updateCli() throws Exception {
-        Path provisionConfig = MetadataTestUtils.prepareProvisionConfig("channels/wfcore-19-base.yaml");
+        final Path manifestPath = temp.newFile().toPath();
+        final Path provisionConfig = temp.newFile().toPath();
+        MetadataTestUtils.copyManifest("channels/wfcore-19-base.yaml", manifestPath);
+        MetadataTestUtils.prepareProvisionConfig(provisionConfig, List.of(manifestPath.toUri().toURL()));
 
         install(provisionConfig);
 
-        final List<Channel> channels = ProsperoConfig.readConfig(targetDir.toPath().resolve(MetadataTestUtils.PROVISION_CONFIG_FILE_PATH)).getChannels();
+        upgradeStreamInManifest(manifestPath, resolvedUpgradeArtifact);
 
-        // TODO: replace with GA channel
-        final URL modifiedChannel = this.getClass().getClassLoader().getResource("channels/wfcore-19-upgrade-component.yaml");
-        channels.add(new Channel("", "", null, null,
-                List.of(new Repository("maven-central", "https://repo1.maven.org/maven2/")),
-                new ChannelManifestCoordinate(modifiedChannel)));
-        new ProsperoConfig(channels).writeConfig(targetDir.toPath().resolve(MetadataTestUtils.PROVISION_CONFIG_FILE_PATH));
-        URL internalRepo = mockInternalRepo();
+        final URL temporaryRepo = mockTemporaryRepo();
 
         ExecutionUtils.prosperoExecution(CliConstants.Commands.UPDATE,
-                        CliConstants.REMOTE_REPOSITORIES, internalRepo.toString(),
+                        CliConstants.REMOTE_REPOSITORIES, temporaryRepo.toString(),
                         CliConstants.Y,
                         CliConstants.NO_LOCAL_MAVEN_CACHE,
                         CliConstants.DIR, targetDir.getAbsolutePath())
@@ -80,25 +74,19 @@ public class UpdateWithAdditionalRepositoryTest extends WfCoreTestBase {
 
         final Optional<Stream> wildflyCliStream = ManifestYamlSupport.parse(targetDir.toPath().resolve(MetadataTestUtils.MANIFEST_FILE_PATH).toFile())
                 .getStreams().stream()
-                .filter(s -> s.getArtifactId().equals("wildfly-cli"))
+                .filter(s -> s.getArtifactId().equals(resolvedUpgradeArtifact.getArtifactId()))
                 .findFirst();
 
         assertEquals(WfCoreTestBase.UPGRADE_VERSION, wildflyCliStream.get().getVersion());
-    }
-
-    private URL mockInternalRepo() throws Exception {
-        final File repo = temp.newFolder();
-        final URL repoUrl = repo.toURI().toURL();
-        final RepositorySystem system = mavenSessionManager.newRepositorySystem();
-        final DefaultRepositorySystemSession session = mavenSessionManager.newRepositorySystemSession(system);
-
-        final DeployRequest deployRequest = new DeployRequest();
-        deployRequest.addArtifact(resolvedUpgradeArtifact);
-        deployRequest.addArtifact(resolvedUpgradeClientArtifact);
-        deployRequest.setRepository(RepositoryUtils.toRemoteRepository("test", repoUrl.toString()));
-        system.deploy(session, deployRequest);
-
-        return repoUrl;
+        // verify the temporary repository has not been added
+        assertThat(ProsperoConfig.readConfig(targetDir.toPath().resolve(MetadataTestUtils.PROVISION_CONFIG_FILE_PATH)).getChannels())
+                .flatMap(Channel::getRepositories)
+                .map(Repository::getUrl)
+                .containsExactlyInAnyOrder("https://repo1.maven.org/maven2/",
+                        "https://repository.jboss.org/nexus/content/groups/public-jboss",
+                        "https://maven.repository.redhat.com/ga"
+                        )
+                .doesNotContain(temporaryRepo.toExternalForm());
     }
 
     private void install(Path provisionConfig) throws Exception {

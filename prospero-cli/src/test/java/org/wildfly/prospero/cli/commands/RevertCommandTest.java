@@ -17,7 +17,9 @@
 
 package org.wildfly.prospero.cli.commands;
 
+import java.net.URL;
 import java.nio.file.Path;
+import java.util.List;
 
 import org.junit.Assert;
 import org.junit.Before;
@@ -99,23 +101,34 @@ public class RevertCommandTest extends AbstractMavenCommandTest {
                 CliConstants.REVISION, "abcd");
 
         assertEquals(ReturnCodes.SUCCESS, exitCode);
-        verify(historyAction).rollback(eq(new SavedState("abcd")), any());
+        verify(historyAction).rollback(eq(new SavedState("abcd")), any(), any());
     }
 
     @Test
     public void useOfflineMavenSessionManagerIfOfflineSet() throws Exception {
         int exitCode = commandLine.execute(CliConstants.Commands.REVERT, CliConstants.DIR, installationDir.toString(),
                 CliConstants.REVISION, "abcd",
-                CliConstants.OFFLINE, CliConstants.LOCAL_REPO, "local-repo");
+                CliConstants.OFFLINE, CliConstants.LOCAL_CACHE, "local-repo");
 
         assertEquals(ReturnCodes.SUCCESS, exitCode);
-        verify(historyAction).rollback(eq(new SavedState("abcd")), mavenSessionManager.capture());
+        verify(historyAction).rollback(eq(new SavedState("abcd")), mavenSessionManager.capture(), any());
         assertTrue(mavenSessionManager.getValue().isOffline());
+    }
+
+    @Test
+    public void passRemoteRepositories() throws Exception {
+        int exitCode = commandLine.execute(CliConstants.Commands.REVERT, CliConstants.DIR, installationDir.toString(),
+                CliConstants.REVISION, "abcd",
+                CliConstants.REMOTE_REPOSITORIES, "http://temp.repo.te",
+                CliConstants.LOCAL_CACHE, "local-repo");
+
+        assertEquals(ReturnCodes.SUCCESS, exitCode);
+        verify(historyAction).rollback(eq(new SavedState("abcd")), any(), eq(List.of(new URL("http://temp.repo.te"))));
     }
 
     @Override
     protected MavenSessionManager getCapturedSessionManager() throws Exception {
-        verify(historyAction).rollback(eq(new SavedState("abcd")), mavenSessionManager.capture());
+        verify(historyAction).rollback(eq(new SavedState("abcd")), mavenSessionManager.capture(), any());
         return mavenSessionManager.getValue();
     }
 

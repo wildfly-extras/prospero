@@ -70,8 +70,6 @@ public class UpdateCommand extends AbstractCommand {
     @CommandLine.ArgGroup(exclusive = true, headingKey = "localRepoOptions.heading")
     LocalRepoOptions localRepoOptions;
 
-    // Option for BETA update support
-    // TODO: evaluate in GA - replace by repository:add / custom channels?
     @CommandLine.Option(
             names = CliConstants.REMOTE_REPOSITORIES,
             paramLabel = CliConstants.REPO_URL,
@@ -79,7 +77,7 @@ public class UpdateCommand extends AbstractCommand {
             split = ",",
             order = 5
     )
-    List<URL> remoteRepositories = new ArrayList<>();
+    List<URL> additionalRepositories = new ArrayList<>();
 
     public UpdateCommand(Console console, ActionFactory actionFactory) {
         super(console, actionFactory);
@@ -101,9 +99,9 @@ public class UpdateCommand extends AbstractCommand {
             installationDir = determineInstallationDirectory(directory);
         }
 
-        final MavenSessionManager mavenSessionManager = new MavenSessionManager(LocalRepoOptions.getLocalRepo(localRepoOptions), offline);
+        final MavenSessionManager mavenSessionManager = new MavenSessionManager(LocalRepoOptions.getLocalMavenCache(localRepoOptions), offline);
 
-        try (UpdateAction updateAction = actionFactory.update(installationDir, mavenSessionManager, console, remoteRepositories)) {
+        try (UpdateAction updateAction = actionFactory.update(installationDir, mavenSessionManager, console, additionalRepositories)) {
             if (!dryRun) {
                 performUpdate(updateAction);
             } else {

@@ -129,15 +129,15 @@ public class InstallCommand extends AbstractCommand {
             throw CliMessages.MESSAGES.exclusiveOptions(CliConstants.PROVISION_CONFIG, CliConstants.REMOTE_REPOSITORIES);
         }
 
-        final Optional<Path> localRepo = LocalRepoOptions.getLocalRepo(localRepoOptions);
+        final Optional<Path> localMavenCache = LocalRepoOptions.getLocalMavenCache(localRepoOptions);
 
-        final MavenSessionManager mavenSessionManager = new MavenSessionManager(localRepo, offline);
+        final MavenSessionManager mavenSessionManager = new MavenSessionManager(localMavenCache, offline);
 
         final ProvisioningDefinition provisioningDefinition = ProvisioningDefinition.builder()
                 .setFpl(featurePackOrDefinition.fpl.orElse(null))
                 .setManifest(channel.orElse(null))
                 .setProvisionConfig(provisionConfig.orElse(null))
-                .setRemoteRepositories(remoteRepositories.stream().map(URL::toString).collect(Collectors.toList()))
+                .setAdditionalRepositories(remoteRepositories.stream().map(URL::toString).collect(Collectors.toList()))
                 .setDefinitionFile(featurePackOrDefinition.definition.map(Path::toUri).orElse(null))
                 .build();
 

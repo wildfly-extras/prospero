@@ -17,7 +17,10 @@
 
 package org.wildfly.prospero.cli.commands;
 
+import java.net.URL;
 import java.nio.file.Path;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Optional;
 
 import org.wildfly.prospero.actions.Console;
@@ -41,6 +44,9 @@ public class RevertCommand extends AbstractCommand {
     @CommandLine.Option(names = CliConstants.REVISION, required = true)
     String revision;
 
+    @CommandLine.Option(names = CliConstants.REMOTE_REPOSITORIES)
+    List<URL> remoteRepositories = new ArrayList<>();
+
     @CommandLine.ArgGroup(exclusive = true, headingKey = "localRepoOptions.heading")
     LocalRepoOptions localRepoOptions;
 
@@ -54,10 +60,10 @@ public class RevertCommand extends AbstractCommand {
     @Override
     public Integer call() throws Exception {
         final Path installationDirectory = determineInstallationDirectory(directory);
-        final MavenSessionManager mavenSessionManager = new MavenSessionManager(LocalRepoOptions.getLocalRepo(localRepoOptions), offline);
+        final MavenSessionManager mavenSessionManager = new MavenSessionManager(LocalRepoOptions.getLocalMavenCache(localRepoOptions), offline);
 
         InstallationHistoryAction historyAction = actionFactory.history(installationDirectory, console);
-        historyAction.rollback(new SavedState(revision), mavenSessionManager);
+        historyAction.rollback(new SavedState(revision), mavenSessionManager, remoteRepositories);
         return ReturnCodes.SUCCESS;
     }
 }

@@ -39,6 +39,7 @@ import java.util.List;
 import javax.xml.stream.XMLStreamException;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.tuple;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.fail;
@@ -103,10 +104,10 @@ public class ProvisioningDefinitionTest {
     }
 
     @Test
-    public void overrideRemoteRepos() throws Exception {
+    public void addAdditionalRemoteRepos() throws Exception {
         final ProvisioningDefinition.Builder builder = new ProvisioningDefinition.Builder()
                 .setFpl(EAP_FPL)
-                .setRemoteRepositories(Arrays.asList("http://test.repo1", "http://test.repo2"));
+                .setAdditionalRepositories(Arrays.asList("http://test.repo1", "http://test.repo2"));
 
         final ProvisioningDefinition def = builder.build();
 
@@ -114,8 +115,8 @@ public class ProvisioningDefinitionTest {
                 .flatMap(Channel::getRepositories)
                 .map(r-> Tuple.tuple(r.getId(), r.getUrl()))
                 .containsExactlyInAnyOrder(
-                Tuple.tuple("repo-0" ,"http://test.repo1"),
-                        Tuple.tuple("repo-1" ,"http://test.repo2")
+                        tuple("temp-repo-0", "http://test.repo1"),
+                        Tuple.tuple("temp-repo-1" ,"http://test.repo2")
                 );
     }
 
@@ -147,7 +148,7 @@ public class ProvisioningDefinitionTest {
         final ProvisioningDefinition.Builder builder = new ProvisioningDefinition.Builder()
                 .setFpl("multi-channel")
                 .setManifest("file:/tmp/foo.bar")
-                .setRemoteRepositories(Arrays.asList("http://test.repo1", "http://test.repo2"));
+                .setAdditionalRepositories(Arrays.asList("http://test.repo1", "http://test.repo2"));
 
         final ProvisioningDefinition def = builder.build();
 
@@ -157,8 +158,8 @@ public class ProvisioningDefinitionTest {
         assertThat(channel.getRepositories())
                 .map(r-> Tuple.tuple(r.getId(), r.getUrl()))
                 .containsExactlyInAnyOrder(
-                        Tuple.tuple("repo-0" ,"http://test.repo1"),
-                        Tuple.tuple("repo-1" ,"http://test.repo2")
+                        Tuple.tuple("temp-repo-0" ,"http://test.repo1"),
+                        Tuple.tuple("temp-repo-1" ,"http://test.repo2")
                 );
     }
 
