@@ -35,7 +35,7 @@ public class ArtifactResolutionException extends OperationException {
     private Collection<RemoteRepository> repositories;
     private boolean offline;
 
-    public ArtifactResolutionException(String msg, Throwable e) {
+    public ArtifactResolutionException(String msg, UnresolvedMavenArtifactException e) {
         super(msg, e);
     }
 
@@ -43,7 +43,7 @@ public class ArtifactResolutionException extends OperationException {
         super(msg);
     }
 
-    public ArtifactResolutionException(Throwable e) {
+    public ArtifactResolutionException(UnresolvedMavenArtifactException e) {
         super(e);
     }
 

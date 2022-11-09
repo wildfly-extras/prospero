@@ -40,7 +40,7 @@ import org.wildfly.channel.Channel;
 import org.wildfly.channel.ChannelManifestCoordinate;
 import org.wildfly.channel.Repository;
 import org.wildfly.prospero.Messages;
-import org.wildfly.prospero.api.exceptions.ArtifactResolutionException;
+import org.wildfly.prospero.api.exceptions.MetadataException;
 import org.wildfly.prospero.api.exceptions.NoChannelException;
 import org.wildfly.prospero.galleon.FeaturePackLocationParser;
 import org.wildfly.prospero.galleon.GalleonUtils;
@@ -57,7 +57,7 @@ public class ProvisioningDefinition {
     private final List<RemoteRepository> repositories = new ArrayList<>();
     private final URI definition;
 
-    private ProvisioningDefinition(Builder builder) throws ArtifactResolutionException, NoChannelException {
+    private ProvisioningDefinition(Builder builder) throws MetadataException, NoChannelException {
         final Optional<String> fpl = Optional.ofNullable(builder.fpl);
         final Optional<URI> definition = Optional.ofNullable(builder.definitionFile);
         final List<Repository> overrideRepos = builder.overrideRepositories;
@@ -88,7 +88,7 @@ public class ProvisioningDefinition {
                                 String.join(", ", KnownFeaturePacks.getNames())));
             }
         } catch (IOException e) {
-            throw new ArtifactResolutionException("Unable to resolve channel definition: " + e.getMessage(), e);
+            throw new MetadataException("Unable to resolve channel definition: " + e.getMessage(), e);
         }
 
         if (channels.isEmpty() || channelsMissingManifest()) {
@@ -172,7 +172,7 @@ public class ProvisioningDefinition {
         private Set<String> includedPackages;
         private ChannelManifestCoordinate manifest;
 
-        public ProvisioningDefinition build() throws ArtifactResolutionException, NoChannelException {
+        public ProvisioningDefinition build() throws MetadataException, NoChannelException {
             return new ProvisioningDefinition(this);
         }
 
