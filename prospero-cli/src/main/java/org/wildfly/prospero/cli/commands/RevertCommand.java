@@ -17,15 +17,16 @@
 
 package org.wildfly.prospero.cli.commands;
 
-import java.net.URL;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
+import org.wildfly.channel.Repository;
 import org.wildfly.prospero.actions.Console;
 import org.wildfly.prospero.actions.InstallationHistoryAction;
 import org.wildfly.prospero.api.SavedState;
+import org.wildfly.prospero.api.TemporaryRepositoriesHandler;
 import org.wildfly.prospero.cli.ActionFactory;
 import org.wildfly.prospero.cli.ReturnCodes;
 import org.wildfly.prospero.cli.commands.options.LocalRepoOptions;
@@ -45,7 +46,7 @@ public class RevertCommand extends AbstractCommand {
     String revision;
 
     @CommandLine.Option(names = CliConstants.REMOTE_REPOSITORIES)
-    List<URL> remoteRepositories = new ArrayList<>();
+    List<String> temporaryRepositories = new ArrayList<>();
 
     @CommandLine.ArgGroup(exclusive = true, headingKey = "localRepoOptions.heading")
     LocalRepoOptions localRepoOptions;
@@ -62,8 +63,10 @@ public class RevertCommand extends AbstractCommand {
         final Path installationDirectory = determineInstallationDirectory(directory);
         final MavenSessionManager mavenSessionManager = new MavenSessionManager(LocalRepoOptions.getLocalMavenCache(localRepoOptions), offline);
 
+        final List<Repository> overrideRepositories = TemporaryRepositoriesHandler.from(temporaryRepositories);
+
         InstallationHistoryAction historyAction = actionFactory.history(installationDirectory, console);
-        historyAction.rollback(new SavedState(revision), mavenSessionManager, remoteRepositories);
+        historyAction.rollback(new SavedState(revision), mavenSessionManager, overrideRepositories);
         return ReturnCodes.SUCCESS;
     }
 }

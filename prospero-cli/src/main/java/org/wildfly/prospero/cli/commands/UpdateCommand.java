@@ -17,7 +17,6 @@
 
 package org.wildfly.prospero.cli.commands;
 
-import java.net.URL;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
@@ -26,8 +25,10 @@ import java.util.Optional;
 
 import org.jboss.galleon.ProvisioningException;
 import org.jboss.logging.Logger;
+import org.wildfly.channel.Repository;
 import org.wildfly.prospero.actions.Console;
 import org.wildfly.prospero.actions.UpdateAction;
+import org.wildfly.prospero.api.TemporaryRepositoriesHandler;
 import org.wildfly.prospero.api.exceptions.ArtifactResolutionException;
 import org.wildfly.prospero.api.exceptions.MetadataException;
 import org.wildfly.prospero.cli.ActionFactory;
@@ -77,7 +78,7 @@ public class UpdateCommand extends AbstractCommand {
             split = ",",
             order = 5
     )
-    List<URL> additionalRepositories = new ArrayList<>();
+    List<String> temporaryRepositories = new ArrayList<>();
 
     public UpdateCommand(Console console, ActionFactory actionFactory) {
         super(console, actionFactory);
@@ -101,7 +102,9 @@ public class UpdateCommand extends AbstractCommand {
 
         final MavenSessionManager mavenSessionManager = new MavenSessionManager(LocalRepoOptions.getLocalMavenCache(localRepoOptions), offline);
 
-        try (UpdateAction updateAction = actionFactory.update(installationDir, mavenSessionManager, console, additionalRepositories)) {
+        final List<Repository> repositories = TemporaryRepositoriesHandler.from(temporaryRepositories);
+
+        try (UpdateAction updateAction = actionFactory.update(installationDir, mavenSessionManager, console, repositories)) {
             if (!dryRun) {
                 performUpdate(updateAction);
             } else {

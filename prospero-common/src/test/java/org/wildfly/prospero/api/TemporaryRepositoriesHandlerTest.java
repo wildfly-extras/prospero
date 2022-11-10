@@ -1,24 +1,23 @@
 /*
+ * Copyright 2022 Red Hat, Inc. and/or its affiliates
+ * and other contributors as indicated by the @author tags.
  *
- *  * Copyright 2022 Red Hat, Inc. and/or its affiliates
- *  * and other contributors as indicated by the @author tags.
- *  *
- *  * Licensed under the Apache License, Version 2.0 (the "License");
- *  * you may not use this file except in compliance with the License.
- *  * You may obtain a copy of the License at
- *  *
- *  *   http://www.apache.org/licenses/LICENSE-2.0
- *  *
- *  * Unless required by applicable law or agreed to in writing, software
- *  * distributed under the License is distributed on an "AS IS" BASIS,
- *  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- *  * See the License for the specific language governing permissions and
- *  * limitations under the License.
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
  *
+ *   http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
  */
 
 package org.wildfly.prospero.api;
 
+import org.apache.commons.lang3.StringUtils;
 import org.junit.Assert;
 import org.junit.Test;
 import org.wildfly.channel.Channel;
@@ -26,14 +25,19 @@ import org.wildfly.channel.Repository;
 
 import java.util.Collections;
 import java.util.List;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertThrows;
+import static org.wildfly.prospero.api.TemporaryRepositoriesHandler.from;
 
 public class TemporaryRepositoriesHandlerTest {
 
     @Test
     public void emptyListReturnsEmptyList() {
-        final List<Channel> channels = merge(Collections.emptyList(), Collections.emptyList());
+        final List<Channel> channels = applyOverride(Collections.emptyList(), Collections.emptyList());
 
         assertThat(channels).isEmpty();
     }
@@ -41,7 +45,7 @@ public class TemporaryRepositoriesHandlerTest {
     @Test
     public void emptyRepositoriesUnchangedChannels() {
         final List<Channel> originalChannels = List.of(getChannel("channel-0", repo("repo-0", "http://test.te")));
-        final List<Channel> channels = merge(originalChannels, Collections.emptyList());
+        final List<Channel> channels = applyOverride(originalChannels, Collections.emptyList());
 
         Assert.assertNotSame("The resulting list should be a clone of original", channels, originalChannels);
         assertChannelNamesContainsExactly(channels, "channel-0");
@@ -52,7 +56,7 @@ public class TemporaryRepositoriesHandlerTest {
     @Test
     public void addRepositoryToSingleChannel() {
         final List<Channel> originalChannels = List.of(getChannel("channel-0", repo("repo-0", "http://test.te")));
-        final List<Channel> channels = merge(originalChannels, List.of(repo("temp-0", "http://temp.te")));
+        final List<Channel> channels = applyOverride(originalChannels, List.of(repo("temp-0", "http://temp.te")));
 
         Assert.assertNotSame("The resulting list should be a clone of original", channels, originalChannels);
         assertChannelNamesContainsExactly(channels,"channel-0");
@@ -64,12 +68,57 @@ public class TemporaryRepositoriesHandlerTest {
     public void addRepositoryToMultipleChannels() {
         final List<Channel> originalChannels = List.of(getChannel("channel-0", repo("repo-0", "http://test.te")),
                 getChannel("channel-1", repo("repo-1", "http://test1.te")));
-        final List<Channel> channels = merge(originalChannels, List.of(repo("temp-0", "http://temp.te")));
+        final List<Channel> channels = applyOverride(originalChannels, List.of(repo("temp-0", "http://temp.te")));
 
         Assert.assertNotSame("The resulting list should be a clone of original", channels, originalChannels);
         assertChannelNamesContainsExactly(channels,"channel-0", "channel-1");
         assertRepositoryIdContainsExactly(channels, "temp-0", "temp-0");
         assertRepositoryUrlContainsExactly(channels, "http://temp.te", "http://temp.te");
+    }
+
+    @Test
+    public void generatesRepositoryIdsIfNotProvided() {
+        assertThat(from(List.of("http://test.te")))
+                .map(Repository::getId)
+                .noneMatch(id-> StringUtils.isEmpty(id));
+    }
+
+    @Test
+    public void generatedRepositoryIdsAreUnique() {
+        final Set<String> collectedIds = from(List.of("http://test1.te", "http://test2.te", "http://test3.te")).stream()
+                .map(Repository::getId)
+                .collect(Collectors.toSet());
+
+        assertEquals(3, collectedIds.size());
+    }
+
+    @Test
+    public void keepsRepositoryIdsIfProvided() {
+        assertThat(from(List.of("repo-1::http://test1.te", "repo-2::http://test2.te", "repo-3::http://test3.te")))
+                .map(Repository::getId)
+                .containsExactly("repo-1", "repo-2", "repo-3");
+    }
+
+    @Test
+    public void mixGeneratedAndProvidedIds() {
+        assertThat(from(List.of("repo-1::http://test1.te", "http://test2.te", "repo-3::http://test3.te")))
+                .map(Repository::getId)
+                .contains("repo-1", "repo-3")
+                .hasSize(3)
+                .noneMatch(id-> StringUtils.isEmpty(id));
+    }
+
+    @Test
+    public void throwsErrorIfFormatIsIncorrect() {
+        assertThrows(IllegalArgumentException.class, ()->from(List.of("::http://test1.te")));
+
+        assertThrows(IllegalArgumentException.class, ()->from(List.of("repo-1::")));
+
+        assertThrows(IllegalArgumentException.class, ()->from(List.of("repo-1:::http://test1.te")));
+
+        assertThrows(IllegalArgumentException.class, ()->from(List.of("foo::bar::http://test1.te")));
+
+        assertThrows(IllegalArgumentException.class, ()->from(List.of("imnoturl")));
     }
 
     private static void assertRepositoryIdContainsExactly(List<Channel> channels, String... ids) {
@@ -101,7 +150,7 @@ public class TemporaryRepositoriesHandlerTest {
         return new Repository(id, url);
     }
 
-    private static List<Channel> merge(List<Channel> originalChannels, List<Repository> additionalRepositories) {
+    private static List<Channel> applyOverride(List<Channel> originalChannels, List<Repository> additionalRepositories) {
         return TemporaryRepositoriesHandler.addRepositories(originalChannels, additionalRepositories);
     }
 }

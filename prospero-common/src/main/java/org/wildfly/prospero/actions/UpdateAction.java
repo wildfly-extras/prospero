@@ -17,10 +17,8 @@
 
 package org.wildfly.prospero.actions;
 
-import java.net.URL;
 import java.nio.file.Path;
 import java.util.List;
-import java.util.stream.Collectors;
 
 import org.wildfly.channel.Channel;
 import org.wildfly.channel.Repository;
@@ -46,7 +44,7 @@ public class UpdateAction implements AutoCloseable {
     private final GalleonEnvironment galleonEnv;
     private final ProsperoConfig prosperoConfig;
 
-    public UpdateAction(Path installDir, MavenSessionManager mavenSessionManager, Console console, List<URL> overrideRepositories)
+    public UpdateAction(Path installDir, MavenSessionManager mavenSessionManager, Console console, List<Repository> overrideRepositories)
             throws ProvisioningException, OperationException {
         this.metadata = new InstallationMetadata(installDir);
 
@@ -79,11 +77,9 @@ public class UpdateAction implements AutoCloseable {
         metadata.close();
     }
 
-    private ProsperoConfig addTemporaryRepositories(List<URL> repositoryUrls) {
+    private ProsperoConfig addTemporaryRepositories(List<Repository> repositories) {
         final ProsperoConfig prosperoConfig = metadata.getProsperoConfig();
 
-        final List<Repository> repositories = TemporaryRepositoriesHandler.from(
-                repositoryUrls.stream().map(URL::toExternalForm).collect(Collectors.toList()));
         final List<Channel> channels = TemporaryRepositoriesHandler.addRepositories(prosperoConfig.getChannels(), repositories);
 
         return new ProsperoConfig(channels);

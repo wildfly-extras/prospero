@@ -91,4 +91,7 @@ public interface Messages {
 
     @Message("Path `%s` does not contain a server installation provisioned by prospero.")
     IllegalArgumentException invalidInstallationDir(Path path);
+
+    @Message("Unable to parse repository definition: %s")
+    IllegalArgumentException invalidRepositoryDefinition(String text);
 }

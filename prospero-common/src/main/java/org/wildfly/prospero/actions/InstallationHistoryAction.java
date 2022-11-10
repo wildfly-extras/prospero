@@ -33,10 +33,8 @@ import org.wildfly.prospero.model.ProsperoConfig;
 import org.wildfly.prospero.wfchannel.MavenSessionManager;
 import org.jboss.galleon.ProvisioningException;
 
-import java.net.URL;
 import java.nio.file.Path;
 import java.util.List;
-import java.util.stream.Collectors;
 
 import static org.wildfly.prospero.galleon.GalleonUtils.MAVEN_REPO_LOCAL;
 
@@ -60,11 +58,9 @@ public class InstallationHistoryAction {
         return installationMetadata.getRevisions();
     }
 
-    public void rollback(SavedState savedState, MavenSessionManager mavenSessionManager, List<URL> overrideRepositoryUrls) throws OperationException, ProvisioningException {
+    public void rollback(SavedState savedState, MavenSessionManager mavenSessionManager, List<Repository> overrideRepositories) throws OperationException, ProvisioningException {
         InstallationMetadata metadata = new InstallationMetadata(installation);
 
-        final List<Repository> overrideRepositories = TemporaryRepositoriesHandler.from(
-                overrideRepositoryUrls.stream().map(URL::toExternalForm).collect(Collectors.toList()));
         final ProsperoConfig prosperoConfig = new ProsperoConfig(
                 TemporaryRepositoriesHandler.addRepositories(metadata.getProsperoConfig().getChannels(), overrideRepositories));
 

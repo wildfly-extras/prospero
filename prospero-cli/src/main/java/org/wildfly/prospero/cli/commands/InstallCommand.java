@@ -17,12 +17,10 @@
 
 package org.wildfly.prospero.cli.commands;
 
-import java.net.URL;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
-import java.util.stream.Collectors;
 
 import org.wildfly.prospero.actions.Console;
 import org.wildfly.prospero.actions.ProvisioningAction;
@@ -77,7 +75,7 @@ public class InstallCommand extends AbstractCommand {
                 split = ",",
                 order = 5
         )
-        List<URL> remoteRepositories = new ArrayList<>();
+        List<String> remoteRepositories = new ArrayList<>();
 
         @CommandLine.ArgGroup(exclusive = true, order = 6, headingKey = "localRepoOptions.heading")
         LocalRepoOptions localRepoOptions;
@@ -137,7 +135,7 @@ public class InstallCommand extends AbstractCommand {
                 .setFpl(featurePackOrDefinition.fpl.orElse(null))
                 .setManifest(channel.orElse(null))
                 .setProvisionConfig(provisionConfig.orElse(null))
-                .setAdditionalRepositories(remoteRepositories.stream().map(URL::toString).collect(Collectors.toList()))
+                .setOverrideRepositories(remoteRepositories)
                 .setDefinitionFile(featurePackOrDefinition.definition.map(Path::toUri).orElse(null))
                 .build();
 

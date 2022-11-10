@@ -142,7 +142,7 @@ public class InstallationHistoryActionTest extends WfCoreTestBase {
         // perform the rollback using temporary repository only. Offline mode disables other repositories
         final URL temporaryRepo = mockTemporaryRepo();
         final MavenSessionManager offlineSessionManager = new MavenSessionManager(Optional.empty(), true);
-        historyAction.rollback(savedState, offlineSessionManager, List.of(temporaryRepo));
+        historyAction.rollback(savedState, offlineSessionManager, List.of(new Repository("temp-repo", temporaryRepo.toExternalForm())));
 
         wildflyCliArtifact = readArtifactFromManifest("org.wildfly.core", "wildfly-cli");
         assertEquals(BASE_VERSION, wildflyCliArtifact.get().getVersion());

@@ -17,7 +17,6 @@
 
 package org.wildfly.prospero.cli.commands;
 
-import java.net.URL;
 import java.nio.file.Path;
 import java.util.List;
 
@@ -31,6 +30,7 @@ import org.mockito.ArgumentCaptor;
 import org.mockito.Captor;
 import org.mockito.Mock;
 import org.mockito.junit.MockitoJUnitRunner;
+import org.wildfly.channel.Repository;
 import org.wildfly.prospero.actions.Console;
 import org.wildfly.prospero.actions.InstallationHistoryAction;
 import org.wildfly.prospero.api.SavedState;
@@ -40,6 +40,7 @@ import org.wildfly.prospero.cli.ReturnCodes;
 import org.wildfly.prospero.test.MetadataTestUtils;
 import org.wildfly.prospero.wfchannel.MavenSessionManager;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
@@ -54,6 +55,9 @@ public class RevertCommandTest extends AbstractMavenCommandTest {
 
     @Captor
     private ArgumentCaptor<MavenSessionManager> mavenSessionManager;
+
+    @Captor
+    private ArgumentCaptor<List<Repository>> repositories;
 
     @Rule
     public TemporaryFolder tempDir = new TemporaryFolder();
@@ -123,7 +127,11 @@ public class RevertCommandTest extends AbstractMavenCommandTest {
                 CliConstants.LOCAL_CACHE, "local-repo");
 
         assertEquals(ReturnCodes.SUCCESS, exitCode);
-        verify(historyAction).rollback(eq(new SavedState("abcd")), any(), eq(List.of(new URL("http://temp.repo.te"))));
+        verify(historyAction).rollback(eq(new SavedState("abcd")), any(), repositories.capture());
+
+        assertThat(repositories.getValue())
+                .map(Repository::getUrl)
+                .containsExactly("http://temp.repo.te");
     }
 
     @Override

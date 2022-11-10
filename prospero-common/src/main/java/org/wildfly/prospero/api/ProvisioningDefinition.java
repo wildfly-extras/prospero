@@ -60,7 +60,7 @@ public class ProvisioningDefinition {
     private ProvisioningDefinition(Builder builder) throws ArtifactResolutionException, NoChannelException {
         final Optional<String> fpl = Optional.ofNullable(builder.fpl);
         final Optional<URI> definition = Optional.ofNullable(builder.definitionFile);
-        final List<String> additionalRepos = builder.additionalRepositories;
+        final List<String> overrideRepos = builder.overrideRepositories;
         final Optional<Path> provisionConfigFile = Optional.ofNullable(builder.provisionConfigFile);
         final Optional<ChannelManifestCoordinate> manifest = Optional.ofNullable(builder.manifest);
         final Optional<Set<String>> includedPackages = Optional.ofNullable(builder.includedPackages);
@@ -73,7 +73,7 @@ public class ProvisioningDefinition {
                 this.fpl = null;
                 this.definition = featurePackInfo.getGalleonConfiguration();
                 this.repositories.addAll(featurePackInfo.getRemoteRepositories());
-                setUpBuildEnv(additionalRepos, provisionConfigFile, manifest, featurePackInfo.getChannels());
+                setUpBuildEnv(overrideRepos, provisionConfigFile, manifest, featurePackInfo.getChannels());
             } else if (provisionConfigFile.isPresent()) {
                 this.fpl = fpl.orElse(null);
                 this.definition = definition.orElse(null);
@@ -128,16 +128,6 @@ public class ProvisioningDefinition {
         }
     }
 
-    private List<Repository> mapOverrideRepos(List<String> overrideRemoteRepos) {
-        ArrayList<Repository> repos = new ArrayList<>();
-        for (int i = 0; i < overrideRemoteRepos.size(); i++) {
-            String url = overrideRemoteRepos.get(i);
-            final String channelRepoId = "repo-" + (i);
-            repos.add(new Repository(channelRepoId, url));
-        }
-        return repos;
-    }
-
     public static Builder builder() {
         return new Builder();
     }
@@ -182,7 +172,7 @@ public class ProvisioningDefinition {
         private String fpl;
         private Path provisionConfigFile;
         private URI definitionFile;
-        private List<String> additionalRepositories = Collections.emptyList();
+        private List<String> overrideRepositories = Collections.emptyList();
         private Set<String> includedPackages;
         private ChannelManifestCoordinate manifest;
 
@@ -201,8 +191,8 @@ public class ProvisioningDefinition {
             return this;
         }
 
-        public Builder setAdditionalRepositories(List<String> repositories) {
-            this.additionalRepositories = repositories;
+        public Builder setOverrideRepositories(List<String> repositories) {
+            this.overrideRepositories = repositories;
             return this;
         }
 
