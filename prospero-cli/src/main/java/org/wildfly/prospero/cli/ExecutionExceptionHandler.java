@@ -46,7 +46,7 @@ public class ExecutionExceptionHandler implements CommandLine.IExecutionExceptio
             throws Exception {
         if (ex instanceof NoChannelException) {
             console.error("ERROR: " + ex.getMessage());
-            console.error(CliMessages.MESSAGES.addChannels(CliConstants.CHANNEL));
+            console.error(CliMessages.MESSAGES.addChannels(CliConstants.CHANNEL_MANIFEST));
             return ReturnCodes.INVALID_ARGUMENTS;
         }
         if (ex instanceof IllegalArgumentException || ex instanceof ArgumentParsingException) {

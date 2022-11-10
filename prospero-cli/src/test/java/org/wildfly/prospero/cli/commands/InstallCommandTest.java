@@ -224,12 +224,12 @@ public class InstallCommandTest extends AbstractMavenCommandTest {
 
         int exitCode = commandLine.execute(CliConstants.Commands.INSTALL, CliConstants.DIR, "test",
                 CliConstants.PROVISION_CONFIG, provisionConfigFile.getAbsolutePath(),
-                CliConstants.CHANNEL, "g:a:v",
+                CliConstants.CHANNEL_MANIFEST, "g:a:v",
                 CliConstants.FPL, "test");
 
         assertEquals(ReturnCodes.INVALID_ARGUMENTS, exitCode);
         assertTrue(getErrorOutput().contains(CliMessages.MESSAGES
-                .exclusiveOptions(CliConstants.PROVISION_CONFIG, CliConstants.CHANNEL).getMessage()));
+                .exclusiveOptions(CliConstants.PROVISION_CONFIG, CliConstants.CHANNEL_MANIFEST).getMessage()));
     }
 
     @Test

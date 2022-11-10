@@ -51,14 +51,14 @@ public final class CliConstants {
 
     // Parameter and option labels:
 
-    public static final String CHANNEL_REFERENCE = "<channel-reference>";
+    public static final String CHANNEL_MANIFEST_REFERENCE = "<manifest-reference>";
     public static final String FEATURE_PACK_REFERENCE = "<feature-pack-reference>";
     public static final String PATH = "<path>";
     public static final String REPO_URL = "<repo-url>";
 
     // Option names:
 
-    public static final String CHANNEL = "--channel";
+    public static final String CHANNEL_MANIFEST = "--manifest";
     public static final String REMOTE_REPOSITORIES = "--remote-repositories";
     public static final String DEFINITION = "--definition";
     public static final String DIR = "--dir";

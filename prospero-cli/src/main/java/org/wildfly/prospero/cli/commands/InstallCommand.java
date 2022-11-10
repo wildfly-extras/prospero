@@ -63,8 +63,8 @@ public class InstallCommand extends AbstractCommand {
         Optional<Path> provisionConfig;
 
         @CommandLine.Option(
-                names = CliConstants.CHANNEL,
-                paramLabel = CliConstants.CHANNEL_REFERENCE,
+                names = CliConstants.CHANNEL_MANIFEST,
+                paramLabel = CliConstants.CHANNEL_MANIFEST_REFERENCE,
                 order = 4
         )
         Optional<String> channel;
@@ -120,7 +120,7 @@ public class InstallCommand extends AbstractCommand {
         }
 
         if (provisionConfig.isPresent() && channel.isPresent()) {
-            throw CliMessages.MESSAGES.exclusiveOptions(CliConstants.PROVISION_CONFIG, CliConstants.CHANNEL);
+            throw CliMessages.MESSAGES.exclusiveOptions(CliConstants.PROVISION_CONFIG, CliConstants.CHANNEL_MANIFEST);
         }
 
         if (provisionConfig.isPresent() && !remoteRepositories.isEmpty()) {
