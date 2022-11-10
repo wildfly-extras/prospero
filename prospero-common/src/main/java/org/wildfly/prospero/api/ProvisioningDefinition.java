@@ -18,6 +18,7 @@
 package org.wildfly.prospero.api;
 
 import java.io.IOException;
+import java.net.URI;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -27,13 +28,14 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 
+import javax.xml.stream.XMLStreamException;
+
 import org.eclipse.aether.repository.RemoteRepository;
 import org.eclipse.aether.repository.RepositoryPolicy;
 import org.jboss.galleon.ProvisioningException;
 import org.jboss.galleon.config.FeaturePackConfig;
 import org.jboss.galleon.config.ProvisioningConfig;
 import org.jboss.galleon.universe.FeaturePackLocation;
-import org.jboss.galleon.xml.ProvisioningXmlParser;
 import org.wildfly.channel.Channel;
 import org.wildfly.channel.ChannelManifestCoordinate;
 import org.wildfly.channel.Repository;
@@ -41,23 +43,23 @@ import org.wildfly.prospero.Messages;
 import org.wildfly.prospero.api.exceptions.ArtifactResolutionException;
 import org.wildfly.prospero.api.exceptions.NoChannelException;
 import org.wildfly.prospero.galleon.FeaturePackLocationParser;
+import org.wildfly.prospero.galleon.GalleonUtils;
 import org.wildfly.prospero.model.KnownFeaturePack;
 import org.wildfly.prospero.model.ProsperoConfig;
 
 public class ProvisioningDefinition {
 
-    private static final String REPO_TYPE = "default";
     public static final RepositoryPolicy DEFAULT_REPOSITORY_POLICY = new RepositoryPolicy(true, RepositoryPolicy.UPDATE_POLICY_ALWAYS, RepositoryPolicy.CHECKSUM_POLICY_FAIL);
 
     private final String fpl;
     private final List<Channel> channels = new ArrayList<>();
     private final Set<String> includedPackages = new HashSet<>();
     private final List<RemoteRepository> repositories = new ArrayList<>();
-    private final Path definition;
+    private final URI definition;
 
     private ProvisioningDefinition(Builder builder) throws ArtifactResolutionException, NoChannelException {
         final Optional<String> fpl = Optional.ofNullable(builder.fpl);
-        final Optional<Path> definition = Optional.ofNullable(builder.definitionFile);
+        final Optional<URI> definition = Optional.ofNullable(builder.definitionFile);
         final List<String> overrideRemoteRepos = builder.remoteRepositories;
         final Optional<Path> provisionConfigFile = Optional.ofNullable(builder.provisionConfigFile);
         final Optional<ChannelManifestCoordinate> manifest = Optional.ofNullable(builder.manifest);
@@ -68,9 +70,8 @@ public class ProvisioningDefinition {
         try {
             if (fpl.isPresent() && KnownFeaturePacks.isWellKnownName(fpl.get())) {
                 KnownFeaturePack featurePackInfo = KnownFeaturePacks.getByName(fpl.get());
-                this.fpl = featurePackInfo.getLocation();
-                this.definition = null;
-                this.includedPackages.addAll(featurePackInfo.getPackages());
+                this.fpl = null;
+                this.definition = featurePackInfo.getGalleonConfiguration();
                 this.repositories.addAll(featurePackInfo.getRemoteRepositories());
                 setUpBuildEnv(overrideRemoteRepos, provisionConfigFile, manifest, featurePackInfo.getChannels());
             } else if (provisionConfigFile.isPresent()) {
@@ -156,7 +157,7 @@ public class ProvisioningDefinition {
         return channels;
     }
 
-    public Path getDefinition() {
+    public URI getDefinition() {
         return definition;
     }
 
@@ -165,7 +166,7 @@ public class ProvisioningDefinition {
     }
 
     public ProvisioningConfig toProvisioningConfig() throws ProvisioningException {
-        if (getFpl() != null) {
+        if (fpl != null) {
             FeaturePackLocation loc = FeaturePackLocationParser.resolveFpl(getFpl());
 
             final FeaturePackConfig.Builder configBuilder = FeaturePackConfig.builder(loc);
@@ -173,15 +174,21 @@ public class ProvisioningDefinition {
                 configBuilder.includePackage(includedPackage);
             }
             return ProvisioningConfig.builder().addFeaturePackDep(configBuilder.build()).build();
+        } else if (definition != null) {
+            try {
+                return GalleonUtils.loadProvisioningConfig(definition);
+            } catch (XMLStreamException e) {
+                throw new ProvisioningException("Can't parse the Galleon provisioning file.", e);
+            }
         } else {
-            return ProvisioningXmlParser.parse(getDefinition());
+            throw new IllegalArgumentException("Can't create ProvisioningConfig: Neither feature-pack-location nor ProvisioningConfig path set.");
         }
     }
 
     public static class Builder {
         private String fpl;
         private Path provisionConfigFile;
-        private Path definitionFile;
+        private URI definitionFile;
         private List<String> remoteRepositories = Collections.emptyList();
         private Set<String> includedPackages;
         private ChannelManifestCoordinate manifest;
@@ -218,7 +225,7 @@ public class ProvisioningDefinition {
             return this;
         }
 
-        public Builder setDefinitionFile(Path provisionDefinition) {
+        public Builder setDefinitionFile(URI provisionDefinition) {
             this.definitionFile = provisionDefinition;
             return this;
         }

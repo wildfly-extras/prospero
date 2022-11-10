@@ -1,8 +1,6 @@
 ---
 - name: "known-fpl"
-  location: "org.wildfly.core:wildfly-core-galleon-pack"
-  packages:
-  - "docs.examples.configs"
+  galleonConfiguration: "classpath:galleon-provisioning.xml"
   channels:
   - schemaVersion: "2.0.0"
     repositories:

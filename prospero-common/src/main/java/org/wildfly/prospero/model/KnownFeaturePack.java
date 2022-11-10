@@ -29,26 +29,23 @@ import org.wildfly.prospero.api.RepositoryUtils;
 
 import java.io.File;
 import java.io.IOException;
+import java.net.URI;
 import java.net.URL;
-import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
 
 public class KnownFeaturePack {
-    private String name;
-    private String location;
-    private List<Channel> channels;
-    private List<String> packages;
+    private final String name;
+    private final List<Channel> channels;
+    private final URI galleonConfiguration;
 
     @JsonCreator
     public KnownFeaturePack(@JsonProperty(value = "name") String name,
-                            @JsonProperty(value = "location") String location,
-                            @JsonProperty(value = "packages") List<String> packages,
-                            @JsonProperty(value = "channels") List<Channel> channels) {
+                            @JsonProperty(value = "channels") List<Channel> channels,
+                            @JsonProperty(value = "galleonConfiguration") URI galleonConfiguration) {
         this.name = name;
-        this.location = location;
         this.channels = channels;
-        this.packages = packages;
+        this.galleonConfiguration = galleonConfiguration;
     }
 
     public static void write(List<KnownFeaturePack> packs, File configFile) throws IOException {
@@ -65,14 +62,6 @@ public class KnownFeaturePack {
         return name;
     }
 
-    public String getLocation() {
-        return location;
-    }
-
-    public List<String> getPackages() {
-        return packages==null?Collections.emptyList():packages;
-    }
-
     public List<Channel> getChannels() {
         return channels;
     }
@@ -86,13 +75,16 @@ public class KnownFeaturePack {
         return repositories.stream().map(r-> RepositoryUtils.toRemoteRepository(r.getId(), r.getUrl())).collect(Collectors.toList());
     }
 
+    public URI getGalleonConfiguration() {
+        return galleonConfiguration;
+    }
+
     @Override
     public String toString() {
         return "KnownFeaturePack{" +
                 "name='" + name + '\'' +
-                ", location='" + location + '\'' +
                 ", channels=" + channels +
-                ", packages=" + packages +
+                ", galleonConfiguration=" + galleonConfiguration +
                 '}';
     }
 }
