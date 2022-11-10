@@ -138,7 +138,7 @@ public class PatchingTest {
             ExecutionUtils.prosperoExecution(CliConstants.Commands.CHANNEL, CliConstants.Commands.CUSTOMIZATION_INIT_CHANNEL,
                             CliConstants.DIR, targetDir.getAbsolutePath(),
                             CliConstants.CUSTOMIZATION_REPOSITORY_URL, repositoryUrl,
-                            CliConstants.CUSTOMIZATION_CHANNEL_NAME, TEST_CUSTOM_CHANNEL)
+                            CliConstants.CHANNEL_MANIFEST, TEST_CUSTOM_CHANNEL)
                     .execute()
                     .assertReturnCode(ReturnCodes.SUCCESS);
 
@@ -150,7 +150,7 @@ public class PatchingTest {
                             CliConstants.Y,
                             CliConstants.CUSTOMIZATION_ARCHIVE, customizationArchive.toString(),
                             CliConstants.CUSTOMIZATION_REPOSITORY_URL, repositoryPath.toUri().toURL().toString(),
-                            CliConstants.CUSTOMIZATION_CHANNEL_NAME, TEST_CUSTOM_CHANNEL)
+                            CliConstants.CHANNEL_MANIFEST, TEST_CUSTOM_CHANNEL)
                     .execute()
                     .assertReturnCode(ReturnCodes.SUCCESS);
 

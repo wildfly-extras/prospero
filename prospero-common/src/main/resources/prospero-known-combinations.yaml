@@ -3,6 +3,7 @@
   galleonConfiguration: "classpath:wildfly-provisioning.xml"
   channels:
     - schemaVersion: "2.0.0"
+      name: "wildfly"
       repositories:
         - id: "central"
           url: "https://repo1.maven.org/maven2/"

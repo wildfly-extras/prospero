@@ -123,7 +123,7 @@ public class RevertCommandTest extends AbstractMavenCommandTest {
     public void passRemoteRepositories() throws Exception {
         int exitCode = commandLine.execute(CliConstants.Commands.REVERT, CliConstants.DIR, installationDir.toString(),
                 CliConstants.REVISION, "abcd",
-                CliConstants.REMOTE_REPOSITORIES, "http://temp.repo.te",
+                CliConstants.REPOSITORIES, "http://temp.repo.te",
                 CliConstants.LOCAL_CACHE, "local-repo");
 
         assertEquals(ReturnCodes.SUCCESS, exitCode);

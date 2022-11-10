@@ -60,7 +60,7 @@ public class ProvisioningDefinition {
     private ProvisioningDefinition(Builder builder) throws ArtifactResolutionException, NoChannelException {
         final Optional<String> fpl = Optional.ofNullable(builder.fpl);
         final Optional<URI> definition = Optional.ofNullable(builder.definitionFile);
-        final List<String> overrideRepos = builder.overrideRepositories;
+        final List<Repository> overrideRepos = builder.overrideRepositories;
         final Optional<Path> provisionConfigFile = Optional.ofNullable(builder.provisionConfigFile);
         final Optional<ChannelManifestCoordinate> manifest = Optional.ofNullable(builder.manifest);
         final Optional<Set<String>> includedPackages = Optional.ofNullable(builder.includedPackages);
@@ -104,23 +104,19 @@ public class ProvisioningDefinition {
         return channels.stream().anyMatch(c->c.getManifestRef() == null);
     }
 
-    private void setUpBuildEnv(List<String> additionalRepositories, Optional<Path> provisionConfigFile,
+    private void setUpBuildEnv(List<Repository> additionalRepositories, Optional<Path> provisionConfigFile,
                                Optional<ChannelManifestCoordinate> manifestRef, List<Channel> channels) throws IOException {
         if (!provisionConfigFile.isPresent() && !manifestRef.isPresent()) {
             if (!additionalRepositories.isEmpty()) {
-                this.channels = TemporaryRepositoriesHandler.addRepositories(channels,
-                        TemporaryRepositoriesHandler.from(additionalRepositories));
+                this.channels = TemporaryRepositoriesHandler.addRepositories(channels, additionalRepositories);
             } else {
                 this.channels = channels;
             }
         } else if (manifestRef.isPresent()) {
-            final List<Repository> repos;
-
             final Channel channel = new Channel("", "", null, null,
                     new ArrayList<>(channels.stream().flatMap(c -> c.getRepositories().stream()).collect(Collectors.toSet())), manifestRef.get());
 
-            this.channels = TemporaryRepositoriesHandler.addRepositories(List.of(channel),
-                    TemporaryRepositoriesHandler.from(additionalRepositories));
+            this.channels = TemporaryRepositoriesHandler.addRepositories(List.of(channel), additionalRepositories);
         } else {
             this.channels = ProsperoConfig.readConfig(provisionConfigFile.get()).getChannels();
             this.repositories.clear();
@@ -172,7 +168,7 @@ public class ProvisioningDefinition {
         private String fpl;
         private Path provisionConfigFile;
         private URI definitionFile;
-        private List<String> overrideRepositories = Collections.emptyList();
+        private List<Repository> overrideRepositories = Collections.emptyList();
         private Set<String> includedPackages;
         private ChannelManifestCoordinate manifest;
 
@@ -191,7 +187,7 @@ public class ProvisioningDefinition {
             return this;
         }
 
-        public Builder setOverrideRepositories(List<String> repositories) {
+        public Builder setOverrideRepositories(List<Repository> repositories) {
             this.overrideRepositories = repositories;
             return this;
         }

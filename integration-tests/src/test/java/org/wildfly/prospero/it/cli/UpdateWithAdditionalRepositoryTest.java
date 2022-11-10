@@ -65,7 +65,7 @@ public class UpdateWithAdditionalRepositoryTest extends WfCoreTestBase {
         final URL temporaryRepo = mockTemporaryRepo();
 
         ExecutionUtils.prosperoExecution(CliConstants.Commands.UPDATE,
-                        CliConstants.REMOTE_REPOSITORIES, temporaryRepo.toString(),
+                        CliConstants.REPOSITORIES, temporaryRepo.toString(),
                         CliConstants.Y,
                         CliConstants.NO_LOCAL_MAVEN_CACHE,
                         CliConstants.DIR, targetDir.getAbsolutePath())

@@ -53,9 +53,9 @@ public class ChannelInitializeCommand extends AbstractCommand {
     public static final String CUSTOM_CHANNELS_GROUP_ID = "custom.channels";
     public static final String DEFAULT_CUSTOMIZATION_REPOSITORY = "customization-repository";
     @CommandLine.Option(
-            names = CliConstants.CUSTOMIZATION_CHANNEL_NAME
+            names = CliConstants.CHANNEL_MANIFEST
     )
-    private Optional<String> name;
+    private Optional<String> manifestName;
 
     @CommandLine.Option(
             names = CliConstants.CUSTOMIZATION_REPOSITORY_URL,
@@ -97,19 +97,19 @@ public class ChannelInitializeCommand extends AbstractCommand {
                 url = defaultLocalRepoPath.toUri().toURL();
             }
 
-            if (name.isEmpty()) {
+            if (manifestName.isEmpty()) {
                 if (customizationChannelExists(metadataAction)) {
                     console.error(CliMessages.MESSAGES.customizationChannelAlreadyExists());
                     return ReturnCodes.PROCESSING_ERROR;
                 }
-                name = Optional.of(CUSTOM_CHANNELS_GROUP_ID + ":" + RandomStringUtils.randomAlphanumeric(8));
+                manifestName = Optional.of(CUSTOM_CHANNELS_GROUP_ID + ":" + RandomStringUtils.randomAlphanumeric(8));
             }
 
             // add new channel
-            console.println(CliMessages.MESSAGES.registeringCustomChannel(name.get()));
+            console.println(CliMessages.MESSAGES.registeringCustomChannel(manifestName.get()));
             Channel channel = new Channel("customization", null, null, null,
                     List.of(new Repository(CUSTOMIZATION_REPO_ID, url.toExternalForm())),
-                    ArtifactUtils.manifestFromString(name.get()));
+                    ArtifactUtils.manifestFromString(manifestName.get()));
             metadataAction.addChannel(channel);
         }
 
@@ -156,17 +156,17 @@ public class ChannelInitializeCommand extends AbstractCommand {
     }
 
     private boolean validateChannel() {
-        if (name.isEmpty()) {
+        if (manifestName.isEmpty()) {
             return true;
         }
         try {
-            final ChannelManifestCoordinate manifestRef = ArtifactUtils.manifestFromString(name.get());
+            final ChannelManifestCoordinate manifestRef = ArtifactUtils.manifestFromString(manifestName.get());
             if (manifestRef.getGav() == null) {
-                console.error(CliMessages.MESSAGES.illegalChannel(name.get()));
+                console.error(CliMessages.MESSAGES.illegalChannel(manifestName.get()));
                 return false;
             }
         } catch (IllegalArgumentException e) {
-            console.error(CliMessages.MESSAGES.illegalChannel(name.get()));
+            console.error(CliMessages.MESSAGES.illegalChannel(manifestName.get()));
             return false;
         }
         return true;

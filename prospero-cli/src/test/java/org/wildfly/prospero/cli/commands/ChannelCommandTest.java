@@ -86,8 +86,9 @@ public class ChannelCommandTest extends AbstractConsoleTest {
     public void testAddEmptyRepository() {
         int exitCode = commandLine.execute(CliConstants.Commands.CHANNEL, CliConstants.Commands.ADD,
                 CliConstants.DIR, dir.toString(),
-                CliConstants.MANIFEST, "org.test:test",
-                CliConstants.REPOSITORY, "");
+                CliConstants.CHANNEL_NAME, "channel-0",
+                CliConstants.CHANNEL_MANIFEST, "org.test:test",
+                CliConstants.REPOSITORIES, "");
 
         Assert.assertEquals(ReturnCodes.INVALID_ARGUMENTS, exitCode);
         assertTrue(getErrorOutput().contains(CliMessages.MESSAGES.invalidRepositoryDefinition("")
@@ -95,23 +96,12 @@ public class ChannelCommandTest extends AbstractConsoleTest {
     }
 
     @Test
-    public void testAddInvalidRepositoryNoId() {
-        int exitCode = commandLine.execute(CliConstants.Commands.CHANNEL, CliConstants.Commands.ADD,
-                CliConstants.DIR, dir.toString(),
-                CliConstants.MANIFEST, "org.test:test",
-                CliConstants.REPOSITORY, "http://test.te");
-
-        Assert.assertEquals(ReturnCodes.INVALID_ARGUMENTS, exitCode);
-        assertTrue(getErrorOutput().contains(CliMessages.MESSAGES.invalidRepositoryDefinition("http://test.te")
-                .getMessage()));
-    }
-
-    @Test
     public void testAddInvalidRepositoryTooManyParts() {
         int exitCode = commandLine.execute(CliConstants.Commands.CHANNEL, CliConstants.Commands.ADD,
                 CliConstants.DIR, dir.toString(),
-                CliConstants.MANIFEST, "org.test:test",
-                CliConstants.REPOSITORY, "id::http://test.te::foo");
+                CliConstants.CHANNEL_NAME, "channel-0",
+                CliConstants.CHANNEL_MANIFEST, "org.test:test",
+                CliConstants.REPOSITORIES, "id::http://test.te::foo");
 
         Assert.assertEquals(ReturnCodes.INVALID_ARGUMENTS, exitCode);
         assertTrue(getErrorOutput().contains(CliMessages.MESSAGES.invalidRepositoryDefinition("id::http://test.te::foo")
@@ -122,20 +112,23 @@ public class ChannelCommandTest extends AbstractConsoleTest {
     public void testAdd() throws MetadataException, MalformedURLException {
         int exitCode = commandLine.execute(CliConstants.Commands.CHANNEL, CliConstants.Commands.ADD,
                 CliConstants.DIR, dir.toString(),
-                CliConstants.MANIFEST, "org.test:test",
-                CliConstants.REPOSITORY, "test_repo::http://test.te");
+                CliConstants.CHANNEL_NAME, "channel-0",
+                CliConstants.CHANNEL_MANIFEST, "org.test:test",
+                CliConstants.REPOSITORIES, "test_repo::http://test.te");
         Assert.assertEquals(ReturnCodes.SUCCESS, exitCode);
 
         exitCode = commandLine.execute(CliConstants.Commands.CHANNEL, CliConstants.Commands.ADD,
                 CliConstants.DIR, dir.toString(),
-                CliConstants.MANIFEST, "g:a2",
-                CliConstants.REPOSITORY, "test_repo::http://test.te");
+                CliConstants.CHANNEL_NAME, "channel-1",
+                CliConstants.CHANNEL_MANIFEST, "g:a2",
+                CliConstants.REPOSITORIES, "test_repo::http://test.te");
         Assert.assertEquals(ReturnCodes.SUCCESS, exitCode);
 
         exitCode = commandLine.execute(CliConstants.Commands.CHANNEL, CliConstants.Commands.ADD,
                 CliConstants.DIR, dir.toString(),
-                CliConstants.MANIFEST, "file:/path",
-                CliConstants.REPOSITORY, "test_repo::http://test.te");
+                CliConstants.CHANNEL_NAME, "channel-2",
+                CliConstants.CHANNEL_MANIFEST, "file:/path",
+                CliConstants.REPOSITORIES, "test_repo::http://test.te");
         Assert.assertEquals(ReturnCodes.SUCCESS, exitCode);
 
         InstallationMetadata installationMetadata = new InstallationMetadata(dir);
@@ -166,8 +159,9 @@ public class ChannelCommandTest extends AbstractConsoleTest {
     @Test
     public void testAddInvalidInstallationDir() {
         int exitCode = commandLine.execute(CliConstants.Commands.CHANNEL, CliConstants.Commands.ADD,
-                CliConstants.MANIFEST, "org.test:test",
-                CliConstants.REPOSITORY, "test_repo::http://test.te");
+                CliConstants.CHANNEL_NAME, "channel-0",
+                CliConstants.CHANNEL_MANIFEST, "org.test:test",
+                CliConstants.REPOSITORIES, "test_repo::http://test.te");
 
         Assert.assertEquals(ReturnCodes.INVALID_ARGUMENTS, exitCode);
         assertTrue(getErrorOutput().contains(CliMessages.MESSAGES.invalidInstallationDir(ChannelCommand.currentDir())
@@ -176,7 +170,8 @@ public class ChannelCommandTest extends AbstractConsoleTest {
 
     @Test
     public void testRemoveInvalidInstallationDir() {
-        int exitCode = commandLine.execute(CliConstants.Commands.CHANNEL, CliConstants.Commands.REMOVE, "0");
+        int exitCode = commandLine.execute(CliConstants.Commands.CHANNEL, CliConstants.Commands.REMOVE,
+                CliConstants.CHANNEL_NAME, "test2");
 
         Assert.assertEquals(ReturnCodes.INVALID_ARGUMENTS, exitCode);
         assertTrue(getErrorOutput().contains(CliMessages.MESSAGES.invalidInstallationDir(ChannelCommand.currentDir())
@@ -212,7 +207,8 @@ public class ChannelCommandTest extends AbstractConsoleTest {
             installationMetadata.getProsperoConfig().getChannels().forEach(System.out::println);
         }
         int exitCode = commandLine.execute(CliConstants.Commands.CHANNEL, CliConstants.Commands.REMOVE,
-                CliConstants.DIR, dir.toString(), "1");
+                CliConstants.DIR, dir.toString(),
+                CliConstants.CHANNEL_NAME, "test2");
         Assert.assertEquals(ReturnCodes.SUCCESS, exitCode);
         try (InstallationMetadata installationMetadata = new InstallationMetadata(dir)) {
             assertThat(installationMetadata.getProsperoConfig().getChannels())
@@ -225,7 +221,8 @@ public class ChannelCommandTest extends AbstractConsoleTest {
         }
 
         exitCode = commandLine.execute(CliConstants.Commands.CHANNEL, CliConstants.Commands.REMOVE,
-                CliConstants.DIR, dir.toString(), "0");
+                CliConstants.DIR, dir.toString(),
+                CliConstants.CHANNEL_NAME, "test1");
         Assert.assertEquals(ReturnCodes.SUCCESS, exitCode);
         try (InstallationMetadata installationMetadata = new InstallationMetadata(dir)) {
             assertThat(installationMetadata.getProsperoConfig().getChannels())
@@ -237,7 +234,8 @@ public class ChannelCommandTest extends AbstractConsoleTest {
         }
 
         exitCode = commandLine.execute(CliConstants.Commands.CHANNEL, CliConstants.Commands.REMOVE,
-                CliConstants.DIR, dir.toString(), "0");
+                CliConstants.DIR, dir.toString(),
+                CliConstants.CHANNEL_NAME, "test3");
         Assert.assertEquals(ReturnCodes.SUCCESS, exitCode);
         try (InstallationMetadata installationMetadata = new InstallationMetadata(dir)) {
             assertThat(installationMetadata.getProsperoConfig().getChannels())
@@ -250,23 +248,22 @@ public class ChannelCommandTest extends AbstractConsoleTest {
     @Test
     public void testRemoveNonExisting() {
         int exitCode = commandLine.execute(CliConstants.Commands.CHANNEL, CliConstants.Commands.REMOVE,
-                CliConstants.DIR, dir.toString(), "4");
+                CliConstants.DIR, dir.toString(),
+                CliConstants.CHANNEL_NAME,  "test4");
         Assert.assertEquals(ReturnCodes.INVALID_ARGUMENTS, exitCode);
 
         exitCode = commandLine.execute(CliConstants.Commands.CHANNEL, CliConstants.Commands.REMOVE,
-                CliConstants.DIR, dir.toString(), "-1");
+                CliConstants.DIR, dir.toString(),
+                CliConstants.CHANNEL_NAME, "test-1");
         Assert.assertEquals(ReturnCodes.INVALID_ARGUMENTS, exitCode);
 
-        // remove all channels
+        // remove the channel twice
         commandLine.execute(CliConstants.Commands.CHANNEL, CliConstants.Commands.REMOVE,
-                CliConstants.DIR, dir.toString(), "0");
-        commandLine.execute(CliConstants.Commands.CHANNEL, CliConstants.Commands.REMOVE,
-                CliConstants.DIR, dir.toString(), "0");
-        commandLine.execute(CliConstants.Commands.CHANNEL, CliConstants.Commands.REMOVE,
-                CliConstants.DIR, dir.toString(), "0");
-
+                CliConstants.DIR, dir.toString(),
+                CliConstants.CHANNEL_NAME, "test1");
         exitCode = commandLine.execute(CliConstants.Commands.CHANNEL, CliConstants.Commands.REMOVE,
-                CliConstants.DIR, dir.toString(), "0");
+                CliConstants.DIR, dir.toString(),
+                CliConstants.CHANNEL_NAME, "test1");
         Assert.assertEquals(ReturnCodes.INVALID_ARGUMENTS, exitCode);
     }
 

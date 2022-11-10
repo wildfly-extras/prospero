@@ -59,7 +59,7 @@ public final class CliConstants {
     // Option names:
 
     public static final String CHANNEL_MANIFEST = "--manifest";
-    public static final String REMOTE_REPOSITORIES = "--remote-repositories";
+    public static final String REPOSITORIES = "--repositories";
     public static final String DEFINITION = "--definition";
     public static final String DIR = "--dir";
     public static final String DRY_RUN = "--dry-run";
@@ -77,11 +77,7 @@ public final class CliConstants {
     public static final String Y = "-y";
     public static final String YES = "--yes";
 
-    public static final String CUSTOMIZATION_CHANNEL_NAME = "--channel-name";
+    public static final String CHANNEL_NAME = "--channel-name";
     public static final String CUSTOMIZATION_REPOSITORY_URL = "--repository-url";
     public static final String CUSTOMIZATION_ARCHIVE = "--archive";
-
-    public static final String REPOSITORY = "repository";
-
-    public static final String MANIFEST = "manifest";
 }

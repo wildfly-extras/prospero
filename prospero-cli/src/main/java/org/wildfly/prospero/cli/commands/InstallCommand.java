@@ -28,6 +28,7 @@ import org.wildfly.prospero.api.ProvisioningDefinition;
 import org.wildfly.prospero.api.KnownFeaturePacks;
 import org.wildfly.prospero.cli.ActionFactory;
 import org.wildfly.prospero.cli.CliMessages;
+import org.wildfly.prospero.cli.RepositoryDefinition;
 import org.wildfly.prospero.cli.ReturnCodes;
 import org.wildfly.prospero.cli.commands.options.LocalRepoOptions;
 import org.wildfly.prospero.cli.commands.options.FeaturePackCandidates;
@@ -70,7 +71,7 @@ public class InstallCommand extends AbstractCommand {
         Optional<String> channel;
 
         @CommandLine.Option(
-                names = CliConstants.REMOTE_REPOSITORIES,
+                names = CliConstants.REPOSITORIES,
                 paramLabel = CliConstants.REPO_URL,
                 split = ",",
                 order = 5
@@ -124,7 +125,7 @@ public class InstallCommand extends AbstractCommand {
         }
 
         if (provisionConfig.isPresent() && !remoteRepositories.isEmpty()) {
-            throw CliMessages.MESSAGES.exclusiveOptions(CliConstants.PROVISION_CONFIG, CliConstants.REMOTE_REPOSITORIES);
+            throw CliMessages.MESSAGES.exclusiveOptions(CliConstants.PROVISION_CONFIG, CliConstants.REPOSITORIES);
         }
 
         final Optional<Path> localMavenCache = LocalRepoOptions.getLocalMavenCache(localRepoOptions);
@@ -135,7 +136,7 @@ public class InstallCommand extends AbstractCommand {
                 .setFpl(featurePackOrDefinition.fpl.orElse(null))
                 .setManifest(channel.orElse(null))
                 .setProvisionConfig(provisionConfig.orElse(null))
-                .setOverrideRepositories(remoteRepositories)
+                .setOverrideRepositories(RepositoryDefinition.from(remoteRepositories))
                 .setDefinitionFile(featurePackOrDefinition.definition.map(Path::toUri).orElse(null))
                 .build();
 

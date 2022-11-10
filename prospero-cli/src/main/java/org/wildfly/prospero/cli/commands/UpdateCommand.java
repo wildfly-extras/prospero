@@ -28,12 +28,12 @@ import org.jboss.logging.Logger;
 import org.wildfly.channel.Repository;
 import org.wildfly.prospero.actions.Console;
 import org.wildfly.prospero.actions.UpdateAction;
-import org.wildfly.prospero.api.TemporaryRepositoriesHandler;
 import org.wildfly.prospero.api.exceptions.ArtifactResolutionException;
 import org.wildfly.prospero.api.exceptions.MetadataException;
 import org.wildfly.prospero.cli.ActionFactory;
 import org.wildfly.prospero.cli.ArgumentParsingException;
 import org.wildfly.prospero.cli.CliMessages;
+import org.wildfly.prospero.cli.RepositoryDefinition;
 import org.wildfly.prospero.cli.ReturnCodes;
 import org.wildfly.prospero.cli.commands.options.LocalRepoOptions;
 import org.wildfly.prospero.galleon.GalleonUtils;
@@ -72,7 +72,7 @@ public class UpdateCommand extends AbstractCommand {
     LocalRepoOptions localRepoOptions;
 
     @CommandLine.Option(
-            names = CliConstants.REMOTE_REPOSITORIES,
+            names = CliConstants.REPOSITORIES,
             paramLabel = CliConstants.REPO_URL,
             descriptionKey = "update.remote-repositories",
             split = ",",
@@ -102,7 +102,7 @@ public class UpdateCommand extends AbstractCommand {
 
         final MavenSessionManager mavenSessionManager = new MavenSessionManager(LocalRepoOptions.getLocalMavenCache(localRepoOptions), offline);
 
-        final List<Repository> repositories = TemporaryRepositoriesHandler.from(temporaryRepositories);
+        final List<Repository> repositories = RepositoryDefinition.from(temporaryRepositories);
 
         try (UpdateAction updateAction = actionFactory.update(installationDir, mavenSessionManager, console, repositories)) {
             if (!dryRun) {

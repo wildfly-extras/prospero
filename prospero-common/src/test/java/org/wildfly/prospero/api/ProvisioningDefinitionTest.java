@@ -107,7 +107,9 @@ public class ProvisioningDefinitionTest {
     public void addAdditionalRemoteRepos() throws Exception {
         final ProvisioningDefinition.Builder builder = new ProvisioningDefinition.Builder()
                 .setFpl(EAP_FPL)
-                .setOverrideRepositories(Arrays.asList("http://test.repo1", "http://test.repo2"));
+                .setOverrideRepositories(Arrays.asList(
+                        new Repository("temp-repo-0", "http://test.repo1"),
+                        new Repository("temp-repo-1", "http://test.repo2")));
 
         final ProvisioningDefinition def = builder.build();
 
@@ -148,7 +150,9 @@ public class ProvisioningDefinitionTest {
         final ProvisioningDefinition.Builder builder = new ProvisioningDefinition.Builder()
                 .setFpl("multi-channel")
                 .setManifest("file:/tmp/foo.bar")
-                .setOverrideRepositories(Arrays.asList("http://test.repo1", "http://test.repo2"));
+                .setOverrideRepositories(Arrays.asList(
+                        new Repository("temp-repo-0", "http://test.repo1"),
+                        new Repository("temp-repo-1", "http://test.repo2")));
 
         final ProvisioningDefinition def = builder.build();
 

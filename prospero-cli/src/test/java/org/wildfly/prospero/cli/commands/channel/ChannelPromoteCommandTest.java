@@ -76,7 +76,7 @@ public class ChannelPromoteCommandTest extends AbstractConsoleTest {
                 CliConstants.Commands.CHANNEL, CUSTOMIZATION_PROMOTE,
                 CliConstants.CUSTOMIZATION_REPOSITORY_URL, "file:///test/test",
                 CliConstants.CUSTOMIZATION_ARCHIVE, "test/archive.zip",
-                CliConstants.CUSTOMIZATION_CHANNEL_NAME, "org.test:custom-channel");
+                CliConstants.CHANNEL_MANIFEST, "org.test:custom-channel");
 
         assertEquals(ReturnCodes.SUCCESS, exitCode);
         verify(promoter).promote(Paths.get("test/archive.zip").toAbsolutePath(), new URL("file:///test/test"),
@@ -88,7 +88,7 @@ public class ChannelPromoteCommandTest extends AbstractConsoleTest {
         int exitCode = commandLine.execute(
                 CliConstants.Commands.CHANNEL, CUSTOMIZATION_PROMOTE,
                 CliConstants.CUSTOMIZATION_ARCHIVE, "test/archive.zip",
-                CliConstants.CUSTOMIZATION_CHANNEL_NAME, "org.test:custom-channel");
+                CliConstants.CHANNEL_MANIFEST, "org.test:custom-channel");
 
         assertEquals(ReturnCodes.INVALID_ARGUMENTS, exitCode);
         assertTrue(getErrorOutput().contains("Unable to determine custom channel and repository"));
@@ -99,7 +99,7 @@ public class ChannelPromoteCommandTest extends AbstractConsoleTest {
         int exitCode = commandLine.execute(
                 CliConstants.Commands.CHANNEL, CUSTOMIZATION_PROMOTE,
                 CliConstants.CUSTOMIZATION_REPOSITORY_URL, "file:///test/test",
-                CliConstants.CUSTOMIZATION_CHANNEL_NAME, "org.test:custom-channel");
+                CliConstants.CHANNEL_MANIFEST, "org.test:custom-channel");
 
         assertEquals(ReturnCodes.INVALID_ARGUMENTS, exitCode);
         assertTrue(getErrorOutput().contains(String.format("Missing required option: '%s", CliConstants.CUSTOMIZATION_ARCHIVE)));
@@ -122,7 +122,7 @@ public class ChannelPromoteCommandTest extends AbstractConsoleTest {
                 CliConstants.Commands.CHANNEL, CUSTOMIZATION_PROMOTE,
                 CliConstants.CUSTOMIZATION_REPOSITORY_URL, "file:///test/test",
                 CliConstants.CUSTOMIZATION_ARCHIVE, "test/archive.zip",
-                CliConstants.CUSTOMIZATION_CHANNEL_NAME, "wrongchannelsyntax");
+                CliConstants.CHANNEL_MANIFEST, "wrongchannelsyntax");
 
         assertEquals(ReturnCodes.INVALID_ARGUMENTS, exitCode);
         assertTrue(getErrorOutput().contains(CliMessages.MESSAGES.wrongChannelCoordinateFormat()));
@@ -163,7 +163,7 @@ public class ChannelPromoteCommandTest extends AbstractConsoleTest {
         int exitCode = commandLine.execute(
                 CliConstants.Commands.CHANNEL, CUSTOMIZATION_PROMOTE,
                 CliConstants.CUSTOMIZATION_REPOSITORY_URL, "http://test.repo",
-                CliConstants.CUSTOMIZATION_CHANNEL_NAME, "org.custom:test",
+                CliConstants.CHANNEL_MANIFEST, "org.custom:test",
                 CliConstants.CUSTOMIZATION_ARCHIVE, "test/archive.zip",
                 CliConstants.DIR, installationDir.toString()
         );

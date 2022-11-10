@@ -26,6 +26,7 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 
+import org.apache.commons.lang3.StringUtils;
 import org.eclipse.aether.artifact.Artifact;
 import org.eclipse.aether.artifact.DefaultArtifact;
 import org.jboss.galleon.ProvisioningException;
@@ -34,6 +35,7 @@ import org.junit.Test;
 import org.wildfly.channel.Channel;
 import org.wildfly.prospero.actions.UpdateAction;
 import org.wildfly.prospero.api.ArtifactChange;
+import org.wildfly.prospero.api.InstallationMetadata;
 import org.wildfly.prospero.api.ProvisioningDefinition;
 import org.wildfly.prospero.api.exceptions.OperationException;
 import org.wildfly.prospero.it.AcceptingConsole;
@@ -41,6 +43,7 @@ import org.wildfly.prospero.model.ManifestYamlSupport;
 import org.wildfly.prospero.model.ProsperoConfig;
 import org.wildfly.prospero.test.MetadataTestUtils;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
@@ -60,6 +63,28 @@ public class SimpleProvisionTest extends WfCoreTestBase {
         // verify manifest contains versions 17.0.1
         final Optional<Artifact> wildflyCliArtifact = readArtifactFromManifest("org.wildfly.core", "wildfly-cli");
         assertEquals(BASE_VERSION, wildflyCliArtifact.get().getVersion());
+    }
+
+    @Test
+    public void installWildflyCore_ChannelsWithEmptyNamesAreNamed() throws Exception {
+        final Path provisionConfigFile = MetadataTestUtils.prepareProvisionConfig(CHANNEL_BASE_CORE_19);
+
+        final ProvisioningDefinition provisioningDefinition = defaultWfCoreDefinition()
+                .setProvisionConfig(provisionConfigFile)
+                .build();
+
+        // make sure the channel names are empty
+        final List<Channel> channels = provisioningDefinition.getChannels().stream()
+                .map(c->new Channel(c.getSchemaVersion(), null, c.getDescription(), c.getVendor(), c.getChannelRequirements(), c.getRepositories(), c.getManifestRef()))
+                .collect(Collectors.toList());
+
+        installation.provision(provisioningDefinition.toProvisioningConfig(), channels);
+
+        final ProsperoConfig persistedConfig = ProsperoConfig.readConfig(outputPath.resolve(InstallationMetadata.METADATA_DIR).resolve(InstallationMetadata.PROSPERO_CONFIG_FILE_NAME));
+        assertThat(persistedConfig.getChannels())
+                .map(Channel::getName)
+                .noneMatch(name-> StringUtils.isEmpty(name))
+                .doesNotHaveDuplicates();
     }
 
     @Test

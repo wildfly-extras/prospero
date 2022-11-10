@@ -123,7 +123,7 @@ public class WfCoreTestBase {
     protected ProvisioningDefinition.Builder defaultWfCoreDefinition() {
         return ProvisioningDefinition.builder()
                 .setFpl("wildfly-core@maven(org.jboss.universe:community-universe):19.0")
-                .setOverrideRepositories(repositories.stream().map(Repository::getUrl).collect(Collectors.toList()));
+                .setOverrideRepositories(repositories);
     }
 
     protected Artifact resolveArtifact(String groupId, String artifactId, String version) throws ArtifactResolutionException {
