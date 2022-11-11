@@ -9,6 +9,8 @@ on:
       - 'examples'
       - 'README.md'
   pull_request:
+    branches-ignore:
+      - 'future'
     paths-ignore:
       - '.gitignore'
       - 'examples'
