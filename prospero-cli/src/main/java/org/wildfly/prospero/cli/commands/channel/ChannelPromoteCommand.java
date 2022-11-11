@@ -44,7 +44,7 @@ import static org.wildfly.prospero.cli.commands.channel.ChannelInitializeCommand
 )
 public class ChannelPromoteCommand extends AbstractCommand {
     @CommandLine.Option(
-            names = CliConstants.CUSTOMIZATION_CHANNEL_NAME
+            names = CliConstants.CHANNEL_MANIFEST
     )
     private Optional<String> name;
 
@@ -92,7 +92,7 @@ public class ChannelPromoteCommand extends AbstractCommand {
             if (res.isPresent()) {
                 this.url = res;
             } else {
-                console.error(CliMessages.MESSAGES.noCustomizationConfigFound(CliConstants.CUSTOMIZATION_CHANNEL_NAME, CliConstants.CUSTOMIZATION_REPOSITORY_URL));
+                console.error(CliMessages.MESSAGES.noCustomizationConfigFound(CliConstants.CHANNEL_NAME, CliConstants.CUSTOMIZATION_REPOSITORY_URL));
                 return ReturnCodes.INVALID_ARGUMENTS;
             }
         }
@@ -106,7 +106,7 @@ public class ChannelPromoteCommand extends AbstractCommand {
             if (res.isPresent()) {
                 this.name = res;
             } else {
-                console.error(CliMessages.MESSAGES.noCustomizationConfigFound(CliConstants.CUSTOMIZATION_CHANNEL_NAME, CliConstants.CUSTOMIZATION_REPOSITORY_URL));
+                console.error(CliMessages.MESSAGES.noCustomizationConfigFound(CliConstants.CHANNEL_NAME, CliConstants.CUSTOMIZATION_REPOSITORY_URL));
                 return ReturnCodes.INVALID_ARGUMENTS;
             }
         }

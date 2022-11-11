@@ -83,7 +83,7 @@ public class ChannelInitializeCommandTest extends AbstractConsoleTest {
         int exitCode = commandLine.execute(
                 CliConstants.Commands.CHANNEL, CliConstants.Commands.CUSTOMIZATION_INIT_CHANNEL,
                 CliConstants.DIR, installationDir.toString(),
-                CliConstants.CUSTOMIZATION_CHANNEL_NAME, "org.test:custom-channel",
+                CliConstants.CHANNEL_MANIFEST, "org.test:custom-channel",
                 CliConstants.CUSTOMIZATION_REPOSITORY_URL, customRepoUrl);
         Assert.assertEquals(ReturnCodes.SUCCESS, exitCode);
         assertThat(actualChannels())
@@ -112,7 +112,7 @@ public class ChannelInitializeCommandTest extends AbstractConsoleTest {
         int exitCode = commandLine.execute(
                 CliConstants.Commands.CHANNEL, CliConstants.Commands.CUSTOMIZATION_INIT_CHANNEL,
                 CliConstants.DIR, installationDir.toString(),
-                CliConstants.CUSTOMIZATION_CHANNEL_NAME, "org.test:custom-channel",
+                CliConstants.CHANNEL_MANIFEST, "org.test:custom-channel",
                 CliConstants.CUSTOMIZATION_REPOSITORY_URL, customRepoUrl);
 
         Assert.assertEquals(ReturnCodes.INVALID_ARGUMENTS, exitCode);
@@ -131,7 +131,7 @@ public class ChannelInitializeCommandTest extends AbstractConsoleTest {
         int exitCode = commandLine.execute(
                 CliConstants.Commands.CHANNEL, CliConstants.Commands.CUSTOMIZATION_INIT_CHANNEL,
                 CliConstants.DIR, installationDir.toString(),
-                CliConstants.CUSTOMIZATION_CHANNEL_NAME, "org.test.custom-channel",
+                CliConstants.CHANNEL_MANIFEST, "org.test.custom-channel",
                 CliConstants.CUSTOMIZATION_REPOSITORY_URL, customRepoUrl);
 
         Assert.assertEquals(ReturnCodes.INVALID_ARGUMENTS, exitCode);
@@ -152,7 +152,7 @@ public class ChannelInitializeCommandTest extends AbstractConsoleTest {
         int exitCode = commandLine.execute(
                 CliConstants.Commands.CHANNEL, CliConstants.Commands.CUSTOMIZATION_INIT_CHANNEL,
                 CliConstants.DIR, installationDir.toString(),
-                CliConstants.CUSTOMIZATION_CHANNEL_NAME, "org.test:custom-channel",
+                CliConstants.CHANNEL_MANIFEST, "org.test:custom-channel",
                 CliConstants.CUSTOMIZATION_REPOSITORY_URL, customRepoUrl);
 
         Assert.assertEquals(ReturnCodes.SUCCESS, exitCode);
@@ -172,7 +172,7 @@ public class ChannelInitializeCommandTest extends AbstractConsoleTest {
             int exitCode = commandLine.execute(
                     CliConstants.Commands.CHANNEL, CliConstants.Commands.CUSTOMIZATION_INIT_CHANNEL,
                     CliConstants.DIR, installationDir.toString(),
-                    CliConstants.CUSTOMIZATION_CHANNEL_NAME, "org.test:custom-channel",
+                    CliConstants.CHANNEL_MANIFEST, "org.test:custom-channel",
                     CliConstants.CUSTOMIZATION_REPOSITORY_URL, customRepoUrl);
 
             Assert.assertEquals(ReturnCodes.PROCESSING_ERROR, exitCode);
@@ -201,7 +201,7 @@ public class ChannelInitializeCommandTest extends AbstractConsoleTest {
         int exitCode = commandLine.execute(
                 CliConstants.Commands.CHANNEL, CliConstants.Commands.CUSTOMIZATION_INIT_CHANNEL,
                 CliConstants.DIR, installationDir.toString(),
-                CliConstants.CUSTOMIZATION_CHANNEL_NAME, "org.test:custom-channel",
+                CliConstants.CHANNEL_MANIFEST, "org.test:custom-channel",
                 CliConstants.CUSTOMIZATION_REPOSITORY_URL, customRepoUrl);
 
         Assert.assertEquals(ReturnCodes.PROCESSING_ERROR, exitCode);
@@ -222,7 +222,7 @@ public class ChannelInitializeCommandTest extends AbstractConsoleTest {
         int exitCode = commandLine.execute(
                 CliConstants.Commands.CHANNEL, CliConstants.Commands.CUSTOMIZATION_INIT_CHANNEL,
                 CliConstants.DIR, installationDir.toString(),
-                CliConstants.CUSTOMIZATION_CHANNEL_NAME, "org.test:custom-channel");
+                CliConstants.CHANNEL_MANIFEST, "org.test:custom-channel");
 
         Assert.assertEquals(ReturnCodes.SUCCESS, exitCode);
         assertThat(actualRepositories())

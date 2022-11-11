@@ -41,12 +41,14 @@ public class MetadataAction implements AutoCloseable {
         this.installationMetadata = installationMetadata;
     }
 
-
-    // channels clash if they define the same manifest & repositories
     public void addChannel(Channel channel) throws MetadataException {
         final ProsperoConfig prosperoConfig = installationMetadata.getProsperoConfig();
         final List<Channel> channels = prosperoConfig.getChannels();
-        // TODO: check for duplicates
+
+        if (channels.stream().filter(c->c.getName().equals(channel.getName())).findAny().isPresent()) {
+            throw new MetadataException(String.format("Channel %s already exists", channel.getName()));
+        }
+
         channels.add(channel);
         installationMetadata.updateProsperoConfig(prosperoConfig);
     }

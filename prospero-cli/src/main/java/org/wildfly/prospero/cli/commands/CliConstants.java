@@ -51,22 +51,22 @@ public final class CliConstants {
 
     // Parameter and option labels:
 
-    public static final String CHANNEL_REFERENCE = "<channel-reference>";
+    public static final String CHANNEL_MANIFEST_REFERENCE = "<manifest-reference>";
     public static final String FEATURE_PACK_REFERENCE = "<feature-pack-reference>";
     public static final String PATH = "<path>";
     public static final String REPO_URL = "<repo-url>";
 
     // Option names:
 
-    public static final String CHANNEL = "--channel";
-    public static final String REMOTE_REPOSITORIES = "--remote-repositories";
+    public static final String CHANNEL_MANIFEST = "--manifest";
+    public static final String REPOSITORIES = "--repositories";
     public static final String DEFINITION = "--definition";
     public static final String DIR = "--dir";
     public static final String DRY_RUN = "--dry-run";
     public static final String FPL = "--fpl";
     public static final String H = "-h";
     public static final String HELP = "--help";
-    public static final String LOCAL_REPO = "--local-repo";
+    public static final String LOCAL_CACHE = "--local-cache";
     public static final String NO_LOCAL_MAVEN_CACHE = "--no-resolve-local-cache";
     public static final String OFFLINE = "--offline";
     public static final String PROVISION_CONFIG = "--provision-config";
@@ -77,11 +77,7 @@ public final class CliConstants {
     public static final String Y = "-y";
     public static final String YES = "--yes";
 
-    public static final String CUSTOMIZATION_CHANNEL_NAME = "--channel-name";
+    public static final String CHANNEL_NAME = "--channel-name";
     public static final String CUSTOMIZATION_REPOSITORY_URL = "--repository-url";
     public static final String CUSTOMIZATION_ARCHIVE = "--archive";
-
-    public static final String REPOSITORY = "repository";
-
-    public static final String MANIFEST = "manifest";
 }

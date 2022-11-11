@@ -18,6 +18,7 @@
 package org.wildfly.prospero.cli.commands;
 
 import java.nio.file.Path;
+import java.util.List;
 
 import org.junit.Assert;
 import org.junit.Before;
@@ -29,6 +30,7 @@ import org.mockito.ArgumentCaptor;
 import org.mockito.Captor;
 import org.mockito.Mock;
 import org.mockito.junit.MockitoJUnitRunner;
+import org.wildfly.channel.Repository;
 import org.wildfly.prospero.actions.Console;
 import org.wildfly.prospero.actions.InstallationHistoryAction;
 import org.wildfly.prospero.api.SavedState;
@@ -38,6 +40,7 @@ import org.wildfly.prospero.cli.ReturnCodes;
 import org.wildfly.prospero.test.MetadataTestUtils;
 import org.wildfly.prospero.wfchannel.MavenSessionManager;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
@@ -52,6 +55,9 @@ public class RevertCommandTest extends AbstractMavenCommandTest {
 
     @Captor
     private ArgumentCaptor<MavenSessionManager> mavenSessionManager;
+
+    @Captor
+    private ArgumentCaptor<List<Repository>> repositories;
 
     @Rule
     public TemporaryFolder tempDir = new TemporaryFolder();
@@ -99,23 +105,38 @@ public class RevertCommandTest extends AbstractMavenCommandTest {
                 CliConstants.REVISION, "abcd");
 
         assertEquals(ReturnCodes.SUCCESS, exitCode);
-        verify(historyAction).rollback(eq(new SavedState("abcd")), any());
+        verify(historyAction).rollback(eq(new SavedState("abcd")), any(), any());
     }
 
     @Test
     public void useOfflineMavenSessionManagerIfOfflineSet() throws Exception {
         int exitCode = commandLine.execute(CliConstants.Commands.REVERT, CliConstants.DIR, installationDir.toString(),
                 CliConstants.REVISION, "abcd",
-                CliConstants.OFFLINE, CliConstants.LOCAL_REPO, "local-repo");
+                CliConstants.OFFLINE, CliConstants.LOCAL_CACHE, "local-repo");
 
         assertEquals(ReturnCodes.SUCCESS, exitCode);
-        verify(historyAction).rollback(eq(new SavedState("abcd")), mavenSessionManager.capture());
+        verify(historyAction).rollback(eq(new SavedState("abcd")), mavenSessionManager.capture(), any());
         assertTrue(mavenSessionManager.getValue().isOffline());
+    }
+
+    @Test
+    public void passRemoteRepositories() throws Exception {
+        int exitCode = commandLine.execute(CliConstants.Commands.REVERT, CliConstants.DIR, installationDir.toString(),
+                CliConstants.REVISION, "abcd",
+                CliConstants.REPOSITORIES, "http://temp.repo.te",
+                CliConstants.LOCAL_CACHE, "local-repo");
+
+        assertEquals(ReturnCodes.SUCCESS, exitCode);
+        verify(historyAction).rollback(eq(new SavedState("abcd")), any(), repositories.capture());
+
+        assertThat(repositories.getValue())
+                .map(Repository::getUrl)
+                .containsExactly("http://temp.repo.te");
     }
 
     @Override
     protected MavenSessionManager getCapturedSessionManager() throws Exception {
-        verify(historyAction).rollback(eq(new SavedState("abcd")), mavenSessionManager.capture());
+        verify(historyAction).rollback(eq(new SavedState("abcd")), mavenSessionManager.capture(), any());
         return mavenSessionManager.getValue();
     }
 

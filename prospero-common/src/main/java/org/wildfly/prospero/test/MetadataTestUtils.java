@@ -17,8 +17,11 @@
 
 package org.wildfly.prospero.test;
 
+import java.io.FileWriter;
 import java.io.IOException;
+import java.io.InputStream;
 import java.net.URL;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -31,6 +34,8 @@ import java.util.stream.Collectors;
 import javax.xml.stream.XMLStreamException;
 
 import org.apache.commons.io.FileUtils;
+import org.apache.commons.io.IOUtils;
+import org.eclipse.aether.artifact.Artifact;
 import org.eclipse.aether.repository.RemoteRepository;
 import org.jboss.galleon.Constants;
 import org.jboss.galleon.state.ProvisionedFeaturePack;
@@ -40,6 +45,7 @@ import org.jboss.galleon.xml.ProvisionedStateXmlWriter;
 import org.wildfly.channel.Channel;
 import org.wildfly.channel.ChannelManifest;
 import org.wildfly.channel.ChannelManifestCoordinate;
+import org.wildfly.channel.ChannelManifestMapper;
 import org.wildfly.channel.Repository;
 import org.wildfly.channel.Stream;
 import org.wildfly.prospero.api.InstallationMetadata;
@@ -120,5 +126,27 @@ public final class MetadataTestUtils {
                 new RemoteRepository.Builder("nexus", "default", "https://repository.jboss.org/nexus/content/groups/public-jboss").build(),
                 new RemoteRepository.Builder("maven-redhat-ga", "default", "https://maven.repository.redhat.com/ga").build()
         );
+    }
+
+    public static void copyManifest(String resource, Path targetPath) throws IOException {
+        final InputStream resourceStream = MetadataTestUtils.class.getClassLoader().getResourceAsStream(resource);
+
+        try (final FileWriter writer = new FileWriter(targetPath.toFile())) {
+            IOUtils.copy(resourceStream, writer, StandardCharsets.UTF_8);
+        }
+    }
+
+    public static void upgradeStreamInManifest(Path manifestPath, Artifact upgrade) throws IOException {
+        final ChannelManifest manifest = ChannelManifestMapper.from(manifestPath.toUri().toURL());
+        final List<Stream> updatedStreams = manifest.getStreams().stream()
+                .map(s -> {
+                    if (s.getGroupId().equals(upgrade.getGroupId()) && s.getArtifactId().equals(upgrade.getArtifactId())) {
+                        return new Stream(upgrade.getGroupId(), upgrade.getArtifactId(), upgrade.getVersion());
+                    } else {
+                        return s;
+                    }
+                })
+                .collect(Collectors.toList());
+        Files.writeString(manifestPath, ChannelManifestMapper.toYaml(new ChannelManifest(manifest.getName(), manifest.getDescription(), updatedStreams)));
     }
 }

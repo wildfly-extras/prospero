@@ -17,15 +17,13 @@
 
 package org.wildfly.prospero.actions;
 
-import java.net.URL;
 import java.nio.file.Path;
 import java.util.List;
-import java.util.Set;
-import java.util.stream.Collectors;
 
 import org.wildfly.channel.Channel;
 import org.wildfly.channel.Repository;
 import org.wildfly.channel.UnresolvedMavenArtifactException;
+import org.wildfly.prospero.api.TemporaryRepositoriesHandler;
 import org.wildfly.prospero.api.InstallationMetadata;
 import org.wildfly.prospero.api.exceptions.MetadataException;
 import org.wildfly.prospero.api.exceptions.ArtifactResolutionException;
@@ -46,11 +44,11 @@ public class UpdateAction implements AutoCloseable {
     private final GalleonEnvironment galleonEnv;
     private final ProsperoConfig prosperoConfig;
 
-    public UpdateAction(Path installDir, MavenSessionManager mavenSessionManager, Console console, List<URL> additionalRepositories)
+    public UpdateAction(Path installDir, MavenSessionManager mavenSessionManager, Console console, List<Repository> overrideRepositories)
             throws ProvisioningException, OperationException {
         this.metadata = new InstallationMetadata(installDir);
 
-        this.prosperoConfig = addTemporaryRepositories(additionalRepositories);
+        this.prosperoConfig = addTemporaryRepositories(overrideRepositories);
         galleonEnv = GalleonEnvironment
                 .builder(installDir, prosperoConfig, mavenSessionManager)
                 .setConsole(console)
@@ -79,18 +77,12 @@ public class UpdateAction implements AutoCloseable {
         metadata.close();
     }
 
-    private ProsperoConfig addTemporaryRepositories(List<URL> additionalRepositories) {
+    private ProsperoConfig addTemporaryRepositories(List<Repository> repositories) {
         final ProsperoConfig prosperoConfig = metadata.getProsperoConfig();
-        for (Channel channel : prosperoConfig.getChannels()) {
-            int i = 0;
-            final Set<String> existingRepos = channel.getRepositories().stream().map(Repository::getUrl).collect(Collectors.toSet());
-            for (URL additionalRepository : additionalRepositories) {
-                if (!existingRepos.contains(additionalRepository.toString())) {
-                    channel.getRepositories().add(new Repository("temp-repo-"+i++, additionalRepository.toString()));
-                }
-            }
-        }
-        return prosperoConfig;
+
+        final List<Channel> channels = TemporaryRepositoriesHandler.addRepositories(prosperoConfig.getChannels(), repositories);
+
+        return new ProsperoConfig(channels);
     }
 
     private void applyUpdates() throws ProvisioningException, ArtifactResolutionException {

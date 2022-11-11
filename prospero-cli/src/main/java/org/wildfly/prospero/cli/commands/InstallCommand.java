@@ -17,12 +17,10 @@
 
 package org.wildfly.prospero.cli.commands;
 
-import java.net.URL;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
-import java.util.stream.Collectors;
 
 import org.wildfly.prospero.actions.Console;
 import org.wildfly.prospero.actions.ProvisioningAction;
@@ -30,6 +28,7 @@ import org.wildfly.prospero.api.ProvisioningDefinition;
 import org.wildfly.prospero.api.KnownFeaturePacks;
 import org.wildfly.prospero.cli.ActionFactory;
 import org.wildfly.prospero.cli.CliMessages;
+import org.wildfly.prospero.cli.RepositoryDefinition;
 import org.wildfly.prospero.cli.ReturnCodes;
 import org.wildfly.prospero.cli.commands.options.LocalRepoOptions;
 import org.wildfly.prospero.cli.commands.options.FeaturePackCandidates;
@@ -65,19 +64,19 @@ public class InstallCommand extends AbstractCommand {
         Optional<Path> provisionConfig;
 
         @CommandLine.Option(
-                names = CliConstants.CHANNEL,
-                paramLabel = CliConstants.CHANNEL_REFERENCE,
+                names = CliConstants.CHANNEL_MANIFEST,
+                paramLabel = CliConstants.CHANNEL_MANIFEST_REFERENCE,
                 order = 4
         )
         Optional<String> channel;
 
         @CommandLine.Option(
-                names = CliConstants.REMOTE_REPOSITORIES,
+                names = CliConstants.REPOSITORIES,
                 paramLabel = CliConstants.REPO_URL,
                 split = ",",
                 order = 5
         )
-        List<URL> remoteRepositories = new ArrayList<>();
+        List<String> remoteRepositories = new ArrayList<>();
 
         @CommandLine.ArgGroup(exclusive = true, order = 6, headingKey = "localRepoOptions.heading")
         LocalRepoOptions localRepoOptions;
@@ -122,22 +121,22 @@ public class InstallCommand extends AbstractCommand {
         }
 
         if (provisionConfig.isPresent() && channel.isPresent()) {
-            throw CliMessages.MESSAGES.exclusiveOptions(CliConstants.PROVISION_CONFIG, CliConstants.CHANNEL);
+            throw CliMessages.MESSAGES.exclusiveOptions(CliConstants.PROVISION_CONFIG, CliConstants.CHANNEL_MANIFEST);
         }
 
         if (provisionConfig.isPresent() && !remoteRepositories.isEmpty()) {
-            throw CliMessages.MESSAGES.exclusiveOptions(CliConstants.PROVISION_CONFIG, CliConstants.REMOTE_REPOSITORIES);
+            throw CliMessages.MESSAGES.exclusiveOptions(CliConstants.PROVISION_CONFIG, CliConstants.REPOSITORIES);
         }
 
-        final Optional<Path> localRepo = LocalRepoOptions.getLocalRepo(localRepoOptions);
+        final Optional<Path> localMavenCache = LocalRepoOptions.getLocalMavenCache(localRepoOptions);
 
-        final MavenSessionManager mavenSessionManager = new MavenSessionManager(localRepo, offline);
+        final MavenSessionManager mavenSessionManager = new MavenSessionManager(localMavenCache, offline);
 
         final ProvisioningDefinition provisioningDefinition = ProvisioningDefinition.builder()
                 .setFpl(featurePackOrDefinition.fpl.orElse(null))
                 .setManifest(channel.orElse(null))
                 .setProvisionConfig(provisionConfig.orElse(null))
-                .setRemoteRepositories(remoteRepositories.stream().map(URL::toString).collect(Collectors.toList()))
+                .setOverrideRepositories(RepositoryDefinition.from(remoteRepositories))
                 .setDefinitionFile(featurePackOrDefinition.definition.map(Path::toUri).orElse(null))
                 .build();
 

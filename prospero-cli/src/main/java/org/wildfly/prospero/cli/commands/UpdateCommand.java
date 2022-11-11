@@ -17,7 +17,6 @@
 
 package org.wildfly.prospero.cli.commands;
 
-import java.net.URL;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
@@ -26,6 +25,7 @@ import java.util.Optional;
 
 import org.jboss.galleon.ProvisioningException;
 import org.jboss.logging.Logger;
+import org.wildfly.channel.Repository;
 import org.wildfly.prospero.actions.Console;
 import org.wildfly.prospero.actions.UpdateAction;
 import org.wildfly.prospero.api.exceptions.ArtifactResolutionException;
@@ -33,6 +33,7 @@ import org.wildfly.prospero.api.exceptions.MetadataException;
 import org.wildfly.prospero.cli.ActionFactory;
 import org.wildfly.prospero.cli.ArgumentParsingException;
 import org.wildfly.prospero.cli.CliMessages;
+import org.wildfly.prospero.cli.RepositoryDefinition;
 import org.wildfly.prospero.cli.ReturnCodes;
 import org.wildfly.prospero.cli.commands.options.LocalRepoOptions;
 import org.wildfly.prospero.galleon.GalleonUtils;
@@ -70,16 +71,14 @@ public class UpdateCommand extends AbstractCommand {
     @CommandLine.ArgGroup(exclusive = true, headingKey = "localRepoOptions.heading")
     LocalRepoOptions localRepoOptions;
 
-    // Option for BETA update support
-    // TODO: evaluate in GA - replace by repository:add / custom channels?
     @CommandLine.Option(
-            names = CliConstants.REMOTE_REPOSITORIES,
+            names = CliConstants.REPOSITORIES,
             paramLabel = CliConstants.REPO_URL,
             descriptionKey = "update.remote-repositories",
             split = ",",
             order = 5
     )
-    List<URL> remoteRepositories = new ArrayList<>();
+    List<String> temporaryRepositories = new ArrayList<>();
 
     public UpdateCommand(Console console, ActionFactory actionFactory) {
         super(console, actionFactory);
@@ -101,9 +100,11 @@ public class UpdateCommand extends AbstractCommand {
             installationDir = determineInstallationDirectory(directory);
         }
 
-        final MavenSessionManager mavenSessionManager = new MavenSessionManager(LocalRepoOptions.getLocalRepo(localRepoOptions), offline);
+        final MavenSessionManager mavenSessionManager = new MavenSessionManager(LocalRepoOptions.getLocalMavenCache(localRepoOptions), offline);
 
-        try (UpdateAction updateAction = actionFactory.update(installationDir, mavenSessionManager, console, remoteRepositories)) {
+        final List<Repository> repositories = RepositoryDefinition.from(temporaryRepositories);
+
+        try (UpdateAction updateAction = actionFactory.update(installationDir, mavenSessionManager, console, repositories)) {
             if (!dryRun) {
                 performUpdate(updateAction);
             } else {

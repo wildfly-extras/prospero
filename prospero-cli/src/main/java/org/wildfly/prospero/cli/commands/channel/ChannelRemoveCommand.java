@@ -17,7 +17,6 @@
 
 package org.wildfly.prospero.cli.commands.channel;
 
-import org.apache.commons.lang3.StringUtils;
 import org.wildfly.channel.Channel;
 import org.wildfly.prospero.actions.Console;
 import org.wildfly.prospero.actions.MetadataAction;
@@ -34,8 +33,8 @@ import java.util.Optional;
 @CommandLine.Command(name = CliConstants.Commands.REMOVE)
 public class ChannelRemoveCommand extends AbstractCommand {
 
-    @CommandLine.Parameters(index = "0", paramLabel = "channel-index")
-    int index;
+    @CommandLine.Option(names=CliConstants.CHANNEL_NAME)
+    String channelName;
 
     @CommandLine.Option(names = CliConstants.DIR)
     Optional<Path> directory;
@@ -48,21 +47,17 @@ public class ChannelRemoveCommand extends AbstractCommand {
     public Integer call() throws Exception {
         Path installationDirectory = determineInstallationDirectory(directory);
         try (final MetadataAction metadataAction = actionFactory.metadataActions(installationDirectory)) {
-            final Channel channel = metadataAction.getChannel(index);
-            if (channel != null) {
-                metadataAction.removeChannel(channel.getName());
-                final String name;
-                if (StringUtils.isNotEmpty(channel.getManifestRef().getGav())) {
-                    name = channel.getManifestRef().getGav();
-                } else {
-                    name = channel.getManifestRef().getUrl().toExternalForm();
-                }
-                console.println(CliMessages.MESSAGES.channelRemoved(name));
-                return ReturnCodes.SUCCESS;
-            } else {
+            final Optional<Channel> channel = metadataAction.getChannels().stream().filter(c->c.getName().equals(channelName)).findFirst();
+
+            if (channel.isEmpty()) {
                 console.println("The requested channel doesn't exist");
                 return ReturnCodes.INVALID_ARGUMENTS;
             }
+
+            metadataAction.removeChannel(channelName);
+
+            console.println(CliMessages.MESSAGES.channelRemoved(channelName));
+            return ReturnCodes.SUCCESS;
         }
     }
 }

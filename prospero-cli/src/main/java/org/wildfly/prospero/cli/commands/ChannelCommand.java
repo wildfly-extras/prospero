@@ -45,7 +45,6 @@ public class ChannelCommand extends AbstractCommand {
         return ReturnCodes.INVALID_ARGUMENTS;
     }
 
-
     @CommandLine.Command(name = CliConstants.Commands.LIST)
     public static class ChannelListCommand extends AbstractCommand {
 
@@ -64,10 +63,9 @@ public class ChannelCommand extends AbstractCommand {
                 channels = metadataAction.getChannels();
             }
 
-            int i=0;
             console.println("-------");
             for (Channel channel: channels) {
-                console.println("#" + i++);
+                console.println("#" + channel.getName());
                 final String manifest = channel.getManifestRef().getGav() == null
                         ?channel.getManifestRef().getUrl().toExternalForm():channel.getManifestRef().getGav();
                 console.println("  " + "manifest: " + manifest);
