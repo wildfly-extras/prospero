@@ -19,12 +19,18 @@ package org.wildfly.prospero.galleon;
 
 import org.jboss.galleon.ProvisioningException;
 import org.jboss.galleon.ProvisioningManager;
+import org.jboss.galleon.config.ProvisioningConfig;
 import org.jboss.galleon.state.ProvisionedFeaturePack;
 import org.jboss.galleon.universe.maven.repo.MavenRepoManager;
 import org.jboss.galleon.util.PathsUtils;
 import org.jboss.galleon.xml.ProvisionedStateXmlParser;
+import org.jboss.galleon.xml.ProvisioningXmlParser;
+import org.jboss.galleon.xml.XmlParsers;
 import org.wildfly.channel.UnresolvedMavenArtifactException;
 
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.net.URI;
 import java.nio.file.Path;
 import java.util.Collection;
 import java.util.HashMap;
@@ -32,6 +38,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Collectors;
+
+import javax.xml.stream.XMLStreamException;
 
 public class GalleonUtils {
 
@@ -43,6 +51,9 @@ public class GalleonUtils {
     public static final String MODULE_PATH_PROPERTY = "module.path";
     public static final String PRINT_ONLY_CONFLICTS_PROPERTY = "print-only-conflicts";
     public static final String PRINT_ONLY_CONFLICTS_VALUE = "true";
+
+    private static final String CLASSPATH_SCHEME = "classpath";
+    private static final String FILE_SCHEME = "file";
 
     public static void executeGalleon(GalleonExecution execution, Path localRepository) throws ProvisioningException, UnresolvedMavenArtifactException {
         final String modulePathProperty = System.getProperty(MODULE_PATH_PROPERTY);
@@ -95,5 +106,24 @@ public class GalleonUtils {
                 PathsUtils.getProvisionedStateXml(dir)).getFeaturePacks();
 
         return featurePacks.stream().map(fp -> fp.getFPID().getProducer().getName()).collect(Collectors.toList());
+    }
+
+    public static ProvisioningConfig loadProvisioningConfig(InputStream is) throws ProvisioningException, XMLStreamException {
+        InputStreamReader reader = new InputStreamReader(is);
+        final ProvisioningConfig.Builder builder = ProvisioningConfig.builder();
+        XmlParsers.parse(reader, builder);
+        return builder.build();
+    }
+
+    public static ProvisioningConfig loadProvisioningConfig(URI uri) throws ProvisioningException, XMLStreamException {
+        if (CLASSPATH_SCHEME.equals(uri.getScheme())) {
+            InputStream is = GalleonUtils.class.getClassLoader().getResourceAsStream(uri.getSchemeSpecificPart());
+            return GalleonUtils.loadProvisioningConfig(is);
+        } else if (FILE_SCHEME.equals(uri.getScheme())) {
+            return ProvisioningXmlParser.parse(Path.of(uri.getPath()));
+        } else {
+            throw new IllegalArgumentException(String.format("Can't use scheme '%s' for Galleon provisioning.xml URI.",
+                    uri.getScheme()));
+        }
     }
 }

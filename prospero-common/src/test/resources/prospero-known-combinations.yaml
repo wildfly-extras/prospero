@@ -1,6 +1,6 @@
 ---
 - name: "no-channel"
-  location: "wildfly@maven(org.jboss.universe:community-universe):current"
+  galleonConfiguration: "galleon-provisioning.xml"
   channels:
     - schemaVersion: "2.0.0"
       repositories:
@@ -8,7 +8,7 @@
           url: "https://repo1.maven.org/maven2/"
       manifest: null
 - name: "multi-channel"
-  location: "wildfly@maven(org.jboss.universe:community-universe):current"
+  galleonConfiguration: "classpath:galleon-provisioning.xml"
   channels:
     - schemaVersion: "2.0.0"
       repositories:
@@ -23,9 +23,7 @@
       manifest:
         gav: "test:two"
 - name: "known-fpl"
-  location: "org.wildfly:wildfly-core-galleon-pack"
-  packages:
-  - "docs.examples.configs"
+  galleonConfiguration: "classpath:galleon-provisioning.xml"
   channels:
     - schemaVersion: "2.0.0"
       repositories:

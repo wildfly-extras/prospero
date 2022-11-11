@@ -131,12 +131,14 @@ public class InstallCommandTest extends AbstractMavenCommandTest {
     @Test
     public void callProvisionOnInstallKnownCommand() throws Exception {
         int exitCode = commandLine.execute(CliConstants.Commands.INSTALL, CliConstants.DIR, "test", CliConstants.FPL, KNOWN_FPL);
+        commandLine.getOut();
+        commandLine.getErr();
 
         assertEquals(ReturnCodes.SUCCESS, exitCode);
         Mockito.verify(provisionAction).provision(configCaptor.capture(), channelCaptor.capture());
         assertThat(configCaptor.getValue().getFeaturePackDeps())
                 .map(fp->fp.getLocation().getProducerName())
-                .containsExactly("org.wildfly.core:wildfly-core-galleon-pack::zip");
+                .containsExactly("org.wildfly.core:wildfly-core-galleon-pack");
     }
 
     @Test
@@ -154,7 +156,7 @@ public class InstallCommandTest extends AbstractMavenCommandTest {
         Mockito.verify(provisionAction).provision(configCaptor.capture(), channelCaptor.capture());
         assertThat(configCaptor.getValue().getFeaturePackDeps())
                 .map(fp->fp.getLocation().getProducerName())
-                .containsExactly("org.wildfly.core:wildfly-core-galleon-pack::zip");
+                .containsExactly("org.wildfly.core:wildfly-core-galleon-pack");
         assertThat(channelCaptor.getValue())
                 .flatMap(c->c.getRepositories())
                 .map(r->r.getId())

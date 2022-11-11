@@ -1,7 +1,6 @@
 ---
 - name: "wildfly"
-  location: "org.wildfly:wildfly-galleon-pack"
-  packages: []
+  galleonConfiguration: "classpath:wildfly-provisioning.xml"
   channels:
     - schemaVersion: "2.0.0"
       repositories:

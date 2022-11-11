@@ -18,6 +18,8 @@
 package org.wildfly.prospero.api;
 
 import org.assertj.core.groups.Tuple;
+import org.jboss.galleon.ProvisioningException;
+import org.jboss.galleon.config.ProvisioningConfig;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
@@ -25,6 +27,7 @@ import org.wildfly.channel.Channel;
 import org.wildfly.channel.ChannelManifestCoordinate;
 import org.wildfly.channel.Repository;
 import org.wildfly.prospero.api.exceptions.NoChannelException;
+import org.wildfly.prospero.galleon.GalleonUtils;
 import org.wildfly.prospero.model.ProsperoConfig;
 
 import java.net.URL;
@@ -33,8 +36,11 @@ import java.nio.file.Paths;
 import java.util.Arrays;
 import java.util.List;
 
+import javax.xml.stream.XMLStreamException;
+
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNull;
 import static org.junit.Assert.fail;
 
 public class ProvisioningDefinitionTest {
@@ -59,7 +65,7 @@ public class ProvisioningDefinitionTest {
                 .containsOnly(
                         CENTRAL_REPO
                 );
-        assertEquals("org.wildfly:wildfly-core-galleon-pack", definition.getFpl());
+        verifyFeaturePackLocation(definition);
     }
 
     @Test
@@ -76,7 +82,7 @@ public class ProvisioningDefinitionTest {
                 .containsOnly(
                         CENTRAL_REPO
                 );
-        assertEquals("org.wildfly:wildfly-core-galleon-pack", definition.getFpl());
+        verifyFeaturePackLocation(definition);
     }
 
     @Test
@@ -93,7 +99,7 @@ public class ProvisioningDefinitionTest {
                 .containsOnly(
                         CENTRAL_REPO
                 );
-        assertEquals("org.wildfly:wildfly-core-galleon-pack", definition.getFpl());
+        verifyFeaturePackLocation(definition);
     }
 
     @Test
@@ -120,7 +126,7 @@ public class ProvisioningDefinitionTest {
         try {
             builder.build();
             fail("Building FPL without channel should fail");
-        } catch (NoChannelException e) {
+        } catch (NoChannelException ignore) {
             // OK
         }
     }
@@ -178,5 +184,13 @@ public class ProvisioningDefinitionTest {
                 .containsExactlyInAnyOrder(
                         Tuple.tuple("test_repo" ,"http://custom.repo")
                 );
+    }
+
+    private void verifyFeaturePackLocation(ProvisioningDefinition definition) throws ProvisioningException, XMLStreamException {
+        assertNull(definition.getFpl());
+        ProvisioningConfig galleonConfig = GalleonUtils.loadProvisioningConfig(definition.getDefinition());
+        assertEquals(1, galleonConfig.getFeaturePackDeps().size());
+        assertEquals("wildfly-core@maven(org.jboss.universe:community-universe)#latest",
+                galleonConfig.getFeaturePackDeps().iterator().next().getLocation().toString());
     }
 }

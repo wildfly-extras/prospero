@@ -138,7 +138,7 @@ public class InstallCommand extends AbstractCommand {
                 .setManifest(channel.orElse(null))
                 .setProvisionConfig(provisionConfig.orElse(null))
                 .setRemoteRepositories(remoteRepositories.stream().map(URL::toString).collect(Collectors.toList()))
-                .setDefinitionFile(featurePackOrDefinition.definition.orElse(null))
+                .setDefinitionFile(featurePackOrDefinition.definition.map(Path::toUri).orElse(null))
                 .build();
 
         ProvisioningAction provisioningAction = actionFactory.install(directory.toAbsolutePath(), mavenSessionManager,
