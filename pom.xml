@@ -317,6 +317,11 @@
                     <artifactId>maven-jar-plugin</artifactId>
                     <version>${version.org.apache.maven.plugins.jar}</version>
                 </plugin>
+                <plugin>
+                    <groupId>org.jboss.galleon</groupId>
+                    <artifactId>galleon-maven-plugin</artifactId>
+                    <version>${version.org.jboss.galleon}</version>
+                </plugin>
             </plugins>
         </pluginManagement>
         <plugins>
