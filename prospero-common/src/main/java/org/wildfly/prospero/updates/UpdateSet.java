@@ -17,23 +17,16 @@
 
 package org.wildfly.prospero.updates;
 
-import org.jboss.galleon.layout.ProvisioningPlan;
 import org.wildfly.prospero.api.ArtifactChange;
 
 import java.util.List;
 
 public class UpdateSet {
 
-    private final ProvisioningPlan fpUpdates;
     private final List<ArtifactChange> artifactUpdates;
 
-    public UpdateSet(ProvisioningPlan fpUpdates, List<ArtifactChange> updates) {
-        this.fpUpdates = fpUpdates;
+    public UpdateSet(List<ArtifactChange> updates) {
         this.artifactUpdates = updates;
-    }
-
-    public ProvisioningPlan getFpUpdates() {
-        return fpUpdates;
     }
 
     public List<ArtifactChange> getArtifactUpdates() {
@@ -41,6 +34,6 @@ public class UpdateSet {
     }
 
     public boolean isEmpty() {
-        return fpUpdates.getUpdates().isEmpty() && artifactUpdates.isEmpty();
+        return artifactUpdates.isEmpty();
     }
 }

@@ -21,7 +21,6 @@ import org.eclipse.aether.artifact.Artifact;
 import org.eclipse.aether.artifact.DefaultArtifact;
 import org.jboss.galleon.ProvisioningException;
 import org.jboss.galleon.ProvisioningManager;
-import org.jboss.galleon.layout.ProvisioningPlan;
 import org.wildfly.channel.ChannelSession;
 import org.wildfly.channel.UnresolvedMavenArtifactException;
 import org.wildfly.prospero.Messages;
@@ -82,8 +81,7 @@ public class UpdateFinder implements AutoCloseable {
                 .flatMap(Optional::stream)
                 .collect(Collectors.toList());
 
-        final ProvisioningPlan fpUpdates = findFPUpdates();
-        return new UpdateSet(fpUpdates, updates);
+        return new UpdateSet(updates);
     }
 
     private Optional<ArtifactChange> findUpdates(Artifact artifact) throws ArtifactResolutionException {
@@ -106,10 +104,6 @@ public class UpdateFinder implements AutoCloseable {
         } else {
             return Optional.of(new ArtifactChange(artifact, latest));
         }
-    }
-
-    private ProvisioningPlan findFPUpdates() throws ProvisioningException {
-        return provisioningManager.getUpdates(true);
     }
 
     @Override

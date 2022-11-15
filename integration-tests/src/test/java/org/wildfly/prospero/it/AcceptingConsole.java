@@ -17,10 +17,8 @@
 
 package org.wildfly.prospero.it;
 
-import java.util.Collection;
 import java.util.List;
 
-import org.jboss.galleon.layout.FeaturePackUpdatePlan;
 import org.jboss.galleon.progresstracking.ProgressCallback;
 import org.wildfly.prospero.actions.Console;
 import org.wildfly.prospero.api.ArtifactChange;
@@ -38,7 +36,7 @@ public class AcceptingConsole implements Console {
     }
 
     @Override
-    public void updatesFound(Collection<FeaturePackUpdatePlan> updates, List<ArtifactChange> changes) {
+    public void updatesFound(List<ArtifactChange> changes) {
         // no op
     }
 
