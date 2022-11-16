@@ -60,7 +60,7 @@ public class UpdateWithAdditionalRepositoryTest extends WfCoreTestBase {
         final ProsperoConfig prosperoConfig = ProsperoConfig.readConfig(targetDir.toPath().resolve(MetadataTestUtils.PROVISION_CONFIG_FILE_PATH));
         // TODO: replace with GA channel
         final URL modifiedChannel = this.getClass().getClassLoader().getResource("channels/wfcore-19-upgrade-component.yaml");
-        prosperoConfig.addChannel(new ChannelRef(null, modifiedChannel.toString()));
+        prosperoConfig.addChannel(new ChannelRef(ChannelRef.Type.URL, null, modifiedChannel.toString(), null, null));
         prosperoConfig.writeConfig(targetDir.toPath().resolve(MetadataTestUtils.PROVISION_CONFIG_FILE_PATH).toFile());
         URL internalRepo = mockInternalRepo();
 

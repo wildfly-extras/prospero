@@ -136,7 +136,7 @@ public class UpdateTest extends WfCoreTestBase {
         final List<RepositoryRef> repositories = new ArrayList<>(defaultRemoteRepositories());
         final File configFile = temp.newFile(InstallationMetadata.PROSPERO_CONFIG_FILE_NAME);
         repositories.add(new RepositoryRef("test-repo", mockRepo.toURI().toURL().toString()));
-        new ProsperoConfig(Arrays.asList(new ChannelRef("test:channel", null)), repositories).writeConfig(configFile);
+        new ProsperoConfig(Arrays.asList(new ChannelRef(ChannelRef.Type.GAV, "test:channel", null, null, null)), repositories).writeConfig(configFile);
         return configFile;
     }
 

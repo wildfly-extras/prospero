@@ -72,14 +72,21 @@ public class InstallCommand extends AbstractCommand {
         Optional<String> channel;
 
         @CommandLine.Option(
+                names = CliConstants.RELATIVE_TO,
+                paramLabel = CliConstants.RELATIVE_TO_REFERENCE,
+                order = 5
+        )
+        Optional<String> relativeTo;
+
+        @CommandLine.Option(
                 names = CliConstants.REMOTE_REPOSITORIES,
                 paramLabel = CliConstants.REPO_URL,
                 split = ",",
-                order = 5
+                order = 6
         )
         List<URL> remoteRepositories = new ArrayList<>();
 
-        @CommandLine.ArgGroup(exclusive = true, order = 6, headingKey = "localRepoOptions.heading")
+        @CommandLine.ArgGroup(exclusive = true, order = 7, headingKey = "localRepoOptions.heading")
         LocalRepoOptions localRepoOptions;
 
         @CommandLine.Option(
@@ -125,8 +132,16 @@ public class InstallCommand extends AbstractCommand {
             throw CliMessages.MESSAGES.exclusiveOptions(CliConstants.PROVISION_CONFIG, CliConstants.CHANNEL);
         }
 
+        if (provisionConfig.isPresent() && relativeTo.isPresent()) {
+            throw CliMessages.MESSAGES.exclusiveOptions(CliConstants.PROVISION_CONFIG, CliConstants.RELATIVE_TO);
+        }
+
         if (provisionConfig.isPresent() && !remoteRepositories.isEmpty()) {
             throw CliMessages.MESSAGES.exclusiveOptions(CliConstants.PROVISION_CONFIG, CliConstants.REMOTE_REPOSITORIES);
+        }
+
+        if (!channel.isPresent() && relativeTo.isPresent()) {
+            throw CliMessages.MESSAGES.requiredOptions(CliConstants.CHANNEL, CliConstants.RELATIVE_TO);
         }
 
         final Optional<Path> localRepo = LocalRepoOptions.getLocalRepo(localRepoOptions);
@@ -135,7 +150,7 @@ public class InstallCommand extends AbstractCommand {
 
         final ProvisioningDefinition provisioningDefinition = ProvisioningDefinition.builder()
                 .setFpl(featurePackOrDefinition.fpl.orElse(null))
-                .setChannel(channel.orElse(null))
+                .setChannel(channel.orElse(null), relativeTo.orElse(null))
                 .setProvisionConfig(provisionConfig.orElse(null))
                 .setRemoteRepositories(remoteRepositories.stream().map(URL::toString).collect(Collectors.toList()))
                 .setDefinitionFile(featurePackOrDefinition.definition.orElse(null))

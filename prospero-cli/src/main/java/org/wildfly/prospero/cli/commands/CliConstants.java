@@ -54,6 +54,7 @@ public final class CliConstants {
     // Parameter and option labels:
 
     public static final String CHANNEL_REFERENCE = "<channel-reference>";
+    public static final String RELATIVE_TO_REFERENCE = "<relative-to-reference>";
     public static final String FEATURE_PACK_REFERENCE = "<feature-pack-reference>";
     public static final String PATH = "<path>";
     public static final String REPO_ID = "<repo-id>";
@@ -73,6 +74,7 @@ public final class CliConstants {
     public static final String NO_LOCAL_MAVEN_CACHE = "--no-resolve-local-cache";
     public static final String OFFLINE = "--offline";
     public static final String PROVISION_CONFIG = "--provision-config";
+    public static final String RELATIVE_TO = "--relative-to";
     public static final String REVISION = "--revision";
     public static final String SELF = "--self";
     public static final String V = "-v";

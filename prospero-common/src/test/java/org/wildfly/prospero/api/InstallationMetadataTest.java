@@ -61,7 +61,7 @@ public class InstallationMetadataTest {
     @Test
     public void testUpdateProsperoConfig() throws Exception {
         final ProsperoConfig config = installationMetadata.getProsperoConfig();
-        config.addChannel(new ChannelRef("new:channel", null));
+        config.addChannel(new ChannelRef(ChannelRef.Type.GAV, "new:channel", null, null, null));
         config.addRepository(new RepositoryRef("test", "file://foo.bar"));
 
         installationMetadata.updateProsperoConfig(config);
@@ -70,7 +70,7 @@ public class InstallationMetadataTest {
         final ProsperoConfig updatedConfig = installationMetadata.getProsperoConfig();
         assertEquals(2, updatedConfig.getChannels().size());
         assertEquals("new channel should be added in first place",
-                new ChannelRef("new:channel", null), updatedConfig.getChannels().get(0));
+                new ChannelRef(ChannelRef.Type.GAV, "new:channel", null, null, null), updatedConfig.getChannels().get(0));
         assertEquals(1, updatedConfig.getRepositories().size());
         assertEquals(new RepositoryRef("test", "file://foo.bar"), updatedConfig.getRepositories().get(0));
         verify(gitStorage).recordConfigChange();
@@ -79,14 +79,14 @@ public class InstallationMetadataTest {
     @Test
     public void dontOverrideProsperoConfigIfItExist() throws Exception {
         final ProsperoConfig config = installationMetadata.getProsperoConfig();
-        config.addChannel(new ChannelRef("new:channel", null));
+        config.addChannel(new ChannelRef(ChannelRef.Type.GAV, "new:channel", null, null, null));
 
         installationMetadata.recordProvision(false);
 
         final ProsperoConfig newConfig = ProsperoConfig.readConfig(base.resolve(InstallationMetadata.METADATA_DIR)
                 .resolve(InstallationMetadata.PROSPERO_CONFIG_FILE_NAME));
         assertThat(newConfig.getChannels()).doesNotContain(
-                new ChannelRef("new:channel", null)
+                new ChannelRef(ChannelRef.Type.GAV, "new:channel", null, null, null)
         );
     }
 
@@ -96,7 +96,7 @@ public class InstallationMetadataTest {
         base = temp.newFolder().toPath();
         installationMetadata = new InstallationMetadata(base,
                 new Channel(null, null, null, null, null),
-                Arrays.asList(new ChannelRef("new:channel", null)),
+                Arrays.asList(new ChannelRef(ChannelRef.Type.GAV, "new:channel", null, null, null)),
                 Arrays.asList(new RepositoryRef("test", "file://foo.bar").toRemoteRepository())
         );
 
@@ -105,7 +105,7 @@ public class InstallationMetadataTest {
         final ProsperoConfig newConfig = ProsperoConfig.readConfig(base.resolve(InstallationMetadata.METADATA_DIR)
                 .resolve(InstallationMetadata.PROSPERO_CONFIG_FILE_NAME));
         assertThat(newConfig.getChannels()).contains(
-                new ChannelRef("new:channel", null)
+                new ChannelRef(ChannelRef.Type.GAV, "new:channel", null, null, null)
         );
         assertThat(newConfig.getRepositories()).contains(
                 new RepositoryRef("test", "file://foo.bar")
@@ -120,7 +120,7 @@ public class InstallationMetadataTest {
         Files.writeString(metadataDir.resolve(InstallationMetadata.MANIFEST_FILE_NAME),
                 ChannelMapper.toYaml(new Channel(null, null, null, null, Collections.emptyList())),
                 StandardOpenOption.CREATE_NEW);
-        new ProsperoConfig(Arrays.asList(new ChannelRef("foo:bar", null)), Collections.emptyList()).writeConfig(
+        new ProsperoConfig(Arrays.asList(new ChannelRef(ChannelRef.Type.GAV, "foo:bar", null, null, null)), Collections.emptyList()).writeConfig(
                 metadataDir.resolve(InstallationMetadata.PROSPERO_CONFIG_FILE_NAME).toFile());
         return base;
     }

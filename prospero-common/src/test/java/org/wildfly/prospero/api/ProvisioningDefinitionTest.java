@@ -37,7 +37,7 @@ public class ProvisioningDefinitionTest {
     public void setChannelWithFileUrl() throws Exception {
         final ProvisioningDefinition.Builder builder = new ProvisioningDefinition.Builder().setFpl(EAP_FPL);
 
-        builder.setChannel("file:/tmp/foo.bar");
+        builder.setChannel("file:/tmp/foo.bar", null);
 
         assertEquals("file:/tmp/foo.bar", builder.build().getChannelRefs().get(0).getUrl());
     }
@@ -46,7 +46,7 @@ public class ProvisioningDefinitionTest {
     public void setChannelWithHttpUrl() throws Exception {
         final ProvisioningDefinition.Builder builder = new ProvisioningDefinition.Builder().setFpl(EAP_FPL);
 
-        builder.setChannel("http://localhost/foo.bar");
+        builder.setChannel("http://localhost/foo.bar", null);
 
         assertEquals("http://localhost/foo.bar", builder.build().getChannelRefs().get(0).getUrl());
     }
@@ -55,7 +55,7 @@ public class ProvisioningDefinitionTest {
     public void setChannelWithLocalFilePath() throws Exception {
         final ProvisioningDefinition.Builder builder = new ProvisioningDefinition.Builder().setFpl(EAP_FPL);
 
-        builder.setChannel("tmp/foo.bar");
+        builder.setChannel("tmp/foo.bar", null);
 
         assertEquals(Paths.get("tmp/foo.bar").toAbsolutePath().toUri().toURL().toString(), builder.build().getChannelRefs().get(0).getUrl());
     }

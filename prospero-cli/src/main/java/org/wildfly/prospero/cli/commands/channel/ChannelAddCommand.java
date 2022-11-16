@@ -35,6 +35,9 @@ public class ChannelAddCommand extends AbstractCommand {
     @CommandLine.Parameters(index = "0", paramLabel = "gav-or-url")
     String gavOrUrl;
 
+    @CommandLine.Option(names = CliConstants.RELATIVE_TO)
+    String relativeTo;
+
     @CommandLine.Option(names = CliConstants.DIR)
     Optional<Path> directory;
 
@@ -46,7 +49,7 @@ public class ChannelAddCommand extends AbstractCommand {
     public Integer call() throws Exception {
         Path installationDirectory = determineInstallationDirectory(directory);
         MetadataAction metadataAction = actionFactory.metadataActions(installationDirectory);
-        metadataAction.addChannel(gavOrUrl);
+        metadataAction.addChannel(gavOrUrl, relativeTo);
         console.println(CliMessages.MESSAGES.channelAdded(gavOrUrl));
         return ReturnCodes.SUCCESS;
     }

@@ -55,18 +55,28 @@ public class ProsperoConfig {
     }
 
     public void addChannel(ChannelRef channelRef) {
-        // Check that neither GAV nor URL of added channel is equal to GAVs or URLs of existing channels.
-        if (StringUtils.isNotBlank(channelRef.getGav())) {
-            Optional<ChannelRef> found = channels.stream().filter(c -> channelRef.getGav().equals(c.getGav())).findAny();
-            if (found.isPresent()) {
-                throw Messages.MESSAGES.channelExists(channelRef.getGav());
-            }
-        }
-        if (StringUtils.isNotBlank(channelRef.getUrl())) {
-            Optional<ChannelRef> found = channels.stream().filter(c -> channelRef.getUrl().equals(c.getUrl())).findAny();
-            if (found.isPresent()) {
-                throw Messages.MESSAGES.channelExists(channelRef.getUrl());
-            }
+        Optional<ChannelRef> found;
+        switch (channelRef.getType()) {
+            case GAV:
+                found = channels.stream().filter(c -> channelRef.getGav().equals(c.getGav())).findAny();
+                if (found.isPresent()) {
+                    throw Messages.MESSAGES.channelExists(channelRef.getGav());
+                }
+                break;
+            case URL:
+                found = channels.stream().filter(c -> channelRef.getUrl().equals(c.getUrl())).findAny();
+                if (found.isPresent()) {
+                    throw Messages.MESSAGES.channelExists(channelRef.getUrl());
+                }
+                break;
+            case PATH:
+                found = channels.stream().filter(c -> channelRef.getPath().equals(c.getPath()) && channelRef.getRelativeTo().equals(c.getRelativeTo())).findAny();
+                if (found.isPresent()) {
+                    throw Messages.MESSAGES.channelExists(channelRef.getPath());
+                }
+                break;
+            default:
+                // do nothing
         }
         channels.add(0, channelRef);
     }
@@ -78,6 +88,9 @@ public class ProsperoConfig {
         }
         if (found.isEmpty() && StringUtils.isNotBlank(channelRef.getUrl())) {
             found = channels.stream().filter(c -> channelRef.getUrl().equals(c.getUrl())).findFirst();
+        }
+        if (found.isEmpty() && StringUtils.isNotBlank(channelRef.getPath()) && StringUtils.isNotBlank(channelRef.getRelativeTo())) {
+            found = channels.stream().filter(c -> channelRef.getPath().equals(c.getPath()) && channelRef.getRelativeTo().equals(c.getRelativeTo())).findFirst();
         }
         if (found.isEmpty()) {
             throw Messages.MESSAGES.channelNotPresent(channelRef.getGavOrUrlString());

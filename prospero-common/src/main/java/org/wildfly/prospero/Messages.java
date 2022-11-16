@@ -88,4 +88,25 @@ public interface Messages {
 
     @Message("Unable to close the update store.")
     MetadataException unableToCloseStore(@Cause Exception e);
+
+    @Message("(%s) is not a valid GAV value.")
+    IllegalArgumentException invalidGAV(String gav);
+
+    @Message("(%s) is not a valid URL value.")
+    IllegalArgumentException invalidURL(String url);
+
+    @Message("File in path (%s) does not exist.")
+    IllegalArgumentException pathNotExist(Path path);
+
+    @Message("Channel type (%s) is not a valid type.")
+    IllegalArgumentException invalidChannelType(String type);
+
+    @Message("Relative-to path (%s) can not be found.")
+    IllegalArgumentException invalidRelativeTo(String relativeTo);
+
+    @Message("Path (%s) is not an absolute path.")
+    IllegalArgumentException invalidAbsolutePath(String path);
+
+    @Message("An absolute path (%s) cannot be specified for relative-to.")
+    IllegalArgumentException invalidNonAbsolutePath(String path);
 }

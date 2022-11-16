@@ -87,10 +87,10 @@ public class MetadataAction {
     /**
      * Adds a channel to an installation.
      */
-    public void addChannel(String gavOrUrl) throws MetadataException {
+    public void addChannel(String gavOrUrl, String relativeTo) throws MetadataException {
         try (final InstallationMetadata installationMetadata = new InstallationMetadata(installation)) {
             ProsperoConfig prosperoConfig = installationMetadata.getProsperoConfig();
-            ChannelRef channelRef = ChannelRef.fromString(gavOrUrl);
+            ChannelRef channelRef = relativeTo == null ? ChannelRef.fromString(gavOrUrl) :  ChannelRef.fromString(gavOrUrl, relativeTo);
             prosperoConfig.addChannel(channelRef);
             installationMetadata.updateProsperoConfig(prosperoConfig);
         }
@@ -99,10 +99,10 @@ public class MetadataAction {
     /**
      * Removes a remote maven repository from an installation.
      */
-    public void removeChannel(String gavOrUrl) throws MetadataException {
+    public void removeChannel(String gavOrUrl, String relativeTo) throws MetadataException {
         try (final InstallationMetadata installationMetadata = new InstallationMetadata(installation)) {
             ProsperoConfig prosperoConfig = installationMetadata.getProsperoConfig();
-            ChannelRef channelRef = ChannelRef.fromString(gavOrUrl);
+            ChannelRef channelRef = relativeTo == null ? ChannelRef.fromString(gavOrUrl) : ChannelRef.fromString(gavOrUrl, relativeTo);
             prosperoConfig.removeChannel(channelRef);
             installationMetadata.updateProsperoConfig(prosperoConfig);
         }

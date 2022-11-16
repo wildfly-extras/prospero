@@ -110,7 +110,7 @@ public final class MetadataTestUtils {
         List<RepositoryRef> repositories = defaultRemoteRepositories().stream()
                 .map(r->new RepositoryRef(r.getId(), r.getUrl())).collect(Collectors.toList());
         for (int i = 0; i< channelUrls.size(); i++) {
-            channels.add(new ChannelRef(null, channelUrls.get(i).toString()));
+            channels.add(new ChannelRef(ChannelRef.Type.URL, null, channelUrls.get(i).toString(), null, null));
         }
         new ProsperoConfig(channels, repositories).writeConfig(provisionConfigFile.toFile());
     }

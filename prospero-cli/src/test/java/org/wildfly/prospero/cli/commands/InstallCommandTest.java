@@ -111,7 +111,7 @@ public class InstallCommandTest extends AbstractMavenCommandTest {
 
     @Test
     public void callProvisionOnInstallCommandWithCustomFpl() throws Exception {
-        List<ChannelRef> channels = Collections.singletonList(new ChannelRef("g:a:v", null));
+        List<ChannelRef> channels = Collections.singletonList(new ChannelRef(ChannelRef.Type.GAV, "g:a:v", null, null, null));
         List<RepositoryRef> repositories = new ArrayList<>();
         final File provisionConfigFile = temporaryFolder.newFile();
         new ProsperoConfig(channels, repositories).writeConfig(provisionConfigFile);
@@ -135,7 +135,7 @@ public class InstallCommandTest extends AbstractMavenCommandTest {
 
     @Test
     public void callProvisionOnInstallKnownFplOverrideChannelsCommand() throws Exception {
-        List<ChannelRef> channels = Arrays.asList(new ChannelRef("org.wildfly:wildfly-channel", null));
+        List<ChannelRef> channels = Arrays.asList(new ChannelRef(ChannelRef.Type.GAV, "org.wildfly:wildfly-channel", null, null, null));
         List<RepositoryRef> repositories = Arrays.asList(new RepositoryRef("dev", "http://test.test"));
         final File provisionConfigFile = temporaryFolder.newFile();
         new ProsperoConfig(channels, repositories).writeConfig(provisionConfigFile);
@@ -151,7 +151,7 @@ public class InstallCommandTest extends AbstractMavenCommandTest {
 
     @Test
     public void usingProvisionDefinitonRequiresChannel() throws Exception {
-        List<ChannelRef> channels = Arrays.asList(new ChannelRef("org.wildfly:wildfly-channel", null));
+        List<ChannelRef> channels = Arrays.asList(new ChannelRef(ChannelRef.Type.GAV, "org.wildfly:wildfly-channel", null, null, null));
         List<RepositoryRef> repositories = Arrays.asList(new RepositoryRef("dev", "http://test.test"));
         final File provisionDefinitionFile = temporaryFolder.newFile("provision.xml");
         final File provisionConfigFile = temporaryFolder.newFile();

@@ -35,6 +35,8 @@ public class ChannelRemoveCommand extends AbstractCommand {
     @CommandLine.Parameters(index = "0", paramLabel = "gav-or-url")
     String gavOrUrl;
 
+    @CommandLine.Option(names = CliConstants.RELATIVE_TO)
+    String relativeTo;
     @CommandLine.Option(names = CliConstants.DIR)
     Optional<Path> directory;
 
@@ -46,7 +48,7 @@ public class ChannelRemoveCommand extends AbstractCommand {
     public Integer call() throws Exception {
         Path installationDirectory = determineInstallationDirectory(directory);
         MetadataAction metadataAction = actionFactory.metadataActions(installationDirectory);
-        metadataAction.removeChannel(gavOrUrl);
+        metadataAction.removeChannel(gavOrUrl, relativeTo);
         console.println(CliMessages.MESSAGES.channelRemoved(gavOrUrl));
         return ReturnCodes.SUCCESS;
     }

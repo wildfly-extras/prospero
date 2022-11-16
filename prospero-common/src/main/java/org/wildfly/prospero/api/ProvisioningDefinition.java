@@ -99,7 +99,7 @@ public class ProvisioningDefinition {
                                Optional<ChannelRef> channel, List<String> channelGAs) throws IOException {
         if (!provisionConfigFile.isPresent() && !channel.isPresent()) {
             if (channelGAs != null) {
-                channelGAs.forEach(c -> this.channels.add(new ChannelRef(c, null)));
+                channelGAs.forEach(c -> this.channels.add(new ChannelRef(ChannelRef.Type.GAV, c, null, null, null)));
             }
             if (!overrideRemoteRepos.isEmpty()) {
                 this.repositories.clear();
@@ -182,9 +182,9 @@ public class ProvisioningDefinition {
             return this;
         }
 
-        public Builder setChannel(String channel) {
-            if (channel != null) {
-                this.channel = ChannelRef.fromString(channel);
+        public Builder setChannel(String channel, String relativeTo) {
+            if(channel != null) {
+                this.channel = relativeTo == null ? ChannelRef.fromString(channel) : ChannelRef.fromString(channel, relativeTo);
             }
             return this;
         }

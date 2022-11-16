@@ -54,9 +54,9 @@ public class ChannelCommandTest extends AbstractConsoleTest {
         super.setUp();
 
         this.dir = tempDir.newFolder().toPath();
-        ChannelRef gaChannel = new ChannelRef(GA, null);
-        ChannelRef gavChannel = new ChannelRef(GAV, null);
-        ChannelRef urlChannel = new ChannelRef(null, URL);
+        ChannelRef gaChannel = new ChannelRef(ChannelRef.Type.GAV, GA, null, null, null);
+        ChannelRef gavChannel = new ChannelRef(ChannelRef.Type.GAV, GAV, null, null, null);
+        ChannelRef urlChannel = new ChannelRef(ChannelRef.Type.URL, null, URL, null, null);
         MetadataTestUtils.createInstallationMetadata(dir,
                 Arrays.asList(gaChannel, gavChannel, urlChannel), Collections.emptyList());
         MetadataTestUtils.createGalleonProvisionedState(dir);

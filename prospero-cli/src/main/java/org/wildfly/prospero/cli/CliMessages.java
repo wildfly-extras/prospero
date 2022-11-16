@@ -138,6 +138,9 @@ public interface CliMessages {
     @Message("Only one of %s and %s can be set.")
     IllegalArgumentException exclusiveOptions(String option1, String option2);
 
+    @Message("Option %s must present before %s can be set.")
+    IllegalArgumentException requiredOptions(String option1, String option2);
+
     @Message("Custom repository `%s` already exist.")
     String customizationRepoExist(String repositoryId);
 

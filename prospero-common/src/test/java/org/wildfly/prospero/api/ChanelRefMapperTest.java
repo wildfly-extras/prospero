@@ -57,7 +57,7 @@ public class ChanelRefMapperTest {
 
     @Test
     public void resolveChannelFileThrowsExceptionIfNoVersionsFound() throws Exception {
-        final List<ChannelRef> channels = Arrays.asList(new ChannelRef("org.test:test:1.0", null));
+        final List<ChannelRef> channels = Arrays.asList(new ChannelRef(ChannelRef.Type.GAV, "org.test:test:1.0", null, null, null));
         try {
             resolveChannel(new RemoteRepository.Builder("test", "default", this.getClass().getResource("/").toString())
                     .build(), channels);
@@ -73,7 +73,7 @@ public class ChanelRefMapperTest {
         deployChannel("test100", "1.0.0", system, session, testRepo);
         deployChannel("test101", "1.0.1", system, session, testRepo);
 
-        final List<ChannelRef> channels = Arrays.asList(new ChannelRef("test:channel-one", null));
+        final List<ChannelRef> channels = Arrays.asList(new ChannelRef(ChannelRef.Type.GAV, "test:channel-one", null, null, null));
         final List<Channel> resolved = resolveChannel(testRepo, channels);
         assertEquals(1, resolved.size());
         assertEquals("test101", resolved.get(0).getName());
@@ -86,7 +86,7 @@ public class ChanelRefMapperTest {
         deployChannel("test100", "1.0.0", system, session, testRepo);
         deployChannel("test101", "1.0.1", system, session, testRepo);
 
-        final List<ChannelRef> channels = Arrays.asList(new ChannelRef("test:channel-one:1.0.0", null));
+        final List<ChannelRef> channels = Arrays.asList(new ChannelRef(ChannelRef.Type.GAV, "test:channel-one:1.0.0", null, null, null));
         final List<Channel> resolved = resolveChannel(testRepo, channels);
         assertEquals(1, resolved.size());
         assertEquals("test101", resolved.get(0).getName());
@@ -100,7 +100,7 @@ public class ChanelRefMapperTest {
         deployChannel("test-2", "1.0.0.Beta1-redhat-20220915", system, session, testRepo);
         deployChannel("test-3", "1.0.0.Beta1-redhat-20220926", system, session, testRepo);
 
-        final List<ChannelRef> channels = Arrays.asList(new ChannelRef("test:channel-one", null));
+        final List<ChannelRef> channels = Arrays.asList(new ChannelRef(ChannelRef.Type.GAV, "test:channel-one", null, null, null));
         final List<Channel> resolved = resolveChannel(testRepo, channels);
         assertEquals(1, resolved.size());
         assertEquals("test-3", resolved.get(0).getName());

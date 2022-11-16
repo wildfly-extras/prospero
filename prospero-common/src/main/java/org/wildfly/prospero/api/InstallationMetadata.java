@@ -65,6 +65,7 @@ public class InstallationMetadata implements AutoCloseable {
 
     private InstallationMetadata(Path manifestFile, Path prosperoConfigFile, Path provisioningFile) throws MetadataException {
         this.base = manifestFile.getParent();
+        System.setProperty("installation.home", base.toString());
         this.gitStorage = null;
         this.manifestFile = manifestFile;
         this.prosperoConfigFile = prosperoConfigFile;
@@ -79,6 +80,7 @@ public class InstallationMetadata implements AutoCloseable {
 
     protected InstallationMetadata(Path base, GitStorage gitStorage) throws MetadataException {
         this.base = base;
+        System.setProperty("installation.home", base.toString());
         this.gitStorage = gitStorage;
         this.manifestFile = base.resolve(METADATA_DIR).resolve(InstallationMetadata.MANIFEST_FILE_NAME);
         this.prosperoConfigFile = base.resolve(METADATA_DIR).resolve(InstallationMetadata.PROSPERO_CONFIG_FILE_NAME);
@@ -289,6 +291,7 @@ public class InstallationMetadata implements AutoCloseable {
                 gitStorage.close();
             } catch (Exception e) {
                 // log and ignore
+                // FIXME result of 'unableToCloseStore' not thrown. change unableToCloseStore to string and log based on above comment ?
                 Messages.MESSAGES.unableToCloseStore(e);
             }
         }

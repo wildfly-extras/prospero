@@ -103,7 +103,7 @@ public class ChannelInitializeCommand extends AbstractCommand {
 
         // add new channel
         console.println(CliMessages.MESSAGES.registeringCustomChannel(name.get()));
-        metadataAction.addChannel(name.get());
+        metadataAction.addChannel(name.get(), null);
 
         // add new repository
         console.println(CliMessages.MESSAGES.registeringCustomRepository(url.toString()));
