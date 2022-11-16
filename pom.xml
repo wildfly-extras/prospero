@@ -55,6 +55,7 @@
     <modules>
         <module>prospero-common</module>
         <module>prospero-cli</module>
+        <module>prospero-metadata</module>
         <module>prospero-launcher</module>
         <module>prospero-bootstrap</module>
         <module>integration-tests</module>
@@ -75,6 +76,11 @@
             <dependency>
                 <groupId>org.wildfly.prospero</groupId>
                 <artifactId>prospero-bootstrap</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.wildfly.prospero</groupId>
+                <artifactId>prospero-metadata</artifactId>
                 <version>${project.version}</version>
             </dependency>
             <dependency>
