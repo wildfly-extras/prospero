@@ -19,10 +19,8 @@ package org.wildfly.prospero.actions;
 
 import java.io.InputStream;
 import java.io.PrintStream;
-import java.util.Collection;
 import java.util.List;
 
-import org.jboss.galleon.layout.FeaturePackUpdatePlan;
 import org.jboss.galleon.progresstracking.ProgressCallback;
 import org.wildfly.prospero.api.ArtifactChange;
 
@@ -37,7 +35,7 @@ public interface Console {
 
 
     // update
-    void updatesFound(Collection<FeaturePackUpdatePlan> updates, List<ArtifactChange> changes);
+    void updatesFound(List<ArtifactChange> changes);
 
     boolean confirmUpdates();
 

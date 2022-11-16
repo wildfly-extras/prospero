@@ -18,7 +18,6 @@
 package org.wildfly.prospero.actions;
 
 import org.eclipse.aether.artifact.DefaultArtifact;
-import org.jboss.galleon.layout.FeaturePackUpdatePlan;
 import org.jboss.galleon.progresstracking.ProgressCallback;
 import org.junit.Rule;
 import org.junit.Test;
@@ -31,7 +30,6 @@ import java.net.URL;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 
@@ -82,7 +80,7 @@ public class PromoteArtifactBundleActionTest {
         }
 
         @Override
-        public void updatesFound(Collection<FeaturePackUpdatePlan> updates, List<ArtifactChange> changes) {
+        public void updatesFound(List<ArtifactChange> changes) {
 
         }
 

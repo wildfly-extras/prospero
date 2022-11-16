@@ -21,7 +21,6 @@ import java.nio.file.Path;
 import java.util.List;
 
 import org.eclipse.aether.artifact.DefaultArtifact;
-import org.jboss.galleon.layout.ProvisioningPlan;
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
@@ -104,7 +103,7 @@ public class UpdateCommandTest extends AbstractMavenCommandTest {
 
     @Test
     public void callUpdate() throws Exception {
-        when(updateAction.findUpdates()).thenReturn(new UpdateSet(new ProvisioningPlan(), List.of(change("1.0.0", "1.0.1"))));
+        when(updateAction.findUpdates()).thenReturn(new UpdateSet(List.of(change("1.0.0", "1.0.1"))));
         int exitCode = commandLine.execute(CliConstants.Commands.UPDATE, CliConstants.DIR, installationDir.toString());
 
         assertEquals(ReturnCodes.SUCCESS, exitCode);
@@ -122,7 +121,7 @@ public class UpdateCommandTest extends AbstractMavenCommandTest {
     @Test
     public void selfUpdatePassesModulePathAsDir() throws Exception {
         System.setProperty(UpdateCommand.JBOSS_MODULE_PATH, installationDir.resolve(MODULES_DIR).toString());
-        when(updateAction.findUpdates()).thenReturn(new UpdateSet(new ProvisioningPlan(), List.of(change("1.0.0", "1.0.1"))));
+        when(updateAction.findUpdates()).thenReturn(new UpdateSet(List.of(change("1.0.0", "1.0.1"))));
 
         int exitCode = commandLine.execute(CliConstants.Commands.UPDATE, CliConstants.SELF);
 
@@ -134,7 +133,7 @@ public class UpdateCommandTest extends AbstractMavenCommandTest {
     @Test
     public void dirParameterOverridesModulePathInSelfUpdate() throws Exception {
         System.setProperty(UpdateCommand.JBOSS_MODULE_PATH, installationDir.toString());
-        when(updateAction.findUpdates()).thenReturn(new UpdateSet(new ProvisioningPlan(), List.of(change("1.0.0", "1.0.1"))));
+        when(updateAction.findUpdates()).thenReturn(new UpdateSet(List.of(change("1.0.0", "1.0.1"))));
 
         int exitCode = commandLine.execute(CliConstants.Commands.UPDATE, CliConstants.SELF,
                 CliConstants.DIR, installationDir.toAbsolutePath().toString());
@@ -169,7 +168,7 @@ public class UpdateCommandTest extends AbstractMavenCommandTest {
     @Test
     public void testAskForConfirmation() throws Exception {
         System.setProperty(UpdateCommand.JBOSS_MODULE_PATH, installationDir.toString());
-        when(updateAction.findUpdates()).thenReturn(new UpdateSet(new ProvisioningPlan(), List.of(change("1.0.0", "1.0.1"))));
+        when(updateAction.findUpdates()).thenReturn(new UpdateSet(List.of(change("1.0.0", "1.0.1"))));
         this.setDenyConfirm(true);
 
         int exitCode = commandLine.execute(CliConstants.Commands.UPDATE, CliConstants.SELF,
@@ -184,7 +183,7 @@ public class UpdateCommandTest extends AbstractMavenCommandTest {
     @Test
     public void testConfirmedConfirmation() throws Exception {
         System.setProperty(UpdateCommand.JBOSS_MODULE_PATH, installationDir.toString());
-        when(updateAction.findUpdates()).thenReturn(new UpdateSet(new ProvisioningPlan(), List.of(change("1.0.0", "1.0.1"))));
+        when(updateAction.findUpdates()).thenReturn(new UpdateSet(List.of(change("1.0.0", "1.0.1"))));
 
         int exitCode = commandLine.execute(CliConstants.Commands.UPDATE, CliConstants.SELF,
                 CliConstants.DIR, installationDir.toAbsolutePath().toString());
@@ -202,7 +201,7 @@ public class UpdateCommandTest extends AbstractMavenCommandTest {
 
     @Override
     protected void doLocalMock() throws Exception {
-        when(updateAction.findUpdates()).thenReturn(new UpdateSet(new ProvisioningPlan(), List.of(change("1.0.0", "1.0.1"))));
+        when(updateAction.findUpdates()).thenReturn(new UpdateSet(List.of(change("1.0.0", "1.0.1"))));
     }
 
     @Override

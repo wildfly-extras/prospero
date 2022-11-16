@@ -110,7 +110,7 @@ public class UpdateCommand extends AbstractCommand {
             } else {
                 final UpdateSet updateSet = updateAction.findUpdates();
 
-                console.updatesFound(updateSet.getFpUpdates().getUpdates(), updateSet.getArtifactUpdates());
+                console.updatesFound(updateSet.getArtifactUpdates());
             }
         }
 
@@ -123,7 +123,7 @@ public class UpdateCommand extends AbstractCommand {
     private void performUpdate(UpdateAction updateAction) throws ArtifactResolutionException, ProvisioningException, MetadataException {
         final UpdateSet updateSet = updateAction.findUpdates();
 
-        console.updatesFound(updateSet.getFpUpdates().getUpdates(), updateSet.getArtifactUpdates());
+        console.updatesFound(updateSet.getArtifactUpdates());
         if (updateSet.isEmpty()) {
             return;
         }

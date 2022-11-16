@@ -17,15 +17,12 @@
 
 package org.wildfly.prospero.cli;
 
-import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
 import java.util.Scanner;
 
-import org.jboss.galleon.layout.FeaturePackUpdatePlan;
 import org.jboss.galleon.progresstracking.ProgressCallback;
 import org.jboss.galleon.progresstracking.ProgressTracker;
-import org.jboss.galleon.universe.FeaturePackLocation;
 import org.wildfly.prospero.actions.Console;
 import org.wildfly.prospero.api.ArtifactChange;
 
@@ -124,16 +121,11 @@ public class CliConsole implements Console {
     }
 
     @Override
-    public void updatesFound(Collection<FeaturePackUpdatePlan> fpUpdates, List<ArtifactChange> artifactUpdates) {
-        if (fpUpdates.isEmpty() && artifactUpdates.isEmpty()) {
+    public void updatesFound(List<ArtifactChange> artifactUpdates) {
+        if (artifactUpdates.isEmpty()) {
             getStdOut().println(CliMessages.MESSAGES.noUpdatesFound());
         } else {
             getStdOut().println(CliMessages.MESSAGES.updatesFound());
-            for (FeaturePackUpdatePlan fpUpdate : fpUpdates) {
-                final FeaturePackLocation oldFp = fpUpdate.getInstalledLocation();
-                final FeaturePackLocation newFp = fpUpdate.getNewLocation();
-                getStdOut().printf("  %-50s    %-20s ==>  %-20s%n", newFp.getProducerName(), oldFp.getBuild(), newFp.getBuild());
-            }
             for (ArtifactChange artifactUpdate : artifactUpdates) {
                 final Optional<String> newVersion = artifactUpdate.getNewVersion();
                 final Optional<String> oldVersion = artifactUpdate.getOldVersion();
