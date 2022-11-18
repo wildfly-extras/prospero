@@ -27,6 +27,7 @@ import org.jboss.galleon.universe.maven.repo.MavenRepoManager;
 import org.wildfly.channel.ChannelSession;
 import org.wildfly.channel.Stream;
 import org.wildfly.channel.UnresolvedMavenArtifactException;
+import org.wildfly.prospero.Messages;
 
 import java.nio.file.Path;
 import java.util.ArrayList;
@@ -66,7 +67,7 @@ public class ChannelMavenArtifactRepositoryManager implements MavenRepoManager, 
                     result = channelSession.resolveMavenArtifact(artifact.getGroupId(), artifact.getArtifactId(), artifact.getExtension(),
                             artifact.getClassifier(), null);
                 } else {
-                    throw new MavenUniverseException("Unable to resolve " + artifact);
+                    throw Messages.MESSAGES.unableToResolve(artifact.getCoordsAsString());
                 }
             }
 
@@ -100,7 +101,7 @@ public class ChannelMavenArtifactRepositoryManager implements MavenRepoManager, 
 
                         MavenArtifactMapper.resolve(artifact, result);
                     } else {
-                        throw new MavenUniverseException("Unable to resolve " + artifact);
+                        throw Messages.MESSAGES.unableToResolve(artifact.getCoordsAsString());
                     }
                 }
             }
@@ -121,7 +122,7 @@ public class ChannelMavenArtifactRepositoryManager implements MavenRepoManager, 
                         found.get().getVersion()
                 ));
             } else {
-                throw new MavenUniverseException("Unable to resolve " + coord);
+                throw Messages.MESSAGES.unableToResolve(coord.getGroupId()+ ":" + coord.getGroupId()+":"+coord.getExtension());
             }
         }
 

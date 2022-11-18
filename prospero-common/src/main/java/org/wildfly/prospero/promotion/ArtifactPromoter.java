@@ -39,6 +39,7 @@ import org.wildfly.channel.Stream;
 import org.wildfly.channel.maven.ChannelCoordinate;
 import org.wildfly.channel.maven.VersionResolverFactory;
 import org.wildfly.channel.spi.MavenVersionsResolver;
+import org.wildfly.prospero.Messages;
 
 import java.io.File;
 import java.io.IOException;
@@ -66,7 +67,7 @@ public class ArtifactPromoter {
         this.targetRepository = targetRepository;
 
         if (!targetRepository.getProtocol().equals("file")) {
-            throw new IllegalArgumentException("Promoting to non-file repositories is not currently supported");
+            throw Messages.MESSAGES.unsupportedPromotionTarget();
         }
     }
 
@@ -179,7 +180,7 @@ public class ArtifactPromoter {
     private String incrementVersion(String baseVersion) {
         final Pattern versionSuffixFormat = Pattern.compile(".*-rev\\d{8}");
         if (!versionSuffixFormat.matcher(baseVersion).matches()) {
-            throw new IllegalArgumentException("Wrong format of custom channel version " + baseVersion);
+            throw Messages.MESSAGES.wrongVersionFormat(baseVersion);
         }
 
         final String suffix = "-rev";
@@ -190,7 +191,7 @@ public class ArtifactPromoter {
         int currentVersion = Integer.parseInt(suffixVersion);
 
         if (currentVersion == 99_999_999) {
-            throw new IllegalArgumentException("Custom channel version exceeded limit " + baseVersion);
+            throw Messages.MESSAGES.versionLimitExceeded(baseVersion);
         }
 
         return String.format("%s%08d", coreVersion, (currentVersion + 1));

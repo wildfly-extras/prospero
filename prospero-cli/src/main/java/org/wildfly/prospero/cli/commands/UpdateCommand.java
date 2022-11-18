@@ -144,20 +144,20 @@ public class UpdateCommand extends AbstractCommand {
         try {
             final List<String> fpNames = GalleonUtils.getInstalledPacks(dir.toAbsolutePath());
             if (fpNames.size() != 1) {
-                throw new ArgumentParsingException(CliMessages.MESSAGES.unexpectedPackageInSelfUpdate(dir.toString()));
+                throw CliMessages.MESSAGES.unexpectedPackageInSelfUpdate(dir.toString());
             }
             if (!fpNames.stream().allMatch(PROSPERO_FP_ZIP::equals)) {
-                throw new ArgumentParsingException(CliMessages.MESSAGES.unexpectedPackageInSelfUpdate(dir.toString()));
+                throw CliMessages.MESSAGES.unexpectedPackageInSelfUpdate(dir.toString());
             }
         } catch (ProvisioningException e) {
-            throw new ArgumentParsingException(CliMessages.MESSAGES.unableToParseSelfUpdateData(), e);
+            throw CliMessages.MESSAGES.unableToParseSelfUpdateData(e);
         }
     }
 
     private static Path detectProsperoInstallationPath() throws ArgumentParsingException {
         final String modulePath = System.getProperty(JBOSS_MODULE_PATH);
         if (modulePath == null) {
-            throw new ArgumentParsingException(CliMessages.MESSAGES.unableToLocateProsperoInstallation());
+            throw CliMessages.MESSAGES.unableToLocateProsperoInstallation();
         }
         return Paths.get(modulePath).toAbsolutePath().getParent();
     }

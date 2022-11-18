@@ -26,7 +26,7 @@ import java.util.Optional;
 import org.apache.commons.io.FileUtils;
 import org.eclipse.aether.repository.LocalRepository;
 import org.jboss.logging.Logger;
-import org.wildfly.prospero.api.exceptions.ProvisioningRuntimeException;
+import org.wildfly.prospero.Messages;
 import org.apache.maven.repository.internal.MavenRepositorySystemUtils;
 import org.eclipse.aether.AbstractRepositoryListener;
 import org.eclipse.aether.DefaultRepositorySystemSession;
@@ -61,7 +61,7 @@ public class MavenSessionManager {
                 this.provisioningRepo = Files.createTempDirectory("provisioning-repo");
                 Runtime.getRuntime().addShutdownHook(new Thread(() -> FileUtils.deleteQuietly(this.provisioningRepo.toFile())));
             } catch (IOException e) {
-                throw new ProvisioningException("Unable to create provisioning repository folder.", e);
+                throw Messages.MESSAGES.unableToCreateCache(e);
             }
         }
 
@@ -88,7 +88,7 @@ public class MavenSessionManager {
         locator.setErrorHandler(new DefaultServiceLocator.ErrorHandler() {
             @Override
             public void serviceCreationFailed(Class<?> type, Class<?> impl, Throwable exception) {
-                throw new ProvisioningRuntimeException("Failed to initiate maven repository system");
+                throw Messages.MESSAGES.failedToInitMaven(exception);
             }
         });
         return locator.getService(RepositorySystem.class);

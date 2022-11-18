@@ -20,6 +20,8 @@ package org.wildfly.prospero.model;
 import org.eclipse.aether.repository.RemoteRepository;
 import org.wildfly.channel.Channel;
 import org.wildfly.channel.ChannelMapper;
+import org.wildfly.prospero.Messages;
+import org.wildfly.prospero.api.exceptions.MetadataException;
 
 import java.io.IOException;
 import java.nio.file.Files;
@@ -44,8 +46,14 @@ public class ProsperoConfig {
         Files.writeString(configFile, ChannelMapper.toYaml(channels));
     }
 
-    public static ProsperoConfig readConfig(Path path) throws IOException {
-        final String yamlContent = Files.readString(path);
+    public static ProsperoConfig readConfig(Path path) throws MetadataException {
+        final String yamlContent;
+        try {
+            yamlContent = Files.readString(path);
+        } catch (IOException e) {
+            throw Messages.MESSAGES.unableToReadFile(path, e);
+        }
+
         if (yamlContent.isEmpty()) {
             return new ProsperoConfig(Collections.emptyList());
         } else {

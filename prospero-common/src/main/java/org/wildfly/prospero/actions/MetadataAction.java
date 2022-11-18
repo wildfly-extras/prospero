@@ -23,6 +23,7 @@ import java.util.List;
 import java.util.Optional;
 
 import org.wildfly.channel.Channel;
+import org.wildfly.prospero.Messages;
 import org.wildfly.prospero.api.InstallationMetadata;
 import org.wildfly.prospero.api.exceptions.MetadataException;
 import org.wildfly.prospero.model.ProsperoConfig;
@@ -46,7 +47,7 @@ public class MetadataAction implements AutoCloseable {
         final List<Channel> channels = prosperoConfig.getChannels();
 
         if (channels.stream().filter(c->c.getName().equals(channel.getName())).findAny().isPresent()) {
-            throw new MetadataException(String.format("Channel %s already exists", channel.getName()));
+            throw Messages.MESSAGES.channelExists(channel.getName());
         }
 
         channels.add(channel);
@@ -58,7 +59,7 @@ public class MetadataAction implements AutoCloseable {
         final List<Channel> channels = prosperoConfig.getChannels();
         final Optional<Channel> removedChannel = channels.stream().filter(c -> c.getName().equals(channelName)).findAny();
         if (removedChannel.isEmpty()) {
-            throw new MetadataException("No channel can be found with name [" + channelName + "]");
+            throw Messages.MESSAGES.channelNotFound(channelName);
         }
         channels.remove(removedChannel.get());
         installationMetadata.updateProsperoConfig(prosperoConfig);
@@ -69,7 +70,7 @@ public class MetadataAction implements AutoCloseable {
         final List<Channel> channels = prosperoConfig.getChannels();
         final Optional<Channel> modifiedChannel = channels.stream().filter(c -> c.getName().equals(channelName)).findAny();
         if (modifiedChannel.isEmpty()) {
-            throw new MetadataException("No channel can be found with name [" + channelName + "]");
+            throw Messages.MESSAGES.channelNotFound(channelName);
         }
         channels.set(channels.indexOf(modifiedChannel.get()), newChannel);
         installationMetadata.updateProsperoConfig(prosperoConfig);

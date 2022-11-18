@@ -17,7 +17,6 @@
 
 package org.wildfly.prospero.api;
 
-import java.io.IOException;
 import java.net.URI;
 import java.nio.file.Path;
 import java.util.ArrayList;
@@ -67,28 +66,22 @@ public class ProvisioningDefinition {
 
         this.includedPackages.addAll(includedPackages.orElse(Collections.emptySet()));
 
-        try {
-            if (fpl.isPresent() && KnownFeaturePacks.isWellKnownName(fpl.get())) {
-                KnownFeaturePack featurePackInfo = KnownFeaturePacks.getByName(fpl.get());
-                this.fpl = null;
-                this.definition = featurePackInfo.getGalleonConfiguration();
-                this.repositories.addAll(featurePackInfo.getRemoteRepositories());
-                setUpBuildEnv(overrideRepos, provisionConfigFile, manifest, featurePackInfo.getChannels());
-            } else if (provisionConfigFile.isPresent()) {
-                this.fpl = fpl.orElse(null);
-                this.definition = definition.orElse(null);
-                this.channels = ProsperoConfig.readConfig(provisionConfigFile.get()).getChannels();
-                this.repositories.clear();
-                this.repositories.addAll(Collections.emptyList());
-            } else {
-                // TODO: provisionConfigFile needn't be mandatory, we could still collect all required data from the
-                //  other options (channel, channelRepo - perhaps both should be made collections)
-                throw new IllegalArgumentException(
-                        String.format("Incomplete configuration: either a predefined fpl (%s) or a provisionConfigFile must be given.",
-                                String.join(", ", KnownFeaturePacks.getNames())));
-            }
-        } catch (IOException e) {
-            throw new MetadataException("Unable to resolve channel definition: " + e.getMessage(), e);
+        if (fpl.isPresent() && KnownFeaturePacks.isWellKnownName(fpl.get())) {
+            KnownFeaturePack featurePackInfo = KnownFeaturePacks.getByName(fpl.get());
+            this.fpl = null;
+            this.definition = featurePackInfo.getGalleonConfiguration();
+            this.repositories.addAll(featurePackInfo.getRemoteRepositories());
+            setUpBuildEnv(overrideRepos, provisionConfigFile, manifest, featurePackInfo.getChannels());
+        } else if (provisionConfigFile.isPresent()) {
+            this.fpl = fpl.orElse(null);
+            this.definition = definition.orElse(null);
+            this.channels = ProsperoConfig.readConfig(provisionConfigFile.get()).getChannels();
+            this.repositories.clear();
+            this.repositories.addAll(Collections.emptyList());
+        } else {
+            // TODO: provisionConfigFile needn't be mandatory, we could still collect all required data from the
+            //  other options (channel, channelRepo - perhaps both should be made collections)
+            throw Messages.MESSAGES.incompleteProvisioningConfiguration(String.join(", ", KnownFeaturePacks.getNames()));
         }
 
         if (channels.isEmpty() || channelsMissingManifest()) {
@@ -105,7 +98,7 @@ public class ProvisioningDefinition {
     }
 
     private void setUpBuildEnv(List<Repository> additionalRepositories, Optional<Path> provisionConfigFile,
-                               Optional<ChannelManifestCoordinate> manifestRef, List<Channel> channels) throws IOException {
+                               Optional<ChannelManifestCoordinate> manifestRef, List<Channel> channels) throws MetadataException {
         if (!provisionConfigFile.isPresent() && !manifestRef.isPresent()) {
             if (!additionalRepositories.isEmpty()) {
                 this.channels = TemporaryRepositoriesHandler.addRepositories(channels, additionalRepositories);
@@ -144,7 +137,7 @@ public class ProvisioningDefinition {
         return new ProsperoConfig(channels);
     }
 
-    public ProvisioningConfig toProvisioningConfig() throws ProvisioningException {
+    public ProvisioningConfig toProvisioningConfig() throws MetadataException, ProvisioningException {
         if (fpl != null) {
             FeaturePackLocation loc = FeaturePackLocationParser.resolveFpl(getFpl());
 
@@ -157,10 +150,10 @@ public class ProvisioningDefinition {
             try {
                 return GalleonUtils.loadProvisioningConfig(definition);
             } catch (XMLStreamException e) {
-                throw new ProvisioningException("Can't parse the Galleon provisioning file.", e);
+                throw Messages.MESSAGES.unableToParseConfigurationUri(definition, e);
             }
         } else {
-            throw new IllegalArgumentException("Can't create ProvisioningConfig: Neither feature-pack-location nor ProvisioningConfig path set.");
+            throw Messages.MESSAGES.incompleteProvisioningConfiguration(String.join(", ", KnownFeaturePacks.getNames()));
         }
     }
 

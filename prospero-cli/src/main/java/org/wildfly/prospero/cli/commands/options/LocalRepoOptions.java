@@ -48,7 +48,7 @@ public class LocalRepoOptions {
             return Optional.empty();
         } else {
             if (Files.exists(localRepoParam.localMavenCache) && !Files.isDirectory(localRepoParam.localMavenCache)) {
-                throw new ArgumentParsingException(CliMessages.MESSAGES.repositoryIsNotDirectory(localRepoParam.localMavenCache));
+                throw CliMessages.MESSAGES.repositoryIsNotDirectory(localRepoParam.localMavenCache);
             }
             return Optional.of(localRepoParam.localMavenCache);
         }
