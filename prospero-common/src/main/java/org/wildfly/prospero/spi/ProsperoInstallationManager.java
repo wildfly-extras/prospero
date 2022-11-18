@@ -1,8 +1,10 @@
 package org.wildfly.prospero.spi;
 
+import org.jboss.galleon.ProvisioningException;
 import org.wildfly.channel.ChannelManifestCoordinate;
 import org.wildfly.installationmanager.ArtifactChange;
 import org.wildfly.installationmanager.Channel;
+import org.wildfly.installationmanager.ChannelChange;
 import org.wildfly.installationmanager.HistoryResult;
 import org.wildfly.installationmanager.InstallationChanges;
 import org.wildfly.installationmanager.MavenOptions;
@@ -34,18 +36,22 @@ import java.util.stream.Collectors;
 
 public class ProsperoInstallationManager implements InstallationManager {
 
-    private MavenSessionManager mavenSessionManager;
-    private Path server;
+    private final ActionFactory actionFactory;
 
     public ProsperoInstallationManager(Path installationDir, MavenOptions mavenOptions) throws Exception {
-        this.server = installationDir;
-        mavenSessionManager = new MavenSessionManager(
+        MavenSessionManager mavenSessionManager = new MavenSessionManager(
                 Optional.ofNullable(mavenOptions.getLocalRepository()), mavenOptions.isOffline());
+        actionFactory = new ActionFactory(installationDir, mavenSessionManager);
+    }
+
+    // Used for tests to mock up action creation
+    protected ProsperoInstallationManager(ActionFactory actionFactory) {
+        this.actionFactory = actionFactory;
     }
 
     @Override
     public List<HistoryResult> history() throws Exception {
-        final InstallationHistoryAction historyAction = new InstallationHistoryAction(this.server, null);
+        final InstallationHistoryAction historyAction = actionFactory.getHistoryAction();
         final List<SavedState> revisions = historyAction.getRevisions();
         final List<HistoryResult> results = new ArrayList<>();
 
@@ -58,38 +64,43 @@ public class ProsperoInstallationManager implements InstallationManager {
     @Override
     public InstallationChanges revisionDetails(String revision) throws MetadataException {
         Objects.requireNonNull(revision);
-        final InstallationHistoryAction historyAction = new InstallationHistoryAction(this.server, null);
-        final List<org.wildfly.prospero.api.ArtifactChange> changes = historyAction.compare(new SavedState(revision));
+        final InstallationHistoryAction historyAction = actionFactory.getHistoryAction();
+        final org.wildfly.prospero.api.InstallationChanges changes = historyAction.compare(new SavedState(revision));
 
         if (changes.isEmpty()) {
             return new InstallationChanges(Collections.EMPTY_LIST, Collections.EMPTY_LIST);
         } else {
-            return new InstallationChanges(
-                    changes.stream().map(ProsperoInstallationManager::mapChange).collect(Collectors.toList()),
-                    Collections.EMPTY_LIST);
+            final List<ArtifactChange> artifacts = changes.getArtifactChanges().stream()
+                    .map(ProsperoInstallationManager::mapArtifactChange)
+                    .collect(Collectors.toList());
+
+            final List<ChannelChange> channels = changes.getChannelChanges().stream()
+                    .map(ProsperoInstallationManager::mapChannelChange)
+                    .collect(Collectors.toList());
+            return new InstallationChanges(artifacts, channels);
         }
     }
 
     @Override
     public void update() throws Exception {
-        try (final UpdateAction updateAction = new UpdateAction(server, mavenSessionManager, null, Collections.emptyList())) {
+        try (final UpdateAction updateAction = actionFactory.getUpdateAction()) {
             updateAction.performUpdate();
         }
     }
 
     @Override
     public List<ArtifactChange> findUpdates() throws Exception {
-        try (final UpdateAction updateAction = new UpdateAction(server, mavenSessionManager, null, Collections.emptyList())) {
+        try (final UpdateAction updateAction = actionFactory.getUpdateAction()) {
             final UpdateSet updates = updateAction.findUpdates();
             return updates.getArtifactUpdates().stream()
-                    .map(ProsperoInstallationManager::mapChange)
+                    .map(ProsperoInstallationManager::mapArtifactChange)
                     .collect(Collectors.toList());
         }
     }
 
     @Override
     public Collection<Channel> listChannels() throws OperationException {
-        try (final MetadataAction metadataAction = new MetadataAction(server)) {
+        try (final MetadataAction metadataAction = actionFactory.getMetadataAction()) {
             return metadataAction.getChannels().stream()
                     .map(ProsperoInstallationManager::mapChannel)
                     .collect(Collectors.toList());
@@ -98,21 +109,21 @@ public class ProsperoInstallationManager implements InstallationManager {
 
     @Override
     public void removeChannel(String channelName) throws OperationException {
-        try (final MetadataAction metadataAction = new MetadataAction(server)) {
+        try (final MetadataAction metadataAction = actionFactory.getMetadataAction()) {
             metadataAction.removeChannel(channelName);
         }
     }
 
     @Override
     public void addChannel(Channel channel) throws OperationException {
-        try (final MetadataAction metadataAction = new MetadataAction(server)) {
+        try (final MetadataAction metadataAction = actionFactory.getMetadataAction()) {
             metadataAction.addChannel(mapChannel(channel));
         }
     }
 
     @Override
     public void changeChannel(String channelName, Channel newChannel) throws OperationException {
-        try (final MetadataAction metadataAction = new MetadataAction(server)) {
+        try (final MetadataAction metadataAction = actionFactory.getMetadataAction()) {
             metadataAction.changeChannel(channelName, mapChannel(newChannel));
         }
     }
@@ -134,7 +145,7 @@ public class ProsperoInstallationManager implements InstallationManager {
             throw Messages.MESSAGES.fileAlreadyExists(targetPath);
         }
 
-        final InstallationExportAction installationExportAction = new InstallationExportAction(server);
+        final InstallationExportAction installationExportAction = actionFactory.getInstallationExportAction();
         installationExportAction.export(snapshotPath);
 
         return snapshotPath;
@@ -180,13 +191,47 @@ public class ProsperoInstallationManager implements InstallationManager {
         return new Repository(repository.getId(), repository.getUrl());
     }
 
-    private static ArtifactChange mapChange(org.wildfly.prospero.api.ArtifactChange c) {
-        if (c.isInstalled()) {
-            return new ArtifactChange(null, c.getNewVersion().get(), c.getArtifactName(), ArtifactChange.Status.INSTALLED);
-        } else if (c.isRemoved()) {
-            return new ArtifactChange(c.getOldVersion().get(), null, c.getArtifactName(), ArtifactChange.Status.REMOVED);
+    private static ArtifactChange mapArtifactChange(org.wildfly.prospero.api.ArtifactChange change) {
+        if (change.isInstalled()) {
+            return new ArtifactChange(null, change.getNewVersion().get(), change.getArtifactName(), ArtifactChange.Status.INSTALLED);
+        } else if (change.isRemoved()) {
+            return new ArtifactChange(change.getOldVersion().get(), null, change.getArtifactName(), ArtifactChange.Status.REMOVED);
         } else {
-            return new ArtifactChange(c.getOldVersion().get(), c.getNewVersion().get(), c.getArtifactName(), ArtifactChange.Status.UPDATED);
+            return new ArtifactChange(change.getOldVersion().get(), change.getNewVersion().get(), change.getArtifactName(), ArtifactChange.Status.UPDATED);
+        }
+    }
+
+    private static ChannelChange mapChannelChange(org.wildfly.prospero.api.ChannelChange change) {
+        final Channel oldChannel = change.getOldChannel() == null ? null : mapChannel(change.getOldChannel());
+        final Channel newChannel = change.getNewChannel() == null ? null : mapChannel(change.getNewChannel());
+
+        return new ChannelChange(oldChannel, newChannel);
+    }
+
+    protected static class ActionFactory {
+
+        private final Path server;
+        private final MavenSessionManager mavenSessionManager;
+
+        private ActionFactory(Path server, MavenSessionManager mavenSessionManager) {
+            this.server = server;
+            this.mavenSessionManager = mavenSessionManager;
+        }
+
+        protected InstallationHistoryAction getHistoryAction() {
+            return new InstallationHistoryAction(server, null);
+        }
+
+        protected UpdateAction getUpdateAction() throws ProvisioningException, OperationException {
+            return new UpdateAction(server, mavenSessionManager, null, Collections.emptyList());
+        }
+
+        protected MetadataAction getMetadataAction() throws MetadataException {
+            return new MetadataAction(server);
+        }
+
+        protected InstallationExportAction getInstallationExportAction() {
+            return new InstallationExportAction(server);
         }
     }
 }

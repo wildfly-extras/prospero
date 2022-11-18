@@ -23,10 +23,11 @@ import java.util.Optional;
 
 import org.wildfly.prospero.actions.Console;
 import org.wildfly.prospero.actions.InstallationHistoryAction;
-import org.wildfly.prospero.api.ArtifactChange;
+import org.wildfly.prospero.api.InstallationChanges;
 import org.wildfly.prospero.api.SavedState;
 import org.wildfly.prospero.cli.ActionFactory;
 import org.wildfly.prospero.cli.CliMessages;
+import org.wildfly.prospero.cli.DiffPrinter;
 import org.wildfly.prospero.cli.ReturnCodes;
 import picocli.CommandLine;
 
@@ -57,11 +58,22 @@ public class HistoryCommand extends AbstractCommand {
                 console.println(savedState.shortDescription());
             }
         } else {
-            List<ArtifactChange> changes = historyAction.compare(new SavedState(revision.get()));
+            InstallationChanges changes = historyAction.compare(new SavedState(revision.get()));
             if (changes.isEmpty()) {
                 console.println(CliMessages.MESSAGES.noChangesFound());
             } else {
-                changes.forEach(c-> console.println(c.toString()));
+                final DiffPrinter diffPrinter = new DiffPrinter("  ");
+                if (!changes.getArtifactChanges().isEmpty()) {
+                    console.println(CliMessages.MESSAGES.diffUpdates()+ ":");
+                    changes.getArtifactChanges().forEach(diffPrinter::print);
+                }
+                if (!changes.getChannelChanges().isEmpty()) {
+                    if (!changes.getArtifactChanges().isEmpty()) {
+                        console.println("");
+                    }
+                    console.println(CliMessages.MESSAGES.diffConfigChanges()+ ":");
+                    changes.getChannelChanges().forEach(diffPrinter::print);
+                }
             }
         }
 

@@ -108,7 +108,7 @@ public class LocalInstallationHistoryTest {
 
         final SavedState previousState = metadata.getRevisions().get(1);
 
-        final List<ArtifactChange> changes = metadata.getChangesSince(previousState);
+        final List<ArtifactChange> changes = metadata.getChangesSince(previousState).getArtifactChanges();
         assertEquals(1, changes.size());
         assertEquals("foo:bar", changes.get(0).getArtifactName());
         assertEquals("1.1.1", changes.get(0).getOldVersion().get());
@@ -123,7 +123,7 @@ public class LocalInstallationHistoryTest {
 
         final SavedState previousState = metadata.getRevisions().get(0);
 
-        final List<ArtifactChange> changes = metadata.getChangesSince(previousState);
+        final List<ArtifactChange> changes = metadata.getChangesSince(previousState).getArtifactChanges();
         assertEquals(0, changes.size());
     }
 

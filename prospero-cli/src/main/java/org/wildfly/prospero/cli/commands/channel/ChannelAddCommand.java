@@ -47,7 +47,7 @@ public class ChannelAddCommand extends AbstractCommand {
     @CommandLine.Option(names = CliConstants.DIR)
     private Optional<Path> directory;
 
-    @CommandLine.Option(names = CliConstants.REPOSITORIES, paramLabel = CliConstants.REPO_URL, required = true)
+    @CommandLine.Option(names = CliConstants.REPOSITORIES, split = ",", paramLabel = CliConstants.REPO_URL, required = true)
     private List<String> repositoryDefs;
 
     public ChannelAddCommand(Console console, ActionFactory actionFactory) {

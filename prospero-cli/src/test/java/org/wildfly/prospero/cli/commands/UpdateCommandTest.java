@@ -195,7 +195,7 @@ public class UpdateCommandTest extends AbstractMavenCommandTest {
     }
 
     private ArtifactChange change(String oldVersion, String newVersion) {
-        return new ArtifactChange(new DefaultArtifact("org.foo", "bar", null, oldVersion),
+        return ArtifactChange.updated(new DefaultArtifact("org.foo", "bar", null, oldVersion),
                 new DefaultArtifact("org.foo", "bar", null, newVersion));
     }
 
