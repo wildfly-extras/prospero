@@ -37,6 +37,8 @@ import org.wildfly.channel.Stream;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.attribute.BasicFileAttributes;
+import java.nio.file.attribute.FileTime;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -49,7 +51,6 @@ import java.util.Map;
 public class GitStorage implements AutoCloseable {
 
     public static final String GIT_HISTORY_USER = "Wildfly Installer";
-    public static final PersonIdent GIT_HISTORY_COMMITTER = new PersonIdent(GIT_HISTORY_USER, "");
     private final Git git;
     private Path base;
 
@@ -84,9 +85,13 @@ public class GitStorage implements AutoCloseable {
 
             if (isRepositoryEmpty(git)) {
                 git.add().addFilepattern(InstallationMetadata.PROSPERO_CONFIG_FILE_NAME).call();
-                git.commit().setCommitter(GIT_HISTORY_COMMITTER).setMessage(SavedState.Type.INSTALL.name()).call();
+                // adjust the date so that when talking over a non-prosper installation date matches creation
+                git.commit()
+                        .setCommitter(adjustCommitDateToCreationDate(getCommitter()))
+                        .setMessage(SavedState.Type.INSTALL.name())
+                        .call();
             } else {
-                git.commit().setCommitter(GIT_HISTORY_COMMITTER).setMessage(SavedState.Type.UPDATE.name()).call();
+                git.commit().setCommitter(getCommitter()).setMessage(SavedState.Type.UPDATE.name()).call();
             }
 
         } catch (IOException | GitAPIException e) {
@@ -94,10 +99,22 @@ public class GitStorage implements AutoCloseable {
         }
     }
 
+    /*
+     * The PersonIdent needs to be created on commit to capture current time
+     */
+    private PersonIdent getCommitter() {
+        return new PersonIdent(GIT_HISTORY_USER, "");
+    }
+
+    private PersonIdent adjustCommitDateToCreationDate(PersonIdent committer) throws IOException {
+        final FileTime fileTime = Files.readAttributes(base, BasicFileAttributes.class).creationTime();
+        return new PersonIdent(committer, fileTime.toMillis(), committer.getTimeZone().getRawOffset());
+    }
+
     public void recordConfigChange() throws MetadataException {
         try {
             git.add().addFilepattern(InstallationMetadata.PROSPERO_CONFIG_FILE_NAME).call();
-            git.commit().setCommitter(GIT_HISTORY_COMMITTER).setMessage(SavedState.Type.CONFIG_CHANGE.name()).call();
+            git.commit().setCommitter(getCommitter()).setMessage(SavedState.Type.CONFIG_CHANGE.name()).call();
         } catch (GitAPIException e) {
             throw new MetadataException("Unable to write history of installation", e);
         }
@@ -110,7 +127,7 @@ public class GitStorage implements AutoCloseable {
                     .addPath(InstallationMetadata.MANIFEST_FILE_NAME)
                     .call();
             git.add().addFilepattern(InstallationMetadata.MANIFEST_FILE_NAME).call();
-            git.commit().setCommitter(GIT_HISTORY_COMMITTER).setMessage(SavedState.Type.ROLLBACK.name()).call();
+            git.commit().setCommitter(getCommitter()).setMessage(SavedState.Type.ROLLBACK.name()).call();
         } catch (GitAPIException e) {
             throw new MetadataException("Unable to write history of installation", e);
         }
@@ -201,5 +218,9 @@ public class GitStorage implements AutoCloseable {
         if (git != null) {
             git.close();
         }
+    }
+
+    public boolean isStarted() throws IOException {
+        return !isRepositoryEmpty(git);
     }
 }

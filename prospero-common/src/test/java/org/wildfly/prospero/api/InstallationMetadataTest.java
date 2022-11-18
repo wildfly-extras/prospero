@@ -122,6 +122,15 @@ public class InstallationMetadataTest {
         }
     }
 
+    @Test
+    public void initStorageIfItDoesNotExist() throws Exception {
+        mockServer();
+
+        new InstallationMetadata(base);
+
+        verify(gitStorage).record();
+    }
+
     private Path mockServer() throws IOException {
         final Path base = temp.newFolder().toPath();
         final Path metadataDir = base.resolve(InstallationMetadata.METADATA_DIR);
