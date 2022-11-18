@@ -63,9 +63,9 @@ public class WfCoreTestBase {
     public static final String BASE_JAR = "wildfly-cli-" + BASE_VERSION + ".jar";
     public static final String UPGRADE_VERSION = "19.0.0.Beta12-SNAPSHOT";
     public static final String UPGRADE_JAR = "wildfly-cli-" + UPGRADE_VERSION + ".jar";
-    public static final String CHANNEL_BASE_CORE_19 = "channels/wfcore-19-base.yaml";
-    public static final String CHANNEL_FP_UPDATES = "channels/wfcore-19-upgrade-fp.yaml";
-    public static final String CHANNEL_COMPONENT_UPDATES = "channels/wfcore-19-upgrade-component.yaml";
+    public static final String CHANNEL_BASE_CORE_19 = "manifests/wfcore-19-base.yaml";
+    public static final String CHANNEL_FP_UPDATES = "manifests/wfcore-19-upgrade-fp.yaml";
+    public static final String CHANNEL_COMPONENT_UPDATES = "manifests/wfcore-19-upgrade-component.yaml";
     public static final Repository REPOSITORY_MAVEN_CENTRAL = new Repository("maven-central", "https://repo1.maven.org/maven2/");
     public static final Repository REPOSITORY_NEXUS = new Repository("nexus", "https://repository.jboss.org/nexus/content/groups/public-jboss");
     public static final Repository REPOSITORY_MRRC_GA = new Repository("maven-redhat-ga", "https://maven.repository.redhat.com/ga");

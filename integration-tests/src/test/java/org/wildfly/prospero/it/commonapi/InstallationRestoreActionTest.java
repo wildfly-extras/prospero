@@ -58,7 +58,7 @@ public class InstallationRestoreActionTest extends WfCoreTestBase {
 
     @Test
     public void restoreInstallation() throws Exception {
-        final Path channelsFile = MetadataTestUtils.prepareProvisionConfig(CHANNEL_BASE_CORE_19);
+        final Path channelsFile = MetadataTestUtils.prepareChannel(CHANNEL_BASE_CORE_19);
 
         final ProvisioningDefinition provisioningDefinition = defaultWfCoreDefinition()
                 .setChannelCoordinates(channelsFile.toString())

@@ -50,7 +50,8 @@ public class WildflyFpTest {
     @Test
     public void testInstallProsperoWithWildfly() throws Exception {
         Path channelsFile = tempDir.newFile().toPath();
-        MetadataTestUtils.prepareProvisionConfig(channelsFile, "channels/wildfly-27.0.0.Alpha2-channel.yaml", "channels/prospero-channel.yaml");
+        MetadataTestUtils.prepareChannel(channelsFile, "manifests/wildfly-27.0.0.Alpha2-channel.yaml",
+                "manifests/prospero-channel.yaml");
 
         final URL provisionDefinition = this.getClass().getClassLoader().getResource("galleon/wfcore-prospero.xml");
 

@@ -40,7 +40,7 @@ public class CreateSnapshotTest extends WfCoreTestBase {
     @Test
     public void createSnapshot() throws Exception {
         // installCore
-        Path channelsFile = MetadataTestUtils.prepareProvisionConfig(CHANNEL_BASE_CORE_19);
+        Path channelsFile = MetadataTestUtils.prepareChannel(CHANNEL_BASE_CORE_19);
 
         final ProvisioningDefinition provisioningDefinition = defaultWfCoreDefinition()
                 .setChannelCoordinates(channelsFile.toString())

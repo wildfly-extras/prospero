@@ -28,7 +28,6 @@ import org.jboss.galleon.universe.FeaturePackLocation;
 import org.jboss.galleon.xml.ProvisioningXmlWriter;
 import org.junit.Assert;
 import org.junit.Before;
-import org.junit.Ignore;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
@@ -107,7 +106,6 @@ public class InstallCommandTest extends AbstractMavenCommandTest {
     }
 
     @Test
-    @Ignore
     public void errorIfChannelsIsNotPresentAndUsingCustomFplOnInstall() {
         int exitCode = commandLine.execute(CliConstants.Commands.INSTALL, CliConstants.DIR, "test",
                 CliConstants.FPL, "foo:bar");

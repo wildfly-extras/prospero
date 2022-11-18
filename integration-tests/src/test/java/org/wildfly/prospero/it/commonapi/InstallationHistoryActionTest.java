@@ -67,7 +67,7 @@ public class InstallationHistoryActionTest extends WfCoreTestBase {
     @Test
     public void listUpdates() throws Exception {
         // installCore
-        channelsFile = MetadataTestUtils.prepareProvisionConfig(CHANNEL_BASE_CORE_19);
+        channelsFile = MetadataTestUtils.prepareChannel(CHANNEL_BASE_CORE_19);
 
         final ProvisioningDefinition provisioningDefinition = defaultWfCoreDefinition()
                 .setChannelCoordinates(channelsFile.toString())
@@ -76,7 +76,7 @@ public class InstallationHistoryActionTest extends WfCoreTestBase {
                 provisioningDefinition.resolveChannels(CHANNELS_RESOLVER_FACTORY));
 
         // updateCore
-        MetadataTestUtils.prepareProvisionConfig(outputPath.resolve(MetadataTestUtils.PROVISION_CONFIG_FILE_PATH), CHANNEL_COMPONENT_UPDATES, CHANNEL_BASE_CORE_19);
+        MetadataTestUtils.prepareChannel(outputPath.resolve(MetadataTestUtils.PROVISION_CONFIG_FILE_PATH), CHANNEL_COMPONENT_UPDATES, CHANNEL_BASE_CORE_19);
         updateAction().performUpdate();
 
         // get history
@@ -88,7 +88,7 @@ public class InstallationHistoryActionTest extends WfCoreTestBase {
 
     @Test
     public void rollbackChanges() throws Exception {
-        channelsFile = MetadataTestUtils.prepareProvisionConfig(CHANNEL_BASE_CORE_19);
+        channelsFile = MetadataTestUtils.prepareChannel(CHANNEL_BASE_CORE_19);
         final Path modulesPaths = outputPath.resolve(Paths.get("modules", "system", "layers", "base"));
         final Path wildflyCliModulePath = modulesPaths.resolve(Paths.get("org", "jboss", "as", "cli", "main"));
 
@@ -98,7 +98,7 @@ public class InstallationHistoryActionTest extends WfCoreTestBase {
         installation.provision(provisioningDefinition.toProvisioningConfig(),
                 provisioningDefinition.resolveChannels(CHANNELS_RESOLVER_FACTORY));
 
-        MetadataTestUtils.prepareProvisionConfig(outputPath.resolve(MetadataTestUtils.PROVISION_CONFIG_FILE_PATH), CHANNEL_COMPONENT_UPDATES, CHANNEL_BASE_CORE_19);
+        MetadataTestUtils.prepareChannel(outputPath.resolve(MetadataTestUtils.PROVISION_CONFIG_FILE_PATH), CHANNEL_COMPONENT_UPDATES, CHANNEL_BASE_CORE_19);
         updateAction().performUpdate();
         Optional<Artifact> wildflyCliArtifact = readArtifactFromManifest("org.wildfly.core", "wildfly-cli");
         assertEquals(UPGRADE_VERSION, wildflyCliArtifact.get().getVersion());
@@ -120,8 +120,8 @@ public class InstallationHistoryActionTest extends WfCoreTestBase {
         // install server
         final Path manifestPath = temp.newFile().toPath();
         channelsFile = temp.newFile().toPath();
-        MetadataTestUtils.copyManifest("channels/wfcore-19-base.yaml", manifestPath);
-        MetadataTestUtils.prepareProvisionConfig(channelsFile, List.of(manifestPath.toUri().toURL()));
+        MetadataTestUtils.copyManifest("manifests/wfcore-19-base.yaml", manifestPath);
+        MetadataTestUtils.prepareChannel(channelsFile, List.of(manifestPath.toUri().toURL()));
 
         final Path modulesPaths = outputPath.resolve(Paths.get("modules", "system", "layers", "base"));
         final Path wildflyCliModulePath = modulesPaths.resolve(Paths.get("org", "jboss", "as", "cli", "main"));
@@ -159,7 +159,7 @@ public class InstallationHistoryActionTest extends WfCoreTestBase {
 
     @Test
     public void displayChanges() throws Exception {
-        channelsFile = MetadataTestUtils.prepareProvisionConfig(CHANNEL_BASE_CORE_19);
+        channelsFile = MetadataTestUtils.prepareChannel(CHANNEL_BASE_CORE_19);
 
         final ProvisioningDefinition provisioningDefinition = defaultWfCoreDefinition()
                 .setChannelCoordinates(channelsFile.toString())
@@ -167,7 +167,7 @@ public class InstallationHistoryActionTest extends WfCoreTestBase {
         installation.provision(provisioningDefinition.toProvisioningConfig(),
                 provisioningDefinition.resolveChannels(CHANNELS_RESOLVER_FACTORY));
 
-        MetadataTestUtils.prepareProvisionConfig(outputPath.resolve(MetadataTestUtils.PROVISION_CONFIG_FILE_PATH), CHANNEL_COMPONENT_UPDATES, CHANNEL_BASE_CORE_19);
+        MetadataTestUtils.prepareChannel(outputPath.resolve(MetadataTestUtils.PROVISION_CONFIG_FILE_PATH), CHANNEL_COMPONENT_UPDATES, CHANNEL_BASE_CORE_19);
         updateAction().performUpdate();
 
         final InstallationHistoryAction historyAction = new InstallationHistoryAction(outputPath, new AcceptingConsole());

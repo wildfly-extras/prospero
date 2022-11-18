@@ -92,32 +92,32 @@ public final class MetadataTestUtils {
         return state;
     }
 
-    public static Path prepareProvisionConfig(String channelDescriptor) throws IOException {
+    public static Path prepareChannel(String manifestDescriptor) throws IOException {
         final Path provisionConfigFile = Files.createTempFile("channels", "yaml").toAbsolutePath();
         provisionConfigFile.toFile().deleteOnExit();
 
-        prepareProvisionConfig(provisionConfigFile, channelDescriptor);
+        prepareChannel(provisionConfigFile, manifestDescriptor);
         return provisionConfigFile;
     }
 
-    public static void prepareProvisionConfig(Path provisionConfigFile, String... channelDescriptor)
+    public static void prepareChannel(Path channelFile, String... manifestDescriptor)
             throws IOException {
-        List<URL> channelUrls = Arrays.stream(channelDescriptor)
+        List<URL> channelUrls = Arrays.stream(manifestDescriptor)
                 .map(d->MetadataTestUtils.class.getClassLoader().getResource(d))
                 .collect(Collectors.toList());
-        prepareProvisionConfig(provisionConfigFile, channelUrls);
+        prepareChannel(channelFile, channelUrls);
     }
 
-    public static void prepareProvisionConfig(Path provisionConfigFile, List<URL> channelUrls) throws IOException {
+    public static void prepareChannel(Path channelFile, List<URL> manifestUrls) throws IOException {
         List<Channel> channels = new ArrayList<>();
         List<Repository> repositories = defaultRemoteRepositories().stream()
                 .map(r->new Repository(r.getId(), r.getUrl())).collect(Collectors.toList());
-        for (int i=0; i<channelUrls.size(); i++) {
+        for (int i=0; i<manifestUrls.size(); i++) {
             channels.add(new Channel("", "", null, null, repositories,
-                    new ChannelManifestCoordinate(channelUrls.get(i))));
+                    new ChannelManifestCoordinate(manifestUrls.get(i))));
         }
 
-        new ProsperoConfig(channels).writeConfig(provisionConfigFile);
+        new ProsperoConfig(channels).writeConfig(channelFile);
     }
 
     public static List<RemoteRepository> defaultRemoteRepositories() {

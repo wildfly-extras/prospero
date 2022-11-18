@@ -31,7 +31,6 @@ import org.apache.commons.lang3.StringUtils;
 import org.eclipse.aether.artifact.Artifact;
 import org.eclipse.aether.artifact.DefaultArtifact;
 import org.jboss.galleon.ProvisioningException;
-import org.junit.Ignore;
 import org.junit.Test;
 import org.wildfly.channel.Channel;
 import org.wildfly.prospero.actions.UpdateAction;
@@ -52,7 +51,7 @@ public class SimpleProvisionTest extends WfCoreTestBase {
 
     @Test
     public void installWildflyCore() throws Exception {
-        final Path channelsFile = MetadataTestUtils.prepareProvisionConfig(CHANNEL_BASE_CORE_19);
+        final Path channelsFile = MetadataTestUtils.prepareChannel(CHANNEL_BASE_CORE_19);
 
         final ProvisioningDefinition provisioningDefinition = defaultWfCoreDefinition()
                 .setChannelCoordinates(List.of(channelsFile.toString()))
@@ -68,9 +67,15 @@ public class SimpleProvisionTest extends WfCoreTestBase {
     }
 
     @Test
-    @Ignore // TODO: fix
     public void installWildflyCore_ChannelsWithEmptyNamesAreNamed() throws Exception {
-        final Path channelsFile = MetadataTestUtils.prepareProvisionConfig(CHANNEL_BASE_CORE_19);
+        final Path channelsFile = MetadataTestUtils.prepareChannel(CHANNEL_BASE_CORE_19);
+
+        // make sure the channel names are empty
+        ProsperoConfig prosperoConfig = ProsperoConfig.readConfig(channelsFile);
+        List<Channel> emptyNameChannels = prosperoConfig.getChannels().stream()
+                .map(c -> new Channel(c.getSchemaVersion(), null, null, null, c.getChannelRequirements(), c.getRepositories(),
+                        c.getManifestRef())).collect(Collectors.toList());
+        new ProsperoConfig(emptyNameChannels).writeConfig(channelsFile);
 
         final ProvisioningDefinition provisioningDefinition = defaultWfCoreDefinition()
                 .setChannelCoordinates(List.of(channelsFile.toString()))
@@ -88,7 +93,7 @@ public class SimpleProvisionTest extends WfCoreTestBase {
 
     @Test
     public void updateWildflyCore() throws Exception {
-        final Path channelsFile = MetadataTestUtils.prepareProvisionConfig(CHANNEL_BASE_CORE_19);
+        final Path channelsFile = MetadataTestUtils.prepareChannel(CHANNEL_BASE_CORE_19);
 
         final ProvisioningDefinition provisioningDefinition = defaultWfCoreDefinition()
                 .setChannelCoordinates(List.of(channelsFile.toString()))
@@ -96,7 +101,7 @@ public class SimpleProvisionTest extends WfCoreTestBase {
         installation.provision(provisioningDefinition.toProvisioningConfig(),
                 provisioningDefinition.resolveChannels(CHANNELS_RESOLVER_FACTORY));
 
-        MetadataTestUtils.prepareProvisionConfig(outputPath.resolve(MetadataTestUtils.PROVISION_CONFIG_FILE_PATH), CHANNEL_COMPONENT_UPDATES, CHANNEL_BASE_CORE_19);
+        MetadataTestUtils.prepareChannel(outputPath.resolve(MetadataTestUtils.PROVISION_CONFIG_FILE_PATH), CHANNEL_COMPONENT_UPDATES, CHANNEL_BASE_CORE_19);
         getUpdateAction().performUpdate();
 
         // verify manifest contains versions 17.0.1
@@ -106,7 +111,7 @@ public class SimpleProvisionTest extends WfCoreTestBase {
 
     @Test
     public void updateWildflyCoreFp() throws Exception {
-        final Path channelsFile = MetadataTestUtils.prepareProvisionConfig(CHANNEL_BASE_CORE_19);
+        final Path channelsFile = MetadataTestUtils.prepareChannel(CHANNEL_BASE_CORE_19);
 
         final ProvisioningDefinition provisioningDefinition = defaultWfCoreDefinition()
                 .setChannelCoordinates(List.of(channelsFile.toString()))
@@ -114,7 +119,7 @@ public class SimpleProvisionTest extends WfCoreTestBase {
         installation.provision(provisioningDefinition.toProvisioningConfig(),
                 provisioningDefinition.resolveChannels(CHANNELS_RESOLVER_FACTORY));
 
-        MetadataTestUtils.prepareProvisionConfig(outputPath.resolve(MetadataTestUtils.PROVISION_CONFIG_FILE_PATH), CHANNEL_FP_UPDATES, CHANNEL_BASE_CORE_19);
+        MetadataTestUtils.prepareChannel(outputPath.resolve(MetadataTestUtils.PROVISION_CONFIG_FILE_PATH), CHANNEL_FP_UPDATES, CHANNEL_BASE_CORE_19);
         getUpdateAction().performUpdate();
 
         // verify manifest contains versions 17.0.1
@@ -124,7 +129,7 @@ public class SimpleProvisionTest extends WfCoreTestBase {
 
     @Test
     public void updateWildflyCoreFp_InstalledWithGAV() throws Exception {
-        final Path channelsFile = MetadataTestUtils.prepareProvisionConfig(CHANNEL_BASE_CORE_19);
+        final Path channelsFile = MetadataTestUtils.prepareChannel(CHANNEL_BASE_CORE_19);
 
         final ProvisioningDefinition provisioningDefinition = defaultWfCoreDefinition()
                 .setFpl("org.wildfly.core:wildfly-core-galleon-pack")
@@ -133,7 +138,7 @@ public class SimpleProvisionTest extends WfCoreTestBase {
         installation.provision(provisioningDefinition.toProvisioningConfig(),
                 provisioningDefinition.resolveChannels(CHANNELS_RESOLVER_FACTORY));
 
-        MetadataTestUtils.prepareProvisionConfig(outputPath.resolve(MetadataTestUtils.PROVISION_CONFIG_FILE_PATH), CHANNEL_FP_UPDATES, CHANNEL_BASE_CORE_19);
+        MetadataTestUtils.prepareChannel(outputPath.resolve(MetadataTestUtils.PROVISION_CONFIG_FILE_PATH), CHANNEL_FP_UPDATES, CHANNEL_BASE_CORE_19);
         getUpdateAction().performUpdate();
 
         // verify manifest contains versions 17.0.1
@@ -143,7 +148,7 @@ public class SimpleProvisionTest extends WfCoreTestBase {
 
     @Test
     public void updateWildflyCoreDryRun() throws Exception {
-        final Path channelsFile = MetadataTestUtils.prepareProvisionConfig(CHANNEL_BASE_CORE_19);
+        final Path channelsFile = MetadataTestUtils.prepareChannel(CHANNEL_BASE_CORE_19);
 
         final ProvisioningDefinition provisioningDefinition = defaultWfCoreDefinition()
                 .setChannelCoordinates(List.of(channelsFile.toString()))
@@ -151,7 +156,7 @@ public class SimpleProvisionTest extends WfCoreTestBase {
         installation.provision(provisioningDefinition.toProvisioningConfig(),
                 provisioningDefinition.resolveChannels(CHANNELS_RESOLVER_FACTORY));
 
-        MetadataTestUtils.prepareProvisionConfig(outputPath.resolve(MetadataTestUtils.PROVISION_CONFIG_FILE_PATH), CHANNEL_COMPONENT_UPDATES, CHANNEL_BASE_CORE_19);
+        MetadataTestUtils.prepareChannel(outputPath.resolve(MetadataTestUtils.PROVISION_CONFIG_FILE_PATH), CHANNEL_COMPONENT_UPDATES, CHANNEL_BASE_CORE_19);
         final Set<String> updates = new UpdateAction(outputPath, mavenSessionManager, new AcceptingConsole(), Collections.emptyList())
                 .findUpdates().getArtifactUpdates().stream()
                 .map(ArtifactChange::getArtifactName)
@@ -166,7 +171,7 @@ public class SimpleProvisionTest extends WfCoreTestBase {
 
     @Test
     public void installWildflyCoreFromInstallationFile() throws Exception {
-        final Path channelsFile = MetadataTestUtils.prepareProvisionConfig(CHANNEL_BASE_CORE_19);
+        final Path channelsFile = MetadataTestUtils.prepareChannel(CHANNEL_BASE_CORE_19);
         final URI installationFile = this.getClass().getClassLoader().getResource("provisioning.xml").toURI();
 
         ProvisioningDefinition definition = ProvisioningDefinition.builder()

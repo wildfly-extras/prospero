@@ -45,7 +45,7 @@ public class InstallTest {
 
     @Test
     public void testInstallWithProvisionConfig() throws Exception {
-        Path channelsFile = MetadataTestUtils.prepareProvisionConfig("channels/wfcore-19-base.yaml");
+        Path channelsFile = MetadataTestUtils.prepareChannel("manifests/wfcore-19-base.yaml");
 
         ExecutionUtils.prosperoExecution(CliConstants.Commands.INSTALL,
                         CliConstants.CHANNELS, channelsFile.toString(),
