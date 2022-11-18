@@ -149,6 +149,13 @@ public class CliConsole implements Console {
     }
 
     @Override
+    public boolean confirmBuildUpdates() {
+        return confirm(CliMessages.MESSAGES.continueWithBuildUpdate(),
+                CliMessages.MESSAGES.buildingUpdates(),
+                CliMessages.MESSAGES.buildUpdateCancelled());
+    }
+
+    @Override
     public boolean confirm(String prompt, String accepted, String cancelled) {
         getStdOut().print(prompt);
         Scanner sc = new Scanner(getInput());
@@ -169,6 +176,11 @@ public class CliConsole implements Console {
     @Override
     public void updatesComplete() {
         println(CliMessages.MESSAGES.updateComplete());
+    }
+
+    @Override
+    public void buildUpdatesComplete() {
+        println(CliMessages.MESSAGES.buildUpdateComplete());
     }
 
 }

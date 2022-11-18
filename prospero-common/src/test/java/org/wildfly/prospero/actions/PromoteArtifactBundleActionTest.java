@@ -99,5 +99,15 @@ public class PromoteArtifactBundleActionTest {
         public void updatesComplete() {
 
         }
+
+        @Override
+        public void buildUpdatesComplete() {
+
+        }
+
+        @Override
+        public boolean confirmBuildUpdates() {
+            return false;
+        }
     }
 }

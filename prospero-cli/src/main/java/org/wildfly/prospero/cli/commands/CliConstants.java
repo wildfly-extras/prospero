@@ -36,6 +36,7 @@ public final class CliConstants {
         public static final String MAIN_COMMAND = "prospero";
         public static final String INSTALL = "install";
         public static final String UPDATE = "update";
+        public static final String BUILD_UPDATE = "build-update";
         public static final String HISTORY = "history";
         public static final String REVERT = "revert";
         public static final String CHANNEL = "channel";
@@ -78,6 +79,7 @@ public final class CliConstants {
     public static final String OFFLINE = "--offline";
     public static final String REVISION = "--revision";
     public static final String SELF = "--self";
+    public static final String TARGET_DIR = "--target-dir";
     public static final String V = "-v";
     public static final String VERSION = "--version";
     public static final String Y = "-y";

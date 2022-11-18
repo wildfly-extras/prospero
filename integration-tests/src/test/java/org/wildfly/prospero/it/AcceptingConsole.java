@@ -54,4 +54,13 @@ public class AcceptingConsole implements Console {
     public void updatesComplete() {
         // no op
     }
+
+    @Override
+    public void buildUpdatesComplete() {
+    }
+
+    @Override
+    public boolean confirmBuildUpdates() {
+        return true;
+    }
 }
