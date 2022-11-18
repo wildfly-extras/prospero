@@ -36,10 +36,15 @@ import org.wildfly.channel.Stream;
 import org.wildfly.prospero.model.ProsperoConfig;
 
 import java.io.IOException;
+import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.attribute.BasicFileAttributes;
+import java.time.Instant;
+import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.Date;
 import java.util.HashSet;
 import java.util.List;
 
@@ -134,6 +139,26 @@ public class GitStorageTest {
         Assertions.assertThat(storedPaths).containsExactlyInAnyOrder("manifest.yaml", InstallationMetadata.PROSPERO_CONFIG_FILE_NAME);
     }
 
+    @Test
+    public void initialRecordAdjustTimeForFolderCreationDate() throws Exception {
+        final GitStorage gitStorage = new GitStorage(base.getParent());
+        final ChannelManifest manifest = new ChannelManifest("test", "", new ArrayList<>());
+        ManifestYamlSupport.write(manifest, base.resolve(InstallationMetadata.MANIFEST_FILE_NAME));
+        new ProsperoConfig(List.of(new Channel("", "", null, null, null, null)))
+                .writeConfig(base.resolve(InstallationMetadata.PROSPERO_CONFIG_FILE_NAME));
+
+        // ensure there's a time gap between creation of the folder and record
+        final Instant metadataDirCreationTime = Files.readAttributes(base, BasicFileAttributes.class).creationTime().toInstant();
+        while (!metadataDirCreationTime.plusMillis(1000).isBefore(new Date().toInstant())) {
+            Thread.sleep(100);
+        }
+
+        gitStorage.record();
+
+        assertEquals(metadataDirCreationTime.truncatedTo(ChronoUnit.SECONDS),
+                getDateOfLastCommit().toInstant().truncatedTo(ChronoUnit.SECONDS));
+    }
+
     private HashSet<String> getPathsInCommit() throws IOException, GitAPIException {
         final Git git = Git.open(base.resolve(".git").toFile());
         HashSet<String> paths = new HashSet<>();
@@ -146,6 +171,15 @@ public class GitStorageTest {
             }
         }
         return paths;
+    }
+
+    private Date getDateOfLastCommit() throws IOException, GitAPIException {
+        final Git git = Git.open(base.resolve(".git").toFile());
+        HashSet<String> paths = new HashSet<>();
+        for (RevCommit revCommit : git.log().setMaxCount(1).call()) {
+            return revCommit.getAuthorIdent().getWhen();
+        }
+        return null;
     }
 
 

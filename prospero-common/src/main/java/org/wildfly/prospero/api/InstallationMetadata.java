@@ -75,6 +75,9 @@ public class InstallationMetadata implements AutoCloseable {
         this(base, new GitStorage(base));
     }
 
+    /*
+     * Used in tests only
+     */
     protected InstallationMetadata(Path base, GitStorage gitStorage) throws MetadataException {
         this.base = base;
         this.gitStorage = gitStorage;
@@ -121,6 +124,14 @@ public class InstallationMetadata implements AutoCloseable {
             this.galleonProvisioningConfig = ProvisioningXmlParser.parse(provisioningFile);
         } catch (ProvisioningException e) {
             throw Messages.MESSAGES.unableToParseConfiguration(provisioningFile.toString(), e);
+        }
+
+        try {
+            if (gitStorage != null && !gitStorage.isStarted()) {
+                gitStorage.record();
+            }
+        } catch (IOException e) {
+            throw new MetadataException("Unable to init history store.", e);
         }
     }
 
