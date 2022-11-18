@@ -123,7 +123,7 @@ public class GalleonUtils {
             InputStream is = GalleonUtils.class.getClassLoader().getResourceAsStream(uri.getSchemeSpecificPart());
             return GalleonUtils.loadProvisioningConfig(is);
         } else if (FILE_SCHEME.equals(uri.getScheme())) {
-            return ProvisioningXmlParser.parse(Path.of(uri.getPath()));
+            return ProvisioningXmlParser.parse(Path.of(uri));
         } else {
             throw new IllegalArgumentException(String.format("Can't use scheme '%s' for Galleon provisioning.xml URI.",
                     uri.getScheme()));
