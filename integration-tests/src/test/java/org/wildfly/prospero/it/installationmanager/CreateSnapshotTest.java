@@ -40,12 +40,13 @@ public class CreateSnapshotTest extends WfCoreTestBase {
     @Test
     public void createSnapshot() throws Exception {
         // installCore
-        Path provisionConfigFile = MetadataTestUtils.prepareProvisionConfig(CHANNEL_BASE_CORE_19);
+        Path channelsFile = MetadataTestUtils.prepareProvisionConfig(CHANNEL_BASE_CORE_19);
 
         final ProvisioningDefinition provisioningDefinition = defaultWfCoreDefinition()
-                .setProvisionConfig(provisionConfigFile)
+                .setChannelCoordinates(channelsFile.toString())
                 .build();
-        installation.provision(provisioningDefinition.toProvisioningConfig(), provisioningDefinition.getChannels());
+        installation.provision(provisioningDefinition.toProvisioningConfig(),
+                provisioningDefinition.resolveChannels(CHANNELS_RESOLVER_FACTORY));
 
         final InstallationManager manager = new ProsperoInstallationManagerFactory().create(outputPath, new MavenOptions(MavenSessionManager.LOCAL_MAVEN_REPO, false));
 

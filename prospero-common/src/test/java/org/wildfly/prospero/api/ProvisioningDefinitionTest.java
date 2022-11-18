@@ -26,6 +26,7 @@ import org.junit.rules.TemporaryFolder;
 import org.wildfly.channel.Channel;
 import org.wildfly.channel.ChannelManifestCoordinate;
 import org.wildfly.channel.Repository;
+import org.wildfly.channel.maven.VersionResolverFactory;
 import org.wildfly.prospero.api.exceptions.NoChannelException;
 import org.wildfly.prospero.galleon.GalleonUtils;
 import org.wildfly.prospero.model.ProsperoConfig;
@@ -175,14 +176,14 @@ public class ProvisioningDefinitionTest {
                 List.of(new Repository("test_repo", "http://custom.repo")),
                 new ChannelManifestCoordinate("new.test", "gav")))).writeConfig(file.toPath());
 
-        final ProvisioningDefinition.Builder builder = new ProvisioningDefinition.Builder()
-                .setFpl("multi-channel")
-                .setProvisionConfig(file.toPath());
+        ProvisioningDefinition def = new ProvisioningDefinition.Builder().setFpl("multi-channel")
+                .setChannelCoordinates(file.toPath().toString()).build();
 
-        final ProvisioningDefinition def = builder.build();
+        VersionResolverFactory versionResolverFactory = new VersionResolverFactory(null, null);
+        List<Channel> channels = def.resolveChannels(versionResolverFactory);
 
-        assertEquals(1, def.getChannels().size());
-        final Channel channel = def.getChannels().get(0);
+        assertEquals(1, channels.size());
+        final Channel channel = channels.get(0);
         assertEquals("new.test:gav", channel.getManifestRef().getGav());
         assertThat(channel.getRepositories())
                 .map(r-> Tuple.tuple(r.getId(), r.getUrl()))

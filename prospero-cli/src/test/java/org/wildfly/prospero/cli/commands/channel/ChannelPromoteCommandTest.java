@@ -80,7 +80,7 @@ public class ChannelPromoteCommandTest extends AbstractConsoleTest {
 
         assertEquals(ReturnCodes.SUCCESS, exitCode);
         verify(promoter).promote(Paths.get("test/archive.zip").toAbsolutePath(), new URL("file:///test/test"),
-                ArtifactUtils.manifestFromString("org.test:custom-channel"));
+                ArtifactUtils.manifestCoordFromString("org.test:custom-channel"));
     }
 
     @Test
@@ -149,7 +149,7 @@ public class ChannelPromoteCommandTest extends AbstractConsoleTest {
                 );
         assertEquals(ReturnCodes.SUCCESS, exitCode);
         verify(promoter).promote(Paths.get("test/archive.zip").toAbsolutePath(), new URL("file:///test/test"),
-                ArtifactUtils.manifestFromString(CUSTOM_CHANNELS_GROUP_ID + ":test1"));
+                ArtifactUtils.manifestCoordFromString(CUSTOM_CHANNELS_GROUP_ID + ":test1"));
     }
 
     @Test
@@ -169,7 +169,7 @@ public class ChannelPromoteCommandTest extends AbstractConsoleTest {
         );
         assertEquals(ReturnCodes.SUCCESS, exitCode);
         verify(promoter).promote(Paths.get("test/archive.zip").toAbsolutePath(), new URL("http://test.repo"),
-                ArtifactUtils.manifestFromString("org.custom:test"));
+                ArtifactUtils.manifestCoordFromString("org.custom:test"));
     }
 
     @Test
@@ -194,6 +194,6 @@ public class ChannelPromoteCommandTest extends AbstractConsoleTest {
         );
         assertEquals(ReturnCodes.SUCCESS, exitCode);
         verify(promoter).promote(Paths.get("test/archive.zip").toAbsolutePath(), new URL("http://test.repo"),
-                ArtifactUtils.manifestFromString(CUSTOM_CHANNELS_GROUP_ID + ":test1"));
+                ArtifactUtils.manifestCoordFromString(CUSTOM_CHANNELS_GROUP_ID + ":test1"));
     }
 }

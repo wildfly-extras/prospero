@@ -62,12 +62,12 @@ public class InstallationHistoryAction {
         InstallationMetadata metadata = new InstallationMetadata(installation);
 
         final ProsperoConfig prosperoConfig = new ProsperoConfig(
-                TemporaryRepositoriesHandler.addRepositories(metadata.getProsperoConfig().getChannels(), overrideRepositories));
+                TemporaryRepositoriesHandler.overrideRepositories(metadata.getProsperoConfig().getChannels(), overrideRepositories));
 
         try {
             metadata = metadata.rollback(savedState);
             final GalleonEnvironment galleonEnv = GalleonEnvironment
-                    .builder(installation, prosperoConfig, mavenSessionManager)
+                    .builder(installation, prosperoConfig.getChannels(), mavenSessionManager)
                     .setConsole(console)
                     .setRestoreManifest(metadata.getManifest())
                     .build();

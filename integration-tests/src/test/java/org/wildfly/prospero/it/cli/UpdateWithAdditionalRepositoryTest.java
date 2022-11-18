@@ -91,7 +91,7 @@ public class UpdateWithAdditionalRepositoryTest extends WfCoreTestBase {
 
     private void install(Path provisionConfig) throws Exception {
         ExecutionUtils.prosperoExecution(CliConstants.Commands.INSTALL,
-                        CliConstants.PROVISION_CONFIG, provisionConfig.toString(),
+                        CliConstants.CHANNELS, provisionConfig.toString(),
                         CliConstants.FPL, "wildfly-core@maven(org.jboss.universe:community-universe):19.0",
                         CliConstants.DIR, targetDir.getAbsolutePath())
                 .withTimeLimit(10, TimeUnit.MINUTES)

@@ -58,13 +58,14 @@ public class InstallationRestoreActionTest extends WfCoreTestBase {
 
     @Test
     public void restoreInstallation() throws Exception {
-        final Path provisionConfigFile = MetadataTestUtils.prepareProvisionConfig(CHANNEL_BASE_CORE_19);
+        final Path channelsFile = MetadataTestUtils.prepareProvisionConfig(CHANNEL_BASE_CORE_19);
 
         final ProvisioningDefinition provisioningDefinition = defaultWfCoreDefinition()
-                .setProvisionConfig(provisionConfigFile)
+                .setChannelCoordinates(channelsFile.toString())
                 .build();
         new ProvisioningAction(outputPath, mavenSessionManager, new AcceptingConsole())
-                .provision(provisioningDefinition.toProvisioningConfig(), provisioningDefinition.getChannels());
+                .provision(provisioningDefinition.toProvisioningConfig(),
+                        provisioningDefinition.resolveChannels(CHANNELS_RESOLVER_FACTORY));
 
         prepareInstallerConfig(outputPath.resolve(MetadataTestUtils.PROVISION_CONFIG_FILE_PATH), CHANNEL_COMPONENT_UPDATES, CHANNEL_BASE_CORE_19);
 

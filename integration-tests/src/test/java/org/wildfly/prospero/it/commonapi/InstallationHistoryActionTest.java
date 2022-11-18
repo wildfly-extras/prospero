@@ -55,24 +55,25 @@ import static org.junit.Assert.assertTrue;
 
 public class InstallationHistoryActionTest extends WfCoreTestBase {
 
-    private Path provisionConfigFile;
+    private Path channelsFile;
 
     @After
     public void tearDown() throws Exception {
-        if (Files.exists(provisionConfigFile)) {
-            Files.delete(provisionConfigFile);
+        if (Files.exists(channelsFile)) {
+            Files.delete(channelsFile);
         }
     }
 
     @Test
     public void listUpdates() throws Exception {
         // installCore
-        provisionConfigFile = MetadataTestUtils.prepareProvisionConfig(CHANNEL_BASE_CORE_19);
+        channelsFile = MetadataTestUtils.prepareProvisionConfig(CHANNEL_BASE_CORE_19);
 
         final ProvisioningDefinition provisioningDefinition = defaultWfCoreDefinition()
-                .setProvisionConfig(provisionConfigFile)
+                .setChannelCoordinates(channelsFile.toString())
                 .build();
-        installation.provision(provisioningDefinition.toProvisioningConfig(), provisioningDefinition.getChannels());
+        installation.provision(provisioningDefinition.toProvisioningConfig(),
+                provisioningDefinition.resolveChannels(CHANNELS_RESOLVER_FACTORY));
 
         // updateCore
         MetadataTestUtils.prepareProvisionConfig(outputPath.resolve(MetadataTestUtils.PROVISION_CONFIG_FILE_PATH), CHANNEL_COMPONENT_UPDATES, CHANNEL_BASE_CORE_19);
@@ -87,14 +88,15 @@ public class InstallationHistoryActionTest extends WfCoreTestBase {
 
     @Test
     public void rollbackChanges() throws Exception {
-        provisionConfigFile = MetadataTestUtils.prepareProvisionConfig(CHANNEL_BASE_CORE_19);
+        channelsFile = MetadataTestUtils.prepareProvisionConfig(CHANNEL_BASE_CORE_19);
         final Path modulesPaths = outputPath.resolve(Paths.get("modules", "system", "layers", "base"));
         final Path wildflyCliModulePath = modulesPaths.resolve(Paths.get("org", "jboss", "as", "cli", "main"));
 
         final ProvisioningDefinition provisioningDefinition = defaultWfCoreDefinition()
-                .setProvisionConfig(provisionConfigFile)
+                .setChannelCoordinates(channelsFile.toString())
                 .build();
-        installation.provision(provisioningDefinition.toProvisioningConfig(), provisioningDefinition.getChannels());
+        installation.provision(provisioningDefinition.toProvisioningConfig(),
+                provisioningDefinition.resolveChannels(CHANNELS_RESOLVER_FACTORY));
 
         MetadataTestUtils.prepareProvisionConfig(outputPath.resolve(MetadataTestUtils.PROVISION_CONFIG_FILE_PATH), CHANNEL_COMPONENT_UPDATES, CHANNEL_BASE_CORE_19);
         updateAction().performUpdate();
@@ -117,17 +119,18 @@ public class InstallationHistoryActionTest extends WfCoreTestBase {
     public void rollbackChangesWithTemporaryRepo() throws Exception {
         // install server
         final Path manifestPath = temp.newFile().toPath();
-        provisionConfigFile = temp.newFile().toPath();
+        channelsFile = temp.newFile().toPath();
         MetadataTestUtils.copyManifest("channels/wfcore-19-base.yaml", manifestPath);
-        MetadataTestUtils.prepareProvisionConfig(provisionConfigFile, List.of(manifestPath.toUri().toURL()));
+        MetadataTestUtils.prepareProvisionConfig(channelsFile, List.of(manifestPath.toUri().toURL()));
 
         final Path modulesPaths = outputPath.resolve(Paths.get("modules", "system", "layers", "base"));
         final Path wildflyCliModulePath = modulesPaths.resolve(Paths.get("org", "jboss", "as", "cli", "main"));
 
         final ProvisioningDefinition provisioningDefinition = defaultWfCoreDefinition()
-                .setProvisionConfig(provisionConfigFile)
+                .setChannelCoordinates(channelsFile.toString())
                 .build();
-        installation.provision(provisioningDefinition.toProvisioningConfig(), provisioningDefinition.getChannels());
+        installation.provision(provisioningDefinition.toProvisioningConfig(),
+                provisioningDefinition.resolveChannels(CHANNELS_RESOLVER_FACTORY));
 
         MetadataTestUtils.upgradeStreamInManifest(manifestPath, resolvedUpgradeArtifact);
         updateAction().performUpdate();
@@ -156,12 +159,13 @@ public class InstallationHistoryActionTest extends WfCoreTestBase {
 
     @Test
     public void displayChanges() throws Exception {
-        provisionConfigFile = MetadataTestUtils.prepareProvisionConfig(CHANNEL_BASE_CORE_19);
+        channelsFile = MetadataTestUtils.prepareProvisionConfig(CHANNEL_BASE_CORE_19);
 
         final ProvisioningDefinition provisioningDefinition = defaultWfCoreDefinition()
-                .setProvisionConfig(provisionConfigFile)
+                .setChannelCoordinates(channelsFile.toString())
                 .build();
-        installation.provision(provisioningDefinition.toProvisioningConfig(), provisioningDefinition.getChannels());
+        installation.provision(provisioningDefinition.toProvisioningConfig(),
+                provisioningDefinition.resolveChannels(CHANNELS_RESOLVER_FACTORY));
 
         MetadataTestUtils.prepareProvisionConfig(outputPath.resolve(MetadataTestUtils.PROVISION_CONFIG_FILE_PATH), CHANNEL_COMPONENT_UPDATES, CHANNEL_BASE_CORE_19);
         updateAction().performUpdate();

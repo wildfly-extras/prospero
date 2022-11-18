@@ -75,9 +75,10 @@ public class UpdateTest extends WfCoreTestBase {
 
         // provision using channel gav
         final ProvisioningDefinition provisioningDefinition = defaultWfCoreDefinition()
-                .setProvisionConfig(buildConfigWithMockRepo().toPath())
+                .setChannelCoordinates(buildConfigWithMockRepo().toPath().toString())
                 .build();
-        installation.provision(provisioningDefinition.toProvisioningConfig(), provisioningDefinition.getChannels());
+        installation.provision(provisioningDefinition.toProvisioningConfig(),
+                provisioningDefinition.resolveChannels(CHANNELS_RESOLVER_FACTORY));
 
         Optional<Artifact> wildflyCliArtifact = readArtifactFromManifest("org.wildfly.core", "wildfly-cli");
         assertEquals(BASE_VERSION, wildflyCliArtifact.get().getVersion());
@@ -105,9 +106,10 @@ public class UpdateTest extends WfCoreTestBase {
 
         // provision using manifest gav
         final ProvisioningDefinition provisioningDefinition = defaultWfCoreDefinition()
-                .setProvisionConfig(buildConfigWithMockRepo().toPath())
+                .setChannelCoordinates(buildConfigWithMockRepo().toPath().toString())
                 .build();
-        installation.provision(provisioningDefinition.toProvisioningConfig(), provisioningDefinition.getChannels());
+        installation.provision(provisioningDefinition.toProvisioningConfig(),
+                provisioningDefinition.resolveChannels(CHANNELS_RESOLVER_FACTORY));
 
         Files.writeString(prosperoConfigFile, "# test comment", StandardOpenOption.APPEND);
 

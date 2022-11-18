@@ -49,13 +49,13 @@ public class WildflyFpTest {
 
     @Test
     public void testInstallProsperoWithWildfly() throws Exception {
-        Path provisionConfig = tempDir.newFile().toPath();
-        MetadataTestUtils.prepareProvisionConfig(provisionConfig, "channels/wildfly-27.0.0.Alpha2-channel.yaml", "channels/prospero-channel.yaml");
+        Path channelsFile = tempDir.newFile().toPath();
+        MetadataTestUtils.prepareProvisionConfig(channelsFile, "channels/wildfly-27.0.0.Alpha2-channel.yaml", "channels/prospero-channel.yaml");
 
         final URL provisionDefinition = this.getClass().getClassLoader().getResource("galleon/wfcore-prospero.xml");
 
         ExecutionUtils.prosperoExecution(CliConstants.Commands.INSTALL,
-                        CliConstants.PROVISION_CONFIG, provisionConfig.toString(),
+                        CliConstants.CHANNELS, channelsFile.toString(),
                         CliConstants.DEFINITION, Paths.get(provisionDefinition.toURI()).toString(),
                         CliConstants.DIR, targetDir.toAbsolutePath().toString())
                 .withTimeLimit(10, TimeUnit.MINUTES)

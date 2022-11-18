@@ -60,7 +60,7 @@ public class ChannelAddCommand extends AbstractCommand {
         List<Repository> repositories;
         repositories = RepositoryDefinition.from(repositoryDefs);
 
-        ChannelManifestCoordinate manifest = ArtifactUtils.manifestFromString(gavUrlOrPath);
+        ChannelManifestCoordinate manifest = ArtifactUtils.manifestCoordFromString(gavUrlOrPath);
         Channel channel = new Channel(channelName, null, null, null, repositories, manifest);
         try (final MetadataAction metadataAction = actionFactory.metadataActions(installationDirectory)) {
             metadataAction.addChannel(channel);

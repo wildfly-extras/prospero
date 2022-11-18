@@ -18,6 +18,7 @@
 package org.wildfly.prospero.actions;
 
 import org.apache.commons.lang3.StringUtils;
+import org.jboss.galleon.config.ProvisioningConfig;
 import org.wildfly.channel.Channel;
 import org.wildfly.channel.ChannelManifest;
 import org.wildfly.channel.UnresolvedMavenArtifactException;
@@ -31,16 +32,15 @@ import org.wildfly.prospero.galleon.GalleonEnvironment;
 import org.wildfly.prospero.galleon.GalleonUtils;
 import org.wildfly.prospero.galleon.ChannelMavenArtifactRepositoryManager;
 
+import java.net.MalformedURLException;
 import java.nio.file.Path;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 
-import org.wildfly.prospero.model.ProsperoConfig;
 import org.wildfly.prospero.wfchannel.MavenSessionManager;
 import org.eclipse.aether.repository.RemoteRepository;
 import org.jboss.galleon.ProvisioningException;
-import org.jboss.galleon.config.ProvisioningConfig;
 
 public class ProvisioningAction {
 
@@ -57,26 +57,22 @@ public class ProvisioningAction {
     }
 
     /**
-     * Installs feature pack defined by {@code fpl} in {@code installDir}. If {@code fpl} doesn't include version,
-     * the newest available version will be used.
+     * Provision installation according to given ProvisioningDefinition.
      *
-     * @param config
-     * @param channels
-     * @throws ProvisioningException
-     * @throws MetadataException
+     * @param provisioningDefinition prospero provisioning definition
      */
-    public void provision(ProvisioningConfig config, List<Channel> channels) throws ProvisioningException, OperationException {
-        doProvision((pm,options)->pm.provision(config, options), enforceChannelNames(channels));
-    }
+    public void provision(ProvisioningConfig provisioningConfig, List<Channel> channels)
+            throws ProvisioningException, OperationException, MalformedURLException {
+        channels = enforceChannelNames(channels);
 
-    private void doProvision(GalleonUtils.ProvisioningManagerExecution galleonOp, List<Channel> channels) throws ProvisioningException, OperationException {
-        final ProsperoConfig prosperoConfig = new ProsperoConfig(channels);
         final GalleonEnvironment galleonEnv = GalleonEnvironment
-                .builder(installDir, prosperoConfig, mavenSessionManager)
+                .builder(installDir, channels, mavenSessionManager)
                 .setConsole(console)
                 .build();
 
         try {
+            GalleonUtils.ProvisioningManagerExecution galleonOp = (pm, options) -> pm.provision(
+                    provisioningConfig, options);
             GalleonUtils.executeGalleon(options -> galleonOp.execute(galleonEnv.getProvisioningManager(), options),
                     mavenSessionManager.getProvisioningRepo().toAbsolutePath());
         } catch (UnresolvedMavenArtifactException e) {

@@ -25,6 +25,7 @@ import org.junit.Before;
 import org.junit.Rule;
 import org.junit.rules.TemporaryFolder;
 import org.wildfly.channel.Repository;
+import org.wildfly.channel.maven.VersionResolverFactory;
 import org.wildfly.prospero.actions.ProvisioningAction;
 import org.wildfly.prospero.api.ProvisioningDefinition;
 import org.wildfly.prospero.api.RepositoryUtils;
@@ -68,6 +69,8 @@ public class WfCoreTestBase {
     public static final Repository REPOSITORY_MAVEN_CENTRAL = new Repository("maven-central", "https://repo1.maven.org/maven2/");
     public static final Repository REPOSITORY_NEXUS = new Repository("nexus", "https://repository.jboss.org/nexus/content/groups/public-jboss");
     public static final Repository REPOSITORY_MRRC_GA = new Repository("maven-redhat-ga", "https://maven.repository.redhat.com/ga");
+    public static final VersionResolverFactory CHANNELS_RESOLVER_FACTORY = new VersionResolverFactory(null, null);
+
     protected static Artifact resolvedUpgradeArtifact;
     protected static Artifact resolvedUpgradeClientArtifact;
     protected Path outputPath;

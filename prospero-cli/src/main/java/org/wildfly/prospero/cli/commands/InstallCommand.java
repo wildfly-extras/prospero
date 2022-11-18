@@ -22,10 +22,14 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
+import org.eclipse.aether.DefaultRepositorySystemSession;
+import org.eclipse.aether.RepositorySystem;
+import org.wildfly.channel.Channel;
+import org.wildfly.channel.maven.VersionResolverFactory;
 import org.wildfly.prospero.actions.Console;
 import org.wildfly.prospero.actions.ProvisioningAction;
-import org.wildfly.prospero.api.ProvisioningDefinition;
 import org.wildfly.prospero.api.KnownFeaturePacks;
+import org.wildfly.prospero.api.ProvisioningDefinition;
 import org.wildfly.prospero.cli.ActionFactory;
 import org.wildfly.prospero.cli.CliMessages;
 import org.wildfly.prospero.cli.RepositoryDefinition;
@@ -57,18 +61,18 @@ public class InstallCommand extends AbstractCommand {
         Path directory;
 
         @CommandLine.Option(
-                names = CliConstants.PROVISION_CONFIG,
-                paramLabel = CliConstants.PATH,
+                names = CliConstants.CHANNELS,
+                paramLabel = CliConstants.CHANNEL_REFERENCE,
                 order = 3
         )
-        Optional<Path> provisionConfig;
+        List<String> channelCoordinates = new ArrayList<>();
 
         @CommandLine.Option(
                 names = CliConstants.CHANNEL_MANIFEST,
                 paramLabel = CliConstants.CHANNEL_MANIFEST_REFERENCE,
                 order = 4
         )
-        Optional<String> channel;
+        Optional<String> manifestCoordinate;
 
         @CommandLine.Option(
                 names = CliConstants.REPOSITORIES,
@@ -116,16 +120,13 @@ public class InstallCommand extends AbstractCommand {
 
         // following is checked by picocli, adding this to avoid IDE warnings
         assert featurePackOrDefinition.definition.isPresent() || featurePackOrDefinition.fpl.isPresent();
-        if (featurePackOrDefinition.definition.isEmpty() && isStandardFpl(featurePackOrDefinition.fpl.get()) && provisionConfig.isEmpty()) {
-            throw CliMessages.MESSAGES.prosperoConfigMandatoryWhenCustomFpl();
+        if (featurePackOrDefinition.definition.isEmpty() && isStandardFpl(featurePackOrDefinition.fpl.get())
+                && channelCoordinates.isEmpty() && manifestCoordinate.isEmpty()) {
+            throw CliMessages.MESSAGES.channelsMandatoryWhenCustomFpl();
         }
 
-        if (provisionConfig.isPresent() && channel.isPresent()) {
-            throw CliMessages.MESSAGES.exclusiveOptions(CliConstants.PROVISION_CONFIG, CliConstants.CHANNEL_MANIFEST);
-        }
-
-        if (provisionConfig.isPresent() && !remoteRepositories.isEmpty()) {
-            throw CliMessages.MESSAGES.exclusiveOptions(CliConstants.PROVISION_CONFIG, CliConstants.REPOSITORIES);
+        if (!channelCoordinates.isEmpty() && manifestCoordinate.isPresent()) {
+            throw CliMessages.MESSAGES.exclusiveOptions(CliConstants.CHANNELS, CliConstants.CHANNEL_MANIFEST);
         }
 
         final Optional<Path> localMavenCache = LocalRepoOptions.getLocalMavenCache(localRepoOptions);
@@ -134,20 +135,30 @@ public class InstallCommand extends AbstractCommand {
 
         final ProvisioningDefinition provisioningDefinition = ProvisioningDefinition.builder()
                 .setFpl(featurePackOrDefinition.fpl.orElse(null))
-                .setManifest(channel.orElse(null))
-                .setProvisionConfig(provisionConfig.orElse(null))
+                .setManifest(manifestCoordinate.orElse(null))
+                .setChannelCoordinates(channelCoordinates)
                 .setOverrideRepositories(RepositoryDefinition.from(remoteRepositories))
                 .setDefinitionFile(featurePackOrDefinition.definition.map(Path::toUri).orElse(null))
                 .build();
 
+        final VersionResolverFactory versionResolverFactory = createVersionResolverFactory(mavenSessionManager);
+        final List<Channel> channels = provisioningDefinition.resolveChannels(versionResolverFactory);
+
         ProvisioningAction provisioningAction = actionFactory.install(directory.toAbsolutePath(), mavenSessionManager,
                 console);
-        provisioningAction.provision(provisioningDefinition.toProvisioningConfig(), provisioningDefinition.getChannels());
+        provisioningAction.provision(provisioningDefinition.toProvisioningConfig(), channels);
 
         final float totalTime = (System.currentTimeMillis() - startTime) / 1000f;
         console.println(CliMessages.MESSAGES.operationCompleted(totalTime));
 
         return ReturnCodes.SUCCESS;
+    }
+
+    private static VersionResolverFactory createVersionResolverFactory(MavenSessionManager mavenSessionManager) {
+        final RepositorySystem repositorySystem = mavenSessionManager.newRepositorySystem();
+        final DefaultRepositorySystemSession repositorySystemSession = mavenSessionManager.newRepositorySystemSession(
+                repositorySystem);
+        return new VersionResolverFactory(repositorySystem, repositorySystemSession);
     }
 
     private boolean isStandardFpl(String fpl) {
