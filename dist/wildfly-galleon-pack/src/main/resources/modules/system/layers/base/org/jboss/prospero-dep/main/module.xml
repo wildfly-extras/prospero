@@ -38,5 +38,6 @@
       <module name="org.slf4j" export="true"/>
       <module name="org.yaml.snakeyaml" export="true"/>
       <module name="org.jboss.staxmapper" export="true"/>
+      <module name="org.wildfly.installation-manager.api" optional="true" export="true"/>
     </dependencies>
 </module>
