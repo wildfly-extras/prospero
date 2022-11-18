@@ -137,7 +137,9 @@ public class ProsperoInstallationManager implements InstallationManager {
     }
 
     private static Channel mapChannel(org.wildfly.channel.Channel channel) {
-        if (channel.getManifestRef().getUrl() != null) {
+        if (channel.getManifestRef() == null) {
+            return new Channel(channel.getName(), map(channel.getRepositories(), ProsperoInstallationManager::mapRepository));
+        } else if (channel.getManifestRef().getUrl() != null) {
             return new Channel(channel.getName(), map(channel.getRepositories(), ProsperoInstallationManager::mapRepository), channel.getManifestRef().getUrl());
         } else if (channel.getManifestRef().getGav() != null) {
             return new Channel(channel.getName(), map(channel.getRepositories(), ProsperoInstallationManager::mapRepository), channel.getManifestRef().getGav());
