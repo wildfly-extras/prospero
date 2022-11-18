@@ -99,13 +99,13 @@ public class InstallationMetadata implements AutoCloseable {
         this.channels = channels;
 
         if (channels != null && channels.stream().filter(c-> StringUtils.isEmpty(c.getName())).findAny().isPresent()) {
-            throw new MetadataException("Channel names cannot be empty");
+            throw Messages.MESSAGES.emptyChannelName();
         }
 
         try {
             this.galleonProvisioningConfig = ProvisioningXmlParser.parse(provisioningFile);
         } catch (ProvisioningException e) {
-            throw new MetadataException("Error when parsing installation metadata", e);
+            throw Messages.MESSAGES.unableToParseConfiguration(provisioningFile, e);
         }
     }
 
@@ -113,17 +113,18 @@ public class InstallationMetadata implements AutoCloseable {
         try {
             this.manifest = ManifestYamlSupport.parse(manifestFile.toFile());
         } catch (IOException e) {
-            throw Messages.MESSAGES.unableToParseConfiguration(manifestFile.toString(), e);
+            throw Messages.MESSAGES.unableToParseConfiguration(manifestFile, e);
         }
         try {
             this.channels = ProsperoConfig.readConfig(provisionConfig).getChannels();
-        } catch (IOException e) {
-            throw Messages.MESSAGES.unableToParseConfiguration(provisionConfig.toString(), e);
+        } catch (MetadataException e) {
+            // re-wrap the exception to change the description
+            throw Messages.MESSAGES.unableToParseConfiguration(provisionConfig, e.getCause());
         }
         try {
             this.galleonProvisioningConfig = ProvisioningXmlParser.parse(provisioningFile);
         } catch (ProvisioningException e) {
-            throw Messages.MESSAGES.unableToParseConfiguration(provisioningFile.toString(), e);
+            throw Messages.MESSAGES.unableToParseConfiguration(provisioningFile, e);
         }
 
         try {
@@ -131,7 +132,7 @@ public class InstallationMetadata implements AutoCloseable {
                 gitStorage.record();
             }
         } catch (IOException e) {
-            throw new MetadataException("Unable to init history store.", e);
+            throw Messages.MESSAGES.unableToCreateHistoryStorage(base.resolve(METADATA_DIR), e);
         }
     }
 
@@ -165,7 +166,7 @@ public class InstallationMetadata implements AutoCloseable {
         }
 
         if (manifestFile == null || provisionConfigFile == null || provisioningFile == null) {
-            throw new IllegalArgumentException("Provided metadata bundle is missing one or more entries");
+            throw Messages.MESSAGES.incompleteMetadataBundle(location);
         }
 
         return new InstallationMetadata(manifestFile, provisionConfigFile, provisioningFile);
@@ -220,7 +221,7 @@ public class InstallationMetadata implements AutoCloseable {
         try {
             ManifestYamlSupport.write(this.manifest, this.manifestFile);
         } catch (IOException e) {
-            throw new MetadataException("Unable to save manifest in installation", e);
+            throw Messages.MESSAGES.unableToSaveConfiguration(manifestFile, e);
         }
 
         if (overrideProsperoConfig || !Files.exists(this.prosperoConfigFile)) {
@@ -234,7 +235,7 @@ public class InstallationMetadata implements AutoCloseable {
         try {
             getProsperoConfig().writeConfig(this.prosperoConfigFile);
         } catch (IOException e) {
-            throw new MetadataException("Unable to save channel list in installation", e);
+            throw Messages.MESSAGES.unableToSaveConfiguration(prosperoConfigFile, e);
         }
     }
 

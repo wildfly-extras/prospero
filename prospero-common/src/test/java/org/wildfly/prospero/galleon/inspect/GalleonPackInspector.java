@@ -20,8 +20,6 @@ package org.wildfly.prospero.galleon.inspect;
 import org.jboss.logging.Logger;
 import org.wildfly.prospero.api.InstallationMetadata;
 import org.wildfly.prospero.api.exceptions.ProvisioningRuntimeException;
-import org.wildfly.prospero.model.XmlException;
-import org.wildfly.prospero.model.XmlSupport;
 import org.eclipse.aether.artifact.Artifact;
 import org.eclipse.aether.artifact.DefaultArtifact;
 import org.jboss.galleon.ProvisioningException;

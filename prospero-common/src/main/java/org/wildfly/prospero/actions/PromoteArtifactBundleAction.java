@@ -51,7 +51,7 @@ public class PromoteArtifactBundleAction {
         Objects.requireNonNull(coordinate);
 
         if (coordinate.getGav() == null || coordinate.getGav().isEmpty()) {
-            throw new IllegalArgumentException("Channel reference has to use Maven GA.");
+            throw Messages.MESSAGES.nonMavenChannelRef();
         }
 
         try (final ArtifactBundle extracted = ArtifactBundle.extract(archive)) {
@@ -70,10 +70,10 @@ public class PromoteArtifactBundleAction {
             try {
                 promoter.promote(extracted.getArtifactList(), new ChannelCoordinate(coordinate.getGav().split(":")[0], coordinate.getGav().split(":")[1]), sourceRepo);
             } catch (IOException | ArtifactResolutionException | DeploymentException e) {
-                throw new ArtifactPromoteException("Unable to promote artifacts to " + targetRepository, e);
+                throw Messages.MESSAGES.unableToPromote(targetRepository, e);
             }
         } catch (IOException e) {
-            throw new ArtifactPromoteException("Unable to parse the customization bundle", e);
+            throw Messages.MESSAGES.unableToParseCustomizationBundle(archive, e);
         }
     }
 }

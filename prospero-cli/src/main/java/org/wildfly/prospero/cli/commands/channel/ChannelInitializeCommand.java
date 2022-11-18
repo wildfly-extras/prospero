@@ -129,7 +129,7 @@ public class ChannelInitializeCommand extends AbstractCommand {
             return false;
         }
         if (file.exists() && !Files.isDirectory(file.toPath())) {
-            console.error(CliMessages.MESSAGES.repositoryIsNotDirectory(localRepository));
+            console.error(CliMessages.MESSAGES.repositoryIsNotDirectory(localRepository).getMessage());
             return false;
         }
 

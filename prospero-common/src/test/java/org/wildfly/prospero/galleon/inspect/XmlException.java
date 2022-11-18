@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-package org.wildfly.prospero.model;
+package org.wildfly.prospero.galleon.inspect;
 
 public class XmlException extends Exception {
 

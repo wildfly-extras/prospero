@@ -25,7 +25,7 @@ public class MetadataException extends OperationException {
         super(msg);
     }
 
-    public MetadataException(String msg, Exception e) {
+    public MetadataException(String msg, Throwable e) {
         super(msg, e);
     }
 }

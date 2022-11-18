@@ -7,6 +7,7 @@ import org.wildfly.installationmanager.HistoryResult;
 import org.wildfly.installationmanager.MavenOptions;
 import org.wildfly.installationmanager.Repository;
 import org.wildfly.installationmanager.spi.InstallationManager;
+import org.wildfly.prospero.Messages;
 import org.wildfly.prospero.actions.InstallationExportAction;
 import org.wildfly.prospero.actions.InstallationHistoryAction;
 import org.wildfly.prospero.actions.MetadataAction;
@@ -127,7 +128,7 @@ public class ProsperoInstallationManager implements InstallationManager {
             String timestamp = LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyyMMddHHmmss"));
             snapshotPath = targetPath.resolve("im-snapshot-" + timestamp + ".zip").toAbsolutePath();
         } else {
-            throw new OperationException("The file already exists: " + targetPath);
+            throw Messages.MESSAGES.fileAlreadyExists(targetPath);
         }
 
         final InstallationExportAction installationExportAction = new InstallationExportAction(server);

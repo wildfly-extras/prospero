@@ -21,6 +21,7 @@ import org.apache.commons.codec.digest.DigestUtils;
 import org.apache.commons.io.FileUtils;
 import org.eclipse.aether.artifact.Artifact;
 import org.wildfly.channel.ArtifactCoordinate;
+import org.wildfly.prospero.Messages;
 
 import java.io.File;
 import java.io.FileInputStream;
@@ -82,7 +83,7 @@ public class ArtifactBundle implements AutoCloseable {
         Objects.requireNonNull(archive);
 
         if (artifacts.isEmpty()) {
-            throw new IllegalArgumentException("Cannot create bundle without artifacts.");
+            throw Messages.MESSAGES.noArtifactsToPackage();
         }
 
         try (ZipOutputStream zos = new ZipOutputStream(new FileOutputStream(archive))) {

@@ -21,6 +21,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.maven.artifact.versioning.ComparableVersion;
 import org.eclipse.aether.artifact.Artifact;
 import org.wildfly.channel.ChannelManifestCoordinate;
+import org.wildfly.prospero.Messages;
 
 import java.net.MalformedURLException;
 import java.net.URL;
@@ -47,7 +48,7 @@ public class ArtifactUtils {
                 try {
                     return new ChannelManifestCoordinate(Paths.get(urlGavOrPath).toAbsolutePath().toUri().toURL());
                 } catch (MalformedURLException e2) {
-                    throw new IllegalArgumentException("Can't convert path to URL", e2);
+                    throw Messages.MESSAGES.invalidUrl(urlGavOrPath, e2);
                 }
             }
         }

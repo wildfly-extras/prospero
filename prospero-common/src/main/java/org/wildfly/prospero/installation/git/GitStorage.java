@@ -19,6 +19,7 @@ package org.wildfly.prospero.installation.git;
 
 import org.eclipse.jgit.lib.StoredConfig;
 import org.wildfly.channel.ChannelManifest;
+import org.wildfly.prospero.Messages;
 import org.wildfly.prospero.api.InstallationMetadata;
 import org.wildfly.prospero.api.exceptions.MetadataException;
 import org.wildfly.prospero.api.SavedState;
@@ -59,7 +60,7 @@ public class GitStorage implements AutoCloseable {
         try {
             git = initGit();
         } catch (GitAPIException | IOException e) {
-            throw new MetadataException("Unable to open or create git repository for the installation", e);
+            throw Messages.MESSAGES.unableToCreateHistoryStorage(base, e);
         }
     }
 
@@ -75,7 +76,7 @@ public class GitStorage implements AutoCloseable {
 
             return history;
         } catch (GitAPIException e) {
-            throw new MetadataException("Unable to read history of installation", e);
+            throw Messages.MESSAGES.unableToAccessHistoryStorage(base, e);
         }
     }
 
@@ -95,7 +96,7 @@ public class GitStorage implements AutoCloseable {
             }
 
         } catch (IOException | GitAPIException e) {
-            throw new MetadataException("Unable to write history of installation", e);
+            throw Messages.MESSAGES.unableToAccessHistoryStorage(base, e);
         }
     }
 
@@ -116,7 +117,7 @@ public class GitStorage implements AutoCloseable {
             git.add().addFilepattern(InstallationMetadata.PROSPERO_CONFIG_FILE_NAME).call();
             git.commit().setCommitter(getCommitter()).setMessage(SavedState.Type.CONFIG_CHANGE.name()).call();
         } catch (GitAPIException e) {
-            throw new MetadataException("Unable to write history of installation", e);
+            throw Messages.MESSAGES.unableToAccessHistoryStorage(base, e);
         }
     }
 
@@ -129,7 +130,7 @@ public class GitStorage implements AutoCloseable {
             git.add().addFilepattern(InstallationMetadata.MANIFEST_FILE_NAME).call();
             git.commit().setCommitter(getCommitter()).setMessage(SavedState.Type.ROLLBACK.name()).call();
         } catch (GitAPIException e) {
-            throw new MetadataException("Unable to write history of installation", e);
+            throw Messages.MESSAGES.unableToAccessHistoryStorage(base, e);
         }
     }
 

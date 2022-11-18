@@ -18,6 +18,7 @@
 package org.wildfly.prospero.cli;
 
 import org.jboss.logging.Messages;
+import org.jboss.logging.annotations.Cause;
 import org.jboss.logging.annotations.Message;
 import org.jboss.logging.annotations.MessageBundle;
 import org.wildfly.prospero.cli.commands.CliConstants;
@@ -91,19 +92,16 @@ public interface CliMessages {
     //
 
     @Message("Unable to perform self-update - folder `%s` contains unexpected feature packs.")
-    String unexpectedPackageInSelfUpdate(String path);
+    ArgumentParsingException unexpectedPackageInSelfUpdate(String path);
 
     @Message("Unable to locate the installation folder to perform self-update.")
-    String unableToLocateProsperoInstallation();
+    ArgumentParsingException unableToLocateProsperoInstallation();
 
     @Message("Unable to perform self-update - unable to determine installed feature packs.")
-    String unableToParseSelfUpdateData();
+    ArgumentParsingException unableToParseSelfUpdateData(@Cause Exception e);
 
     @Message("Provisioning config argument (" + CliConstants.PROVISION_CONFIG + ") need to be set when using custom fpl")
     IllegalArgumentException prosperoConfigMandatoryWhenCustomFpl();
-
-    @Message("Error while executing operation '%s': %s")
-    String errorWhileExecutingOperation(String op, String exceptionMessage);
 
     @Message("No changes found")
     String noChangesFound();
@@ -113,12 +111,6 @@ public interface CliMessages {
 
     @Message("%n[*] The update list contain one or more artifacts with lower versions then currently installed. Proceed with caution.%n%n")
     String possibleDowngrade();
-
-    @Message("Repository '%s' removed.")
-    String repositoryRemoved(String repoId);
-
-    @Message("Repository '%s' added.")
-    String repositoryAdded(String repoId);
 
     @Message("Channel '%s' added.")
     String channelAdded(String urlOrGav);
@@ -148,7 +140,7 @@ public interface CliMessages {
     String unableToCreateLocalRepository(Path repositoryPath);
 
     @Message("Repository path `%s` is a file not a directory.")
-    String repositoryIsNotDirectory(Path repo);
+    ArgumentParsingException repositoryIsNotDirectory(Path repo);
 
     @Message("Channel coordinate must be provided in `groupId:artifactId` format")
     String wrongChannelCoordinateFormat();
@@ -170,9 +162,6 @@ public interface CliMessages {
 
     @Message("Registering custom channel `%s`")
     String registeringCustomChannel(String name);
-
-    @Message("Registering custom repository `%s`")
-    String registeringCustomRepository(String name);
 
     @Message("Repository definition [%s] is invalid. The definition format should be [id::url]")
     ArgumentParsingException invalidRepositoryDefinition(String repoKey);
