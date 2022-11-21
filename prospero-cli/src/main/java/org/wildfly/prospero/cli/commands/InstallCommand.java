@@ -61,7 +61,7 @@ public class InstallCommand extends AbstractCommand {
         Path directory;
 
         @CommandLine.Option(
-                names = CliConstants.CHANNELS,
+                names = {CliConstants.CHANNELS, CliConstants.CHANNEL},
                 paramLabel = CliConstants.CHANNEL_REFERENCE,
                 order = 3
         )

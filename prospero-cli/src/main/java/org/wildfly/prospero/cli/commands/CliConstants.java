@@ -60,6 +60,7 @@ public final class CliConstants {
     // Option names:
 
     public static final String CHANNEL_MANIFEST = "--manifest";
+    public static final String CHANNEL = "--channel";
     public static final String CHANNELS = "--channels";
     public static final String REPOSITORIES = "--repositories";
     public static final String DEFINITION = "--definition";
