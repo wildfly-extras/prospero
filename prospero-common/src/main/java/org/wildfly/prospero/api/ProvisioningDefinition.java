@@ -100,8 +100,10 @@ public class ProvisioningDefinition {
             if (this.channelCoordinates.isEmpty()) { // no channels provided by user
                 if (builder.manifest.isPresent()) { // if manifest given, use it to create a channel
                     this.channels = List.of(composeChannelFromManifest(builder.manifest.get(), featurePackInfo));
-                } else { // if no manifest given, use channels from known FP
+                } else if (!featurePackInfo.getChannels().isEmpty()) { // if no manifest given, use channels from known FP
                     this.channels = featurePackInfo.getChannels();
+                } else {
+                    throw Messages.MESSAGES.fplDefinitionDoesntContainChannel(builder.fpl.get());
                 }
             }
         } else if (!this.channelCoordinates.isEmpty()) {
@@ -110,19 +112,6 @@ public class ProvisioningDefinition {
         } else {
             throw Messages.MESSAGES.predefinedFplOrChannelRequired(String.join(", ", KnownFeaturePacks.getNames()));
         }
-
-        // TODO: Do this check after channels are resolved?
-        if ((channels.isEmpty() || channelsMissingManifest()) && channelCoordinates.isEmpty() && builder.manifest.isEmpty()) {
-            if (builder.fpl.isPresent() && KnownFeaturePacks.isWellKnownName(builder.fpl.get())) {
-                throw Messages.MESSAGES.fplDefinitionDoesntContainChannel(builder.fpl.get());
-            } else {
-                throw Messages.MESSAGES.noChannelReference();
-            }
-        }
-    }
-
-    private boolean channelsMissingManifest() {
-        return channels.stream().anyMatch(c->c.getManifestRef() == null);
     }
 
     private List<RemoteRepository> channelResolutionRepositories() {
@@ -133,6 +122,17 @@ public class ProvisioningDefinition {
             return overrideRepositories.stream()
                     .map(RepositoryUtils::toRemoteRepository)
                     .collect(Collectors.toList());
+        }
+    }
+
+    private static void validateResolvedChannels(List<Channel> channels) throws NoChannelException {
+        if (channels.isEmpty()) {
+            throw Messages.MESSAGES.noChannelReference();
+        }
+
+        Optional<Channel> invalidChannel = channels.stream().filter(c -> c.getManifestRef() == null).findFirst();
+        if (invalidChannel.isPresent()) {
+            throw Messages.MESSAGES.noChannelManifestReference(invalidChannel.get().getName());
         }
     }
 
@@ -191,7 +191,7 @@ public class ProvisioningDefinition {
      * @param versionResolverFactory a VersionResolverFactory instance to perform the channel resolution
      * @return Channel instances
      */
-    public List<Channel> resolveChannels(VersionResolverFactory versionResolverFactory) {
+    public List<Channel> resolveChannels(VersionResolverFactory versionResolverFactory) throws NoChannelException {
         try {
             List<Channel> channels = new ArrayList<>(this.channels);
 
@@ -200,6 +200,8 @@ public class ProvisioningDefinition {
             }
 
             channels = TemporaryRepositoriesHandler.overrideRepositories(channels, overrideRepositories);
+
+            validateResolvedChannels(channels);
             return channels;
         } catch (MalformedURLException e) {
             // I believe the MalformedURLException is declared mistakenly by VersionResolverFactory#resolveChannels().

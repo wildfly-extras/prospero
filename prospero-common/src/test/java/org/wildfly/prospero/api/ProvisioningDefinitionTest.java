@@ -126,7 +126,8 @@ public class ProvisioningDefinitionTest {
         final ProvisioningDefinition.Builder builder = new ProvisioningDefinition.Builder().setFpl("no-channel");
 
         try {
-            builder.build();
+            ProvisioningDefinition definition = builder.build();
+            definition.resolveChannels(VERSION_RESOLVER_FACTORY);
             fail("Building FPL without channel should fail");
         } catch (NoChannelException ignore) {
             // OK

@@ -53,10 +53,13 @@ public interface Messages {
     @Message("Artifact [%s:%s] not found")
     ArtifactResolutionException artifactNotFound(String g, String a, @Cause UnresolvedMavenArtifactException e);
 
-    @Message("At least one channel reference must be given.")
+    @Message("Given configuration doesn't reference any channel.")
     NoChannelException noChannelReference();
 
-    @Message("[%s] doesn't specify any channels and no additional channels are selected.")
+    @Message("Invalid channel: Channel '%s' doesn't reference a manifest.")
+    NoChannelException noChannelManifestReference(String name);
+
+    @Message("Pre-defined FPL [%s] doesn't specify any channels and no explicit channels were given.")
     NoChannelException fplDefinitionDoesntContainChannel(String fpl);
 
     @Message("Channel '%s' is already present.")
