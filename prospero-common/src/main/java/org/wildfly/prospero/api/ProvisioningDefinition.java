@@ -31,7 +31,6 @@ import java.util.stream.Collectors;
 import javax.xml.stream.XMLStreamException;
 
 import org.eclipse.aether.repository.RemoteRepository;
-import org.eclipse.aether.repository.RepositoryPolicy;
 import org.jboss.galleon.ProvisioningException;
 import org.jboss.galleon.config.FeaturePackConfig;
 import org.jboss.galleon.config.ProvisioningConfig;
@@ -50,8 +49,6 @@ import org.wildfly.prospero.model.KnownFeaturePack;
 import org.wildfly.prospero.model.ProsperoConfig;
 
 public class ProvisioningDefinition {
-
-    public static final RepositoryPolicy DEFAULT_REPOSITORY_POLICY = new RepositoryPolicy(true, RepositoryPolicy.UPDATE_POLICY_ALWAYS, RepositoryPolicy.CHECKSUM_POLICY_FAIL);
 
     /**
      * Galleon feature pack location. Can be either a well-known name (like "eap-8.0" or "wildfly") that references a predefined
@@ -129,12 +126,15 @@ public class ProvisioningDefinition {
         return channels.stream().anyMatch(c->c.getManifestRef() == null);
     }
 
-    // TODO: externalize
-    private static List<RemoteRepository> defaultChannelResolutionRepositories() {
-        return List.of(
-                new RemoteRepository.Builder("MRRC", null, "https://maven.repository.redhat.com/ga/").build(),
-                new RemoteRepository.Builder("central", null, "https://repo1.maven.org/maven2").build()
-        );
+    private List<RemoteRepository> channelResolutionRepositories() {
+        if (overrideRepositories.isEmpty()) {
+            return List.of(new RemoteRepository.Builder("MRRC", null, "https://maven.repository.redhat.com/ga/").build(),
+                    new RemoteRepository.Builder("central", null, "https://repo1.maven.org/maven2").build());
+        } else {
+            return overrideRepositories.stream()
+                    .map(RepositoryUtils::toRemoteRepository)
+                    .collect(Collectors.toList());
+        }
     }
 
     private static List<Repository> extractRepositoriesFromChannels(List<Channel> channels) {
@@ -207,7 +207,7 @@ public class ProvisioningDefinition {
             List<Channel> channels = new ArrayList<>(this.channels);
 
             if (!channelCoordinates.isEmpty()) {
-                channels.addAll(versionResolverFactory.resolveChannels(channelCoordinates, defaultChannelResolutionRepositories()));
+                channels.addAll(versionResolverFactory.resolveChannels(channelCoordinates, channelResolutionRepositories()));
             }
 
             if (!overrideRepositories.isEmpty()) {
