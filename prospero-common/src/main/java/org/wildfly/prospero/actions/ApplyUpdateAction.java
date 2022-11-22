@@ -16,6 +16,7 @@
  */
 package org.wildfly.prospero.actions;
 
+import java.io.File;
 import java.io.IOException;
 import java.nio.file.FileVisitResult;
 import java.nio.file.Files;
@@ -162,7 +163,8 @@ public class ApplyUpdateAction implements AutoCloseable {
                 } else {
                     if (!Arrays.equals(original.getHash(), updateHash)) {
                         if (systemPaths.isSystemPath(Paths.get(installation.getRelativePath()))) {
-                            System.out.println("SYSTEM PATH");
+                            System.out.println("System path modified, creating .glold");
+                            System.out.println("SYSTEM PATH modified, creating .glold " + installationFile + installation.getPath() + ".glold");
                             glold(installation.getPath(), file);
                         } else {
                             System.out.println("CONFLICT, create glnew " + installationFile + ".glnew");
@@ -245,14 +247,21 @@ public class ApplyUpdateAction implements AutoCloseable {
                 }
                 if (!dir.equals(installationDir)) {
                     Path relative = installationDir.relativize(dir);
-                    Path target = updateDir.resolve(dir);
+                    Path target = updateDir.resolve(relative);
+                    String pathKey = relative.toString();
+                    pathKey = pathKey.endsWith(File.separator) ? pathKey : pathKey + File.separator;
                     // Not a file in the update
-                    if (fsDiff.getModifiedEntry(relative.toString()) == null
-                            && fsDiff.getAddedEntry(relative.toString()) == null
-                            && fsDiff.getRemovedEntry(relative.toString()) == null) {
+                    if (fsDiff.getModifiedEntry(pathKey) == null
+                            && fsDiff.getAddedEntry(pathKey) == null
+                            && fsDiff.getRemovedEntry(pathKey) == null) {
                         if (!Files.exists(target)) {
                             System.out.println("Deleting the directory " + dir + " that doesn't exist in the update");
                             IoUtils.recursiveDelete(dir);
+                            return FileVisitResult.SKIP_SUBTREE;
+                        }
+                    } else {
+                         if (!Files.exists(target)) {
+                            System.out.println("The directory " + dir + " that doesn't exist in the update is a User changes, skipping");
                             return FileVisitResult.SKIP_SUBTREE;
                         }
                     }
