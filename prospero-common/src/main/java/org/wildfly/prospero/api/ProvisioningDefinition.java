@@ -153,10 +153,6 @@ public class ProvisioningDefinition {
         return fpl;
     }
 
-    public List<Channel> getChannels() {
-        return channels;
-    }
-
     public URI getDefinition() {
         return definition;
     }
