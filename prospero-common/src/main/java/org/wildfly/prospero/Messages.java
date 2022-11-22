@@ -108,8 +108,11 @@ public interface Messages {
     @Message("Invalide URL [%s]")
     IllegalArgumentException invalidUrl(String text, @Cause Exception e);
 
-    @Message("Incomplete configuration: either a predefined fpl (%s) or a provisionConfigFile must be given.")
-    IllegalArgumentException incompleteProvisioningConfiguration(String availableFpls);
+    @Message("Incomplete configuration: If the FPL is not one of predefined names (%s) a channel must be given.")
+    IllegalArgumentException predefinedFplOrChannelRequired(String availableFpls);
+
+    @Message("Incomplete configuration: neither FPL nor Galleon provisioning config was given.")
+    IllegalArgumentException fplNorGalleonConfigWereSet();
 
     @Message("Provided metadata bundle [%s] is missing one or more entries")
     IllegalArgumentException incompleteMetadataBundle(Path path);

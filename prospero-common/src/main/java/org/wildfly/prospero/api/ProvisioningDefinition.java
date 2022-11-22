@@ -103,14 +103,12 @@ public class ProvisioningDefinition {
                 } else { // if no manifest given, use channels from known FP
                     this.channels = featurePackInfo.getChannels();
                 }
-                // override repositories if needed
-                this.channels = TemporaryRepositoriesHandler.overrideRepositories(this.channels, overrideRepositories);
             }
         } else if (!this.channelCoordinates.isEmpty()) {
             this.fpl = builder.fpl.orElse(null);
             this.definition = builder.definitionFile.orElse(null);
         } else {
-            throw Messages.MESSAGES.incompleteProvisioningConfiguration(String.join(", ", KnownFeaturePacks.getNames()));
+            throw Messages.MESSAGES.predefinedFplOrChannelRequired(String.join(", ", KnownFeaturePacks.getNames()));
         }
 
         // TODO: Do this check after channels are resolved?
@@ -187,7 +185,7 @@ public class ProvisioningDefinition {
                 throw Messages.MESSAGES.unableToParseConfigurationUri(definition, e);
             }
         } else {
-            throw Messages.MESSAGES.incompleteProvisioningConfiguration(String.join(", ", KnownFeaturePacks.getNames()));
+            throw Messages.MESSAGES.fplNorGalleonConfigWereSet();
         }
     }
 
