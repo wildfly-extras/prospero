@@ -53,43 +53,43 @@ public class InstallCommand extends AbstractCommand {
     )
     FeaturePackOrDefinition featurePackOrDefinition;
 
-        @CommandLine.Option(
-                names = CliConstants.DIR,
-                required = true,
-                order = 2
-        )
-        Path directory;
+    @CommandLine.Option(
+            names = CliConstants.DIR,
+            required = true,
+            order = 2
+    )
+    Path directory;
 
-        @CommandLine.Option(
-                names = {CliConstants.CHANNELS, CliConstants.CHANNEL},
-                paramLabel = CliConstants.CHANNEL_REFERENCE,
-                order = 3
-        )
-        List<String> channelCoordinates = new ArrayList<>();
+    @CommandLine.Option(
+            names = {CliConstants.CHANNELS, CliConstants.CHANNEL},
+            paramLabel = CliConstants.CHANNEL_REFERENCE,
+            order = 3
+    )
+    List<String> channelCoordinates = new ArrayList<>();
 
-        @CommandLine.Option(
-                names = CliConstants.CHANNEL_MANIFEST,
-                paramLabel = CliConstants.CHANNEL_MANIFEST_REFERENCE,
-                order = 4
-        )
-        Optional<String> manifestCoordinate;
+    @CommandLine.Option(
+            names = CliConstants.CHANNEL_MANIFEST,
+            paramLabel = CliConstants.CHANNEL_MANIFEST_REFERENCE,
+            order = 4
+    )
+    Optional<String> manifestCoordinate;
 
-        @CommandLine.Option(
-                names = CliConstants.REPOSITORIES,
-                paramLabel = CliConstants.REPO_URL,
-                split = ",",
-                order = 5
-        )
-        List<String> remoteRepositories = new ArrayList<>();
+    @CommandLine.Option(
+            names = CliConstants.REPOSITORIES,
+            paramLabel = CliConstants.REPO_URL,
+            split = ",",
+            order = 5
+    )
+    List<String> remoteRepositories = new ArrayList<>();
 
-        @CommandLine.ArgGroup(exclusive = true, order = 6, headingKey = "localRepoOptions.heading")
-        LocalRepoOptions localRepoOptions;
+    @CommandLine.ArgGroup(exclusive = true, order = 6, headingKey = "localRepoOptions.heading")
+    LocalRepoOptions localRepoOptions;
 
-        @CommandLine.Option(
-                names = CliConstants.OFFLINE,
-                order = 8
-        )
-        boolean offline;
+    @CommandLine.Option(
+            names = CliConstants.OFFLINE,
+            order = 8
+    )
+    boolean offline;
 
     static class FeaturePackOrDefinition {
         @CommandLine.Option(
