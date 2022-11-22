@@ -89,33 +89,34 @@ public class ProvisioningDefinition {
     private final URI definition;
 
     private ProvisioningDefinition(Builder builder) throws NoChannelException {
-        final Optional<String> fpl = Optional.ofNullable(builder.fpl);
-        final Optional<URI> definition = Optional.ofNullable(builder.definitionFile);
-        final Optional<ChannelManifestCoordinate> manifest = Optional.ofNullable(builder.manifest);
-        final Optional<Set<String>> includedPackages = Optional.ofNullable(builder.includedPackages);
-
-        this.includedPackages.addAll(includedPackages.orElse(Collections.emptySet()));
+        this.includedPackages.addAll(builder.includedPackages);
         this.overrideRepositories.addAll(builder.overrideRepositories);
         this.channelCoordinates.addAll(builder.channelCoordinates);
 
-        if (fpl.isPresent() && KnownFeaturePacks.isWellKnownName(fpl.get())) {
-            KnownFeaturePack featurePackInfo = KnownFeaturePacks.getByName(fpl.get());
+        if (builder.fpl.isPresent() && KnownFeaturePacks.isWellKnownName(builder.fpl.get())) { // if known FP name
+            KnownFeaturePack featurePackInfo = KnownFeaturePacks.getByName(builder.fpl.get());
             this.fpl = null;
             this.definition = featurePackInfo.getGalleonConfiguration();
-            if (this.channelCoordinates.isEmpty()) {
-                this.channels = getKnownFeaturePackChannels(overrideRepositories, manifest, featurePackInfo.getChannels());
+            if (this.channelCoordinates.isEmpty()) { // no channels provided by user
+                if (builder.manifest.isPresent()) { // if manifest given, use it to create a channel
+                    this.channels = List.of(composeChannelFromManifest(builder.manifest.get(), featurePackInfo));
+                } else { // if no manifest given, use channels from known FP
+                    this.channels = featurePackInfo.getChannels();
+                }
+                // override repositories if needed
+                this.channels = TemporaryRepositoriesHandler.overrideRepositories(this.channels, overrideRepositories);
             }
         } else if (!this.channelCoordinates.isEmpty()) {
-            this.fpl = fpl.orElse(null);
-            this.definition = definition.orElse(null);
+            this.fpl = builder.fpl.orElse(null);
+            this.definition = builder.definitionFile.orElse(null);
         } else {
             throw Messages.MESSAGES.incompleteProvisioningConfiguration(String.join(", ", KnownFeaturePacks.getNames()));
         }
 
         // TODO: Do this check after channels are resolved?
-        if ((channels.isEmpty() || channelsMissingManifest()) && channelCoordinates.isEmpty() && manifest.isEmpty()) {
-            if (fpl.isPresent() && KnownFeaturePacks.isWellKnownName(fpl.get())) {
-                throw Messages.MESSAGES.fplDefinitionDoesntContainChannel(fpl.get());
+        if ((channels.isEmpty() || channelsMissingManifest()) && channelCoordinates.isEmpty() && builder.manifest.isEmpty()) {
+            if (builder.fpl.isPresent() && KnownFeaturePacks.isWellKnownName(builder.fpl.get())) {
+                throw Messages.MESSAGES.fplDefinitionDoesntContainChannel(builder.fpl.get());
             } else {
                 throw Messages.MESSAGES.noChannelReference();
             }
@@ -141,15 +142,9 @@ public class ProvisioningDefinition {
         return channels.stream().flatMap(c -> c.getRepositories().stream()).collect(Collectors.toList());
     }
 
-    private static List<Channel> getKnownFeaturePackChannels(List<Repository> overrideRepositories,
-            Optional<ChannelManifestCoordinate> manifestRef, List<Channel> channelsFromKnownFP) {
-        if (manifestRef.isPresent()) {
-            final Channel channel = new Channel("", "", null, null, extractRepositoriesFromChannels(channelsFromKnownFP),
-                    manifestRef.get());
-            return TemporaryRepositoriesHandler.overrideRepositories(List.of(channel), overrideRepositories);
-        } else {
-            return TemporaryRepositoriesHandler.overrideRepositories(channelsFromKnownFP, overrideRepositories);
-        }
+    private static Channel composeChannelFromManifest(ChannelManifestCoordinate manifestCoordinate, KnownFeaturePack knownFeaturePack) {
+        return new Channel("", "", null, null, extractRepositoriesFromChannels(knownFeaturePack.getChannels()),
+                manifestCoordinate);
     }
 
     public static Builder builder() {
@@ -210,10 +205,7 @@ public class ProvisioningDefinition {
                 channels.addAll(versionResolverFactory.resolveChannels(channelCoordinates, channelResolutionRepositories()));
             }
 
-            if (!overrideRepositories.isEmpty()) {
-                channels = TemporaryRepositoriesHandler.overrideRepositories(channels, overrideRepositories);
-            }
-
+            channels = TemporaryRepositoriesHandler.overrideRepositories(channels, overrideRepositories);
             return channels;
         } catch (MalformedURLException e) {
             // I believe the MalformedURLException is declared mistakenly by VersionResolverFactory#resolveChannels().
@@ -222,11 +214,11 @@ public class ProvisioningDefinition {
     }
 
     public static class Builder {
-        private String fpl;
-        private URI definitionFile;
+        private Optional<String> fpl = Optional.empty();
+        private Optional<URI> definitionFile = Optional.empty();
         private List<Repository> overrideRepositories = Collections.emptyList();
-        private Set<String> includedPackages;
-        private ChannelManifestCoordinate manifest;
+        private Set<String> includedPackages = Collections.emptySet();
+        private Optional<ChannelManifestCoordinate> manifest = Optional.empty();
         private List<ChannelCoordinate> channelCoordinates = Collections.emptyList();
 
         public ProvisioningDefinition build() throws MetadataException, NoChannelException {
@@ -234,7 +226,7 @@ public class ProvisioningDefinition {
         }
 
         public Builder setFpl(String fpl) {
-            this.fpl = fpl;
+            this.fpl = Optional.ofNullable(fpl);
             return this;
         }
 
@@ -250,7 +242,7 @@ public class ProvisioningDefinition {
 
         public Builder setManifest(String manifest) {
             if (manifest != null) {
-                this.manifest = ArtifactUtils.manifestCoordFromString(manifest);
+                this.manifest = Optional.of(ArtifactUtils.manifestCoordFromString(manifest));
             }
             return this;
         }
@@ -269,7 +261,7 @@ public class ProvisioningDefinition {
         }
 
         public Builder setDefinitionFile(URI provisionDefinition) {
-            this.definitionFile = provisionDefinition;
+            this.definitionFile = Optional.ofNullable(provisionDefinition);
             return this;
         }
     }
