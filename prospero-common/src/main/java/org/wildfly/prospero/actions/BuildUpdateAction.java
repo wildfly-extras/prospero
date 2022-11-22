@@ -20,6 +20,7 @@ package org.wildfly.prospero.actions;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
+import org.jboss.galleon.Constants;
 
 import org.wildfly.channel.Channel;
 import org.wildfly.channel.Repository;
@@ -100,7 +101,10 @@ public class BuildUpdateAction implements AutoCloseable {
     private void buildUpdates() throws ProvisioningException, ArtifactResolutionException {
         final ProvisioningManager provMgr = galleonEnv.getProvisioningManager();
         try {
-            GalleonUtils.executeGalleon(options -> provMgr.provision(ProvisioningXmlParser.parse(PathsUtils.getProvisioningXml(installDir)), options),
+            GalleonUtils.executeGalleon((options) -> {
+                options.put(Constants.EXPORT_SYSTEM_PATHS, "true");
+                provMgr.provision(ProvisioningXmlParser.parse(PathsUtils.getProvisioningXml(installDir)), options);
+            },
                     mavenSessionManager.getProvisioningRepo().toAbsolutePath());
         } catch (UnresolvedMavenArtifactException e) {
             throw new ArtifactResolutionException(e, prosperoConfig.listAllRepositories(), mavenSessionManager.isOffline());

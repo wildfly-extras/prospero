@@ -24,9 +24,7 @@ import java.nio.file.Paths;
 import java.nio.file.SimpleFileVisitor;
 import java.nio.file.attribute.BasicFileAttributes;
 import java.util.Arrays;
-import java.util.HashSet;
 import java.util.List;
-import java.util.Set;
 import org.jboss.galleon.Constants;
 import org.jboss.galleon.Errors;
 
@@ -57,7 +55,7 @@ public class ApplyUpdateAction implements AutoCloseable {
     private final ProsperoConfig prosperoConfig;
     private final Path updateDir;
     private final Path installationDir;
-
+    private final SystemPaths systemPaths;
     public ApplyUpdateAction(Path installationDir, Path updateDir, MavenSessionManager mavenSessionManager, Console console, List<Repository> overrideRepositories)
             throws ProvisioningException, OperationException {
         this.updateDir = updateDir;
@@ -65,7 +63,12 @@ public class ApplyUpdateAction implements AutoCloseable {
         this.installationMetadata = new InstallationMetadata(installationDir);
 
         this.prosperoConfig = addTemporaryRepositories(overrideRepositories);
-
+        try {
+            this.systemPaths = SystemPaths.load(updateDir);
+        } catch (IOException ex) {
+            throw new ProvisioningException(ex);
+        }
+        System.out.println("SYSTEM PATHS " + this.systemPaths.getPaths());
         galleonEnv = GalleonEnvironment
                 .builder(installationDir, prosperoConfig, mavenSessionManager)
                 .setConsole(console)
@@ -74,7 +77,7 @@ public class ApplyUpdateAction implements AutoCloseable {
     }
 
     public void applyUpdate() throws ProvisioningException, MetadataException, ArtifactResolutionException {
-        FsDiff diffs = findChanges();        
+        FsDiff diffs = findChanges();
         try {
             doApplyUpdate(diffs);
             updateMetadata();
@@ -119,15 +122,12 @@ public class ApplyUpdateAction implements AutoCloseable {
     }
 
     private void doApplyUpdate(FsDiff fsDiff) throws IOException, ProvisioningException {
-        Set<Path> paths = new HashSet<>();
-        paths.add(Paths.get("modules/system/layers/base"));
-        SystemPaths sPaths = new SystemPaths(paths);
         if (fsDiff.hasRemovedEntries()) {
             for (FsEntry removed : fsDiff.getRemovedEntries()) {
                 final Path target = updateDir.resolve(removed.getRelativePath());
                 System.out.println("REMOVED FILE " + target);
                 if (Files.exists(target)) {
-                    if (sPaths.isSystemPath(Paths.get(removed.getRelativePath()))) {
+                    if (systemPaths.isSystemPath(Paths.get(removed.getRelativePath()))) {
                         System.out.println("Forcing a copy of a deleted file");
                         Files.createDirectories(installationDir.resolve(removed.getRelativePath()).getParent());
                         IoUtils.copy(target, installationDir.resolve(removed.getRelativePath()));
@@ -145,7 +145,7 @@ public class ApplyUpdateAction implements AutoCloseable {
                 if (p.getName(0).toString().equals(".installation")) {
                     continue;
                 }
-                addFsEntry(updateDir, added, sPaths);
+                addFsEntry(updateDir, added, systemPaths);
             }
         }
         if (fsDiff.hasModifiedEntries()) {
@@ -161,7 +161,7 @@ public class ApplyUpdateAction implements AutoCloseable {
                     System.out.println("Installation changes match the update");
                 } else {
                     if (!Arrays.equals(original.getHash(), updateHash)) {
-                        if (sPaths.isSystemPath(Paths.get(installation.getRelativePath()))) {
+                        if (systemPaths.isSystemPath(Paths.get(installation.getRelativePath()))) {
                             System.out.println("SYSTEM PATH");
                             glold(installation.getPath(), file);
                         } else {

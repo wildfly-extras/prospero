@@ -27,7 +27,7 @@
         <version.org.apache.maven.resolver.provider>3.8.6</version.org.apache.maven.resolver.provider>
         <version.org.apache.logging.log4j>2.14.1</version.org.apache.logging.log4j>
         <version.commons.io>2.11.0</version.commons.io>
-        <version.org.jboss.galleon>5.0.6.Final</version.org.jboss.galleon>
+        <version.org.jboss.galleon>5.0.7.Final-SNAPSHOT</version.org.jboss.galleon>
         <version.org.eclipse.jgit>5.13.0.202109080827-r</version.org.eclipse.jgit>
         <version.com.fasterxml.jackson>2.13.4</version.com.fasterxml.jackson>
         <version.com.networknt.json-schema-validator>1.0.61</version.com.networknt.json-schema-validator>
