@@ -63,7 +63,8 @@ public class InstallCommand extends AbstractCommand {
     @CommandLine.Option(
             names = {CliConstants.CHANNELS, CliConstants.CHANNEL},
             paramLabel = CliConstants.CHANNEL_REFERENCE,
-            order = 3
+            order = 3,
+            split = ","
     )
     List<String> channelCoordinates = new ArrayList<>();
 

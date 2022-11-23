@@ -17,8 +17,11 @@
 
 package org.wildfly.prospero.api;
 
+import java.io.IOException;
+import java.io.InputStream;
 import java.net.MalformedURLException;
 import java.net.URI;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashSet;
@@ -30,6 +33,7 @@ import java.util.stream.Collectors;
 
 import javax.xml.stream.XMLStreamException;
 
+import org.apache.commons.io.IOUtils;
 import org.eclipse.aether.repository.RemoteRepository;
 import org.jboss.galleon.ProvisioningException;
 import org.jboss.galleon.config.FeaturePackConfig;
@@ -37,6 +41,8 @@ import org.jboss.galleon.config.ProvisioningConfig;
 import org.jboss.galleon.universe.FeaturePackLocation;
 import org.wildfly.channel.Channel;
 import org.wildfly.channel.ChannelManifestCoordinate;
+import org.wildfly.channel.ChannelMapper;
+import org.wildfly.channel.InvalidChannelException;
 import org.wildfly.channel.Repository;
 import org.wildfly.channel.maven.ChannelCoordinate;
 import org.wildfly.channel.maven.VersionResolverFactory;
@@ -125,30 +131,6 @@ public class ProvisioningDefinition {
         }
     }
 
-    private static void validateResolvedChannels(List<Channel> channels) throws NoChannelException {
-        if (channels.isEmpty()) {
-            throw Messages.MESSAGES.noChannelReference();
-        }
-
-        Optional<Channel> invalidChannel = channels.stream().filter(c -> c.getManifestRef() == null).findFirst();
-        if (invalidChannel.isPresent()) {
-            throw Messages.MESSAGES.noChannelManifestReference(invalidChannel.get().getName());
-        }
-    }
-
-    private static List<Repository> extractRepositoriesFromChannels(List<Channel> channels) {
-        return channels.stream().flatMap(c -> c.getRepositories().stream()).collect(Collectors.toList());
-    }
-
-    private static Channel composeChannelFromManifest(ChannelManifestCoordinate manifestCoordinate, KnownFeaturePack knownFeaturePack) {
-        return new Channel("", "", null, null, extractRepositoriesFromChannels(knownFeaturePack.getChannels()),
-                manifestCoordinate);
-    }
-
-    public static Builder builder() {
-        return new Builder();
-    }
-
     public String getFpl() {
         return fpl;
     }
@@ -178,6 +160,7 @@ public class ProvisioningDefinition {
             try {
                 return GalleonUtils.loadProvisioningConfig(definition);
             } catch (XMLStreamException e) {
+                e.printStackTrace();
                 throw Messages.MESSAGES.unableToParseConfigurationUri(definition, e);
             }
         } else {
@@ -195,8 +178,18 @@ public class ProvisioningDefinition {
         try {
             List<Channel> channels = new ArrayList<>(this.channels);
 
-            if (!channelCoordinates.isEmpty()) {
-                channels.addAll(versionResolverFactory.resolveChannels(channelCoordinates, channelResolutionRepositories()));
+            final List<ChannelCoordinate> urlCoordinates = channelCoordinates.stream().filter(c -> c.getUrl() != null)
+                    .collect(Collectors.toList());
+            final List<ChannelCoordinate> gavCoordinates = channelCoordinates.stream().filter(c -> c.getUrl() == null)
+                    .collect(Collectors.toList());
+
+            if (!gavCoordinates.isEmpty()) {
+                channels.addAll(versionResolverFactory.resolveChannels(gavCoordinates, channelResolutionRepositories()));
+            }
+            if (!urlCoordinates.isEmpty()) {
+                // The URL-based coordinates are resolved in a way that bypasses the VersionResolverFactory, because the factory
+                // only reads the first Channel from each document. We expect a document can contain multiple channels.
+                channels.addAll(resolveUrlCoordinates(urlCoordinates));
             }
 
             channels = TemporaryRepositoriesHandler.overrideRepositories(channels, overrideRepositories);
@@ -207,6 +200,48 @@ public class ProvisioningDefinition {
             // I believe the MalformedURLException is declared mistakenly by VersionResolverFactory#resolveChannels().
             throw new IllegalArgumentException(e);
         }
+    }
+
+    private static List<Channel> resolveUrlCoordinates(List<ChannelCoordinate> urlCoordinates) {
+        ArrayList<Channel> channels = new ArrayList<>();
+        for (ChannelCoordinate coord: urlCoordinates) {
+            Objects.requireNonNull(coord.getUrl(), "This method only expects URL coordinates.");
+            try {
+                InputStream is = coord.getUrl().openStream();
+                String yaml = IOUtils.toString(is, StandardCharsets.UTF_8);
+                channels.addAll(ChannelMapper.fromString(yaml));
+            } catch (IOException e) {
+                InvalidChannelException ice = new InvalidChannelException(
+                        "Failed to read channel " + coord.getUrl(), List.of(e.getLocalizedMessage()));
+                ice.initCause(e);
+                throw ice;
+            }
+        }
+        return channels;
+    }
+
+    private static void validateResolvedChannels(List<Channel> channels) throws NoChannelException {
+        if (channels.isEmpty()) {
+            throw Messages.MESSAGES.noChannelReference();
+        }
+
+        Optional<Channel> invalidChannel = channels.stream().filter(c -> c.getManifestRef() == null).findFirst();
+        if (invalidChannel.isPresent()) {
+            throw Messages.MESSAGES.noChannelManifestReference(invalidChannel.get().getName());
+        }
+    }
+
+    private static List<Repository> extractRepositoriesFromChannels(List<Channel> channels) {
+        return channels.stream().flatMap(c -> c.getRepositories().stream()).collect(Collectors.toList());
+    }
+
+    private static Channel composeChannelFromManifest(ChannelManifestCoordinate manifestCoordinate, KnownFeaturePack knownFeaturePack) {
+        return new Channel("", "", null, null, extractRepositoriesFromChannels(knownFeaturePack.getChannels()),
+                manifestCoordinate);
+    }
+
+    public static Builder builder() {
+        return new Builder();
     }
 
     public static class Builder {
