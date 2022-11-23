@@ -76,6 +76,7 @@ public class UpdateTest extends WfCoreTestBase {
         // provision using channel gav
         final ProvisioningDefinition provisioningDefinition = defaultWfCoreDefinition()
                 .setChannelCoordinates(buildConfigWithMockRepo().toPath().toString())
+                .setOverrideRepositories(Collections.emptyList()) // reset overrides from defaultWfCoreDefinition()
                 .build();
         installation.provision(provisioningDefinition.toProvisioningConfig(),
                 provisioningDefinition.resolveChannels(CHANNELS_RESOLVER_FACTORY));
@@ -107,6 +108,7 @@ public class UpdateTest extends WfCoreTestBase {
         // provision using manifest gav
         final ProvisioningDefinition provisioningDefinition = defaultWfCoreDefinition()
                 .setChannelCoordinates(buildConfigWithMockRepo().toPath().toString())
+                .setOverrideRepositories(Collections.emptyList()) // reset overrides from defaultWfCoreDefinition()
                 .build();
         installation.provision(provisioningDefinition.toProvisioningConfig(),
                 provisioningDefinition.resolveChannels(CHANNELS_RESOLVER_FACTORY));
