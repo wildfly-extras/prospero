@@ -59,7 +59,7 @@ public class BuildUpdateCommand extends AbstractCommand {
     @CommandLine.Option(names = CliConstants.DIR)
     Optional<Path> directory;
 
-    @CommandLine.Option(names = CliConstants.TARGET_DIR)
+    @CommandLine.Option(names = CliConstants.TARGET_DIR, required = true)
     Optional<Path> targetDir;
 
     @CommandLine.Option(names = CliConstants.DRY_RUN)

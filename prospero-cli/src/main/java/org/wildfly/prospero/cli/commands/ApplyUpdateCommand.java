@@ -24,7 +24,6 @@ import java.util.List;
 import java.util.Optional;
 
 import org.jboss.galleon.ProvisioningException;
-import org.jboss.galleon.diff.FsDiff;
 import org.jboss.logging.Logger;
 import org.wildfly.channel.Repository;
 import org.wildfly.prospero.actions.ApplyUpdateAction;
@@ -59,7 +58,7 @@ public class ApplyUpdateCommand extends AbstractCommand {
     @CommandLine.Option(names = CliConstants.DIR)
     Optional<Path> directory;
 
-    @CommandLine.Option(names = CliConstants.TARGET_DIR)
+    @CommandLine.Option(names = CliConstants.TARGET_DIR, required = true)
     Optional<Path> targetDir;
 
     @CommandLine.Option(names = CliConstants.DRY_RUN)
@@ -112,10 +111,6 @@ public class ApplyUpdateCommand extends AbstractCommand {
         try (ApplyUpdateAction applyUpdateAction = actionFactory.applyUpdate(installationDir.toAbsolutePath(), updateDir.toAbsolutePath(), mavenSessionManager, console, repositories)) {
             if (!dryRun) {
                 applyUpdate(applyUpdateAction);
-            } else {
-                final FsDiff diff = applyUpdateAction.findChanges();
-                System.out.println(diff);
-                //console.diffsFound(diff);
             }
         }
 
@@ -126,20 +121,7 @@ public class ApplyUpdateCommand extends AbstractCommand {
     }
 
     private void applyUpdate(ApplyUpdateAction applyUpdateAction) throws ArtifactResolutionException, ProvisioningException, MetadataException {
-        final FsDiff diff = applyUpdateAction.findChanges();
-
-//        console.diffsFound(diff);
-//        if (diff.isEmpty()) {
-//            return;
-//        }
-//
-//        if (!yes && !console.confirmApplyUpdates()) {
-//            return;
-//        }
-
         applyUpdateAction.applyUpdate();
-
-        //console.applyUpdatesComplete();
     }
 
 
