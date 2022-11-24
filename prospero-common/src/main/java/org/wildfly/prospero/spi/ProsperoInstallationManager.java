@@ -4,6 +4,7 @@ import org.wildfly.channel.ChannelManifestCoordinate;
 import org.wildfly.installationmanager.ArtifactChange;
 import org.wildfly.installationmanager.Channel;
 import org.wildfly.installationmanager.HistoryResult;
+import org.wildfly.installationmanager.InstallationChanges;
 import org.wildfly.installationmanager.MavenOptions;
 import org.wildfly.installationmanager.Repository;
 import org.wildfly.installationmanager.spi.InstallationManager;
@@ -55,15 +56,17 @@ public class ProsperoInstallationManager implements InstallationManager {
     }
 
     @Override
-    public List<ArtifactChange> revisionDetails(String revision) throws MetadataException {
+    public InstallationChanges revisionDetails(String revision) throws MetadataException {
         Objects.requireNonNull(revision);
         final InstallationHistoryAction historyAction = new InstallationHistoryAction(this.server, null);
         final List<org.wildfly.prospero.api.ArtifactChange> changes = historyAction.compare(new SavedState(revision));
 
         if (changes.isEmpty()) {
-            return Collections.EMPTY_LIST;
+            return new InstallationChanges(Collections.EMPTY_LIST, Collections.EMPTY_LIST);
         } else {
-            return changes.stream().map(ProsperoInstallationManager::mapChange).collect(Collectors.toList());
+            return new InstallationChanges(
+                    changes.stream().map(ProsperoInstallationManager::mapChange).collect(Collectors.toList()),
+                    Collections.EMPTY_LIST);
         }
     }
 
