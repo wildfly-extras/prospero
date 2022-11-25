@@ -19,6 +19,7 @@ package org.wildfly.prospero.cli.commands;
 
 import java.io.File;
 import java.io.IOException;
+import java.net.URL;
 import java.nio.file.Path;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -110,8 +111,8 @@ public class InstallCommandTest extends AbstractMavenCommandTest {
         int exitCode = commandLine.execute(CliConstants.Commands.INSTALL, CliConstants.DIR, "test",
                 CliConstants.FPL, "foo:bar");
         assertEquals(ReturnCodes.INVALID_ARGUMENTS, exitCode);
-        assertTrue("output: " + getErrorOutput(), getErrorOutput().contains(String.format(
-                CliMessages.MESSAGES.channelsMandatoryWhenCustomFpl().getMessage(), CliConstants.CHANNELS)));
+        assertTrue("output: " + getErrorOutput(), getErrorOutput().contains(CliMessages.MESSAGES
+                .channelsMandatoryWhenCustomFpl().getMessage()));
     }
 
     @Test
@@ -239,7 +240,7 @@ public class InstallCommandTest extends AbstractMavenCommandTest {
     @Test
     public void provisionConfigAndRemoteRepoSet() throws Exception {
         Path channelsFile = temporaryFolder.newFile().toPath();
-        MetadataTestUtils.prepareChannel(channelsFile, List.of(getClass().getClassLoader().getResource("manifest.yaml")));
+        MetadataTestUtils.prepareChannel(channelsFile, List.of(new URL("file:some-manifest.yaml")));
 
         int exitCode = commandLine.execute(CliConstants.Commands.INSTALL, CliConstants.DIR, "test",
                 CliConstants.CHANNELS, channelsFile.toString(),

@@ -109,8 +109,8 @@
                                             <classifier>channel</classifier>
                                             <type>yaml</type>
                                             <overWrite>true</overWrite>
-                                            <outputDirectory>target/test-classes/channels</outputDirectory>
-                                            <destFileName>prospero-channel.yaml</destFileName>
+                                            <outputDirectory>target/test-classes/manifests</outputDirectory>
+                                            <destFileName>prospero-manifest.yaml</destFileName>
                                         </artifactItem>
                                     </artifactItems>
                                 </configuration>

@@ -143,10 +143,6 @@ public class ProvisioningDefinition {
         return new ProsperoConfig(channels);
     }
 
-    public List<Repository> getOverrideRepositories() {
-        return overrideRepositories;
-    }
-
     public ProvisioningConfig toProvisioningConfig() throws MetadataException, ProvisioningException {
         if (fpl != null) {
             FeaturePackLocation loc = FeaturePackLocationParser.resolveFpl(getFpl());
@@ -160,7 +156,6 @@ public class ProvisioningDefinition {
             try {
                 return GalleonUtils.loadProvisioningConfig(definition);
             } catch (XMLStreamException e) {
-                e.printStackTrace();
                 throw Messages.MESSAGES.unableToParseConfigurationUri(definition, e);
             }
         } else {

@@ -59,7 +59,8 @@ public class ProvisioningAction {
     /**
      * Provision installation according to given ProvisioningDefinition.
      *
-     * @param provisioningDefinition prospero provisioning definition
+     * @param provisioningConfig prospero provisioning definition
+     * @param channels list of channels to resolve installed artifacts
      */
     public void provision(ProvisioningConfig provisioningConfig, List<Channel> channels)
             throws ProvisioningException, OperationException, MalformedURLException {
