@@ -152,4 +152,16 @@ public interface Messages {
 
     @Message("At least one repository must be set when using the manifest option.")
     IllegalArgumentException repositoriesMustBeSetWithManifest();
+
+    @Message("Out file [%s] exists already!")
+    IllegalArgumentException outFileExists(Path outPath);
+
+    @Message("Installation metadata is exported to [%s].")
+    String installationExported(Path outPath);
+
+    @Message("The file: [%s] to be restored does not exist.")
+    String restoreFileNotExisted(Path path);
+
+    @Message("Installation meta was restored from: [%s] to [%s].")
+    String installationMetaRestored(Path restorePath, Path installPath);
 }

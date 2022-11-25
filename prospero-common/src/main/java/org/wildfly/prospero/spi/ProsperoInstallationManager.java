@@ -135,7 +135,7 @@ public class ProsperoInstallationManager implements InstallationManager {
         }
 
         final InstallationExportAction installationExportAction = new InstallationExportAction(server);
-        installationExportAction.export(snapshotPath.toString());
+        installationExportAction.export(snapshotPath);
 
         return snapshotPath;
     }

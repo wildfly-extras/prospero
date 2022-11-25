@@ -37,17 +37,17 @@ public class InstallationExportAction {
         String installation = args[0];
         String exportName = args[1];
 
-        new InstallationExportAction(Paths.get(installation)).export(exportName);
+        new InstallationExportAction(Paths.get(installation)).export(Paths.get(exportName));
     }
 
-    public void export(String exportName) throws IOException, MetadataException {
+    public void export(Path exportPath) throws IOException, MetadataException {
         if (!installationDir.toFile().exists()) {
             throw Messages.MESSAGES.installationDirDoesNotExist(installationDir);
         }
 
         try (final InstallationMetadata metadataBundle = new InstallationMetadata(installationDir)) {
 
-            metadataBundle.exportMetadataBundle(Paths.get(exportName));
+            metadataBundle.exportMetadataBundle(exportPath);
         }
     }
 }

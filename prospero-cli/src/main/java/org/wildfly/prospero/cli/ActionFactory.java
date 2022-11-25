@@ -23,7 +23,9 @@ import java.util.List;
 import org.jboss.galleon.ProvisioningException;
 import org.wildfly.channel.Repository;
 import org.wildfly.prospero.actions.Console;
+import org.wildfly.prospero.actions.InstallationExportAction;
 import org.wildfly.prospero.actions.InstallationHistoryAction;
+import org.wildfly.prospero.actions.InstallationRestoreAction;
 import org.wildfly.prospero.actions.MetadataAction;
 import org.wildfly.prospero.actions.PromoteArtifactBundleAction;
 import org.wildfly.prospero.actions.ProvisioningAction;
@@ -56,5 +58,13 @@ public class ActionFactory {
 
     public PromoteArtifactBundleAction promoter(Console console) {
         return new PromoteArtifactBundleAction(console);
+    }
+
+    public InstallationExportAction exportAction(Path targetPath) {
+        return new InstallationExportAction(targetPath);
+    }
+
+    public InstallationRestoreAction restoreAction(Path targetPath, MavenSessionManager mavenSessionManager, Console console) {
+        return new InstallationRestoreAction(targetPath, mavenSessionManager, console);
     }
 }
