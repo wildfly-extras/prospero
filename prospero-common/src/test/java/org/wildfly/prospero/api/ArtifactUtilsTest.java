@@ -20,9 +20,12 @@ package org.wildfly.prospero.api;
 import java.net.URL;
 import java.nio.file.Path;
 
+import org.apache.commons.lang3.SystemUtils;
 import org.junit.Test;
+import org.wildfly.channel.maven.ChannelCoordinate;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.Assume.assumeTrue;
 
 public class ArtifactUtilsTest {
 
@@ -105,5 +108,21 @@ public class ArtifactUtilsTest {
             assertThat(channelCoordinate.getArtifactId()).isEqualTo("a");
             assertThat(channelCoordinate.getVersion()).isEqualTo("v");
         });
+    }
+
+    @Test
+    public void testWindowsPath() {
+        ChannelCoordinate channelCoordinate = ArtifactUtils.channelCoordFromString(
+                "D:\\some\\file\\path");
+        assertThat(channelCoordinate.getUrl()).isNotNull();
+    }
+
+    @Test
+    public void testUnixPath() {
+        assumeTrue(SystemUtils.IS_OS_UNIX); // ignore on Windows - ':' is invalid path character
+
+        ChannelCoordinate channelCoordinate = ArtifactUtils.channelCoordFromString(
+                "some/path/g:a");
+        assertThat(channelCoordinate.getUrl()).isNotNull();
     }
 }

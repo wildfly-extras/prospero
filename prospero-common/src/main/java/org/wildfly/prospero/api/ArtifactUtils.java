@@ -72,14 +72,20 @@ public class ArtifactUtils {
     }
 
     public static boolean isValidCoordinate(String gav) {
+        if (gav.contains("\\") || gav.contains("/")) { // must not contain slash or backslash -> could be a path
+            return false;
+        }
+
         String[] parts = gav.split(":");
-        return (parts.length == 3 // GAV
-                && StringUtils.isNotBlank(parts[0])
-                && StringUtils.isNotBlank(parts[1])
-                && StringUtils.isNotBlank(parts[2]))
-                ||
-                (parts.length == 2 // GA
-                        && StringUtils.isNotBlank(parts[0])
-                        && StringUtils.isNotBlank(parts[1]));
+        for (String part: parts) { // no segment can be empty or null
+            if (StringUtils.isBlank(part)) {
+                return false;
+            }
+        }
+        if (parts.length != 2 && parts.length != 3) { // GA or GAV
+            return false;
+        }
+
+        return true;
     }
 }
