@@ -62,7 +62,7 @@ mvn clean package
 ## Installation Referencing a Channel
 
 ```shell
-./prospero install --fpl org.wildfly.core:wildfly-core-galleon-pack:20.0.0.Beta2 \
+./prospero install --fpl org.wildfly.core:wildfly-core-galleon-pack:20.0.0.Beta3 \
   --channels examples/wildfly-core-channel.yaml \
   --dir installation-dir
 ```
@@ -75,7 +75,7 @@ Maven repositories).
 ## Installation Referencing a Channel Manifest and Maven Repositories
 
 ```shell
-./prospero install --fpl org.wildfly.core:wildfly-core-galleon-pack:20.0.0.Beta2 \
+./prospero install --fpl org.wildfly.core:wildfly-core-galleon-pack:20.0.0.Beta3 \
   --manifest examples/wildfly-core-manifest.yaml \
   --repositories central::https://repo1.maven.org/maven2/ \
   --dir installation-dir
