@@ -53,7 +53,7 @@ public interface Messages {
     @Message("Artifact [%s:%s] not found")
     ArtifactResolutionException artifactNotFound(String g, String a, @Cause UnresolvedMavenArtifactException e);
 
-    @Message("Given configuration doesn't reference any channel.")
+    @Message("Given configuration doesn't reference any channel or channel manifest.")
     NoChannelException noChannelReference();
 
     @Message("Invalid channel: Channel '%s' doesn't reference a manifest.")
@@ -149,4 +149,7 @@ public interface Messages {
 
     @Message("Unable to parse the customization bundle [%s].")
     ArtifactPromoteException unableToParseCustomizationBundle(Path path, @Cause Exception e);
+
+    @Message("At least one repository must be set when using the manifest option.")
+    IllegalArgumentException repositoriesMustBeSetWithManifest();
 }

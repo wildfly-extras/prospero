@@ -105,18 +105,25 @@ public class ProvisioningDefinition {
             this.definition = featurePackInfo.getGalleonConfiguration();
             if (this.channelCoordinates.isEmpty()) { // no channels provided by user
                 if (builder.manifest.isPresent()) { // if manifest given, use it to create a channel
-                    this.channels = List.of(composeChannelFromManifest(builder.manifest.get(), featurePackInfo));
+                    List<Repository> repositories = extractRepositoriesFromChannels(featurePackInfo.getChannels());
+                    this.channels = List.of(composeChannelFromManifest(builder.manifest.get(), repositories));
                 } else if (!featurePackInfo.getChannels().isEmpty()) { // if no manifest given, use channels from known FP
                     this.channels = featurePackInfo.getChannels();
                 } else {
                     throw Messages.MESSAGES.fplDefinitionDoesntContainChannel(builder.fpl.get());
                 }
             }
-        } else if (!this.channelCoordinates.isEmpty()) {
+        } else {
             this.fpl = builder.fpl.orElse(null);
             this.definition = builder.definitionFile.orElse(null);
-        } else {
-            throw Messages.MESSAGES.predefinedFplOrChannelRequired(String.join(", ", KnownFeaturePacks.getNames()));
+            if (this.channelCoordinates.isEmpty() && builder.manifest.isEmpty()) {
+                throw Messages.MESSAGES.predefinedFplOrChannelRequired(String.join(", ", KnownFeaturePacks.getNames()));
+            } else if (builder.manifest.isPresent()) { // if manifest given, use it to create a channel
+                if (overrideRepositories.isEmpty()) {
+                    throw Messages.MESSAGES.repositoriesMustBeSetWithManifest();
+                }
+                this.channels = List.of(composeChannelFromManifest(builder.manifest.get(), overrideRepositories));
+            }
         }
     }
 
@@ -230,9 +237,8 @@ public class ProvisioningDefinition {
         return channels.stream().flatMap(c -> c.getRepositories().stream()).collect(Collectors.toList());
     }
 
-    private static Channel composeChannelFromManifest(ChannelManifestCoordinate manifestCoordinate, KnownFeaturePack knownFeaturePack) {
-        return new Channel("", "", null, null, extractRepositoriesFromChannels(knownFeaturePack.getChannels()),
-                manifestCoordinate);
+    private static Channel composeChannelFromManifest(ChannelManifestCoordinate manifestCoordinate, List<Repository> repositories) {
+        return new Channel("", "", null, null, repositories, manifestCoordinate);
     }
 
     public static Builder builder() {

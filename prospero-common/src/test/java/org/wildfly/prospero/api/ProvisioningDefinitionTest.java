@@ -27,6 +27,7 @@ import org.wildfly.channel.Channel;
 import org.wildfly.channel.ChannelManifestCoordinate;
 import org.wildfly.channel.Repository;
 import org.wildfly.channel.maven.VersionResolverFactory;
+import org.wildfly.prospero.Messages;
 import org.wildfly.prospero.api.exceptions.NoChannelException;
 import org.wildfly.prospero.galleon.GalleonUtils;
 import org.wildfly.prospero.model.ProsperoConfig;
@@ -106,6 +107,40 @@ public class ProvisioningDefinitionTest {
     public void addAdditionalRemoteRepos() throws Exception {
         final ProvisioningDefinition.Builder builder = new ProvisioningDefinition.Builder()
                 .setFpl(EAP_FPL)
+                .setOverrideRepositories(Arrays.asList(
+                        new Repository("temp-repo-0", "http://test.repo1"),
+                        new Repository("temp-repo-1", "http://test.repo2")));
+
+        final ProvisioningDefinition def = builder.build();
+
+        assertThat(def.resolveChannels(VERSION_RESOLVER_FACTORY))
+                .flatMap(Channel::getRepositories)
+                .map(r-> Tuple.tuple(r.getId(), r.getUrl()))
+                .containsExactlyInAnyOrder(
+                        tuple("temp-repo-0", "http://test.repo1"),
+                        Tuple.tuple("temp-repo-1" ,"http://test.repo2")
+                );
+    }
+
+
+    @Test
+    public void customFplManifestNoRepos() throws Exception {
+        try {
+            final ProvisioningDefinition.Builder builder = new ProvisioningDefinition.Builder()
+                    .setFpl("custom:fpl")
+                    .setManifest("tmp/foo.bar");
+            builder.build();
+            fail("Expected to fail because no repositories were given.");
+        } catch (IllegalArgumentException e) {
+            assertThat(e.getMessage()).contains(Messages.MESSAGES.repositoriesMustBeSetWithManifest().getMessage());
+        }
+    }
+
+    @Test
+    public void customFplManifestRepos() throws Exception {
+        final ProvisioningDefinition.Builder builder = new ProvisioningDefinition.Builder()
+                .setFpl("custom:fpl")
+                .setManifest("tmp/foo.bar")
                 .setOverrideRepositories(Arrays.asList(
                         new Repository("temp-repo-0", "http://test.repo1"),
                         new Repository("temp-repo-1", "http://test.repo2")));
