@@ -56,8 +56,8 @@ import org.jboss.galleon.util.HashUtils;
 import org.jboss.galleon.util.IoUtils;
 import org.jboss.galleon.util.PathsUtils;
 import org.jboss.logging.Logger;
-import org.wildfly.channel.ChannelManifest;
-import org.wildfly.prospero.galleon.ChannelMavenArtifactRepositoryManager;
+import org.wildfly.prospero.Messages;
+import org.wildfly.prospero.installation.git.GitStorage;
 import org.wildfly.prospero.metadata.ProsperoMetadataUtils;
 
 public class ApplyUpdateAction implements AutoCloseable {
@@ -120,7 +120,7 @@ public class ApplyUpdateAction implements AutoCloseable {
 
     private void updateMetadata() throws ProvisioningException, ArtifactResolutionException {
         try {
-            writeProsperoMetadata(installationDir, galleonEnv.getRepositoryManager(), installationMetadata.getProsperoConfig().getChannels());
+            writeProsperoMetadata();
             Path installationGalleonPath = PathsUtils.getProvisionedStateDir(installationDir);
             Path updateGalleonPath = PathsUtils.getProvisionedStateDir(updateDir);
             IoUtils.recursiveDelete(installationGalleonPath);
@@ -130,11 +130,30 @@ public class ApplyUpdateAction implements AutoCloseable {
         }
     }
 
-    private void writeProsperoMetadata(Path home, ChannelMavenArtifactRepositoryManager maven, List<Channel> channels) throws MetadataException {
-        final ChannelManifest manifest = maven.resolvedChannel();
+    private void writeProsperoMetadata() throws MetadataException, IOException {
+        Path updateMetadataDir = updateDir.resolve(ProsperoMetadataUtils.METADATA_DIR);
+        Path updateManifest = updateMetadataDir.resolve(ProsperoMetadataUtils.MANIFEST_FILE_NAME);
+        Path updateConf = updateMetadataDir.resolve(ProsperoMetadataUtils.PROSPERO_CONFIG_FILE_NAME);
 
-        try (final InstallationMetadata installationMetadata = new InstallationMetadata(home, manifest, channels)) {
-            installationMetadata.recordProvision(true);
+        Path installationMetadataDir = installationDir.resolve(ProsperoMetadataUtils.METADATA_DIR);
+        Path installationManifest = installationMetadataDir.resolve(ProsperoMetadataUtils.MANIFEST_FILE_NAME);
+        Path installationConf = installationMetadataDir.resolve(ProsperoMetadataUtils.PROSPERO_CONFIG_FILE_NAME);
+        IoUtils.copy(updateManifest, installationManifest);
+        IoUtils.copy(updateConf, installationConf);
+
+        GitStorage git = new GitStorage(installationDir);
+        try {
+            git.record();
+
+            IoUtils.copy(updateManifest, installationManifest);
+            IoUtils.copy(updateConf, installationConf);
+        } finally {
+            try {
+                git.close();
+            } catch (Exception e) {
+                // log and ignore
+                Messages.MESSAGES.unableToCloseStore(e);
+            }
         }
     }
 
