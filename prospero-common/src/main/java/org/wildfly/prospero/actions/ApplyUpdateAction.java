@@ -41,22 +41,35 @@ import org.wildfly.prospero.model.ProsperoConfig;
 import org.wildfly.prospero.wfchannel.MavenSessionManager;
 import org.jboss.galleon.ProvisioningException;
 import org.jboss.galleon.diff.FsDiff;
+import static org.jboss.galleon.diff.FsDiff.ADDED;
+import static org.jboss.galleon.diff.FsDiff.CONFLICT;
+import static org.jboss.galleon.diff.FsDiff.CONFLICTS_WITH_THE_UPDATED_VERSION;
+import static org.jboss.galleon.diff.FsDiff.FORCED;
+import static org.jboss.galleon.diff.FsDiff.HAS_BEEN_REMOVED_FROM_THE_UPDATED_VERSION;
+import static org.jboss.galleon.diff.FsDiff.HAS_CHANGED_IN_THE_UPDATED_VERSION;
+import static org.jboss.galleon.diff.FsDiff.MODIFIED;
+import static org.jboss.galleon.diff.FsDiff.REMOVED;
+import static org.jboss.galleon.diff.FsDiff.formatMessage;
 import org.jboss.galleon.diff.FsEntry;
 import org.jboss.galleon.layout.SystemPaths;
 import org.jboss.galleon.util.HashUtils;
 import org.jboss.galleon.util.IoUtils;
+import org.jboss.galleon.util.PathsUtils;
+import org.jboss.logging.Logger;
 import org.wildfly.channel.ChannelManifest;
 import org.wildfly.prospero.galleon.ChannelMavenArtifactRepositoryManager;
+import org.wildfly.prospero.metadata.ProsperoMetadataUtils;
 
 public class ApplyUpdateAction implements AutoCloseable {
+    private static final Logger LOGGER = Logger.getLogger(ApplyUpdateAction.class);
 
     private final InstallationMetadata installationMetadata;
-    private final MavenSessionManager mavenSessionManager;
     private final GalleonEnvironment galleonEnv;
     private final ProsperoConfig prosperoConfig;
     private final Path updateDir;
     private final Path installationDir;
     private final SystemPaths systemPaths;
+
     public ApplyUpdateAction(Path installationDir, Path updateDir, MavenSessionManager mavenSessionManager, Console console, List<Repository> overrideRepositories)
             throws ProvisioningException, OperationException {
         this.updateDir = updateDir;
@@ -69,12 +82,13 @@ public class ApplyUpdateAction implements AutoCloseable {
         } catch (IOException ex) {
             throw new ProvisioningException(ex);
         }
-        System.out.println("SYSTEM PATHS " + this.systemPaths.getPaths());
+        if (LOGGER.isDebugEnabled()) {
+            LOGGER.debug("System paths " + this.systemPaths.getPaths());
+        }
         galleonEnv = GalleonEnvironment
                 .builder(installationDir, prosperoConfig, mavenSessionManager)
                 .setConsole(console)
                 .build();
-        this.mavenSessionManager = mavenSessionManager;
     }
 
     public void applyUpdate() throws ProvisioningException, MetadataException, ArtifactResolutionException {
@@ -107,8 +121,10 @@ public class ApplyUpdateAction implements AutoCloseable {
     private void updateMetadata() throws ProvisioningException, ArtifactResolutionException {
         try {
             writeProsperoMetadata(installationDir, galleonEnv.getRepositoryManager(), installationMetadata.getProsperoConfig().getChannels());
-            IoUtils.recursiveDelete(installationDir.resolve(".galleon"));
-            IoUtils.copy(updateDir.resolve(".galleon"), installationDir.resolve(".galleon"), true);
+            Path installationGalleonPath = PathsUtils.getProvisionedStateDir(installationDir);
+            Path updateGalleonPath = PathsUtils.getProvisionedStateDir(updateDir);
+            IoUtils.recursiveDelete(installationGalleonPath);
+            IoUtils.copy(updateGalleonPath, installationGalleonPath, true);
         } catch (IOException | MetadataException ex) {
             throw new ProvisioningException(ex);
         }
@@ -118,86 +134,153 @@ public class ApplyUpdateAction implements AutoCloseable {
         final ChannelManifest manifest = maven.resolvedChannel();
 
         try (final InstallationMetadata installationMetadata = new InstallationMetadata(home, manifest, channels)) {
-            installationMetadata.recordProvision(true, true);
+            installationMetadata.recordProvision(true);
         }
     }
 
-    private void doApplyUpdate(FsDiff fsDiff) throws IOException, ProvisioningException {
+    private void handleRemovedFiles(FsDiff fsDiff) throws IOException {
         if (fsDiff.hasRemovedEntries()) {
             for (FsEntry removed : fsDiff.getRemovedEntries()) {
                 final Path target = updateDir.resolve(removed.getRelativePath());
-                System.out.println("REMOVED FILE " + target);
+                if (LOGGER.isDebugEnabled()) {
+                    LOGGER.debug(formatMessage(REMOVED, removed.getRelativePath(), null));
+                }
                 if (Files.exists(target)) {
                     if (systemPaths.isSystemPath(Paths.get(removed.getRelativePath()))) {
-                        System.out.println("Forcing a copy of a deleted file");
+                        LOGGER.info(formatMessage(FORCED, removed.getRelativePath(), HAS_CHANGED_IN_THE_UPDATED_VERSION));
                         Files.createDirectories(installationDir.resolve(removed.getRelativePath()).getParent());
                         IoUtils.copy(target, installationDir.resolve(removed.getRelativePath()));
-                    } else {
-                        System.out.println(removed.getRelativePath() + " Has already been removed in installation");
                     }
                 } else {
-                    System.out.println(removed.getRelativePath() + " is also removed in update");
+                    if (LOGGER.isDebugEnabled()) {
+                        LOGGER.debug(formatMessage(REMOVED, removed.getRelativePath(),
+                                HAS_BEEN_REMOVED_FROM_THE_UPDATED_VERSION));
+                    }
                 }
             }
         }
+    }
+
+    private void handleAddedFiles(FsDiff fsDiff) throws IOException, ProvisioningException {
         if (fsDiff.hasAddedEntries()) {
             for (FsEntry added : fsDiff.getAddedEntries()) {
                 Path p = Paths.get(added.getRelativePath());
-                if (p.getName(0).toString().equals(".installation")) {
-                    continue;
+                // Ignore .installation owned by prospero
+                if (p.getNameCount() > 0) {
+                    if (p.getName(0).toString().equals(ProsperoMetadataUtils.METADATA_DIR)) {
+                        continue;
+                    }
                 }
                 addFsEntry(updateDir, added, systemPaths);
             }
         }
+    }
+
+    private void addFsEntry(Path updateDir, FsEntry added, SystemPaths systemPaths)
+            throws ProvisioningException {
+        final Path target = updateDir.resolve(added.getRelativePath());
+        if (LOGGER.isDebugEnabled()) {
+            LOGGER.debug(formatMessage(ADDED, added.getRelativePath(), null));
+        }
+        if (Files.exists(target)) {
+            if (added.isDir()) {
+                for (FsEntry child : added.getChildren()) {
+                    addFsEntry(updateDir, child, systemPaths);
+                }
+                return;
+            }
+            final byte[] targetHash;
+            try {
+                targetHash = HashUtils.hashPath(target);
+            } catch (IOException e) {
+                throw new ProvisioningException(Errors.hashCalculation(target), e);
+            }
+
+            if (Arrays.equals(added.getHash(), targetHash)) {
+                if (LOGGER.isDebugEnabled()) {
+                    LOGGER.debug(formatMessage(ADDED, added.getRelativePath(), "Added file matches the update."));
+                }
+            } else {
+                if (systemPaths.isSystemPath(Paths.get(added.getRelativePath()))) {
+                    LOGGER.info(formatMessage(FORCED, added.getRelativePath(), CONFLICTS_WITH_THE_UPDATED_VERSION));
+                    glold(installationDir.resolve(added.getRelativePath()), target);
+                } else {
+                    LOGGER.info(formatMessage(CONFLICT, added.getRelativePath(), CONFLICTS_WITH_THE_UPDATED_VERSION));
+                    glnew(target, installationDir.resolve(added.getRelativePath()));
+                }
+            }
+        }
+    }
+
+    private void handleModifiedFiles(FsDiff fsDiff) throws IOException, ProvisioningException {
         if (fsDiff.hasModifiedEntries()) {
             for (FsEntry[] modified : fsDiff.getModifiedEntries()) {
                 FsEntry installation = modified[1];
                 FsEntry original = modified[0];
                 final Path file = updateDir.resolve(modified[1].getRelativePath());
-                byte[] updateHash = HashUtils.hashPath(file);
-                Path installationFile = installationDir.resolve(modified[1].getRelativePath());
-                System.out.println("MODIFIED " + installation.getRelativePath());
-                // Case where the modified file is equal to the hash of the update. Do nothing
-                if (Arrays.equals(installation.getHash(), updateHash)) {
-                    System.out.println("Installation changes match the update");
-                } else {
-                    if (!Arrays.equals(original.getHash(), updateHash)) {
-                        if (systemPaths.isSystemPath(Paths.get(installation.getRelativePath()))) {
-                            System.out.println("System path modified, creating .glold");
-                            System.out.println("SYSTEM PATH modified, creating .glold " + installationFile + installation.getPath() + ".glold");
-                            glold(installation.getPath(), file);
-                        } else {
-                            System.out.println("CONFLICT, create glnew " + installationFile + ".glnew");
-                            glnew(file, installationFile);
+                if (LOGGER.isDebugEnabled()) {
+                    LOGGER.debug(formatMessage(MODIFIED, installation.getRelativePath(), null));
+                }
+                if (Files.exists(file)) {
+                    byte[] updateHash;
+                    try {
+                        updateHash = HashUtils.hashPath(file);
+                    } catch (IOException e) {
+                        throw new ProvisioningException(Errors.hashCalculation(file), e);
+                    }
+                    Path installationFile = installationDir.resolve(modified[1].getRelativePath());
+                    // Case where the modified file is equal to the hash of the update. Do nothing
+                    if (Arrays.equals(installation.getHash(), updateHash)) {
+                        if (LOGGER.isDebugEnabled()) {
+                            LOGGER.debug(formatMessage(MODIFIED, installation.getRelativePath(), "Modified file matches the update"));
                         }
                     } else {
-                        System.out.println("Installation and update are identical, do not copy the file");
+                        if (!Arrays.equals(original.getHash(), updateHash)) {
+                            if (systemPaths.isSystemPath(Paths.get(installation.getRelativePath()))) {
+                                LOGGER.info(formatMessage(FORCED, installation.getRelativePath(), HAS_CHANGED_IN_THE_UPDATED_VERSION));
+                                glold(installation.getPath(), file);
+                            } else {
+                                LOGGER.info(formatMessage(CONFLICT, installation.getRelativePath(), HAS_CHANGED_IN_THE_UPDATED_VERSION));
+                                glnew(file, installationFile);
+                            }
+                        }
                     }
+                } else {
+                    // The file doesn't exist in the update, we keep the file in the installation
+                    LOGGER.info(formatMessage(MODIFIED, installation.getRelativePath(), HAS_BEEN_REMOVED_FROM_THE_UPDATED_VERSION));
                 }
             }
         }
-        // We have handled user added/removed/modified files
-        // Need to handle files added/removed/modified in the update.
+    }
 
-        Path skipUpdateGalleon = updateDir.resolve(".galleon");
-        Path skipUpdateInstallation = updateDir.resolve(".installation");
-        Path skipInstallationGalleon = installationDir.resolve(".galleon");
-        Path skipInstallationInstallation = installationDir.resolve(".installation");
+    private void doApplyUpdate(FsDiff fsDiff) throws IOException, ProvisioningException {
+        // Handles user added/removed/modified files
+        handleRemovedFiles(fsDiff);
+        handleAddedFiles(fsDiff);
+        handleModifiedFiles(fsDiff);
+
+        // Handles files added/removed/modified in the update.
+        Path skipUpdateGalleon = PathsUtils.getProvisionedStateDir(updateDir);
+        Path skipUpdateInstallation = updateDir.resolve(ProsperoMetadataUtils.METADATA_DIR);
+        Path skipInstallationGalleon = PathsUtils.getProvisionedStateDir(installationDir);
+        Path skipInstallationInstallation = installationDir.resolve(ProsperoMetadataUtils.METADATA_DIR);
+
+        // Copy the new/modified files that the update brings that are not in the installation and not removed/modified by the user.
         Files.walkFileTree(updateDir, new SimpleFileVisitor<Path>() {
             @Override
             public FileVisitResult visitFile(Path file, BasicFileAttributes attrs)
                     throws IOException {
-                //               try {
                 Path relative = updateDir.relativize(file);
                 Path installationFile = installationDir.resolve(relative);
-                // Not a file modified by the user
-                if (fsDiff.getModifiedEntry(relative.toString()) == null
-                        && fsDiff.getAddedEntry(relative.toString()) == null
-                        && fsDiff.getRemovedEntry(relative.toString()) == null) {
+                // Not a file added or modified by the user
+                if (fsDiff.getModifiedEntry(relative.toString()) == null &&
+                     fsDiff.getAddedEntry(relative.toString()) == null) {
                     byte[] updateHash = HashUtils.hashPath(file);
                     // The file could be new or updated in the installation
                     if (!Files.exists(installationFile) || !Arrays.equals(updateHash, HashUtils.hashPath(installationFile))) {
-                        System.out.println("Copying file to the installation " + file);
+                        if (LOGGER.isDebugEnabled()) {
+                            LOGGER.debug("Copying updated file " + relative + " to the installation");
+                        }
                         IoUtils.copy(file, installationFile);
                     }
                 }
@@ -220,19 +303,21 @@ public class ApplyUpdateAction implements AutoCloseable {
             }
         });
 
+        // Delete the files in the installation that are not present in the update and not added by the user
+        // We need to skip .glnew and .glold.
         Files.walkFileTree(installationDir, new SimpleFileVisitor<Path>() {
             @Override
             public FileVisitResult visitFile(Path file, BasicFileAttributes attrs)
                     throws IOException {
-                //               try {
                 Path relative = installationDir.relativize(file);
                 Path updateFile = updateDir.resolve(relative);
-                // Not a file in the update
-                if (fsDiff.getModifiedEntry(relative.toString()) == null
-                        && fsDiff.getAddedEntry(relative.toString()) == null
-                        && fsDiff.getRemovedEntry(relative.toString()) == null) {
-                    if (!Files.exists(updateFile) && !updateFile.toString().endsWith(".glnew") && !updateFile.toString().endsWith(".glold")) {
-                         System.out.println("Deleting the file " + file + " that doesn't exist in the update");
+                if (fsDiff.getAddedEntry(relative.toString()) == null) {
+                    if (!Files.exists(updateFile) &&
+                            !updateFile.toString().endsWith(Constants.DOT_GLNEW) &&
+                            !updateFile.toString().endsWith(Constants.DOT_GLOLD)) {
+                        if (LOGGER.isDebugEnabled()) {
+                            LOGGER.debug("Deleting the file " + relative + " that doesn't exist in the update");
+                        }
                         IoUtils.recursiveDelete(file);
                     }
                 }
@@ -250,18 +335,19 @@ public class ApplyUpdateAction implements AutoCloseable {
                     Path target = updateDir.resolve(relative);
                     String pathKey = relative.toString();
                     pathKey = pathKey.endsWith(File.separator) ? pathKey : pathKey + File.separator;
-                    // Not a file in the update
-                    if (fsDiff.getModifiedEntry(pathKey) == null
-                            && fsDiff.getAddedEntry(pathKey) == null
-                            && fsDiff.getRemovedEntry(pathKey) == null) {
+                    if (fsDiff.getAddedEntry(pathKey) == null) {
                         if (!Files.exists(target)) {
-                            System.out.println("Deleting the directory " + dir + " that doesn't exist in the update");
+                            if (LOGGER.isDebugEnabled()) {
+                                LOGGER.debug("Deleting the directory " + relative + " that doesn't exist in the update");
+                            }
                             IoUtils.recursiveDelete(dir);
                             return FileVisitResult.SKIP_SUBTREE;
                         }
                     } else {
                          if (!Files.exists(target)) {
-                            System.out.println("The directory " + dir + " that doesn't exist in the update is a User changes, skipping");
+                             if (LOGGER.isDebugEnabled()) {
+                                LOGGER.debug("The directory " + relative + " that doesn't exist in the update is a User changes, skipping it");
+                            }
                             return FileVisitResult.SKIP_SUBTREE;
                         }
                     }
@@ -275,39 +361,6 @@ public class ApplyUpdateAction implements AutoCloseable {
                 return FileVisitResult.CONTINUE;
             }
         });
-    }
-
-    private void addFsEntry(Path updateDir, FsEntry added, SystemPaths systemPaths)
-            throws ProvisioningException {
-        final Path target = updateDir.resolve(added.getRelativePath());
-        System.out.println("ADDED FILE " + target);
-        if (Files.exists(target)) {
-            if (added.isDir()) {
-                for (FsEntry child : added.getChildren()) {
-                    addFsEntry(updateDir, child, systemPaths);
-                }
-                return;
-            }
-            final byte[] targetHash;
-            try {
-                targetHash = HashUtils.hashPath(target);
-            } catch (IOException e) {
-                throw new ProvisioningException(Errors.hashCalculation(target), e);
-            }
-
-            if (Arrays.equals(added.getHash(), targetHash)) {
-                System.out.println("Added match the update, nothing to do for " + added.getRelativePath());
-            } else {
-                if (systemPaths.isSystemPath(Paths.get(added.getRelativePath()))) {
-                    System.out.println("The added file in the update must override the file in the installation");
-                    glold(installationDir.resolve(added.getRelativePath()), target);
-                } else {
-                    glnew(target, installationDir.resolve(added.getRelativePath()));
-                }
-            }
-        } else {
-            System.out.println("This file was added by the user, do nothing for " + target);
-        }
     }
 
     private static void glnew(final Path updateFile, Path installationFile) throws ProvisioningException {

@@ -149,7 +149,7 @@ public class UpdateCommand extends AbstractCommand {
         console.updatesComplete();
     }
 
-    private static void verifyInstallationContainsOnlyProspero(Path dir) throws ArgumentParsingException {
+    public static void verifyInstallationContainsOnlyProspero(Path dir) throws ArgumentParsingException {
         verifyInstallationDirectory(dir);
 
         try {
@@ -165,7 +165,7 @@ public class UpdateCommand extends AbstractCommand {
         }
     }
 
-    private static Path detectProsperoInstallationPath() throws ArgumentParsingException {
+    public static Path detectProsperoInstallationPath() throws ArgumentParsingException {
         final String modulePath = System.getProperty(JBOSS_MODULE_PATH);
         if (modulePath == null) {
             throw CliMessages.MESSAGES.unableToLocateProsperoInstallation();
