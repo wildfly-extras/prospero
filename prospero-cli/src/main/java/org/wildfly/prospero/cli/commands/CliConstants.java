@@ -47,6 +47,10 @@ public final class CliConstants {
         public static final String CUSTOMIZATION_INIT_CHANNEL = "init";
         public static final String CUSTOMIZATION_INITIALIZE_CHANNEL = "initialize";
         public static final String CUSTOMIZATION_PROMOTE = "promote";
+
+        public static final String CLONE = "clone";
+        public static final String RESTORE = "restore";
+        public static final String EXPORT = "export";
     }
 
     // Parameter and option labels:
@@ -82,4 +86,5 @@ public final class CliConstants {
     public static final String CHANNEL_NAME = "--channel-name";
     public static final String CUSTOMIZATION_REPOSITORY_URL = "--repository-url";
     public static final String CUSTOMIZATION_ARCHIVE = "--archive";
+    public static final String ARG_PATH = "--path";
 }

@@ -19,8 +19,10 @@ package org.wildfly.prospero.actions;
 
 import org.wildfly.channel.Channel;
 import org.wildfly.channel.ChannelManifest;
+import org.wildfly.channel.Repository;
 import org.wildfly.channel.UnresolvedMavenArtifactException;
 import org.wildfly.prospero.Messages;
+import org.wildfly.prospero.api.TemporaryRepositoriesHandler;
 import org.wildfly.prospero.api.exceptions.ArtifactResolutionException;
 import org.wildfly.prospero.api.exceptions.OperationException;
 import org.wildfly.prospero.galleon.GalleonEnvironment;
@@ -34,6 +36,7 @@ import org.jboss.galleon.ProvisioningException;
 
 import java.io.IOException;
 import java.nio.file.Path;
+import java.util.ArrayList;
 import java.util.List;
 
 public class InstallationRestoreAction {
@@ -48,7 +51,7 @@ public class InstallationRestoreAction {
         this.console = console;
     }
 
-    public void restore(Path metadataBundleZip)
+    public void restore(Path metadataBundleZip, List<Repository> remoteRepositories)
             throws ProvisioningException, IOException, OperationException {
         if (installDir.toFile().exists()) {
             throw Messages.MESSAGES.installationDirAlreadyExists(installDir);
@@ -56,6 +59,11 @@ public class InstallationRestoreAction {
 
         try (final InstallationMetadata metadataBundle = InstallationMetadata.importMetadata(metadataBundleZip)) {
             final ProsperoConfig prosperoConfig = metadataBundle.getProsperoConfig();
+            List<Channel> originalChannels = new ArrayList<>(prosperoConfig.getChannels());
+            if (remoteRepositories != null && !remoteRepositories.isEmpty()) {
+                prosperoConfig.getChannels().clear();
+                prosperoConfig.getChannels().addAll(TemporaryRepositoriesHandler.overrideRepositories(originalChannels, remoteRepositories));
+            }
             final GalleonEnvironment galleonEnv = GalleonEnvironment
                     .builder(installDir, prosperoConfig.getChannels(), mavenSessionManager)
                     .setConsole(console)
@@ -69,7 +77,7 @@ public class InstallationRestoreAction {
                 throw new ArtifactResolutionException(e, prosperoConfig.listAllRepositories(), mavenSessionManager.isOffline());
             }
 
-            writeProsperoMetadata(galleonEnv.getRepositoryManager(), prosperoConfig.getChannels());
+            writeProsperoMetadata(galleonEnv.getRepositoryManager(), originalChannels);
         }
     }
 

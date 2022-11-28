@@ -40,6 +40,7 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
@@ -69,9 +70,9 @@ public class InstallationRestoreActionTest extends WfCoreTestBase {
 
         prepareInstallerConfig(outputPath.resolve(MetadataTestUtils.PROVISION_CONFIG_FILE_PATH), CHANNEL_COMPONENT_UPDATES, CHANNEL_BASE_CORE_19);
 
-        new InstallationExportAction(outputPath).export("target/bundle.zip");
+        new InstallationExportAction(outputPath).export(Paths.get("target/bundle.zip"));
 
-        new InstallationRestoreAction(restoredServerDir, mavenSessionManager, new AcceptingConsole()).restore(Paths.get("target/bundle.zip"));
+        new InstallationRestoreAction(restoredServerDir, mavenSessionManager, new AcceptingConsole()).restore(Paths.get("target/bundle.zip"), Collections.emptyList());
 
         final Optional<Artifact> wildflyCliArtifact = readArtifactFromManifest("org.wildfly.core", "wildfly-cli");
         assertEquals(BASE_VERSION, wildflyCliArtifact.get().getVersion());
