@@ -178,10 +178,10 @@ public class PatchingTest {
     }
 
     private void installCore() throws Exception {
-        Path provisionConfig = MetadataTestUtils.prepareProvisionConfig("channels/wfcore-19-base.yaml");
+        Path channelsFile = MetadataTestUtils.prepareChannel("manifests/wfcore-19-base.yaml");
 
         ExecutionUtils.prosperoExecution(CliConstants.Commands.INSTALL,
-                        CliConstants.PROVISION_CONFIG, provisionConfig.toString(),
+                        CliConstants.CHANNELS, channelsFile.toString(),
                         CliConstants.FPL, "wildfly-core@maven(org.jboss.universe:community-universe):19.0",
                         CliConstants.DIR, targetDir.getAbsolutePath())
                 .execute()

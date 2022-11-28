@@ -26,11 +26,11 @@ import java.util.Objects;
 
 public class TemporaryRepositoriesHandler {
 
-    public static List<Channel> addRepositories(List<Channel> originalChannels, List<Repository> additionalRepositories) {
+    public static List<Channel> overrideRepositories(List<Channel> originalChannels, List<Repository> repositories) {
         Objects.requireNonNull(originalChannels);
-        Objects.requireNonNull(additionalRepositories);
+        Objects.requireNonNull(repositories);
 
-        if (additionalRepositories.isEmpty()) {
+        if (repositories.isEmpty()) {
             return new ArrayList<>(originalChannels);
         }
 
@@ -38,7 +38,7 @@ public class TemporaryRepositoriesHandler {
 
         for (Channel oc : originalChannels) {
             final Channel c = new Channel(oc.getSchemaVersion(), oc.getName(), oc.getDescription(), oc.getVendor(),
-                    oc.getChannelRequirements(), additionalRepositories, oc.getManifestRef());
+                    oc.getChannelRequirements(), repositories, oc.getManifestRef());
             mergedChannels.add(c);
         }
 

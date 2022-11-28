@@ -19,7 +19,10 @@ package org.wildfly.prospero.cli.commands;
 
 import java.io.File;
 import java.io.IOException;
+import java.net.URL;
+import java.nio.file.Path;
 import java.util.List;
+import java.util.stream.Collectors;
 
 import org.jboss.galleon.config.ProvisioningConfig;
 import org.jboss.galleon.universe.FeaturePackLocation;
@@ -43,6 +46,7 @@ import org.wildfly.prospero.cli.ActionFactory;
 import org.wildfly.prospero.cli.CliMessages;
 import org.wildfly.prospero.cli.ReturnCodes;
 import org.wildfly.prospero.model.ProsperoConfig;
+import org.wildfly.prospero.test.MetadataTestUtils;
 import org.wildfly.prospero.wfchannel.MavenSessionManager;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -55,6 +59,7 @@ import static org.mockito.Mockito.when;
 public class InstallCommandTest extends AbstractMavenCommandTest {
 
     public static final String KNOWN_FPL = "known-fpl";
+
     @Rule
     public TemporaryFolder temporaryFolder = new TemporaryFolder();
 
@@ -106,21 +111,21 @@ public class InstallCommandTest extends AbstractMavenCommandTest {
         int exitCode = commandLine.execute(CliConstants.Commands.INSTALL, CliConstants.DIR, "test",
                 CliConstants.FPL, "foo:bar");
         assertEquals(ReturnCodes.INVALID_ARGUMENTS, exitCode);
-        assertTrue("output: " + getErrorOutput(), getErrorOutput().contains(String.format(
-                CliMessages.MESSAGES.prosperoConfigMandatoryWhenCustomFpl().getMessage(), CliConstants.PROVISION_CONFIG)));
+        assertTrue("output: " + getErrorOutput(), getErrorOutput().contains(CliMessages.MESSAGES
+                .channelsMandatoryWhenCustomFpl().getMessage()));
     }
 
     @Test
     public void callProvisionOnInstallCommandWithCustomFpl() throws Exception {
-        final File provisionConfigFile = temporaryFolder.newFile();
+        final File channelsFile = temporaryFolder.newFile();
         Channel channel = new Channel("", "", null, null,
                 List.of(new Repository("test", "http://test.org")),
                 new ChannelManifestCoordinate("org.test", "test"));
-        new ProsperoConfig(List.of(channel)).writeConfig(provisionConfigFile.toPath());
+        new ProsperoConfig(List.of(channel)).writeConfig(channelsFile.toPath());
 
         int exitCode = commandLine.execute(CliConstants.Commands.INSTALL, CliConstants.DIR, "test",
                 CliConstants.FPL, "org.wildfly:wildfly-ee-galleon-pack",
-                CliConstants.PROVISION_CONFIG, provisionConfigFile.getAbsolutePath());
+                CliConstants.CHANNELS, channelsFile.getAbsolutePath());
         assertEquals(ReturnCodes.SUCCESS, exitCode);
         Mockito.verify(provisionAction).provision(configCaptor.capture(), channelCaptor.capture());
         assertThat(configCaptor.getValue().getFeaturePackDeps())
@@ -143,14 +148,14 @@ public class InstallCommandTest extends AbstractMavenCommandTest {
 
     @Test
     public void callProvisionOnInstallKnownFplOverrideChannelsCommand() throws Exception {
-        final File provisionConfigFile = temporaryFolder.newFile();
+        final File channelsFile = temporaryFolder.newFile();
         Channel channel = new Channel("", "", null, null,
                 List.of(new Repository("dev", "http://test.test")),
                 new ChannelManifestCoordinate("org.wildfly", "wildfly-channel"));
-        new ProsperoConfig(List.of(channel)).writeConfig(provisionConfigFile.toPath());
+        new ProsperoConfig(List.of(channel)).writeConfig(channelsFile.toPath());
 
         int exitCode = commandLine.execute(CliConstants.Commands.INSTALL, CliConstants.DIR, "test", CliConstants.FPL, KNOWN_FPL,
-                CliConstants.PROVISION_CONFIG, provisionConfigFile.getAbsolutePath());
+                CliConstants.CHANNELS, channelsFile.getAbsolutePath());
 
         assertEquals(ReturnCodes.SUCCESS, exitCode);
         Mockito.verify(provisionAction).provision(configCaptor.capture(), channelCaptor.capture());
@@ -158,8 +163,8 @@ public class InstallCommandTest extends AbstractMavenCommandTest {
                 .map(fp->fp.getLocation().getProducerName())
                 .containsExactly("org.wildfly.core:wildfly-core-galleon-pack");
         assertThat(channelCaptor.getValue())
-                .flatMap(c->c.getRepositories())
-                .map(r->r.getId())
+                .flatMap(Channel::getRepositories)
+                .map(Repository::getId)
                 .containsExactly("dev");
     }
 
@@ -171,14 +176,14 @@ public class InstallCommandTest extends AbstractMavenCommandTest {
                         .build(),
                 provisionDefinitionFile.toPath());
 
-        final File provisionConfigFile = temporaryFolder.newFile();
+        final File channelsFile = temporaryFolder.newFile();
         Channel channel = new Channel("", "", null, null,
                 List.of(new Repository("dev", "http://test.test")),
                 new ChannelManifestCoordinate("org.wildfly", "wildfly-channel"));
-        new ProsperoConfig(List.of(channel)).writeConfig(provisionConfigFile.toPath());
+        new ProsperoConfig(List.of(channel)).writeConfig(channelsFile.toPath());
 
         int exitCode = commandLine.execute(CliConstants.Commands.INSTALL, CliConstants.DIR, "test",
-                CliConstants.PROVISION_CONFIG, provisionConfigFile.getAbsolutePath(),
+                CliConstants.CHANNELS, channelsFile.getAbsolutePath(),
                 CliConstants.DEFINITION, provisionDefinitionFile.getAbsolutePath());
 
         assertEquals(ReturnCodes.SUCCESS, exitCode);
@@ -187,19 +192,19 @@ public class InstallCommandTest extends AbstractMavenCommandTest {
                 .map(fp->fp.getLocation().getProducerName())
                 .containsExactly("org.wildfly.core:wildfly-core-galleon-pack::zip");
         assertThat(channelCaptor.getValue())
-                .flatMap(c->c.getRepositories())
-                .map(r->r.getId())
+                .flatMap(Channel::getRepositories)
+                .map(Repository::getId)
                 .containsExactly("dev");
     }
 
     @Test
     public void fplAndDefinitionAreNotAllowedTogether() throws Exception {
         final File provisionDefinitionFile = temporaryFolder.newFile("provision.xml");
-        final File provisionConfigFile = temporaryFolder.newFile();
+        final File channelsFile = temporaryFolder.newFile();
 
         int exitCode = commandLine.execute(CliConstants.Commands.INSTALL, CliConstants.DIR, "test",
                 CliConstants.DEFINITION, provisionDefinitionFile.getAbsolutePath(),
-                CliConstants.PROVISION_CONFIG, provisionConfigFile.getAbsolutePath(),
+                CliConstants.CHANNELS, channelsFile.getAbsolutePath(),
                 CliConstants.FPL, "test");
 
         assertEquals(ReturnCodes.INVALID_ARGUMENTS, exitCode);
@@ -220,30 +225,33 @@ public class InstallCommandTest extends AbstractMavenCommandTest {
 
     @Test
     public void provisionConfigAndChannelSet() throws IOException {
-        final File provisionConfigFile = temporaryFolder.newFile();
+        final File channelsFile = temporaryFolder.newFile();
 
         int exitCode = commandLine.execute(CliConstants.Commands.INSTALL, CliConstants.DIR, "test",
-                CliConstants.PROVISION_CONFIG, provisionConfigFile.getAbsolutePath(),
+                CliConstants.CHANNELS, channelsFile.getAbsolutePath(),
                 CliConstants.CHANNEL_MANIFEST, "g:a:v",
                 CliConstants.FPL, "test");
 
         assertEquals(ReturnCodes.INVALID_ARGUMENTS, exitCode);
         assertTrue(getErrorOutput().contains(CliMessages.MESSAGES
-                .exclusiveOptions(CliConstants.PROVISION_CONFIG, CliConstants.CHANNEL_MANIFEST).getMessage()));
+                .exclusiveOptions(CliConstants.CHANNELS, CliConstants.CHANNEL_MANIFEST).getMessage()));
     }
 
     @Test
-    public void provisionConfigAndRemoteRepoSet() throws IOException {
-        final File provisionConfigFile = temporaryFolder.newFile();
+    public void provisionConfigAndRemoteRepoSet() throws Exception {
+        Path channelsFile = temporaryFolder.newFile().toPath();
+        MetadataTestUtils.prepareChannel(channelsFile, List.of(new URL("file:some-manifest.yaml")));
 
         int exitCode = commandLine.execute(CliConstants.Commands.INSTALL, CliConstants.DIR, "test",
-                CliConstants.PROVISION_CONFIG, provisionConfigFile.getAbsolutePath(),
+                CliConstants.CHANNELS, channelsFile.toString(),
                 CliConstants.REPOSITORIES, "file:/test",
-                CliConstants.FPL, "test");
+                CliConstants.FPL, "g:a");
 
-        assertEquals(ReturnCodes.INVALID_ARGUMENTS, exitCode);
-        assertTrue(getErrorOutput().contains(CliMessages.MESSAGES
-                .exclusiveOptions(CliConstants.PROVISION_CONFIG, CliConstants.REPOSITORIES).getMessage()));
+        assertEquals(ReturnCodes.SUCCESS, exitCode);
+        Mockito.verify(provisionAction).provision(configCaptor.capture(), channelCaptor.capture());
+        assertThat(channelCaptor.getValue().get(0).getRepositories()
+                .stream().map(Repository::getUrl).collect(Collectors.toList()))
+                .containsOnly("file:/test");
     }
 
     @Override

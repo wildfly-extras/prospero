@@ -45,7 +45,7 @@ public class PromoteArtifactBundleActionTest {
     public void channelCoordinateMustHaveGA() throws Exception {
         try {
             new PromoteArtifactBundleAction(new TestConsole()).promote(createCustomArchive(), new URL("file://test/test-repo"),
-                    ArtifactUtils.manifestFromString("file://test/test.zip"));
+                    ArtifactUtils.manifestCoordFromString("file://test/test.zip"));
             fail("URL Channel GA should not be allowed");
         } catch (IllegalArgumentException e) {
             assertTrue(e.getMessage().contains("Channel reference has to use Maven GA."));
@@ -57,7 +57,8 @@ public class PromoteArtifactBundleActionTest {
         final PromoteArtifactBundleAction action = new PromoteArtifactBundleAction(new TestConsole());
         final Path targetRepo = temp.newFolder().toPath();
 
-        action.promote(createCustomArchive(), targetRepo.toUri().toURL(), ArtifactUtils.manifestFromString("org.test:test-channel"));
+        action.promote(createCustomArchive(), targetRepo.toUri().toURL(),
+                ArtifactUtils.manifestCoordFromString("org.test:test-channel"));
 
         assertTrue(Files.exists(targetRepo.resolve(Paths.get("foo", "bar", "test", "1.2.3", "test-1.2.3.jar"))));
     }
@@ -67,7 +68,7 @@ public class PromoteArtifactBundleActionTest {
         return ArtifactBundle.createCustomizationArchive(Collections.singletonList(testArtifact), temp.newFile("archive.zip"));
     }
 
-    private class TestConsole implements Console {
+    private static class TestConsole implements Console {
 
         @Override
         public void installationComplete() {

@@ -21,7 +21,6 @@ import org.jboss.logging.Messages;
 import org.jboss.logging.annotations.Cause;
 import org.jboss.logging.annotations.Message;
 import org.jboss.logging.annotations.MessageBundle;
-import org.wildfly.prospero.cli.commands.CliConstants;
 
 import java.nio.file.Path;
 
@@ -100,8 +99,8 @@ public interface CliMessages {
     @Message("Unable to perform self-update - unable to determine installed feature packs.")
     ArgumentParsingException unableToParseSelfUpdateData(@Cause Exception e);
 
-    @Message("Provisioning config argument (" + CliConstants.PROVISION_CONFIG + ") need to be set when using custom fpl")
-    IllegalArgumentException prosperoConfigMandatoryWhenCustomFpl();
+    @Message("No channel or channel manifest were specified.")
+    IllegalArgumentException channelsMandatoryWhenCustomFpl();
 
     @Message("No changes found")
     String noChangesFound();

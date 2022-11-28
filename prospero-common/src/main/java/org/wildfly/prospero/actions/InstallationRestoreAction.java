@@ -40,7 +40,7 @@ public class InstallationRestoreAction {
 
     private final Path installDir;
     private final Console console;
-    private MavenSessionManager mavenSessionManager;
+    private final MavenSessionManager mavenSessionManager;
 
     public InstallationRestoreAction(Path installDir, MavenSessionManager mavenSessionManager, Console console) {
         this.installDir = installDir;
@@ -57,7 +57,7 @@ public class InstallationRestoreAction {
         try (final InstallationMetadata metadataBundle = InstallationMetadata.importMetadata(metadataBundleZip)) {
             final ProsperoConfig prosperoConfig = metadataBundle.getProsperoConfig();
             final GalleonEnvironment galleonEnv = GalleonEnvironment
-                    .builder(installDir, prosperoConfig, mavenSessionManager)
+                    .builder(installDir, prosperoConfig.getChannels(), mavenSessionManager)
                     .setConsole(console)
                     .setRestoreManifest(metadataBundle.getManifest())
                     .build();

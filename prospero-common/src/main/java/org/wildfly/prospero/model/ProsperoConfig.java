@@ -32,7 +32,7 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 public class ProsperoConfig {
-    private List<Channel> channels;
+    private final List<Channel> channels;
 
     public ProsperoConfig(List<Channel> channels) {
         this.channels = channels;

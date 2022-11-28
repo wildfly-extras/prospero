@@ -55,8 +55,8 @@ public class UpdateWithAdditionalRepositoryTest extends WfCoreTestBase {
     public void updateCli() throws Exception {
         final Path manifestPath = temp.newFile().toPath();
         final Path provisionConfig = temp.newFile().toPath();
-        MetadataTestUtils.copyManifest("channels/wfcore-19-base.yaml", manifestPath);
-        MetadataTestUtils.prepareProvisionConfig(provisionConfig, List.of(manifestPath.toUri().toURL()));
+        MetadataTestUtils.copyManifest("manifests/wfcore-19-base.yaml", manifestPath);
+        MetadataTestUtils.prepareChannel(provisionConfig, List.of(manifestPath.toUri().toURL()));
 
         install(provisionConfig);
 
@@ -91,7 +91,7 @@ public class UpdateWithAdditionalRepositoryTest extends WfCoreTestBase {
 
     private void install(Path provisionConfig) throws Exception {
         ExecutionUtils.prosperoExecution(CliConstants.Commands.INSTALL,
-                        CliConstants.PROVISION_CONFIG, provisionConfig.toString(),
+                        CliConstants.CHANNELS, provisionConfig.toString(),
                         CliConstants.FPL, "wildfly-core@maven(org.jboss.universe:community-universe):19.0",
                         CliConstants.DIR, targetDir.getAbsolutePath())
                 .withTimeLimit(10, TimeUnit.MINUTES)

@@ -26,6 +26,8 @@ import org.junit.rules.TemporaryFolder;
 import org.wildfly.channel.Channel;
 import org.wildfly.channel.ChannelManifestCoordinate;
 import org.wildfly.channel.Repository;
+import org.wildfly.channel.maven.VersionResolverFactory;
+import org.wildfly.prospero.Messages;
 import org.wildfly.prospero.api.exceptions.NoChannelException;
 import org.wildfly.prospero.galleon.GalleonUtils;
 import org.wildfly.prospero.model.ProsperoConfig;
@@ -51,6 +53,7 @@ public class ProvisioningDefinitionTest {
 
     public static final String EAP_FPL = "known-fpl";
     private static final Tuple CENTRAL_REPO = Tuple.tuple("central", "https://repo1.maven.org/maven2/");
+    private static final VersionResolverFactory VERSION_RESOLVER_FACTORY = new VersionResolverFactory(null, null);
 
     @Test
     public void setChannelWithFileUrl() throws Exception {
@@ -58,14 +61,13 @@ public class ProvisioningDefinitionTest {
 
         builder.setManifest("file:/tmp/foo.bar");
         final ProvisioningDefinition definition = builder.build();
+        List<Channel> channels = definition.resolveChannels(VERSION_RESOLVER_FACTORY);
 
-        assertEquals(new URL("file:/tmp/foo.bar"), definition.getChannels().get(0).getManifestRef().getUrl());
-        assertEquals(1, definition.getChannels().size());
-        assertThat(definition.getChannels().get(0).getRepositories())
+        assertEquals(1, channels.size());
+        assertEquals(new URL("file:/tmp/foo.bar"), channels.get(0).getManifestRef().getUrl());
+        assertThat(channels.get(0).getRepositories())
                 .map(r-> Tuple.tuple(r.getId(), r.getUrl()))
-                .containsOnly(
-                        CENTRAL_REPO
-                );
+                .containsOnly(CENTRAL_REPO);
         verifyFeaturePackLocation(definition);
     }
 
@@ -75,14 +77,13 @@ public class ProvisioningDefinitionTest {
 
         builder.setManifest("http://localhost/foo.bar");
         final ProvisioningDefinition definition = builder.build();
+        List<Channel> channels = definition.resolveChannels(VERSION_RESOLVER_FACTORY);
 
-        assertEquals(new URL("http://localhost/foo.bar"), definition.getChannels().get(0).getManifestRef().getUrl());
-        assertEquals(1, definition.getChannels().size());
-        assertThat(definition.getChannels().get(0).getRepositories())
+        assertEquals(1, channels.size());
+        assertEquals(new URL("http://localhost/foo.bar"), channels.get(0).getManifestRef().getUrl());
+        assertThat(channels.get(0).getRepositories())
                 .map(r-> Tuple.tuple(r.getId(), r.getUrl()))
-                .containsOnly(
-                        CENTRAL_REPO
-                );
+                .containsOnly(CENTRAL_REPO);
         verifyFeaturePackLocation(definition);
     }
 
@@ -92,14 +93,13 @@ public class ProvisioningDefinitionTest {
 
         builder.setManifest("tmp/foo.bar");
         final ProvisioningDefinition definition = builder.build();
+        List<Channel> channels = definition.resolveChannels(VERSION_RESOLVER_FACTORY);
 
-        assertEquals(Paths.get("tmp/foo.bar").toAbsolutePath().toUri().toURL(), definition.getChannels().get(0).getManifestRef().getUrl());
-        assertEquals(1, definition.getChannels().size());
-        assertThat(definition.getChannels().get(0).getRepositories())
+        assertEquals(1, channels.size());
+        assertEquals(Paths.get("tmp/foo.bar").toAbsolutePath().toUri().toURL(), channels.get(0).getManifestRef().getUrl());
+        assertThat(channels.get(0).getRepositories())
                 .map(r-> Tuple.tuple(r.getId(), r.getUrl()))
-                .containsOnly(
-                        CENTRAL_REPO
-                );
+                .containsOnly(CENTRAL_REPO);
         verifyFeaturePackLocation(definition);
     }
 
@@ -113,7 +113,41 @@ public class ProvisioningDefinitionTest {
 
         final ProvisioningDefinition def = builder.build();
 
-        assertThat(def.getChannels())
+        assertThat(def.resolveChannels(VERSION_RESOLVER_FACTORY))
+                .flatMap(Channel::getRepositories)
+                .map(r-> Tuple.tuple(r.getId(), r.getUrl()))
+                .containsExactlyInAnyOrder(
+                        tuple("temp-repo-0", "http://test.repo1"),
+                        Tuple.tuple("temp-repo-1" ,"http://test.repo2")
+                );
+    }
+
+
+    @Test
+    public void customFplManifestNoRepos() throws Exception {
+        try {
+            final ProvisioningDefinition.Builder builder = new ProvisioningDefinition.Builder()
+                    .setFpl("custom:fpl")
+                    .setManifest("tmp/foo.bar");
+            builder.build();
+            fail("Expected to fail because no repositories were given.");
+        } catch (IllegalArgumentException e) {
+            assertThat(e.getMessage()).contains(Messages.MESSAGES.repositoriesMustBeSetWithManifest().getMessage());
+        }
+    }
+
+    @Test
+    public void customFplManifestRepos() throws Exception {
+        final ProvisioningDefinition.Builder builder = new ProvisioningDefinition.Builder()
+                .setFpl("custom:fpl")
+                .setManifest("tmp/foo.bar")
+                .setOverrideRepositories(Arrays.asList(
+                        new Repository("temp-repo-0", "http://test.repo1"),
+                        new Repository("temp-repo-1", "http://test.repo2")));
+
+        final ProvisioningDefinition def = builder.build();
+
+        assertThat(def.resolveChannels(VERSION_RESOLVER_FACTORY))
                 .flatMap(Channel::getRepositories)
                 .map(r-> Tuple.tuple(r.getId(), r.getUrl()))
                 .containsExactlyInAnyOrder(
@@ -127,7 +161,8 @@ public class ProvisioningDefinitionTest {
         final ProvisioningDefinition.Builder builder = new ProvisioningDefinition.Builder().setFpl("no-channel");
 
         try {
-            builder.build();
+            ProvisioningDefinition definition = builder.build();
+            definition.resolveChannels(VERSION_RESOLVER_FACTORY);
             fail("Building FPL without channel should fail");
         } catch (NoChannelException ignore) {
             // OK
@@ -139,10 +174,8 @@ public class ProvisioningDefinitionTest {
         final ProvisioningDefinition.Builder builder = new ProvisioningDefinition.Builder().setFpl("multi-channel");
 
         final ProvisioningDefinition def = builder.build();
-        assertThat(def.getChannels().stream().map(c->c.getManifestRef().getGav())).contains(
-                "test:one",
-                "test:two"
-        );
+        assertThat(def.resolveChannels(VERSION_RESOLVER_FACTORY).stream().map(c -> c.getManifestRef().getGav())).contains(
+                "test:one", "test:two");
     }
 
     @Test
@@ -155,9 +188,10 @@ public class ProvisioningDefinitionTest {
                         new Repository("temp-repo-1", "http://test.repo2")));
 
         final ProvisioningDefinition def = builder.build();
+        List<Channel> channels = def.resolveChannels(VERSION_RESOLVER_FACTORY);
 
-        assertEquals(1, def.getChannels().size());
-        final Channel channel = def.getChannels().get(0);
+        assertEquals(1, channels.size());
+        final Channel channel = channels.get(0);
         assertEquals(new URL("file:/tmp/foo.bar"), channel.getManifestRef().getUrl());
         assertThat(channel.getRepositories())
                 .map(r-> Tuple.tuple(r.getId(), r.getUrl()))
@@ -175,14 +209,14 @@ public class ProvisioningDefinitionTest {
                 List.of(new Repository("test_repo", "http://custom.repo")),
                 new ChannelManifestCoordinate("new.test", "gav")))).writeConfig(file.toPath());
 
-        final ProvisioningDefinition.Builder builder = new ProvisioningDefinition.Builder()
-                .setFpl("multi-channel")
-                .setProvisionConfig(file.toPath());
+        ProvisioningDefinition def = new ProvisioningDefinition.Builder().setFpl("multi-channel")
+                .setChannelCoordinates(file.toPath().toString()).build();
 
-        final ProvisioningDefinition def = builder.build();
+        VersionResolverFactory versionResolverFactory = new VersionResolverFactory(null, null);
+        List<Channel> channels = def.resolveChannels(versionResolverFactory);
 
-        assertEquals(1, def.getChannels().size());
-        final Channel channel = def.getChannels().get(0);
+        assertEquals(1, channels.size());
+        final Channel channel = channels.get(0);
         assertEquals("new.test:gav", channel.getManifestRef().getGav());
         assertThat(channel.getRepositories())
                 .map(r-> Tuple.tuple(r.getId(), r.getUrl()))

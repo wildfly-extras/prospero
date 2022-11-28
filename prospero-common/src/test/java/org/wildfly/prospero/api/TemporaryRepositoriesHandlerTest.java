@@ -99,7 +99,7 @@ public class TemporaryRepositoriesHandlerTest {
         return new Repository(id, url);
     }
 
-    private static List<Channel> applyOverride(List<Channel> originalChannels, List<Repository> additionalRepositories) {
-        return TemporaryRepositoriesHandler.addRepositories(originalChannels, additionalRepositories);
+    private static List<Channel> applyOverride(List<Channel> originalChannels, List<Repository> overrideRepositories) {
+        return TemporaryRepositoriesHandler.overrideRepositories(originalChannels, overrideRepositories);
     }
 }

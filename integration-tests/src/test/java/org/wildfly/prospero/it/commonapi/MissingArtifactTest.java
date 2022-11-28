@@ -54,14 +54,15 @@ public class MissingArtifactTest extends WfCoreTestBase {
                         .collect(Collectors.toList()));
         final Path channelFile = temporaryFolder.newFile().toPath();
         Files.writeString(channelFile, ChannelManifestMapper.toYaml(target));
-        final Path provisionConfigFile = temporaryFolder.newFile().toPath();
-        MetadataTestUtils.prepareProvisionConfig(provisionConfigFile, List.of(channelFile.toUri().toURL()));
+        final Path channelsFile = temporaryFolder.newFile().toPath();
+        MetadataTestUtils.prepareChannel(channelsFile, List.of(channelFile.toUri().toURL()));
 
         final ProvisioningDefinition provisioningDefinition = defaultWfCoreDefinition()
-                .setProvisionConfig(provisionConfigFile)
+                .setChannelCoordinates(List.of(channelsFile.toString()))
                 .build();
         assertThrows(ArtifactResolutionException.class,
-                () -> installation.provision(provisioningDefinition.toProvisioningConfig(), provisioningDefinition.getChannels()));
+                () -> installation.provision(provisioningDefinition.toProvisioningConfig(),
+                        provisioningDefinition.resolveChannels(CHANNELS_RESOLVER_FACTORY)));
     }
 
     @Test
@@ -79,13 +80,14 @@ public class MissingArtifactTest extends WfCoreTestBase {
                         .collect(Collectors.toList()));
         final Path channelFile = temporaryFolder.newFile().toPath();
         Files.writeString(channelFile, ChannelManifestMapper.toYaml(target));
-        final Path provisionConfigFile = temporaryFolder.newFile().toPath();
-        MetadataTestUtils.prepareProvisionConfig(provisionConfigFile, List.of(channelFile.toUri().toURL()));
+        final Path channelsFile = temporaryFolder.newFile().toPath();
+        MetadataTestUtils.prepareChannel(channelsFile, List.of(channelFile.toUri().toURL()));
 
         final ProvisioningDefinition provisioningDefinition = defaultWfCoreDefinition()
-                .setProvisionConfig(provisionConfigFile)
+                .setChannelCoordinates(List.of(channelsFile.toString()))
                 .build();
         assertThrows(ArtifactResolutionException.class,
-                () -> installation.provision(provisioningDefinition.toProvisioningConfig(), provisioningDefinition.getChannels()));
+                () -> installation.provision(provisioningDefinition.toProvisioningConfig(),
+                        provisioningDefinition.resolveChannels(CHANNELS_RESOLVER_FACTORY)));
     }
 }

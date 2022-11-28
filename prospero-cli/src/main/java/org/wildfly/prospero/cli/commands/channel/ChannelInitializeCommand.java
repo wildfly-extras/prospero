@@ -109,7 +109,7 @@ public class ChannelInitializeCommand extends AbstractCommand {
             console.println(CliMessages.MESSAGES.registeringCustomChannel(manifestName.get()));
             Channel channel = new Channel("customization", null, null, null,
                     List.of(new Repository(CUSTOMIZATION_REPO_ID, url.toExternalForm())),
-                    ArtifactUtils.manifestFromString(manifestName.get()));
+                    ArtifactUtils.manifestCoordFromString(manifestName.get()));
             metadataAction.addChannel(channel);
         }
 
@@ -160,7 +160,7 @@ public class ChannelInitializeCommand extends AbstractCommand {
             return true;
         }
         try {
-            final ChannelManifestCoordinate manifestRef = ArtifactUtils.manifestFromString(manifestName.get());
+            final ChannelManifestCoordinate manifestRef = ArtifactUtils.manifestCoordFromString(manifestName.get());
             if (manifestRef.getGav() == null) {
                 console.error(CliMessages.MESSAGES.illegalChannel(manifestName.get()));
                 return false;

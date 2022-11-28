@@ -53,10 +53,13 @@ public interface Messages {
     @Message("Artifact [%s:%s] not found")
     ArtifactResolutionException artifactNotFound(String g, String a, @Cause UnresolvedMavenArtifactException e);
 
-    @Message("At least one channel reference must be given.")
+    @Message("Given configuration doesn't reference any channel or channel manifest.")
     NoChannelException noChannelReference();
 
-    @Message("[%s] doesn't specify any channels and no additional channels are selected.")
+    @Message("Invalid channel: Channel '%s' doesn't reference a manifest.")
+    NoChannelException noChannelManifestReference(String name);
+
+    @Message("Pre-defined FPL [%s] doesn't specify any channels and no explicit channels were given.")
     NoChannelException fplDefinitionDoesntContainChannel(String fpl);
 
     @Message("Channel '%s' is already present.")
@@ -108,8 +111,11 @@ public interface Messages {
     @Message("Invalide URL [%s]")
     IllegalArgumentException invalidUrl(String text, @Cause Exception e);
 
-    @Message("Incomplete configuration: either a predefined fpl (%s) or a provisionConfigFile must be given.")
-    IllegalArgumentException incompleteProvisioningConfiguration(String availableFpls);
+    @Message("Incomplete configuration: If the FPL is not one of predefined names (%s) a channel must be given.")
+    IllegalArgumentException predefinedFplOrChannelRequired(String availableFpls);
+
+    @Message("Incomplete configuration: neither FPL nor Galleon provisioning config was given.")
+    IllegalArgumentException fplNorGalleonConfigWereSet();
 
     @Message("Provided metadata bundle [%s] is missing one or more entries")
     IllegalArgumentException incompleteMetadataBundle(Path path);
@@ -143,4 +149,7 @@ public interface Messages {
 
     @Message("Unable to parse the customization bundle [%s].")
     ArtifactPromoteException unableToParseCustomizationBundle(Path path, @Cause Exception e);
+
+    @Message("At least one repository must be set when using the manifest option.")
+    IllegalArgumentException repositoriesMustBeSetWithManifest();
 }

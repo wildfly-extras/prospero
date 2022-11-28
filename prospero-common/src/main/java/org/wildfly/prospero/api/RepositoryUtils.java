@@ -20,7 +20,7 @@ package org.wildfly.prospero.api;
 import org.eclipse.aether.repository.RemoteRepository;
 import org.wildfly.channel.Repository;
 
-import static org.wildfly.prospero.api.ProvisioningDefinition.DEFAULT_REPOSITORY_POLICY;
+import static org.wildfly.channel.maven.VersionResolverFactory.DEFAULT_REPOSITORY_POLICY;
 
 public class RepositoryUtils {
     public static Repository toChannelRepository(RemoteRepository r) {
@@ -31,5 +31,9 @@ public class RepositoryUtils {
         return new RemoteRepository.Builder(id, "default", url)
                 .setPolicy(DEFAULT_REPOSITORY_POLICY)
                 .build();
+    }
+
+    public static RemoteRepository toRemoteRepository(Repository repository) {
+        return toRemoteRepository(repository.getId(), repository.getUrl());
     }
 }

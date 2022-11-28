@@ -22,7 +22,10 @@ import org.apache.maven.artifact.versioning.ComparableVersion;
 import org.eclipse.aether.artifact.Artifact;
 import org.wildfly.channel.ChannelManifestCoordinate;
 import org.wildfly.prospero.Messages;
+import org.wildfly.channel.ChannelMetadataCoordinate;
+import org.wildfly.channel.maven.ChannelCoordinate;
 
+import java.lang.reflect.InvocationTargetException;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.nio.file.Paths;
@@ -32,37 +35,57 @@ public class ArtifactUtils {
         return new ComparableVersion(first.getVersion()).compareTo(new ComparableVersion(other.getVersion()));
     }
 
-    public static ChannelManifestCoordinate manifestFromString(String urlGavOrPath) {
+    public static ChannelManifestCoordinate manifestCoordFromString(String urlGavOrPath) {
+        return coordinateFromString(urlGavOrPath, ChannelManifestCoordinate.class);
+    }
+
+    public static ChannelCoordinate channelCoordFromString(String urlGavOrPath) {
+        return coordinateFromString(urlGavOrPath, ChannelCoordinate.class);
+    }
+
+    private static <T extends ChannelMetadataCoordinate> T coordinateFromString(String urlGavOrPath, Class<T> clazz) {
         try {
-            URL url = new URL(urlGavOrPath);
-            return new ChannelManifestCoordinate(url);
-        } catch (MalformedURLException e) {
-            if (isValidCoordinate(urlGavOrPath)) {
-                try {
-                    return ChannelManifestCoordinate.create(null, urlGavOrPath);
-                } catch (MalformedURLException ex) {
-                    throw new RuntimeException(ex);
+            try {
+                URL url = new URL(urlGavOrPath);
+                return clazz.getDeclaredConstructor(URL.class).newInstance(url);
+            } catch (MalformedURLException e) {
+                if (isValidCoordinate(urlGavOrPath)) {
+                    String[] gav = urlGavOrPath.split(":");
+                    if (gav.length == 2) {
+                        return clazz.getDeclaredConstructor(String.class, String.class).newInstance(gav[0], gav[1]);
+                    } else if (gav.length == 3) {
+                        return clazz.getDeclaredConstructor(String.class, String.class, String.class)
+                                .newInstance(gav[0], gav[1], gav[2]);
+                    }
                 }
-            } else {
                 // assume the string is a path
                 try {
-                    return new ChannelManifestCoordinate(Paths.get(urlGavOrPath).toAbsolutePath().toUri().toURL());
+                    return clazz.getDeclaredConstructor(URL.class)
+                            .newInstance(Paths.get(urlGavOrPath).toAbsolutePath().toUri().toURL());
                 } catch (MalformedURLException e2) {
                     throw Messages.MESSAGES.invalidUrl(urlGavOrPath, e2);
                 }
             }
+        } catch (NoSuchMethodException | InstantiationException | IllegalAccessException | InvocationTargetException e) {
+            throw new IllegalStateException("Can't instantiate " + clazz.getSimpleName(), e);
         }
     }
 
     public static boolean isValidCoordinate(String gav) {
+        if (gav.contains("\\") || gav.contains("/")) { // must not contain slash or backslash -> could be a path
+            return false;
+        }
+
         String[] parts = gav.split(":");
-        return (parts.length == 3 // GAV
-                && StringUtils.isNotBlank(parts[0])
-                && StringUtils.isNotBlank(parts[1])
-                && StringUtils.isNotBlank(parts[2]))
-                ||
-                (parts.length == 2 // GA
-                        && StringUtils.isNotBlank(parts[0])
-                        && StringUtils.isNotBlank(parts[1]));
+        for (String part: parts) { // no segment can be empty or null
+            if (StringUtils.isBlank(part)) {
+                return false;
+            }
+        }
+        if (parts.length != 2 && parts.length != 3) { // GA or GAV
+            return false;
+        }
+
+        return true;
     }
 }

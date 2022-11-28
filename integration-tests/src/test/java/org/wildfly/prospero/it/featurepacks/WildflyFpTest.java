@@ -49,13 +49,14 @@ public class WildflyFpTest {
 
     @Test
     public void testInstallProsperoWithWildfly() throws Exception {
-        Path provisionConfig = tempDir.newFile().toPath();
-        MetadataTestUtils.prepareProvisionConfig(provisionConfig, "channels/wildfly-27.0.0.Alpha2-channel.yaml", "channels/prospero-channel.yaml");
+        Path channelsFile = tempDir.newFile().toPath();
+        MetadataTestUtils.prepareChannel(channelsFile, "manifests/wildfly-27.0.0.Alpha2-channel.yaml",
+                "manifests/prospero-manifest.yaml");
 
         final URL provisionDefinition = this.getClass().getClassLoader().getResource("galleon/wfcore-prospero.xml");
 
         ExecutionUtils.prosperoExecution(CliConstants.Commands.INSTALL,
-                        CliConstants.PROVISION_CONFIG, provisionConfig.toString(),
+                        CliConstants.CHANNELS, channelsFile.toString(),
                         CliConstants.DEFINITION, Paths.get(provisionDefinition.toURI()).toString(),
                         CliConstants.DIR, targetDir.toAbsolutePath().toString())
                 .withTimeLimit(10, TimeUnit.MINUTES)
@@ -65,6 +66,8 @@ public class WildflyFpTest {
         final Path installedProspero = targetDir.resolve("bin").resolve(ExecutionUtils.isWindows()?"prospero.bat":"prospero.sh");
         assertTrue(Files.exists(installedProspero));
 
+        // TODO: This doesn't work due to incompatible wildfly-channel library version. Re-enable after we get back to an
+        //  official wildfly-channel release.
         ExecutionUtils.prosperoExecution(CliConstants.Commands.UPDATE, CliConstants.DRY_RUN,
                 CliConstants.DIR, targetDir.toAbsolutePath().toString())
                 .withTimeLimit(10, TimeUnit.MINUTES)

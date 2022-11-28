@@ -117,7 +117,7 @@ public class ChannelPromoteCommand extends AbstractCommand {
             return ReturnCodes.INVALID_ARGUMENTS;
         }
         // TODO: support remote repositories
-        final ChannelManifestCoordinate coordinate = ArtifactUtils.manifestFromString(name.get());
+        final ChannelManifestCoordinate coordinate = ArtifactUtils.manifestCoordFromString(name.get());
 
         final boolean accepted;
         if (!noPrompt) {

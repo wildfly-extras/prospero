@@ -18,21 +18,17 @@
 package org.wildfly.prospero.model;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
-import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
-import org.eclipse.aether.repository.RemoteRepository;
 import org.wildfly.channel.Channel;
-import org.wildfly.prospero.api.RepositoryUtils;
 
 import java.io.File;
 import java.io.IOException;
 import java.net.URI;
 import java.net.URL;
 import java.util.List;
-import java.util.stream.Collectors;
 
 public class KnownFeaturePack {
     private final String name;
@@ -64,15 +60,6 @@ public class KnownFeaturePack {
 
     public List<Channel> getChannels() {
         return channels;
-    }
-
-    @JsonIgnore
-    public List<RemoteRepository> getRemoteRepositories() {
-        final List<RemoteRepository> repositories = channels.stream()
-                .flatMap(c -> c.getRepositories().stream())
-                .map(r -> RepositoryUtils.toRemoteRepository(r.getId(), r.getUrl()))
-                .collect(Collectors.toList());
-        return repositories.stream().map(r-> RepositoryUtils.toRemoteRepository(r.getId(), r.getUrl())).collect(Collectors.toList());
     }
 
     public URI getGalleonConfiguration() {

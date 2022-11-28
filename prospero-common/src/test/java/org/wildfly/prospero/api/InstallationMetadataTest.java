@@ -64,7 +64,7 @@ public class InstallationMetadataTest {
         final ProsperoConfig config = installationMetadata.getProsperoConfig();
         Channel channel = new Channel("test", null, null, null,
                 List.of(new Repository("test", "file://foo.bar")),
-                ArtifactUtils.manifestFromString("new:channel"));
+                ArtifactUtils.manifestCoordFromString("new:channel"));
         config.getChannels().add(channel);
 
         installationMetadata.updateProsperoConfig(config);
@@ -84,7 +84,7 @@ public class InstallationMetadataTest {
         final ProsperoConfig config = installationMetadata.getProsperoConfig();
         Channel channel = new Channel("test", null, null, null,
                 List.of(new Repository("test", "file://foo.bar")),
-                ArtifactUtils.manifestFromString("new:channel"));
+                ArtifactUtils.manifestCoordFromString("new:channel"));
         config.getChannels().add(channel);
 
         installationMetadata.recordProvision(false);

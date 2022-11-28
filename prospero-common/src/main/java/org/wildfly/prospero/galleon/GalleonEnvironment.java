@@ -28,7 +28,6 @@ import org.wildfly.channel.ChannelSession;
 import org.wildfly.channel.maven.VersionResolverFactory;
 import org.wildfly.prospero.actions.Console;
 import org.wildfly.prospero.api.exceptions.OperationException;
-import org.wildfly.prospero.model.ProsperoConfig;
 import org.wildfly.prospero.wfchannel.MavenSessionManager;
 
 import java.nio.file.Path;
@@ -43,10 +42,10 @@ public class GalleonEnvironment {
     private final ChannelSession channelSession;
     private final List<Channel> channels;
 
-    private GalleonEnvironment(Builder builder) throws ProvisioningException, OperationException {
+    private GalleonEnvironment(Builder builder) throws ProvisioningException {
         Optional<Console> console = Optional.ofNullable(builder.console);
         Optional<ChannelManifest> restoreManifest = Optional.ofNullable(builder.manifest);
-        channels = builder.prosperoConfig.getChannels();
+        channels = builder.channels;
 
         final RepositorySystem system = builder.mavenSessionManager.newRepositorySystem();
         final DefaultRepositorySystemSession session = builder.mavenSessionManager.newRepositorySystemSession(system);
@@ -84,25 +83,25 @@ public class GalleonEnvironment {
         return channels;
     }
 
-    public static Builder builder(Path installDir, ProsperoConfig prosperoConfig, MavenSessionManager mavenSessionManager) {
+    public static Builder builder(Path installDir, List<Channel> channels, MavenSessionManager mavenSessionManager) {
         Objects.requireNonNull(installDir);
-        Objects.requireNonNull(prosperoConfig);
+        Objects.requireNonNull(channels);
         Objects.requireNonNull(mavenSessionManager);
 
-        return new Builder(installDir, prosperoConfig, mavenSessionManager);
+        return new Builder(installDir, channels, mavenSessionManager);
     }
 
     public static class Builder {
 
         private final Path installDir;
-        private final ProsperoConfig prosperoConfig;
+        private final List<Channel> channels;
         private final MavenSessionManager mavenSessionManager;
         private Console console;
         private ChannelManifest manifest;
 
-        private Builder(Path installDir, ProsperoConfig prosperoConfig, MavenSessionManager mavenSessionManager) {
+        private Builder(Path installDir, List<Channel> channels, MavenSessionManager mavenSessionManager) {
             this.installDir = installDir;
-            this.prosperoConfig = prosperoConfig;
+            this.channels = channels;
             this.mavenSessionManager = mavenSessionManager;
         }
 
