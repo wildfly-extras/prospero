@@ -56,8 +56,8 @@ public final class MetadataTestUtils {
 
     public static final Path MANIFEST_FILE_PATH =
             Paths.get(InstallationMetadata.METADATA_DIR, InstallationMetadata.MANIFEST_FILE_NAME);
-    public static final Path PROVISION_CONFIG_FILE_PATH =
-            Paths.get(InstallationMetadata.METADATA_DIR, InstallationMetadata.PROSPERO_CONFIG_FILE_NAME);
+    public static final Path INSTALLER_CHANNELS_FILE_PATH =
+            Paths.get(InstallationMetadata.METADATA_DIR, InstallationMetadata.INSTALLER_CHANNELS_FILE_NAME);
 
     private MetadataTestUtils() {
     }

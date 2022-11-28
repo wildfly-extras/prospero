@@ -42,9 +42,9 @@ public class ProsperoInstallationManagerFactory implements InstallationManagerFa
 
     private void verifyInstallationDirectory(Path path) {
         File dotGalleonDir = path.resolve(InstallationMetadata.GALLEON_INSTALLATION_DIR).toFile();
-        File prosperoConfigFile = path.resolve(InstallationMetadata.METADATA_DIR)
-                .resolve(InstallationMetadata.PROSPERO_CONFIG_FILE_NAME).toFile();
-        if (!dotGalleonDir.isDirectory() || !prosperoConfigFile.isFile()) {
+        File channelsFile = path.resolve(InstallationMetadata.METADATA_DIR)
+                .resolve(InstallationMetadata.INSTALLER_CHANNELS_FILE_NAME).toFile();
+        if (!dotGalleonDir.isDirectory() || !channelsFile.isFile()) {
             throw Messages.MESSAGES.invalidInstallationDir(path);
         }
     }

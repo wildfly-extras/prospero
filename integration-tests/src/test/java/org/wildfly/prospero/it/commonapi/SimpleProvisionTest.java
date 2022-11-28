@@ -84,7 +84,7 @@ public class SimpleProvisionTest extends WfCoreTestBase {
         installation.provision(provisioningDefinition.toProvisioningConfig(),
                 provisioningDefinition.resolveChannels(CHANNELS_RESOLVER_FACTORY));
 
-        final ProsperoConfig persistedConfig = ProsperoConfig.readConfig(outputPath.resolve(InstallationMetadata.METADATA_DIR).resolve(InstallationMetadata.PROSPERO_CONFIG_FILE_NAME));
+        final ProsperoConfig persistedConfig = ProsperoConfig.readConfig(outputPath.resolve(InstallationMetadata.METADATA_DIR).resolve(InstallationMetadata.INSTALLER_CHANNELS_FILE_NAME));
         assertThat(persistedConfig.getChannels())
                 .map(Channel::getName)
                 .noneMatch(StringUtils::isEmpty)
@@ -101,7 +101,7 @@ public class SimpleProvisionTest extends WfCoreTestBase {
         installation.provision(provisioningDefinition.toProvisioningConfig(),
                 provisioningDefinition.resolveChannels(CHANNELS_RESOLVER_FACTORY));
 
-        MetadataTestUtils.prepareChannel(outputPath.resolve(MetadataTestUtils.PROVISION_CONFIG_FILE_PATH), CHANNEL_COMPONENT_UPDATES, CHANNEL_BASE_CORE_19);
+        MetadataTestUtils.prepareChannel(outputPath.resolve(MetadataTestUtils.INSTALLER_CHANNELS_FILE_PATH), CHANNEL_COMPONENT_UPDATES, CHANNEL_BASE_CORE_19);
         getUpdateAction().performUpdate();
 
         // verify manifest contains versions 17.0.1
@@ -119,7 +119,7 @@ public class SimpleProvisionTest extends WfCoreTestBase {
         installation.provision(provisioningDefinition.toProvisioningConfig(),
                 provisioningDefinition.resolveChannels(CHANNELS_RESOLVER_FACTORY));
 
-        MetadataTestUtils.prepareChannel(outputPath.resolve(MetadataTestUtils.PROVISION_CONFIG_FILE_PATH), CHANNEL_FP_UPDATES, CHANNEL_BASE_CORE_19);
+        MetadataTestUtils.prepareChannel(outputPath.resolve(MetadataTestUtils.INSTALLER_CHANNELS_FILE_PATH), CHANNEL_FP_UPDATES, CHANNEL_BASE_CORE_19);
         getUpdateAction().performUpdate();
 
         // verify manifest contains versions 17.0.1
@@ -138,7 +138,7 @@ public class SimpleProvisionTest extends WfCoreTestBase {
         installation.provision(provisioningDefinition.toProvisioningConfig(),
                 provisioningDefinition.resolveChannels(CHANNELS_RESOLVER_FACTORY));
 
-        MetadataTestUtils.prepareChannel(outputPath.resolve(MetadataTestUtils.PROVISION_CONFIG_FILE_PATH), CHANNEL_FP_UPDATES, CHANNEL_BASE_CORE_19);
+        MetadataTestUtils.prepareChannel(outputPath.resolve(MetadataTestUtils.INSTALLER_CHANNELS_FILE_PATH), CHANNEL_FP_UPDATES, CHANNEL_BASE_CORE_19);
         getUpdateAction().performUpdate();
 
         // verify manifest contains versions 17.0.1
@@ -156,7 +156,7 @@ public class SimpleProvisionTest extends WfCoreTestBase {
         installation.provision(provisioningDefinition.toProvisioningConfig(),
                 provisioningDefinition.resolveChannels(CHANNELS_RESOLVER_FACTORY));
 
-        MetadataTestUtils.prepareChannel(outputPath.resolve(MetadataTestUtils.PROVISION_CONFIG_FILE_PATH), CHANNEL_COMPONENT_UPDATES, CHANNEL_BASE_CORE_19);
+        MetadataTestUtils.prepareChannel(outputPath.resolve(MetadataTestUtils.INSTALLER_CHANNELS_FILE_PATH), CHANNEL_COMPONENT_UPDATES, CHANNEL_BASE_CORE_19);
         final Set<String> updates = new UpdateAction(outputPath, mavenSessionManager, new AcceptingConsole(), Collections.emptyList())
                 .findUpdates().getArtifactUpdates().stream()
                 .map(ArtifactChange::getArtifactName)

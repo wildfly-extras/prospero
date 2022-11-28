@@ -85,7 +85,7 @@ public class GitStorage implements AutoCloseable {
             git.add().addFilepattern(InstallationMetadata.MANIFEST_FILE_NAME).call();
 
             if (isRepositoryEmpty(git)) {
-                git.add().addFilepattern(InstallationMetadata.PROSPERO_CONFIG_FILE_NAME).call();
+                git.add().addFilepattern(InstallationMetadata.INSTALLER_CHANNELS_FILE_NAME).call();
                 // adjust the date so that when talking over a non-prosper installation date matches creation
                 git.commit()
                         .setCommitter(adjustCommitDateToCreationDate(getCommitter()))
@@ -114,7 +114,7 @@ public class GitStorage implements AutoCloseable {
 
     public void recordConfigChange() throws MetadataException {
         try {
-            git.add().addFilepattern(InstallationMetadata.PROSPERO_CONFIG_FILE_NAME).call();
+            git.add().addFilepattern(InstallationMetadata.INSTALLER_CHANNELS_FILE_NAME).call();
             git.commit().setCommitter(getCommitter()).setMessage(SavedState.Type.CONFIG_CHANGE.name()).call();
         } catch (GitAPIException e) {
             throw Messages.MESSAGES.unableToAccessHistoryStorage(base, e);

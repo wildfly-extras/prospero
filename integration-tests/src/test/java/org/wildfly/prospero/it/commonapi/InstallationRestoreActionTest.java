@@ -68,7 +68,7 @@ public class InstallationRestoreActionTest extends WfCoreTestBase {
                 .provision(provisioningDefinition.toProvisioningConfig(),
                         provisioningDefinition.resolveChannels(CHANNELS_RESOLVER_FACTORY));
 
-        prepareInstallerConfig(outputPath.resolve(MetadataTestUtils.PROVISION_CONFIG_FILE_PATH), CHANNEL_COMPONENT_UPDATES, CHANNEL_BASE_CORE_19);
+        prepareInstallerConfig(outputPath.resolve(MetadataTestUtils.INSTALLER_CHANNELS_FILE_PATH), CHANNEL_COMPONENT_UPDATES, CHANNEL_BASE_CORE_19);
 
         new InstallationExportAction(outputPath).export(Paths.get("target/bundle.zip"));
 

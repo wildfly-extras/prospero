@@ -98,8 +98,8 @@ public class UpdateTest extends WfCoreTestBase {
 
     @Test
     public void updateWildflyCoreIgnoreChangesInProsperoConfig() throws Exception {
-        final Path prosperoConfigFile = outputPath.resolve(InstallationMetadata.METADATA_DIR)
-                .resolve(InstallationMetadata.PROSPERO_CONFIG_FILE_NAME);
+        final Path channelsFile = outputPath.resolve(InstallationMetadata.METADATA_DIR)
+                .resolve(InstallationMetadata.INSTALLER_CHANNELS_FILE_NAME);
 
         // deploy manifest file
         File manifestFile = new File(MetadataTestUtils.class.getClassLoader().getResource(CHANNEL_BASE_CORE_19).toURI());
@@ -113,7 +113,7 @@ public class UpdateTest extends WfCoreTestBase {
         installation.provision(provisioningDefinition.toProvisioningConfig(),
                 provisioningDefinition.resolveChannels(CHANNELS_RESOLVER_FACTORY));
 
-        Files.writeString(prosperoConfigFile, "# test comment", StandardOpenOption.APPEND);
+        Files.writeString(channelsFile, "# test comment", StandardOpenOption.APPEND);
 
         // update manifest file
         final File updatedChannel = upgradeTestArtifactIn(manifestFile);
@@ -123,7 +123,7 @@ public class UpdateTest extends WfCoreTestBase {
         new UpdateAction(outputPath, mavenSessionManager, new AcceptingConsole(), Collections.emptyList())
                 .performUpdate();
 
-        assertTrue(Files.readString(prosperoConfigFile).contains("# test comment"));
+        assertTrue(Files.readString(channelsFile).contains("# test comment"));
     }
 
     private File upgradeTestArtifactIn(File channelFile) throws IOException {
@@ -143,12 +143,12 @@ public class UpdateTest extends WfCoreTestBase {
 
     private File buildConfigWithMockRepo() throws IOException {
         final List<Repository> repositories = new ArrayList<>(defaultRemoteRepositories());
-        final File configFile = temp.newFile(InstallationMetadata.PROSPERO_CONFIG_FILE_NAME);
+        final File channelsFile = temp.newFile(InstallationMetadata.INSTALLER_CHANNELS_FILE_NAME);
         repositories.add(new Repository("test-repo", mockRepo.toURI().toURL().toString()));
         Channel channel = new Channel("test", "", null, null, repositories,
                 new ChannelManifestCoordinate("test", "channel"));
-        new ProsperoConfig(List.of(channel)).writeConfig(configFile.toPath());
-        return configFile;
+        new ProsperoConfig(List.of(channel)).writeConfig(channelsFile.toPath());
+        return channelsFile;
     }
 
     private void deployManifestFile(File channelFile, String version) throws ProvisioningException, MalformedURLException, DeploymentException {

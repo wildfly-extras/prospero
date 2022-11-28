@@ -79,7 +79,7 @@ public class UpdateWithAdditionalRepositoryTest extends WfCoreTestBase {
 
         assertEquals(WfCoreTestBase.UPGRADE_VERSION, wildflyCliStream.get().getVersion());
         // verify the temporary repository has not been added
-        assertThat(ProsperoConfig.readConfig(targetDir.toPath().resolve(MetadataTestUtils.PROVISION_CONFIG_FILE_PATH)).getChannels())
+        assertThat(ProsperoConfig.readConfig(targetDir.toPath().resolve(MetadataTestUtils.INSTALLER_CHANNELS_FILE_PATH)).getChannels())
                 .flatMap(Channel::getRepositories)
                 .map(Repository::getUrl)
                 .containsExactlyInAnyOrder("https://repo1.maven.org/maven2/",
