@@ -28,6 +28,7 @@ import org.wildfly.prospero.api.InstallationMetadata;
 import org.wildfly.prospero.api.exceptions.MetadataException;
 import org.wildfly.prospero.api.exceptions.ArtifactResolutionException;
 import org.wildfly.prospero.api.exceptions.OperationException;
+import org.wildfly.prospero.galleon.GalleonArtifactExporter;
 import org.wildfly.prospero.galleon.GalleonEnvironment;
 import org.wildfly.prospero.galleon.GalleonUtils;
 import org.wildfly.prospero.model.ProsperoConfig;
@@ -43,6 +44,7 @@ public class UpdateAction implements AutoCloseable {
     private final MavenSessionManager mavenSessionManager;
     private final GalleonEnvironment galleonEnv;
     private final ProsperoConfig prosperoConfig;
+    private final Path installDir;
 
     public UpdateAction(Path installDir, MavenSessionManager mavenSessionManager, Console console, List<Repository> overrideRepositories)
             throws ProvisioningException, OperationException {
@@ -53,6 +55,7 @@ public class UpdateAction implements AutoCloseable {
                 .builder(installDir, prosperoConfig.getChannels(), mavenSessionManager)
                 .setConsole(console)
                 .build();
+        this.installDir = installDir;
         this.mavenSessionManager = mavenSessionManager;
     }
 
@@ -95,5 +98,11 @@ public class UpdateAction implements AutoCloseable {
         }
 
         metadata.setManifest(galleonEnv.getRepositoryManager().resolvedChannel());
+
+        try {
+            new GalleonArtifactExporter().cacheGalleonArtifacts(galleonEnv.getChannels(), mavenSessionManager, installDir, provMgr.getProvisioningConfig());
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
     }
 }

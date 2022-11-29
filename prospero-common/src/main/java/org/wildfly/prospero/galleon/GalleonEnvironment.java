@@ -27,6 +27,7 @@ import org.wildfly.channel.Channel;
 import org.wildfly.channel.ChannelManifest;
 import org.wildfly.channel.ChannelSession;
 import org.wildfly.channel.maven.VersionResolverFactory;
+import org.wildfly.channel.spi.MavenVersionsResolver;
 import org.wildfly.prospero.actions.Console;
 import org.wildfly.prospero.api.exceptions.MetadataException;
 import org.wildfly.prospero.api.exceptions.OperationException;
@@ -37,6 +38,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.function.Consumer;
 
 public class GalleonEnvironment {
 
@@ -60,14 +62,14 @@ public class GalleonEnvironment {
 
         final RepositorySystem system = builder.mavenSessionManager.newRepositorySystem();
         final DefaultRepositorySystemSession session = builder.mavenSessionManager.newRepositorySystemSession(system);
-        final VersionResolverFactory factory = new VersionResolverFactory(system, session);
-        channelSession = new ChannelSession(substitutedChannels, factory);
+        final MavenVersionsResolver.Factory factory = new CachedVersionResolverFactory(new VersionResolverFactory(system, session), builder.installDir, system, session);
+        channelSession = new ChannelSession(channels, factory);
         if (restoreManifest.isEmpty()) {
             repositoryManager = new ChannelMavenArtifactRepositoryManager(channelSession);
         } else {
             repositoryManager = new ChannelMavenArtifactRepositoryManager(channelSession, restoreManifest.get());
         }
-        provisioningManager = GalleonUtils.getProvisioningManager(builder.installDir, repositoryManager);
+        provisioningManager = GalleonUtils.getProvisioningManager(builder.installDir, repositoryManager, builder.fpTracker);
 
         final ProvisioningLayoutFactory layoutFactory = provisioningManager.getLayoutFactory();
         if (console.isPresent()) {
@@ -109,6 +111,7 @@ public class GalleonEnvironment {
         private final MavenSessionManager mavenSessionManager;
         private Console console;
         private ChannelManifest manifest;
+        private Consumer<String> fpTracker;
 
         private Builder(Path installDir, List<Channel> channels, MavenSessionManager mavenSessionManager) {
             this.installDir = installDir;
@@ -123,6 +126,11 @@ public class GalleonEnvironment {
 
         public Builder setRestoreManifest(ChannelManifest manifest) {
             this.manifest = manifest;
+            return this;
+        }
+
+        public Builder setResolvedFpTracker(Consumer<String> fpTracker) {
+            this.fpTracker = fpTracker;
             return this;
         }
 
