@@ -62,7 +62,8 @@ public class GalleonEnvironment {
 
         final RepositorySystem system = builder.mavenSessionManager.newRepositorySystem();
         final DefaultRepositorySystemSession session = builder.mavenSessionManager.newRepositorySystemSession(system);
-        final MavenVersionsResolver.Factory factory = new CachedVersionResolverFactory(new VersionResolverFactory(system, session), builder.installDir, system, session);
+        final Path sourceServerPath = builder.sourceServerPath == null? builder.installDir:builder.sourceServerPath;
+        final MavenVersionsResolver.Factory factory = new CachedVersionResolverFactory(new VersionResolverFactory(system, session), sourceServerPath, system, session);
         channelSession = new ChannelSession(channels, factory);
         if (restoreManifest.isEmpty()) {
             repositoryManager = new ChannelMavenArtifactRepositoryManager(channelSession);
@@ -112,6 +113,7 @@ public class GalleonEnvironment {
         private Console console;
         private ChannelManifest manifest;
         private Consumer<String> fpTracker;
+        private Path sourceServerPath;
 
         private Builder(Path installDir, List<Channel> channels, MavenSessionManager mavenSessionManager) {
             this.installDir = installDir;
@@ -136,6 +138,15 @@ public class GalleonEnvironment {
 
         public GalleonEnvironment build() throws ProvisioningException, OperationException {
             return new GalleonEnvironment(this);
+        }
+
+        public Builder setSourceServerPath(Path sourceServerPath) {
+            this.sourceServerPath = sourceServerPath;
+            return this;
+        }
+
+        public Path getSourceServerPath() {
+            return sourceServerPath;
         }
     }
 }

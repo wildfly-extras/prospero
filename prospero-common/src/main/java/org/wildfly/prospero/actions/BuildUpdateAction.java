@@ -65,6 +65,7 @@ public class BuildUpdateAction implements AutoCloseable {
 
         galleonEnv = GalleonEnvironment
                 .builder(targetDir, prosperoConfig.getChannels(), mavenSessionManager)
+                .setSourceServerPath(this.installDir)
                 .setConsole(console)
                 .build();
         this.mavenSessionManager = mavenSessionManager;
