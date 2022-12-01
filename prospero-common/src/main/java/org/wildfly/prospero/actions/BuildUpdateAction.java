@@ -64,7 +64,7 @@ public class BuildUpdateAction implements AutoCloseable {
         this.prosperoConfig = addTemporaryRepositories(overrideRepositories);
 
         galleonEnv = GalleonEnvironment
-                .builder(targetDir, prosperoConfig, mavenSessionManager)
+                .builder(targetDir, prosperoConfig.getChannels(), mavenSessionManager)
                 .setConsole(console)
                 .build();
         this.mavenSessionManager = mavenSessionManager;
@@ -93,7 +93,7 @@ public class BuildUpdateAction implements AutoCloseable {
     private ProsperoConfig addTemporaryRepositories(List<Repository> repositories) {
         final ProsperoConfig prosperoConfig = installationMetadata.getProsperoConfig();
 
-        final List<Channel> channels = TemporaryRepositoriesHandler.addRepositories(prosperoConfig.getChannels(), repositories);
+        final List<Channel> channels = TemporaryRepositoriesHandler.overrideRepositories(prosperoConfig.getChannels(), repositories);
 
         return new ProsperoConfig(channels);
     }

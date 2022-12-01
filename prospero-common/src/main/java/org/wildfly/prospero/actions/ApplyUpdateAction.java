@@ -86,7 +86,7 @@ public class ApplyUpdateAction implements AutoCloseable {
             LOGGER.debug("System paths " + this.systemPaths.getPaths());
         }
         galleonEnv = GalleonEnvironment
-                .builder(installationDir, prosperoConfig, mavenSessionManager)
+                .builder(installationDir, prosperoConfig.getChannels(), mavenSessionManager)
                 .setConsole(console)
                 .build();
     }
@@ -113,7 +113,7 @@ public class ApplyUpdateAction implements AutoCloseable {
     private ProsperoConfig addTemporaryRepositories(List<Repository> repositories) {
         final ProsperoConfig prosperoConfig = installationMetadata.getProsperoConfig();
 
-        final List<Channel> channels = TemporaryRepositoriesHandler.addRepositories(prosperoConfig.getChannels(), repositories);
+        final List<Channel> channels = TemporaryRepositoriesHandler.overrideRepositories(prosperoConfig.getChannels(), repositories);
 
         return new ProsperoConfig(channels);
     }
@@ -133,20 +133,14 @@ public class ApplyUpdateAction implements AutoCloseable {
     private void writeProsperoMetadata() throws MetadataException, IOException {
         Path updateMetadataDir = updateDir.resolve(ProsperoMetadataUtils.METADATA_DIR);
         Path updateManifest = updateMetadataDir.resolve(ProsperoMetadataUtils.MANIFEST_FILE_NAME);
-        Path updateConf = updateMetadataDir.resolve(ProsperoMetadataUtils.PROSPERO_CONFIG_FILE_NAME);
 
         Path installationMetadataDir = installationDir.resolve(ProsperoMetadataUtils.METADATA_DIR);
         Path installationManifest = installationMetadataDir.resolve(ProsperoMetadataUtils.MANIFEST_FILE_NAME);
-        Path installationConf = installationMetadataDir.resolve(ProsperoMetadataUtils.PROSPERO_CONFIG_FILE_NAME);
         IoUtils.copy(updateManifest, installationManifest);
-        IoUtils.copy(updateConf, installationConf);
 
         GitStorage git = new GitStorage(installationDir);
         try {
             git.record();
-
-            IoUtils.copy(updateManifest, installationManifest);
-            IoUtils.copy(updateConf, installationConf);
         } finally {
             try {
                 git.close();
