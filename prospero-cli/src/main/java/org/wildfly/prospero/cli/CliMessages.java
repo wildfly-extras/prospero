@@ -118,12 +118,26 @@ public interface CliMessages {
     @Message("Channel '%s' removed.")
     String channelRemoved(String urlOrGav);
 
-    @Message("Path `%s` does not contain a server installation provisioned by prospero.")
-    IllegalArgumentException invalidInstallationDir(Path path);
+    /**
+     * @see #invalidInstallationDir(Path)
+     */
+    @Message("Path `%s` does not contain a server installation provisioned by the %s.")
+    IllegalArgumentException invalidInstallationDir(Path path, String distName);
 
-    @Message("Path `%s` does not contain a server installation provisioned by prospero."
+    default IllegalArgumentException invalidInstallationDir(Path path) {
+        return invalidInstallationDir(path, DistributionInfo.DIST_NAME);
+    }
+
+    /**
+     * @see #invalidInstallationDirMaybeUseDirOption(Path)
+     */
+    @Message("Path `%s` does not contain a server installation provisioned by the %s."
             + " Maybe you forgot to specify path to the installation (" + CliConstants.DIR + ")?")
-    IllegalArgumentException invalidInstallationDirMaybeUseDirOption(Path path);
+    IllegalArgumentException invalidInstallationDirMaybeUseDirOption(Path path, String distName);
+
+    default IllegalArgumentException invalidInstallationDirMaybeUseDirOption(Path path) {
+        return invalidInstallationDirMaybeUseDirOption(path, DistributionInfo.DIST_NAME);
+    }
 
     @Message("Add required channels using [%s] argument.")
     String addChannels(String channel);
