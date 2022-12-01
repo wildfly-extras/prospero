@@ -21,6 +21,7 @@ import org.jboss.logging.Messages;
 import org.jboss.logging.annotations.Cause;
 import org.jboss.logging.annotations.Message;
 import org.jboss.logging.annotations.MessageBundle;
+import org.wildfly.prospero.cli.commands.CliConstants;
 
 import java.nio.file.Path;
 
@@ -119,6 +120,10 @@ public interface CliMessages {
 
     @Message("Path `%s` does not contain a server installation provisioned by prospero.")
     IllegalArgumentException invalidInstallationDir(Path path);
+
+    @Message("Path `%s` does not contain a server installation provisioned by prospero."
+            + " Maybe you forgot to specify path to the installation (" + CliConstants.DIR + ")?")
+    IllegalArgumentException invalidInstallationDirMaybeUseDirOption(Path path);
 
     @Message("Add required channels using [%s] argument.")
     String addChannels(String channel);
