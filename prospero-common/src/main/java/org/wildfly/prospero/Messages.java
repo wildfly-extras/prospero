@@ -164,4 +164,7 @@ public interface Messages {
 
     @Message("Installation meta was restored from: [%s] to [%s].")
     String installationMetaRestored(Path restorePath, Path installPath);
+
+    @Message("Malformed URL in substituted value : %s from %s")
+    MetadataException invalidPropertySubstitutionValue(String substituted, String url);
 }

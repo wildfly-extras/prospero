@@ -22,15 +22,18 @@ import org.eclipse.aether.RepositorySystem;
 import org.jboss.galleon.ProvisioningException;
 import org.jboss.galleon.ProvisioningManager;
 import org.jboss.galleon.layout.ProvisioningLayoutFactory;
+import org.jboss.logging.Logger;
 import org.wildfly.channel.Channel;
 import org.wildfly.channel.ChannelManifest;
 import org.wildfly.channel.ChannelSession;
 import org.wildfly.channel.maven.VersionResolverFactory;
 import org.wildfly.prospero.actions.Console;
+import org.wildfly.prospero.api.exceptions.MetadataException;
 import org.wildfly.prospero.api.exceptions.OperationException;
 import org.wildfly.prospero.wfchannel.MavenSessionManager;
 
 import java.nio.file.Path;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
@@ -42,15 +45,23 @@ public class GalleonEnvironment {
     private final ChannelSession channelSession;
     private final List<Channel> channels;
 
-    private GalleonEnvironment(Builder builder) throws ProvisioningException {
+    private static final Logger logger = Logger.getLogger(GalleonEnvironment.class);
+
+    private GalleonEnvironment(Builder builder) throws ProvisioningException, MetadataException {
         Optional<Console> console = Optional.ofNullable(builder.console);
         Optional<ChannelManifest> restoreManifest = Optional.ofNullable(builder.manifest);
         channels = builder.channels;
+        List<Channel> substitutedChannels = new ArrayList<>();
+        System.setProperty("installation.home", builder.installDir.toString());
+        // substitute any properties found in URL of ChannelManifestCoordinate.
+        for (Channel channel : channels) {
+            substitutedChannels.add(ChannelManifestSubstitutor.substitute(channel));
+        }
 
         final RepositorySystem system = builder.mavenSessionManager.newRepositorySystem();
         final DefaultRepositorySystemSession session = builder.mavenSessionManager.newRepositorySystemSession(system);
         final VersionResolverFactory factory = new VersionResolverFactory(system, session);
-        channelSession = new ChannelSession(channels, factory);
+        channelSession = new ChannelSession(substitutedChannels, factory);
         if (restoreManifest.isEmpty()) {
             repositoryManager = new ChannelMavenArtifactRepositoryManager(channelSession);
         } else {
