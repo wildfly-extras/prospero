@@ -58,7 +58,13 @@ public abstract class AbstractCommand implements Callable<Integer> {
         File prosperoConfigFile = path.resolve(InstallationMetadata.METADATA_DIR)
                 .resolve(InstallationMetadata.PROSPERO_CONFIG_FILE_NAME).toFile();
         if (!dotGalleonDir.isDirectory() || !prosperoConfigFile.isFile()) {
-            throw CliMessages.MESSAGES.invalidInstallationDir(path);
+            if (currentDir().equals(path)) {
+                // if the path is the current directory, user may have forgotten to specify the --dir option
+                //   -> suggest to use --dir
+                throw CliMessages.MESSAGES.invalidInstallationDirMaybeUseDirOption(path);
+            } else {
+                throw CliMessages.MESSAGES.invalidInstallationDir(path);
+            }
         }
     }
 

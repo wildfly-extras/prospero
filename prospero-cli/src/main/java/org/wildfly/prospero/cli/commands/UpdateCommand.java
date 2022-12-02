@@ -24,7 +24,6 @@ import java.util.List;
 import java.util.Optional;
 
 import org.jboss.galleon.ProvisioningException;
-import org.jboss.logging.Logger;
 import org.wildfly.channel.Repository;
 import org.wildfly.prospero.actions.Console;
 import org.wildfly.prospero.actions.UpdateAction;
@@ -50,8 +49,6 @@ public class UpdateCommand extends AbstractCommand {
     public static final String JBOSS_MODULE_PATH = "module.path";
     public static final String PROSPERO_FP_GA = "org.wildfly.prospero:prospero-standalone-galleon-pack";
     public static final String PROSPERO_FP_ZIP = PROSPERO_FP_GA + "::zip";
-
-    private final Logger logger = Logger.getLogger(this.getClass());
 
     @CommandLine.Option(names = CliConstants.SELF)
     boolean self;
