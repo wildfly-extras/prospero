@@ -93,7 +93,7 @@ public final class MetadataTestUtils {
     }
 
     public static Path prepareChannel(String manifestDescriptor) throws IOException {
-        final Path provisionConfigFile = Files.createTempFile("channels", "yaml").toAbsolutePath();
+        final Path provisionConfigFile = Files.createTempFile("channels", ".yaml").toAbsolutePath();
         provisionConfigFile.toFile().deleteOnExit();
 
         prepareChannel(provisionConfigFile, manifestDescriptor);
