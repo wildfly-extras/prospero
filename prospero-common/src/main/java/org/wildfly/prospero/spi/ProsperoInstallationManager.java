@@ -11,6 +11,7 @@ import org.wildfly.installationmanager.MavenOptions;
 import org.wildfly.installationmanager.Repository;
 import org.wildfly.installationmanager.spi.InstallationManager;
 import org.wildfly.prospero.Messages;
+import org.wildfly.prospero.actions.BuildUpdateAction;
 import org.wildfly.prospero.actions.InstallationExportAction;
 import org.wildfly.prospero.actions.InstallationHistoryAction;
 import org.wildfly.prospero.actions.MetadataAction;
@@ -85,6 +86,13 @@ public class ProsperoInstallationManager implements InstallationManager {
     public void update() throws Exception {
         try (final UpdateAction updateAction = actionFactory.getUpdateAction()) {
             updateAction.performUpdate();
+        }
+    }
+
+    @Override
+    public void prepareUpdate(Path targetDir) throws Exception {
+        try (final BuildUpdateAction prepareUpdateAction = actionFactory.getPrepareUpdateAction(targetDir)) {
+            prepareUpdateAction.buildUpdate();
         }
     }
 
@@ -232,6 +240,10 @@ public class ProsperoInstallationManager implements InstallationManager {
 
         protected InstallationExportAction getInstallationExportAction() {
             return new InstallationExportAction(server);
+        }
+
+        protected BuildUpdateAction getPrepareUpdateAction(Path targetDir) throws ProvisioningException, OperationException {
+            return new BuildUpdateAction(server, targetDir, mavenSessionManager, null, Collections.emptyList());
         }
     }
 }
