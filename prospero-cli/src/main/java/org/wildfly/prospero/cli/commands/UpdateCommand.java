@@ -17,7 +17,6 @@
 
 package org.wildfly.prospero.cli.commands;
 
-import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
@@ -25,13 +24,10 @@ import java.util.List;
 import java.util.Optional;
 
 import org.jboss.galleon.ProvisioningException;
-import org.jboss.galleon.util.IoUtils;
 import org.wildfly.channel.Repository;
-import org.wildfly.prospero.actions.ApplyUpdateAction;
-import org.wildfly.prospero.actions.BuildUpdateAction;
 import org.wildfly.prospero.actions.Console;
-import org.wildfly.prospero.api.exceptions.ArtifactResolutionException;
-import org.wildfly.prospero.api.exceptions.MetadataException;
+import org.wildfly.prospero.actions.UpdateAction;
+import org.wildfly.prospero.api.exceptions.OperationException;
 import org.wildfly.prospero.cli.ActionFactory;
 import org.wildfly.prospero.cli.ArgumentParsingException;
 import org.wildfly.prospero.cli.CliMessages;
@@ -103,25 +99,14 @@ public class UpdateCommand extends AbstractCommand {
         final MavenSessionManager mavenSessionManager = new MavenSessionManager(LocalRepoOptions.getLocalMavenCache(localRepoOptions), offline);
 
         final List<Repository> repositories = RepositoryDefinition.from(temporaryRepositories);
-        boolean updateBuilt = false;
-        Path updateDir = Files.createTempDirectory("prospero-update");
-        try {
-            try (BuildUpdateAction buildUpdateAction = actionFactory.buildUpdate(installationDir, updateDir.toAbsolutePath(), mavenSessionManager, console, repositories)) {
-                if (!dryRun) {
-                    updateBuilt = buildUpdate(buildUpdateAction);
-                } else {
-                    final UpdateSet updateSet = buildUpdateAction.findUpdates();
-                    console.updatesFound(updateSet.getArtifactUpdates());
-                    return ReturnCodes.SUCCESS;
-                }
+        try (UpdateAction updateAction = actionFactory.update(installationDir, mavenSessionManager, console, repositories)) {
+            if (!dryRun) {
+                performUpdate(updateAction);
+            } else {
+                final UpdateSet updateSet = updateAction.findUpdates();
+                console.updatesFound(updateSet.getArtifactUpdates());
+                return ReturnCodes.SUCCESS;
             }
-            if (updateBuilt) {
-                try (ApplyUpdateAction applyUpdateAction = actionFactory.applyUpdate(installationDir.toAbsolutePath(), updateDir.toAbsolutePath(), mavenSessionManager, console, repositories)) {
-                    applyUpdate(applyUpdateAction);
-                }
-            }
-        } finally {
-            IoUtils.recursiveDelete(updateDir);
         }
         final float totalTime = (System.currentTimeMillis() - startTime) / 1000f;
         console.println(CliMessages.MESSAGES.operationCompleted(totalTime));
@@ -129,23 +114,20 @@ public class UpdateCommand extends AbstractCommand {
         return ReturnCodes.SUCCESS;
     }
 
-    private boolean buildUpdate(BuildUpdateAction buildUpdateAction) throws ArtifactResolutionException, ProvisioningException, MetadataException {
-        final UpdateSet updateSet = buildUpdateAction.findUpdates();
+    private void performUpdate(UpdateAction updateAction) throws OperationException, ProvisioningException {
+        final UpdateSet updateSet = updateAction.findUpdates();
 
         console.updatesFound(updateSet.getArtifactUpdates());
         if (updateSet.isEmpty()) {
-            return false;
+            return;
         }
 
-        if (!yes && !console.confirmBuildUpdates()) {
-            return false;
+        if (!yes && !console.confirmUpdates()) {
+            return;
         }
 
-        buildUpdateAction.buildUpdate();
-        return true;
-    }
-    private void applyUpdate(ApplyUpdateAction applyUpdateAction) throws ArtifactResolutionException, ProvisioningException, MetadataException {
-        applyUpdateAction.applyUpdate();
+        updateAction.performUpdate();
+
         console.updatesComplete();
     }
 

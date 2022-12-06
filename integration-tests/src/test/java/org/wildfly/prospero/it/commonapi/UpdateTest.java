@@ -17,6 +17,7 @@
 
 package org.wildfly.prospero.it.commonapi;
 
+import org.apache.commons.io.FileUtils;
 import org.eclipse.aether.DefaultRepositorySystemSession;
 import org.eclipse.aether.RepositorySystem;
 import org.eclipse.aether.artifact.Artifact;
@@ -24,6 +25,7 @@ import org.eclipse.aether.artifact.DefaultArtifact;
 import org.eclipse.aether.deployment.DeployRequest;
 import org.eclipse.aether.deployment.DeploymentException;
 import org.jboss.galleon.ProvisioningException;
+import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.wildfly.channel.Channel;
@@ -65,6 +67,13 @@ public class UpdateTest extends WfCoreTestBase {
     public void setUp() throws Exception {
         super.setUp();
         mockRepo = temp.newFolder("repo");
+    }
+
+    @After
+    public void tearDown() throws Exception {
+        if (mockRepo.exists()) {
+            FileUtils.deleteQuietly(mockRepo);
+        }
     }
 
     @Test

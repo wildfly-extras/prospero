@@ -59,7 +59,7 @@ public class ActionFactory {
     public ApplyUpdateAction applyUpdate(Path installationPath, Path updatePath, MavenSessionManager mavenSessionManager, Console console, List<Repository> additionalRepositories)
             throws OperationException,
             ProvisioningException {
-        return new ApplyUpdateAction(installationPath, updatePath, mavenSessionManager, console, additionalRepositories);
+        return new ApplyUpdateAction(installationPath, updatePath, mavenSessionManager, console);
     }
 
     public InstallationHistoryAction history(Path targetPath, Console console) {

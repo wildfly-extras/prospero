@@ -129,7 +129,7 @@ public class CloneTest extends WfCoreTestBase {
             // check prosperoConfig
             assertEquals(1, prosperoConfig.getChannels().size());
             Channel channel = prosperoConfig.getChannels().get(0);
-            assertEquals("channel-0", channel.getName());
+            assertEquals("test-channel-0", channel.getName());
             assertThat(channel.getRepositories())
               .map(Repository::getId).containsExactly("maven-central", "nexus", "maven-redhat-ga");
 

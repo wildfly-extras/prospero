@@ -113,7 +113,7 @@ public final class MetadataTestUtils {
         List<Repository> repositories = defaultRemoteRepositories().stream()
                 .map(r->new Repository(r.getId(), r.getUrl())).collect(Collectors.toList());
         for (int i=0; i<manifestUrls.size(); i++) {
-            channels.add(new Channel("", "", null, null, repositories,
+            channels.add(new Channel("test-channel-" + i, "", null, null, repositories,
                     new ChannelManifestCoordinate(manifestUrls.get(i))));
         }
 

@@ -71,13 +71,14 @@ public class BuildUpdateAction implements AutoCloseable {
         this.mavenSessionManager = mavenSessionManager;
     }
 
-    public void buildUpdate() throws ProvisioningException, MetadataException, ArtifactResolutionException {
+    public boolean buildUpdate() throws ProvisioningException, MetadataException, ArtifactResolutionException {
         if (findUpdates().isEmpty()) {
-            return;
+            return false;
         }
 
         buildUpdates();
 
+        return true;
     }
 
     public UpdateSet findUpdates() throws ArtifactResolutionException, ProvisioningException {

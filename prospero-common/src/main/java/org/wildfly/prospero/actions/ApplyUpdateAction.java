@@ -70,13 +70,13 @@ public class ApplyUpdateAction implements AutoCloseable {
     private final Path installationDir;
     private final SystemPaths systemPaths;
 
-    public ApplyUpdateAction(Path installationDir, Path updateDir, MavenSessionManager mavenSessionManager, Console console, List<Repository> overrideRepositories)
+    public ApplyUpdateAction(Path installationDir, Path updateDir, MavenSessionManager mavenSessionManager, Console console)
             throws ProvisioningException, OperationException {
         this.updateDir = updateDir;
         this.installationDir = installationDir;
         this.installationMetadata = new InstallationMetadata(installationDir);
 
-        this.prosperoConfig = addTemporaryRepositories(overrideRepositories);
+        this.prosperoConfig = installationMetadata.getProsperoConfig();
         try {
             this.systemPaths = SystemPaths.load(updateDir);
         } catch (IOException ex) {
@@ -91,7 +91,7 @@ public class ApplyUpdateAction implements AutoCloseable {
                 .build();
     }
 
-    public void applyUpdate() throws ProvisioningException, MetadataException, ArtifactResolutionException {
+    public void applyUpdate() throws ProvisioningException, ArtifactResolutionException {
         FsDiff diffs = findChanges();
         try {
             doApplyUpdate(diffs);
