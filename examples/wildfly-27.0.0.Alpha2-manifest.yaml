@@ -414,7 +414,7 @@ streams:
 
   - groupId: "io.undertow"
     artifactId: "undertow-core"
-    version: "2.2.17.Final"
+    version: "2.2.18.Final"
 
   - groupId: "com.github.fge"
     artifactId: "json-patch"

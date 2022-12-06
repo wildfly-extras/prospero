@@ -24,9 +24,13 @@ import java.util.List;
 import java.util.Optional;
 
 import org.jboss.galleon.ProvisioningException;
+import org.jboss.logging.Logger;
 import org.wildfly.channel.Repository;
+import org.wildfly.prospero.actions.BuildUpdateAction;
 import org.wildfly.prospero.actions.Console;
 import org.wildfly.prospero.actions.UpdateAction;
+import org.wildfly.prospero.api.exceptions.ArtifactResolutionException;
+import org.wildfly.prospero.api.exceptions.MetadataException;
 import org.wildfly.prospero.api.exceptions.OperationException;
 import org.wildfly.prospero.cli.ActionFactory;
 import org.wildfly.prospero.cli.ArgumentParsingException;
@@ -45,6 +49,8 @@ import picocli.CommandLine;
 )
 public class UpdateCommand extends AbstractCommand {
 
+    private static final Logger log = Logger.getLogger(UpdateCommand.class);
+
     public static final String JBOSS_MODULE_PATH = "module.path";
     public static final String PROSPERO_FP_GA = "org.wildfly.prospero:prospero-standalone-galleon-pack";
     public static final String PROSPERO_FP_ZIP = PROSPERO_FP_GA + "::zip";
@@ -54,6 +60,9 @@ public class UpdateCommand extends AbstractCommand {
 
     @CommandLine.Option(names = CliConstants.DIR)
     Optional<Path> directory;
+
+    @CommandLine.Option(names = CliConstants.UPDATE_DIR)
+    Optional<Path> updateDirectory;
 
     @CommandLine.Option(names = CliConstants.DRY_RUN)
     boolean dryRun;
@@ -97,17 +106,31 @@ public class UpdateCommand extends AbstractCommand {
         }
 
         final MavenSessionManager mavenSessionManager = new MavenSessionManager(LocalRepoOptions.getLocalMavenCache(localRepoOptions), offline);
-
         final List<Repository> repositories = RepositoryDefinition.from(temporaryRepositories);
-        try (UpdateAction updateAction = actionFactory.update(installationDir, mavenSessionManager, console, repositories)) {
-            if (!dryRun) {
-                performUpdate(updateAction);
-            } else {
+
+        if (dryRun) {
+            try (UpdateAction updateAction = actionFactory.update(installationDir, mavenSessionManager, console, repositories)) {
                 final UpdateSet updateSet = updateAction.findUpdates();
                 console.updatesFound(updateSet.getArtifactUpdates());
                 return ReturnCodes.SUCCESS;
             }
         }
+
+        if (updateDirectory.isPresent()) {
+            log.tracef("Generate update in %s", updateDirectory.get());
+
+            try(BuildUpdateAction buildUpdateAction = actionFactory.buildUpdate(installationDir, updateDirectory.get().toAbsolutePath(),
+                    mavenSessionManager, console, repositories)) {
+                buildUpdate(buildUpdateAction);
+            }
+        } else {
+            log.tracef("Perform full update");
+
+            try (UpdateAction updateAction = actionFactory.update(installationDir, mavenSessionManager, console, repositories)) {
+                performUpdate(updateAction);
+            }
+        }
+
         final float totalTime = (System.currentTimeMillis() - startTime) / 1000f;
         console.println(CliMessages.MESSAGES.operationCompleted(totalTime));
 
@@ -129,6 +152,23 @@ public class UpdateCommand extends AbstractCommand {
         updateAction.performUpdate();
 
         console.updatesComplete();
+    }
+
+    private void buildUpdate(BuildUpdateAction buildUpdateAction) throws ArtifactResolutionException, ProvisioningException, MetadataException {
+        final UpdateSet updateSet = buildUpdateAction.findUpdates();
+
+        console.updatesFound(updateSet.getArtifactUpdates());
+        if (updateSet.isEmpty()) {
+            return;
+        }
+
+        if (!yes && !console.confirmBuildUpdates()) {
+            return;
+        }
+
+        buildUpdateAction.buildUpdate();
+
+        console.buildUpdatesComplete();
     }
 
     public static void verifyInstallationContainsOnlyProspero(Path dir) throws ArgumentParsingException {
