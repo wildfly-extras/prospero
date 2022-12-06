@@ -129,14 +129,14 @@ public class GitStorageTest {
         final ChannelManifest manifest = new ChannelManifest("test", "", new ArrayList<>());
         ManifestYamlSupport.write(manifest, base.resolve(InstallationMetadata.MANIFEST_FILE_NAME));
         new ProsperoConfig(List.of(new Channel("", "", null, null, null, null)))
-                .writeConfig(base.resolve(InstallationMetadata.PROSPERO_CONFIG_FILE_NAME));
+                .writeConfig(base.resolve(InstallationMetadata.INSTALLER_CHANNELS_FILE_NAME));
 
         gitStorage.record();
 
         // TODO: replace with gitStorage API for reading config changes
         HashSet<String> storedPaths = getPathsInCommit();
 
-        Assertions.assertThat(storedPaths).containsExactlyInAnyOrder("manifest.yaml", InstallationMetadata.PROSPERO_CONFIG_FILE_NAME);
+        Assertions.assertThat(storedPaths).containsExactlyInAnyOrder("manifest.yaml", InstallationMetadata.INSTALLER_CHANNELS_FILE_NAME);
     }
 
     @Test
@@ -145,7 +145,7 @@ public class GitStorageTest {
         final ChannelManifest manifest = new ChannelManifest("test", "", new ArrayList<>());
         ManifestYamlSupport.write(manifest, base.resolve(InstallationMetadata.MANIFEST_FILE_NAME));
         new ProsperoConfig(List.of(new Channel("", "", null, null, null, null)))
-                .writeConfig(base.resolve(InstallationMetadata.PROSPERO_CONFIG_FILE_NAME));
+                .writeConfig(base.resolve(InstallationMetadata.INSTALLER_CHANNELS_FILE_NAME));
 
         // ensure there's a time gap between creation of the folder and record
         final Instant metadataDirCreationTime = Files.readAttributes(base, BasicFileAttributes.class).creationTime().toInstant();

@@ -55,9 +55,9 @@ public abstract class AbstractCommand implements Callable<Integer> {
 
     static void verifyInstallationDirectory(Path path) {
         File dotGalleonDir = path.resolve(InstallationMetadata.GALLEON_INSTALLATION_DIR).toFile();
-        File prosperoConfigFile = path.resolve(InstallationMetadata.METADATA_DIR)
-                .resolve(InstallationMetadata.PROSPERO_CONFIG_FILE_NAME).toFile();
-        if (!dotGalleonDir.isDirectory() || !prosperoConfigFile.isFile()) {
+        File channelsFile = path.resolve(InstallationMetadata.METADATA_DIR)
+                .resolve(InstallationMetadata.INSTALLER_CHANNELS_FILE_NAME).toFile();
+        if (!dotGalleonDir.isDirectory() || !channelsFile.isFile()) {
             if (currentDir().equals(path)) {
                 // if the path is the current directory, user may have forgotten to specify the --dir option
                 //   -> suggest to use --dir

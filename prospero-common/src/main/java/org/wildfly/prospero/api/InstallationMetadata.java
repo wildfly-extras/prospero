@@ -49,11 +49,11 @@ public class InstallationMetadata implements AutoCloseable {
 
     public static final String METADATA_DIR = ".installation";
     public static final String MANIFEST_FILE_NAME = "manifest.yaml";
-    public static final String PROSPERO_CONFIG_FILE_NAME = "installer-config.yaml";
+    public static final String INSTALLER_CHANNELS_FILE_NAME = "installer-channels.yaml";
     public static final String PROVISIONING_FILE_NAME = "provisioning.xml";
     public static final String GALLEON_INSTALLATION_DIR = ".galleon";
     private final Path manifestFile;
-    private final Path prosperoConfigFile;
+    private final Path channelsFile;
     private final Path provisioningFile;
     private ChannelManifest manifest;
     private org.jboss.galleon.config.ProvisioningConfig galleonProvisioningConfig;
@@ -61,14 +61,14 @@ public class InstallationMetadata implements AutoCloseable {
     private final GitStorage gitStorage;
     private final Path base;
 
-    private InstallationMetadata(Path manifestFile, Path prosperoConfigFile, Path provisioningFile) throws MetadataException {
+    private InstallationMetadata(Path manifestFile, Path channelsFile, Path provisioningFile) throws MetadataException {
         this.base = manifestFile.getParent();
         this.gitStorage = null;
         this.manifestFile = manifestFile;
-        this.prosperoConfigFile = prosperoConfigFile;
+        this.channelsFile = channelsFile;
         this.provisioningFile = provisioningFile;
 
-        doInit(manifestFile, prosperoConfigFile, provisioningFile);
+        doInit(manifestFile, channelsFile, provisioningFile);
     }
 
     public InstallationMetadata(Path base) throws MetadataException {
@@ -82,17 +82,17 @@ public class InstallationMetadata implements AutoCloseable {
         this.base = base;
         this.gitStorage = gitStorage;
         this.manifestFile = base.resolve(METADATA_DIR).resolve(InstallationMetadata.MANIFEST_FILE_NAME);
-        this.prosperoConfigFile = base.resolve(METADATA_DIR).resolve(InstallationMetadata.PROSPERO_CONFIG_FILE_NAME);
+        this.channelsFile = base.resolve(METADATA_DIR).resolve(InstallationMetadata.INSTALLER_CHANNELS_FILE_NAME);
         this.provisioningFile = base.resolve(GALLEON_INSTALLATION_DIR).resolve(InstallationMetadata.PROVISIONING_FILE_NAME);
 
-        doInit(manifestFile, prosperoConfigFile, provisioningFile);
+        doInit(manifestFile, channelsFile, provisioningFile);
     }
 
     public InstallationMetadata(Path base, ChannelManifest manifest, List<Channel> channels) throws MetadataException {
         this.base = base;
         this.gitStorage = new GitStorage(base);
         this.manifestFile = base.resolve(METADATA_DIR).resolve(InstallationMetadata.MANIFEST_FILE_NAME);
-        this.prosperoConfigFile = base.resolve(METADATA_DIR).resolve(InstallationMetadata.PROSPERO_CONFIG_FILE_NAME);
+        this.channelsFile = base.resolve(METADATA_DIR).resolve(InstallationMetadata.INSTALLER_CHANNELS_FILE_NAME);
         this.provisioningFile = base.resolve(GALLEON_INSTALLATION_DIR).resolve(InstallationMetadata.PROVISIONING_FILE_NAME);
 
         this.manifest = manifest;
@@ -109,17 +109,17 @@ public class InstallationMetadata implements AutoCloseable {
         }
     }
 
-    private void doInit(Path manifestFile, Path provisionConfig, Path provisioningFile) throws MetadataException {
+    private void doInit(Path manifestFile, Path channelsFile, Path provisioningFile) throws MetadataException {
         try {
             this.manifest = ManifestYamlSupport.parse(manifestFile.toFile());
         } catch (IOException e) {
             throw Messages.MESSAGES.unableToParseConfiguration(manifestFile, e);
         }
         try {
-            this.channels = ProsperoConfig.readConfig(provisionConfig).getChannels();
+            this.channels = ProsperoConfig.readConfig(channelsFile).getChannels();
         } catch (MetadataException e) {
             // re-wrap the exception to change the description
-            throw Messages.MESSAGES.unableToParseConfiguration(provisionConfig, e.getCause());
+            throw Messages.MESSAGES.unableToParseConfiguration(channelsFile, e.getCause());
         }
         try {
             this.galleonProvisioningConfig = ProvisioningXmlParser.parse(provisioningFile);
@@ -138,7 +138,7 @@ public class InstallationMetadata implements AutoCloseable {
 
     public static InstallationMetadata importMetadata(Path location) throws IOException, MetadataException {
         Path manifestFile = null;
-        Path provisionConfigFile = null;
+        Path channelsFile = null;
         Path provisioningFile = null;
 
         try (ZipInputStream zis = new ZipInputStream(new FileInputStream(location.toFile()))) {
@@ -151,10 +151,10 @@ public class InstallationMetadata implements AutoCloseable {
                     manifestFile.toFile().deleteOnExit();
                 }
 
-                if (entry.getName().equals(PROSPERO_CONFIG_FILE_NAME)) {
-                    provisionConfigFile = Files.createTempFile("channels", "yaml");
-                    Files.copy(zis, provisionConfigFile, StandardCopyOption.REPLACE_EXISTING);
-                    provisionConfigFile.toFile().deleteOnExit();
+                if (entry.getName().equals(INSTALLER_CHANNELS_FILE_NAME)) {
+                    channelsFile = Files.createTempFile("channels", "yaml");
+                    Files.copy(zis, channelsFile, StandardCopyOption.REPLACE_EXISTING);
+                    channelsFile.toFile().deleteOnExit();
                 }
 
                 if (entry.getName().equals(PROVISIONING_FILE_NAME)) {
@@ -165,11 +165,11 @@ public class InstallationMetadata implements AutoCloseable {
             }
         }
 
-        if (manifestFile == null || provisionConfigFile == null || provisioningFile == null) {
+        if (manifestFile == null || channelsFile == null || provisioningFile == null) {
             throw Messages.MESSAGES.incompleteMetadataBundle(location);
         }
 
-        return new InstallationMetadata(manifestFile, provisionConfigFile, provisioningFile);
+        return new InstallationMetadata(manifestFile, channelsFile, provisioningFile);
     }
 
     public Path exportMetadataBundle(Path location) throws IOException {
@@ -186,8 +186,8 @@ public class InstallationMetadata implements AutoCloseable {
             }
             zos.closeEntry();
 
-            zos.putNextEntry(new ZipEntry(PROSPERO_CONFIG_FILE_NAME));
-            try(FileInputStream fis = new FileInputStream(prosperoConfigFile.toFile())) {
+            zos.putNextEntry(new ZipEntry(INSTALLER_CHANNELS_FILE_NAME));
+            try(FileInputStream fis = new FileInputStream(channelsFile.toFile())) {
                 byte[] buffer = new byte[1024];
                 int len;
                 while ((len = fis.read(buffer)) > 0) {
@@ -224,7 +224,7 @@ public class InstallationMetadata implements AutoCloseable {
             throw Messages.MESSAGES.unableToSaveConfiguration(manifestFile, e);
         }
 
-        if (overrideProsperoConfig || !Files.exists(this.prosperoConfigFile)) {
+        if (overrideProsperoConfig || !Files.exists(this.channelsFile)) {
             writeProsperoConfig();
         }
 
@@ -233,9 +233,9 @@ public class InstallationMetadata implements AutoCloseable {
 
     private void writeProsperoConfig() throws MetadataException {
         try {
-            getProsperoConfig().writeConfig(this.prosperoConfigFile);
+            getProsperoConfig().writeConfig(this.channelsFile);
         } catch (IOException e) {
-            throw Messages.MESSAGES.unableToSaveConfiguration(prosperoConfigFile, e);
+            throw Messages.MESSAGES.unableToSaveConfiguration(channelsFile, e);
         }
     }
 
@@ -283,8 +283,6 @@ public class InstallationMetadata implements AutoCloseable {
 
     public void updateProsperoConfig(ProsperoConfig config) throws MetadataException {
         this.channels = config.getChannels();
-//        this.channelRefs = new ArrayList<>(config.getChannels());
-//        this.repositories = config.getRepositories().stream().map(RepositoryRef::toRemoteRepository).collect(Collectors.toList());
 
         writeProsperoConfig();
 

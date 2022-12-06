@@ -142,7 +142,7 @@ public class InstallationMetadataTest {
         final Channel channel = new Channel("test", "", null, null,
                 List.of(new Repository("test", "file://foo.bar")),
         new ChannelManifestCoordinate("foo","bar"));
-        new ProsperoConfig(List.of(channel)).writeConfig(metadataDir.resolve(InstallationMetadata.PROSPERO_CONFIG_FILE_NAME));
+        new ProsperoConfig(List.of(channel)).writeConfig(metadataDir.resolve(InstallationMetadata.INSTALLER_CHANNELS_FILE_NAME));
         return base;
     }
 
