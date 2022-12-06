@@ -61,7 +61,7 @@ public class UpdateAction implements AutoCloseable {
                 prepared = prepareUpdateAction.buildUpdate();
             }
             if (prepared) {
-                try (ApplyUpdateAction applyUpdateAction = new ApplyUpdateAction(installDir, targetDir, mavenSessionManager, console)) {
+                try (ApplyUpdateAction applyUpdateAction = new ApplyUpdateAction(installDir, targetDir)) {
                     applyUpdateAction.applyUpdate();
                 }
             }

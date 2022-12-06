@@ -25,20 +25,17 @@ import java.nio.file.Paths;
 import java.nio.file.SimpleFileVisitor;
 import java.nio.file.attribute.BasicFileAttributes;
 import java.util.Arrays;
-import java.util.List;
+import java.util.Collections;
+import java.util.Optional;
+
 import org.jboss.galleon.Constants;
 import org.jboss.galleon.Errors;
 
-import org.wildfly.channel.Channel;
-import org.wildfly.channel.Repository;
-import org.wildfly.prospero.api.TemporaryRepositoriesHandler;
+import org.jboss.galleon.ProvisioningManager;
 import org.wildfly.prospero.api.InstallationMetadata;
 import org.wildfly.prospero.api.exceptions.MetadataException;
 import org.wildfly.prospero.api.exceptions.ArtifactResolutionException;
 import org.wildfly.prospero.api.exceptions.OperationException;
-import org.wildfly.prospero.galleon.GalleonEnvironment;
-import org.wildfly.prospero.model.ProsperoConfig;
-import org.wildfly.prospero.wfchannel.MavenSessionManager;
 import org.jboss.galleon.ProvisioningException;
 import org.jboss.galleon.diff.FsDiff;
 import static org.jboss.galleon.diff.FsDiff.ADDED;
@@ -57,26 +54,26 @@ import org.jboss.galleon.util.IoUtils;
 import org.jboss.galleon.util.PathsUtils;
 import org.jboss.logging.Logger;
 import org.wildfly.prospero.Messages;
+import org.wildfly.prospero.galleon.GalleonEnvironment;
 import org.wildfly.prospero.installation.git.GitStorage;
 import org.wildfly.prospero.metadata.ProsperoMetadataUtils;
+import org.wildfly.prospero.wfchannel.MavenSessionManager;
 
 public class ApplyUpdateAction implements AutoCloseable {
     private static final Logger LOGGER = Logger.getLogger(ApplyUpdateAction.class);
 
     private final InstallationMetadata installationMetadata;
-    private final GalleonEnvironment galleonEnv;
-    private final ProsperoConfig prosperoConfig;
     private final Path updateDir;
     private final Path installationDir;
     private final SystemPaths systemPaths;
+    private final ProvisioningManager provisioningManager;
 
-    public ApplyUpdateAction(Path installationDir, Path updateDir, MavenSessionManager mavenSessionManager, Console console)
+    public ApplyUpdateAction(Path installationDir, Path updateDir)
             throws ProvisioningException, OperationException {
         this.updateDir = updateDir;
         this.installationDir = installationDir;
         this.installationMetadata = new InstallationMetadata(installationDir);
 
-        this.prosperoConfig = installationMetadata.getProsperoConfig();
         try {
             this.systemPaths = SystemPaths.load(updateDir);
         } catch (IOException ex) {
@@ -85,10 +82,10 @@ public class ApplyUpdateAction implements AutoCloseable {
         if (LOGGER.isDebugEnabled()) {
             LOGGER.debug("System paths " + this.systemPaths.getPaths());
         }
-        galleonEnv = GalleonEnvironment
-                .builder(installationDir, prosperoConfig.getChannels(), mavenSessionManager)
-                .setConsole(console)
-                .build();
+        // offline is enough - we just need to read the configuration
+        provisioningManager = GalleonEnvironment.builder(installationDir, Collections.emptyList(),
+                new MavenSessionManager(Optional.empty(), true))
+                .build().getProvisioningManager();
     }
 
     public void applyUpdate() throws ProvisioningException, ArtifactResolutionException {
@@ -102,20 +99,12 @@ public class ApplyUpdateAction implements AutoCloseable {
     }
 
     public FsDiff findChanges() throws ArtifactResolutionException, ProvisioningException {
-        return galleonEnv.getProvisioningManager().getFsDiff();
+        return provisioningManager.getFsDiff();
     }
 
     @Override
     public void close() {
         installationMetadata.close();
-    }
-
-    private ProsperoConfig addTemporaryRepositories(List<Repository> repositories) {
-        final ProsperoConfig prosperoConfig = installationMetadata.getProsperoConfig();
-
-        final List<Channel> channels = TemporaryRepositoriesHandler.overrideRepositories(prosperoConfig.getChannels(), repositories);
-
-        return new ProsperoConfig(channels);
     }
 
     private void updateMetadata() throws ProvisioningException, ArtifactResolutionException {

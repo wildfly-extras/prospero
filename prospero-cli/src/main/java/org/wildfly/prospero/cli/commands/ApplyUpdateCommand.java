@@ -18,24 +18,13 @@
 package org.wildfly.prospero.cli.commands;
 
 import java.nio.file.Path;
-import java.util.ArrayList;
-import java.util.List;
 import java.util.Optional;
 
-import org.jboss.galleon.ProvisioningException;
-import org.wildfly.channel.Repository;
 import org.wildfly.prospero.actions.ApplyUpdateAction;
 import org.wildfly.prospero.actions.Console;
-import org.wildfly.prospero.api.exceptions.ArtifactResolutionException;
-import org.wildfly.prospero.api.exceptions.MetadataException;
 import org.wildfly.prospero.cli.ActionFactory;
 import org.wildfly.prospero.cli.CliMessages;
-import org.wildfly.prospero.cli.RepositoryDefinition;
 import org.wildfly.prospero.cli.ReturnCodes;
-import static org.wildfly.prospero.cli.commands.UpdateCommand.detectProsperoInstallationPath;
-import static org.wildfly.prospero.cli.commands.UpdateCommand.verifyInstallationContainsOnlyProspero;
-import org.wildfly.prospero.cli.commands.options.LocalRepoOptions;
-import org.wildfly.prospero.wfchannel.MavenSessionManager;
 import picocli.CommandLine;
 
 @CommandLine.Command(
@@ -44,29 +33,13 @@ import picocli.CommandLine;
 )
 public class ApplyUpdateCommand extends AbstractCommand {
 
-    @CommandLine.Option(names = CliConstants.SELF)
-    boolean self;
-
+    // directory to apply the update to. Contains old version of the server
     @CommandLine.Option(names = CliConstants.DIR)
-    Optional<Path> directory;
+    Optional<Path> installationDirectory;
 
-    @CommandLine.Option(names = CliConstants.TARGET_DIR, required = true)
-    Optional<Path> targetDir;
-
-    @CommandLine.Option(names = CliConstants.OFFLINE)
-    boolean offline;
-
-    @CommandLine.ArgGroup(exclusive = true, headingKey = "localRepoOptions.heading")
-    LocalRepoOptions localRepoOptions;
-
-    @CommandLine.Option(
-            names = CliConstants.REPOSITORIES,
-            paramLabel = CliConstants.REPO_URL,
-            descriptionKey = "update.remote-repositories",
-            split = ",",
-            order = 5
-    )
-    List<String> temporaryRepositories = new ArrayList<>();
+    // directory with the updated server.
+    @CommandLine.Option(names = CliConstants.UPDATE_DIR, required = true)
+    Path updateDir;
 
     public ApplyUpdateCommand(Console console, ActionFactory actionFactory) {
         super(console, actionFactory);
@@ -75,36 +48,19 @@ public class ApplyUpdateCommand extends AbstractCommand {
     @Override
     public Integer call() throws Exception {
         final long startTime = System.currentTimeMillis();
-        final Path updateDir;
-        final Path installationDir;
 
-        if (self) {
-            if (directory.isPresent()) {
-                updateDir = directory.get().toAbsolutePath();
-            } else {
-                updateDir = detectProsperoInstallationPath().toAbsolutePath();
-            }
-            verifyInstallationContainsOnlyProspero(updateDir);
-        } else {
-            updateDir = determineInstallationDirectory(directory);
-        }
-        installationDir = targetDir.get();
+        // TODO: verify server is stopped
+        // TODO: verify updateDir contains server and is an update
 
-        final MavenSessionManager mavenSessionManager = new MavenSessionManager(LocalRepoOptions.getLocalMavenCache(localRepoOptions), offline);
+        final Path installationDir = determineInstallationDirectory(installationDirectory);
 
-        final List<Repository> repositories = RepositoryDefinition.from(temporaryRepositories);
-
-        try (ApplyUpdateAction applyUpdateAction = actionFactory.applyUpdate(installationDir.toAbsolutePath(), updateDir.toAbsolutePath(), mavenSessionManager, console, repositories)) {
-            applyUpdate(applyUpdateAction);
+        try (ApplyUpdateAction applyUpdateAction = actionFactory.applyUpdate(installationDir.toAbsolutePath(), updateDir.toAbsolutePath())) {
+            applyUpdateAction.applyUpdate();
         }
 
         final float totalTime = (System.currentTimeMillis() - startTime) / 1000f;
         console.println(CliMessages.MESSAGES.operationCompleted(totalTime));
 
         return ReturnCodes.SUCCESS;
-    }
-
-    private void applyUpdate(ApplyUpdateAction applyUpdateAction) throws ArtifactResolutionException, ProvisioningException, MetadataException {
-        applyUpdateAction.applyUpdate();
     }
 }
