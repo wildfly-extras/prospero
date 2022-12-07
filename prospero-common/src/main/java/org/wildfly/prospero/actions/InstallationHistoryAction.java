@@ -20,8 +20,8 @@ package org.wildfly.prospero.actions;
 import org.jboss.galleon.ProvisioningManager;
 import org.wildfly.channel.Repository;
 import org.wildfly.channel.UnresolvedMavenArtifactException;
+import org.wildfly.prospero.api.InstallationChanges;
 import org.wildfly.prospero.api.TemporaryRepositoriesHandler;
-import org.wildfly.prospero.api.ArtifactChange;
 import org.wildfly.prospero.api.exceptions.ArtifactResolutionException;
 import org.wildfly.prospero.api.exceptions.OperationException;
 import org.wildfly.prospero.api.InstallationMetadata;
@@ -48,7 +48,7 @@ public class InstallationHistoryAction {
         this.console = console;
     }
 
-    public List<ArtifactChange> compare(SavedState savedState) throws MetadataException {
+    public InstallationChanges compare(SavedState savedState) throws MetadataException {
         final InstallationMetadata installationMetadata = new InstallationMetadata(installation);
         return installationMetadata.getChangesSince(savedState);
     }

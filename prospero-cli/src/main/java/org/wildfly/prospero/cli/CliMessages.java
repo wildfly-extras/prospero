@@ -183,4 +183,34 @@ public interface CliMessages {
 
     @Message("Repository definition [%s] is invalid. The definition format should be [id::url]")
     ArgumentParsingException invalidRepositoryDefinition(String repoKey);
+
+    // start - changes diff
+    @Message("manifest")
+    String manifest();
+
+    @Message("repositories")
+    String repositories();
+
+    @Message("Updated")
+    String changeUpdated();
+
+    @Message("Added")
+    String changeAdded();
+
+    @Message("Removed")
+    String changeRemoved();
+
+    @Message("Updates")
+    String diffUpdates();
+
+    @Message("Configuration changes")
+    String diffConfigChanges();
+
+    @Message("artifact")
+    String artifactChangeType();
+
+    @Message("channel")
+    String channelChangeType();
+
+    // end - changes diff
 }

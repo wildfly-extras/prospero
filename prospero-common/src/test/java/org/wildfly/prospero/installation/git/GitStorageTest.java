@@ -17,14 +17,17 @@
 
 package org.wildfly.prospero.installation.git;
 
-import org.assertj.core.api.Assertions;
+import org.assertj.core.api.iterable.ThrowingExtractor;
 import org.eclipse.jgit.api.Git;
 import org.eclipse.jgit.api.errors.GitAPIException;
 import org.eclipse.jgit.revwalk.RevCommit;
 import org.eclipse.jgit.treewalk.TreeWalk;
 import org.wildfly.channel.Channel;
 import org.wildfly.channel.ChannelManifest;
+import org.wildfly.channel.ChannelManifestCoordinate;
+import org.wildfly.channel.Repository;
 import org.wildfly.prospero.api.ArtifactChange;
+import org.wildfly.prospero.api.ChannelChange;
 import org.wildfly.prospero.api.InstallationMetadata;
 import org.wildfly.prospero.api.SavedState;
 import org.wildfly.prospero.model.ManifestYamlSupport;
@@ -47,7 +50,9 @@ import java.util.Collections;
 import java.util.Date;
 import java.util.HashSet;
 import java.util.List;
+import java.util.function.Function;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
@@ -76,7 +81,7 @@ public class GitStorageTest {
         final List<SavedState> revisions = gitStorage.getRevisions();
         final SavedState savedState = revisions.get(1);
 
-        final List<ArtifactChange> changes = gitStorage.getChanges(savedState);
+        final List<ArtifactChange> changes = gitStorage.getArtifactChanges(savedState);
         assertEquals(1, changes.size());
         assertEquals("1.2.3", changes.get(0).getOldVersion().get());
         assertEquals("1.2.4", changes.get(0).getNewVersion().get());
@@ -97,7 +102,7 @@ public class GitStorageTest {
         final List<SavedState> revisions = gitStorage.getRevisions();
         final SavedState savedState = revisions.get(1);
 
-        final List<ArtifactChange> changes = gitStorage.getChanges(savedState);
+        final List<ArtifactChange> changes = gitStorage.getArtifactChanges(savedState);
         assertEquals(1, changes.size());
         assertEquals("1.2.3", changes.get(0).getOldVersion().get());
         assertTrue(changes.get(0).getNewVersion().isEmpty());
@@ -117,7 +122,7 @@ public class GitStorageTest {
         final List<SavedState> revisions = gitStorage.getRevisions();
         final SavedState savedState = revisions.get(1);
 
-        final List<ArtifactChange> changes = gitStorage.getChanges(savedState);
+        final List<ArtifactChange> changes = gitStorage.getArtifactChanges(savedState);
         assertEquals(1, changes.size());
         assertTrue(changes.get(0).getOldVersion().isEmpty());
         assertEquals("1.2.3", changes.get(0).getNewVersion().get());
@@ -136,7 +141,121 @@ public class GitStorageTest {
         // TODO: replace with gitStorage API for reading config changes
         HashSet<String> storedPaths = getPathsInCommit();
 
-        Assertions.assertThat(storedPaths).containsExactlyInAnyOrder("manifest.yaml", InstallationMetadata.INSTALLER_CHANNELS_FILE_NAME);
+        assertThat(storedPaths).containsExactlyInAnyOrder("manifest.yaml", InstallationMetadata.INSTALLER_CHANNELS_FILE_NAME);
+    }
+
+    @Test
+    public void testChangedChannel() throws Exception {
+        final GitStorage gitStorage = new GitStorage(base.getParent());
+        final ChannelManifest manifest = new ChannelManifest("test", "", new ArrayList<>());
+        ManifestYamlSupport.write(manifest, base.resolve(InstallationMetadata.MANIFEST_FILE_NAME));
+        new ProsperoConfig(List.of(new Channel("channel-1", "old", null, null,
+                List.of(new Repository("test", "http://test.te")),
+                new ChannelManifestCoordinate("foo", "bar"))))
+                .writeConfig(base.resolve(InstallationMetadata.INSTALLER_CHANNELS_FILE_NAME));
+        gitStorage.record();
+
+        new ProsperoConfig(List.of(new Channel("channel-1", "new", null, null,
+                List.of(new Repository("test", "http://test.te")),
+                new ChannelManifestCoordinate("foo", "bar2"))))
+                .writeConfig(base.resolve(InstallationMetadata.INSTALLER_CHANNELS_FILE_NAME));
+        gitStorage.recordConfigChange();
+
+        final SavedState savedState = gitStorage.getRevisions().get(1);
+        final List<ChannelChange> changes = gitStorage.getChannelChanges(savedState);
+
+        assertThat(changes)
+                .map(compareAttr((c)->c.getDescription()))
+                .containsExactly("old::new");
+    }
+
+    @Test
+    public void testAddedChannel() throws Exception {
+        final GitStorage gitStorage = new GitStorage(base.getParent());
+        final ChannelManifest manifest = new ChannelManifest("test", "", new ArrayList<>());
+        ManifestYamlSupport.write(manifest, base.resolve(InstallationMetadata.MANIFEST_FILE_NAME));
+        final Channel channel1 = new Channel("channel-1", "old", null, null,
+                List.of(new Repository("test", "http://test.te")),
+                new ChannelManifestCoordinate("foo", "bar"));
+        final Channel channel2 = new Channel("channel-2", "new", null, null,
+                List.of(new Repository("test", "http://test.te")),
+                new ChannelManifestCoordinate("foo", "bar"));
+
+        new ProsperoConfig(List.of(channel1))
+                .writeConfig(base.resolve(InstallationMetadata.INSTALLER_CHANNELS_FILE_NAME));
+        gitStorage.record();
+
+        new ProsperoConfig(List.of(channel1, channel2))
+                .writeConfig(base.resolve(InstallationMetadata.INSTALLER_CHANNELS_FILE_NAME));
+        gitStorage.recordConfigChange();
+
+        final SavedState savedState = gitStorage.getRevisions().get(1);
+        final List<ChannelChange> changes = gitStorage.getChannelChanges(savedState);
+
+        assertThat(changes)
+                .map(compareAttr((c)->c.getName()))
+                .containsExactly("[]::channel-2");
+    }
+
+    @Test
+    public void testRemovedChannel() throws Exception {
+        final GitStorage gitStorage = new GitStorage(base.getParent());
+        final ChannelManifest manifest = new ChannelManifest("test", "", new ArrayList<>());
+        ManifestYamlSupport.write(manifest, base.resolve(InstallationMetadata.MANIFEST_FILE_NAME));
+        final Channel channel1 = new Channel("channel-1", "old", null, null,
+                List.of(new Repository("test", "http://test.te")),
+                new ChannelManifestCoordinate("foo", "bar"));
+        final Channel channel2 = new Channel("channel-2", "new", null, null,
+                List.of(new Repository("test", "http://test.te")),
+                new ChannelManifestCoordinate("foo", "bar"));
+
+        new ProsperoConfig(List.of(channel1, channel2))
+                .writeConfig(base.resolve(InstallationMetadata.INSTALLER_CHANNELS_FILE_NAME));
+        gitStorage.record();
+
+        new ProsperoConfig(List.of(channel2))
+                .writeConfig(base.resolve(InstallationMetadata.INSTALLER_CHANNELS_FILE_NAME));
+        gitStorage.recordConfigChange();
+
+        final SavedState savedState = gitStorage.getRevisions().get(1);
+        final List<ChannelChange> changes = gitStorage.getChannelChanges(savedState);
+
+        assertThat(changes)
+                .map(compareAttr((c)->c.getName()))
+                .containsExactly("channel-1::[]");
+    }
+
+    @Test
+    public void testNoChangedChannels() throws Exception {
+        final GitStorage gitStorage = new GitStorage(base.getParent());
+        final ChannelManifest manifest = new ChannelManifest("test", "", new ArrayList<>());
+        ManifestYamlSupport.write(manifest, base.resolve(InstallationMetadata.MANIFEST_FILE_NAME));
+        final Channel channel1 = new Channel("channel-1", "old", null, null,
+                List.of(new Repository("test", "http://test.te")),
+                new ChannelManifestCoordinate("foo", "bar"));
+        final Channel channel2 = new Channel("channel-2", "new", null, null,
+                List.of(new Repository("test", "http://test.te")),
+                new ChannelManifestCoordinate("foo", "bar"));
+
+        new ProsperoConfig(List.of(channel1, channel2))
+                .writeConfig(base.resolve(InstallationMetadata.INSTALLER_CHANNELS_FILE_NAME));
+        gitStorage.record();
+
+        new ProsperoConfig(List.of(channel1, channel2))
+                .writeConfig(base.resolve(InstallationMetadata.INSTALLER_CHANNELS_FILE_NAME));
+        gitStorage.recordConfigChange();
+
+        final SavedState savedState = gitStorage.getRevisions().get(1);
+        final List<ChannelChange> changes = gitStorage.getChannelChanges(savedState);
+
+        assertThat(changes)
+                .map(compareAttr((c)->c.getName()))
+                .isEmpty();
+    }
+
+    private static ThrowingExtractor<ChannelChange, String, RuntimeException> compareAttr(Function<Channel, String> attributeReader) {
+        Function<Channel, String> escape = (c)->c==null?"[]": attributeReader.apply(c);
+        return c -> escape.apply(c.getOldChannel()) + "::" + escape.apply(c.getNewChannel());
     }
 
     @Test
