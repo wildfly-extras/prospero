@@ -61,9 +61,8 @@ public class UpdateAction implements AutoCloseable {
                 prepared = prepareUpdateAction.buildUpdate();
             }
             if (prepared) {
-                try (ApplyUpdateAction applyUpdateAction = new ApplyUpdateAction(installDir, targetDir)) {
-                    applyUpdateAction.applyUpdate();
-                }
+                ApplyUpdateAction applyUpdateAction = new ApplyUpdateAction(installDir, targetDir);
+                applyUpdateAction.applyUpdate();
             }
         } catch (IOException e) {
             throw new ProvisioningException("Unable to create temporary directory", e);

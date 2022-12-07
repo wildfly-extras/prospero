@@ -54,9 +54,8 @@ public class ApplyUpdateCommand extends AbstractCommand {
 
         final Path installationDir = determineInstallationDirectory(installationDirectory);
 
-        try (ApplyUpdateAction applyUpdateAction = actionFactory.applyUpdate(installationDir.toAbsolutePath(), updateDir.toAbsolutePath())) {
-            applyUpdateAction.applyUpdate();
-        }
+        ApplyUpdateAction applyUpdateAction = actionFactory.applyUpdate(installationDir.toAbsolutePath(), updateDir.toAbsolutePath());
+        applyUpdateAction.applyUpdate();
 
         final float totalTime = (System.currentTimeMillis() - startTime) / 1000f;
         console.println(CliMessages.MESSAGES.operationCompleted(totalTime));

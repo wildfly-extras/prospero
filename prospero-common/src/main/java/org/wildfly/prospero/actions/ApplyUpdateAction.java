@@ -32,7 +32,6 @@ import org.jboss.galleon.Constants;
 import org.jboss.galleon.Errors;
 
 import org.jboss.galleon.ProvisioningManager;
-import org.wildfly.prospero.api.InstallationMetadata;
 import org.wildfly.prospero.api.exceptions.MetadataException;
 import org.wildfly.prospero.api.exceptions.ArtifactResolutionException;
 import org.wildfly.prospero.api.exceptions.OperationException;
@@ -59,10 +58,8 @@ import org.wildfly.prospero.installation.git.GitStorage;
 import org.wildfly.prospero.metadata.ProsperoMetadataUtils;
 import org.wildfly.prospero.wfchannel.MavenSessionManager;
 
-public class ApplyUpdateAction implements AutoCloseable {
+public class ApplyUpdateAction {
     private static final Logger LOGGER = Logger.getLogger(ApplyUpdateAction.class);
-
-    private final InstallationMetadata installationMetadata;
     private final Path updateDir;
     private final Path installationDir;
     private final SystemPaths systemPaths;
@@ -72,7 +69,6 @@ public class ApplyUpdateAction implements AutoCloseable {
             throws ProvisioningException, OperationException {
         this.updateDir = updateDir;
         this.installationDir = installationDir;
-        this.installationMetadata = new InstallationMetadata(installationDir);
 
         try {
             this.systemPaths = SystemPaths.load(updateDir);
@@ -100,11 +96,6 @@ public class ApplyUpdateAction implements AutoCloseable {
 
     public FsDiff findChanges() throws ArtifactResolutionException, ProvisioningException {
         return provisioningManager.getFsDiff();
-    }
-
-    @Override
-    public void close() {
-        installationMetadata.close();
     }
 
     private void updateMetadata() throws ProvisioningException, ArtifactResolutionException {
@@ -276,7 +267,7 @@ public class ApplyUpdateAction implements AutoCloseable {
                 Path installationFile = installationDir.resolve(relative);
                 // Not a file added or modified by the user
                 if (fsDiff.getModifiedEntry(relative.toString()) == null &&
-                     fsDiff.getAddedEntry(relative.toString()) == null) {
+                        (fsDiff.getAddedEntry(relative.toString()) == null && !isParentAdded(fsDiff, relative))) {
                     byte[] updateHash = HashUtils.hashPath(file);
                     // The file could be new or updated in the installation
                     if (!Files.exists(installationFile) || !Arrays.equals(updateHash, HashUtils.hashPath(installationFile))) {
@@ -287,6 +278,17 @@ public class ApplyUpdateAction implements AutoCloseable {
                     }
                 }
                 return FileVisitResult.CONTINUE;
+            }
+
+            private boolean isParentAdded(FsDiff fsDiff, Path relative) {
+                Path parent = relative.getParent();
+                while (parent != null) {
+                    if (fsDiff.getAddedEntry(parent + File.separator) != null) {
+                        return true;
+                    }
+                    parent = parent.getParent();
+                }
+                return false;
             }
 
             @Override
