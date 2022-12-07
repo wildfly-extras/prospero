@@ -143,7 +143,7 @@ public class InstallCommandTest extends AbstractMavenCommandTest {
         Mockito.verify(provisionAction).provision(configCaptor.capture(), channelCaptor.capture());
         assertThat(configCaptor.getValue().getFeaturePackDeps())
                 .map(fp->fp.getLocation().getProducerName())
-                .containsExactly("org.wildfly.core:wildfly-core-galleon-pack");
+                .containsExactly("org.wildfly.core:wildfly-core-galleon-pack::zip");
     }
 
     @Test
@@ -161,7 +161,7 @@ public class InstallCommandTest extends AbstractMavenCommandTest {
         Mockito.verify(provisionAction).provision(configCaptor.capture(), channelCaptor.capture());
         assertThat(configCaptor.getValue().getFeaturePackDeps())
                 .map(fp->fp.getLocation().getProducerName())
-                .containsExactly("org.wildfly.core:wildfly-core-galleon-pack");
+                .containsExactly("org.wildfly.core:wildfly-core-galleon-pack::zip");
         assertThat(channelCaptor.getValue())
                 .flatMap(Channel::getRepositories)
                 .map(Repository::getId)

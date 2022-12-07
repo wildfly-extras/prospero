@@ -93,7 +93,7 @@ public class CloneTest extends WfCoreTestBase {
     private ChannelManifest install(Path installDir, Path provisionConfig) throws Exception {
         ExecutionUtils.prosperoExecution(CliConstants.Commands.INSTALL,
                         CliConstants.CHANNEL, provisionConfig.toString(),
-                        CliConstants.FPL, "wildfly-core@maven(org.jboss.universe:community-universe):19.0",
+                        CliConstants.FPL, "org.wildfly.core:wildfly-core-galleon-pack::zip",
                         CliConstants.DIR, installDir.toString())
                 .withTimeLimit(10, TimeUnit.MINUTES)
                 .execute()
@@ -137,7 +137,7 @@ public class CloneTest extends WfCoreTestBase {
             assertTrue(provisionedConfig.hasFeaturePackDeps());
             assertEquals(1, provisionedConfig.getFeaturePackDeps().size());
             FeaturePackConfig featurePackConfig = provisionedConfig.getFeaturePackDeps().iterator().next();
-            assertEquals("wildfly-core", featurePackConfig.getLocation().getProducerName());
+            assertEquals("org.wildfly.core:wildfly-core-galleon-pack::zip", featurePackConfig.getLocation().getProducerName());
         }
     }
 

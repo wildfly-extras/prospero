@@ -18,7 +18,7 @@
   -->
 
 <installation xmlns="urn:jboss:galleon:provisioning:3.0">
-    <feature-pack location="wildfly-core@maven(org.jboss.universe:community-universe)#latest">
+    <feature-pack location="org.wildfly.core:wildfly-core-galleon-pack::zip">
         <packages>
             <include name="package1"/>
             <exclude name="package2"/>
