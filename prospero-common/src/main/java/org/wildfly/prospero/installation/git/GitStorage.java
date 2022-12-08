@@ -87,16 +87,23 @@ public class GitStorage implements AutoCloseable {
         try {
             git.add().addFilepattern(InstallationMetadata.MANIFEST_FILE_NAME).call();
 
+            final PersonIdent author;
+            final SavedState.Type commitType;
             if (isRepositoryEmpty(git)) {
                 git.add().addFilepattern(InstallationMetadata.INSTALLER_CHANNELS_FILE_NAME).call();
-                // adjust the date so that when talking over a non-prosper installation date matches creation
-                git.commit()
-                        .setCommitter(adjustCommitDateToCreationDate(getCommitter()))
-                        .setMessage(SavedState.Type.INSTALL.name())
-                        .call();
+                // adjust the date so that when taking over a non-prosper installation date matches creation
+                author = adjustCommitDateToCreationDate(getCommitter());
+                commitType = SavedState.Type.INSTALL;
             } else {
-                git.commit().setCommitter(getCommitter()).setMessage(SavedState.Type.UPDATE.name()).call();
+                author = getCommitter();
+                commitType = SavedState.Type.UPDATE;
             }
+
+            git.commit()
+                    .setAuthor(author)
+                    .setCommitter(author)
+                    .setMessage(commitType.name())
+                    .call();
 
         } catch (IOException | GitAPIException e) {
             throw Messages.MESSAGES.unableToAccessHistoryStorage(base, e);
@@ -118,7 +125,12 @@ public class GitStorage implements AutoCloseable {
     public void recordConfigChange() throws MetadataException {
         try {
             git.add().addFilepattern(InstallationMetadata.INSTALLER_CHANNELS_FILE_NAME).call();
-            git.commit().setCommitter(getCommitter()).setMessage(SavedState.Type.CONFIG_CHANGE.name()).call();
+            final PersonIdent author = getCommitter();
+            git.commit()
+                    .setAuthor(author)
+                    .setCommitter(author)
+                    .setMessage(SavedState.Type.CONFIG_CHANGE.name())
+                    .call();
         } catch (GitAPIException e) {
             throw Messages.MESSAGES.unableToAccessHistoryStorage(base, e);
         }
@@ -131,7 +143,12 @@ public class GitStorage implements AutoCloseable {
                     .addPath(InstallationMetadata.MANIFEST_FILE_NAME)
                     .call();
             git.add().addFilepattern(InstallationMetadata.MANIFEST_FILE_NAME).call();
-            git.commit().setCommitter(getCommitter()).setMessage(SavedState.Type.ROLLBACK.name()).call();
+            final PersonIdent author = getCommitter();
+            git.commit()
+                    .setAuthor(author)
+                    .setCommitter(author)
+                    .setMessage(SavedState.Type.ROLLBACK.name())
+                    .call();
         } catch (GitAPIException e) {
             throw Messages.MESSAGES.unableToAccessHistoryStorage(base, e);
         }
@@ -242,6 +259,8 @@ public class GitStorage implements AutoCloseable {
             git = Git.init().setDirectory(base.toFile()).call();
             final StoredConfig config = git.getRepository().getConfig();
             config.setBoolean("commit", null, "gpgsign", false);
+            config.setString("user", null, "name", GIT_HISTORY_USER);
+            config.setString("user", null, "email", "");
             config.save();
         } else {
             git = Git.open(base.toFile());
