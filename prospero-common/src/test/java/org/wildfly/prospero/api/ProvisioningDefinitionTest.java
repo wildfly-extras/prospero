@@ -229,7 +229,7 @@ public class ProvisioningDefinitionTest {
         assertNull(definition.getFpl());
         ProvisioningConfig galleonConfig = GalleonUtils.loadProvisioningConfig(definition.getDefinition());
         assertEquals(1, galleonConfig.getFeaturePackDeps().size());
-        assertEquals("wildfly-core@maven(org.jboss.universe:community-universe)#latest",
+        assertEquals("org.wildfly.core:wildfly-core-galleon-pack:zip",
                 galleonConfig.getFeaturePackDeps().iterator().next().getLocation().toString());
     }
 }

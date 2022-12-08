@@ -182,7 +182,7 @@ public class PatchingTest {
 
         ExecutionUtils.prosperoExecution(CliConstants.Commands.INSTALL,
                         CliConstants.CHANNELS, channelsFile.toString(),
-                        CliConstants.FPL, "wildfly-core@maven(org.jboss.universe:community-universe):19.0",
+                        CliConstants.FPL, "org.wildfly.core:wildfly-core-galleon-pack::zip",
                         CliConstants.DIR, targetDir.getAbsolutePath())
                 .execute()
                 .assertReturnCode(ReturnCodes.SUCCESS);

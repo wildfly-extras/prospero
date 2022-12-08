@@ -48,7 +48,7 @@ public class KnownFeaturePacksTest {
         ProvisioningConfig galleonConfig = GalleonUtils.loadProvisioningConfig(knownFeaturePack.getGalleonConfiguration());
         assertThat(galleonConfig.getOptions()).containsOnly(Map.entry("jboss-bulk-resolve-artifacts", "true"));
         assertThat(galleonConfig.getFeaturePackDeps().iterator().next()).satisfies(fp -> {
-            assertThat(fp.getLocation().toString()).isEqualTo("wildfly-core@maven(org.jboss.universe:community-universe)#latest");
+            assertThat(fp.getLocation().toString()).isEqualTo("org.wildfly.core:wildfly-core-galleon-pack:zip");
             assertThat(fp.getExcludedPackages()).containsOnly("package2");
             assertThat(fp.getIncludedPackages()).containsOnly("package1");
         });

@@ -125,7 +125,7 @@ public class WfCoreTestBase {
 
     protected ProvisioningDefinition.Builder defaultWfCoreDefinition() {
         return ProvisioningDefinition.builder()
-                .setFpl("wildfly-core@maven(org.jboss.universe:community-universe):19.0")
+                .setFpl("org.wildfly.core:wildfly-core-galleon-pack::zip")
                 .setOverrideRepositories(repositories);
     }
 
@@ -201,8 +201,6 @@ public class WfCoreTestBase {
         }
 
         // additional artifacts not included in galleon-pack
-        artifacts.put("community-universe", "org.jboss.universe:community-universe:1.2.0.Final::jar");
-        artifacts.put("wildfly-producer", "org.jboss.universe.producer:wildfly-producers:1.3.4.Final::jar");
         artifacts.put("galleon-pack", "org.wildfly.core:wildfly-core-galleon-pack:19.0.0.Beta11::zip");
         artifacts.put("galleon-plugins", "org.wildfly.galleon-plugins:wildfly-galleon-plugins:6.0.0.Alpha6::jar");
 

@@ -18,5 +18,5 @@
   -->
 
 <installation xmlns="urn:jboss:galleon:provisioning:3.0">
-    <feature-pack location="wildfly@maven(org.jboss.universe:community-universe):current#latest"/>
+    <feature-pack location="org.wildfly:wildfly-galleon-pack::zip"/>
 </installation>

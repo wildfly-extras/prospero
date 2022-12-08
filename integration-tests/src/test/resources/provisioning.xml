@@ -1,5 +1,5 @@
 <?xml version="1.0" ?>
 
 <installation xmlns="urn:jboss:galleon:provisioning:3.0">
-    <feature-pack location="wildfly-core@maven(org.jboss.universe:community-universe):current#17.0.0.Final"/>
+    <feature-pack location="org.wildfly.core:wildfly-core-galleon-pack::zip"/>
 </installation>
