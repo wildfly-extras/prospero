@@ -20,6 +20,7 @@ package org.wildfly.prospero.actions;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.Collections;
 import java.util.List;
 
 import org.apache.commons.io.FileUtils;
@@ -31,6 +32,7 @@ import org.wildfly.channel.Channel;
 import org.wildfly.channel.ChannelManifest;
 import org.wildfly.channel.Repository;
 import org.wildfly.channel.UnresolvedMavenArtifactException;
+import org.wildfly.prospero.api.FileConflict;
 import org.wildfly.prospero.api.TemporaryRepositoriesHandler;
 import org.wildfly.prospero.api.InstallationMetadata;
 import org.wildfly.prospero.api.exceptions.MetadataException;
@@ -64,13 +66,15 @@ public class UpdateAction implements AutoCloseable {
         this.mavenSessionManager = mavenSessionManager;
     }
 
-    public void performUpdate() throws OperationException, ProvisioningException {
+    public List<FileConflict> performUpdate() throws OperationException, ProvisioningException {
         Path targetDir = null;
         try {
             targetDir = Files.createTempDirectory("update-eap");
             if (buildUpdate(targetDir)) {
                 ApplyUpdateAction applyUpdateAction = new ApplyUpdateAction(installDir, targetDir);
-                applyUpdateAction.applyUpdate();
+                return applyUpdateAction.applyUpdate();
+            } else {
+                return Collections.emptyList();
             }
         } catch (IOException e) {
             throw new ProvisioningException("Unable to create temporary directory", e);

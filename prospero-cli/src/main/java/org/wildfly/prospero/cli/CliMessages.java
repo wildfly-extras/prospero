@@ -224,5 +224,8 @@ public interface CliMessages {
     @Message("channel")
     String channelChangeType();
 
+    @Message("Conflicting changes detected in the update:")
+    String conflictingChangesDetected();
+
     // end - changes diff
 }

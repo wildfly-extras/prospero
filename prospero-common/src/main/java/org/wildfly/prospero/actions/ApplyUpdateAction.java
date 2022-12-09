@@ -24,14 +24,17 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.SimpleFileVisitor;
 import java.nio.file.attribute.BasicFileAttributes;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.List;
 import java.util.Optional;
 
 import org.jboss.galleon.Constants;
 import org.jboss.galleon.Errors;
 
 import org.jboss.galleon.ProvisioningManager;
+import org.wildfly.prospero.api.FileConflict;
 import org.wildfly.prospero.api.exceptions.MetadataException;
 import org.wildfly.prospero.api.exceptions.ArtifactResolutionException;
 import org.wildfly.prospero.api.exceptions.OperationException;
@@ -46,6 +49,9 @@ import static org.jboss.galleon.diff.FsDiff.HAS_CHANGED_IN_THE_UPDATED_VERSION;
 import static org.jboss.galleon.diff.FsDiff.MODIFIED;
 import static org.jboss.galleon.diff.FsDiff.REMOVED;
 import static org.jboss.galleon.diff.FsDiff.formatMessage;
+import static org.wildfly.prospero.api.FileConflict.Change;
+import static org.wildfly.prospero.api.FileConflict.Resolution;
+
 import org.jboss.galleon.diff.FsEntry;
 import org.jboss.galleon.layout.SystemPaths;
 import org.jboss.galleon.util.HashUtils;
@@ -84,17 +90,18 @@ public class ApplyUpdateAction {
                 .build().getProvisioningManager();
     }
 
-    public void applyUpdate() throws ProvisioningException, ArtifactResolutionException {
+    public List<FileConflict> applyUpdate() throws ProvisioningException, ArtifactResolutionException {
         FsDiff diffs = findChanges();
         try {
-            doApplyUpdate(diffs);
+            final List<FileConflict> conflicts = doApplyUpdate(diffs);
             updateMetadata();
+            return conflicts;
         } catch (IOException ex) {
             throw new ProvisioningException(ex);
         }
     }
 
-    public FsDiff findChanges() throws ArtifactResolutionException, ProvisioningException {
+    private FsDiff findChanges() throws ArtifactResolutionException, ProvisioningException {
         return provisioningManager.getFsDiff();
     }
 
@@ -131,7 +138,8 @@ public class ApplyUpdateAction {
         }
     }
 
-    private void handleRemovedFiles(FsDiff fsDiff) throws IOException {
+    private List<FileConflict> handleRemovedFiles(FsDiff fsDiff) throws IOException {
+        final List<FileConflict> conflictList = new ArrayList<>();
         if (fsDiff.hasRemovedEntries()) {
             for (FsEntry removed : fsDiff.getRemovedEntries()) {
                 final Path target = updateDir.resolve(removed.getRelativePath());
@@ -140,7 +148,10 @@ public class ApplyUpdateAction {
                 }
                 if (Files.exists(target)) {
                     if (systemPaths.isSystemPath(Paths.get(removed.getRelativePath()))) {
-                        LOGGER.info(formatMessage(FORCED, removed.getRelativePath(), HAS_CHANGED_IN_THE_UPDATED_VERSION));
+                        conflictList.add(new FileConflict(Change.REMOVED, Change.MODIFIED, Resolution.UPDATE, removed.getRelativePath()));
+                        if (LOGGER.isDebugEnabled()) {
+                            LOGGER.debug(formatMessage(FORCED, removed.getRelativePath(), HAS_CHANGED_IN_THE_UPDATED_VERSION));
+                        }
                         Files.createDirectories(installationDir.resolve(removed.getRelativePath()).getParent());
                         IoUtils.copy(target, installationDir.resolve(removed.getRelativePath()));
                     }
@@ -152,9 +163,11 @@ public class ApplyUpdateAction {
                 }
             }
         }
+        return conflictList;
     }
 
-    private void handleAddedFiles(FsDiff fsDiff) throws IOException, ProvisioningException {
+    private List<FileConflict> handleAddedFiles(FsDiff fsDiff) throws IOException, ProvisioningException {
+        final List<FileConflict> conflictList = new ArrayList<>();
         if (fsDiff.hasAddedEntries()) {
             for (FsEntry added : fsDiff.getAddedEntries()) {
                 Path p = Paths.get(added.getRelativePath());
@@ -164,12 +177,13 @@ public class ApplyUpdateAction {
                         continue;
                     }
                 }
-                addFsEntry(updateDir, added, systemPaths);
+                addFsEntry(updateDir, added, systemPaths, conflictList);
             }
         }
+        return conflictList;
     }
 
-    private void addFsEntry(Path updateDir, FsEntry added, SystemPaths systemPaths)
+    private void addFsEntry(Path updateDir, FsEntry added, SystemPaths systemPaths, List<FileConflict> conflictList)
             throws ProvisioningException {
         final Path target = updateDir.resolve(added.getRelativePath());
         if (LOGGER.isDebugEnabled()) {
@@ -178,7 +192,7 @@ public class ApplyUpdateAction {
         if (Files.exists(target)) {
             if (added.isDir()) {
                 for (FsEntry child : added.getChildren()) {
-                    addFsEntry(updateDir, child, systemPaths);
+                    addFsEntry(updateDir, child, systemPaths, conflictList);
                 }
                 return;
             }
@@ -195,17 +209,24 @@ public class ApplyUpdateAction {
                 }
             } else {
                 if (systemPaths.isSystemPath(Paths.get(added.getRelativePath()))) {
-                    LOGGER.info(formatMessage(FORCED, added.getRelativePath(), CONFLICTS_WITH_THE_UPDATED_VERSION));
+                    if (LOGGER.isDebugEnabled()) {
+                        LOGGER.debug(formatMessage(FORCED, added.getRelativePath(), CONFLICTS_WITH_THE_UPDATED_VERSION));
+                    }
+                    conflictList.add(new FileConflict(Change.ADDED, Change.ADDED, Resolution.UPDATE, added.getRelativePath()));
                     glold(installationDir.resolve(added.getRelativePath()), target);
                 } else {
-                    LOGGER.info(formatMessage(CONFLICT, added.getRelativePath(), CONFLICTS_WITH_THE_UPDATED_VERSION));
+                    if (LOGGER.isDebugEnabled()) {
+                        LOGGER.debug(formatMessage(CONFLICT, added.getRelativePath(), CONFLICTS_WITH_THE_UPDATED_VERSION));
+                    }
+                    conflictList.add(new FileConflict(Change.ADDED, Change.ADDED, Resolution.USER, added.getRelativePath()));
                     glnew(target, installationDir.resolve(added.getRelativePath()));
                 }
             }
         }
     }
 
-    private void handleModifiedFiles(FsDiff fsDiff) throws IOException, ProvisioningException {
+    private List<FileConflict> handleModifiedFiles(FsDiff fsDiff) throws IOException, ProvisioningException {
+        final List<FileConflict> conflictList = new ArrayList<>();
         if (fsDiff.hasModifiedEntries()) {
             for (FsEntry[] modified : fsDiff.getModifiedEntries()) {
                 FsEntry installation = modified[1];
@@ -230,27 +251,38 @@ public class ApplyUpdateAction {
                     } else {
                         if (!Arrays.equals(original.getHash(), updateHash)) {
                             if (systemPaths.isSystemPath(Paths.get(installation.getRelativePath()))) {
-                                LOGGER.info(formatMessage(FORCED, installation.getRelativePath(), HAS_CHANGED_IN_THE_UPDATED_VERSION));
+                                if (LOGGER.isDebugEnabled()) {
+                                    LOGGER.debug(formatMessage(FORCED, installation.getRelativePath(), HAS_CHANGED_IN_THE_UPDATED_VERSION));
+                                }
+                                conflictList.add(new FileConflict(Change.MODIFIED, Change.MODIFIED, Resolution.UPDATE, installation.getRelativePath()));
                                 glold(installation.getPath(), file);
                             } else {
-                                LOGGER.info(formatMessage(CONFLICT, installation.getRelativePath(), HAS_CHANGED_IN_THE_UPDATED_VERSION));
+                                if (LOGGER.isDebugEnabled()) {
+                                    LOGGER.debug(formatMessage(CONFLICT, installation.getRelativePath(), HAS_CHANGED_IN_THE_UPDATED_VERSION));
+                                }
+                                conflictList.add(new FileConflict(Change.MODIFIED, Change.MODIFIED, Resolution.USER, installation.getRelativePath()));
                                 glnew(file, installationFile);
                             }
                         }
                     }
                 } else {
                     // The file doesn't exist in the update, we keep the file in the installation
-                    LOGGER.info(formatMessage(MODIFIED, installation.getRelativePath(), HAS_BEEN_REMOVED_FROM_THE_UPDATED_VERSION));
+                    if (LOGGER.isDebugEnabled()) {
+                        LOGGER.debug(formatMessage(MODIFIED, installation.getRelativePath(), HAS_BEEN_REMOVED_FROM_THE_UPDATED_VERSION));
+                    }
+                    conflictList.add(new FileConflict(Change.MODIFIED, Change.REMOVED, Resolution.USER, installation.getRelativePath()));
                 }
             }
         }
+        return conflictList;
     }
 
-    private void doApplyUpdate(FsDiff fsDiff) throws IOException, ProvisioningException {
+    private List<FileConflict> doApplyUpdate(FsDiff fsDiff) throws IOException, ProvisioningException {
+        List<FileConflict> conflicts = new ArrayList<>();
         // Handles user added/removed/modified files
-        handleRemovedFiles(fsDiff);
-        handleAddedFiles(fsDiff);
-        handleModifiedFiles(fsDiff);
+        conflicts.addAll(handleRemovedFiles(fsDiff));
+        conflicts.addAll(handleAddedFiles(fsDiff));
+        conflicts.addAll(handleModifiedFiles(fsDiff));
 
         // Handles files added/removed/modified in the update.
         Path skipUpdateGalleon = PathsUtils.getProvisionedStateDir(updateDir);
@@ -315,7 +347,7 @@ public class ApplyUpdateAction {
                     throws IOException {
                 Path relative = installationDir.relativize(file);
                 Path updateFile = updateDir.resolve(relative);
-                if (fsDiff.getAddedEntry(relative.toString()) == null) {
+                if (fsDiff.getAddedEntry(relative.toString()) == null && fsDiff.getModifiedEntry(relative.toString()) == null) {
                     if (!Files.exists(updateFile) &&
                             !updateFile.toString().endsWith(Constants.DOT_GLNEW) &&
                             !updateFile.toString().endsWith(Constants.DOT_GLOLD)) {
@@ -339,21 +371,11 @@ public class ApplyUpdateAction {
                     Path target = updateDir.resolve(relative);
                     String pathKey = relative.toString();
                     pathKey = pathKey.endsWith(File.separator) ? pathKey : pathKey + File.separator;
-                    if (fsDiff.getAddedEntry(pathKey) == null) {
-                        if (!Files.exists(target)) {
-                            if (LOGGER.isDebugEnabled()) {
-                                LOGGER.debug("Deleting the directory " + relative + " that doesn't exist in the update");
-                            }
-                            IoUtils.recursiveDelete(dir);
-                            return FileVisitResult.SKIP_SUBTREE;
+                    if (fsDiff.getAddedEntry(pathKey) != null && !Files.exists(target)) {
+                        if (LOGGER.isDebugEnabled()) {
+                            LOGGER.debug("The directory " + relative + " that doesn't exist in the update is a User changes, skipping it");
                         }
-                    } else {
-                         if (!Files.exists(target)) {
-                             if (LOGGER.isDebugEnabled()) {
-                                LOGGER.debug("The directory " + relative + " that doesn't exist in the update is a User changes, skipping it");
-                            }
-                            return FileVisitResult.SKIP_SUBTREE;
-                        }
+                        return FileVisitResult.SKIP_SUBTREE;
                     }
                 }
                 return FileVisitResult.CONTINUE;
@@ -362,9 +384,25 @@ public class ApplyUpdateAction {
             @Override
             public FileVisitResult postVisitDirectory(Path dir, IOException e)
                     throws IOException {
+                if (!dir.equals(installationDir)) {
+                    Path relative = installationDir.relativize(dir);
+                    Path target = updateDir.resolve(relative);
+                    String pathKey = relative.toString();
+                    pathKey = pathKey.endsWith(File.separator) ? pathKey : pathKey + File.separator;
+                    if (fsDiff.getAddedEntry(pathKey) == null) {
+                        if (!Files.exists(target) && dir.toFile().list().length == 0) {
+                            if (LOGGER.isDebugEnabled()) {
+                                LOGGER.debug("Deleting the directory " + relative + " that doesn't exist in the update");
+                            }
+                            IoUtils.recursiveDelete(dir);
+                            return FileVisitResult.SKIP_SUBTREE;
+                        }
+                    }
+                }
                 return FileVisitResult.CONTINUE;
             }
         });
+        return Collections.unmodifiableList(conflicts);
     }
 
     private static void glnew(final Path updateFile, Path installationFile) throws ProvisioningException {

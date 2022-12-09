@@ -18,12 +18,15 @@
 package org.wildfly.prospero.cli.commands;
 
 import java.nio.file.Path;
+import java.util.List;
 import java.util.Optional;
 
 import org.wildfly.prospero.actions.ApplyUpdateAction;
 import org.wildfly.prospero.actions.Console;
+import org.wildfly.prospero.api.FileConflict;
 import org.wildfly.prospero.cli.ActionFactory;
 import org.wildfly.prospero.cli.CliMessages;
+import org.wildfly.prospero.cli.FileConflictPrinter;
 import org.wildfly.prospero.cli.ReturnCodes;
 import picocli.CommandLine;
 
@@ -55,7 +58,9 @@ public class ApplyUpdateCommand extends AbstractCommand {
         final Path installationDir = determineInstallationDirectory(installationDirectory);
 
         ApplyUpdateAction applyUpdateAction = actionFactory.applyUpdate(installationDir.toAbsolutePath(), updateDir.toAbsolutePath());
-        applyUpdateAction.applyUpdate();
+        final List<FileConflict> fileConflicts = applyUpdateAction.applyUpdate();
+
+        FileConflictPrinter.print(fileConflicts, console);
 
         final float totalTime = (System.currentTimeMillis() - startTime) / 1000f;
         console.println(CliMessages.MESSAGES.operationCompleted(totalTime));

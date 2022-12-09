@@ -27,6 +27,7 @@ import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
+import org.wildfly.prospero.api.FileConflict;
 import org.wildfly.prospero.api.InstallationMetadata;
 import org.wildfly.prospero.installation.git.GitStorage;
 import org.wildfly.prospero.utils.filestate.DirState;
@@ -36,9 +37,16 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.HashMap;
+import java.util.List;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
+import static org.wildfly.prospero.api.FileConflict.Change.ADDED;
+import static org.wildfly.prospero.api.FileConflict.Change.MODIFIED;
+import static org.wildfly.prospero.api.FileConflict.Change.REMOVED;
+import static org.wildfly.prospero.api.FileConflict.Resolution.UPDATE;
+import static org.wildfly.prospero.api.FileConflict.Resolution.USER;
 
 public class ApplyUpdateActionTest {
 
@@ -86,10 +94,11 @@ public class ApplyUpdateActionTest {
         // install base and update. perform apply-update
         install(installationPath, fpl100);
         install(updatePath, fpl101);
-        new ApplyUpdateAction(installationPath, updatePath).applyUpdate();
+        final List<FileConflict> conflicts = new ApplyUpdateAction(installationPath, updatePath).applyUpdate();
 
         // verify
         expectedState.assertState(installationPath);
+        assertThat(conflicts).isEmpty();
     }
 
     @Test
@@ -99,10 +108,11 @@ public class ApplyUpdateActionTest {
 
         final DirState expectedState = dirBuilder
                 .addFile("prod1/p1.txt", "user prod1/p1")
-                .addFile("prod1/p2.txt", "prod1/p2 1.0.1")
                 .addFile("prod1/p1.txt.glnew", "prod1/p1 1.0.1")
+                .addFile("prod1/p2.txt", "prod1/p2 1.0.1")
                 .addFile("prod1/p4.txt", "user prod1/p4")
                 .addFile("prod1/p4.txt.glnew", "prod1/p4 1.0.1")
+                .addFile("prod2/p2.txt", "user prod2/p2")
                 .addFile("prod3/p1.txt", "prod3/p1 1.0.1")
                 .addFile("prod4/p1.txt", "user prod4/p1")
                 .addFile("prod4/p1.txt.glnew", "prod4/p1 1.0.1")
@@ -117,6 +127,7 @@ public class ApplyUpdateActionTest {
                 .writeContent("prod1/p2.txt", "prod1/p2 1.0.0") // removed by user, restored in update
                 .writeContent("prod1/p3.txt", "prod1/p3 1.0.0") // removed by user, not restored in update
                 .writeContent("prod2/p1.txt", "prod2/p1 1.0.0") // removed by update
+                .writeContent("prod2/p2.txt", "prod2/p2 1.0.0") // removed by update, updated by user
                 .getFeaturePack();
         creator.newFeaturePack(FeaturePackLocation.fromString(fpl101).getFPID())
                 .newPackage("p1", true)
@@ -124,7 +135,7 @@ public class ApplyUpdateActionTest {
                 .writeContent("prod1/p2.txt", "prod1/p2 1.0.1")
                 .writeContent("prod1/p4.txt", "prod1/p4 1.0.1") // not present in base, added by user and overwritten
                 .writeContent("prod3/p1.txt", "prod3/p1 1.0.1") // not present in base, not added by user
-                .writeContent("prod4/p1.txt", "prod4/p1 1.0.1")
+                .writeContent("prod4/p1.txt", "prod4/p1 1.0.1") // not present in base, added by user in new directory
                 .getFeaturePack();
         creator.install();
 
@@ -138,18 +149,22 @@ public class ApplyUpdateActionTest {
         Files.createDirectory(installationPath.resolve("new_dir"));
         Files.createDirectory(installationPath.resolve("prod4"));
         writeContent("prod4/p1.txt", "user prod4/p1");
+        writeContent("prod2/p2.txt", "user prod2/p2");
         writeContent("new_dir/users.txt", "user new_dir/users.txt");
         // update
         install(updatePath, fpl101);
-        new ApplyUpdateAction(installationPath, updatePath).applyUpdate();
+        final List<FileConflict> conflicts = new ApplyUpdateAction(installationPath, updatePath).applyUpdate();
 
         // verify
         expectedState.assertState(installationPath);
+        assertThat(conflicts).containsExactlyInAnyOrder(
+                new FileConflict(MODIFIED, USER, "prod1/p1.txt"),
+                new FileConflict(ADDED, USER, "prod1/p4.txt"),
+                new FileConflict(ADDED, USER, "prod4/p1.txt"),
+                new FileConflict(MODIFIED, REMOVED, USER, "prod2/p2.txt")
+        );
     }
 
-    private void writeContent(String path, String content) throws IOException {
-        Files.writeString(installationPath.resolve(path.replace("/", File.separator)), content);
-    }
 
     @Test
     public void testUserChangesInSystemPaths() throws Exception {
@@ -168,7 +183,7 @@ public class ApplyUpdateActionTest {
         creator.newFeaturePack(FeaturePackLocation.fromString(fpl100).getFPID())
                 .addSystemPaths("prod1")
                 .newPackage("p1", true)
-                .writeContent("prod1/p1.txt", "p1 1.0.0")
+                .writeContent("prod1/p1.txt", "p1 1.0.0") // modified by user and updated in update
                 .writeContent("prod1/p2.txt", "p2 1.0.0") // removed by user and restored in update
                 .getFeaturePack();
         creator.newFeaturePack(FeaturePackLocation.fromString(fpl101).getFPID())
@@ -186,10 +201,15 @@ public class ApplyUpdateActionTest {
         Files.delete(installationPath.resolve("prod1/p2.txt"));
         writeContent("prod1/p3.txt", "user prod1/p3");
         install(updatePath, fpl101);
-        new ApplyUpdateAction(installationPath, updatePath).applyUpdate();
+        final List<FileConflict> conflicts = new ApplyUpdateAction(installationPath, updatePath).applyUpdate();
 
         // verify
         expectedState.assertState(installationPath);
+        assertThat(conflicts).containsExactlyInAnyOrder(
+                new FileConflict(MODIFIED, UPDATE, "prod1/p1.txt"),
+                new FileConflict(REMOVED, MODIFIED, UPDATE, "prod1/p2.txt"),
+                new FileConflict(ADDED, UPDATE, "prod1/p3.txt")
+        );
     }
 
     @Test
@@ -233,6 +253,10 @@ public class ApplyUpdateActionTest {
                 .contains(fpl101));
         // verify update was recorded
         assertEquals(2, new GitStorage(installationPath).getRevisions().size());
+    }
+
+    private void writeContent(String path, String content) throws IOException {
+        Files.writeString(installationPath.resolve(path.replace("/", File.separator)), content);
     }
 
     private void install(Path path, String fpl) throws Exception {

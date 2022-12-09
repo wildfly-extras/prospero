@@ -28,10 +28,12 @@ import org.jboss.logging.Logger;
 import org.wildfly.channel.Repository;
 import org.wildfly.prospero.actions.Console;
 import org.wildfly.prospero.actions.UpdateAction;
+import org.wildfly.prospero.api.FileConflict;
 import org.wildfly.prospero.api.exceptions.OperationException;
 import org.wildfly.prospero.cli.ActionFactory;
 import org.wildfly.prospero.cli.ArgumentParsingException;
 import org.wildfly.prospero.cli.CliMessages;
+import org.wildfly.prospero.cli.FileConflictPrinter;
 import org.wildfly.prospero.cli.RepositoryDefinition;
 import org.wildfly.prospero.cli.ReturnCodes;
 import org.wildfly.prospero.cli.commands.options.LocalRepoOptions;
@@ -146,7 +148,9 @@ public class UpdateCommand extends AbstractCommand {
             return;
         }
 
-        updateAction.performUpdate();
+        final List<FileConflict> fileConflicts = updateAction.performUpdate();
+
+        FileConflictPrinter.print(fileConflicts, console);
 
         console.updatesComplete();
     }
