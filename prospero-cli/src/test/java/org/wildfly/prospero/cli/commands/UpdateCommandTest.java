@@ -18,6 +18,7 @@
 package org.wildfly.prospero.cli.commands;
 
 import java.nio.file.Path;
+import java.util.Collections;
 import java.util.List;
 
 import org.eclipse.aether.artifact.DefaultArtifact;
@@ -190,6 +191,50 @@ public class UpdateCommandTest extends AbstractMavenCommandTest {
         Mockito.verify(actionFactory).update(eq(installationDir.toAbsolutePath()), any(), any(), any());
         assertEquals(1, getAskedConfirmation());
         Mockito.verify(updateAction).performUpdate();
+    }
+
+    @Test
+    public void testDryRunCallsFindUpdates() throws Exception {
+        System.setProperty(UpdateCommand.JBOSS_MODULE_PATH, installationDir.toString());
+        when(updateAction.findUpdates()).thenReturn(new UpdateSet(List.of(change("1.0.0", "1.0.1"))));
+
+        int exitCode = commandLine.execute(CliConstants.Commands.UPDATE, CliConstants.DRY_RUN,
+                CliConstants.DIR, installationDir.toAbsolutePath().toString());
+
+        assertEquals(ReturnCodes.SUCCESS, exitCode);
+        Mockito.verify(actionFactory).update(eq(installationDir.toAbsolutePath()), any(), any(), any());
+        Mockito.verify(updateAction, never()).performUpdate();
+        Mockito.verify(updateAction).findUpdates();
+    }
+
+    @Test
+    public void testBuildUpdateCallsUpdateActionWhenUpdatesAvailable() throws Exception {
+        System.setProperty(UpdateCommand.JBOSS_MODULE_PATH, installationDir.toString());
+        when(updateAction.findUpdates()).thenReturn(new UpdateSet(List.of(change("1.0.0", "1.0.1"))));
+        final Path updatePath = tempFolder.newFolder().toPath();
+
+        int exitCode = commandLine.execute(CliConstants.Commands.UPDATE, CliConstants.UPDATE_DIR, updatePath.toString(),
+                CliConstants.DIR, installationDir.toAbsolutePath().toString());
+
+        assertEquals(ReturnCodes.SUCCESS, exitCode);
+        Mockito.verify(actionFactory).update(eq(installationDir.toAbsolutePath()), any(), any(), any());
+        assertEquals(1, getAskedConfirmation());
+        Mockito.verify(updateAction).buildUpdate(updatePath);
+    }
+
+    @Test
+    public void testBuildUpdateDoesNothingWhenUpdatesNotAvailable() throws Exception {
+        System.setProperty(UpdateCommand.JBOSS_MODULE_PATH, installationDir.toString());
+        when(updateAction.findUpdates()).thenReturn(new UpdateSet(Collections.emptyList()));
+        final Path updatePath = tempFolder.newFolder().toPath();
+
+        int exitCode = commandLine.execute(CliConstants.Commands.UPDATE, CliConstants.UPDATE_DIR, updatePath.toString(),
+                CliConstants.DIR, installationDir.toAbsolutePath().toString());
+
+        assertEquals(ReturnCodes.SUCCESS, exitCode);
+        Mockito.verify(actionFactory).update(eq(installationDir.toAbsolutePath()), any(), any(), any());
+        assertEquals(0, getAskedConfirmation());
+        Mockito.verify(updateAction, never()).buildUpdate(updatePath);
     }
 
     private ArtifactChange change(String oldVersion, String newVersion) {

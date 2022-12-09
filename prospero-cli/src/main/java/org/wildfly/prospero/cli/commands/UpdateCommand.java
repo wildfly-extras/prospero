@@ -26,11 +26,8 @@ import java.util.Optional;
 import org.jboss.galleon.ProvisioningException;
 import org.jboss.logging.Logger;
 import org.wildfly.channel.Repository;
-import org.wildfly.prospero.actions.BuildUpdateAction;
 import org.wildfly.prospero.actions.Console;
 import org.wildfly.prospero.actions.UpdateAction;
-import org.wildfly.prospero.api.exceptions.ArtifactResolutionException;
-import org.wildfly.prospero.api.exceptions.MetadataException;
 import org.wildfly.prospero.api.exceptions.OperationException;
 import org.wildfly.prospero.cli.ActionFactory;
 import org.wildfly.prospero.cli.ArgumentParsingException;
@@ -119,9 +116,9 @@ public class UpdateCommand extends AbstractCommand {
         if (updateDirectory.isPresent()) {
             log.tracef("Generate update in %s", updateDirectory.get());
 
-            try(BuildUpdateAction buildUpdateAction = actionFactory.buildUpdate(installationDir, updateDirectory.get().toAbsolutePath(),
+            try(UpdateAction updateAction = actionFactory.update(installationDir,
                     mavenSessionManager, console, repositories)) {
-                buildUpdate(buildUpdateAction);
+                buildUpdate(updateAction);
             }
         } else {
             log.tracef("Perform full update");
@@ -154,8 +151,8 @@ public class UpdateCommand extends AbstractCommand {
         console.updatesComplete();
     }
 
-    private void buildUpdate(BuildUpdateAction buildUpdateAction) throws ArtifactResolutionException, ProvisioningException, MetadataException {
-        final UpdateSet updateSet = buildUpdateAction.findUpdates();
+    private void buildUpdate(UpdateAction updateAction) throws OperationException, ProvisioningException {
+        final UpdateSet updateSet = updateAction.findUpdates();
 
         console.updatesFound(updateSet.getArtifactUpdates());
         if (updateSet.isEmpty()) {
@@ -166,7 +163,7 @@ public class UpdateCommand extends AbstractCommand {
             return;
         }
 
-        buildUpdateAction.buildUpdate();
+        updateAction.buildUpdate(updateDirectory.get().toAbsolutePath());
 
         console.buildUpdatesComplete();
     }

@@ -23,7 +23,6 @@ import java.util.List;
 import org.jboss.galleon.ProvisioningException;
 import org.wildfly.channel.Repository;
 import org.wildfly.prospero.actions.ApplyUpdateAction;
-import org.wildfly.prospero.actions.BuildUpdateAction;
 import org.wildfly.prospero.actions.Console;
 import org.wildfly.prospero.actions.InstallationExportAction;
 import org.wildfly.prospero.actions.InstallationHistoryAction;
@@ -48,12 +47,6 @@ public class ActionFactory {
             throws OperationException,
             ProvisioningException {
         return new UpdateAction(targetPath, mavenSessionManager, console, additionalRepositories);
-    }
-
-    public BuildUpdateAction buildUpdate(Path installationPath, Path targetPath, MavenSessionManager mavenSessionManager, Console console, List<Repository> additionalRepositories)
-            throws OperationException,
-            ProvisioningException {
-        return new BuildUpdateAction(installationPath, targetPath, mavenSessionManager, console, additionalRepositories);
     }
 
     public ApplyUpdateAction applyUpdate(Path installationPath, Path updatePath)
