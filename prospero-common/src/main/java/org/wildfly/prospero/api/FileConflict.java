@@ -34,15 +34,97 @@ public class FileConflict {
         USER, UPDATE
     }
 
-    public FileConflict(Change userChange, Change updateChange, Resolution resolution, String relativePath) {
+    public static AddBuilder userAdded(String path) {
+        return new AddBuilder(path);
+    }
+
+    public static RemoveBuilder userRemoved(String path) {
+        return new RemoveBuilder(path);
+    }
+
+    public static ModifyBuilder userModified(String path) {
+        return new ModifyBuilder(path);
+    }
+
+    public static class ModifyBuilder {
+        private final String path;
+
+        private ModifyBuilder(String path) {
+            this.path = path;
+        }
+
+        public ResolutionBuilder updateModified() {
+            return new ResolutionBuilder(path, Change.MODIFIED, Change.MODIFIED);
+        }
+
+        public ResolutionBuilder updateDidntChange() {
+            return new ResolutionBuilder(path, Change.MODIFIED, Change.NONE);
+        }
+
+        public ResolutionBuilder updateRemoved() {
+            return new ResolutionBuilder(path, Change.MODIFIED, Change.REMOVED);
+        }
+    }
+
+    public static class RemoveBuilder {
+        private final String path;
+
+        private RemoveBuilder(String path) {
+            this.path = path;
+        }
+
+        public ResolutionBuilder updateModified() {
+            return new ResolutionBuilder(path, Change.REMOVED, Change.MODIFIED);
+        }
+
+        public ResolutionBuilder updateDidntChange() {
+            return new ResolutionBuilder(path, Change.REMOVED, Change.NONE);
+        }
+    }
+
+    public static class AddBuilder {
+
+        private final String path;
+
+        private AddBuilder(String path) {
+            this.path = path;
+        }
+
+        public ResolutionBuilder updateAdded() {
+            return new ResolutionBuilder(path, Change.ADDED, Change.ADDED);
+        }
+
+        public ResolutionBuilder updateDidntChange() {
+            return new ResolutionBuilder(path, Change.ADDED, Change.NONE);
+        }
+    }
+
+    public static class ResolutionBuilder {
+
+        private final Change user;
+        private final Change update;
+        private final String path;
+
+        private ResolutionBuilder(String path, Change user, Change update) {
+            this.user = user;
+            this.update = update;
+            this.path = path;
+        }
+
+        public FileConflict userPreserved() {
+            return new FileConflict(user, update, Resolution.USER, path);
+        }
+
+        public FileConflict overwritten() {
+            return new FileConflict(user, update, Resolution.UPDATE, path);
+        }
+    }
+
+    private FileConflict(Change userChange, Change updateChange, Resolution resolution, String relativePath) {
         this.userChange = userChange;
         this.updateChange = updateChange;
         this.resolution = resolution;
         this.relativePath = relativePath;
-    }
-
-    public FileConflict(Change change, Resolution resolution, String relativePath) {
-        this(change, change, resolution, relativePath);
     }
 
     public Change getUserChange() {

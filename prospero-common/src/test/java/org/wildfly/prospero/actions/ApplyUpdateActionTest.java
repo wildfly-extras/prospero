@@ -42,11 +42,6 @@ import java.util.List;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
-import static org.wildfly.prospero.api.FileConflict.Change.ADDED;
-import static org.wildfly.prospero.api.FileConflict.Change.MODIFIED;
-import static org.wildfly.prospero.api.FileConflict.Change.REMOVED;
-import static org.wildfly.prospero.api.FileConflict.Resolution.UPDATE;
-import static org.wildfly.prospero.api.FileConflict.Resolution.USER;
 
 public class ApplyUpdateActionTest {
 
@@ -158,10 +153,10 @@ public class ApplyUpdateActionTest {
         // verify
         expectedState.assertState(installationPath);
         assertThat(conflicts).containsExactlyInAnyOrder(
-                new FileConflict(MODIFIED, USER, "prod1/p1.txt"),
-                new FileConflict(ADDED, USER, "prod1/p4.txt"),
-                new FileConflict(ADDED, USER, "prod4/p1.txt"),
-                new FileConflict(MODIFIED, REMOVED, USER, "prod2/p2.txt")
+                FileConflict.userModified("prod1/p1.txt").updateModified().userPreserved(),
+                FileConflict.userAdded("prod1/p4.txt").updateAdded().userPreserved(),
+                FileConflict.userAdded("prod4/p1.txt").updateAdded().userPreserved(),
+                FileConflict.userModified("prod2/p2.txt").updateRemoved().userPreserved()
         );
     }
 
@@ -205,10 +200,11 @@ public class ApplyUpdateActionTest {
 
         // verify
         expectedState.assertState(installationPath);
+        FileConflict.userAdded("prod1/p3.txt").updateAdded().userPreserved();
         assertThat(conflicts).containsExactlyInAnyOrder(
-                new FileConflict(MODIFIED, UPDATE, "prod1/p1.txt"),
-                new FileConflict(REMOVED, MODIFIED, UPDATE, "prod1/p2.txt"),
-                new FileConflict(ADDED, UPDATE, "prod1/p3.txt")
+                FileConflict.userModified("prod1/p1.txt").updateModified().overwritten(),
+                FileConflict.userRemoved("prod1/p2.txt").updateModified().overwritten(),
+                FileConflict.userAdded("prod1/p3.txt").updateAdded().overwritten()
         );
     }
 

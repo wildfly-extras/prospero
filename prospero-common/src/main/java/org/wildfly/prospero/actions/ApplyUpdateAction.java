@@ -49,8 +49,6 @@ import static org.jboss.galleon.diff.FsDiff.HAS_CHANGED_IN_THE_UPDATED_VERSION;
 import static org.jboss.galleon.diff.FsDiff.MODIFIED;
 import static org.jboss.galleon.diff.FsDiff.REMOVED;
 import static org.jboss.galleon.diff.FsDiff.formatMessage;
-import static org.wildfly.prospero.api.FileConflict.Change;
-import static org.wildfly.prospero.api.FileConflict.Resolution;
 
 import org.jboss.galleon.diff.FsEntry;
 import org.jboss.galleon.layout.SystemPaths;
@@ -148,7 +146,7 @@ public class ApplyUpdateAction {
                 }
                 if (Files.exists(target)) {
                     if (systemPaths.isSystemPath(Paths.get(removed.getRelativePath()))) {
-                        conflictList.add(new FileConflict(Change.REMOVED, Change.MODIFIED, Resolution.UPDATE, removed.getRelativePath()));
+                        conflictList.add(FileConflict.userRemoved(removed.getRelativePath()).updateModified().overwritten());
                         if (LOGGER.isDebugEnabled()) {
                             LOGGER.debug(formatMessage(FORCED, removed.getRelativePath(), HAS_CHANGED_IN_THE_UPDATED_VERSION));
                         }
@@ -212,13 +210,13 @@ public class ApplyUpdateAction {
                     if (LOGGER.isDebugEnabled()) {
                         LOGGER.debug(formatMessage(FORCED, added.getRelativePath(), CONFLICTS_WITH_THE_UPDATED_VERSION));
                     }
-                    conflictList.add(new FileConflict(Change.ADDED, Change.ADDED, Resolution.UPDATE, added.getRelativePath()));
+                    conflictList.add(FileConflict.userAdded(added.getRelativePath()).updateAdded().overwritten());
                     glold(installationDir.resolve(added.getRelativePath()), target);
                 } else {
                     if (LOGGER.isDebugEnabled()) {
                         LOGGER.debug(formatMessage(CONFLICT, added.getRelativePath(), CONFLICTS_WITH_THE_UPDATED_VERSION));
                     }
-                    conflictList.add(new FileConflict(Change.ADDED, Change.ADDED, Resolution.USER, added.getRelativePath()));
+                    conflictList.add(FileConflict.userAdded(added.getRelativePath()).updateAdded().userPreserved());
                     glnew(target, installationDir.resolve(added.getRelativePath()));
                 }
             }
@@ -254,13 +252,13 @@ public class ApplyUpdateAction {
                                 if (LOGGER.isDebugEnabled()) {
                                     LOGGER.debug(formatMessage(FORCED, installation.getRelativePath(), HAS_CHANGED_IN_THE_UPDATED_VERSION));
                                 }
-                                conflictList.add(new FileConflict(Change.MODIFIED, Change.MODIFIED, Resolution.UPDATE, installation.getRelativePath()));
+                                conflictList.add(FileConflict.userModified(installation.getRelativePath()).updateModified().overwritten());
                                 glold(installation.getPath(), file);
                             } else {
                                 if (LOGGER.isDebugEnabled()) {
                                     LOGGER.debug(formatMessage(CONFLICT, installation.getRelativePath(), HAS_CHANGED_IN_THE_UPDATED_VERSION));
                                 }
-                                conflictList.add(new FileConflict(Change.MODIFIED, Change.MODIFIED, Resolution.USER, installation.getRelativePath()));
+                                conflictList.add(FileConflict.userModified(installation.getRelativePath()).updateModified().userPreserved());
                                 glnew(file, installationFile);
                             }
                         }
@@ -270,7 +268,7 @@ public class ApplyUpdateAction {
                     if (LOGGER.isDebugEnabled()) {
                         LOGGER.debug(formatMessage(MODIFIED, installation.getRelativePath(), HAS_BEEN_REMOVED_FROM_THE_UPDATED_VERSION));
                     }
-                    conflictList.add(new FileConflict(Change.MODIFIED, Change.REMOVED, Resolution.USER, installation.getRelativePath()));
+                    conflictList.add(FileConflict.userModified(installation.getRelativePath()).updateRemoved().userPreserved());
                 }
             }
         }
