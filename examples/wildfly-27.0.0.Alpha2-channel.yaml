@@ -5,4 +5,4 @@ repositories:
   - id: "jboss-public"
     url: "https://repository.jboss.org/nexus/content/groups/public/"
 manifest:
-  url: "https://raw.githubusercontent.com/wildfly-extras/prospero/main/examples/wildfly-27.0.0.Alpha2-channel.yaml"
+  url: "https://raw.githubusercontent.com/wildfly-extras/prospero/future/examples/wildfly-27.0.0.Alpha2-manifest.yaml"

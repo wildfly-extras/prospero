@@ -3,9 +3,6 @@ schemaVersion: "1.0.0"
 name: Channel for WildFly 27
 description: |-
   This channel provides updates WildFly 26 Feature Pack.
-vendor:
-  name: WildFly
-  support: community
 streams:
   - groupId: "org.wildfly"
     artifactId: "wildfly-galleon-pack"
