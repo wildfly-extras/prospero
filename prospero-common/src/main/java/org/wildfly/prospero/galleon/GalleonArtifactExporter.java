@@ -17,7 +17,6 @@
 
 package org.wildfly.prospero.galleon;
 
-import org.apache.commons.codec.digest.DigestUtils;
 import org.apache.commons.io.FileUtils;
 import org.jboss.galleon.ProvisioningManager;
 import org.jboss.galleon.config.ProvisioningConfig;
@@ -26,12 +25,12 @@ import org.jboss.galleon.layout.ProvisioningLayout;
 import org.jboss.galleon.layout.ProvisioningLayoutFactory;
 import org.jboss.galleon.spec.FeaturePackPlugin;
 import org.jboss.galleon.universe.maven.MavenUniverseException;
+import org.jboss.galleon.util.HashUtils;
 import org.jboss.galleon.util.IoUtils;
 import org.wildfly.channel.Channel;
 import org.wildfly.channel.MavenArtifact;
 import org.wildfly.prospero.wfchannel.MavenSessionManager;
 
-import java.io.FileInputStream;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -81,14 +80,14 @@ public class GalleonArtifactExporter {
     }
 
     private void record(MavenArtifact artifact, Path target, Path installedDir) throws IOException {
-        final String hash = DigestUtils.md5Hex(new FileInputStream(target.toFile()));
-        Files.writeString(installedDir.resolve(".galleon").resolve("artifact.log"),
+        final String hash = HashUtils.hashFile(target);
+        Files.writeString(installedDir.resolve(".installation").resolve(".cache").resolve("artifacts.txt"),
                 String.format("%s:%s:%s:%s", artifact.getGroupId(), artifact.getArtifactId(), artifact.getExtension(), artifact.getVersion())
-                        + "=" + hash + "=" + installedDir.relativize(target) + System.lineSeparator(), StandardOpenOption.APPEND);
+                        + "::" + hash + "::" + installedDir.relativize(target) + System.lineSeparator(), StandardOpenOption.APPEND);
     }
 
     private void cache(MavenArtifact artifact, Path installedDir) throws MavenUniverseException, IOException {
-        final Path cacheDir = installedDir.resolve(".galleon").resolve("cache");
+        final Path cacheDir = installedDir.resolve(".installation").resolve(".cache");
 
         IoUtils.copy(artifact.getFile().toPath(), cacheDir.resolve(artifact.getFile().getName()));
 

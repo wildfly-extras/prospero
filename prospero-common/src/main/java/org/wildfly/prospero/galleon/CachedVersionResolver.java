@@ -17,7 +17,6 @@
 
 package org.wildfly.prospero.galleon;
 
-import org.apache.commons.codec.digest.DigestUtils;
 import org.eclipse.aether.DefaultRepositorySystemSession;
 import org.eclipse.aether.RepositorySystem;
 import org.eclipse.aether.artifact.DefaultArtifact;
@@ -25,6 +24,7 @@ import org.eclipse.aether.installation.InstallRequest;
 import org.eclipse.aether.installation.InstallationException;
 import org.jboss.galleon.universe.maven.MavenArtifact;
 import org.jboss.galleon.universe.maven.MavenUniverseException;
+import org.jboss.galleon.util.HashUtils;
 import org.jboss.logging.Logger;
 import org.wildfly.channel.ArtifactCoordinate;
 import org.wildfly.channel.ChannelMetadataCoordinate;
@@ -32,7 +32,6 @@ import org.wildfly.channel.UnresolvedMavenArtifactException;
 import org.wildfly.channel.spi.MavenVersionsResolver;
 
 import java.io.File;
-import java.io.FileInputStream;
 import java.io.IOException;
 import java.net.URL;
 import java.nio.file.Files;
@@ -58,17 +57,17 @@ public class CachedVersionResolver implements MavenVersionsResolver {
         this.mavenVersionsResolver = mavenVersionsResolver;
         this.system = system;
         this.session = session;
-        Path artifactLog = installDir.resolve(".galleon").resolve("artifact.log");
+        Path artifactLog = installDir.resolve(".installation").resolve(".cache").resolve("artifacts.txt");
 
         if (Files.exists(artifactLog)) {
             try {
                 final List<String> lines = Files.readAllLines(artifactLog);
                 for (String line : lines) {
-                    String gav = line.split("=")[0];
-                    String hash = line.split("=")[1];
-                    Path path = Paths.get(line.split("=")[2]);
+                    String gav = line.split("::")[0];
+                    String hash = line.split("::")[1];
+                    Path path = Paths.get(line.split("::")[2]);
                     final MavenArtifact mavenArtifact = MavenArtifact.fromString(gav);
-                    final String key = String.format("%s:%s:%s:%s", mavenArtifact.getGroupId(), mavenArtifact.getArtifactId(), mavenArtifact.getClassifier(), mavenArtifact.getExtension());
+                    final String key = asKey(mavenArtifact.getGroupId(), mavenArtifact.getArtifactId(), mavenArtifact.getVersion(), mavenArtifact.getClassifier(), mavenArtifact.getExtension());
                     paths.put(key, installDir.resolve(path));
                     hashes.put(key, hash);
                 }
@@ -78,6 +77,10 @@ public class CachedVersionResolver implements MavenVersionsResolver {
                 throw new RuntimeException(e);
             }
         }
+    }
+
+    private static String asKey(String groupId, String artifactId, String version, String classifier, String extension) {
+        return String.format("%s:%s:%s:%s:%s", groupId, artifactId, version, classifier, extension);
     }
 
     @Override
@@ -96,11 +99,11 @@ public class CachedVersionResolver implements MavenVersionsResolver {
     }
 
     private Optional<File> resolveFromInstallation(String groupId, String artifactId, String extension, String classifier, String version) {
-        final String key = String.format("%s:%s:%s:%s", groupId, artifactId, classifier, extension);
+        final String key = asKey(groupId, artifactId, version, classifier, extension);
         if (paths.containsKey(key)) {
             final Path path = paths.get(key);
             try {
-                final String hash = DigestUtils.md5Hex(new FileInputStream(path.toFile()));
+                final String hash = HashUtils.hashFile(path);
                 if (!hash.equals(hashes.get(key))) {
                     log.debug("Hashes don't match for " + key);
                     return Optional.empty();

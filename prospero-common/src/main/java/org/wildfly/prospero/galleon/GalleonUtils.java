@@ -55,8 +55,8 @@ public class GalleonUtils {
     public static final String PRINT_ONLY_CONFLICTS_VALUE = "true";
     public static final String STORE_INPUT_PROVISIONING_CONFIG_PROPERTY = "store-input-provisioning-config";
     public static final String STORE_INPUT_PROVISIONING_CONFIG_VALUE = "true";
-    public static final String STORE_PROVISIONED_ARTIFACTS = "jboss-record-artifacts";
-    public static final String STORE_PROVISIONED_ARTIFACTS_VALUE = "true";
+    public static final String STORE_PROVISIONED_ARTIFACTS = "jboss-resolved-artifacts-cache";
+    public static final String STORE_PROVISIONED_ARTIFACTS_VALUE = ".installation/.cache";
 
     private static final String CLASSPATH_SCHEME = "classpath";
     private static final String FILE_SCHEME = "file";
