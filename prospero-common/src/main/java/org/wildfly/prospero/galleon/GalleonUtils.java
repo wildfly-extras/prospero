@@ -56,7 +56,7 @@ public class GalleonUtils {
     public static final String STORE_INPUT_PROVISIONING_CONFIG_PROPERTY = "store-input-provisioning-config";
     public static final String STORE_INPUT_PROVISIONING_CONFIG_VALUE = "true";
     public static final String STORE_PROVISIONED_ARTIFACTS = "jboss-resolved-artifacts-cache";
-    public static final String STORE_PROVISIONED_ARTIFACTS_VALUE = ".installation/.cache";
+    public static final String STORE_PROVISIONED_ARTIFACTS_VALUE = CachedVersionResolver.CACHE_FOLDER.toString();
 
     private static final String CLASSPATH_SCHEME = "classpath";
     private static final String FILE_SCHEME = "file";

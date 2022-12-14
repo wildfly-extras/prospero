@@ -30,6 +30,7 @@ import org.wildfly.channel.ArtifactCoordinate;
 import org.wildfly.channel.ChannelMetadataCoordinate;
 import org.wildfly.channel.UnresolvedMavenArtifactException;
 import org.wildfly.channel.spi.MavenVersionsResolver;
+import org.wildfly.prospero.api.InstallationMetadata;
 
 import java.io.File;
 import java.io.IOException;
@@ -45,6 +46,7 @@ import java.util.Set;
 
 public class CachedVersionResolver implements MavenVersionsResolver {
 
+    public static final Path CACHE_FOLDER = Path.of(InstallationMetadata.METADATA_DIR, ".cache");
     private final MavenVersionsResolver mavenVersionsResolver;
     private final Map<String, Path> paths = new HashMap<>();
     private final Map<String, String> hashes = new HashMap<>();
@@ -57,7 +59,7 @@ public class CachedVersionResolver implements MavenVersionsResolver {
         this.mavenVersionsResolver = mavenVersionsResolver;
         this.system = system;
         this.session = session;
-        Path artifactLog = installDir.resolve(".installation").resolve(".cache").resolve("artifacts.txt");
+        Path artifactLog = installDir.resolve(CACHE_FOLDER).resolve("artifacts.txt");
 
         if (Files.exists(artifactLog)) {
             try {

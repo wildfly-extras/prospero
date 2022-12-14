@@ -227,5 +227,14 @@ public interface CliMessages {
     @Message("Conflicting changes detected in the update:")
     String conflictingChangesDetected();
 
+    @Message("Server at [%s] is not a valid update candidate.")
+    IllegalArgumentException invalidUpdateCandidate(Path updateDir);
+
+    @Message("Unable to apply update.%n  Installation at [%s] has been updated since the update candidate [%s] was created.")
+    IllegalArgumentException updateCandidateStateNotMatched(Path targetDir, Path updateDir);
+
+    @Message("The target path needs to point to an empty, writable folder.")
+    IllegalArgumentException nonEmptyTargetFolder();
+
     // end - changes diff
 }

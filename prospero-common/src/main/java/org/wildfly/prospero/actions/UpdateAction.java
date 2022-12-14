@@ -33,6 +33,7 @@ import org.wildfly.channel.ChannelManifest;
 import org.wildfly.channel.Repository;
 import org.wildfly.channel.UnresolvedMavenArtifactException;
 import org.wildfly.prospero.api.FileConflict;
+import org.wildfly.prospero.api.SavedState;
 import org.wildfly.prospero.api.TemporaryRepositoriesHandler;
 import org.wildfly.prospero.api.InstallationMetadata;
 import org.wildfly.prospero.api.exceptions.MetadataException;
@@ -91,6 +92,13 @@ public class UpdateAction implements AutoCloseable {
         }
 
         doBuildUpdate(targetDir);
+
+        try {
+            final SavedState savedState = metadata.getRevisions().get(0);
+            Files.writeString(targetDir.resolve(ApplyUpdateAction.UPDATE_MARKER_FILE), savedState.getName());
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
 
         return true;
     }

@@ -18,11 +18,13 @@
 package org.wildfly.prospero.cli.commands;
 
 import java.io.File;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Optional;
 import java.util.concurrent.Callable;
 
+import org.jboss.logging.Logger;
 import org.wildfly.prospero.actions.Console;
 import org.wildfly.prospero.api.InstallationMetadata;
 import org.wildfly.prospero.cli.ActionFactory;
@@ -33,6 +35,8 @@ public abstract class AbstractCommand implements Callable<Integer> {
 
     protected final Console console;
     protected final ActionFactory actionFactory;
+
+    private static final Logger log = Logger.getLogger(AbstractCommand.class);
 
     @SuppressWarnings("unused")
     @CommandLine.Option(
@@ -49,11 +53,11 @@ public abstract class AbstractCommand implements Callable<Integer> {
 
     protected static Path determineInstallationDirectory(Optional<Path> directoryOption) {
         Path installationDirectory = directoryOption.orElse(currentDir()).toAbsolutePath();
-        verifyInstallationDirectory(installationDirectory);
+        verifyDirectoryContainsInstallation(installationDirectory);
         return installationDirectory;
     }
 
-    static void verifyInstallationDirectory(Path path) {
+    static void verifyDirectoryContainsInstallation(Path path) {
         File dotGalleonDir = path.resolve(InstallationMetadata.GALLEON_INSTALLATION_DIR).toFile();
         File channelsFile = path.resolve(InstallationMetadata.METADATA_DIR)
                 .resolve(InstallationMetadata.INSTALLER_CHANNELS_FILE_NAME).toFile();
@@ -72,4 +76,29 @@ public abstract class AbstractCommand implements Callable<Integer> {
         return Paths.get(".").toAbsolutePath();
     }
 
+    protected static void verifyTargetDirectoryIsEmpty(Path path) {
+        if (Files.exists(path)) {
+            if (!Files.isDirectory(path)) {
+                log.debug("Target is not a directory");
+                throw CliMessages.MESSAGES.nonEmptyTargetFolder();
+            }
+            if (path.toFile().list().length != 0) {
+                log.debug("Target folder is not empty");
+                throw CliMessages.MESSAGES.nonEmptyTargetFolder();
+            }
+        }
+        if (!isWritable(path)) {
+            log.debug("Target is not writable");
+            throw CliMessages.MESSAGES.nonEmptyTargetFolder();
+        }
+    }
+
+    private static boolean isWritable(final Path path) {
+        Path absPath = path.toAbsolutePath();
+        if (Files.exists(absPath)) {
+            return Files.isWritable(absPath);
+        } else {
+            return isWritable(absPath.getParent());
+        }
+    }
 }

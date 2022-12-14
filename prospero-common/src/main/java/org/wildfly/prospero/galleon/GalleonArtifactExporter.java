@@ -81,13 +81,13 @@ public class GalleonArtifactExporter {
 
     private void record(MavenArtifact artifact, Path target, Path installedDir) throws IOException {
         final String hash = HashUtils.hashFile(target);
-        Files.writeString(installedDir.resolve(".installation").resolve(".cache").resolve("artifacts.txt"),
+        Files.writeString(installedDir.resolve(CachedVersionResolver.CACHE_FOLDER).resolve("artifacts.txt"),
                 String.format("%s:%s:%s:%s", artifact.getGroupId(), artifact.getArtifactId(), artifact.getExtension(), artifact.getVersion())
                         + "::" + hash + "::" + installedDir.relativize(target) + System.lineSeparator(), StandardOpenOption.APPEND);
     }
 
     private void cache(MavenArtifact artifact, Path installedDir) throws MavenUniverseException, IOException {
-        final Path cacheDir = installedDir.resolve(".installation").resolve(".cache");
+        final Path cacheDir = installedDir.resolve(CachedVersionResolver.CACHE_FOLDER);
 
         IoUtils.copy(artifact.getFile().toPath(), cacheDir.resolve(artifact.getFile().getName()));
 

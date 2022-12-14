@@ -17,6 +17,7 @@
 
 package org.wildfly.prospero.cli.commands;
 
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
 import java.util.Optional;
@@ -52,12 +53,20 @@ public class ApplyUpdateCommand extends AbstractCommand {
     public Integer call() throws Exception {
         final long startTime = System.currentTimeMillis();
 
-        // TODO: verify server is stopped
-        // TODO: verify updateDir contains server and is an update
-
         final Path installationDir = determineInstallationDirectory(installationDirectory);
 
+        verifyDirectoryContainsInstallation(updateDir);
+
+        if (!Files.exists(updateDir.resolve(ApplyUpdateAction.UPDATE_MARKER_FILE))) {
+            throw CliMessages.MESSAGES.invalidUpdateCandidate(updateDir);
+        }
+
         ApplyUpdateAction applyUpdateAction = actionFactory.applyUpdate(installationDir.toAbsolutePath(), updateDir.toAbsolutePath());
+
+        if (!applyUpdateAction.verifyUpdateCandidate()) {
+            throw CliMessages.MESSAGES.updateCandidateStateNotMatched(installationDir, updateDir.toAbsolutePath());
+        }
+
         final List<FileConflict> fileConflicts = applyUpdateAction.applyUpdate();
 
         FileConflictPrinter.print(fileConflicts, console);

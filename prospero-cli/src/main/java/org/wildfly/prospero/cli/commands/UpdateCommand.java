@@ -116,7 +116,10 @@ public class UpdateCommand extends AbstractCommand {
         }
 
         if (updateDirectory.isPresent()) {
-            log.tracef("Generate update in %s", updateDirectory.get());
+            final Path updateDirPath = updateDirectory.get();
+            log.tracef("Generate update in %s", updateDirPath);
+
+            verifyTargetDirectoryIsEmpty(updateDirPath);
 
             try(UpdateAction updateAction = actionFactory.update(installationDir,
                     mavenSessionManager, console, repositories)) {
@@ -173,7 +176,7 @@ public class UpdateCommand extends AbstractCommand {
     }
 
     public static void verifyInstallationContainsOnlyProspero(Path dir) throws ArgumentParsingException {
-        verifyInstallationDirectory(dir);
+        verifyDirectoryContainsInstallation(dir);
 
         try {
             final List<String> fpNames = GalleonUtils.getInstalledPacks(dir.toAbsolutePath());

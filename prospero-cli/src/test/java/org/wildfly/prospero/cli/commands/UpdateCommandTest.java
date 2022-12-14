@@ -17,6 +17,7 @@
 
 package org.wildfly.prospero.cli.commands;
 
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Collections;
 import java.util.List;
@@ -235,6 +236,29 @@ public class UpdateCommandTest extends AbstractMavenCommandTest {
         Mockito.verify(actionFactory).update(eq(installationDir.toAbsolutePath()), any(), any(), any());
         assertEquals(0, getAskedConfirmation());
         Mockito.verify(updateAction, never()).buildUpdate(updatePath);
+    }
+
+    @Test
+    public void testBuildUpdateTargetHasToBeEmptyDirectory() throws Exception {
+        final Path updatePath = tempFolder.newFolder().toPath();
+        Files.writeString(updatePath.resolve("test.txt"), "test");
+        int exitCode = commandLine.execute(CliConstants.Commands.UPDATE, CliConstants.UPDATE_DIR, updatePath.toString(),
+                CliConstants.DIR, installationDir.toAbsolutePath().toString());
+
+        assertEquals(ReturnCodes.INVALID_ARGUMENTS, exitCode);
+        assertTrue(getErrorOutput().contains(
+                CliMessages.MESSAGES.nonEmptyTargetFolder().getMessage()));
+    }
+
+    @Test
+    public void testBuildUpdateTargetHasToBeADirectory() throws Exception {
+        final Path aFile = tempFolder.newFile().toPath();
+        int exitCode = commandLine.execute(CliConstants.Commands.UPDATE, CliConstants.UPDATE_DIR, aFile.toString(),
+                CliConstants.DIR, installationDir.toAbsolutePath().toString());
+
+        assertEquals(ReturnCodes.INVALID_ARGUMENTS, exitCode);
+        assertTrue(getErrorOutput().contains(
+                CliMessages.MESSAGES.nonEmptyTargetFolder().getMessage()));
     }
 
     private ArtifactChange change(String oldVersion, String newVersion) {

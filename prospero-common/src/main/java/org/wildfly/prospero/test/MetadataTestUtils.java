@@ -28,6 +28,7 @@ import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.Comparator;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -49,6 +50,7 @@ import org.wildfly.channel.ChannelManifestMapper;
 import org.wildfly.channel.Repository;
 import org.wildfly.channel.Stream;
 import org.wildfly.prospero.api.InstallationMetadata;
+import org.wildfly.prospero.api.SavedState;
 import org.wildfly.prospero.api.exceptions.MetadataException;
 import org.wildfly.prospero.model.ProsperoConfig;
 
@@ -148,5 +150,10 @@ public final class MetadataTestUtils {
                 })
                 .collect(Collectors.toList());
         Files.writeString(manifestPath, ChannelManifestMapper.toYaml(new ChannelManifest(manifest.getName(), manifest.getDescription(), updatedStreams)));
+    }
+
+    public static String getLatestRevision(Path installationPath) throws MetadataException {
+        final InstallationMetadata im = new InstallationMetadata(installationPath);
+        return im.getRevisions().stream().sorted(Comparator.comparing(SavedState::getTimestamp)).findFirst().get().getName();
     }
 }

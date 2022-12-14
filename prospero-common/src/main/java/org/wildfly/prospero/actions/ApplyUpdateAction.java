@@ -35,8 +35,9 @@ import org.jboss.galleon.Errors;
 
 import org.jboss.galleon.ProvisioningManager;
 import org.wildfly.prospero.api.FileConflict;
+import org.wildfly.prospero.api.InstallationMetadata;
+import org.wildfly.prospero.api.exceptions.InvalidUpdateCandidateException;
 import org.wildfly.prospero.api.exceptions.MetadataException;
-import org.wildfly.prospero.api.exceptions.ArtifactResolutionException;
 import org.wildfly.prospero.api.exceptions.OperationException;
 import org.jboss.galleon.ProvisioningException;
 import org.jboss.galleon.diff.FsDiff;
@@ -57,13 +58,17 @@ import org.jboss.galleon.util.IoUtils;
 import org.jboss.galleon.util.PathsUtils;
 import org.jboss.logging.Logger;
 import org.wildfly.prospero.Messages;
+import org.wildfly.prospero.galleon.CachedVersionResolver;
 import org.wildfly.prospero.galleon.GalleonEnvironment;
 import org.wildfly.prospero.installation.git.GitStorage;
 import org.wildfly.prospero.metadata.ProsperoMetadataUtils;
 import org.wildfly.prospero.wfchannel.MavenSessionManager;
 
 public class ApplyUpdateAction {
+    public static final Path UPDATE_MARKER_FILE = Path.of(InstallationMetadata.METADATA_DIR, ".update.txt");
     private static final Logger LOGGER = Logger.getLogger(ApplyUpdateAction.class);
+    public static final Path STANDALONE_STARTUP_MARKER = Path.of("standalone", "tmp", "startup-marker");
+    public static final Path DOMAIN_STARTUP_MARKER = Path.of("domain", "tmp", "startup-marker");
     private final Path updateDir;
     private final Path installationDir;
     private final SystemPaths systemPaths;
@@ -88,7 +93,28 @@ public class ApplyUpdateAction {
                 .build().getProvisioningManager();
     }
 
-    public List<FileConflict> applyUpdate() throws ProvisioningException, ArtifactResolutionException {
+    /**
+     * Applies changes from prepare update at {@code updateDir} to {@code installationDir}. The update candidate has to
+     * contain a marker file {@code .installation/.update.txt} with revision matching current installation's revision.
+     * Any update files from {@code updateDir} are copied to {@code installationDir}. If any of the updates
+     * (apart from {@code system-paths}) conflict with user changes, the user changes are preserved and the updated file
+     * is added with {@code'.glnew'} suffix.
+     *
+     *
+     * @return list of solved {@code FileConflict}s
+     * @throws ProvisioningException - if unable to apply the changes from {@code updateDir} to {@code installationDir}
+     * @throws InvalidUpdateCandidateException - if the folder at {@code updateDir} is not a valid update
+     * @throws MetadataException - if unable to read or write the installation of update metadata
+     */
+    public List<FileConflict> applyUpdate() throws ProvisioningException, InvalidUpdateCandidateException, MetadataException {
+        if (!verifyUpdateCandidate()) {
+            throw Messages.MESSAGES.invalidUpdateCandidate(updateDir, installationDir);
+        }
+
+        if (targetServerIsRunning()) {
+            throw new ProvisioningException("The server appears to be running.");
+        }
+
         FsDiff diffs = findChanges();
         try {
             final List<FileConflict> conflicts = doApplyUpdate(diffs);
@@ -99,18 +125,55 @@ public class ApplyUpdateAction {
         }
     }
 
-    private FsDiff findChanges() throws ArtifactResolutionException, ProvisioningException {
+    /**
+     * checks that the candidate is an update of a current state of installation
+     *
+     * @return true if the candidate can be applied to installation
+     * @throws InvalidUpdateCandidateException - if the candidate has no marker file
+     * @throws MetadataException - if the metadata of candidate or installation cannot be read
+     */
+    public boolean verifyUpdateCandidate() throws InvalidUpdateCandidateException, MetadataException {
+        final Path updateMarkerPath = updateDir.resolve(UPDATE_MARKER_FILE);
+        if (!Files.exists(updateMarkerPath)) {
+            if (LOGGER.isDebugEnabled()) {
+                LOGGER.debugf("The update candidate [%s] doesn't have a marker file", updateDir);
+            }
+            throw Messages.MESSAGES.invalidUpdateCandidate(updateDir, installationDir);
+        }
+        try {
+            final String hash = Files.readString(updateMarkerPath);
+            if (!new InstallationMetadata(installationDir).getRevisions().get(0).getName().equals(hash)) {
+                if (LOGGER.isDebugEnabled()) {
+                    LOGGER.debugf("The installation state has changed from the update candidate [%s].", updateDir);
+                }
+                return false;
+            }
+        } catch (IOException e) {
+            if (LOGGER.isDebugEnabled()) {
+                LOGGER.debugf("Unable to read marker file [%s].", updateDir);
+            }
+            throw Messages.MESSAGES.unableToReadFile(updateMarkerPath, e);
+        }
+        return true;
+    }
+
+    private boolean targetServerIsRunning() {
+        return Files.exists(installationDir.resolve(STANDALONE_STARTUP_MARKER)) || Files.exists(installationDir.resolve(DOMAIN_STARTUP_MARKER));
+    }
+
+    private FsDiff findChanges() throws ProvisioningException {
         return provisioningManager.getFsDiff();
     }
 
-    private void updateMetadata() throws ProvisioningException, ArtifactResolutionException {
+    private void updateMetadata() throws ProvisioningException, MetadataException {
         try {
             writeProsperoMetadata();
+            updateInstallationCache();
             Path installationGalleonPath = PathsUtils.getProvisionedStateDir(installationDir);
             Path updateGalleonPath = PathsUtils.getProvisionedStateDir(updateDir);
             IoUtils.recursiveDelete(installationGalleonPath);
             IoUtils.copy(updateGalleonPath, installationGalleonPath, true);
-        } catch (IOException | MetadataException ex) {
+        } catch (IOException ex) {
             throw new ProvisioningException(ex);
         }
     }
@@ -133,6 +196,19 @@ public class ApplyUpdateAction {
                 // log and ignore
                 Messages.MESSAGES.unableToCloseStore(e);
             }
+        }
+    }
+
+    private void updateInstallationCache() throws IOException {
+        Path updateCacheDir = updateDir.resolve(CachedVersionResolver.CACHE_FOLDER);
+
+
+        Path installationCacheDir = installationDir.resolve(CachedVersionResolver.CACHE_FOLDER);
+        if (Files.exists(installationCacheDir)) {
+            IoUtils.recursiveDelete(installationCacheDir);
+        }
+        if (Files.exists(updateCacheDir)) {
+            IoUtils.copy(updateCacheDir, installationCacheDir);
         }
     }
 

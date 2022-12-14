@@ -18,6 +18,7 @@
 package org.wildfly.prospero.actions;
 
 import org.jboss.galleon.Constants;
+import org.jboss.galleon.ProvisioningException;
 import org.jboss.galleon.ProvisioningManager;
 import org.jboss.galleon.creator.FeaturePackCreator;
 import org.jboss.galleon.repo.RepositoryArtifactResolver;
@@ -27,8 +28,16 @@ import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
+import org.wildfly.channel.Channel;
+import org.wildfly.channel.ChannelManifest;
+import org.wildfly.channel.ChannelManifestCoordinate;
+import org.wildfly.channel.ChannelManifestMapper;
+import org.wildfly.channel.ChannelMapper;
+import org.wildfly.channel.Repository;
 import org.wildfly.prospero.api.FileConflict;
 import org.wildfly.prospero.api.InstallationMetadata;
+import org.wildfly.prospero.api.exceptions.InvalidUpdateCandidateException;
+import org.wildfly.prospero.galleon.CachedVersionResolver;
 import org.wildfly.prospero.installation.git.GitStorage;
 import org.wildfly.prospero.utils.filestate.DirState;
 
@@ -36,15 +45,20 @@ import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertThrows;
 import static org.junit.Assert.assertTrue;
 
 public class ApplyUpdateActionTest {
 
+    private static final String FPL_100 = "org.test:pack-one:1.0.0:zip";
+    private static final String FPL_101 = "org.test:pack-one:1.0.1:zip";
     @Rule
     public TemporaryFolder temp = new TemporaryFolder();
     private Path repoHome;
@@ -68,27 +82,16 @@ public class ApplyUpdateActionTest {
 
     @Test
     public void testUpdateNoUserChanges() throws Exception {
-        final String fpl100 = "org.test:pack-one:1.0.0:zip";
-        final String fpl101 = "org.test:pack-one:1.0.1:zip";
-
         final DirState expectedState = dirBuilder
                 .addFile("prod1/p1.txt", "p1 1.0.1")
                 .build();
 
         // build test packages
-        creator.newFeaturePack(FeaturePackLocation.fromString(fpl100).getFPID())
-                .newPackage("p1", true)
-                .writeContent("prod1/p1.txt", "p1 1.0.0")
-                .getFeaturePack();
-        creator.newFeaturePack(FeaturePackLocation.fromString(fpl101).getFPID())
-                .newPackage("p1", true)
-                .writeContent("prod1/p1.txt", "p1 1.0.1")
-                .getFeaturePack();
-        creator.install();
+        createSimpleFeaturePacks();
 
         // install base and update. perform apply-update
-        install(installationPath, fpl100);
-        install(updatePath, fpl101);
+        install(installationPath, FPL_100);
+        prepareUpdate(updatePath, installationPath, FPL_101);
         final List<FileConflict> conflicts = new ApplyUpdateAction(installationPath, updatePath).applyUpdate();
 
         // verify
@@ -98,9 +101,6 @@ public class ApplyUpdateActionTest {
 
     @Test
     public void testUpdateWithUserChanges() throws Exception {
-        final String fpl100 = "org.test:pack-one:1.0.0:zip";
-        final String fpl101 = "org.test:pack-one:1.0.1:zip";
-
         final DirState expectedState = dirBuilder
                 .addFile("prod1/p1.txt", "user prod1/p1")
                 .addFile("prod1/p1.txt.glnew", "prod1/p1 1.0.1")
@@ -116,7 +116,7 @@ public class ApplyUpdateActionTest {
                 .build();
 
         // build test packages
-        creator.newFeaturePack(FeaturePackLocation.fromString(fpl100).getFPID())
+        creator.newFeaturePack(FeaturePackLocation.fromString(FPL_100).getFPID())
                 .newPackage("p1", true)
                 .writeContent("prod1/p1.txt", "prod1/p1 1.0.0")
                 .writeContent("prod1/p2.txt", "prod1/p2 1.0.0") // removed by user, restored in update
@@ -124,7 +124,7 @@ public class ApplyUpdateActionTest {
                 .writeContent("prod2/p1.txt", "prod2/p1 1.0.0") // removed by update
                 .writeContent("prod2/p2.txt", "prod2/p2 1.0.0") // removed by update, updated by user
                 .getFeaturePack();
-        creator.newFeaturePack(FeaturePackLocation.fromString(fpl101).getFPID())
+        creator.newFeaturePack(FeaturePackLocation.fromString(FPL_101).getFPID())
                 .newPackage("p1", true)
                 .writeContent("prod1/p1.txt", "prod1/p1 1.0.1")
                 .writeContent("prod1/p2.txt", "prod1/p2 1.0.1")
@@ -135,7 +135,7 @@ public class ApplyUpdateActionTest {
         creator.install();
 
         // install base
-        install(installationPath, fpl100);
+        install(installationPath, FPL_100);
         // perform user changes
         writeContent("prod1/p1.txt", "user prod1/p1");
         writeContent("new.file", "user new file");
@@ -147,7 +147,7 @@ public class ApplyUpdateActionTest {
         writeContent("prod2/p2.txt", "user prod2/p2");
         writeContent("new_dir/users.txt", "user new_dir/users.txt");
         // update
-        install(updatePath, fpl101);
+        prepareUpdate(updatePath, installationPath, FPL_101);
         final List<FileConflict> conflicts = new ApplyUpdateAction(installationPath, updatePath).applyUpdate();
 
         // verify
@@ -163,9 +163,6 @@ public class ApplyUpdateActionTest {
 
     @Test
     public void testUserChangesInSystemPaths() throws Exception {
-        final String fpl100 = "org.test:pack-one:1.0.0:zip";
-        final String fpl101 = "org.test:pack-one:1.0.1:zip";
-
         final DirState expectedState = dirBuilder
                 .addFile("prod1/p1.txt", "p1 1.0.1")
                 .addFile("prod1/p1.txt.glold", "user prod1/p1")
@@ -175,13 +172,13 @@ public class ApplyUpdateActionTest {
                 .build();
 
         // build test packages
-        creator.newFeaturePack(FeaturePackLocation.fromString(fpl100).getFPID())
+        creator.newFeaturePack(FeaturePackLocation.fromString(FPL_100).getFPID())
                 .addSystemPaths("prod1")
                 .newPackage("p1", true)
                 .writeContent("prod1/p1.txt", "p1 1.0.0") // modified by user and updated in update
                 .writeContent("prod1/p2.txt", "p2 1.0.0") // removed by user and restored in update
                 .getFeaturePack();
-        creator.newFeaturePack(FeaturePackLocation.fromString(fpl101).getFPID())
+        creator.newFeaturePack(FeaturePackLocation.fromString(FPL_101).getFPID())
                 .addSystemPaths("prod1")
                 .newPackage("p1", true)
                 .writeContent("prod1/p1.txt", "p1 1.0.1")
@@ -191,11 +188,11 @@ public class ApplyUpdateActionTest {
         creator.install();
 
         // install base and update. perform apply-update
-        install(installationPath, fpl100);
+        install(installationPath, FPL_100);
         writeContent("prod1/p1.txt", "user prod1/p1");
         Files.delete(installationPath.resolve("prod1/p2.txt"));
         writeContent("prod1/p3.txt", "user prod1/p3");
-        install(updatePath, fpl101);
+        prepareUpdate(updatePath, installationPath, FPL_101);
         final List<FileConflict> conflicts = new ApplyUpdateAction(installationPath, updatePath).applyUpdate();
 
         // verify
@@ -214,41 +211,107 @@ public class ApplyUpdateActionTest {
         // 2. installation-channels.yaml are not modified
         // 3. .galleon is updated with new values
 
-        final String fpl100 = "org.test:pack-one:1.0.0:zip";
-        final String fpl101 = "org.test:pack-one:1.0.1:zip";
-
         final DirState expectedState = DirState.rootBuilder()
                 .skip("prod1")
                 .skip(InstallationMetadata.METADATA_DIR + "/" + ".git")
                 .skip(Constants.PROVISIONED_STATE_DIR)
-                .addFile(InstallationMetadata.METADATA_DIR + "/" + InstallationMetadata.MANIFEST_FILE_NAME, "manifest " + fpl101)
-                .addFile(InstallationMetadata.METADATA_DIR + "/" + InstallationMetadata.INSTALLER_CHANNELS_FILE_NAME, "channels " + fpl100)
+                .addFile(InstallationMetadata.METADATA_DIR + "/" + InstallationMetadata.MANIFEST_FILE_NAME,
+                        manifest("manifest " + FPL_101).trim())
+                .addFile(InstallationMetadata.METADATA_DIR + "/" + InstallationMetadata.INSTALLER_CHANNELS_FILE_NAME,
+                        channel("channels " + FPL_100).trim())
+                .addFile(CachedVersionResolver.CACHE_FOLDER + "/" + "artifacts.txt" , FPL_101+"::abcd::foo/bar")
                 .build();
 
         // build test packages
-        creator.newFeaturePack(FeaturePackLocation.fromString(fpl100).getFPID())
-                .newPackage("p1", true)
-                .writeContent("prod1/p1.txt", "p1 1.0.0")
-                .getFeaturePack();
-        creator.newFeaturePack(FeaturePackLocation.fromString(fpl101).getFPID())
-                .newPackage("p1", true)
-                .writeContent("prod1/p1.txt", "p1 1.0.1")
-                .getFeaturePack();
-        creator.install();
+        createSimpleFeaturePacks();
 
         // install base and update. perform apply-update
-        install(installationPath, fpl100);
-        install(updatePath, fpl101);
+        install(installationPath, FPL_100);
+        prepareUpdate(updatePath, installationPath, FPL_101);
         new ApplyUpdateAction(installationPath, updatePath).applyUpdate();
 
         // verify
         expectedState.assertState(installationPath);
         assertTrue(Files.readString(installationPath.resolve(Constants.PROVISIONED_STATE_DIR).resolve(Constants.PROVISIONING_XML))
-                .contains(fpl101));
+                .contains(FPL_101));
         assertTrue(Files.readString(installationPath.resolve(Constants.PROVISIONED_STATE_DIR).resolve(Constants.PROVISIONED_STATE_XML))
-                .contains(fpl101));
+                .contains(FPL_101));
         // verify update was recorded
         assertEquals(2, new GitStorage(installationPath).getRevisions().size());
+    }
+
+    @Test
+    public void updateWithoutMarkerFileIsRejected() throws Exception {
+        createSimpleFeaturePacks();
+
+        install(installationPath, FPL_100);
+        prepareUpdate(updatePath, installationPath, FPL_101);
+
+        Files.deleteIfExists(updatePath.resolve(ApplyUpdateAction.UPDATE_MARKER_FILE));
+
+        assertThrows(InvalidUpdateCandidateException.class, ()->new ApplyUpdateAction(installationPath, updatePath).applyUpdate());
+    }
+
+    @Test
+    public void updateWithMarkerNotMatchingCurrentRevisionFileIsRejected() throws Exception {
+        createSimpleFeaturePacks();
+
+        install(installationPath, FPL_100);
+        prepareUpdate(updatePath, installationPath, FPL_101);
+
+        Files.writeString(updatePath.resolve(ApplyUpdateAction.UPDATE_MARKER_FILE), "abcd1234");
+
+        assertThrows(InvalidUpdateCandidateException.class, ()->new ApplyUpdateAction(installationPath, updatePath).applyUpdate());
+    }
+
+    @Test
+    public void markerFileIsNotPresentInUpdateFolder() throws Exception {
+        createSimpleFeaturePacks();
+
+        install(installationPath, FPL_100);
+        prepareUpdate(updatePath, installationPath, FPL_101);
+
+        new ApplyUpdateAction(installationPath, updatePath).applyUpdate();
+
+        assertFalse(Files.exists(installationPath.resolve(ApplyUpdateAction.UPDATE_MARKER_FILE)));
+    }
+
+    @Test
+    public void targetStandaloneServerHasToBeStopped() throws Exception {
+        createSimpleFeaturePacks();
+
+        install(installationPath, FPL_100);
+        prepareUpdate(updatePath, installationPath, FPL_101);
+
+        Files.createDirectories(installationPath.resolve(ApplyUpdateAction.STANDALONE_STARTUP_MARKER.getParent()));
+        Files.writeString(installationPath.resolve(ApplyUpdateAction.STANDALONE_STARTUP_MARKER), "test");
+
+        assertThrows(ProvisioningException.class, () -> new ApplyUpdateAction(installationPath, updatePath).applyUpdate());
+    }
+
+    @Test
+    public void targetDomainServerHasToBeStopped() throws Exception {
+        createSimpleFeaturePacks();
+
+        install(installationPath, FPL_100);
+        prepareUpdate(updatePath, installationPath, FPL_101);
+
+        Files.createDirectories(installationPath.resolve(ApplyUpdateAction.DOMAIN_STARTUP_MARKER.getParent()));
+        Files.writeString(installationPath.resolve(ApplyUpdateAction.DOMAIN_STARTUP_MARKER), "test");
+
+        assertThrows(ProvisioningException.class, () -> new ApplyUpdateAction(installationPath, updatePath).applyUpdate());
+    }
+
+    private void createSimpleFeaturePacks() throws ProvisioningException {
+        creator.newFeaturePack(FeaturePackLocation.fromString(FPL_100).getFPID())
+                .newPackage("p1", true)
+                .writeContent("prod1/p1.txt", "p1 1.0.0")
+                .getFeaturePack();
+        creator.newFeaturePack(FeaturePackLocation.fromString(FPL_101).getFPID())
+                .newPackage("p1", true)
+                .writeContent("prod1/p1.txt", "p1 1.0.1")
+                .getFeaturePack();
+        creator.install();
     }
 
     private void writeContent(String path, String content) throws IOException {
@@ -260,10 +323,34 @@ public class ApplyUpdateActionTest {
         options.put(Constants.EXPORT_SYSTEM_PATHS, "true");
         getPm(path).install(FeaturePackLocation.fromString(fpl), options);
         // mock the installation metadata
-        Files.createDirectory(path.resolve(InstallationMetadata.METADATA_DIR));
-        Files.writeString(path.resolve(InstallationMetadata.METADATA_DIR).resolve(InstallationMetadata.MANIFEST_FILE_NAME), "manifest " + fpl);
-        Files.writeString(path.resolve(InstallationMetadata.METADATA_DIR).resolve(InstallationMetadata.INSTALLER_CHANNELS_FILE_NAME), "channels " + fpl);
-        new GitStorage(path).record();
+        final Path metadataPath = path.resolve(InstallationMetadata.METADATA_DIR);
+        Files.createDirectory(metadataPath);
+        Files.writeString(metadataPath.resolve(InstallationMetadata.MANIFEST_FILE_NAME), manifest("manifest " + fpl));
+        Files.writeString(metadataPath.resolve(InstallationMetadata.INSTALLER_CHANNELS_FILE_NAME), channel("channels " + fpl));
+        try (final GitStorage gitStorage = new GitStorage(path)) {
+            gitStorage.record();
+        }
+
+        Files.createDirectory(path.resolve(CachedVersionResolver.CACHE_FOLDER));
+        Files.writeString(path.resolve(CachedVersionResolver.CACHE_FOLDER).resolve("artifacts.txt"), fpl + "::abcd::foo/bar");
+    }
+
+    private String manifest(String name) throws IOException {
+        return ChannelManifestMapper.toYaml(new ChannelManifest(name, null, Collections.emptyList()));
+    }
+
+    private String channel(String name) throws IOException {
+        return ChannelMapper.toYaml(new Channel(name, null, null, Collections.emptyList(), List.of(new Repository("foo", "http://foo.bar")), new ChannelManifestCoordinate("foo", "bar")));
+    }
+
+    private void prepareUpdate(Path updatePath, Path basePath, String fpl) throws Exception {
+        install(updatePath, fpl);
+
+        // create update marker file
+        try (final GitStorage gitStorage = new GitStorage(basePath)) {
+            final String revHash = gitStorage.getRevisions().get(0).getName();
+            Files.writeString(updatePath.resolve(ApplyUpdateAction.UPDATE_MARKER_FILE), revHash);
+        }
     }
 
     protected RepositoryArtifactResolver initRepoManager(Path repoHome) {

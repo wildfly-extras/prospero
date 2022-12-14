@@ -58,6 +58,7 @@ import java.util.stream.Collectors;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
+import static org.wildfly.prospero.actions.ApplyUpdateAction.UPDATE_MARKER_FILE;
 
 public class UpdateTest extends WfCoreTestBase {
 
@@ -133,6 +134,35 @@ public class UpdateTest extends WfCoreTestBase {
                 .performUpdate();
 
         assertTrue(Files.readString(channelsFile).contains("# test comment"));
+    }
+
+    @Test
+    public void prepareUpdateCreatesMarkerFile() throws Exception {
+        // deploy manifest file
+        File manifestFile = new File(MetadataTestUtils.class.getClassLoader().getResource(CHANNEL_BASE_CORE_19).toURI());
+        deployManifestFile(manifestFile, "1.0.0");
+
+        // provision using manifest gav
+        final ProvisioningDefinition provisioningDefinition = defaultWfCoreDefinition()
+                .setChannelCoordinates(buildConfigWithMockRepo().toPath().toString())
+                .setOverrideRepositories(Collections.emptyList()) // reset overrides from defaultWfCoreDefinition()
+                .build();
+        installation.provision(provisioningDefinition.toProvisioningConfig(),
+                provisioningDefinition.resolveChannels(CHANNELS_RESOLVER_FACTORY));
+        final String latestRevision = MetadataTestUtils.getLatestRevision(outputPath);
+
+        // update manifest file
+        final File updatedChannel = upgradeTestArtifactIn(manifestFile);
+        deployManifestFile(updatedChannel, "1.0.1");
+
+        // update installation
+        final Path preparedUpdatePath = temp.newFolder().toPath();
+        new UpdateAction(outputPath, mavenSessionManager, new AcceptingConsole(), Collections.emptyList())
+                .buildUpdate(preparedUpdatePath);
+
+        final Path markerFile = preparedUpdatePath.resolve(UPDATE_MARKER_FILE);
+        assertTrue(Files.exists(markerFile));
+        assertEquals(latestRevision, Files.readString(markerFile));
     }
 
     private File upgradeTestArtifactIn(File channelFile) throws IOException {
