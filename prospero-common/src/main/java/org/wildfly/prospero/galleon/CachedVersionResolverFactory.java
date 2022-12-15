@@ -23,6 +23,7 @@ import org.wildfly.channel.Repository;
 import org.wildfly.channel.maven.VersionResolverFactory;
 import org.wildfly.channel.spi.MavenVersionsResolver;
 
+import java.io.IOException;
 import java.nio.file.Path;
 import java.util.Collection;
 
@@ -32,17 +33,19 @@ public class CachedVersionResolverFactory implements MavenVersionsResolver.Facto
     private final Path installDir;
     private final RepositorySystem system;
     private final DefaultRepositorySystemSession session;
+    private final ArtifactCache artifactCache;
 
-    public CachedVersionResolverFactory(VersionResolverFactory factory, Path installDir, RepositorySystem system, DefaultRepositorySystemSession session) {
+    public CachedVersionResolverFactory(VersionResolverFactory factory, Path installDir, RepositorySystem system, DefaultRepositorySystemSession session) throws IOException {
         this.factory = factory;
         this.installDir = installDir;
         this.system = system;
         this.session = session;
+        this.artifactCache = ArtifactCache.getInstance(installDir);
     }
 
     @Override
     public MavenVersionsResolver create(Collection<Repository> repositories) {
-        return new CachedVersionResolver(factory.create(repositories), installDir, system, session);
+        return new CachedVersionResolver(factory.create(repositories), artifactCache, system, session);
     }
 
 }

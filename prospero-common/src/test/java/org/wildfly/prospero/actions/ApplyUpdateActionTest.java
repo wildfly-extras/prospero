@@ -37,7 +37,7 @@ import org.wildfly.channel.Repository;
 import org.wildfly.prospero.api.FileConflict;
 import org.wildfly.prospero.api.InstallationMetadata;
 import org.wildfly.prospero.api.exceptions.InvalidUpdateCandidateException;
-import org.wildfly.prospero.galleon.CachedVersionResolver;
+import org.wildfly.prospero.galleon.ArtifactCache;
 import org.wildfly.prospero.installation.git.GitStorage;
 import org.wildfly.prospero.utils.filestate.DirState;
 
@@ -219,7 +219,7 @@ public class ApplyUpdateActionTest {
                         manifest("manifest " + FPL_101).trim())
                 .addFile(InstallationMetadata.METADATA_DIR + "/" + InstallationMetadata.INSTALLER_CHANNELS_FILE_NAME,
                         channel("channels " + FPL_100).trim())
-                .addFile(CachedVersionResolver.CACHE_FOLDER + "/" + "artifacts.txt" , FPL_101+"::abcd::foo/bar")
+                .addFile(ArtifactCache.CACHE_FOLDER + "/" + "artifacts.txt" , FPL_101+"::abcd::foo/bar")
                 .build();
 
         // build test packages
@@ -331,8 +331,8 @@ public class ApplyUpdateActionTest {
             gitStorage.record();
         }
 
-        Files.createDirectory(path.resolve(CachedVersionResolver.CACHE_FOLDER));
-        Files.writeString(path.resolve(CachedVersionResolver.CACHE_FOLDER).resolve("artifacts.txt"), fpl + "::abcd::foo/bar");
+        Files.createDirectory(path.resolve(ArtifactCache.CACHE_FOLDER));
+        Files.writeString(path.resolve(ArtifactCache.CACHE_FOLDER).resolve("artifacts.txt"), fpl + "::abcd::foo/bar");
     }
 
     private String manifest(String name) throws IOException {

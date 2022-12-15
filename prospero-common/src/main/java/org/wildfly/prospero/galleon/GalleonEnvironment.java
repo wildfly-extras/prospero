@@ -33,6 +33,7 @@ import org.wildfly.prospero.api.exceptions.MetadataException;
 import org.wildfly.prospero.api.exceptions.OperationException;
 import org.wildfly.prospero.wfchannel.MavenSessionManager;
 
+import java.io.IOException;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
@@ -63,7 +64,13 @@ public class GalleonEnvironment {
         final RepositorySystem system = builder.mavenSessionManager.newRepositorySystem();
         final DefaultRepositorySystemSession session = builder.mavenSessionManager.newRepositorySystemSession(system);
         final Path sourceServerPath = builder.sourceServerPath == null? builder.installDir:builder.sourceServerPath;
-        final MavenVersionsResolver.Factory factory = new CachedVersionResolverFactory(new VersionResolverFactory(system, session), sourceServerPath, system, session);
+        MavenVersionsResolver.Factory factory;
+        try {
+            factory = new CachedVersionResolverFactory(new VersionResolverFactory(system, session), sourceServerPath, system, session);
+        } catch (IOException e) {
+            logger.debug("Unable to read artifact cache, falling back to Maven resolver.", e);
+            factory = new VersionResolverFactory(system, session);
+        }
         channelSession = new ChannelSession(channels, factory);
         if (restoreManifest.isEmpty()) {
             repositoryManager = new ChannelMavenArtifactRepositoryManager(channelSession);

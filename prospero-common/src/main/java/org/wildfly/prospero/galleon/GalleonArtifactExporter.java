@@ -24,17 +24,12 @@ import org.jboss.galleon.layout.FeaturePackLayout;
 import org.jboss.galleon.layout.ProvisioningLayout;
 import org.jboss.galleon.layout.ProvisioningLayoutFactory;
 import org.jboss.galleon.spec.FeaturePackPlugin;
-import org.jboss.galleon.universe.maven.MavenUniverseException;
-import org.jboss.galleon.util.HashUtils;
-import org.jboss.galleon.util.IoUtils;
 import org.wildfly.channel.Channel;
 import org.wildfly.channel.MavenArtifact;
 import org.wildfly.prospero.wfchannel.MavenSessionManager;
 
-import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.StandardOpenOption;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
@@ -62,35 +57,23 @@ public class GalleonArtifactExporter {
                     pluginGavs.add(plugin.getLocation());
                 }
             }
+
+            final ArtifactCache artifactCache = ArtifactCache.getInstance(installedDir);
             for (String pluginGav : pluginGavs) {
                 final String[] pluginLoc = pluginGav.split(":");
                 final MavenArtifact jar = galleonEnv.getChannelSession().resolveMavenArtifact(pluginLoc[0], pluginLoc[1], "jar", null, null);
-                cache(jar, installedDir);
+                artifactCache.cache(jar);
             }
 
             for (String fp : fps) {
                 // resolve the artifact
                 final MavenArtifact mavenArtifact = galleonEnv.getChannelSession().resolveMavenArtifact(fp.split(":")[0], fp.split(":")[1], "zip", null, null);
                 // cache it in the
-                cache(mavenArtifact, installedDir);
+                artifactCache.cache(mavenArtifact);
             }
         } finally {
             FileUtils.deleteQuietly(tempInstallationPath.toFile());
         }
     }
 
-    private void record(MavenArtifact artifact, Path target, Path installedDir) throws IOException {
-        final String hash = HashUtils.hashFile(target);
-        Files.writeString(installedDir.resolve(CachedVersionResolver.CACHE_FOLDER).resolve("artifacts.txt"),
-                String.format("%s:%s:%s:%s", artifact.getGroupId(), artifact.getArtifactId(), artifact.getExtension(), artifact.getVersion())
-                        + "::" + hash + "::" + installedDir.relativize(target) + System.lineSeparator(), StandardOpenOption.APPEND);
-    }
-
-    private void cache(MavenArtifact artifact, Path installedDir) throws MavenUniverseException, IOException {
-        final Path cacheDir = installedDir.resolve(CachedVersionResolver.CACHE_FOLDER);
-
-        IoUtils.copy(artifact.getFile().toPath(), cacheDir.resolve(artifact.getFile().getName()));
-
-        record(artifact, cacheDir.resolve(artifact.getFile().getName()), installedDir);
-    }
 }

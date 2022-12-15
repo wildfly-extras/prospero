@@ -16,7 +16,7 @@ streams:
     version: "3.0.3"
   - groupId: "io.undertow"
     artifactId: "undertow-core"
-    version: "2.3.0.Final"
+    version: "2.3.1.Final"
   - groupId: "jakarta.authentication"
     artifactId: "jakarta.authentication-api"
     version: "3.0.0"

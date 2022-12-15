@@ -58,7 +58,7 @@ import org.jboss.galleon.util.IoUtils;
 import org.jboss.galleon.util.PathsUtils;
 import org.jboss.logging.Logger;
 import org.wildfly.prospero.Messages;
-import org.wildfly.prospero.galleon.CachedVersionResolver;
+import org.wildfly.prospero.galleon.ArtifactCache;
 import org.wildfly.prospero.galleon.GalleonEnvironment;
 import org.wildfly.prospero.installation.git.GitStorage;
 import org.wildfly.prospero.metadata.ProsperoMetadataUtils;
@@ -200,10 +200,10 @@ public class ApplyUpdateAction {
     }
 
     private void updateInstallationCache() throws IOException {
-        Path updateCacheDir = updateDir.resolve(CachedVersionResolver.CACHE_FOLDER);
+        Path updateCacheDir = updateDir.resolve(ArtifactCache.CACHE_FOLDER);
 
 
-        Path installationCacheDir = installationDir.resolve(CachedVersionResolver.CACHE_FOLDER);
+        Path installationCacheDir = installationDir.resolve(ArtifactCache.CACHE_FOLDER);
         if (Files.exists(installationCacheDir)) {
             IoUtils.recursiveDelete(installationCacheDir);
         }

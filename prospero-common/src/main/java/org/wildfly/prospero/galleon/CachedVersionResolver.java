@@ -17,118 +17,111 @@
 
 package org.wildfly.prospero.galleon;
 
-import org.eclipse.aether.DefaultRepositorySystemSession;
 import org.eclipse.aether.RepositorySystem;
+import org.eclipse.aether.RepositorySystemSession;
 import org.eclipse.aether.artifact.DefaultArtifact;
 import org.eclipse.aether.installation.InstallRequest;
 import org.eclipse.aether.installation.InstallationException;
-import org.jboss.galleon.universe.maven.MavenArtifact;
-import org.jboss.galleon.universe.maven.MavenUniverseException;
-import org.jboss.galleon.util.HashUtils;
 import org.jboss.logging.Logger;
 import org.wildfly.channel.ArtifactCoordinate;
 import org.wildfly.channel.ChannelMetadataCoordinate;
 import org.wildfly.channel.UnresolvedMavenArtifactException;
 import org.wildfly.channel.spi.MavenVersionsResolver;
-import org.wildfly.prospero.api.InstallationMetadata;
 
 import java.io.File;
-import java.io.IOException;
 import java.net.URL;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
-import java.util.HashMap;
+import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import java.util.function.Function;
+import java.util.stream.Collectors;
 
+/**
+ * Attempts to resolve artifact from local installation cache first. If that's not possible
+ * falls back onto {@code fallback} {@code MavenVersionsResolver}.
+ *
+ * Installs locally resolved artifacts in LRM to allow galleon to start thin servers.
+ */
 public class CachedVersionResolver implements MavenVersionsResolver {
-
-    public static final Path CACHE_FOLDER = Path.of(InstallationMetadata.METADATA_DIR, ".cache");
-    private final MavenVersionsResolver mavenVersionsResolver;
-    private final Map<String, Path> paths = new HashMap<>();
-    private final Map<String, String> hashes = new HashMap<>();
+    private final MavenVersionsResolver fallbackResolver;
     private final RepositorySystem system;
-    private final DefaultRepositorySystemSession session;
+    private final RepositorySystemSession session;
+    private final ArtifactCache artifactCache;
 
     private final Logger log = Logger.getLogger(CachedVersionResolver.class);
 
-    public CachedVersionResolver(MavenVersionsResolver mavenVersionsResolver, Path installDir, RepositorySystem system, DefaultRepositorySystemSession session) {
-        this.mavenVersionsResolver = mavenVersionsResolver;
+    public CachedVersionResolver(MavenVersionsResolver fallbackResolver, ArtifactCache cache, RepositorySystem system, RepositorySystemSession session) {
+        this.fallbackResolver = fallbackResolver;
         this.system = system;
         this.session = session;
-        Path artifactLog = installDir.resolve(CACHE_FOLDER).resolve("artifacts.txt");
-
-        if (Files.exists(artifactLog)) {
-            try {
-                final List<String> lines = Files.readAllLines(artifactLog);
-                for (String line : lines) {
-                    String gav = line.split("::")[0];
-                    String hash = line.split("::")[1];
-                    Path path = Paths.get(line.split("::")[2]);
-                    final MavenArtifact mavenArtifact = MavenArtifact.fromString(gav);
-                    final String key = asKey(mavenArtifact.getGroupId(), mavenArtifact.getArtifactId(), mavenArtifact.getVersion(), mavenArtifact.getClassifier(), mavenArtifact.getExtension());
-                    paths.put(key, installDir.resolve(path));
-                    hashes.put(key, hash);
-                }
-            } catch (IOException e) {
-                throw new RuntimeException(e);
-            } catch (MavenUniverseException e) {
-                throw new RuntimeException(e);
-            }
-        }
-    }
-
-    private static String asKey(String groupId, String artifactId, String version, String classifier, String extension) {
-        return String.format("%s:%s:%s:%s:%s", groupId, artifactId, version, classifier, extension);
+        this.artifactCache = cache;
     }
 
     @Override
     public Set<String> getAllVersions(String groupId, String artifactId, String extension, String classifier) {
-        return mavenVersionsResolver.getAllVersions(groupId, artifactId, extension, classifier);
+        return fallbackResolver.getAllVersions(groupId, artifactId, extension, classifier);
     }
 
     @Override
     public File resolveArtifact(String groupId, String artifactId, String extension, String classifier, String version) throws UnresolvedMavenArtifactException {
-        Optional<File> path = resolveFromInstallation(groupId, artifactId, extension, classifier, version);
-        if (path.isPresent()) {
-            return path.get();
+        Optional<File> path = artifactCache.getArtifact(groupId, artifactId, extension, classifier, version);
+        if (path.isEmpty()) {
+            return fallbackResolver.resolveArtifact(groupId, artifactId, extension, classifier, version);
         } else {
-            return mavenVersionsResolver.resolveArtifact(groupId, artifactId, extension, classifier, version);
-        }
-    }
-
-    private Optional<File> resolveFromInstallation(String groupId, String artifactId, String extension, String classifier, String version) {
-        final String key = asKey(groupId, artifactId, version, classifier, extension);
-        if (paths.containsKey(key)) {
-            final Path path = paths.get(key);
-            try {
-                final String hash = HashUtils.hashFile(path);
-                if (!hash.equals(hashes.get(key))) {
-                    log.debug("Hashes don't match for " + key);
-                    return Optional.empty();
-                }
-                final InstallRequest request = new InstallRequest();
-                request.setArtifacts(List.of(new DefaultArtifact(groupId, artifactId, classifier, extension, version, null, path.toFile())));
-                system.install(session, request);
-                return Optional.of(path.toFile());
-            } catch (InstallationException | IOException e) {
-                log.debug("Unable to use cached artifact " + key, e);
-                return Optional.empty();
+            // we need to install the artifact locally so that galleon can start embedded server to generate configurations
+            if (installArtifactLocally(groupId, artifactId, extension, classifier, version, path.get())) {
+                return path.get();
+            } else {
+                return fallbackResolver.resolveArtifact(groupId, artifactId, extension, classifier, version);
             }
         }
-        return Optional.empty();
     }
 
     @Override
     public List<File> resolveArtifacts(List<ArtifactCoordinate> coordinates) throws UnresolvedMavenArtifactException {
-        return mavenVersionsResolver.resolveArtifacts(coordinates);
+        final List<Function<List<File>, File>> res = new ArrayList<>(coordinates.size());
+        final List<ArtifactCoordinate> missingArtifacts = new ArrayList<>();
+        int index = 0;
+        for (ArtifactCoordinate coordinate : coordinates) {
+            Optional<File> path = artifactCache.getArtifact(coordinate.getGroupId(), coordinate.getArtifactId(),
+                    coordinate.getExtension(), coordinate.getClassifier(), coordinate.getVersion());
+            if (path.isEmpty()) {
+                int i = index++;
+                res.add((list)->list.get(i));
+                missingArtifacts.add(coordinate);
+            } else {
+                // we need to install the artifact locally so that galleon can start embedded server to generate configurations
+                if (installArtifactLocally(coordinate.getGroupId(), coordinate.getArtifactId(),
+                        coordinate.getExtension(), coordinate.getClassifier(), coordinate.getVersion(), path.get())) {
+                    res.add((list) -> path.get());
+                } else {
+                    int i = index++;
+                    res.add((list)->list.get(i));
+                    missingArtifacts.add(coordinate);
+                }
+            }
+        }
+
+        final List<File> resolvedFromMaven = fallbackResolver.resolveArtifacts(missingArtifacts);
+
+        return res.stream().map(f->f.apply(resolvedFromMaven)).collect(Collectors.toList());
     }
 
     @Override
     public List<URL> resolveChannelMetadata(List<? extends ChannelMetadataCoordinate> manifestCoords) throws UnresolvedMavenArtifactException {
-        return mavenVersionsResolver.resolveChannelMetadata(manifestCoords);
+        return fallbackResolver.resolveChannelMetadata(manifestCoords);
+    }
+
+    private boolean installArtifactLocally(String groupId, String artifactId, String extension, String classifier, String version, File path) {
+        try {
+            final InstallRequest request = new InstallRequest();
+            request.setArtifacts(List.of(new DefaultArtifact(groupId, artifactId, classifier, extension, version, null, path)));
+            system.install(session, request);
+            return true;
+        } catch (InstallationException e) {
+            log.debug("Unable to install cached artifact into LRM, falling back to resolver.", e);
+            return false;
+        }
     }
 }
