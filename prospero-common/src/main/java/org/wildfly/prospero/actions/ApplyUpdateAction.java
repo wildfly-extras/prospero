@@ -372,8 +372,9 @@ public class ApplyUpdateAction {
                 Path relative = updateDir.relativize(file);
                 Path installationFile = installationDir.resolve(relative);
                 // Not a file added or modified by the user
-                if (fsDiff.getModifiedEntry(relative.toString()) == null &&
-                        (fsDiff.getAddedEntry(relative.toString()) == null && !isParentAdded(fsDiff, relative))) {
+                final String pathKey = getFsDiffKey(relative, false);
+                if (fsDiff.getModifiedEntry(pathKey) == null &&
+                        (fsDiff.getAddedEntry(pathKey) == null && !isParentAdded(fsDiff, relative))) {
                     byte[] updateHash = HashUtils.hashPath(file);
                     // The file could be new or updated in the installation
                     if (!Files.exists(installationFile) || !Arrays.equals(updateHash, HashUtils.hashPath(installationFile))) {
@@ -389,7 +390,8 @@ public class ApplyUpdateAction {
             private boolean isParentAdded(FsDiff fsDiff, Path relative) {
                 Path parent = relative.getParent();
                 while (parent != null) {
-                    if (fsDiff.getAddedEntry(parent + File.separator) != null) {
+                    // FsDiff always uses UNIX separators
+                    if (fsDiff.getAddedEntry(parent + "/") != null) {
                         return true;
                     }
                     parent = parent.getParent();
@@ -421,7 +423,8 @@ public class ApplyUpdateAction {
                     throws IOException {
                 Path relative = installationDir.relativize(file);
                 Path updateFile = updateDir.resolve(relative);
-                if (fsDiff.getAddedEntry(relative.toString()) == null && fsDiff.getModifiedEntry(relative.toString()) == null) {
+                final String fsDiffKey = getFsDiffKey(relative, false);
+                if (fsDiff.getAddedEntry(fsDiffKey) == null && fsDiff.getModifiedEntry(fsDiffKey) == null) {
                     if (!Files.exists(updateFile) &&
                             !updateFile.toString().endsWith(Constants.DOT_GLNEW) &&
                             !updateFile.toString().endsWith(Constants.DOT_GLOLD)) {
@@ -443,8 +446,7 @@ public class ApplyUpdateAction {
                 if (!dir.equals(installationDir)) {
                     Path relative = installationDir.relativize(dir);
                     Path target = updateDir.resolve(relative);
-                    String pathKey = relative.toString();
-                    pathKey = pathKey.endsWith(File.separator) ? pathKey : pathKey + File.separator;
+                    String pathKey = getFsDiffKey(relative, true);
                     if (fsDiff.getAddedEntry(pathKey) != null && !Files.exists(target)) {
                         if (LOGGER.isDebugEnabled()) {
                             LOGGER.debug("The directory " + relative + " that doesn't exist in the update is a User changes, skipping it");
@@ -461,8 +463,7 @@ public class ApplyUpdateAction {
                 if (!dir.equals(installationDir)) {
                     Path relative = installationDir.relativize(dir);
                     Path target = updateDir.resolve(relative);
-                    String pathKey = relative.toString();
-                    pathKey = pathKey.endsWith(File.separator) ? pathKey : pathKey + File.separator;
+                    String pathKey = getFsDiffKey(relative, true);
                     if (fsDiff.getAddedEntry(pathKey) == null) {
                         if (!Files.exists(target) && dir.toFile().list().length == 0) {
                             if (LOGGER.isDebugEnabled()) {
@@ -477,6 +478,15 @@ public class ApplyUpdateAction {
             }
         });
         return Collections.unmodifiableList(conflicts);
+    }
+
+    private String getFsDiffKey(Path relative, boolean appendSeparator) {
+        String pathKey = relative.toString().replace(File.separator, "/");
+        if (appendSeparator) {
+            // FsDiff always uses UNIX separators
+            pathKey = pathKey.endsWith("/") ? pathKey : pathKey + "/";
+        }
+        return pathKey;
     }
 
     private static void glnew(final Path updateFile, Path installationFile) throws ProvisioningException {

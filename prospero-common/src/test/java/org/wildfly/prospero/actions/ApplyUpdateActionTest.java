@@ -219,7 +219,7 @@ public class ApplyUpdateActionTest {
                         manifest("manifest " + FPL_101).trim())
                 .addFile(InstallationMetadata.METADATA_DIR + "/" + InstallationMetadata.INSTALLER_CHANNELS_FILE_NAME,
                         channel("channels " + FPL_100).trim())
-                .addFile(ArtifactCache.CACHE_FOLDER + "/" + "artifacts.txt" , FPL_101+"::abcd::foo/bar")
+                .addFile(ArtifactCache.CACHE_FOLDER.toString().replace(File.separatorChar, '/') + "/" + "artifacts.txt" , FPL_101+"::abcd::foo/bar")
                 .build();
 
         // build test packages
@@ -336,11 +336,15 @@ public class ApplyUpdateActionTest {
     }
 
     private String manifest(String name) throws IOException {
-        return ChannelManifestMapper.toYaml(new ChannelManifest(name, null, Collections.emptyList()));
+        String txt = ChannelManifestMapper.toYaml(new ChannelManifest(name, null, Collections.emptyList()));
+        // workaround for Windows
+        return txt.replace("\n", System.lineSeparator());
     }
 
     private String channel(String name) throws IOException {
-        return ChannelMapper.toYaml(new Channel(name, null, null, Collections.emptyList(), List.of(new Repository("foo", "http://foo.bar")), new ChannelManifestCoordinate("foo", "bar")));
+        final String txt = ChannelMapper.toYaml(new Channel(name, null, null, Collections.emptyList(), List.of(new Repository("foo", "http://foo.bar")), new ChannelManifestCoordinate("foo", "bar")));
+        // workaround for Windows
+        return txt.replace("\n", System.lineSeparator());
     }
 
     private void prepareUpdate(Path updatePath, Path basePath, String fpl) throws Exception {
