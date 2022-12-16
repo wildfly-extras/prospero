@@ -29,6 +29,7 @@
         <artifact name="${org.codehaus.plexus:plexus-interpolation}"/>
         <artifact name="${org.codehaus.plexus:plexus-utils}"/>
         <artifact name="${org.wildfly.prospero:prospero-common}"/>
+        <artifact name="${org.wildfly.prospero:prospero-metadata}"/>
         <artifact name="${org.wildfly.prospero:prospero-cli}"/>
         <artifact name="${org.jboss.galleon:galleon-core}"/>
         <artifact name="${org.jboss.galleon:galleon-maven-universe}"/>

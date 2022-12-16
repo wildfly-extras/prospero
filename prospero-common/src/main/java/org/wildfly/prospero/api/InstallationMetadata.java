@@ -23,6 +23,7 @@ import org.wildfly.channel.ChannelManifest;
 import org.wildfly.prospero.Messages;
 import org.wildfly.prospero.api.exceptions.MetadataException;
 import org.wildfly.prospero.installation.git.GitStorage;
+import org.wildfly.prospero.metadata.ProsperoMetadataUtils;
 import org.wildfly.prospero.model.ManifestYamlSupport;
 import org.wildfly.prospero.model.ProsperoConfig;
 import org.eclipse.aether.artifact.Artifact;
@@ -47,9 +48,12 @@ import java.util.zip.ZipOutputStream;
 
 public class InstallationMetadata implements AutoCloseable {
 
-    public static final String METADATA_DIR = ".installation";
-    public static final String MANIFEST_FILE_NAME = "manifest.yaml";
-    public static final String INSTALLER_CHANNELS_FILE_NAME = "installer-channels.yaml";
+    @Deprecated
+    public static final String METADATA_DIR = ProsperoMetadataUtils.METADATA_DIR;
+    @Deprecated
+    public static final String MANIFEST_FILE_NAME = ProsperoMetadataUtils.MANIFEST_FILE_NAME;
+    @Deprecated
+    public static final String INSTALLER_CHANNELS_FILE_NAME = ProsperoMetadataUtils.INSTALLER_CHANNELS_FILE_NAME;
     public static final String PROVISIONING_FILE_NAME = "provisioning.xml";
     public static final String GALLEON_INSTALLATION_DIR = ".galleon";
     private final Path manifestFile;
