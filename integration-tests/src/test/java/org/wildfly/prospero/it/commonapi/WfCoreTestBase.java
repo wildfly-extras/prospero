@@ -162,11 +162,14 @@ public class WfCoreTestBase {
         );
     }
 
-    protected URL mockTemporaryRepo() throws Exception {
+    protected URL mockTemporaryRepo(boolean updatesOnly) throws Exception {
         final RepositorySystem system = mavenSessionManager.newRepositorySystem();
         final DefaultRepositorySystemSession session = mavenSessionManager.newRepositorySystemSession(system);
 
-        final File repo = populateTestRepo(system, session).toFile();
+        final File repo = temp.newFolder();
+        if (!updatesOnly) {
+            populateTestRepo(repo, system, session);
+        }
         final URL repoUrl = repo.toURI().toURL();
 
 
@@ -179,7 +182,7 @@ public class WfCoreTestBase {
         return repoUrl;
     }
 
-    private Path populateTestRepo(RepositorySystem system, DefaultRepositorySystemSession session) throws Exception {
+    private Path populateTestRepo(File repo, RepositorySystem system, DefaultRepositorySystemSession session) throws Exception {
         final List<RemoteRepository> remoteRepositories = defaultRemoteRepositories().stream().map(r -> toRemoteRepository(r)).collect(Collectors.toList());
 
         // resolve wildfly-core galleon pack zip
@@ -219,7 +222,7 @@ public class WfCoreTestBase {
         for (ArtifactResult artifactResult : artifactResults) {
             deployRequest.addArtifact(artifactResult.getArtifact());
         }
-        final Path path = temp.newFolder().toPath();
+        final Path path = repo.toPath();
         deployRequest.setRepository(RepositoryUtils.toRemoteRepository("test", path.toUri().toURL().toExternalForm()));
         system.deploy(session, deployRequest);
         return path;

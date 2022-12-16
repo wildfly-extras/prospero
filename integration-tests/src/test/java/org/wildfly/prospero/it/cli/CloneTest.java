@@ -164,7 +164,7 @@ public class CloneTest extends WfCoreTestBase {
             CliConstants.DIR, importDir.toString(),
             CliConstants.ARG_PATH, exportPath.toString(),
             // mockTemporaryRepo contains org.wildfly.core:wildfly-cli:19.0.0.Beta12-SNAPSHOT
-            CliConstants.REPOSITORIES, mockTemporaryRepo().toString()
+            CliConstants.REPOSITORIES, mockTemporaryRepo(true).toString()
           )
           .execute()
           .assertReturnCode(ReturnCodes.SUCCESS);

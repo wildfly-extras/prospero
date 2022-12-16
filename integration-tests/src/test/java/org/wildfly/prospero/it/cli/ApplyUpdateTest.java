@@ -18,41 +18,43 @@
 package org.wildfly.prospero.it.cli;
 
 import org.junit.Before;
+import org.junit.Rule;
 import org.junit.Test;
-import org.wildfly.channel.Channel;
-import org.wildfly.channel.Repository;
+import org.junit.rules.TemporaryFolder;
 import org.wildfly.channel.Stream;
 import org.wildfly.prospero.cli.ReturnCodes;
 import org.wildfly.prospero.cli.commands.CliConstants;
 import org.wildfly.prospero.it.ExecutionUtils;
 import org.wildfly.prospero.it.commonapi.WfCoreTestBase;
-import org.wildfly.prospero.model.ProsperoConfig;
 import org.wildfly.prospero.test.MetadataTestUtils;
 
 import java.io.File;
+import java.io.IOException;
 import java.net.URL;
 import java.nio.file.Path;
 import java.util.List;
 import java.util.Optional;
 
-import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.Assert.assertEquals;
 import static org.wildfly.prospero.test.MetadataTestUtils.upgradeStreamInManifest;
 
-public class UpdateWithAdditionalRepositoryTest extends CliTestBase {
+public class ApplyUpdateTest extends CliTestBase  {
+
+    @Rule
+    public TemporaryFolder tempDir = new TemporaryFolder();
 
     private File targetDir;
 
     @Before
-    public void setUp() throws Exception {
-        super.setUp();
-        targetDir = temp.newFolder();
+    public void setUp() throws IOException {
+        targetDir = tempDir.newFolder();
     }
 
     @Test
-    public void updateCli() throws Exception {
+    public void generateUpdateAndApply() throws Exception {
         final Path manifestPath = temp.newFile().toPath();
         final Path provisionConfig = temp.newFile().toPath();
+        final Path updatePath = tempDir.newFolder("update-candidate").toPath();
         MetadataTestUtils.copyManifest("manifests/wfcore-19-base.yaml", manifestPath);
         MetadataTestUtils.prepareChannel(provisionConfig, List.of(manifestPath.toUri().toURL()));
 
@@ -62,26 +64,28 @@ public class UpdateWithAdditionalRepositoryTest extends CliTestBase {
 
         final URL temporaryRepo = mockTemporaryRepo(true);
 
+        // generate update-candidate
         ExecutionUtils.prosperoExecution(CliConstants.Commands.UPDATE,
                         CliConstants.REPOSITORIES, temporaryRepo.toString(),
+                        CliConstants.UPDATE_DIR, updatePath.toAbsolutePath().toString(),
                         CliConstants.Y,
-                        CliConstants.NO_LOCAL_MAVEN_CACHE,
-                        CliConstants.OFFLINE,
                         CliConstants.DIR, targetDir.getAbsolutePath())
                 .execute()
                 .assertReturnCode(ReturnCodes.SUCCESS);
 
-        final Optional<Stream> wildflyCliStream = getInstalledArtifact(resolvedUpgradeArtifact.getArtifactId(), targetDir.toPath());
+        // verify the original server has not been modified
+        Optional<Stream> wildflyCliStream = getInstalledArtifact(resolvedUpgradeArtifact.getArtifactId(), targetDir.toPath());
+        assertEquals(WfCoreTestBase.BASE_VERSION, wildflyCliStream.get().getVersion());
 
+        // apply update-candidate
+        ExecutionUtils.prosperoExecution(CliConstants.Commands.APPLY_UPDATE,
+                        CliConstants.UPDATE_DIR, updatePath.toAbsolutePath().toString(),
+                        CliConstants.DIR, targetDir.getAbsolutePath())
+                .execute()
+                .assertReturnCode(ReturnCodes.SUCCESS);
+
+        // verify the original server has been modified
+        wildflyCliStream = getInstalledArtifact(resolvedUpgradeArtifact.getArtifactId(), targetDir.toPath());
         assertEquals(WfCoreTestBase.UPGRADE_VERSION, wildflyCliStream.get().getVersion());
-        // verify the temporary repository has not been added
-        assertThat(ProsperoConfig.readConfig(targetDir.toPath().resolve(MetadataTestUtils.INSTALLER_CHANNELS_FILE_PATH)).getChannels())
-                .flatMap(Channel::getRepositories)
-                .map(Repository::getUrl)
-                .containsExactlyInAnyOrder("https://repo1.maven.org/maven2/",
-                        "https://repository.jboss.org/nexus/content/groups/public-jboss",
-                        "https://maven.repository.redhat.com/ga"
-                        )
-                .doesNotContain(temporaryRepo.toExternalForm());
     }
 }

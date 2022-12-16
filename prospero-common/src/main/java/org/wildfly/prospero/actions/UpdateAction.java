@@ -54,7 +54,6 @@ public class UpdateAction implements AutoCloseable {
     private final MavenSessionManager mavenSessionManager;
     private final Path installDir;
     private final Console console;
-    private final List<Repository> overrideRepositories;
     private final ProsperoConfig prosperoConfig;
 
     public UpdateAction(Path installDir, MavenSessionManager mavenSessionManager, Console console, List<Repository> overrideRepositories)
@@ -62,7 +61,6 @@ public class UpdateAction implements AutoCloseable {
         this.metadata = new InstallationMetadata(installDir);
         this.installDir = installDir;
         this.console = console;
-        this.overrideRepositories = overrideRepositories;
         this.prosperoConfig = addTemporaryRepositories(overrideRepositories);
         this.mavenSessionManager = mavenSessionManager;
     }
