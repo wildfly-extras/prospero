@@ -33,7 +33,7 @@
       <module name="com.fasterxml.jackson.core.jackson-databind" export="true"/>
       <module name="javax.inject.api" export="true"/>
       <module name="org.jboss.logging" export="true"/>
-      <module name="org.jboss.logmanager" export="true"/>
+      <module name="org.jboss.logmanager" export="true" services="export"/>
       <module name="org.eclipse.jgit" export="true"/>
       <module name="org.slf4j" export="true"/>
       <module name="org.yaml.snakeyaml" export="true"/>
