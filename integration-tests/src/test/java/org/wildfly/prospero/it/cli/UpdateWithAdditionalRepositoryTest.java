@@ -66,7 +66,6 @@ public class UpdateWithAdditionalRepositoryTest extends CliTestBase {
                         CliConstants.REPOSITORIES, temporaryRepo.toString(),
                         CliConstants.Y,
                         CliConstants.NO_LOCAL_MAVEN_CACHE,
-                        CliConstants.OFFLINE,
                         CliConstants.DIR, targetDir.getAbsolutePath())
                 .execute()
                 .assertReturnCode(ReturnCodes.SUCCESS);

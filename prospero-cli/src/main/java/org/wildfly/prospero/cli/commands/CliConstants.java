@@ -36,7 +36,6 @@ public final class CliConstants {
         public static final String MAIN_COMMAND = "prospero";
         public static final String INSTALL = "install";
         public static final String UPDATE = "update";
-        public static final String BUILD_UPDATE = "build-update";
         public static final String APPLY_UPDATE = "apply-update";
         public static final String HISTORY = "history";
         public static final String REVERT = "revert";

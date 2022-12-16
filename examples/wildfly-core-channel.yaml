@@ -7,4 +7,4 @@ repositories:
     url: "https://repository.jboss.org/nexus/content/groups/public/"
 manifest:
 #  url: "https://raw.githubusercontent.com/wildfly-extras/prospero/main/examples/wildfly-core-manifest.yaml"
-  url: "file:/Users/spyrkob/workspaces/set/prospero/prospero/examples/wildfly-core-manifest.yaml"
+  url: "https://github.com/TomasHofman/prospero/raw/future-custom-fpl-with-repos/examples/wildfly-core-manifest.yaml"
