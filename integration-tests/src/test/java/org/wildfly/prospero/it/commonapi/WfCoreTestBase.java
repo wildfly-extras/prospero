@@ -205,7 +205,7 @@ public class WfCoreTestBase {
 
         // additional artifacts not included in galleon-pack
         artifacts.put("galleon-pack", "org.wildfly.core:wildfly-core-galleon-pack:19.0.0.Beta11::zip");
-        artifacts.put("galleon-plugins", "org.wildfly.galleon-plugins:wildfly-galleon-plugins:6.2.1.Final-SNAPSHOT::jar");
+        artifacts.put("galleon-plugins", "org.wildfly.galleon-plugins:wildfly-galleon-plugins:6.2.1.Final::jar");
 
         // resolve all dependencies
         final List<ArtifactRequest> requests = artifacts.values().stream()
