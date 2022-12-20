@@ -28,6 +28,7 @@ import java.nio.file.Path;
 
 /*
  * Taken from https://github.com/wildfly/galleon/tree/1fa07afb29b2ec61222e746b107a6822e836d05c/core/src/test/java/org/jboss/galleon/test/util/fs/state
+ * @author Alexey Loubyansky
  */
 public abstract class PathState {
 

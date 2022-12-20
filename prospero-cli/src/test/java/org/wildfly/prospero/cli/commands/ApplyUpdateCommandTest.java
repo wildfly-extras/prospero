@@ -119,13 +119,15 @@ public class ApplyUpdateCommandTest extends AbstractConsoleTest {
     @Test
     public void targetFolderNeedsToBeProsperoInstallation() throws Exception {
         final Path updatePath = mockInstallation("update");
-        final Path targetPath = mockInstallation("target");
+        final Path targetPath = temp.newFolder().toPath();
         int exitCode = commandLine.execute(CliConstants.Commands.APPLY_UPDATE,
                 CliConstants.UPDATE_DIR, updatePath.toString(),
                 CliConstants.DIR, targetPath.toString());
 
-        Assert.assertEquals(getErrorOutput(), ReturnCodes.SUCCESS, exitCode);
-        verify(applyUpdateAction).applyUpdate();
+        Assert.assertEquals(getErrorOutput(), ReturnCodes.INVALID_ARGUMENTS, exitCode);
+        assertTrue(getErrorOutput().contains(CliMessages.MESSAGES.invalidInstallationDir(targetPath)
+                .getMessage()));
+        verify(applyUpdateAction, never()).applyUpdate();
     }
 
     @Test

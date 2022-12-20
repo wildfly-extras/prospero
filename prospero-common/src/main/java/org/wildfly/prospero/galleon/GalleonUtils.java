@@ -49,7 +49,7 @@ public class GalleonUtils {
     public static final String JBOSS_FORK_EMBEDDED_PROPERTY = "jboss-fork-embedded";
     public static final String JBOSS_FORK_EMBEDDED_VALUE = "true";
     public static final String JBOSS_BULK_RESOLVE_PROPERTY = "jboss-bulk-resolve-artifacts";
-    public static final String JBOSS_BULK_RESOLVE_VALUE = "false";
+    public static final String JBOSS_BULK_RESOLVE_VALUE = "true";
     public static final String MODULE_PATH_PROPERTY = "module.path";
     public static final String PRINT_ONLY_CONFLICTS_PROPERTY = "print-only-conflicts";
     public static final String PRINT_ONLY_CONFLICTS_VALUE = "true";

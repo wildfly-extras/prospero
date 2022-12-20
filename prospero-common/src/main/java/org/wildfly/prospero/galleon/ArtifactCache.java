@@ -39,6 +39,17 @@ import java.util.Optional;
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 
+/**
+ * Manages artifact cache located in {@code installationDir}/{@code CACHE_FOLDER}.
+ *
+ * Cached artifacts are listed in {@code CACHE_FOLDER}/{@code CACHE_FILENAME}. Each artifact is identified by its {@code GAV}
+ * and specifies an SHA-1 hash of the file and a relative path were the artifact can be found within {@code installationDir}.
+ *
+ * If the artifact cannot be found within Galleon-provisioned {@code installationDir}, the artifact can be added to the
+ * {@code CACHE_FOLDER}.
+ *
+ * The cache is rebuild during update and only current artifacts are stored.
+ */
 public class ArtifactCache {
     private static final Logger LOG = Logger.getLogger(ArtifactCache.class);
 
@@ -185,9 +196,10 @@ public class ArtifactCache {
             try {
                 final List<String> lines = Files.readAllLines(artifactLog);
                 for (String line : lines) {
-                    String gav = line.split(ArtifactCache.CACHE_LINE_SEPARATOR)[0];
-                    String hash = line.split(ArtifactCache.CACHE_LINE_SEPARATOR)[1];
-                    Path path = Paths.get(line.split(ArtifactCache.CACHE_LINE_SEPARATOR)[2]);
+                    final String[] splitLine = line.split(ArtifactCache.CACHE_LINE_SEPARATOR);
+                    String gav = splitLine[0];
+                    String hash = splitLine[1];
+                    Path path = Paths.get(splitLine[2]);
                     final org.jboss.galleon.universe.maven.MavenArtifact mavenArtifact = org.jboss.galleon.universe.maven.MavenArtifact.fromString(gav);
                     final String key = asKey(mavenArtifact.getGroupId(), mavenArtifact.getArtifactId(), mavenArtifact.getExtension(), mavenArtifact.getClassifier(), mavenArtifact.getVersion());
                     paths.put(key, installationDir.resolve(path));

@@ -35,8 +35,16 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
+/**
+ * Analyzes provisioning information found in {@code installedDir} and caches {@code FeaturePack} and Galleon plugin
+ * artifacts.
+ *
+ * This complements caching done in <a href="https://github.com/wildfly/galleon-plugins/blob/main/galleon-plugins/src/main/java/org/wildfly/galleon/plugin/ArtifactRecorder.java">Wildfly Galleon Plugin</a>},
+ * as Galleon plugin is not able to access FeaturePack information. The discovered artifacts are cached using {@link ArtifactCache}.
+ */
 public class GalleonArtifactExporter {
     public void cacheGalleonArtifacts(List<Channel> channels, MavenSessionManager mavenSessionManager, Path installedDir, ProvisioningConfig provisioningConfig) throws Exception {
+        // no data will be actually written out, but we need a path to init the Galleon
         final Path tempInstallationPath = Files.createTempDirectory("temp");
         try {
             final List<String> fps = new ArrayList<>();
@@ -67,7 +75,8 @@ public class GalleonArtifactExporter {
 
             for (String fp : fps) {
                 // resolve the artifact
-                final MavenArtifact mavenArtifact = galleonEnv.getChannelSession().resolveMavenArtifact(fp.split(":")[0], fp.split(":")[1], "zip", null, null);
+                final String[] fpLoc = fp.split(":");
+                final MavenArtifact mavenArtifact = galleonEnv.getChannelSession().resolveMavenArtifact(fpLoc[0], fpLoc[1], "zip", null, null);
                 // cache it in the
                 artifactCache.cache(mavenArtifact);
             }
