@@ -67,17 +67,29 @@ public interface CliMessages {
     @Message("Continue with update [y/N]: ")
     String continueWithUpdate();
 
+    @Message("Continue with building update [y/N]: ")
+    String continueWithBuildUpdate();
+
     @Message("Update cancelled")
     String updateCancelled();
 
+    @Message("Build update cancelled")
+    String buildUpdateCancelled();
+
     @Message("Applying updates")
     String applyingUpdates();
+
+    @Message("Building updates")
+    String buildingUpdates();
 
     @Message("Choose [y/N]: ")
     String chooseYN();
 
     @Message("Update complete!")
     String updateComplete();
+
+    @Message("Build update complete!")
+    String buildUpdateComplete();
 
     // this would be used to determine user answer to [y/n] questions
     @Message("y")
@@ -211,6 +223,18 @@ public interface CliMessages {
 
     @Message("channel")
     String channelChangeType();
+
+    @Message("Conflicting changes detected in the update:")
+    String conflictingChangesDetected();
+
+    @Message("Server at [%s] is not a valid update candidate.")
+    IllegalArgumentException invalidUpdateCandidate(Path updateDir);
+
+    @Message("Unable to apply update.%n  Installation at [%s] has been updated since the update candidate [%s] was created.")
+    IllegalArgumentException updateCandidateStateNotMatched(Path targetDir, Path updateDir);
+
+    @Message("The target path needs to point to an empty, writable folder.")
+    IllegalArgumentException nonEmptyTargetFolder();
 
     // end - changes diff
 }

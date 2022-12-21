@@ -43,6 +43,10 @@ public interface Console {
 
     void updatesComplete();
 
+    void buildUpdatesComplete();
+
+    boolean confirmBuildUpdates();
+
     default void println(String text) {
         getStdOut().println(text);
     }

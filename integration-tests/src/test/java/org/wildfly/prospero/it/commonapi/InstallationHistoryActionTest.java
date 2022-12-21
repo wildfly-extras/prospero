@@ -143,7 +143,7 @@ public class InstallationHistoryActionTest extends WfCoreTestBase {
         final SavedState savedState = revisions.get(1);
 
         // perform the rollback using temporary repository only. Offline mode disables other repositories
-        final URL temporaryRepo = mockTemporaryRepo();
+        final URL temporaryRepo = mockTemporaryRepo(false);
         final MavenSessionManager offlineSessionManager = new MavenSessionManager(Optional.empty(), true);
         historyAction.rollback(savedState, offlineSessionManager, List.of(new Repository("temp-repo", temporaryRepo.toExternalForm())));
 

@@ -89,6 +89,13 @@ public class ProsperoInstallationManager implements InstallationManager {
     }
 
     @Override
+    public void prepareUpdate(Path targetDir) throws Exception {
+        try (final UpdateAction prepareUpdateAction = actionFactory.getUpdateAction()) {
+            prepareUpdateAction.buildUpdate(targetDir);
+        }
+    }
+
+    @Override
     public List<ArtifactChange> findUpdates() throws Exception {
         try (final UpdateAction updateAction = actionFactory.getUpdateAction()) {
             final UpdateSet updates = updateAction.findUpdates();

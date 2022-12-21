@@ -24,14 +24,16 @@ import java.util.List;
 import java.util.Optional;
 
 import org.jboss.galleon.ProvisioningException;
+import org.jboss.logging.Logger;
 import org.wildfly.channel.Repository;
 import org.wildfly.prospero.actions.Console;
 import org.wildfly.prospero.actions.UpdateAction;
-import org.wildfly.prospero.api.exceptions.ArtifactResolutionException;
-import org.wildfly.prospero.api.exceptions.MetadataException;
+import org.wildfly.prospero.api.FileConflict;
+import org.wildfly.prospero.api.exceptions.OperationException;
 import org.wildfly.prospero.cli.ActionFactory;
 import org.wildfly.prospero.cli.ArgumentParsingException;
 import org.wildfly.prospero.cli.CliMessages;
+import org.wildfly.prospero.cli.FileConflictPrinter;
 import org.wildfly.prospero.cli.RepositoryDefinition;
 import org.wildfly.prospero.cli.ReturnCodes;
 import org.wildfly.prospero.cli.commands.options.LocalRepoOptions;
@@ -46,6 +48,8 @@ import picocli.CommandLine;
 )
 public class UpdateCommand extends AbstractCommand {
 
+    private static final Logger log = Logger.getLogger(UpdateCommand.class);
+
     public static final String JBOSS_MODULE_PATH = "module.path";
     public static final String PROSPERO_FP_GA = "org.wildfly.prospero:prospero-standalone-galleon-pack";
     public static final String PROSPERO_FP_ZIP = PROSPERO_FP_GA + "::zip";
@@ -55,6 +59,9 @@ public class UpdateCommand extends AbstractCommand {
 
     @CommandLine.Option(names = CliConstants.DIR)
     Optional<Path> directory;
+
+    @CommandLine.Option(names = CliConstants.UPDATE_DIR)
+    Optional<Path> updateDirectory;
 
     @CommandLine.Option(names = CliConstants.DRY_RUN)
     boolean dryRun;
@@ -98,16 +105,31 @@ public class UpdateCommand extends AbstractCommand {
         }
 
         final MavenSessionManager mavenSessionManager = new MavenSessionManager(LocalRepoOptions.getLocalMavenCache(localRepoOptions), offline);
-
         final List<Repository> repositories = RepositoryDefinition.from(temporaryRepositories);
 
-        try (UpdateAction updateAction = actionFactory.update(installationDir, mavenSessionManager, console, repositories)) {
-            if (!dryRun) {
-                performUpdate(updateAction);
-            } else {
+        if (dryRun) {
+            try (UpdateAction updateAction = actionFactory.update(installationDir, mavenSessionManager, console, repositories)) {
                 final UpdateSet updateSet = updateAction.findUpdates();
-
                 console.updatesFound(updateSet.getArtifactUpdates());
+                return ReturnCodes.SUCCESS;
+            }
+        }
+
+        if (updateDirectory.isPresent()) {
+            final Path updateDirPath = updateDirectory.get();
+            log.tracef("Generate update in %s", updateDirPath);
+
+            verifyTargetDirectoryIsEmpty(updateDirPath);
+
+            try(UpdateAction updateAction = actionFactory.update(installationDir,
+                    mavenSessionManager, console, repositories)) {
+                buildUpdate(updateAction);
+            }
+        } else {
+            log.tracef("Perform full update");
+
+            try (UpdateAction updateAction = actionFactory.update(installationDir, mavenSessionManager, console, repositories)) {
+                performUpdate(updateAction);
             }
         }
 
@@ -117,7 +139,7 @@ public class UpdateCommand extends AbstractCommand {
         return ReturnCodes.SUCCESS;
     }
 
-    private void performUpdate(UpdateAction updateAction) throws ArtifactResolutionException, ProvisioningException, MetadataException {
+    private void performUpdate(UpdateAction updateAction) throws OperationException, ProvisioningException {
         final UpdateSet updateSet = updateAction.findUpdates();
 
         console.updatesFound(updateSet.getArtifactUpdates());
@@ -129,14 +151,32 @@ public class UpdateCommand extends AbstractCommand {
             return;
         }
 
-        updateAction.performUpdate();
+        final List<FileConflict> fileConflicts = updateAction.performUpdate();
+
+        FileConflictPrinter.print(fileConflicts, console);
 
         console.updatesComplete();
     }
 
+    private void buildUpdate(UpdateAction updateAction) throws OperationException, ProvisioningException {
+        final UpdateSet updateSet = updateAction.findUpdates();
 
-    private static void verifyInstallationContainsOnlyProspero(Path dir) throws ArgumentParsingException {
-        verifyInstallationDirectory(dir);
+        console.updatesFound(updateSet.getArtifactUpdates());
+        if (updateSet.isEmpty()) {
+            return;
+        }
+
+        if (!yes && !console.confirmBuildUpdates()) {
+            return;
+        }
+
+        updateAction.buildUpdate(updateDirectory.get().toAbsolutePath());
+
+        console.buildUpdatesComplete();
+    }
+
+    public static void verifyInstallationContainsOnlyProspero(Path dir) throws ArgumentParsingException {
+        verifyDirectoryContainsInstallation(dir);
 
         try {
             final List<String> fpNames = GalleonUtils.getInstalledPacks(dir.toAbsolutePath());
@@ -151,7 +191,7 @@ public class UpdateCommand extends AbstractCommand {
         }
     }
 
-    private static Path detectProsperoInstallationPath() throws ArgumentParsingException {
+    public static Path detectProsperoInstallationPath() throws ArgumentParsingException {
         final String modulePath = System.getProperty(JBOSS_MODULE_PATH);
         if (modulePath == null) {
             throw CliMessages.MESSAGES.unableToLocateProsperoInstallation();

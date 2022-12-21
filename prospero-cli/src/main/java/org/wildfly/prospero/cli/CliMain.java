@@ -19,6 +19,7 @@ package org.wildfly.prospero.cli;
 
 import org.jboss.logging.Logger;
 import org.wildfly.prospero.actions.Console;
+import org.wildfly.prospero.cli.commands.ApplyUpdateCommand;
 import org.wildfly.prospero.cli.commands.ChannelCommand;
 import org.wildfly.prospero.cli.commands.CliConstants;
 import org.wildfly.prospero.cli.commands.CloneCommand;
@@ -70,6 +71,7 @@ public class CliMain {
 
         commandLine.addSubcommand(new InstallCommand(console, actionFactory));
         commandLine.addSubcommand(new UpdateCommand(console, actionFactory));
+        commandLine.addSubcommand(new ApplyUpdateCommand(console, actionFactory));
         commandLine.addSubcommand(new HistoryCommand(console, actionFactory));
         commandLine.addSubcommand(new RevertCommand(console, actionFactory));
         commandLine.addSubcommand(new ChannelCommand(console, actionFactory));

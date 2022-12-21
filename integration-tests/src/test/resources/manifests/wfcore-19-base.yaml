@@ -280,11 +280,8 @@ streams:
     artifactId: wildfly-discovery-client
     version: "1.2.1.Final"
   - groupId: org.wildfly.galleon-plugins
-    artifactId: wildfly-config-gen
-    version: "6.0.0.Alpha6"
-  - groupId: org.wildfly.galleon-plugins
     artifactId: wildfly-galleon-plugins
-    version: "6.0.0.Alpha6"
+    version: "6.2.1.Final"
   - groupId: org.wildfly.openssl
     artifactId: wildfly-openssl-java
     version: "2.2.1.Final"

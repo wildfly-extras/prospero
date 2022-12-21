@@ -21,6 +21,8 @@ import org.jboss.galleon.ProvisioningException;
 import org.jboss.galleon.ProvisioningManager;
 import org.jboss.galleon.config.ProvisioningConfig;
 import org.jboss.galleon.state.ProvisionedFeaturePack;
+import org.jboss.galleon.universe.FeaturePackLocation;
+import org.jboss.galleon.universe.UniverseResolver;
 import org.jboss.galleon.universe.maven.repo.MavenRepoManager;
 import org.jboss.galleon.util.PathsUtils;
 import org.jboss.galleon.xml.ProvisionedStateXmlParser;
@@ -53,6 +55,8 @@ public class GalleonUtils {
     public static final String PRINT_ONLY_CONFLICTS_VALUE = "true";
     public static final String STORE_INPUT_PROVISIONING_CONFIG_PROPERTY = "store-input-provisioning-config";
     public static final String STORE_INPUT_PROVISIONING_CONFIG_VALUE = "true";
+    public static final String STORE_PROVISIONED_ARTIFACTS = "jboss-resolved-artifacts-cache";
+    public static final String STORE_PROVISIONED_ARTIFACTS_VALUE = ArtifactCache.CACHE_FOLDER.toString();
 
     private static final String CLASSPATH_SCHEME = "classpath";
     private static final String FILE_SCHEME = "file";
@@ -70,6 +74,7 @@ public class GalleonUtils {
             options.put(GalleonUtils.JBOSS_BULK_RESOLVE_PROPERTY, GalleonUtils.JBOSS_BULK_RESOLVE_VALUE);
             options.put(GalleonUtils.PRINT_ONLY_CONFLICTS_PROPERTY, GalleonUtils.PRINT_ONLY_CONFLICTS_VALUE);
             options.put(GalleonUtils.STORE_INPUT_PROVISIONING_CONFIG_PROPERTY, GalleonUtils.STORE_INPUT_PROVISIONING_CONFIG_VALUE);
+            options.put(GalleonUtils.STORE_PROVISIONED_ARTIFACTS, GalleonUtils.STORE_PROVISIONED_ARTIFACTS_VALUE);
             execution.execute(options);
         } catch (ProvisioningException e) {
             throw extractMavenException(e).orElseThrow(()->e);
@@ -98,10 +103,29 @@ public class GalleonUtils {
         void execute(ProvisioningManager provMgr, Map<String, String> options) throws ProvisioningException;
     }
 
-    public static ProvisioningManager getProvisioningManager(Path installDir, MavenRepoManager maven) throws ProvisioningException {
-        ProvisioningManager provMgr = ProvisioningManager.builder().addArtifactResolver(maven)
+    public static ProvisioningManager getProvisioningManager(Path installDir, MavenRepoManager maven, java.util.function.Consumer<String> resolvedFps) throws ProvisioningException {
+        if (resolvedFps != null) {
+            final UniverseResolver.Builder builder = UniverseResolver.builder()
+                    .addArtifactResolver(maven);
+            UniverseResolver universeResolver = new UniverseResolver(builder) {
+                @Override
+                public Path resolve(FeaturePackLocation fpl) throws ProvisioningException {
+                    if (fpl.isMavenCoordinates()) {
+                        final String[] split = fpl.getFPID().getProducer().getName().split(":");
+                        resolvedFps.accept(split[0] + ":" + split[1]);
+                    }
+                    return super.resolve(fpl);
+                }
+            };
+
+            return ProvisioningManager.builder()
+                    .setUniverseResolver(universeResolver)
+                    .setInstallationHome(installDir).build();
+        } else {
+            return ProvisioningManager.builder()
+                .addArtifactResolver(maven)
                 .setInstallationHome(installDir).build();
-        return provMgr;
+        }
     }
 
     public static List<String> getInstalledPacks(Path dir) throws ProvisioningException {

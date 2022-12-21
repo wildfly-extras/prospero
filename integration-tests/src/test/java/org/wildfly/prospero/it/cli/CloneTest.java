@@ -129,7 +129,7 @@ public class CloneTest extends WfCoreTestBase {
             // check prosperoConfig
             assertEquals(1, prosperoConfig.getChannels().size());
             Channel channel = prosperoConfig.getChannels().get(0);
-            assertEquals("channel-0", channel.getName());
+            assertEquals("test-channel-0", channel.getName());
             assertThat(channel.getRepositories())
               .map(Repository::getId).containsExactly("maven-central", "nexus", "maven-redhat-ga");
 
@@ -164,7 +164,7 @@ public class CloneTest extends WfCoreTestBase {
             CliConstants.DIR, importDir.toString(),
             CliConstants.ARG_PATH, exportPath.toString(),
             // mockTemporaryRepo contains org.wildfly.core:wildfly-cli:19.0.0.Beta12-SNAPSHOT
-            CliConstants.REPOSITORIES, mockTemporaryRepo().toString()
+            CliConstants.REPOSITORIES, mockTemporaryRepo(true).toString()
           )
           .execute()
           .assertReturnCode(ReturnCodes.SUCCESS);

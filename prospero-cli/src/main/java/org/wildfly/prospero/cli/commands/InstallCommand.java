@@ -130,6 +130,8 @@ public class InstallCommand extends AbstractCommand {
             throw CliMessages.MESSAGES.exclusiveOptions(CliConstants.CHANNELS, CliConstants.CHANNEL_MANIFEST);
         }
 
+        verifyTargetDirectoryIsEmpty(directory);
+
         final Optional<Path> localMavenCache = LocalRepoOptions.getLocalMavenCache(localRepoOptions);
 
         final MavenSessionManager mavenSessionManager = new MavenSessionManager(localMavenCache, offline);

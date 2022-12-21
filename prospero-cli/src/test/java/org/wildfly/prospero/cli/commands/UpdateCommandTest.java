@@ -17,7 +17,9 @@
 
 package org.wildfly.prospero.cli.commands;
 
+import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.Collections;
 import java.util.List;
 
 import org.eclipse.aether.artifact.DefaultArtifact;
@@ -78,9 +80,7 @@ public class UpdateCommandTest extends AbstractMavenCommandTest {
     @Before
     public void setUp() throws Exception {
         super.setUp();
-
         when(actionFactory.update(any(), any(), any(), any())).thenReturn(updateAction);
-
         installationDir = tempFolder.newFolder().toPath();
 
         MetadataTestUtils.createInstallationMetadata(installationDir);
@@ -192,6 +192,73 @@ public class UpdateCommandTest extends AbstractMavenCommandTest {
         Mockito.verify(actionFactory).update(eq(installationDir.toAbsolutePath()), any(), any(), any());
         assertEquals(1, getAskedConfirmation());
         Mockito.verify(updateAction).performUpdate();
+    }
+
+    @Test
+    public void testDryRunCallsFindUpdates() throws Exception {
+        System.setProperty(UpdateCommand.JBOSS_MODULE_PATH, installationDir.toString());
+        when(updateAction.findUpdates()).thenReturn(new UpdateSet(List.of(change("1.0.0", "1.0.1"))));
+
+        int exitCode = commandLine.execute(CliConstants.Commands.UPDATE, CliConstants.DRY_RUN,
+                CliConstants.DIR, installationDir.toAbsolutePath().toString());
+
+        assertEquals(ReturnCodes.SUCCESS, exitCode);
+        Mockito.verify(actionFactory).update(eq(installationDir.toAbsolutePath()), any(), any(), any());
+        Mockito.verify(updateAction, never()).performUpdate();
+        Mockito.verify(updateAction).findUpdates();
+    }
+
+    @Test
+    public void testBuildUpdateCallsUpdateActionWhenUpdatesAvailable() throws Exception {
+        System.setProperty(UpdateCommand.JBOSS_MODULE_PATH, installationDir.toString());
+        when(updateAction.findUpdates()).thenReturn(new UpdateSet(List.of(change("1.0.0", "1.0.1"))));
+        final Path updatePath = tempFolder.newFolder().toPath();
+
+        int exitCode = commandLine.execute(CliConstants.Commands.UPDATE, CliConstants.UPDATE_DIR, updatePath.toString(),
+                CliConstants.DIR, installationDir.toAbsolutePath().toString());
+
+        assertEquals(ReturnCodes.SUCCESS, exitCode);
+        Mockito.verify(actionFactory).update(eq(installationDir.toAbsolutePath()), any(), any(), any());
+        assertEquals(1, getAskedConfirmation());
+        Mockito.verify(updateAction).buildUpdate(updatePath);
+    }
+
+    @Test
+    public void testBuildUpdateDoesNothingWhenUpdatesNotAvailable() throws Exception {
+        System.setProperty(UpdateCommand.JBOSS_MODULE_PATH, installationDir.toString());
+        when(updateAction.findUpdates()).thenReturn(new UpdateSet(Collections.emptyList()));
+        final Path updatePath = tempFolder.newFolder().toPath();
+
+        int exitCode = commandLine.execute(CliConstants.Commands.UPDATE, CliConstants.UPDATE_DIR, updatePath.toString(),
+                CliConstants.DIR, installationDir.toAbsolutePath().toString());
+
+        assertEquals(ReturnCodes.SUCCESS, exitCode);
+        Mockito.verify(actionFactory).update(eq(installationDir.toAbsolutePath()), any(), any(), any());
+        assertEquals(0, getAskedConfirmation());
+        Mockito.verify(updateAction, never()).buildUpdate(updatePath);
+    }
+
+    @Test
+    public void testBuildUpdateTargetHasToBeEmptyDirectory() throws Exception {
+        final Path updatePath = tempFolder.newFolder().toPath();
+        Files.writeString(updatePath.resolve("test.txt"), "test");
+        int exitCode = commandLine.execute(CliConstants.Commands.UPDATE, CliConstants.UPDATE_DIR, updatePath.toString(),
+                CliConstants.DIR, installationDir.toAbsolutePath().toString());
+
+        assertEquals(ReturnCodes.INVALID_ARGUMENTS, exitCode);
+        assertTrue(getErrorOutput().contains(
+                CliMessages.MESSAGES.nonEmptyTargetFolder().getMessage()));
+    }
+
+    @Test
+    public void testBuildUpdateTargetHasToBeADirectory() throws Exception {
+        final Path aFile = tempFolder.newFile().toPath();
+        int exitCode = commandLine.execute(CliConstants.Commands.UPDATE, CliConstants.UPDATE_DIR, aFile.toString(),
+                CliConstants.DIR, installationDir.toAbsolutePath().toString());
+
+        assertEquals(ReturnCodes.INVALID_ARGUMENTS, exitCode);
+        assertTrue(getErrorOutput().contains(
+                CliMessages.MESSAGES.nonEmptyTargetFolder().getMessage()));
     }
 
     private ArtifactChange change(String oldVersion, String newVersion) {

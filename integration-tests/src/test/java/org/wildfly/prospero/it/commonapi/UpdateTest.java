@@ -17,6 +17,7 @@
 
 package org.wildfly.prospero.it.commonapi;
 
+import org.apache.commons.io.FileUtils;
 import org.eclipse.aether.DefaultRepositorySystemSession;
 import org.eclipse.aether.RepositorySystem;
 import org.eclipse.aether.artifact.Artifact;
@@ -24,6 +25,7 @@ import org.eclipse.aether.artifact.DefaultArtifact;
 import org.eclipse.aether.deployment.DeployRequest;
 import org.eclipse.aether.deployment.DeploymentException;
 import org.jboss.galleon.ProvisioningException;
+import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.wildfly.channel.Channel;
@@ -44,6 +46,7 @@ import org.wildfly.prospero.wfchannel.MavenSessionManager;
 import java.io.File;
 import java.io.IOException;
 import java.net.MalformedURLException;
+import java.net.URL;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardOpenOption;
@@ -56,6 +59,7 @@ import java.util.stream.Collectors;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
+import static org.wildfly.prospero.actions.ApplyUpdateAction.UPDATE_MARKER_FILE;
 
 public class UpdateTest extends WfCoreTestBase {
 
@@ -67,11 +71,18 @@ public class UpdateTest extends WfCoreTestBase {
         mockRepo = temp.newFolder("repo");
     }
 
+    @After
+    public void tearDown() throws Exception {
+        if (mockRepo.exists()) {
+            FileUtils.deleteQuietly(mockRepo);
+        }
+    }
+
     @Test
     public void updateWildflyCoreWithNewChannel() throws Exception {
         // deploy manifest file
         File manifestFile = new File(MetadataTestUtils.class.getClassLoader().getResource(CHANNEL_BASE_CORE_19).toURI());
-        deployManifestFile(manifestFile, "1.0.0");
+        deployManifestFile(mockRepo.toURI().toURL(), manifestFile, "1.0.0");
 
         // provision using channel gav
         final ProvisioningDefinition provisioningDefinition = defaultWfCoreDefinition()
@@ -86,7 +97,7 @@ public class UpdateTest extends WfCoreTestBase {
 
         // update manifest file
         final File updatedManifest = upgradeTestArtifactIn(manifestFile);
-        deployManifestFile(updatedManifest, "1.0.1");
+        deployManifestFile(mockRepo.toURI().toURL(), updatedManifest, "1.0.1");
 
         // update installation
         new UpdateAction(outputPath, mavenSessionManager, new AcceptingConsole(), Collections.emptyList())
@@ -103,7 +114,7 @@ public class UpdateTest extends WfCoreTestBase {
 
         // deploy manifest file
         File manifestFile = new File(MetadataTestUtils.class.getClassLoader().getResource(CHANNEL_BASE_CORE_19).toURI());
-        deployManifestFile(manifestFile, "1.0.0");
+        deployManifestFile(mockRepo.toURI().toURL(), manifestFile, "1.0.0");
 
         // provision using manifest gav
         final ProvisioningDefinition provisioningDefinition = defaultWfCoreDefinition()
@@ -117,7 +128,7 @@ public class UpdateTest extends WfCoreTestBase {
 
         // update manifest file
         final File updatedChannel = upgradeTestArtifactIn(manifestFile);
-        deployManifestFile(updatedChannel, "1.0.1");
+        deployManifestFile(mockRepo.toURI().toURL(), updatedChannel, "1.0.1");
 
         // update installation
         new UpdateAction(outputPath, mavenSessionManager, new AcceptingConsole(), Collections.emptyList())
@@ -126,8 +137,67 @@ public class UpdateTest extends WfCoreTestBase {
         assertTrue(Files.readString(channelsFile).contains("# test comment"));
     }
 
-    private File upgradeTestArtifactIn(File channelFile) throws IOException {
-        final ChannelManifest manifest = ManifestYamlSupport.parse(channelFile);
+    @Test
+    public void prepareUpdateCreatesMarkerFile() throws Exception {
+        // deploy manifest file
+        File manifestFile = new File(MetadataTestUtils.class.getClassLoader().getResource(CHANNEL_BASE_CORE_19).toURI());
+        deployManifestFile(mockRepo.toURI().toURL(), manifestFile, "1.0.0");
+
+        // provision using manifest gav
+        final ProvisioningDefinition provisioningDefinition = defaultWfCoreDefinition()
+                .setChannelCoordinates(buildConfigWithMockRepo().toPath().toString())
+                .setOverrideRepositories(Collections.emptyList()) // reset overrides from defaultWfCoreDefinition()
+                .build();
+        installation.provision(provisioningDefinition.toProvisioningConfig(),
+                provisioningDefinition.resolveChannels(CHANNELS_RESOLVER_FACTORY));
+        final String latestRevision = MetadataTestUtils.getLatestRevision(outputPath);
+
+        // update manifest file
+        final File updatedChannel = upgradeTestArtifactIn(manifestFile);
+        deployManifestFile(mockRepo.toURI().toURL(), updatedChannel, "1.0.1");
+
+        // update installation
+        final Path preparedUpdatePath = temp.newFolder().toPath();
+        new UpdateAction(outputPath, mavenSessionManager, new AcceptingConsole(), Collections.emptyList())
+                .buildUpdate(preparedUpdatePath);
+
+        final Path markerFile = preparedUpdatePath.resolve(UPDATE_MARKER_FILE);
+        assertTrue(Files.exists(markerFile));
+    }
+
+    @Test
+    public void updateRequiresOnlyChangedArtifacts() throws Exception {
+        // deploy manifest file
+        File manifestFile = new File(MetadataTestUtils.class.getClassLoader().getResource(CHANNEL_BASE_CORE_19).toURI());
+        deployManifestFile(mockRepo.toURI().toURL(), manifestFile, "1.0.0");
+
+        // provision using manifest gav
+        final ProvisioningDefinition provisioningDefinition = defaultWfCoreDefinition()
+                .setChannelCoordinates(buildConfigWithMockRepo().toPath().toString())
+                .setOverrideRepositories(Collections.emptyList()) // reset overrides from defaultWfCoreDefinition()
+                .build();
+        installation.provision(provisioningDefinition.toProvisioningConfig(),
+                provisioningDefinition.resolveChannels(CHANNELS_RESOLVER_FACTORY));
+
+        // update manifest file
+        final URL tempRepo = mockTemporaryRepo(true);
+        final File updatedChannel = upgradeTestArtifactIn(manifestFile);
+        deployManifestFile(tempRepo, updatedChannel, "1.0.1");
+
+        // offline MSM will disable http(s) repositories and local maven cache
+        MavenSessionManager offlineMsm = new MavenSessionManager(Optional.empty(), true);
+
+        // update installation
+        new UpdateAction(outputPath, offlineMsm, new AcceptingConsole(),
+                List.of(new Repository("temp", tempRepo.toExternalForm())))
+                .performUpdate();
+
+        Optional<Artifact> wildflyCliArtifact = readArtifactFromManifest("org.wildfly.core", "wildfly-cli");
+        assertEquals(UPGRADE_VERSION, wildflyCliArtifact.get().getVersion());
+    }
+
+    private File upgradeTestArtifactIn(File manifestFile) throws IOException {
+        final ChannelManifest manifest = ManifestYamlSupport.parse(manifestFile);
         final List<Stream> streams = manifest.getStreams().stream().map(s -> {
             if (s.getGroupId().equals("org.wildfly.core") && s.getArtifactId().equals("wildfly-cli")) {
                 return new Stream(s.getGroupId(), s.getArtifactId(), UPGRADE_VERSION);
@@ -151,12 +221,12 @@ public class UpdateTest extends WfCoreTestBase {
         return channelsFile;
     }
 
-    private void deployManifestFile(File channelFile, String version) throws ProvisioningException, MalformedURLException, DeploymentException {
+    private void deployManifestFile(URL repoUrl, File channelFile, String version) throws ProvisioningException, MalformedURLException, DeploymentException {
         final MavenSessionManager msm = new MavenSessionManager();
         final RepositorySystem system = msm.newRepositorySystem();
         final DefaultRepositorySystemSession session = msm.newRepositorySystemSession(system);
         final DeployRequest request = new DeployRequest();
-        request.setRepository(RepositoryUtils.toRemoteRepository("test-repo", mockRepo.toURI().toURL().toString()));
+        request.setRepository(RepositoryUtils.toRemoteRepository("test-repo", repoUrl.toExternalForm()));
         request.setArtifacts(Arrays.asList(new DefaultArtifact("test", "channel",
                 ChannelManifest.CLASSIFIER, ChannelManifest.EXTENSION, version,
                 null, channelFile)));

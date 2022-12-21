@@ -29,6 +29,7 @@ import org.jboss.logging.annotations.MessageBundle;
 import org.wildfly.channel.UnresolvedMavenArtifactException;
 import org.wildfly.prospero.api.exceptions.ArtifactPromoteException;
 import org.wildfly.prospero.api.exceptions.ArtifactResolutionException;
+import org.wildfly.prospero.api.exceptions.InvalidUpdateCandidateException;
 import org.wildfly.prospero.api.exceptions.MetadataException;
 import org.wildfly.prospero.api.exceptions.NoChannelException;
 import org.wildfly.prospero.api.exceptions.ProvisioningRuntimeException;
@@ -167,4 +168,7 @@ public interface Messages {
 
     @Message("Malformed URL in substituted value : %s from %s")
     MetadataException invalidPropertySubstitutionValue(String substituted, String url);
+
+    @Message("The installation at %s is not a valid update for %s")
+    InvalidUpdateCandidateException invalidUpdateCandidate(Path update, Path installation);
 }
