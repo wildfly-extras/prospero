@@ -28,17 +28,20 @@ import org.wildfly.prospero.api.RepositoryUtils;
 import org.wildfly.prospero.api.exceptions.ArtifactResolutionException;
 import org.wildfly.prospero.api.exceptions.MetadataException;
 import org.wildfly.prospero.api.exceptions.OperationException;
-import org.wildfly.prospero.galleon.GalleonArtifactExporter;
+import org.wildfly.prospero.galleon.GalleonFeaturePackAnalyzer;
 import org.wildfly.prospero.galleon.GalleonEnvironment;
 import org.wildfly.prospero.galleon.GalleonUtils;
 import org.wildfly.prospero.galleon.ChannelMavenArtifactRepositoryManager;
 
+import java.io.IOException;
 import java.net.MalformedURLException;
 import java.nio.file.Path;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 
+import org.wildfly.prospero.licenses.License;
+import org.wildfly.prospero.licenses.LicenseManager;
 import org.wildfly.prospero.wfchannel.MavenSessionManager;
 import org.eclipse.aether.repository.RemoteRepository;
 import org.jboss.galleon.ProvisioningException;
@@ -73,9 +76,7 @@ public class ProvisioningAction {
                 .build();
 
         try {
-            GalleonUtils.ProvisioningManagerExecution galleonOp = (pm, options) -> pm.provision(
-                    provisioningConfig, options);
-            GalleonUtils.executeGalleon(options -> galleonOp.execute(galleonEnv.getProvisioningManager(), options),
+            GalleonUtils.executeGalleon(options -> galleonEnv.getProvisioningManager().provision(provisioningConfig, options),
                     mavenSessionManager.getProvisioningRepo().toAbsolutePath());
         } catch (UnresolvedMavenArtifactException e) {
             final List<RemoteRepository> repositories = galleonEnv.getChannels().stream()
@@ -88,8 +89,18 @@ public class ProvisioningAction {
         writeProsperoMetadata(installDir, galleonEnv.getRepositoryManager(), channels);
 
         try {
-            new GalleonArtifactExporter().cacheGalleonArtifacts(galleonEnv.getChannels(), mavenSessionManager, installDir, provisioningConfig);
+            new GalleonFeaturePackAnalyzer(galleonEnv.getChannels(), mavenSessionManager).cacheGalleonArtifacts(installDir, provisioningConfig);
         } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    public List<License> getPendingLicenses(ProvisioningConfig provisioningConfig, List<Channel> channels) {
+        try {
+            final GalleonFeaturePackAnalyzer exporter = new GalleonFeaturePackAnalyzer(channels, mavenSessionManager);
+            final List<String> featurePacks = exporter.getFeaturePacks(provisioningConfig);
+            return new LicenseManager().getLicenses(featurePacks);
+        } catch (IOException | ProvisioningException | OperationException e) {
             throw new RuntimeException(e);
         }
     }

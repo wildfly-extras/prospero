@@ -26,6 +26,7 @@ import org.wildfly.prospero.cli.commands.CompletionCommand;
 import org.wildfly.prospero.cli.commands.HistoryCommand;
 import org.wildfly.prospero.cli.commands.InstallCommand;
 import org.wildfly.prospero.cli.commands.MainCommand;
+import org.wildfly.prospero.cli.commands.PrintLicensesCommand;
 import org.wildfly.prospero.cli.commands.RevertCommand;
 import org.wildfly.prospero.cli.commands.UpdateCommand;
 import org.wildfly.prospero.cli.commands.channel.ChannelAddCommand;
@@ -72,6 +73,7 @@ public class CliMain {
         final UpdateCommand updateCommand = new UpdateCommand(console, actionFactory);
         commandLine.addSubcommand(updateCommand);
         updateCommand.addSubCommands(commandLine);
+        commandLine.addSubcommand(new PrintLicensesCommand(console, actionFactory));
         commandLine.addSubcommand(new HistoryCommand(console, actionFactory));
         final RevertCommand revertCommand = new RevertCommand(console, actionFactory);
         commandLine.addSubcommand(revertCommand);

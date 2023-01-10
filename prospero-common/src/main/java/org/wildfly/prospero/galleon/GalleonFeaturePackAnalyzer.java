@@ -18,6 +18,7 @@
 package org.wildfly.prospero.galleon;
 
 import org.apache.commons.io.FileUtils;
+import org.jboss.galleon.ProvisioningException;
 import org.jboss.galleon.ProvisioningManager;
 import org.jboss.galleon.config.ProvisioningConfig;
 import org.jboss.galleon.layout.FeaturePackLayout;
@@ -26,8 +27,10 @@ import org.jboss.galleon.layout.ProvisioningLayoutFactory;
 import org.jboss.galleon.spec.FeaturePackPlugin;
 import org.wildfly.channel.Channel;
 import org.wildfly.channel.MavenArtifact;
+import org.wildfly.prospero.api.exceptions.OperationException;
 import org.wildfly.prospero.wfchannel.MavenSessionManager;
 
+import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
@@ -35,24 +38,32 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
-/**
- * Analyzes provisioning information found in {@code installedDir} and caches {@code FeaturePack} and Galleon plugin
- * artifacts.
- *
- * This complements caching done in <a href="https://github.com/wildfly/galleon-plugins/blob/main/galleon-plugins/src/main/java/org/wildfly/galleon/plugin/ArtifactRecorder.java">Wildfly Galleon Plugin</a>},
- * as Galleon plugin is not able to access FeaturePack information. The discovered artifacts are cached using {@link ArtifactCache}.
- */
-public class GalleonArtifactExporter {
-    public void cacheGalleonArtifacts(List<Channel> channels, MavenSessionManager mavenSessionManager, Path installedDir, ProvisioningConfig provisioningConfig) throws Exception {
+public class GalleonFeaturePackAnalyzer {
+
+    private final List<Channel> channels;
+    private final MavenSessionManager mavenSessionManager;
+
+    public GalleonFeaturePackAnalyzer(List<Channel> channels, MavenSessionManager mavenSessionManager) {
+        this.channels = channels;
+        this.mavenSessionManager = mavenSessionManager;
+    }
+
+    /**
+     * Analyzes provisioning information found in {@code installedDir} and caches {@code FeaturePack} and Galleon plugin
+     * artifacts.
+     *
+     * This complements caching done in <a href="https://github.com/wildfly/galleon-plugins/blob/main/galleon-plugins/src/main/java/org/wildfly/galleon/plugin/ArtifactRecorder.java">Wildfly Galleon Plugin</a>},
+     * as Galleon plugin is not able to access FeaturePack information. The discovered artifacts are cached using {@link ArtifactCache}.
+     *
+     * @param installedDir - path to the installation. Used to access the cache
+     * @param provisioningConfig - Galleon configuration to analyze
+     */
+    public void cacheGalleonArtifacts(Path installedDir, ProvisioningConfig provisioningConfig) throws Exception {
         // no data will be actually written out, but we need a path to init the Galleon
         final Path tempInstallationPath = Files.createTempDirectory("temp");
         try {
             final List<String> fps = new ArrayList<>();
-            final GalleonEnvironment galleonEnv = GalleonEnvironment
-                    .builder(tempInstallationPath, channels, mavenSessionManager)
-                    .setConsole(null)
-                    .setResolvedFpTracker(fps::add)
-                    .build();
+            final GalleonEnvironment galleonEnv = galleonEnvWithFpMapper(tempInstallationPath, fps);
             final ProvisioningManager pm = galleonEnv.getProvisioningManager();
 
 
@@ -83,6 +94,40 @@ public class GalleonArtifactExporter {
         } finally {
             FileUtils.deleteQuietly(tempInstallationPath.toFile());
         }
+    }
+
+    /**
+     * lists maven coordinates (groupId:artifactId) of FeaturePacks included in the {@code provisioningConfig}. Includes transitive dependencies.
+     *
+     * @param provisioningConfig - provisioning config to analyze
+     * @return
+     * @throws IOException
+     * @throws ProvisioningException
+     * @throws OperationException
+     */
+    public List<String> getFeaturePacks(ProvisioningConfig provisioningConfig) throws IOException, ProvisioningException, OperationException {
+        // no data will be actually written out, but we need a path to init the Galleon
+        final Path tempInstallationPath = Files.createTempDirectory("temp");
+        try {
+            final List<String> fps = new ArrayList<>();
+            final GalleonEnvironment galleonEnv = galleonEnvWithFpMapper(tempInstallationPath, fps);
+            final ProvisioningManager pm = galleonEnv.getProvisioningManager();
+
+            final ProvisioningLayoutFactory layoutFactory = pm.getLayoutFactory();
+            layoutFactory.newConfigLayout(provisioningConfig);
+            return fps;
+        } finally {
+            FileUtils.deleteQuietly(tempInstallationPath.toFile());
+        }
+    }
+
+    private GalleonEnvironment galleonEnvWithFpMapper(Path tempInstallationPath, List<String> fps) throws ProvisioningException, OperationException {
+        final GalleonEnvironment galleonEnv = GalleonEnvironment
+                .builder(tempInstallationPath, channels, mavenSessionManager)
+                .setConsole(null)
+                .setResolvedFpTracker(fps::add)
+                .build();
+        return galleonEnv;
     }
 
 }
