@@ -17,6 +17,9 @@
     <properties>
         <prospero.dist.name>prospero</prospero.dist.name>
         <prospero.target.server>Wildfly</prospero.target.server>
+        <prospero.base.feature-pack.groupId>org.wildfly</prospero.base.feature-pack.groupId>
+        <prospero.base.feature-pack.artifactId>wildfly-ee-galleon-pack</prospero.base.feature-pack.artifactId>
+        <prospero.base.feature-pack.version>26.1.0.Final</prospero.base.feature-pack.version>
         <version.io.undertow>2.2.17.Final</version.io.undertow>
         <version.org.apache.commons.commons-text>1.10.0</version.org.apache.commons.commons-text>
         <version.org.apache.maven.plugins.antrun>1.8</version.org.apache.maven.plugins.antrun>
@@ -44,7 +47,7 @@
         <version.maven-shade-plugin>2.3</version.maven-shade-plugin>
         <version.org.wildfly.channel>1.0.0.Beta4-SNAPSHOT</version.org.wildfly.channel>
         <version.maven-compiler-plugin>3.10.1</version.maven-compiler-plugin>
-        <version.org.wildfly.galleon-pack>26.1.0.Final</version.org.wildfly.galleon-pack>
+        <version.org.wildfly.galleon-pack>${prospero.base.feature-pack.version}</version.org.wildfly.galleon-pack>
         <version.info.picocli>4.6.3</version.info.picocli>
         <version.system-rules>1.19.0</version.system-rules>
         <version.assertj>3.23.1</version.assertj>
@@ -89,8 +92,8 @@
                 <version>${version.org.wildfly.installation-manager}</version>
             </dependency>
             <dependency>
-                <groupId>org.wildfly</groupId>
-                <artifactId>wildfly-ee-galleon-pack</artifactId>
+                <groupId>${prospero.base.feature-pack.groupId}</groupId>
+                <artifactId>${prospero.base.feature-pack.artifactId}</artifactId>
                 <version>${version.org.wildfly.galleon-pack}</version>
                 <type>zip</type>
             </dependency>

@@ -24,7 +24,7 @@
 
 <build xmlns="urn:wildfly:feature-pack-build:3.0" producer="org.wildfly.prospero:prospero-wildfly-galleon-pack">
   <dependencies>
-    <dependency group-id="org.wildfly" artifact-id="wildfly-ee-galleon-pack">
+    <dependency group-id="${prospero.base.feature-pack.groupId}" artifact-id="${prospero.base.feature-pack.artifactId}">
       <packages inherit="true"/>
     </dependency>
   </dependencies>
