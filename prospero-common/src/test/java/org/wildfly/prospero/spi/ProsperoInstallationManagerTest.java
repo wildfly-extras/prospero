@@ -26,8 +26,11 @@ import org.wildfly.channel.ChannelManifestCoordinate;
 import org.wildfly.channel.Repository;
 import org.wildfly.installationmanager.InstallationChanges;
 import org.wildfly.prospero.actions.InstallationHistoryAction;
+import org.wildfly.prospero.actions.UpdateAction;
 import org.wildfly.prospero.api.ChannelChange;
+import org.wildfly.prospero.updates.UpdateSet;
 
+import java.nio.file.Path;
 import java.util.Collections;
 import java.util.List;
 
@@ -47,6 +50,9 @@ public class ProsperoInstallationManagerTest {
             new ChannelManifestCoordinate("foo", "bar2"));
     @Mock
     private ProsperoInstallationManager.ActionFactory actionFactory;
+
+    @Mock
+    private UpdateAction updateAction;
 
     @Mock
     private InstallationHistoryAction historyAction;
@@ -93,4 +99,57 @@ public class ProsperoInstallationManagerTest {
         assertEquals("url1", newChannel.getRepositories().get(0).getUrl());
     }
 
+    @Test
+    public void findUpdateWithNullRepositoryListPassesEmptyList() throws Exception {
+        final ProsperoInstallationManager mgr = new ProsperoInstallationManager(actionFactory);
+        when(actionFactory.getUpdateAction(Collections.emptyList())).thenReturn(updateAction);
+        when(updateAction.findUpdates()).thenReturn(new UpdateSet(Collections.emptyList()));
+
+        mgr.findUpdates(null);
+    }
+
+    @Test
+    public void findUpdateWithEmptyRepositoryListPassesEmptyList() throws Exception {
+        final ProsperoInstallationManager mgr = new ProsperoInstallationManager(actionFactory);
+        when(actionFactory.getUpdateAction(Collections.emptyList())).thenReturn(updateAction);
+        when(updateAction.findUpdates()).thenReturn(new UpdateSet(Collections.emptyList()));
+
+        mgr.findUpdates(null);
+    }
+
+    @Test
+    public void findUpdateWithRepositoryListPassesEmptyList() throws Exception {
+        final ProsperoInstallationManager mgr = new ProsperoInstallationManager(actionFactory);
+        when(actionFactory.getUpdateAction(List.of(new Repository("test", "http://test.te")))).thenReturn(updateAction);
+        when(updateAction.findUpdates()).thenReturn(new UpdateSet(Collections.emptyList()));
+
+        mgr.findUpdates(List.of(new org.wildfly.installationmanager.Repository("test", "http://test.te")));
+    }
+
+    @Test
+    public void prepareUpdateWithNullRepositoryListPassesEmptyList() throws Exception {
+        final ProsperoInstallationManager mgr = new ProsperoInstallationManager(actionFactory);
+        when(actionFactory.getUpdateAction(Collections.emptyList())).thenReturn(updateAction);
+        when(updateAction.buildUpdate(any())).thenReturn(true);
+
+        mgr.prepareUpdate(Path.of("test"), null);
+    }
+
+    @Test
+    public void prepareUpdateWithEmptyRepositoryListPassesEmptyList() throws Exception {
+        final ProsperoInstallationManager mgr = new ProsperoInstallationManager(actionFactory);
+        when(actionFactory.getUpdateAction(Collections.emptyList())).thenReturn(updateAction);
+        when(updateAction.buildUpdate(any())).thenReturn(true);
+
+        mgr.prepareUpdate(Path.of("test"), Collections.emptyList());
+    }
+
+    @Test
+    public void prepareUpdateWithRepositoryListPassesEmptyList() throws Exception {
+        final ProsperoInstallationManager mgr = new ProsperoInstallationManager(actionFactory);
+        when(actionFactory.getUpdateAction(List.of(new Repository("test", "http://test.te")))).thenReturn(updateAction);
+        when(updateAction.buildUpdate(any())).thenReturn(true);
+
+        mgr.prepareUpdate(Path.of("test"), List.of(new org.wildfly.installationmanager.Repository("test", "http://test.te")));
+    }
 }
