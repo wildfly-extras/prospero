@@ -28,6 +28,7 @@ import org.wildfly.installationmanager.InstallationChanges;
 import org.wildfly.prospero.actions.InstallationHistoryAction;
 import org.wildfly.prospero.actions.UpdateAction;
 import org.wildfly.prospero.api.ChannelChange;
+import org.wildfly.prospero.api.SavedState;
 import org.wildfly.prospero.updates.UpdateSet;
 
 import java.nio.file.Path;
@@ -37,6 +38,8 @@ import java.util.List;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNull;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 @RunWith(MockitoJUnitRunner.class)
@@ -151,5 +154,35 @@ public class ProsperoInstallationManagerTest {
         when(updateAction.buildUpdate(any())).thenReturn(true);
 
         mgr.prepareUpdate(Path.of("test"), List.of(new org.wildfly.installationmanager.Repository("test", "http://test.te")));
+    }
+
+    @Test
+    public void prepareRevertWithNullRepositoryListPassesEmptyList() throws Exception {
+        final ProsperoInstallationManager mgr = new ProsperoInstallationManager(actionFactory);
+        when(actionFactory.getHistoryAction()).thenReturn(historyAction);
+
+        mgr.prepareRevert("abcd1234", Path.of("test"), null);
+        verify(historyAction).prepareRevert(eq(new SavedState("abcd1234")), any(),
+                eq(Collections.emptyList()), eq(Path.of("test")));
+    }
+
+    @Test
+    public void prepareRevertWithEmptyRepositoryListPassesEmptyList() throws Exception {
+        final ProsperoInstallationManager mgr = new ProsperoInstallationManager(actionFactory);
+        when(actionFactory.getHistoryAction()).thenReturn(historyAction);
+
+        mgr.prepareRevert("abcd1234", Path.of("test"), null);
+        verify(historyAction).prepareRevert(eq(new SavedState("abcd1234")), any(),
+                eq(Collections.emptyList()), eq(Path.of("test")));
+    }
+
+    @Test
+    public void prepareRevertWithRepositoryListPassesEmptyList() throws Exception {
+        final ProsperoInstallationManager mgr = new ProsperoInstallationManager(actionFactory);
+        when(actionFactory.getHistoryAction()).thenReturn(historyAction);
+
+        mgr.prepareRevert("abcd1234", Path.of("test"), List.of(new org.wildfly.installationmanager.Repository("test", "http://test.te")));
+        verify(historyAction).prepareRevert(eq(new SavedState("abcd1234")), any(),
+                eq(List.of(new Repository("test", "http://test.te"))), eq(Path.of("test")));
     }
 }

@@ -18,7 +18,6 @@
 package org.wildfly.prospero.cli.commands;
 
 import java.nio.file.Path;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
@@ -39,20 +38,76 @@ import picocli.CommandLine;
 )
 public class RevertCommand extends AbstractCommand {
 
-    @CommandLine.Option(names = CliConstants.DIR)
-    Optional<Path> directory;
+    @CommandLine.Command(name = CliConstants.Commands.PERFORM, sortOptions = false)
+    public class PerformCommand extends AbstractMavenCommand {
 
-    @CommandLine.Option(names = CliConstants.REVISION, required = true)
-    String revision;
+        public PerformCommand(Console console, ActionFactory actionFactory) {
+            super(console, actionFactory);
+        }
 
-    @CommandLine.Option(names = CliConstants.REPOSITORIES)
-    List<String> temporaryRepositories = new ArrayList<>();
+        @Override
+        public Integer call() throws Exception {
+            final Path installationDirectory = determineInstallationDirectory(directory);
+            final MavenSessionManager mavenSessionManager = new MavenSessionManager(LocalRepoOptions.getLocalMavenCache(localRepoOptions), offline);
 
-    @CommandLine.ArgGroup(exclusive = true, headingKey = "localRepoOptions.heading")
-    LocalRepoOptions localRepoOptions;
+            final List<Repository> overrideRepositories = RepositoryDefinition.from(temporaryRepositories);
 
-    @CommandLine.Option(names = CliConstants.OFFLINE)
-    boolean offline;
+            InstallationHistoryAction historyAction = actionFactory.history(installationDirectory, console);
+            historyAction.rollback(new SavedState(revision), mavenSessionManager, overrideRepositories);
+            return ReturnCodes.SUCCESS;
+        }
+    }
+
+    @CommandLine.Command(name = CliConstants.Commands.APPLY, sortOptions = false)
+    public class ApplyCommand extends AbstractCommand {
+
+        @CommandLine.Option(names = CliConstants.DIR)
+        Optional<Path> directory;
+
+        @CommandLine.Option(names = CliConstants.UPDATE_DIR, required = true)
+        Path updateDirectory;
+
+        public ApplyCommand(Console console, ActionFactory actionFactory) {
+            super(console, actionFactory);
+        }
+
+        @Override
+        public Integer call() throws Exception {
+            final Path installationDirectory = determineInstallationDirectory(directory);
+
+            InstallationHistoryAction historyAction = actionFactory.history(installationDirectory, console);
+            historyAction.applyRevert(updateDirectory);
+            return ReturnCodes.SUCCESS;
+        }
+    }
+
+    @CommandLine.Command(name = CliConstants.Commands.PREPARE, sortOptions = false)
+    public class PrepareCommand extends AbstractMavenCommand {
+
+        @CommandLine.Option(names = CliConstants.UPDATE_DIR, required = true)
+        Path updateDirectory;
+
+        public PrepareCommand(Console console, ActionFactory actionFactory) {
+            super(console, actionFactory);
+        }
+
+        @Override
+        public Integer call() throws Exception {
+            verifyTargetDirectoryIsEmpty(updateDirectory);
+
+            final Path installationDirectory = determineInstallationDirectory(directory);
+            final MavenSessionManager mavenSessionManager = new MavenSessionManager(LocalRepoOptions.getLocalMavenCache(localRepoOptions), offline);
+
+            final List<Repository> overrideRepositories = RepositoryDefinition.from(temporaryRepositories);
+
+            InstallationHistoryAction historyAction = actionFactory.history(installationDirectory, console);
+            historyAction.prepareRevert(new SavedState(revision), mavenSessionManager, overrideRepositories, updateDirectory);
+            return ReturnCodes.SUCCESS;
+        }
+    }
+
+    @CommandLine.Spec
+    protected CommandLine.Model.CommandSpec spec;
 
     public RevertCommand(Console console, ActionFactory actionFactory) {
         super(console, actionFactory);
@@ -60,13 +115,14 @@ public class RevertCommand extends AbstractCommand {
 
     @Override
     public Integer call() throws Exception {
-        final Path installationDirectory = determineInstallationDirectory(directory);
-        final MavenSessionManager mavenSessionManager = new MavenSessionManager(LocalRepoOptions.getLocalMavenCache(localRepoOptions), offline);
+        spec.commandLine().usage(console.getErrOut());
+        return ReturnCodes.INVALID_ARGUMENTS;
+    }
 
-        final List<Repository> overrideRepositories = RepositoryDefinition.from(temporaryRepositories);
-
-        InstallationHistoryAction historyAction = actionFactory.history(installationDirectory, console);
-        historyAction.rollback(new SavedState(revision), mavenSessionManager, overrideRepositories);
-        return ReturnCodes.SUCCESS;
+    public void addSubCommands(CommandLine rootCmd) {
+        CommandLine revertCmd = rootCmd.getSubcommands().get(CliConstants.Commands.REVERT);
+        revertCmd.addSubcommand(new PrepareCommand(console, actionFactory));
+        revertCmd.addSubcommand(new ApplyCommand(console, actionFactory));
+        revertCmd.addSubcommand(new PerformCommand(console, actionFactory));
     }
 }

@@ -25,7 +25,7 @@ import org.junit.rules.TemporaryFolder;
 import org.junit.runner.RunWith;
 import org.mockito.Mock;
 import org.mockito.junit.MockitoJUnitRunner;
-import org.wildfly.prospero.actions.ApplyUpdateAction;
+import org.wildfly.prospero.actions.ApplyCandidateAction;
 import org.wildfly.prospero.api.exceptions.MetadataException;
 import org.wildfly.prospero.cli.AbstractConsoleTest;
 import org.wildfly.prospero.cli.ActionFactory;
@@ -51,7 +51,7 @@ public class ApplyUpdateCommandTest extends AbstractConsoleTest {
     private ActionFactory actionFactory;
 
     @Mock
-    private ApplyUpdateAction applyUpdateAction;
+    private ApplyCandidateAction applyCandidateAction;
 
     @Rule
     public TemporaryFolder temp = new TemporaryFolder();
@@ -64,8 +64,8 @@ public class ApplyUpdateCommandTest extends AbstractConsoleTest {
     @Before
     public void setUp() throws Exception {
         super.setUp();
-        when(applyUpdateAction.verifyUpdateCandidate()).thenReturn(true);
-        when(actionFactory.applyUpdate(any(), any())).thenReturn(applyUpdateAction);
+        when(applyCandidateAction.verifyUpdateCandidate()).thenReturn(true);
+        when(actionFactory.applyUpdate(any(), any())).thenReturn(applyCandidateAction);
     }
 
     @Test
@@ -85,7 +85,7 @@ public class ApplyUpdateCommandTest extends AbstractConsoleTest {
                 CliConstants.DIR, targetPath.toString());
 
         Assert.assertEquals(getErrorOutput(), ReturnCodes.SUCCESS, exitCode);
-        verify(applyUpdateAction).applyUpdate();
+        verify(applyCandidateAction).applyUpdate();
     }
 
     @Test
@@ -127,14 +127,14 @@ public class ApplyUpdateCommandTest extends AbstractConsoleTest {
         Assert.assertEquals(getErrorOutput(), ReturnCodes.INVALID_ARGUMENTS, exitCode);
         assertTrue(getErrorOutput().contains(CliMessages.MESSAGES.invalidInstallationDir(targetPath)
                 .getMessage()));
-        verify(applyUpdateAction, never()).applyUpdate();
+        verify(applyCandidateAction, never()).applyUpdate();
     }
 
     @Test
     public void updateCandidateNeedsToContainUpdateMarkupFile() throws Exception {
         final Path updatePath = mockInstallation("update");
         final Path targetPath = mockInstallation("target");
-        Files.deleteIfExists(updatePath.resolve(ApplyUpdateAction.UPDATE_MARKER_FILE));
+        Files.deleteIfExists(updatePath.resolve(ApplyCandidateAction.UPDATE_MARKER_FILE));
 
         int exitCode = commandLine.execute(CliConstants.Commands.APPLY_UPDATE,
                 CliConstants.UPDATE_DIR, updatePath.toString(),
@@ -143,7 +143,7 @@ public class ApplyUpdateCommandTest extends AbstractConsoleTest {
         Assert.assertEquals(getErrorOutput(), ReturnCodes.INVALID_ARGUMENTS, exitCode);
         assertTrue(getErrorOutput().contains(CliMessages.MESSAGES.invalidUpdateCandidate(updatePath)
                 .getMessage()));
-        verify(applyUpdateAction, never()).applyUpdate();
+        verify(applyCandidateAction, never()).applyUpdate();
     }
 
     @Test
@@ -151,7 +151,7 @@ public class ApplyUpdateCommandTest extends AbstractConsoleTest {
         final Path updatePath = mockInstallation("update");
         final Path targetPath = mockInstallation("target");
 
-        when(applyUpdateAction.verifyUpdateCandidate()).thenReturn(false);
+        when(applyCandidateAction.verifyUpdateCandidate()).thenReturn(false);
 
         int exitCode = commandLine.execute(CliConstants.Commands.APPLY_UPDATE,
                 CliConstants.UPDATE_DIR, updatePath.toString(),
@@ -160,7 +160,7 @@ public class ApplyUpdateCommandTest extends AbstractConsoleTest {
         Assert.assertEquals(getErrorOutput(), ReturnCodes.INVALID_ARGUMENTS, exitCode);
         assertTrue(getErrorOutput().contains(CliMessages.MESSAGES.updateCandidateStateNotMatched(targetPath, updatePath)
                 .getMessage()));
-        verify(applyUpdateAction, never()).applyUpdate();
+        verify(applyCandidateAction, never()).applyUpdate();
     }
 
     private Path mockInstallation(String target) throws IOException, MetadataException, XMLStreamException {
@@ -168,7 +168,7 @@ public class ApplyUpdateCommandTest extends AbstractConsoleTest {
         MetadataTestUtils.createInstallationMetadata(targetPath);
         MetadataTestUtils.createGalleonProvisionedState(targetPath, UpdateCommand.PROSPERO_FP_GA);
 
-        Files.writeString(targetPath.resolve(ApplyUpdateAction.UPDATE_MARKER_FILE), "abcd1234");
+        Files.writeString(targetPath.resolve(ApplyCandidateAction.UPDATE_MARKER_FILE), "abcd1234");
         return targetPath;
     }
 

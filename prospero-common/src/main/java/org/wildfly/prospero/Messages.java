@@ -171,4 +171,10 @@ public interface Messages {
 
     @Message("The installation at %s is not a valid update for %s")
     InvalidUpdateCandidateException invalidUpdateCandidate(Path update, Path installation);
+
+    @Message("The requested state %s does not exist in server's history.")
+    MetadataException savedStateNotFound(String name);
+
+    @Message("Unable to create temporary directory")
+    ProvisioningException unableToCreateTemporaryDirectory(@Cause Throwable t);
 }

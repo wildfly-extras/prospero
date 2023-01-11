@@ -73,7 +73,9 @@ public class CliMain {
         commandLine.addSubcommand(new UpdateCommand(console, actionFactory));
         commandLine.addSubcommand(new ApplyUpdateCommand(console, actionFactory));
         commandLine.addSubcommand(new HistoryCommand(console, actionFactory));
-        commandLine.addSubcommand(new RevertCommand(console, actionFactory));
+        final RevertCommand revertCommand = new RevertCommand(console, actionFactory);
+        commandLine.addSubcommand(revertCommand);
+        revertCommand.addSubCommands(commandLine);
         commandLine.addSubcommand(new ChannelCommand(console, actionFactory));
         commandLine.addSubcommand(new CompletionCommand());
 

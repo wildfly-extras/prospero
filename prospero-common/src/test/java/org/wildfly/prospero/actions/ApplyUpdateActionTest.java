@@ -92,7 +92,7 @@ public class ApplyUpdateActionTest {
         // install base and update. perform apply-update
         install(installationPath, FPL_100);
         prepareUpdate(updatePath, installationPath, FPL_101);
-        final List<FileConflict> conflicts = new ApplyUpdateAction(installationPath, updatePath).applyUpdate();
+        final List<FileConflict> conflicts = new ApplyCandidateAction(installationPath, updatePath).applyUpdate();
 
         // verify
         expectedState.assertState(installationPath);
@@ -148,7 +148,7 @@ public class ApplyUpdateActionTest {
         writeContent("new_dir/users.txt", "user new_dir/users.txt");
         // update
         prepareUpdate(updatePath, installationPath, FPL_101);
-        final List<FileConflict> conflicts = new ApplyUpdateAction(installationPath, updatePath).applyUpdate();
+        final List<FileConflict> conflicts = new ApplyCandidateAction(installationPath, updatePath).applyUpdate();
 
         // verify
         expectedState.assertState(installationPath);
@@ -193,7 +193,7 @@ public class ApplyUpdateActionTest {
         Files.delete(installationPath.resolve("prod1/p2.txt"));
         writeContent("prod1/p3.txt", "user prod1/p3");
         prepareUpdate(updatePath, installationPath, FPL_101);
-        final List<FileConflict> conflicts = new ApplyUpdateAction(installationPath, updatePath).applyUpdate();
+        final List<FileConflict> conflicts = new ApplyCandidateAction(installationPath, updatePath).applyUpdate();
 
         // verify
         expectedState.assertState(installationPath);
@@ -228,7 +228,7 @@ public class ApplyUpdateActionTest {
         // install base and update. perform apply-update
         install(installationPath, FPL_100);
         prepareUpdate(updatePath, installationPath, FPL_101);
-        new ApplyUpdateAction(installationPath, updatePath).applyUpdate();
+        new ApplyCandidateAction(installationPath, updatePath).applyUpdate();
 
         // verify
         expectedState.assertState(installationPath);
@@ -247,9 +247,9 @@ public class ApplyUpdateActionTest {
         install(installationPath, FPL_100);
         prepareUpdate(updatePath, installationPath, FPL_101);
 
-        Files.deleteIfExists(updatePath.resolve(ApplyUpdateAction.UPDATE_MARKER_FILE));
+        Files.deleteIfExists(updatePath.resolve(ApplyCandidateAction.UPDATE_MARKER_FILE));
 
-        assertThrows(InvalidUpdateCandidateException.class, ()->new ApplyUpdateAction(installationPath, updatePath).applyUpdate());
+        assertThrows(InvalidUpdateCandidateException.class, ()->new ApplyCandidateAction(installationPath, updatePath).applyUpdate());
     }
 
     @Test
@@ -259,9 +259,9 @@ public class ApplyUpdateActionTest {
         install(installationPath, FPL_100);
         prepareUpdate(updatePath, installationPath, FPL_101);
 
-        Files.writeString(updatePath.resolve(ApplyUpdateAction.UPDATE_MARKER_FILE), "abcd1234");
+        Files.writeString(updatePath.resolve(ApplyCandidateAction.UPDATE_MARKER_FILE), "abcd1234");
 
-        assertThrows(InvalidUpdateCandidateException.class, ()->new ApplyUpdateAction(installationPath, updatePath).applyUpdate());
+        assertThrows(InvalidUpdateCandidateException.class, ()->new ApplyCandidateAction(installationPath, updatePath).applyUpdate());
     }
 
     @Test
@@ -271,9 +271,9 @@ public class ApplyUpdateActionTest {
         install(installationPath, FPL_100);
         prepareUpdate(updatePath, installationPath, FPL_101);
 
-        new ApplyUpdateAction(installationPath, updatePath).applyUpdate();
+        new ApplyCandidateAction(installationPath, updatePath).applyUpdate();
 
-        assertFalse(Files.exists(installationPath.resolve(ApplyUpdateAction.UPDATE_MARKER_FILE)));
+        assertFalse(Files.exists(installationPath.resolve(ApplyCandidateAction.UPDATE_MARKER_FILE)));
     }
 
     @Test
@@ -283,10 +283,10 @@ public class ApplyUpdateActionTest {
         install(installationPath, FPL_100);
         prepareUpdate(updatePath, installationPath, FPL_101);
 
-        Files.createDirectories(installationPath.resolve(ApplyUpdateAction.STANDALONE_STARTUP_MARKER.getParent()));
-        Files.writeString(installationPath.resolve(ApplyUpdateAction.STANDALONE_STARTUP_MARKER), "test");
+        Files.createDirectories(installationPath.resolve(ApplyCandidateAction.STANDALONE_STARTUP_MARKER.getParent()));
+        Files.writeString(installationPath.resolve(ApplyCandidateAction.STANDALONE_STARTUP_MARKER), "test");
 
-        assertThrows(ProvisioningException.class, () -> new ApplyUpdateAction(installationPath, updatePath).applyUpdate());
+        assertThrows(ProvisioningException.class, () -> new ApplyCandidateAction(installationPath, updatePath).applyUpdate());
     }
 
     @Test
@@ -296,10 +296,10 @@ public class ApplyUpdateActionTest {
         install(installationPath, FPL_100);
         prepareUpdate(updatePath, installationPath, FPL_101);
 
-        Files.createDirectories(installationPath.resolve(ApplyUpdateAction.DOMAIN_STARTUP_MARKER.getParent()));
-        Files.writeString(installationPath.resolve(ApplyUpdateAction.DOMAIN_STARTUP_MARKER), "test");
+        Files.createDirectories(installationPath.resolve(ApplyCandidateAction.DOMAIN_STARTUP_MARKER.getParent()));
+        Files.writeString(installationPath.resolve(ApplyCandidateAction.DOMAIN_STARTUP_MARKER), "test");
 
-        assertThrows(ProvisioningException.class, () -> new ApplyUpdateAction(installationPath, updatePath).applyUpdate());
+        assertThrows(ProvisioningException.class, () -> new ApplyCandidateAction(installationPath, updatePath).applyUpdate());
     }
 
     private void createSimpleFeaturePacks() throws ProvisioningException {
@@ -353,7 +353,7 @@ public class ApplyUpdateActionTest {
         // create update marker file
         try (final GitStorage gitStorage = new GitStorage(basePath)) {
             final String revHash = gitStorage.getRevisions().get(0).getName();
-            Files.writeString(updatePath.resolve(ApplyUpdateAction.UPDATE_MARKER_FILE), revHash);
+            Files.writeString(updatePath.resolve(ApplyCandidateAction.UPDATE_MARKER_FILE), revHash);
         }
     }
 

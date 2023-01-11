@@ -17,22 +17,22 @@
 
 package org.wildfly.prospero.actions;
 
-import org.jboss.galleon.ProvisioningManager;
+import org.apache.commons.io.FileUtils;
 import org.wildfly.channel.Repository;
-import org.wildfly.channel.UnresolvedMavenArtifactException;
+import org.wildfly.prospero.Messages;
 import org.wildfly.prospero.api.InstallationChanges;
 import org.wildfly.prospero.api.TemporaryRepositoriesHandler;
-import org.wildfly.prospero.api.exceptions.ArtifactResolutionException;
 import org.wildfly.prospero.api.exceptions.OperationException;
 import org.wildfly.prospero.api.InstallationMetadata;
 import org.wildfly.prospero.api.exceptions.MetadataException;
 import org.wildfly.prospero.api.SavedState;
 import org.wildfly.prospero.galleon.GalleonEnvironment;
-import org.wildfly.prospero.galleon.GalleonUtils;
 import org.wildfly.prospero.model.ProsperoConfig;
 import org.wildfly.prospero.wfchannel.MavenSessionManager;
 import org.jboss.galleon.ProvisioningException;
 
+import java.io.IOException;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
 
@@ -50,6 +50,9 @@ public class InstallationHistoryAction {
 
     public InstallationChanges compare(SavedState savedState) throws MetadataException {
         final InstallationMetadata installationMetadata = new InstallationMetadata(installation);
+        if (!installationMetadata.getRevisions().contains(savedState)) {
+            throw Messages.MESSAGES.savedStateNotFound(savedState.getName());
+        }
         return installationMetadata.getChangesSince(savedState);
     }
 
@@ -59,32 +62,55 @@ public class InstallationHistoryAction {
     }
 
     public void rollback(SavedState savedState, MavenSessionManager mavenSessionManager, List<Repository> overrideRepositories) throws OperationException, ProvisioningException {
-        InstallationMetadata metadata = new InstallationMetadata(installation);
-
-        final ProsperoConfig prosperoConfig = new ProsperoConfig(
-                TemporaryRepositoriesHandler.overrideRepositories(metadata.getProsperoConfig().getChannels(), overrideRepositories));
-
+        Path tempDirectory = null;
         try {
-            metadata = metadata.rollback(savedState);
-            final GalleonEnvironment galleonEnv = GalleonEnvironment
-                    .builder(installation, prosperoConfig.getChannels(), mavenSessionManager)
-                    .setConsole(console)
-                    .setRestoreManifest(metadata.getManifest())
-                    .build();
-
-            System.setProperty(MAVEN_REPO_LOCAL, mavenSessionManager.getProvisioningRepo().toAbsolutePath().toString());
-            final ProvisioningManager provMgr = galleonEnv.getProvisioningManager();
-            try {
-                GalleonUtils.executeGalleon(options -> provMgr.provision(provMgr.getProvisioningConfig(), options),
-                        mavenSessionManager.getProvisioningRepo().toAbsolutePath());
-            } catch (UnresolvedMavenArtifactException e) {
-                throw new ArtifactResolutionException(e, prosperoConfig.listAllRepositories(), mavenSessionManager.isOffline());
-            }
+            tempDirectory = Files.createTempDirectory("eap-revert");
+            prepareRevert(savedState, mavenSessionManager, overrideRepositories, tempDirectory);
+            new ApplyCandidateAction(installation, tempDirectory).applyUpdate();
+        } catch (IOException e) {
+            throw Messages.MESSAGES.unableToCreateTemporaryDirectory(e);
         } finally {
-            System.clearProperty(MAVEN_REPO_LOCAL);
-            metadata.close();
+            if (tempDirectory != null) {
+                FileUtils.deleteQuietly(tempDirectory.toFile());
+            }
+        }
+    }
+
+    public void prepareRevert(SavedState savedState, MavenSessionManager mavenSessionManager, List<Repository> overrideRepositories, Path targetDir)
+            throws OperationException, ProvisioningException {
+
+        try (final InstallationMetadata metadata = new InstallationMetadata(installation)) {
+
+            if (!metadata.getRevisions().contains(savedState)) {
+                throw Messages.MESSAGES.savedStateNotFound(savedState.getName());
+            }
+
+            final ProsperoConfig prosperoConfig = new ProsperoConfig(
+                    TemporaryRepositoriesHandler.overrideRepositories(metadata.getProsperoConfig().getChannels(), overrideRepositories));
+
+            try (final InstallationMetadata revertMetadata = metadata.rollback(savedState)) {
+                final GalleonEnvironment galleonEnv = GalleonEnvironment
+                        .builder(targetDir, prosperoConfig.getChannels(), mavenSessionManager)
+                        .setConsole(console)
+                        .setRestoreManifest(revertMetadata.getManifest())
+                        .build();
+
+                System.setProperty(MAVEN_REPO_LOCAL, mavenSessionManager.getProvisioningRepo().toAbsolutePath().toString());
+                try(final PrepareCandidateAction prepareCandidateAction = new PrepareCandidateAction(installation, mavenSessionManager, console, prosperoConfig)) {
+                    prepareCandidateAction.buildUpdate(targetDir, galleonEnv);
+                }
+            } finally {
+                System.clearProperty(MAVEN_REPO_LOCAL);
+            }
+        }
+    }
+
+    public void applyRevert(Path updateDirectory) throws OperationException, ProvisioningException {
+        final ApplyCandidateAction applyAction = new ApplyCandidateAction(installation, updateDirectory);
+        if (!applyAction.verifyUpdateCandidate()) {
+            throw Messages.MESSAGES.invalidUpdateCandidate(updateDirectory, installation);
         }
 
-        // TODO: handle errors - write final state? revert rollback?
+        applyAction.applyUpdate();
     }
 }
