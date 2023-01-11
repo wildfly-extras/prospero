@@ -1,6 +1,5 @@
 package org.wildfly.prospero.spi;
 
-import org.jboss.galleon.ProvisioningException;
 import org.wildfly.channel.ChannelManifestCoordinate;
 import org.wildfly.installationmanager.ArtifactChange;
 import org.wildfly.installationmanager.Channel;
@@ -82,22 +81,15 @@ public class ProsperoInstallationManager implements InstallationManager {
     }
 
     @Override
-    public void update() throws Exception {
-        try (final UpdateAction updateAction = actionFactory.getUpdateAction()) {
-            updateAction.performUpdate();
-        }
-    }
-
-    @Override
-    public void prepareUpdate(Path targetDir) throws Exception {
-        try (final UpdateAction prepareUpdateAction = actionFactory.getUpdateAction()) {
+    public void prepareUpdate(Path targetDir, List<Repository> repositories) throws Exception {
+        try (final UpdateAction prepareUpdateAction = actionFactory.getUpdateAction(map(repositories, ProsperoInstallationManager::mapRepository))) {
             prepareUpdateAction.buildUpdate(targetDir);
         }
     }
 
     @Override
-    public List<ArtifactChange> findUpdates() throws Exception {
-        try (final UpdateAction updateAction = actionFactory.getUpdateAction()) {
+    public List<ArtifactChange> findUpdates(List<Repository> repositories) throws Exception {
+        try (final UpdateAction updateAction = actionFactory.getUpdateAction(map(repositories, ProsperoInstallationManager::mapRepository))) {
             final UpdateSet updates = updateAction.findUpdates();
             return updates.getArtifactUpdates().stream()
                     .map(ProsperoInstallationManager::mapArtifactChange)
@@ -187,6 +179,9 @@ public class ProsperoInstallationManager implements InstallationManager {
     }
 
     private static <T, R> List<R> map(List<T> subject, Function<T,R> mapper) {
+        if (subject == null) {
+            return Collections.emptyList();
+        }
         return subject.stream().map(mapper::apply).collect(Collectors.toList());
     }
 
@@ -229,8 +224,8 @@ public class ProsperoInstallationManager implements InstallationManager {
             return new InstallationHistoryAction(server, null);
         }
 
-        protected UpdateAction getUpdateAction() throws ProvisioningException, OperationException {
-            return new UpdateAction(server, mavenSessionManager, null, Collections.emptyList());
+        protected UpdateAction getUpdateAction(List<org.wildfly.channel.Repository> repositories) throws OperationException {
+            return new UpdateAction(server, mavenSessionManager, null, repositories);
         }
 
         protected MetadataAction getMetadataAction() throws MetadataException {
