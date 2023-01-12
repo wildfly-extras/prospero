@@ -216,7 +216,14 @@ public class ProsperoInstallationManager implements InstallationManager {
         final Channel oldChannel = change.getOldChannel() == null ? null : mapChannel(change.getOldChannel());
         final Channel newChannel = change.getNewChannel() == null ? null : mapChannel(change.getNewChannel());
 
-        return new ChannelChange(oldChannel, newChannel);
+        switch (change.getStatus()) {
+            case ADDED:
+                return new ChannelChange(oldChannel, newChannel, ChannelChange.Status.ADDED);
+            case REMOVED:
+                return new ChannelChange(oldChannel, newChannel, ChannelChange.Status.REMOVED);
+            default:
+                return new ChannelChange(oldChannel, newChannel, ChannelChange.Status.MODIFIED);
+        }
     }
 
     protected static class ActionFactory {
