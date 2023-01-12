@@ -24,24 +24,14 @@ import java.util.Collections;
 import java.util.List;
 
 import org.apache.commons.io.FileUtils;
-import org.jboss.galleon.Constants;
-import org.jboss.galleon.ProvisioningManager;
-import org.jboss.galleon.util.PathsUtils;
-import org.jboss.galleon.xml.ProvisioningXmlParser;
 import org.wildfly.channel.Channel;
-import org.wildfly.channel.ChannelManifest;
 import org.wildfly.channel.Repository;
-import org.wildfly.channel.UnresolvedMavenArtifactException;
+import org.wildfly.prospero.Messages;
 import org.wildfly.prospero.api.FileConflict;
-import org.wildfly.prospero.api.SavedState;
 import org.wildfly.prospero.api.TemporaryRepositoriesHandler;
 import org.wildfly.prospero.api.InstallationMetadata;
-import org.wildfly.prospero.api.exceptions.MetadataException;
-import org.wildfly.prospero.api.exceptions.ArtifactResolutionException;
 import org.wildfly.prospero.api.exceptions.OperationException;
-import org.wildfly.prospero.galleon.ChannelMavenArtifactRepositoryManager;
 import org.wildfly.prospero.galleon.GalleonEnvironment;
-import org.wildfly.prospero.galleon.GalleonUtils;
 import org.wildfly.prospero.model.ProsperoConfig;
 import org.wildfly.prospero.updates.UpdateFinder;
 import org.wildfly.prospero.updates.UpdateSet;
@@ -70,13 +60,13 @@ public class UpdateAction implements AutoCloseable {
         try {
             targetDir = Files.createTempDirectory("update-eap");
             if (buildUpdate(targetDir)) {
-                ApplyUpdateAction applyUpdateAction = new ApplyUpdateAction(installDir, targetDir);
-                return applyUpdateAction.applyUpdate();
+                ApplyCandidateAction applyCandidateAction = new ApplyCandidateAction(installDir, targetDir);
+                return applyCandidateAction.applyUpdate();
             } else {
                 return Collections.emptyList();
             }
         } catch (IOException e) {
-            throw new ProvisioningException("Unable to create temporary directory", e);
+            throw Messages.MESSAGES.unableToCreateTemporaryDirectory(e);
         } finally {
             if (targetDir != null) {
                 FileUtils.deleteQuietly(targetDir.toFile());
@@ -88,35 +78,8 @@ public class UpdateAction implements AutoCloseable {
         if (findUpdates().isEmpty()) {
             return false;
         }
-
-        doBuildUpdate(targetDir);
-
-        try {
-            final SavedState savedState = metadata.getRevisions().get(0);
-            Files.writeString(targetDir.resolve(ApplyUpdateAction.UPDATE_MARKER_FILE), savedState.getName());
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        }
-
-        return true;
-    }
-
-    private void doBuildUpdate(Path targetDir) throws ProvisioningException, OperationException {
-        final GalleonEnvironment galleonEnv = getGalleonEnv(targetDir);
-        final ProvisioningManager provMgr = galleonEnv.getProvisioningManager();
-        try {
-            GalleonUtils.executeGalleon((options) -> {
-                        options.put(Constants.EXPORT_SYSTEM_PATHS, "true");
-                        provMgr.provision(ProvisioningXmlParser.parse(PathsUtils.getProvisioningXml(installDir)), options);
-                    },
-                    mavenSessionManager.getProvisioningRepo().toAbsolutePath());
-        } catch (UnresolvedMavenArtifactException e) {
-            throw new ArtifactResolutionException(e, prosperoConfig.listAllRepositories(), mavenSessionManager.isOffline());
-        }
-        try {
-            writeProsperoMetadata(targetDir, galleonEnv.getRepositoryManager(), metadata.getProsperoConfig().getChannels());
-        } catch (MetadataException ex) {
-            throw new ProvisioningException(ex);
+        try(final PrepareCandidateAction prepareCandidateAction = new PrepareCandidateAction(installDir, mavenSessionManager, console, prosperoConfig)) {
+            return prepareCandidateAction.buildUpdate(targetDir, getGalleonEnv(targetDir));
         }
     }
 
@@ -146,13 +109,5 @@ public class UpdateAction implements AutoCloseable {
         final List<Channel> channels = TemporaryRepositoriesHandler.overrideRepositories(prosperoConfig.getChannels(), repositories);
 
         return new ProsperoConfig(channels);
-    }
-
-    private void writeProsperoMetadata(Path home, ChannelMavenArtifactRepositoryManager maven, List<Channel> channels) throws MetadataException {
-        final ChannelManifest manifest = maven.resolvedChannel();
-
-        try (final InstallationMetadata installationMetadata = new InstallationMetadata(home, manifest, channels)) {
-            installationMetadata.recordProvision(true, false);
-        }
     }
 }

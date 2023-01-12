@@ -52,6 +52,10 @@ public final class CliConstants {
         public static final String CLONE = "clone";
         public static final String RESTORE = "restore";
         public static final String EXPORT = "export";
+
+        public static final String PREPARE = "prepare";
+        public static final String PERFORM = "perform";
+        public static final String APPLY = "apply";
     }
 
     // Parameter and option labels:

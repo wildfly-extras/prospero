@@ -64,9 +64,12 @@ import org.wildfly.prospero.installation.git.GitStorage;
 import org.wildfly.prospero.metadata.ProsperoMetadataUtils;
 import org.wildfly.prospero.wfchannel.MavenSessionManager;
 
-public class ApplyUpdateAction {
+/**
+ * Merges a "candidate" server into base server. The "candidate" can be an update or revert.
+ */
+public class ApplyCandidateAction {
     public static final Path UPDATE_MARKER_FILE = Path.of(InstallationMetadata.METADATA_DIR, ".update.txt");
-    private static final Logger LOGGER = Logger.getLogger(ApplyUpdateAction.class);
+    private static final Logger LOGGER = Logger.getLogger(ApplyCandidateAction.class);
     public static final Path STANDALONE_STARTUP_MARKER = Path.of("standalone", "tmp", "startup-marker");
     public static final Path DOMAIN_STARTUP_MARKER = Path.of("domain", "tmp", "startup-marker");
     private final Path updateDir;
@@ -74,7 +77,7 @@ public class ApplyUpdateAction {
     private final SystemPaths systemPaths;
     private final ProvisioningManager provisioningManager;
 
-    public ApplyUpdateAction(Path installationDir, Path updateDir)
+    public ApplyCandidateAction(Path installationDir, Path updateDir)
             throws ProvisioningException, OperationException {
         this.updateDir = updateDir;
         this.installationDir = installationDir;

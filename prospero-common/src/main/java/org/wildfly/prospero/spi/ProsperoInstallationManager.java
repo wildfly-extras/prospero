@@ -81,6 +81,15 @@ public class ProsperoInstallationManager implements InstallationManager {
     }
 
     @Override
+    public void prepareRevert(String revision, Path targetDir, List<Repository> repositories) throws Exception {
+        Objects.requireNonNull(revision);
+        Objects.requireNonNull(targetDir);
+        final InstallationHistoryAction historyAction = actionFactory.getHistoryAction();
+        historyAction.prepareRevert(new SavedState(revision), actionFactory.mavenSessionManager,
+                map(repositories, ProsperoInstallationManager::mapRepository), targetDir);
+    }
+
+    @Override
     public void prepareUpdate(Path targetDir, List<Repository> repositories) throws Exception {
         try (final UpdateAction prepareUpdateAction = actionFactory.getUpdateAction(map(repositories, ProsperoInstallationManager::mapRepository))) {
             prepareUpdateAction.buildUpdate(targetDir);

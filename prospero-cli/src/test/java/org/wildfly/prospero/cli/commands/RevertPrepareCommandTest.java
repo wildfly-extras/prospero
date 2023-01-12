@@ -1,5 +1,5 @@
 /*
- * Copyright 2022 Red Hat, Inc. and/or its affiliates
+ * Copyright 2023 Red Hat, Inc. and/or its affiliates
  * and other contributors as indicated by the @author tags.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -16,9 +16,6 @@
  */
 
 package org.wildfly.prospero.cli.commands;
-
-import java.nio.file.Path;
-import java.util.List;
 
 import org.junit.Assert;
 import org.junit.Before;
@@ -40,6 +37,9 @@ import org.wildfly.prospero.cli.ReturnCodes;
 import org.wildfly.prospero.test.MetadataTestUtils;
 import org.wildfly.prospero.wfchannel.MavenSessionManager;
 
+import java.nio.file.Path;
+import java.util.List;
+
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
@@ -48,7 +48,7 @@ import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.verify;
 
 @RunWith(MockitoJUnitRunner.class)
-public class RevertCommandTest extends AbstractMavenCommandTest {
+public class RevertPrepareCommandTest extends AbstractMavenCommandTest {
 
     @Mock
     private InstallationHistoryAction historyAction;
@@ -83,7 +83,8 @@ public class RevertCommandTest extends AbstractMavenCommandTest {
     }
     @Test
     public void invalidInstallationDir() {
-        int exitCode = commandLine.execute(CliConstants.Commands.REVERT, CliConstants.REVISION, "abcd");
+        int exitCode = commandLine.execute(CliConstants.Commands.REVERT, CliConstants.Commands.PREPARE,
+                CliConstants.REVISION, "abcd", CliConstants.UPDATE_DIR, "update_test");
 
         Assert.assertEquals(ReturnCodes.INVALID_ARGUMENTS, exitCode);
         assertTrue(getErrorOutput().contains(CliMessages.MESSAGES.invalidInstallationDir(RevertCommand.currentDir())
@@ -92,7 +93,9 @@ public class RevertCommandTest extends AbstractMavenCommandTest {
 
     @Test
     public void requireRevisionArgument() {
-        int exitCode = commandLine.execute(CliConstants.Commands.REVERT, CliConstants.DIR, installationDir.toString());
+        int exitCode = commandLine.execute(CliConstants.Commands.REVERT, CliConstants.Commands.PREPARE,
+                CliConstants.DIR, installationDir.toString(),
+                CliConstants.UPDATE_DIR, "update_test");
 
         assertEquals(ReturnCodes.INVALID_ARGUMENTS, exitCode);
         assertTrue(getErrorOutput().contains(String.format(
@@ -100,34 +103,51 @@ public class RevertCommandTest extends AbstractMavenCommandTest {
     }
 
     @Test
-    public void callRevertOpertation() throws Exception {
-        int exitCode = commandLine.execute(CliConstants.Commands.REVERT, CliConstants.DIR, installationDir.toString(),
+    public void requireUpdateDirArgument() {
+        int exitCode = commandLine.execute(CliConstants.Commands.REVERT, CliConstants.Commands.PREPARE,
+                CliConstants.DIR, installationDir.toString(),
+                CliConstants.REVISION, "abcd");
+
+        assertEquals(ReturnCodes.INVALID_ARGUMENTS, exitCode);
+        assertTrue(getErrorOutput().contains(String.format(
+                "Missing required option: '%s=<updateDirectory>'", CliConstants.UPDATE_DIR)));
+    }
+
+    @Test
+    public void callPrepareOperation() throws Exception {
+        int exitCode = commandLine.execute(CliConstants.Commands.REVERT, CliConstants.Commands.PREPARE,
+                CliConstants.DIR, installationDir.toString(),
+                CliConstants.UPDATE_DIR, "update_test",
                 CliConstants.REVISION, "abcd");
 
         assertEquals(ReturnCodes.SUCCESS, exitCode);
-        verify(historyAction).rollback(eq(new SavedState("abcd")), any(), any());
+        verify(historyAction).prepareRevert(eq(new SavedState("abcd")), any(), any(), eq(Path.of("update_test")));
     }
 
     @Test
     public void useOfflineMavenSessionManagerIfOfflineSet() throws Exception {
-        int exitCode = commandLine.execute(CliConstants.Commands.REVERT, CliConstants.DIR, installationDir.toString(),
+        int exitCode = commandLine.execute(CliConstants.Commands.REVERT, CliConstants.Commands.PREPARE,
+                CliConstants.DIR, installationDir.toString(),
+                CliConstants.UPDATE_DIR, "update_test",
                 CliConstants.REVISION, "abcd",
                 CliConstants.OFFLINE, CliConstants.LOCAL_CACHE, "local-repo");
 
         assertEquals(ReturnCodes.SUCCESS, exitCode);
-        verify(historyAction).rollback(eq(new SavedState("abcd")), mavenSessionManager.capture(), any());
+        verify(historyAction).prepareRevert(eq(new SavedState("abcd")), mavenSessionManager.capture(), any(), eq(Path.of("update_test")));
         assertTrue(mavenSessionManager.getValue().isOffline());
     }
 
     @Test
     public void passRemoteRepositories() throws Exception {
-        int exitCode = commandLine.execute(CliConstants.Commands.REVERT, CliConstants.DIR, installationDir.toString(),
+        int exitCode = commandLine.execute(CliConstants.Commands.REVERT, CliConstants.Commands.PREPARE,
+                CliConstants.DIR, installationDir.toString(),
+                CliConstants.UPDATE_DIR, "update_test",
                 CliConstants.REVISION, "abcd",
                 CliConstants.REPOSITORIES, "http://temp.repo.te",
                 CliConstants.LOCAL_CACHE, "local-repo");
 
         assertEquals(ReturnCodes.SUCCESS, exitCode);
-        verify(historyAction).rollback(eq(new SavedState("abcd")), any(), repositories.capture());
+        verify(historyAction).prepareRevert(eq(new SavedState("abcd")), any(), repositories.capture(), eq(Path.of("update_test")));
 
         assertThat(repositories.getValue())
                 .map(Repository::getUrl)
@@ -136,13 +156,13 @@ public class RevertCommandTest extends AbstractMavenCommandTest {
 
     @Override
     protected MavenSessionManager getCapturedSessionManager() throws Exception {
-        verify(historyAction).rollback(eq(new SavedState("abcd")), mavenSessionManager.capture(), any());
+        verify(historyAction).prepareRevert(eq(new SavedState("abcd")), mavenSessionManager.capture(), any(), eq(Path.of("update_test")));
         return mavenSessionManager.getValue();
     }
 
     @Override
     protected String[] getDefaultArguments() {
-        return new String[]{CliConstants.Commands.REVERT, CliConstants.DIR, installationDir.toString(),
-                CliConstants.REVISION, "abcd"};
+        return new String[]{CliConstants.Commands.REVERT, CliConstants.Commands.PREPARE, CliConstants.DIR, installationDir.toString(),
+                CliConstants.REVISION, "abcd", CliConstants.UPDATE_DIR, "update_test"};
     }
 }

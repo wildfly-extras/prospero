@@ -22,7 +22,7 @@ import java.nio.file.Path;
 import java.util.List;
 import java.util.Optional;
 
-import org.wildfly.prospero.actions.ApplyUpdateAction;
+import org.wildfly.prospero.actions.ApplyCandidateAction;
 import org.wildfly.prospero.actions.Console;
 import org.wildfly.prospero.api.FileConflict;
 import org.wildfly.prospero.cli.ActionFactory;
@@ -57,17 +57,17 @@ public class ApplyUpdateCommand extends AbstractCommand {
 
         verifyDirectoryContainsInstallation(updateDir);
 
-        if (!Files.exists(updateDir.resolve(ApplyUpdateAction.UPDATE_MARKER_FILE))) {
+        if (!Files.exists(updateDir.resolve(ApplyCandidateAction.UPDATE_MARKER_FILE))) {
             throw CliMessages.MESSAGES.invalidUpdateCandidate(updateDir);
         }
 
-        ApplyUpdateAction applyUpdateAction = actionFactory.applyUpdate(installationDir.toAbsolutePath(), updateDir.toAbsolutePath());
+        final ApplyCandidateAction applyCandidateAction = actionFactory.applyUpdate(installationDir.toAbsolutePath(), updateDir.toAbsolutePath());
 
-        if (!applyUpdateAction.verifyUpdateCandidate()) {
+        if (!applyCandidateAction.verifyUpdateCandidate()) {
             throw CliMessages.MESSAGES.updateCandidateStateNotMatched(installationDir, updateDir.toAbsolutePath());
         }
 
-        final List<FileConflict> fileConflicts = applyUpdateAction.applyUpdate();
+        final List<FileConflict> fileConflicts = applyCandidateAction.applyUpdate();
 
         FileConflictPrinter.print(fileConflicts, console);
 
