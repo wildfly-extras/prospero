@@ -50,7 +50,7 @@ public class PromoteArtifactBundleAction {
         Objects.requireNonNull(targetRepository);
         Objects.requireNonNull(coordinate);
 
-        if (coordinate.getGav() == null || coordinate.getGav().isEmpty()) {
+        if (coordinate.getMaven() == null) {
             throw Messages.MESSAGES.nonMavenChannelRef();
         }
 
@@ -68,7 +68,7 @@ public class PromoteArtifactBundleAction {
 
             final ArtifactPromoter promoter = new ArtifactPromoter(system, session, targetRepo);
             try {
-                promoter.promote(extracted.getArtifactList(), new ChannelCoordinate(coordinate.getGav().split(":")[0], coordinate.getGav().split(":")[1]), sourceRepo);
+                promoter.promote(extracted.getArtifactList(), new ChannelCoordinate(coordinate.getMaven().getGroupId(), coordinate.getMaven().getArtifactId()), sourceRepo);
             } catch (IOException | ArtifactResolutionException | DeploymentException e) {
                 throw Messages.MESSAGES.unableToPromote(targetRepository, e);
             }

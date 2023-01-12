@@ -25,6 +25,7 @@ import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
 import org.wildfly.channel.Channel;
 import org.wildfly.channel.ChannelManifestCoordinate;
+import org.wildfly.channel.MavenCoordinate;
 import org.wildfly.channel.Repository;
 import org.wildfly.prospero.api.InstallationMetadata;
 import org.wildfly.prospero.api.exceptions.MetadataException;
@@ -87,9 +88,9 @@ public class ChannelInitializeCommandTest extends AbstractConsoleTest {
                 CliConstants.CUSTOMIZATION_REPOSITORY_URL, customRepoUrl);
         Assert.assertEquals(ReturnCodes.SUCCESS, exitCode);
         assertThat(actualChannels())
-                .map(c -> c.getManifestRef().getGav())
+                .map(c -> c.getManifestRef().getMaven())
                 .contains(
-                    "org.test:custom-channel"
+                    new MavenCoordinate("org.test", "custom-channel", null)
                 );
         assertThat(actualRepositories())
                 .map(r-> tuple(r.getId(), r.getUrl()))
@@ -118,9 +119,9 @@ public class ChannelInitializeCommandTest extends AbstractConsoleTest {
         Assert.assertEquals(ReturnCodes.INVALID_ARGUMENTS, exitCode);
         assertTrue(getErrorOutput().contains(CliMessages.MESSAGES.customizationRepoExist(CUSTOMIZATION_REPO_ID)));
         assertThat(actualChannels())
-                .map(c -> c.getManifestRef().getGav())
+                .map(c -> c.getManifestRef().getMaven())
                 .doesNotContain(
-                    "org.test:custom-channel"
+                    new MavenCoordinate("org.test", "custom-channel", null)
                 );
     }
 
@@ -182,9 +183,9 @@ public class ChannelInitializeCommandTest extends AbstractConsoleTest {
                             tuple(CUSTOMIZATION_REPO_ID, customRepoUrl)
                     );
             assertThat(actualChannels())
-                    .map(c -> c.getManifestRef().getGav())
+                    .map(c -> c.getManifestRef().getMaven())
                     .doesNotContain(
-                        "org.test:custom-channel"
+                        new MavenCoordinate("org.test", "custom-channel", null)
                     );
         } finally {
             base.toFile().setWritable(true);
@@ -211,9 +212,9 @@ public class ChannelInitializeCommandTest extends AbstractConsoleTest {
                         tuple(CUSTOMIZATION_REPO_ID, customRepoUrl)
                 );
         assertThat(actualChannels())
-                .map(c -> c.getManifestRef().getGav())
+                .map(c -> c.getManifestRef().getMaven())
                 .doesNotContain(
-                    "org.test:custom-channel"
+                    new MavenCoordinate("org.test", "custom-channel", null)
                 );
     }
 
@@ -232,9 +233,9 @@ public class ChannelInitializeCommandTest extends AbstractConsoleTest {
                         installationDir.resolve(InstallationMetadata.METADATA_DIR).resolve(DEFAULT_CUSTOMIZATION_REPOSITORY).toUri().toURL().toString())
                 );
         assertThat(actualChannels())
-                .map(c -> c.getManifestRef().getGav())
+                .map(c -> c.getManifestRef().getMaven())
                 .contains(
-                    "org.test:custom-channel"
+                    new MavenCoordinate("org.test", "custom-channel", null)
                 );
     }
 
@@ -257,9 +258,9 @@ public class ChannelInitializeCommandTest extends AbstractConsoleTest {
                         installationDir.resolve(InstallationMetadata.METADATA_DIR).resolve(DEFAULT_CUSTOMIZATION_REPOSITORY).toUri().toURL().toString())
         );
         assertThat(actualChannels())
-                .map(c -> c.getManifestRef().getGav())
+                .map(c -> c.getManifestRef().getMaven())
                 .contains(
-                    channelName
+                        new MavenCoordinate(channelName.split(":")[0], channelName.split(":")[1], null)
                 );
     }
 
@@ -283,9 +284,9 @@ public class ChannelInitializeCommandTest extends AbstractConsoleTest {
                         tuple("test", "http://test.org/repo")
                 );
         assertThat(actualChannels())
-                .map(c -> c.getManifestRef().getGav())
+                .map(c -> c.getManifestRef().getMaven())
                 .containsOnly(
-                    CUSTOM_CHANNELS_GROUP_ID + ":existing"
+                    new MavenCoordinate(CUSTOM_CHANNELS_GROUP_ID, "existing", null)
                 );
     }
 

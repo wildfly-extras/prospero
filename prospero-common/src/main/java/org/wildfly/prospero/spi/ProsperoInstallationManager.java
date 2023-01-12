@@ -1,6 +1,7 @@
 package org.wildfly.prospero.spi;
 
 import org.wildfly.channel.ChannelManifestCoordinate;
+import org.wildfly.channel.MavenCoordinate;
 import org.wildfly.installationmanager.ArtifactChange;
 import org.wildfly.installationmanager.Channel;
 import org.wildfly.installationmanager.ChannelChange;
@@ -164,11 +165,19 @@ public class ProsperoInstallationManager implements InstallationManager {
             return new Channel(channel.getName(), map(channel.getRepositories(), ProsperoInstallationManager::mapRepository));
         } else if (channel.getManifestRef().getUrl() != null) {
             return new Channel(channel.getName(), map(channel.getRepositories(), ProsperoInstallationManager::mapRepository), channel.getManifestRef().getUrl());
-        } else if (channel.getManifestRef().getGav() != null) {
-            return new Channel(channel.getName(), map(channel.getRepositories(), ProsperoInstallationManager::mapRepository), channel.getManifestRef().getGav());
+        } else if (channel.getManifestRef().getMaven() != null) {
+            return new Channel(channel.getName(), map(channel.getRepositories(), ProsperoInstallationManager::mapRepository), toGav(channel.getManifestRef().getMaven()));
         } else {
             return new Channel(channel.getName(), map(channel.getRepositories(), ProsperoInstallationManager::mapRepository));
         }
+    }
+
+    private static String toGav(MavenCoordinate coord) {
+        final String ga = coord.getGroupId() + ":" + coord.getArtifactId();
+        if (coord.getVersion() != null && !coord.getVersion().isEmpty()) {
+            return ga + ":" + coord.getVersion();
+        }
+        return ga;
     }
 
     private static org.wildfly.channel.Channel mapChannel(Channel channel) {

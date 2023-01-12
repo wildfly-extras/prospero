@@ -19,6 +19,7 @@ package org.wildfly.prospero.cli.commands.channel;
 
 import org.wildfly.channel.Channel;
 import org.wildfly.channel.ChannelManifestCoordinate;
+import org.wildfly.channel.MavenCoordinate;
 import org.wildfly.prospero.Messages;
 import org.wildfly.prospero.actions.Console;
 import org.wildfly.prospero.actions.MetadataAction;
@@ -99,13 +100,13 @@ public class ChannelPromoteCommand extends AbstractCommand {
         }
 
         if (name.isEmpty()) {
-            final Optional<String> res = readSetting(a->a.getChannels().stream()
+            final Optional<MavenCoordinate> res = readSetting(a->a.getChannels().stream()
                     .map(Channel::getManifestRef)
-                    .filter(m -> m.getGav() != null && m.getGav().startsWith(CUSTOM_CHANNELS_GROUP_ID + ":"))
-                    .map(ChannelManifestCoordinate::getGav)
+                    .filter(m -> m.getMaven() != null && m.getMaven().getGroupId().equals(CUSTOM_CHANNELS_GROUP_ID))
+                    .map(ChannelManifestCoordinate::getMaven)
                     .findFirst());
             if (res.isPresent()) {
-                this.name = res;
+                this.name = res.map(this::toGav);
             } else {
                 console.error(CliMessages.MESSAGES.noCustomizationConfigFound(CliConstants.CHANNEL_NAME, CliConstants.CUSTOMIZATION_REPOSITORY_URL));
                 return ReturnCodes.INVALID_ARGUMENTS;
@@ -132,6 +133,14 @@ public class ChannelPromoteCommand extends AbstractCommand {
         }
 
         return ReturnCodes.SUCCESS;
+    }
+
+    private String toGav(MavenCoordinate coord) {
+        final String ga = coord.getGroupId() + ":" + coord.getArtifactId();
+        if (coord.getVersion() != null && !coord.getVersion().isEmpty()) {
+            return ga + ":" + coord.getVersion();
+        }
+        return ga;
     }
 
     private <T> Optional<T> readSetting(ThrowableFunction<MetadataAction, Optional<T>> reader) throws MetadataException {

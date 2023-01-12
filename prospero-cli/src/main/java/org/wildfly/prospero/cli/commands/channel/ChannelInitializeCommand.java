@@ -119,7 +119,7 @@ public class ChannelInitializeCommand extends AbstractCommand {
     private boolean customizationChannelExists(MetadataAction metadataAction) throws MetadataException {
         return metadataAction.getChannels().stream()
                 .map(Channel::getManifestRef)
-                .anyMatch(m -> m.getGav() != null && m.getGav().startsWith(CUSTOM_CHANNELS_GROUP_ID + ":"));
+                .anyMatch(m -> m.getMaven() != null && m.getMaven().getGroupId().equals(CUSTOM_CHANNELS_GROUP_ID));
     }
 
     private boolean createLocalRepository(Path localRepository) throws URISyntaxException {
@@ -161,7 +161,7 @@ public class ChannelInitializeCommand extends AbstractCommand {
         }
         try {
             final ChannelManifestCoordinate manifestRef = ArtifactUtils.manifestCoordFromString(manifestName.get());
-            if (manifestRef.getGav() == null) {
+            if (manifestRef.getMaven() == null) {
                 console.error(CliMessages.MESSAGES.illegalChannel(manifestName.get()));
                 return false;
             }

@@ -32,6 +32,7 @@ import org.junit.rules.TemporaryFolder;
 import org.wildfly.channel.Channel;
 import org.wildfly.channel.ChannelManifest;
 import org.wildfly.channel.ChannelManifestCoordinate;
+import org.wildfly.channel.MavenCoordinate;
 import org.wildfly.channel.Repository;
 import org.wildfly.prospero.api.InstallationMetadata;
 import org.wildfly.prospero.api.exceptions.MetadataException;
@@ -45,8 +46,8 @@ import static org.junit.Assert.assertTrue;
 
 public class ChannelCommandTest extends AbstractConsoleTest {
 
-    private static final String GA = "g:a";
-    private static final String GAV = "g:a:v";
+    private static final MavenCoordinate GA = new MavenCoordinate("g", "a", null);
+    private static final MavenCoordinate GAV = new MavenCoordinate("g", "a", "v");
     private static final String URL = "file:/a:b";
 
     @Rule
@@ -145,13 +146,13 @@ public class ChannelCommandTest extends AbstractConsoleTest {
                 );
         assertThat(installationMetadata.getProsperoConfig().getChannels())
                 .map(c->c.getManifestRef())
-                .map(r->Tuple.tuple(r.getGav(), r.getUrl()))
+                .map(r->Tuple.tuple(r.getMaven(), r.getUrl()))
                 .containsExactly(
                         Tuple.tuple(GA, null),
                         Tuple.tuple(GAV, null),
                         Tuple.tuple(null, new URL(URL)),
-                        Tuple.tuple("org.test:test", null),
-                        Tuple.tuple("g:a2", null),
+                        Tuple.tuple(new MavenCoordinate("org.test", "test", null), null),
+                        Tuple.tuple(new MavenCoordinate("g", "a2", null), null),
                         Tuple.tuple(null, new URL("file:/path"))
                 );
     }
@@ -189,11 +190,11 @@ public class ChannelCommandTest extends AbstractConsoleTest {
     @Test
     public void testAddDuplicate() {
         int exitCode = commandLine.execute(CliConstants.Commands.CHANNEL, CliConstants.Commands.ADD,
-                CliConstants.DIR, dir.toString(), GAV);
+                CliConstants.DIR, dir.toString(), toGav(GAV));
         Assert.assertEquals(ReturnCodes.INVALID_ARGUMENTS, exitCode);
 
         exitCode = commandLine.execute(CliConstants.Commands.CHANNEL, CliConstants.Commands.ADD,
-                CliConstants.DIR, dir.toString(), GA);
+                CliConstants.DIR, dir.toString(), toGav(GA));
         Assert.assertEquals(ReturnCodes.INVALID_ARGUMENTS, exitCode);
 
         exitCode = commandLine.execute(CliConstants.Commands.CHANNEL, CliConstants.Commands.ADD,
@@ -213,7 +214,7 @@ public class ChannelCommandTest extends AbstractConsoleTest {
         try (InstallationMetadata installationMetadata = new InstallationMetadata(dir)) {
             assertThat(installationMetadata.getProsperoConfig().getChannels())
                     .map(c->c.getManifestRef())
-                    .map(r->Tuple.tuple(r.getGav(), r.getUrl()))
+                    .map(r->Tuple.tuple(r.getMaven(), r.getUrl()))
                     .containsExactly(
                             Tuple.tuple(GA, null),
                             Tuple.tuple(null, new URL(URL))
@@ -227,7 +228,7 @@ public class ChannelCommandTest extends AbstractConsoleTest {
         try (InstallationMetadata installationMetadata = new InstallationMetadata(dir)) {
             assertThat(installationMetadata.getProsperoConfig().getChannels())
                     .map(c->c.getManifestRef())
-                    .map(r->Tuple.tuple(r.getGav(), r.getUrl()))
+                    .map(r->Tuple.tuple(r.getMaven(), r.getUrl()))
                     .containsExactly(
                             Tuple.tuple(null, new URL(URL))
                     );
@@ -240,7 +241,7 @@ public class ChannelCommandTest extends AbstractConsoleTest {
         try (InstallationMetadata installationMetadata = new InstallationMetadata(dir)) {
             assertThat(installationMetadata.getProsperoConfig().getChannels())
                     .map(c->c.getManifestRef())
-                    .map(r->Tuple.tuple(r.getGav(), r.getUrl()))
+                    .map(r->Tuple.tuple(r.getMaven(), r.getUrl()))
                     .isEmpty();
         }
     }
@@ -265,6 +266,14 @@ public class ChannelCommandTest extends AbstractConsoleTest {
                 CliConstants.DIR, dir.toString(),
                 CliConstants.CHANNEL_NAME, "test1");
         Assert.assertEquals(ReturnCodes.INVALID_ARGUMENTS, exitCode);
+    }
+
+    private static String toGav(MavenCoordinate coord) {
+        final String ga = coord.getGroupId() + ":" + coord.getArtifactId();
+        if (coord.getVersion() != null && !coord.getVersion().isEmpty()) {
+            return ga + ":" + coord.getVersion();
+        }
+        return ga;
     }
 
 }

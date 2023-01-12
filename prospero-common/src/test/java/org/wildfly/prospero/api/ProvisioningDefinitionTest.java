@@ -25,6 +25,7 @@ import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
 import org.wildfly.channel.Channel;
 import org.wildfly.channel.ChannelManifestCoordinate;
+import org.wildfly.channel.MavenCoordinate;
 import org.wildfly.channel.Repository;
 import org.wildfly.channel.maven.VersionResolverFactory;
 import org.wildfly.prospero.Messages;
@@ -174,8 +175,10 @@ public class ProvisioningDefinitionTest {
         final ProvisioningDefinition.Builder builder = new ProvisioningDefinition.Builder().setFpl("multi-channel");
 
         final ProvisioningDefinition def = builder.build();
-        assertThat(def.resolveChannels(VERSION_RESOLVER_FACTORY).stream().map(c -> c.getManifestRef().getGav())).contains(
-                "test:one", "test:two");
+        assertThat(def.resolveChannels(VERSION_RESOLVER_FACTORY).stream().map(c -> c.getManifestRef().getMaven()))
+                .contains(
+                new MavenCoordinate("test", "one", null),
+                new MavenCoordinate("test", "two", null));
     }
 
     @Test
@@ -217,7 +220,7 @@ public class ProvisioningDefinitionTest {
 
         assertEquals(1, channels.size());
         final Channel channel = channels.get(0);
-        assertEquals("new.test:gav", channel.getManifestRef().getGav());
+        assertEquals(new MavenCoordinate("new.test", "gav", null), channel.getManifestRef().getMaven());
         assertThat(channel.getRepositories())
                 .map(r-> Tuple.tuple(r.getId(), r.getUrl()))
                 .containsExactlyInAnyOrder(
