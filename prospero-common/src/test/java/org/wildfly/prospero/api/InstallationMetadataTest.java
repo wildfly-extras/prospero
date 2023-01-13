@@ -28,6 +28,7 @@ import org.wildfly.channel.Channel;
 import org.wildfly.channel.ChannelManifest;
 import org.wildfly.channel.ChannelManifestCoordinate;
 import org.wildfly.channel.ChannelManifestMapper;
+import org.wildfly.channel.MavenCoordinate;
 import org.wildfly.channel.Repository;
 import org.wildfly.prospero.installation.git.GitStorage;
 import org.wildfly.prospero.model.ProsperoConfig;
@@ -73,7 +74,8 @@ public class InstallationMetadataTest {
         final ProsperoConfig updatedConfig = installationMetadata.getProsperoConfig();
         assertEquals(2, updatedConfig.getChannels().size());
         assertEquals("new channel should be added in first place",
-                "new:channel", updatedConfig.getChannels().get(1).getManifestRef().getGav());
+                new MavenCoordinate("new", "channel", null),
+                updatedConfig.getChannels().get(1).getManifestRef().getMaven());
         assertEquals("test", updatedConfig.getChannels().get(1).getRepositories().get(0).getId());
         assertEquals("file://foo.bar", updatedConfig.getChannels().get(1).getRepositories().get(0).getUrl());
         verify(gitStorage).recordConfigChange();
@@ -92,9 +94,9 @@ public class InstallationMetadataTest {
         try (final InstallationMetadata im = new InstallationMetadata(base)) {
             final ProsperoConfig newConfig = im.getProsperoConfig();
             assertThat(newConfig.getChannels())
-                .map(channel1 -> channel1.getManifestRef().getGav())
+                .map(channel1 -> channel1.getManifestRef().getMaven())
                 .doesNotContain(
-                    "new:channel"
+                    new MavenCoordinate("new", "channel", null)
             );
         }
     }
@@ -116,7 +118,7 @@ public class InstallationMetadataTest {
         try (final InstallationMetadata im = new InstallationMetadata(base)) {
             final ProsperoConfig newConfig = im.getProsperoConfig();
             assertEquals(1, newConfig.getChannels().size());
-            assertEquals("new:channel", newConfig.getChannels().get(0).getManifestRef().getGav());
+            assertEquals(new MavenCoordinate("new", "channel", null), newConfig.getChannels().get(0).getManifestRef().getMaven());
             assertEquals("file://foo.bar", newConfig.getChannels().get(0).getRepositories().get(0).getUrl());
             assertEquals("test", newConfig.getChannels().get(0).getRepositories().get(0).getId());
         }

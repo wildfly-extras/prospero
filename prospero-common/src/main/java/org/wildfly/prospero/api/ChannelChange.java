@@ -19,6 +19,7 @@ package org.wildfly.prospero.api;
 
 import org.apache.commons.lang3.StringUtils;
 import org.wildfly.channel.Channel;
+import org.wildfly.channel.MavenCoordinate;
 import org.wildfly.channel.Repository;
 
 import java.util.ArrayList;
@@ -115,7 +116,15 @@ public class ChannelChange extends Diff {
         if (channel == null) {
             return null;
         }
-        return channel.getManifestRef().getGav() == null
-                ? channel.getManifestRef().getUrl().toExternalForm() : channel.getManifestRef().getGav();
+        return channel.getManifestRef().getMaven() == null
+                ? channel.getManifestRef().getUrl().toExternalForm() : toGav(channel.getManifestRef().getMaven());
+    }
+
+    private static String toGav(MavenCoordinate coord) {
+        final String ga = coord.getGroupId() + ":" + coord.getArtifactId();
+        if (coord.getVersion() != null && !coord.getVersion().isEmpty()) {
+            return ga + ":" + coord.getVersion();
+        }
+        return ga;
     }
 }

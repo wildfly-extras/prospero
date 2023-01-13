@@ -26,6 +26,7 @@ import javax.xml.stream.XMLStreamException;
 import org.jboss.galleon.ProvisioningException;
 import org.jboss.galleon.config.ProvisioningConfig;
 import org.junit.Test;
+import org.wildfly.channel.MavenCoordinate;
 import org.wildfly.channel.Repository;
 import org.wildfly.prospero.galleon.GalleonUtils;
 import org.wildfly.prospero.model.KnownFeaturePack;
@@ -41,7 +42,7 @@ public class KnownFeaturePacksTest {
         assertThat(knownFeaturePack.getGalleonConfiguration()).isEqualTo(
                 new URI("classpath:galleon-provisioning.xml"));
         assertThat(knownFeaturePack.getChannels().get(0)).satisfies(channel -> {
-            assertThat(channel.getManifestRef().getGav()).isEqualTo("test:one");
+            assertThat(channel.getManifestRef().getMaven()).isEqualTo(new MavenCoordinate("test", "one", null));
             assertThat(channel.getRepositories()).containsOnly(new Repository("central", "https://repo1.maven.org/maven2/"));
         });
 

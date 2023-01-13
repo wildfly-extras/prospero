@@ -22,6 +22,7 @@ import java.util.List;
 import java.util.Optional;
 
 import org.wildfly.channel.Channel;
+import org.wildfly.channel.MavenCoordinate;
 import org.wildfly.channel.Repository;
 import org.wildfly.prospero.actions.Console;
 import org.wildfly.prospero.actions.MetadataAction;
@@ -66,8 +67,8 @@ public class ChannelCommand extends AbstractCommand {
             console.println("-------");
             for (Channel channel: channels) {
                 console.println("#" + channel.getName());
-                final String manifest = channel.getManifestRef().getGav() == null
-                        ?channel.getManifestRef().getUrl().toExternalForm():channel.getManifestRef().getGav();
+                final String manifest = channel.getManifestRef().getMaven() == null
+                        ?channel.getManifestRef().getUrl().toExternalForm():toGav(channel.getManifestRef().getMaven());
                 console.println("  " + "manifest: " + manifest);
                 console.println("  " + "repositories:");
                 for (Repository repository : channel.getRepositories()) {
@@ -79,6 +80,14 @@ public class ChannelCommand extends AbstractCommand {
 
             return ReturnCodes.SUCCESS;
         }
+        private static String toGav(MavenCoordinate coord) {
+            final String ga = coord.getGroupId() + ":" + coord.getArtifactId();
+            if (coord.getVersion() != null && !coord.getVersion().isEmpty()) {
+                return ga + ":" + coord.getVersion();
+            }
+            return ga;
+        }
     }
+
 
 }
