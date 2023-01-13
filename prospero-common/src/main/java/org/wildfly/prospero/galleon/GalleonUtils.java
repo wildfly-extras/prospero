@@ -60,14 +60,19 @@ public class GalleonUtils {
 
     private static final String CLASSPATH_SCHEME = "classpath";
     private static final String FILE_SCHEME = "file";
+    static final String JAVAX_MANAGEMENT_BUILDER_INITIAL_PROPERTY = "javax.management.builder.initial";
 
     public static void executeGalleon(GalleonExecution execution, Path localRepository) throws ProvisioningException, UnresolvedMavenArtifactException {
         final String modulePathProperty = System.getProperty(MODULE_PATH_PROPERTY);
+        final String javaxManagementBuilderProperty = System.getProperty(JAVAX_MANAGEMENT_BUILDER_INITIAL_PROPERTY);
 
         try {
             System.setProperty(MAVEN_REPO_LOCAL, localRepository.toString());
             if (modulePathProperty != null) {
                 System.clearProperty(MODULE_PATH_PROPERTY);
+            }
+            if (javaxManagementBuilderProperty != null) {
+                System.clearProperty(JAVAX_MANAGEMENT_BUILDER_INITIAL_PROPERTY);
             }
             final Map<String, String> options = new HashMap<>();
             options.put(GalleonUtils.JBOSS_FORK_EMBEDDED_PROPERTY, GalleonUtils.JBOSS_FORK_EMBEDDED_VALUE);
@@ -82,6 +87,9 @@ public class GalleonUtils {
             System.clearProperty(MAVEN_REPO_LOCAL);
             if (modulePathProperty != null) {
                 System.setProperty(MODULE_PATH_PROPERTY, modulePathProperty);
+            }
+            if (javaxManagementBuilderProperty != null) {
+                System.setProperty(JAVAX_MANAGEMENT_BUILDER_INITIAL_PROPERTY, javaxManagementBuilderProperty);
             }
         }
     }
