@@ -12,8 +12,8 @@
 
   <dependencies>
     <dependency>
-      <groupId>org.wildfly</groupId>
-      <artifactId>wildfly-ee-galleon-pack</artifactId>
+      <groupId>${prospero.base.feature-pack.groupId}</groupId>
+      <artifactId>${prospero.base.feature-pack.artifactId}</artifactId>
       <type>zip</type>
     </dependency>
 
@@ -68,6 +68,26 @@
             </configuration>
           </execution>
           <execution>
+            <id>prepare-feature-pack-descriptor</id>
+            <phase>process-resources</phase>
+            <goals>
+              <goal>copy-resources</goal>
+            </goals>
+            <configuration>
+              <outputDirectory>${basedir}/target</outputDirectory>
+              <escapeString>\</escapeString>
+              <resources>
+                <resource>
+                  <directory>src/main/config</directory>
+                  <includes>
+                    <include>*.xml</include>
+                  </includes>
+                  <filtering>true</filtering>
+                </resource>
+              </resources>
+            </configuration>
+          </execution>
+          <execution>
             <id>copy-resources</id>
             <phase>process-resources</phase>
             <goals>
@@ -97,6 +117,7 @@
             <configuration>
               <resources-dir>${basedir}/target/resources</resources-dir>
               <generate-channel>true</generate-channel>
+              <configFile>target/wildfly-user-feature-pack-build.xml</configFile>
               <add-feature-packs-as-required-channels>false</add-feature-packs-as-required-channels>
             </configuration>
           </execution>
