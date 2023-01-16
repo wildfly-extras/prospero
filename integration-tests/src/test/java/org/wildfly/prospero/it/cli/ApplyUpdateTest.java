@@ -65,7 +65,7 @@ public class ApplyUpdateTest extends CliTestBase  {
         final URL temporaryRepo = mockTemporaryRepo(true);
 
         // generate update-candidate
-        ExecutionUtils.prosperoExecution(CliConstants.Commands.UPDATE,
+        ExecutionUtils.prosperoExecution(CliConstants.Commands.UPDATE, CliConstants.Commands.PREPARE,
                         CliConstants.REPOSITORIES, temporaryRepo.toString(),
                         CliConstants.UPDATE_DIR, updatePath.toAbsolutePath().toString(),
                         CliConstants.Y,
@@ -78,7 +78,7 @@ public class ApplyUpdateTest extends CliTestBase  {
         assertEquals(WfCoreTestBase.BASE_VERSION, wildflyCliStream.get().getVersion());
 
         // apply update-candidate
-        ExecutionUtils.prosperoExecution(CliConstants.Commands.APPLY_UPDATE,
+        ExecutionUtils.prosperoExecution(CliConstants.Commands.UPDATE, CliConstants.Commands.APPLY,
                         CliConstants.UPDATE_DIR, updatePath.toAbsolutePath().toString(),
                         CliConstants.DIR, targetDir.getAbsolutePath())
                 .execute()

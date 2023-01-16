@@ -94,7 +94,7 @@ public class UpdateCommandTest extends AbstractMavenCommandTest {
 
     @Test
     public void currentDirNotValidInstallation() {
-        int exitCode = commandLine.execute(CliConstants.Commands.UPDATE);
+        int exitCode = commandLine.execute(CliConstants.Commands.UPDATE, CliConstants.Commands.PERFORM);
 
         Assert.assertEquals(ReturnCodes.INVALID_ARGUMENTS, exitCode);
         assertTrue(getErrorOutput().contains(CliMessages.MESSAGES.invalidInstallationDir(UpdateCommand.currentDir().toAbsolutePath())
@@ -104,7 +104,8 @@ public class UpdateCommandTest extends AbstractMavenCommandTest {
     @Test
     public void callUpdate() throws Exception {
         when(updateAction.findUpdates()).thenReturn(new UpdateSet(List.of(change("1.0.0", "1.0.1"))));
-        int exitCode = commandLine.execute(CliConstants.Commands.UPDATE, CliConstants.DIR, installationDir.toString());
+        int exitCode = commandLine.execute(CliConstants.Commands.UPDATE, CliConstants.Commands.PERFORM,
+                CliConstants.DIR, installationDir.toString());
 
         assertEquals(ReturnCodes.SUCCESS, exitCode);
         Mockito.verify(updateAction).performUpdate();
@@ -112,7 +113,7 @@ public class UpdateCommandTest extends AbstractMavenCommandTest {
 
     @Test
     public void selfUpdateRequiresModulePathProp() {
-        int exitCode = commandLine.execute(CliConstants.Commands.UPDATE, CliConstants.SELF);
+        int exitCode = commandLine.execute(CliConstants.Commands.UPDATE, CliConstants.Commands.PERFORM, CliConstants.SELF);
 
         assertEquals(ReturnCodes.INVALID_ARGUMENTS, exitCode);
         assertTrue(getErrorOutput().contains(CliMessages.MESSAGES.unableToLocateProsperoInstallation().getMessage()));
@@ -123,7 +124,7 @@ public class UpdateCommandTest extends AbstractMavenCommandTest {
         System.setProperty(UpdateCommand.JBOSS_MODULE_PATH, installationDir.resolve(MODULES_DIR).toString());
         when(updateAction.findUpdates()).thenReturn(new UpdateSet(List.of(change("1.0.0", "1.0.1"))));
 
-        int exitCode = commandLine.execute(CliConstants.Commands.UPDATE, CliConstants.SELF);
+        int exitCode = commandLine.execute(CliConstants.Commands.UPDATE, CliConstants.Commands.PERFORM, CliConstants.SELF);
 
         assertEquals(ReturnCodes.SUCCESS, exitCode);
         Mockito.verify(actionFactory).update(eq(installationDir.toAbsolutePath()), any(), any(), any());
@@ -135,7 +136,7 @@ public class UpdateCommandTest extends AbstractMavenCommandTest {
         System.setProperty(UpdateCommand.JBOSS_MODULE_PATH, installationDir.toString());
         when(updateAction.findUpdates()).thenReturn(new UpdateSet(List.of(change("1.0.0", "1.0.1"))));
 
-        int exitCode = commandLine.execute(CliConstants.Commands.UPDATE, CliConstants.SELF,
+        int exitCode = commandLine.execute(CliConstants.Commands.UPDATE, CliConstants.Commands.PERFORM, CliConstants.SELF,
                 CliConstants.DIR, installationDir.toAbsolutePath().toString());
 
         assertEquals(ReturnCodes.SUCCESS, exitCode);
@@ -146,7 +147,7 @@ public class UpdateCommandTest extends AbstractMavenCommandTest {
     @Test
     public void selfUpdateFailsIfMultipleFPsDetected() throws Exception {
         MetadataTestUtils.createGalleonProvisionedState(installationDir, A_PROSPERO_FP, OTHER_FP);
-        int exitCode = commandLine.execute(CliConstants.Commands.UPDATE, CliConstants.SELF,
+        int exitCode = commandLine.execute(CliConstants.Commands.UPDATE, CliConstants.Commands.PERFORM, CliConstants.SELF,
                 CliConstants.DIR, installationDir.toAbsolutePath().toString());
 
         assertEquals(ReturnCodes.INVALID_ARGUMENTS, exitCode);
@@ -157,7 +158,7 @@ public class UpdateCommandTest extends AbstractMavenCommandTest {
     @Test
     public void selfUpdateFailsIfProsperoFPNotDetected() throws Exception {
         MetadataTestUtils.createGalleonProvisionedState(installationDir, OTHER_FP);
-        int exitCode = commandLine.execute(CliConstants.Commands.UPDATE, CliConstants.SELF,
+        int exitCode = commandLine.execute(CliConstants.Commands.UPDATE, CliConstants.Commands.PERFORM, CliConstants.SELF,
                 CliConstants.DIR, installationDir.toString());
 
         assertEquals(ReturnCodes.INVALID_ARGUMENTS, exitCode);
@@ -171,7 +172,7 @@ public class UpdateCommandTest extends AbstractMavenCommandTest {
         when(updateAction.findUpdates()).thenReturn(new UpdateSet(List.of(change("1.0.0", "1.0.1"))));
         this.setDenyConfirm(true);
 
-        int exitCode = commandLine.execute(CliConstants.Commands.UPDATE, CliConstants.SELF,
+        int exitCode = commandLine.execute(CliConstants.Commands.UPDATE, CliConstants.Commands.PERFORM, CliConstants.SELF,
                 CliConstants.DIR, installationDir.toAbsolutePath().toString());
 
         assertEquals(ReturnCodes.SUCCESS, exitCode);
@@ -185,7 +186,7 @@ public class UpdateCommandTest extends AbstractMavenCommandTest {
         System.setProperty(UpdateCommand.JBOSS_MODULE_PATH, installationDir.toString());
         when(updateAction.findUpdates()).thenReturn(new UpdateSet(List.of(change("1.0.0", "1.0.1"))));
 
-        int exitCode = commandLine.execute(CliConstants.Commands.UPDATE, CliConstants.SELF,
+        int exitCode = commandLine.execute(CliConstants.Commands.UPDATE, CliConstants.Commands.PERFORM, CliConstants.SELF,
                 CliConstants.DIR, installationDir.toAbsolutePath().toString());
 
         assertEquals(ReturnCodes.SUCCESS, exitCode);
@@ -199,7 +200,7 @@ public class UpdateCommandTest extends AbstractMavenCommandTest {
         System.setProperty(UpdateCommand.JBOSS_MODULE_PATH, installationDir.toString());
         when(updateAction.findUpdates()).thenReturn(new UpdateSet(List.of(change("1.0.0", "1.0.1"))));
 
-        int exitCode = commandLine.execute(CliConstants.Commands.UPDATE, CliConstants.DRY_RUN,
+        int exitCode = commandLine.execute(CliConstants.Commands.UPDATE, CliConstants.Commands.PERFORM, CliConstants.DRY_RUN,
                 CliConstants.DIR, installationDir.toAbsolutePath().toString());
 
         assertEquals(ReturnCodes.SUCCESS, exitCode);
@@ -214,7 +215,7 @@ public class UpdateCommandTest extends AbstractMavenCommandTest {
         when(updateAction.findUpdates()).thenReturn(new UpdateSet(List.of(change("1.0.0", "1.0.1"))));
         final Path updatePath = tempFolder.newFolder().toPath();
 
-        int exitCode = commandLine.execute(CliConstants.Commands.UPDATE, CliConstants.UPDATE_DIR, updatePath.toString(),
+        int exitCode = commandLine.execute(CliConstants.Commands.UPDATE, CliConstants.Commands.PREPARE, CliConstants.UPDATE_DIR, updatePath.toString(),
                 CliConstants.DIR, installationDir.toAbsolutePath().toString());
 
         assertEquals(ReturnCodes.SUCCESS, exitCode);
@@ -229,7 +230,7 @@ public class UpdateCommandTest extends AbstractMavenCommandTest {
         when(updateAction.findUpdates()).thenReturn(new UpdateSet(Collections.emptyList()));
         final Path updatePath = tempFolder.newFolder().toPath();
 
-        int exitCode = commandLine.execute(CliConstants.Commands.UPDATE, CliConstants.UPDATE_DIR, updatePath.toString(),
+        int exitCode = commandLine.execute(CliConstants.Commands.UPDATE, CliConstants.Commands.PREPARE, CliConstants.UPDATE_DIR, updatePath.toString(),
                 CliConstants.DIR, installationDir.toAbsolutePath().toString());
 
         assertEquals(ReturnCodes.SUCCESS, exitCode);
@@ -242,7 +243,7 @@ public class UpdateCommandTest extends AbstractMavenCommandTest {
     public void testBuildUpdateTargetHasToBeEmptyDirectory() throws Exception {
         final Path updatePath = tempFolder.newFolder().toPath();
         Files.writeString(updatePath.resolve("test.txt"), "test");
-        int exitCode = commandLine.execute(CliConstants.Commands.UPDATE, CliConstants.UPDATE_DIR, updatePath.toString(),
+        int exitCode = commandLine.execute(CliConstants.Commands.UPDATE, CliConstants.Commands.PREPARE, CliConstants.UPDATE_DIR, updatePath.toString(),
                 CliConstants.DIR, installationDir.toAbsolutePath().toString());
 
         assertEquals(ReturnCodes.INVALID_ARGUMENTS, exitCode);
@@ -253,7 +254,7 @@ public class UpdateCommandTest extends AbstractMavenCommandTest {
     @Test
     public void testBuildUpdateTargetHasToBeADirectory() throws Exception {
         final Path aFile = tempFolder.newFile().toPath();
-        int exitCode = commandLine.execute(CliConstants.Commands.UPDATE, CliConstants.UPDATE_DIR, aFile.toString(),
+        int exitCode = commandLine.execute(CliConstants.Commands.UPDATE, CliConstants.Commands.PREPARE, CliConstants.UPDATE_DIR, aFile.toString(),
                 CliConstants.DIR, installationDir.toAbsolutePath().toString());
 
         assertEquals(ReturnCodes.INVALID_ARGUMENTS, exitCode);
@@ -280,7 +281,7 @@ public class UpdateCommandTest extends AbstractMavenCommandTest {
 
     @Override
     protected String[] getDefaultArguments() {
-        return new String[] {CliConstants.Commands.UPDATE, CliConstants.DIR, installationDir.toString()};
+        return new String[] {CliConstants.Commands.UPDATE, CliConstants.Commands.PERFORM, CliConstants.DIR, installationDir.toString()};
     }
 
 }

@@ -70,7 +70,7 @@ public class ApplyUpdateCommandTest extends AbstractConsoleTest {
 
     @Test
     public void requireUpdateDirPresent() throws Exception {
-        int exitCode = commandLine.execute(CliConstants.Commands.APPLY_UPDATE);
+        int exitCode = commandLine.execute(CliConstants.Commands.UPDATE, CliConstants.Commands.APPLY);
         Assert.assertEquals(ReturnCodes.INVALID_ARGUMENTS, exitCode);
         assertTrue(getErrorOutput().contains(String.format("Missing required option: '%s",
                 CliConstants.UPDATE_DIR)));
@@ -80,7 +80,7 @@ public class ApplyUpdateCommandTest extends AbstractConsoleTest {
     public void callUpdateAction() throws Exception {
         final Path updatePath = mockInstallation("update");
         final Path targetPath = mockInstallation("target");
-        int exitCode = commandLine.execute(CliConstants.Commands.APPLY_UPDATE,
+        int exitCode = commandLine.execute(CliConstants.Commands.UPDATE, CliConstants.Commands.APPLY,
                 CliConstants.UPDATE_DIR, updatePath.toString(),
                 CliConstants.DIR, targetPath.toString());
 
@@ -93,7 +93,7 @@ public class ApplyUpdateCommandTest extends AbstractConsoleTest {
         final Path updatePath = mockInstallation("update");
         final Path targetPath = temp.newFolder("target").toPath();
 
-        int exitCode = commandLine.execute(CliConstants.Commands.APPLY_UPDATE,
+        int exitCode = commandLine.execute(CliConstants.Commands.UPDATE, CliConstants.Commands.APPLY,
                 CliConstants.UPDATE_DIR, updatePath.toString(),
                 CliConstants.DIR, targetPath.toString());
 
@@ -107,7 +107,7 @@ public class ApplyUpdateCommandTest extends AbstractConsoleTest {
         final Path updatePath = temp.newFolder("update").toPath();
         final Path targetPath = mockInstallation("target");
 
-        int exitCode = commandLine.execute(CliConstants.Commands.APPLY_UPDATE,
+        int exitCode = commandLine.execute(CliConstants.Commands.UPDATE, CliConstants.Commands.APPLY,
                 CliConstants.UPDATE_DIR, updatePath.toString(),
                 CliConstants.DIR, targetPath.toString());
 
@@ -120,7 +120,7 @@ public class ApplyUpdateCommandTest extends AbstractConsoleTest {
     public void targetFolderNeedsToBeProsperoInstallation() throws Exception {
         final Path updatePath = mockInstallation("update");
         final Path targetPath = temp.newFolder().toPath();
-        int exitCode = commandLine.execute(CliConstants.Commands.APPLY_UPDATE,
+        int exitCode = commandLine.execute(CliConstants.Commands.UPDATE, CliConstants.Commands.APPLY,
                 CliConstants.UPDATE_DIR, updatePath.toString(),
                 CliConstants.DIR, targetPath.toString());
 
@@ -136,7 +136,7 @@ public class ApplyUpdateCommandTest extends AbstractConsoleTest {
         final Path targetPath = mockInstallation("target");
         Files.deleteIfExists(updatePath.resolve(ApplyCandidateAction.UPDATE_MARKER_FILE));
 
-        int exitCode = commandLine.execute(CliConstants.Commands.APPLY_UPDATE,
+        int exitCode = commandLine.execute(CliConstants.Commands.UPDATE, CliConstants.Commands.APPLY,
                 CliConstants.UPDATE_DIR, updatePath.toString(),
                 CliConstants.DIR, targetPath.toString());
 
@@ -153,7 +153,7 @@ public class ApplyUpdateCommandTest extends AbstractConsoleTest {
 
         when(applyCandidateAction.verifyUpdateCandidate()).thenReturn(false);
 
-        int exitCode = commandLine.execute(CliConstants.Commands.APPLY_UPDATE,
+        int exitCode = commandLine.execute(CliConstants.Commands.UPDATE, CliConstants.Commands.APPLY,
                 CliConstants.UPDATE_DIR, updatePath.toString(),
                 CliConstants.DIR, targetPath.toString());
 
