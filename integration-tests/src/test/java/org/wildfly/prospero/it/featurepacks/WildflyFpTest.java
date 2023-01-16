@@ -68,7 +68,8 @@ public class WildflyFpTest {
 
         // TODO: This doesn't work due to incompatible wildfly-channel library version. Re-enable after we get back to an
         //  official wildfly-channel release.
-        ExecutionUtils.prosperoExecution(CliConstants.Commands.UPDATE, CliConstants.DRY_RUN,
+        ExecutionUtils.prosperoExecution(CliConstants.Commands.UPDATE, CliConstants.Commands.PERFORM,
+                CliConstants.DRY_RUN,
                 CliConstants.DIR, targetDir.toAbsolutePath().toString())
                 .withTimeLimit(10, TimeUnit.MINUTES)
                 .execute(installedProspero)

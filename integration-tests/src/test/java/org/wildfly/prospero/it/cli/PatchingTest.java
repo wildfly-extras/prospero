@@ -97,7 +97,7 @@ public class PatchingTest {
                 .assertReturnCode(ReturnCodes.SUCCESS);
 
         // apply update
-        ExecutionUtils.prosperoExecution(CliConstants.Commands.UPDATE,
+        ExecutionUtils.prosperoExecution(CliConstants.Commands.UPDATE, CliConstants.Commands.PERFORM,
                         CliConstants.DIR, targetDir.getAbsolutePath(),
                         CliConstants.Y)
                 .execute()
@@ -155,7 +155,7 @@ public class PatchingTest {
                     .assertReturnCode(ReturnCodes.SUCCESS);
 
             // apply update
-            ExecutionUtils.prosperoExecution(CliConstants.Commands.UPDATE,
+            ExecutionUtils.prosperoExecution(CliConstants.Commands.UPDATE, CliConstants.Commands.PERFORM,
                             CliConstants.DIR, targetDir.getAbsolutePath(),
                             CliConstants.Y)
                     .execute()

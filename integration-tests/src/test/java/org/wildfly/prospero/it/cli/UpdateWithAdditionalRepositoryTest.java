@@ -62,7 +62,7 @@ public class UpdateWithAdditionalRepositoryTest extends CliTestBase {
 
         final URL temporaryRepo = mockTemporaryRepo(true);
 
-        ExecutionUtils.prosperoExecution(CliConstants.Commands.UPDATE,
+        ExecutionUtils.prosperoExecution(CliConstants.Commands.UPDATE, CliConstants.Commands.PERFORM,
                         CliConstants.REPOSITORIES, temporaryRepo.toString(),
                         CliConstants.Y,
                         CliConstants.NO_LOCAL_MAVEN_CACHE,

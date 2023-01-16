@@ -31,9 +31,6 @@ public abstract class AbstractMavenCommand extends AbstractCommand {
     @CommandLine.Option(names = CliConstants.DIR)
     Optional<Path> directory;
 
-    @CommandLine.Option(names = CliConstants.REVISION, required = true)
-    String revision;
-
     @CommandLine.Option(names = CliConstants.REPOSITORIES)
     List<String> temporaryRepositories = new ArrayList<>();
 

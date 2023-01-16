@@ -36,10 +36,13 @@ import picocli.CommandLine;
         name = CliConstants.Commands.REVERT,
         sortOptions = false
 )
-public class RevertCommand extends AbstractCommand {
+public class RevertCommand extends AbstractParentCommand {
 
     @CommandLine.Command(name = CliConstants.Commands.PERFORM, sortOptions = false)
-    public class PerformCommand extends AbstractMavenCommand {
+    public static class PerformCommand extends AbstractMavenCommand {
+
+        @CommandLine.Option(names = CliConstants.REVISION, required = true)
+        String revision;
 
         public PerformCommand(Console console, ActionFactory actionFactory) {
             super(console, actionFactory);
@@ -59,7 +62,7 @@ public class RevertCommand extends AbstractCommand {
     }
 
     @CommandLine.Command(name = CliConstants.Commands.APPLY, sortOptions = false)
-    public class ApplyCommand extends AbstractCommand {
+    public static class ApplyCommand extends AbstractCommand {
 
         @CommandLine.Option(names = CliConstants.DIR)
         Optional<Path> directory;
@@ -82,7 +85,10 @@ public class RevertCommand extends AbstractCommand {
     }
 
     @CommandLine.Command(name = CliConstants.Commands.PREPARE, sortOptions = false)
-    public class PrepareCommand extends AbstractMavenCommand {
+    public static class PrepareCommand extends AbstractMavenCommand {
+
+        @CommandLine.Option(names = CliConstants.REVISION, required = true)
+        String revision;
 
         @CommandLine.Option(names = CliConstants.UPDATE_DIR, required = true)
         Path updateDirectory;
@@ -106,23 +112,11 @@ public class RevertCommand extends AbstractCommand {
         }
     }
 
-    @CommandLine.Spec
-    protected CommandLine.Model.CommandSpec spec;
-
     public RevertCommand(Console console, ActionFactory actionFactory) {
-        super(console, actionFactory);
-    }
-
-    @Override
-    public Integer call() throws Exception {
-        spec.commandLine().usage(console.getErrOut());
-        return ReturnCodes.INVALID_ARGUMENTS;
-    }
-
-    public void addSubCommands(CommandLine rootCmd) {
-        CommandLine revertCmd = rootCmd.getSubcommands().get(CliConstants.Commands.REVERT);
-        revertCmd.addSubcommand(new PrepareCommand(console, actionFactory));
-        revertCmd.addSubcommand(new ApplyCommand(console, actionFactory));
-        revertCmd.addSubcommand(new PerformCommand(console, actionFactory));
+        super(console, actionFactory, CliConstants.Commands.REVERT, List.of(
+                new PrepareCommand(console, actionFactory),
+                new ApplyCommand(console, actionFactory),
+                new PerformCommand(console, actionFactory)
+        ));
     }
 }
