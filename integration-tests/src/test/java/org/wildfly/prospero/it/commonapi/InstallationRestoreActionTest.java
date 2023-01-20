@@ -96,8 +96,8 @@ public class InstallationRestoreActionTest extends WfCoreTestBase {
         List<Repository> repositories1 = defaultRemoteRepositories().stream()
                 .map(r->new Repository(r.getId(), r.getUrl())).collect(Collectors.toList());
         for (int i = 0; i< channelUrls.size(); i++) {
-            channels.add(new Channel("channel-" + i, "", null, null, repositories1,
-                    new ChannelManifestCoordinate(channelUrls.get(i))));
+            channels.add(new Channel("channel-" + i, "", null, repositories1,
+                    new ChannelManifestCoordinate(channelUrls.get(i)), null, null));
         }
 
         new ProsperoConfig(channels).writeConfig(provisionConfigFile);

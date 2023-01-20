@@ -163,8 +163,9 @@ public class CloneTest extends WfCoreTestBase {
         ExecutionUtils.prosperoExecution(CliConstants.Commands.CLONE, CliConstants.Commands.RESTORE,
             CliConstants.DIR, importDir.toString(),
             CliConstants.ARG_PATH, exportPath.toString(),
+            CliConstants.NO_LOCAL_MAVEN_CACHE,
             // mockTemporaryRepo contains org.wildfly.core:wildfly-cli:19.0.0.Beta12-SNAPSHOT
-            CliConstants.REPOSITORIES, mockTemporaryRepo(true).toString()
+            CliConstants.REPOSITORIES, mockTemporaryRepo(false).toString()
           )
           .execute()
           .assertReturnCode(ReturnCodes.SUCCESS);

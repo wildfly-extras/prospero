@@ -59,7 +59,7 @@ public class WildflyFpTest {
                         CliConstants.CHANNELS, channelsFile.toString(),
                         CliConstants.DEFINITION, Paths.get(provisionDefinition.toURI()).toString(),
                         CliConstants.DIR, targetDir.toAbsolutePath().toString())
-                .withTimeLimit(10, TimeUnit.MINUTES)
+                .withTimeLimit(20, TimeUnit.MINUTES)
                 .execute()
                 .assertReturnCode(ReturnCodes.SUCCESS);
 

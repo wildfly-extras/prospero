@@ -38,6 +38,9 @@ import org.eclipse.aether.spi.connector.RepositoryConnectorFactory;
 import org.eclipse.aether.spi.connector.transport.TransporterFactory;
 import org.eclipse.aether.transport.http.HttpTransporterFactory;
 import org.wildfly.channel.Channel;
+import org.wildfly.channel.ChannelManifest;
+import org.wildfly.channel.ChannelManifestCoordinate;
+import org.wildfly.channel.ChannelManifestMapper;
 import org.wildfly.channel.ChannelMapper;
 import org.wildfly.channel.ChannelSession;
 import org.wildfly.channel.MavenArtifact;
@@ -89,7 +92,12 @@ public class BootstrapUpdater {
             final ChannelSession channelSession = session;
 
             List<Path> previousVersions = new ArrayList<>();
-            for (Stream stream : channel.getManifest().getStreams()) {
+            final ChannelManifestCoordinate manifestCoord = channel.getManifestCoordinate();
+            final List<URL> urls = mavenResolver.resolveChannelMetadata(List.of(manifestCoord));
+
+            final ChannelManifest manifest = ChannelManifestMapper.from(urls.get(0));
+
+            for (Stream stream : manifest.getStreams()) {
                 final String groupId = stream.getGroupId();
                 final String artifactId = stream.getArtifactId();
                 final String extension = "jar";

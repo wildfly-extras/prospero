@@ -215,8 +215,8 @@ public class UpdateTest extends WfCoreTestBase {
         final List<Repository> repositories = new ArrayList<>(defaultRemoteRepositories());
         final File channelsFile = temp.newFile(InstallationMetadata.INSTALLER_CHANNELS_FILE_NAME);
         repositories.add(new Repository("test-repo", mockRepo.toURI().toURL().toString()));
-        Channel channel = new Channel("test", "", null, null, repositories,
-                new ChannelManifestCoordinate("test", "channel"));
+        Channel channel = new Channel("test", "", null, repositories,
+                new ChannelManifestCoordinate("test", "channel"), null, null);
         new ProsperoConfig(List.of(channel)).writeConfig(channelsFile.toPath());
         return channelsFile;
     }

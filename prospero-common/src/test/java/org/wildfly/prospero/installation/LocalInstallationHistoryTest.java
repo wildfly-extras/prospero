@@ -128,7 +128,8 @@ public class LocalInstallationHistoryTest {
     }
 
     private void updateManifest(InstallationMetadata metadata) throws MetadataException {
-        final ChannelManifest manifest = new ChannelManifest("test", "", Arrays.asList(new Stream("foo", "bar", "1.1.2", null)));
+        final ChannelManifest manifest = new ChannelManifest("test", "test-id", "",
+                Arrays.asList(new Stream("foo", "bar", "1.1.2", null)));
         metadata.setManifest(manifest);
         metadata.recordProvision(true);
     }
@@ -136,9 +137,10 @@ public class LocalInstallationHistoryTest {
     private InstallationMetadata mockInstallation() throws Exception {
         final ChannelManifest manifest = MetadataTestUtils.createManifest(Arrays.asList(new Stream("foo", "bar", "1.1.1", null)));
         InstallationMetadata installationMetadata = MetadataTestUtils.createInstallationMetadata(installation, manifest,
-                List.of(new Channel("test", "", null, null,
+                List.of(new Channel("test", "", null,
                         List.of(new Repository("test", "file://test.org/test")),
-                        new ChannelManifestCoordinate("org.test", "manifest"))));
+                        new ChannelManifestCoordinate("org.test", "manifest"),
+                        null, null)));
         return installationMetadata;
     }
 }

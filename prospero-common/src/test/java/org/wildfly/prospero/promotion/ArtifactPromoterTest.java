@@ -221,7 +221,7 @@ public class ArtifactPromoterTest {
     }
 
     private void mockDeployedManifest(List<Stream> streams, String version) throws IOException, DeploymentException {
-        ChannelManifest manifest = new ChannelManifest("custom-channel", null, streams);
+        ChannelManifest manifest = new ChannelManifest("custom-channel", null, null, streams);
 
         final DeployRequest deployRequest = new DeployRequest();
         final File file = temp.newFile();

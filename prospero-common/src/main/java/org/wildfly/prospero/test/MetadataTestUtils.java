@@ -65,14 +65,15 @@ public final class MetadataTestUtils {
     }
 
     public static ChannelManifest createManifest(Collection<Stream> streams) {
-        return new ChannelManifest("manifest", null, streams);
+        return new ChannelManifest("manifest", null, null, streams);
     }
 
     public static InstallationMetadata createInstallationMetadata(Path installation) throws MetadataException {
         return createInstallationMetadata(installation, createManifest(null),
-                List.of(new Channel("test-channel", "", null, null,
+                List.of(new Channel("test-channel", "", null,
                         List.of(new Repository("test", "http://test.org")),
-                        new ChannelManifestCoordinate("org.test","test"))));
+                        new ChannelManifestCoordinate("org.test","test"),
+                        null, null)));
     }
 
     public static InstallationMetadata createInstallationMetadata(Path installation, ChannelManifest manifest, List<Channel> channels) throws MetadataException {
@@ -115,8 +116,9 @@ public final class MetadataTestUtils {
         List<Repository> repositories = defaultRemoteRepositories().stream()
                 .map(r->new Repository(r.getId(), r.getUrl())).collect(Collectors.toList());
         for (int i=0; i<manifestUrls.size(); i++) {
-            channels.add(new Channel("test-channel-" + i, "", null, null, repositories,
-                    new ChannelManifestCoordinate(manifestUrls.get(i))));
+            channels.add(new Channel("test-channel-" + i, "", null, repositories,
+                    new ChannelManifestCoordinate(manifestUrls.get(i)),
+                    null, Channel.NoStreamStrategy.NONE));
         }
 
         new ProsperoConfig(channels).writeConfig(channelFile);
@@ -149,7 +151,7 @@ public final class MetadataTestUtils {
                     }
                 })
                 .collect(Collectors.toList());
-        Files.writeString(manifestPath, ChannelManifestMapper.toYaml(new ChannelManifest(manifest.getName(), manifest.getDescription(), updatedStreams)));
+        Files.writeString(manifestPath, ChannelManifestMapper.toYaml(new ChannelManifest(manifest.getName(), manifest.getId(), manifest.getDescription(), updatedStreams)));
     }
 
     public static String getLatestRevision(Path installationPath) throws MetadataException {

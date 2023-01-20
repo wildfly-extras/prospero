@@ -42,7 +42,7 @@ import org.jboss.galleon.universe.FeaturePackLocation;
 import org.wildfly.channel.Channel;
 import org.wildfly.channel.ChannelManifestCoordinate;
 import org.wildfly.channel.ChannelMapper;
-import org.wildfly.channel.InvalidChannelException;
+import org.wildfly.channel.InvalidChannelMetadataException;
 import org.wildfly.channel.Repository;
 import org.wildfly.channel.maven.ChannelCoordinate;
 import org.wildfly.channel.maven.VersionResolverFactory;
@@ -213,7 +213,7 @@ public class ProvisioningDefinition {
                 String yaml = IOUtils.toString(is, StandardCharsets.UTF_8);
                 channels.addAll(ChannelMapper.fromString(yaml));
             } catch (IOException e) {
-                InvalidChannelException ice = new InvalidChannelException(
+                InvalidChannelMetadataException ice = new InvalidChannelMetadataException(
                         "Failed to read channel " + coord.getUrl(), List.of(e.getLocalizedMessage()));
                 ice.initCause(e);
                 throw ice;
@@ -227,7 +227,7 @@ public class ProvisioningDefinition {
             throw Messages.MESSAGES.noChannelReference();
         }
 
-        Optional<Channel> invalidChannel = channels.stream().filter(c -> c.getManifestRef() == null).findFirst();
+        Optional<Channel> invalidChannel = channels.stream().filter(c -> c.getManifestCoordinate() == null).findFirst();
         if (invalidChannel.isPresent()) {
             throw Messages.MESSAGES.noChannelManifestReference(invalidChannel.get().getName());
         }
@@ -238,7 +238,7 @@ public class ProvisioningDefinition {
     }
 
     private static Channel composeChannelFromManifest(ChannelManifestCoordinate manifestCoordinate, List<Repository> repositories) {
-        return new Channel("", "", null, null, repositories, manifestCoordinate);
+        return new Channel("", "", null, repositories, manifestCoordinate, null, null);
     }
 
     public static Builder builder() {

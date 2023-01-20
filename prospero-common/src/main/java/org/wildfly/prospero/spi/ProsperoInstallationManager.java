@@ -161,12 +161,12 @@ public class ProsperoInstallationManager implements InstallationManager {
     }
 
     private static Channel mapChannel(org.wildfly.channel.Channel channel) {
-        if (channel.getManifestRef() == null) {
+        if (channel.getManifestCoordinate() == null) {
             return new Channel(channel.getName(), map(channel.getRepositories(), ProsperoInstallationManager::mapRepository));
-        } else if (channel.getManifestRef().getUrl() != null) {
-            return new Channel(channel.getName(), map(channel.getRepositories(), ProsperoInstallationManager::mapRepository), channel.getManifestRef().getUrl());
-        } else if (channel.getManifestRef().getMaven() != null) {
-            return new Channel(channel.getName(), map(channel.getRepositories(), ProsperoInstallationManager::mapRepository), toGav(channel.getManifestRef().getMaven()));
+        } else if (channel.getManifestCoordinate().getUrl() != null) {
+            return new Channel(channel.getName(), map(channel.getRepositories(), ProsperoInstallationManager::mapRepository), channel.getManifestCoordinate().getUrl());
+        } else if (channel.getManifestCoordinate().getMaven() != null) {
+            return new Channel(channel.getName(), map(channel.getRepositories(), ProsperoInstallationManager::mapRepository), toGav(channel.getManifestCoordinate().getMaven()));
         } else {
             return new Channel(channel.getName(), map(channel.getRepositories(), ProsperoInstallationManager::mapRepository));
         }
@@ -181,8 +181,9 @@ public class ProsperoInstallationManager implements InstallationManager {
     }
 
     private static org.wildfly.channel.Channel mapChannel(Channel channel) {
-        return new org.wildfly.channel.Channel(channel.getName(), null, null, null,
-                map(channel.getRepositories(), ProsperoInstallationManager::mapRepository), toManifestCoordinate(channel));
+        return new org.wildfly.channel.Channel(channel.getName(), null, null,
+                map(channel.getRepositories(), ProsperoInstallationManager::mapRepository), toManifestCoordinate(channel),
+                null, null);
     }
 
     private static ChannelManifestCoordinate toManifestCoordinate(Channel c) {

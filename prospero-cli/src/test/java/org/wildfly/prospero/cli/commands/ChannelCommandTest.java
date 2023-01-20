@@ -60,16 +60,10 @@ public class ChannelCommandTest extends AbstractConsoleTest {
         super.setUp();
 
         this.dir = tempDir.newFolder().toPath();
-        Channel gaChannel = new Channel("test1", "", null, null,
-                List.of(new Repository("test", "http://test.org")),
-                ChannelManifestCoordinate.create(null, GA));
-        Channel gavChannel = new Channel("test2", "", null, null,
-                List.of(new Repository("test", "http://test.org")),
-                ChannelManifestCoordinate.create(null, GAV));
-        Channel urlChannel = new Channel("test3", "", null, null,
-                List.of(new Repository("test", "http://test.org")),
-                ChannelManifestCoordinate.create(URL, null));
-        MetadataTestUtils.createInstallationMetadata(dir, new ChannelManifest(null, null, null),
+        Channel gaChannel = createChannel("test1", ChannelManifestCoordinate.create(null, GA));
+        Channel gavChannel = createChannel("test2", ChannelManifestCoordinate.create(null, GAV));
+        Channel urlChannel = createChannel("test3", ChannelManifestCoordinate.create(URL, null));
+        MetadataTestUtils.createInstallationMetadata(dir, new ChannelManifest(null, null, null, null),
                 Arrays.asList(gaChannel, gavChannel, urlChannel));
         MetadataTestUtils.createGalleonProvisionedState(dir);
     }
@@ -145,7 +139,7 @@ public class ChannelCommandTest extends AbstractConsoleTest {
                         Tuple.tuple("test_repo", "http://test.te")
                 );
         assertThat(installationMetadata.getProsperoConfig().getChannels())
-                .map(c->c.getManifestRef())
+                .map(c->c.getManifestCoordinate())
                 .map(r->Tuple.tuple(r.getMaven(), r.getUrl()))
                 .containsExactly(
                         Tuple.tuple(GA, null),
@@ -213,7 +207,7 @@ public class ChannelCommandTest extends AbstractConsoleTest {
         Assert.assertEquals(ReturnCodes.SUCCESS, exitCode);
         try (InstallationMetadata installationMetadata = new InstallationMetadata(dir)) {
             assertThat(installationMetadata.getProsperoConfig().getChannels())
-                    .map(c->c.getManifestRef())
+                    .map(c->c.getManifestCoordinate())
                     .map(r->Tuple.tuple(r.getMaven(), r.getUrl()))
                     .containsExactly(
                             Tuple.tuple(GA, null),
@@ -227,7 +221,7 @@ public class ChannelCommandTest extends AbstractConsoleTest {
         Assert.assertEquals(ReturnCodes.SUCCESS, exitCode);
         try (InstallationMetadata installationMetadata = new InstallationMetadata(dir)) {
             assertThat(installationMetadata.getProsperoConfig().getChannels())
-                    .map(c->c.getManifestRef())
+                    .map(c->c.getManifestCoordinate())
                     .map(r->Tuple.tuple(r.getMaven(), r.getUrl()))
                     .containsExactly(
                             Tuple.tuple(null, new URL(URL))
@@ -240,7 +234,7 @@ public class ChannelCommandTest extends AbstractConsoleTest {
         Assert.assertEquals(ReturnCodes.SUCCESS, exitCode);
         try (InstallationMetadata installationMetadata = new InstallationMetadata(dir)) {
             assertThat(installationMetadata.getProsperoConfig().getChannels())
-                    .map(c->c.getManifestRef())
+                    .map(c->c.getManifestCoordinate())
                     .map(r->Tuple.tuple(r.getMaven(), r.getUrl()))
                     .isEmpty();
         }
@@ -266,6 +260,12 @@ public class ChannelCommandTest extends AbstractConsoleTest {
                 CliConstants.DIR, dir.toString(),
                 CliConstants.CHANNEL_NAME, "test1");
         Assert.assertEquals(ReturnCodes.INVALID_ARGUMENTS, exitCode);
+    }
+
+    private static Channel createChannel(String name, ChannelManifestCoordinate coord) throws MalformedURLException {
+        return new Channel(name, "", null,
+                List.of(new Repository("test", "http://test.org")),
+                coord, null, null);
     }
 
     private static String toGav(MavenCoordinate coord) {

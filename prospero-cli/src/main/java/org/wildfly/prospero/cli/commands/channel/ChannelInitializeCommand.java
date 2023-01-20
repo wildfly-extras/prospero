@@ -107,9 +107,9 @@ public class ChannelInitializeCommand extends AbstractCommand {
 
             // add new channel
             console.println(CliMessages.MESSAGES.registeringCustomChannel(manifestName.get()));
-            Channel channel = new Channel("customization", null, null, null,
+            Channel channel = new Channel("customization", null, null,
                     List.of(new Repository(CUSTOMIZATION_REPO_ID, url.toExternalForm())),
-                    ArtifactUtils.manifestCoordFromString(manifestName.get()));
+                    ArtifactUtils.manifestCoordFromString(manifestName.get()), null, null);
             metadataAction.addChannel(channel);
         }
 
@@ -118,7 +118,7 @@ public class ChannelInitializeCommand extends AbstractCommand {
 
     private boolean customizationChannelExists(MetadataAction metadataAction) throws MetadataException {
         return metadataAction.getChannels().stream()
-                .map(Channel::getManifestRef)
+                .map(Channel::getManifestCoordinate)
                 .anyMatch(m -> m.getMaven() != null && m.getMaven().getGroupId().equals(CUSTOM_CHANNELS_GROUP_ID));
     }
 

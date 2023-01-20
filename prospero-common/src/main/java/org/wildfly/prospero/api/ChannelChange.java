@@ -116,8 +116,8 @@ public class ChannelChange extends Diff {
         if (channel == null) {
             return null;
         }
-        return channel.getManifestRef().getMaven() == null
-                ? channel.getManifestRef().getUrl().toExternalForm() : toGav(channel.getManifestRef().getMaven());
+        return channel.getManifestCoordinate().getMaven() == null
+                ? channel.getManifestCoordinate().getUrl().toExternalForm() : toGav(channel.getManifestCoordinate().getMaven());
     }
 
     private static String toGav(MavenCoordinate coord) {

@@ -17,14 +17,14 @@
 
 package org.wildfly.prospero.api.exceptions;
 
-import org.wildfly.channel.InvalidChannelException;
+import org.wildfly.channel.InvalidChannelMetadataException;
 
 public class ChannelDefinitionException extends OperationException {
-    public ChannelDefinitionException(String msg, InvalidChannelException e) {
+    public ChannelDefinitionException(String msg, InvalidChannelMetadataException e) {
         super(msg, e);
     }
 
     public String getValidationMessages() {
-        return String.join("\n", ((InvalidChannelException)getCause()).getValidationMessages());
+        return String.join("\n", ((InvalidChannelMetadataException)getCause()).getValidationMessages());
     }
 }

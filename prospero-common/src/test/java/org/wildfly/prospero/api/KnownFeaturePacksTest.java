@@ -42,7 +42,7 @@ public class KnownFeaturePacksTest {
         assertThat(knownFeaturePack.getGalleonConfiguration()).isEqualTo(
                 new URI("classpath:galleon-provisioning.xml"));
         assertThat(knownFeaturePack.getChannels().get(0)).satisfies(channel -> {
-            assertThat(channel.getManifestRef().getMaven()).isEqualTo(new MavenCoordinate("test", "one", null));
+            assertThat(channel.getManifestCoordinate().getMaven()).isEqualTo(new MavenCoordinate("test", "one", null));
             assertThat(channel.getRepositories()).containsOnly(new Repository("central", "https://repo1.maven.org/maven2/"));
         });
 

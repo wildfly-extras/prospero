@@ -107,8 +107,8 @@ public class ProvisioningAction {
         return newChannels.stream().map(c->{
             if (StringUtils.isEmpty(c.getName())) {
                 return new Channel(c.getSchemaVersion(), CHANNEL_NAME_PREFIX + channelCounter.getAndIncrement(), c.getDescription(),
-                        c.getVendor(), c.getChannelRequirements(), c.getRepositories(),
-                        c.getManifestRef());
+                        c.getVendor(), c.getRepositories(),
+                        c.getManifestCoordinate(), c.getBlocklistCoordinate(), c.getNoStreamStrategy());
             } else {
                 return c;
             }

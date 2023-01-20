@@ -118,9 +118,7 @@ public class InstallCommandTest extends AbstractMavenCommandTest {
     @Test
     public void callProvisionOnInstallCommandWithCustomFpl() throws Exception {
         final File channelsFile = temporaryFolder.newFile();
-        Channel channel = new Channel("", "", null, null,
-                List.of(new Repository("test", "http://test.org")),
-                new ChannelManifestCoordinate("org.test", "test"));
+        Channel channel = createChannel("test", "test", "http://test.org", "org.test");
         new ProsperoConfig(List.of(channel)).writeConfig(channelsFile.toPath());
 
         int exitCode = commandLine.execute(CliConstants.Commands.INSTALL, CliConstants.DIR, "test",
@@ -149,9 +147,7 @@ public class InstallCommandTest extends AbstractMavenCommandTest {
     @Test
     public void callProvisionOnInstallKnownFplOverrideChannelsCommand() throws Exception {
         final File channelsFile = temporaryFolder.newFile();
-        Channel channel = new Channel("", "", null, null,
-                List.of(new Repository("dev", "http://test.test")),
-                new ChannelManifestCoordinate("org.wildfly", "wildfly-channel"));
+        Channel channel = createChannel("dev", "wildfly-channel", "http://test.test", "org.wildfly");
         new ProsperoConfig(List.of(channel)).writeConfig(channelsFile.toPath());
 
         int exitCode = commandLine.execute(CliConstants.Commands.INSTALL, CliConstants.DIR, "test", CliConstants.FPL, KNOWN_FPL,
@@ -177,9 +173,7 @@ public class InstallCommandTest extends AbstractMavenCommandTest {
                 provisionDefinitionFile.toPath());
 
         final File channelsFile = temporaryFolder.newFile();
-        Channel channel = new Channel("", "", null, null,
-                List.of(new Repository("dev", "http://test.test")),
-                new ChannelManifestCoordinate("org.wildfly", "wildfly-channel"));
+        Channel channel = createChannel("dev", "wildfly-channel", "http://test.test", "org.wildfly");
         new ProsperoConfig(List.of(channel)).writeConfig(channelsFile.toPath());
 
         int exitCode = commandLine.execute(CliConstants.Commands.INSTALL, CliConstants.DIR, "test",
@@ -265,5 +259,13 @@ public class InstallCommandTest extends AbstractMavenCommandTest {
     protected String[] getDefaultArguments() {
         return new String[]{CliConstants.Commands.INSTALL, CliConstants.DIR, "test",
                 CliConstants.FPL, KNOWN_FPL};
+    }
+
+    private static Channel createChannel(String test, String test1, String url, String groupId) {
+        Channel channel = new Channel("", "", null,
+                List.of(new Repository(test, url)),
+                new ChannelManifestCoordinate(groupId, test1),
+                null, null);
+        return channel;
     }
 }

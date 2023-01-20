@@ -151,7 +151,7 @@ public class ArtifactPromoter {
             return ChannelManifestMapper.fromString(Files.readString(file.toPath()));
         } else {
             log.debugf("No existing customization channel found, creating new channel");
-            return new ChannelManifest("custom-channel", "Customization channel", new ArrayList<>());
+            return new ChannelManifest("custom-channel", "custom-channel", "Customization channel", new ArrayList<>());
         }
     }
 
