@@ -60,19 +60,13 @@ public class GalleonUtils {
 
     private static final String CLASSPATH_SCHEME = "classpath";
     private static final String FILE_SCHEME = "file";
-    static final String JAVAX_MANAGEMENT_BUILDER_INITIAL_PROPERTY = "javax.management.builder.initial";
-
+    private static final String OPTION_RESET_EMBEDDED_SYSTEM_PROPERTIES = "jboss-reset-embedded-system-properties";
     public static void executeGalleon(GalleonExecution execution, Path localRepository) throws ProvisioningException, UnresolvedMavenArtifactException {
         final String modulePathProperty = System.getProperty(MODULE_PATH_PROPERTY);
-        final String javaxManagementBuilderProperty = System.getProperty(JAVAX_MANAGEMENT_BUILDER_INITIAL_PROPERTY);
-
         try {
             System.setProperty(MAVEN_REPO_LOCAL, localRepository.toString());
             if (modulePathProperty != null) {
                 System.clearProperty(MODULE_PATH_PROPERTY);
-            }
-            if (javaxManagementBuilderProperty != null) {
-                System.clearProperty(JAVAX_MANAGEMENT_BUILDER_INITIAL_PROPERTY);
             }
             final Map<String, String> options = new HashMap<>();
             options.put(GalleonUtils.JBOSS_FORK_EMBEDDED_PROPERTY, GalleonUtils.JBOSS_FORK_EMBEDDED_VALUE);
@@ -80,6 +74,10 @@ public class GalleonUtils {
             options.put(GalleonUtils.PRINT_ONLY_CONFLICTS_PROPERTY, GalleonUtils.PRINT_ONLY_CONFLICTS_VALUE);
             options.put(GalleonUtils.STORE_INPUT_PROVISIONING_CONFIG_PROPERTY, GalleonUtils.STORE_INPUT_PROVISIONING_CONFIG_VALUE);
             options.put(GalleonUtils.STORE_PROVISIONED_ARTIFACTS, GalleonUtils.STORE_PROVISIONED_ARTIFACTS_VALUE);
+            String resetSysProp = System.getProperty(OPTION_RESET_EMBEDDED_SYSTEM_PROPERTIES, "");
+            if (resetSysProp != "-") {
+                options.put(GalleonUtils.OPTION_RESET_EMBEDDED_SYSTEM_PROPERTIES, resetSysProp);
+            }
             execution.execute(options);
         } catch (ProvisioningException e) {
             throw extractMavenException(e).orElseThrow(()->e);
@@ -87,9 +85,6 @@ public class GalleonUtils {
             System.clearProperty(MAVEN_REPO_LOCAL);
             if (modulePathProperty != null) {
                 System.setProperty(MODULE_PATH_PROPERTY, modulePathProperty);
-            }
-            if (javaxManagementBuilderProperty != null) {
-                System.setProperty(JAVAX_MANAGEMENT_BUILDER_INITIAL_PROPERTY, javaxManagementBuilderProperty);
             }
         }
     }
