@@ -196,17 +196,26 @@ public class UpdateCommandTest extends AbstractMavenCommandTest {
     }
 
     @Test
-    public void testDryRunCallsFindUpdates() throws Exception {
+    public void testListCallsFindUpdates() throws Exception {
         System.setProperty(UpdateCommand.JBOSS_MODULE_PATH, installationDir.toString());
         when(updateAction.findUpdates()).thenReturn(new UpdateSet(List.of(change("1.0.0", "1.0.1"))));
 
-        int exitCode = commandLine.execute(CliConstants.Commands.UPDATE, CliConstants.Commands.PERFORM, CliConstants.DRY_RUN,
+        int exitCode = commandLine.execute(CliConstants.Commands.UPDATE, CliConstants.Commands.LIST,
                 CliConstants.DIR, installationDir.toAbsolutePath().toString());
 
         assertEquals(ReturnCodes.SUCCESS, exitCode);
         Mockito.verify(actionFactory).update(eq(installationDir.toAbsolutePath()), any(), any(), any());
         Mockito.verify(updateAction, never()).performUpdate();
         Mockito.verify(updateAction).findUpdates();
+    }
+
+    @Test
+    public void testListCurrentDirNotValidInstallation() {
+        int exitCode = commandLine.execute(CliConstants.Commands.UPDATE, CliConstants.Commands.LIST);
+
+        Assert.assertEquals(ReturnCodes.INVALID_ARGUMENTS, exitCode);
+        assertTrue(getErrorOutput().contains(CliMessages.MESSAGES.invalidInstallationDir(UpdateCommand.currentDir().toAbsolutePath())
+                .getMessage()));
     }
 
     @Test

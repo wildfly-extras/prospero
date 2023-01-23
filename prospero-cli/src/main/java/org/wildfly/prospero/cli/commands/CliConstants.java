@@ -74,7 +74,6 @@ public final class CliConstants {
     public static final String REPOSITORIES = "--repositories";
     public static final String DEFINITION = "--definition";
     public static final String DIR = "--dir";
-    public static final String DRY_RUN = "--dry-run";
     public static final String FPL = "--fpl";
     public static final String H = "-h";
     public static final String HELP = "--help";

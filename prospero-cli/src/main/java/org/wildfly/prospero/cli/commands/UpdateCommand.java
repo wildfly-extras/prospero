@@ -61,9 +61,6 @@ public class UpdateCommand extends AbstractParentCommand {
         @CommandLine.Option(names = CliConstants.SELF)
         boolean self;
 
-        @CommandLine.Option(names = CliConstants.DRY_RUN)
-        boolean dryRun;
-
         @CommandLine.Option(names = {CliConstants.Y, CliConstants.YES})
         boolean yes;
 
@@ -90,14 +87,6 @@ public class UpdateCommand extends AbstractParentCommand {
             final MavenSessionManager mavenSessionManager = new MavenSessionManager(LocalRepoOptions.getLocalMavenCache(localRepoOptions), offline);
             final List<Repository> repositories = RepositoryDefinition.from(temporaryRepositories);
 
-            if (dryRun) {
-                try (UpdateAction updateAction = actionFactory.update(installationDir, mavenSessionManager, console, repositories)) {
-                    final UpdateSet updateSet = updateAction.findUpdates();
-                    console.updatesFound(updateSet.getArtifactUpdates());
-                    return ReturnCodes.SUCCESS;
-                }
-            }
-
             log.tracef("Perform full update");
 
             try (UpdateAction updateAction = actionFactory.update(installationDir, mavenSessionManager, console, repositories)) {
@@ -117,9 +106,6 @@ public class UpdateCommand extends AbstractParentCommand {
         @CommandLine.Option(names = CliConstants.UPDATE_DIR, required = true)
         Path updateDirectory;
 
-        @CommandLine.Option(names = CliConstants.DRY_RUN)
-        boolean dryRun;
-
         @CommandLine.Option(names = {CliConstants.Y, CliConstants.YES})
         boolean yes;
 
@@ -134,14 +120,6 @@ public class UpdateCommand extends AbstractParentCommand {
 
             final MavenSessionManager mavenSessionManager = new MavenSessionManager(LocalRepoOptions.getLocalMavenCache(localRepoOptions), offline);
             final List<Repository> repositories = RepositoryDefinition.from(temporaryRepositories);
-
-            if (dryRun) {
-                try (UpdateAction updateAction = actionFactory.update(installationDir, mavenSessionManager, console, repositories)) {
-                    final UpdateSet updateSet = updateAction.findUpdates();
-                    console.updatesFound(updateSet.getArtifactUpdates());
-                    return ReturnCodes.SUCCESS;
-                }
-            }
 
             log.tracef("Generate update in %s", updateDirectory);
 
@@ -200,12 +178,35 @@ public class UpdateCommand extends AbstractParentCommand {
             return ReturnCodes.SUCCESS;
         }
     }
+
+    @CommandLine.Command(name = CliConstants.Commands.LIST, sortOptions = false)
+    public static class ListCommand extends AbstractMavenCommand {
+
+        public ListCommand(Console console, ActionFactory actionFactory) {
+            super(console, actionFactory);
+        }
+        @Override
+        public Integer call() throws Exception {
+            final Path installationDir = determineInstallationDirectory(directory);
+
+            final MavenSessionManager mavenSessionManager = new MavenSessionManager(LocalRepoOptions.getLocalMavenCache(localRepoOptions), offline);
+            final List<Repository> repositories = RepositoryDefinition.from(temporaryRepositories);
+
+            try (UpdateAction updateAction = actionFactory.update(installationDir, mavenSessionManager, console, repositories)) {
+                final UpdateSet updateSet = updateAction.findUpdates();
+                console.updatesFound(updateSet.getArtifactUpdates());
+                return ReturnCodes.SUCCESS;
+            }
+        }
+    }
+
     public UpdateCommand(Console console, ActionFactory actionFactory) {
         super(console, actionFactory, CliConstants.Commands.UPDATE,
                 List.of(
                     new UpdateCommand.PrepareCommand(console, actionFactory),
                     new UpdateCommand.ApplyCommand(console, actionFactory),
-                    new UpdateCommand.PerformCommand(console, actionFactory))
+                    new UpdateCommand.PerformCommand(console, actionFactory),
+                    new UpdateCommand.ListCommand(console, actionFactory))
         );
     }
 
