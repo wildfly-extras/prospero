@@ -43,10 +43,10 @@ import static org.wildfly.prospero.metadata.ProsperoMetadataUtils.INSTALLER_CHAN
 
 public class ProsperoMetadataUtilsTest {
 
-    private static final Channel A_CHANNEL = new Channel("test-channel", null, null, null,
+    private static final Channel A_CHANNEL = new Channel("test-channel", null, null,
             List.of(new Repository("test-repo", "http://test.te")),
-            new ChannelManifestCoordinate("foo", "bar"));
-    private static final ChannelManifest A_MANIFEST = new ChannelManifest("test-manifest", null, null);
+            new ChannelManifestCoordinate("foo", "bar"), null, null);
+    private static final ChannelManifest A_MANIFEST = new ChannelManifest("test-manifest", null, null, null);
     @Rule
     public TemporaryFolder temp = new TemporaryFolder();
     private Path server;

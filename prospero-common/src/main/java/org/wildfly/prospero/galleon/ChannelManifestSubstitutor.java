@@ -32,7 +32,7 @@ public class ChannelManifestSubstitutor {
     private static final Logger logger = Logger.getLogger(ChannelManifestSubstitutor.class);
 
     public static Channel substitute(Channel channel) throws MetadataException {
-        ChannelManifestCoordinate channelManifestCoordinate = channel.getManifestRef();
+        ChannelManifestCoordinate channelManifestCoordinate = channel.getManifestCoordinate();
         if (channelManifestCoordinate.getUrl() == null) {
             return channel;
         } else {
@@ -51,9 +51,11 @@ public class ChannelManifestSubstitutor {
                 logger.debug("Channel's manifest URL " + url + " is substituted by " + substituted);
                 ChannelManifestCoordinate substitutedChannelManifestCoordinate = new ChannelManifestCoordinate(substitutedURL);
                 if (channel.getSchemaVersion().isEmpty()) {
-                    return new Channel(channel.getName(), channel.getDescription(), channel.getVendor(), channel.getChannelRequirements(), channel.getRepositories(), substitutedChannelManifestCoordinate);
+                    return new Channel(channel.getName(), channel.getDescription(), channel.getVendor(), channel.getRepositories(), substitutedChannelManifestCoordinate,
+                            channel.getBlocklistCoordinate(), channel.getNoStreamStrategy());
                 } else {
-                    return new Channel(channel.getSchemaVersion(), channel.getName(), channel.getDescription(), channel.getVendor(), channel.getChannelRequirements(), channel.getRepositories(), substitutedChannelManifestCoordinate);
+                    return new Channel(channel.getSchemaVersion(), channel.getName(), channel.getDescription(), channel.getVendor(), channel.getRepositories(), substitutedChannelManifestCoordinate,
+                            channel.getBlocklistCoordinate(), channel.getNoStreamStrategy());
                 }
             }
         }

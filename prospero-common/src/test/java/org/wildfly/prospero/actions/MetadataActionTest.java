@@ -57,9 +57,9 @@ public class MetadataActionTest {
 
     @Test
     public void addDuplicatedChannelNameThrowsException() throws Exception {
-        metadataAction.addChannel(new Channel("test-1", null, null, null, null, null));
+        metadataAction.addChannel(new Channel("test-1", null, null, null, null, null, null));
         assertThrows(MetadataException.class, ()->
-            metadataAction.addChannel(new Channel("test-1", null, null, null, null, null))
+            metadataAction.addChannel(new Channel("test-1", null, null, null, null, null, null))
         );
 
         assertThat(channels)

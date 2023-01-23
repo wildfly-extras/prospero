@@ -134,9 +134,10 @@ public class ChannelPromoteCommandTest extends AbstractConsoleTest {
         MetadataTestUtils.createInstallationMetadata(installationDir);
         MetadataTestUtils.createGalleonProvisionedState(installationDir, "org.wildfly.core:core-feature-pack");
 
-        Channel channel = new Channel("Customization", null, null, null,
+        Channel channel = new Channel("Customization", null, null,
                 List.of(new Repository(CUSTOMIZATION_REPO_ID, "file:///test/test")),
-                new ChannelManifestCoordinate(CUSTOM_CHANNELS_GROUP_ID, "test1"));
+                new ChannelManifestCoordinate(CUSTOM_CHANNELS_GROUP_ID, "test1"),
+                null, null);
 
         when(actionFactory.promoter(any())).thenReturn(promoter);
         when(actionFactory.metadataActions(any())).thenReturn(metadataAction);
@@ -178,9 +179,10 @@ public class ChannelPromoteCommandTest extends AbstractConsoleTest {
         MetadataTestUtils.createInstallationMetadata(installationDir);
         MetadataTestUtils.createGalleonProvisionedState(installationDir, "org.wildfly.core:core-feature-pack");
 
-        Channel channel = new Channel("Customization", null, null, null,
+        Channel channel = new Channel("Customization", null, null,
                 List.of(new Repository(CUSTOMIZATION_REPO_ID, "file:///test/test")),
-                new ChannelManifestCoordinate(CUSTOM_CHANNELS_GROUP_ID, "test1"));
+                new ChannelManifestCoordinate(CUSTOM_CHANNELS_GROUP_ID, "test1"),
+                null, null);
 
         when(actionFactory.promoter(any())).thenReturn(promoter);
         when(actionFactory.metadataActions(any())).thenReturn(metadataAction);

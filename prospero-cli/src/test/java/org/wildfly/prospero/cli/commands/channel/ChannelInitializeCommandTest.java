@@ -88,7 +88,7 @@ public class ChannelInitializeCommandTest extends AbstractConsoleTest {
                 CliConstants.CUSTOMIZATION_REPOSITORY_URL, customRepoUrl);
         Assert.assertEquals(ReturnCodes.SUCCESS, exitCode);
         assertThat(actualChannels())
-                .map(c -> c.getManifestRef().getMaven())
+                .map(c -> c.getManifestCoordinate().getMaven())
                 .contains(
                     new MavenCoordinate("org.test", "custom-channel", null)
                 );
@@ -103,9 +103,10 @@ public class ChannelInitializeCommandTest extends AbstractConsoleTest {
     public void customRepositoryAlreadyExists() throws Exception {
         final String customRepoUrl = tempFolder.newFolder().toURI().toURL().toString();
         final InstallationMetadata im = new InstallationMetadata(installationDir);
-        Channel channel = new Channel("Customization channel", null, null, null,
+        Channel channel = new Channel("Customization channel", null, null,
                 List.of(new Repository(CUSTOMIZATION_REPO_ID, customRepoUrl)),
-                new ChannelManifestCoordinate("org.test", "test"));
+                new ChannelManifestCoordinate("org.test", "test"),
+                null, null);
         final ProsperoConfig prosperoConfig = im.getProsperoConfig();
         prosperoConfig.getChannels().add(channel);
         im.updateProsperoConfig(prosperoConfig);
@@ -119,7 +120,7 @@ public class ChannelInitializeCommandTest extends AbstractConsoleTest {
         Assert.assertEquals(ReturnCodes.INVALID_ARGUMENTS, exitCode);
         assertTrue(getErrorOutput().contains(CliMessages.MESSAGES.customizationRepoExist(CUSTOMIZATION_REPO_ID)));
         assertThat(actualChannels())
-                .map(c -> c.getManifestRef().getMaven())
+                .map(c -> c.getManifestCoordinate().getMaven())
                 .doesNotContain(
                     new MavenCoordinate("org.test", "custom-channel", null)
                 );
@@ -183,7 +184,7 @@ public class ChannelInitializeCommandTest extends AbstractConsoleTest {
                             tuple(CUSTOMIZATION_REPO_ID, customRepoUrl)
                     );
             assertThat(actualChannels())
-                    .map(c -> c.getManifestRef().getMaven())
+                    .map(c -> c.getManifestCoordinate().getMaven())
                     .doesNotContain(
                         new MavenCoordinate("org.test", "custom-channel", null)
                     );
@@ -212,7 +213,7 @@ public class ChannelInitializeCommandTest extends AbstractConsoleTest {
                         tuple(CUSTOMIZATION_REPO_ID, customRepoUrl)
                 );
         assertThat(actualChannels())
-                .map(c -> c.getManifestRef().getMaven())
+                .map(c -> c.getManifestCoordinate().getMaven())
                 .doesNotContain(
                     new MavenCoordinate("org.test", "custom-channel", null)
                 );
@@ -233,7 +234,7 @@ public class ChannelInitializeCommandTest extends AbstractConsoleTest {
                         installationDir.resolve(InstallationMetadata.METADATA_DIR).resolve(DEFAULT_CUSTOMIZATION_REPOSITORY).toUri().toURL().toString())
                 );
         assertThat(actualChannels())
-                .map(c -> c.getManifestRef().getMaven())
+                .map(c -> c.getManifestCoordinate().getMaven())
                 .contains(
                     new MavenCoordinate("org.test", "custom-channel", null)
                 );
@@ -258,7 +259,7 @@ public class ChannelInitializeCommandTest extends AbstractConsoleTest {
                         installationDir.resolve(InstallationMetadata.METADATA_DIR).resolve(DEFAULT_CUSTOMIZATION_REPOSITORY).toUri().toURL().toString())
         );
         assertThat(actualChannels())
-                .map(c -> c.getManifestRef().getMaven())
+                .map(c -> c.getManifestCoordinate().getMaven())
                 .contains(
                         new MavenCoordinate(channelName.split(":")[0], channelName.split(":")[1], null)
                 );
@@ -266,9 +267,10 @@ public class ChannelInitializeCommandTest extends AbstractConsoleTest {
 
     @Test
     public void onlyOneDefaultChannelCanBeCreated() throws Exception {
-        Channel channel = new Channel(null, null, null, null,
+        Channel channel = new Channel(null, null, null,
                 List.of(new Repository("test", "http://test.org/repo")),
-                new ChannelManifestCoordinate(CUSTOM_CHANNELS_GROUP_ID, "existing"));
+                new ChannelManifestCoordinate(CUSTOM_CHANNELS_GROUP_ID, "existing"),
+                null, null);
         new ProsperoConfig(List.of(channel))
                 .writeConfig(installationDir.resolve(InstallationMetadata.METADATA_DIR).resolve(InstallationMetadata.INSTALLER_CHANNELS_FILE_NAME));
         int exitCode = commandLine.execute(
@@ -284,7 +286,7 @@ public class ChannelInitializeCommandTest extends AbstractConsoleTest {
                         tuple("test", "http://test.org/repo")
                 );
         assertThat(actualChannels())
-                .map(c -> c.getManifestRef().getMaven())
+                .map(c -> c.getManifestCoordinate().getMaven())
                 .containsOnly(
                     new MavenCoordinate(CUSTOM_CHANNELS_GROUP_ID, "existing", null)
                 );

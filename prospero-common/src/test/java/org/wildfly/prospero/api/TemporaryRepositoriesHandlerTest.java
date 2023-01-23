@@ -91,8 +91,8 @@ public class TemporaryRepositoriesHandlerTest {
     }
 
     private static Channel getChannel(String channelName, Repository... repos) {
-        return new Channel(channelName, null, null, null,
-                List.of(repos), null);
+        return new Channel(channelName, null, null,
+                List.of(repos), null, null, null);
     }
 
     private static Repository repo(String id, String url) {

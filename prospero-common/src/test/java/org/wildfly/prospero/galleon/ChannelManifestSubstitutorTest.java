@@ -33,17 +33,19 @@ public class ChannelManifestSubstitutorTest {
         String url = "file:${propName}/examples/wildfly-27.0.0.Alpha2-manifest.yaml";
         System.setProperty("propName", "propValue");
         String expected = "file:propValue/examples/wildfly-27.0.0.Alpha2-manifest.yaml";
-        Channel channel = new Channel("channel1", "", null, null, List.of(new Repository("test", "http://test.org")), ChannelManifestCoordinate.create(url, null));
+        Channel channel = new Channel("channel1", "", null, null, List.of(new Repository("test", "http://test.org")),
+                ChannelManifestCoordinate.create(url, null), null, null);
         Channel substitutedChannel = ChannelManifestSubstitutor.substitute(channel);
         System.clearProperty("propName");
-        Assert.assertEquals(expected, substitutedChannel.getManifestRef().getUrl().toString());
+        Assert.assertEquals(expected, substitutedChannel.getManifestCoordinate().getUrl().toString());
     }
 
     @Test
     public void testChannelManifestNotSubstituted() throws MalformedURLException, MetadataException {
         String url = "file:/Users/examples/wildfly-27.0.0.Alpha2-manifest.yaml";
-        Channel channel = new Channel("channel1", "", null, null, List.of(new Repository("test", "http://test.org")), ChannelManifestCoordinate.create(url, null));
+        Channel channel = new Channel("channel1", "", null, List.of(new Repository("test", "http://test.org")),
+                ChannelManifestCoordinate.create(url, null), null, null);
         Channel substitutedChannel = ChannelManifestSubstitutor.substitute(channel);
-        Assert.assertEquals(url, substitutedChannel.getManifestRef().getUrl().toString());
+        Assert.assertEquals(url, substitutedChannel.getManifestCoordinate().getUrl().toString());
     }
 }

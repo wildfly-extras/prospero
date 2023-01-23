@@ -67,8 +67,8 @@ public class ChannelCommand extends AbstractCommand {
             console.println("-------");
             for (Channel channel: channels) {
                 console.println("#" + channel.getName());
-                final String manifest = channel.getManifestRef().getMaven() == null
-                        ?channel.getManifestRef().getUrl().toExternalForm():toGav(channel.getManifestRef().getMaven());
+                final String manifest = channel.getManifestCoordinate().getMaven() == null
+                        ?channel.getManifestCoordinate().getUrl().toExternalForm():toGav(channel.getManifestCoordinate().getMaven());
                 console.println("  " + "manifest: " + manifest);
                 console.println("  " + "repositories:");
                 for (Repository repository : channel.getRepositories()) {

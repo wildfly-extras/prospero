@@ -30,13 +30,13 @@ import static org.junit.Assert.assertTrue;
 
 public class ChannelChangeTest {
 
-    private final Channel channel1 = new Channel("channel-1", null, null, null,
+    private final Channel channel1 = new Channel("channel-1", null, null,
             List.of(new Repository("repo1", "url1"), new Repository("repo2", "url2")),
-            new ChannelManifestCoordinate("foo", "bar"));
+            new ChannelManifestCoordinate("foo", "bar"), null, null);
 
-    private final Channel channel2 = new Channel("channel-1", null, null, null,
+    private final Channel channel2 = new Channel("channel-1", null, null,
             List.of(new Repository("repo1", "url1b"), new Repository("repo2", "url2")),
-            new ChannelManifestCoordinate("foo", "bar2"));
+            new ChannelManifestCoordinate("foo", "bar2"), null, null);
 
     @Test
     public void changeWithAddedChannel() throws Exception {

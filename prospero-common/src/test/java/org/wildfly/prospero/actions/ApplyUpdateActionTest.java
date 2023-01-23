@@ -336,13 +336,16 @@ public class ApplyUpdateActionTest {
     }
 
     private String manifest(String name) throws IOException {
-        String txt = ChannelManifestMapper.toYaml(new ChannelManifest(name, null, Collections.emptyList()));
+        String txt = ChannelManifestMapper.toYaml(new ChannelManifest(name, null, null, Collections.emptyList()));
         // workaround for Windows
         return txt.replace("\n", System.lineSeparator());
     }
 
     private String channel(String name) throws IOException {
-        final String txt = ChannelMapper.toYaml(new Channel(name, null, null, Collections.emptyList(), List.of(new Repository("foo", "http://foo.bar")), new ChannelManifestCoordinate("foo", "bar")));
+        final String txt = ChannelMapper.toYaml(new Channel(name, null, null,
+                List.of(new Repository("foo", "http://foo.bar")),
+                new ChannelManifestCoordinate("foo", "bar"),
+                null, null));
         // workaround for Windows
         return txt.replace("\n", System.lineSeparator());
     }

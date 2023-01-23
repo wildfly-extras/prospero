@@ -113,6 +113,16 @@ public class CachedVersionResolver implements MavenVersionsResolver {
         return fallbackResolver.resolveChannelMetadata(manifestCoords);
     }
 
+    @Override
+    public String getMetadataReleaseVersion(String groupId, String artifactId) {
+        return fallbackResolver.getMetadataReleaseVersion(groupId, artifactId);
+    }
+
+    @Override
+    public String getMetadataLatestVersion(String groupId, String artifactId) {
+        return fallbackResolver.getMetadataLatestVersion(groupId, artifactId);
+    }
+
     private boolean installArtifactLocally(String groupId, String artifactId, String extension, String classifier, String version, File path) {
         try {
             final InstallRequest request = new InstallRequest();

@@ -49,7 +49,10 @@ public class ExecutionUtils {
 
     private static ExecutionResult execute(Path script, Execution execution) throws Exception {
         String[] execArray = mergeArrays(new String[] {script.toString()}, execution.args);
-        Process process = Runtime.getRuntime().exec(execArray);
+        Process process = new ProcessBuilder(execArray)
+                .redirectErrorStream(true)
+                .redirectOutput(ProcessBuilder.Redirect.INHERIT)
+                .start();
 
         if (!process.waitFor(execution.timeLimit, execution.timeUnit)) {
             process.destroy();

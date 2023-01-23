@@ -101,7 +101,7 @@ public class ChannelPromoteCommand extends AbstractCommand {
 
         if (name.isEmpty()) {
             final Optional<MavenCoordinate> res = readSetting(a->a.getChannels().stream()
-                    .map(Channel::getManifestRef)
+                    .map(Channel::getManifestCoordinate)
                     .filter(m -> m.getMaven() != null && m.getMaven().getGroupId().equals(CUSTOM_CHANNELS_GROUP_ID))
                     .map(ChannelManifestCoordinate::getMaven)
                     .findFirst());

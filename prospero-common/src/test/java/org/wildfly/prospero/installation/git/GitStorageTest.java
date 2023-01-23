@@ -62,6 +62,8 @@ public class GitStorageTest {
     public TemporaryFolder folder = new TemporaryFolder();
     private Path base;
 
+    private final ChannelManifest manifest = new ChannelManifest("test", "test-id", "", new ArrayList<>());
+
     @Before
     public void setUp() throws Exception {
         base = folder.newFolder().toPath().resolve(InstallationMetadata.METADATA_DIR);
@@ -70,7 +72,6 @@ public class GitStorageTest {
     @Test
     public void testChangedArtifactVersion() throws Exception {
         final GitStorage gitStorage = new GitStorage(base.getParent());
-        final ChannelManifest manifest = new ChannelManifest("test", "", new ArrayList<>());
 
         setArtifact(manifest, "org.test:test:1.2.3");
         gitStorage.record();
@@ -90,7 +91,6 @@ public class GitStorageTest {
     @Test
     public void testRemovedArtifact() throws Exception {
         final GitStorage gitStorage = new GitStorage(base.getParent());
-        final ChannelManifest manifest = new ChannelManifest("test", "", new ArrayList<>());
 
         setArtifact(manifest, "org.test:test:1.2.3");
         gitStorage.record();
@@ -111,7 +111,6 @@ public class GitStorageTest {
     @Test
     public void testAddedArtifact() throws Exception {
         final GitStorage gitStorage = new GitStorage(base.getParent());
-        final ChannelManifest manifest = new ChannelManifest("test", "", new ArrayList<>());
 
         ManifestYamlSupport.write(manifest, base.resolve(InstallationMetadata.MANIFEST_FILE_NAME));
         gitStorage.record();
@@ -131,9 +130,8 @@ public class GitStorageTest {
     @Test
     public void initialRecordStoresConfigState() throws Exception {
         final GitStorage gitStorage = new GitStorage(base.getParent());
-        final ChannelManifest manifest = new ChannelManifest("test", "", new ArrayList<>());
         ManifestYamlSupport.write(manifest, base.resolve(InstallationMetadata.MANIFEST_FILE_NAME));
-        new ProsperoConfig(List.of(new Channel("", "", null, null, null, null)))
+        new ProsperoConfig(List.of(new Channel("", "", null, null, null, null, null)))
                 .writeConfig(base.resolve(InstallationMetadata.INSTALLER_CHANNELS_FILE_NAME));
 
         gitStorage.record();
@@ -147,17 +145,18 @@ public class GitStorageTest {
     @Test
     public void testChangedChannel() throws Exception {
         final GitStorage gitStorage = new GitStorage(base.getParent());
-        final ChannelManifest manifest = new ChannelManifest("test", "", new ArrayList<>());
         ManifestYamlSupport.write(manifest, base.resolve(InstallationMetadata.MANIFEST_FILE_NAME));
-        new ProsperoConfig(List.of(new Channel("channel-1", "old", null, null,
+        new ProsperoConfig(List.of(new Channel("channel-1", "old", null,
                 List.of(new Repository("test", "http://test.te")),
-                new ChannelManifestCoordinate("foo", "bar"))))
+                new ChannelManifestCoordinate("foo", "bar"),
+                null, null)))
                 .writeConfig(base.resolve(InstallationMetadata.INSTALLER_CHANNELS_FILE_NAME));
         gitStorage.record();
 
-        new ProsperoConfig(List.of(new Channel("channel-1", "new", null, null,
+        new ProsperoConfig(List.of(new Channel("channel-1", "new", null,
                 List.of(new Repository("test", "http://test.te")),
-                new ChannelManifestCoordinate("foo", "bar2"))))
+                new ChannelManifestCoordinate("foo", "bar2"),
+                null, null)))
                 .writeConfig(base.resolve(InstallationMetadata.INSTALLER_CHANNELS_FILE_NAME));
         gitStorage.recordConfigChange();
 
@@ -172,14 +171,15 @@ public class GitStorageTest {
     @Test
     public void testAddedChannel() throws Exception {
         final GitStorage gitStorage = new GitStorage(base.getParent());
-        final ChannelManifest manifest = new ChannelManifest("test", "", new ArrayList<>());
         ManifestYamlSupport.write(manifest, base.resolve(InstallationMetadata.MANIFEST_FILE_NAME));
-        final Channel channel1 = new Channel("channel-1", "old", null, null,
+        final Channel channel1 = new Channel("channel-1", "old", null,
                 List.of(new Repository("test", "http://test.te")),
-                new ChannelManifestCoordinate("foo", "bar"));
-        final Channel channel2 = new Channel("channel-2", "new", null, null,
+                new ChannelManifestCoordinate("foo", "bar"),
+                null, null);
+        final Channel channel2 = new Channel("channel-2", "new", null,
                 List.of(new Repository("test", "http://test.te")),
-                new ChannelManifestCoordinate("foo", "bar"));
+                new ChannelManifestCoordinate("foo", "bar"),
+                null, null);
 
         new ProsperoConfig(List.of(channel1))
                 .writeConfig(base.resolve(InstallationMetadata.INSTALLER_CHANNELS_FILE_NAME));
@@ -200,14 +200,15 @@ public class GitStorageTest {
     @Test
     public void testRemovedChannel() throws Exception {
         final GitStorage gitStorage = new GitStorage(base.getParent());
-        final ChannelManifest manifest = new ChannelManifest("test", "", new ArrayList<>());
         ManifestYamlSupport.write(manifest, base.resolve(InstallationMetadata.MANIFEST_FILE_NAME));
-        final Channel channel1 = new Channel("channel-1", "old", null, null,
+        final Channel channel1 = new Channel("channel-1", "old", null,
                 List.of(new Repository("test", "http://test.te")),
-                new ChannelManifestCoordinate("foo", "bar"));
-        final Channel channel2 = new Channel("channel-2", "new", null, null,
+                new ChannelManifestCoordinate("foo", "bar"),
+                null, null);
+        final Channel channel2 = new Channel("channel-2", "new", null,
                 List.of(new Repository("test", "http://test.te")),
-                new ChannelManifestCoordinate("foo", "bar"));
+                new ChannelManifestCoordinate("foo", "bar"),
+                null, null);
 
         new ProsperoConfig(List.of(channel1, channel2))
                 .writeConfig(base.resolve(InstallationMetadata.INSTALLER_CHANNELS_FILE_NAME));
@@ -228,14 +229,15 @@ public class GitStorageTest {
     @Test
     public void testNoChangedChannels() throws Exception {
         final GitStorage gitStorage = new GitStorage(base.getParent());
-        final ChannelManifest manifest = new ChannelManifest("test", "", new ArrayList<>());
         ManifestYamlSupport.write(manifest, base.resolve(InstallationMetadata.MANIFEST_FILE_NAME));
-        final Channel channel1 = new Channel("channel-1", "old", null, null,
+        final Channel channel1 = new Channel("channel-1", "old", null,
                 List.of(new Repository("test", "http://test.te")),
-                new ChannelManifestCoordinate("foo", "bar"));
-        final Channel channel2 = new Channel("channel-2", "new", null, null,
+                new ChannelManifestCoordinate("foo", "bar"),
+                null, null);
+        final Channel channel2 = new Channel("channel-2", "new", null,
                 List.of(new Repository("test", "http://test.te")),
-                new ChannelManifestCoordinate("foo", "bar"));
+                new ChannelManifestCoordinate("foo", "bar"),
+                null, null);
 
         new ProsperoConfig(List.of(channel1, channel2))
                 .writeConfig(base.resolve(InstallationMetadata.INSTALLER_CHANNELS_FILE_NAME));
@@ -261,9 +263,8 @@ public class GitStorageTest {
     @Test
     public void initialRecordAdjustTimeForFolderCreationDate() throws Exception {
         final GitStorage gitStorage = new GitStorage(base.getParent());
-        final ChannelManifest manifest = new ChannelManifest("test", "", new ArrayList<>());
         ManifestYamlSupport.write(manifest, base.resolve(InstallationMetadata.MANIFEST_FILE_NAME));
-        new ProsperoConfig(List.of(new Channel("", "", null, null, null, null)))
+        new ProsperoConfig(List.of(new Channel("", "", null, null, null, null, null)))
                 .writeConfig(base.resolve(InstallationMetadata.INSTALLER_CHANNELS_FILE_NAME));
 
         // ensure there's a time gap between creation of the folder and record
@@ -304,10 +305,11 @@ public class GitStorageTest {
 
     private void setArtifact(ChannelManifest manifest, String gav) throws IOException {
         if (gav == null) {
-            manifest = new ChannelManifest(manifest.getName(), manifest.getDescription(), Collections.emptyList());
+            manifest = new ChannelManifest(manifest.getName(), manifest.getId(), manifest.getDescription(), Collections.emptyList());
         } else {
             final String[] splitGav = gav.split(":");
-            manifest = new ChannelManifest(manifest.getName(), manifest.getDescription(), Arrays.asList(new Stream(splitGav[0], splitGav[1], splitGav[2], null)));
+            manifest = new ChannelManifest(manifest.getName(), manifest.getId(), manifest.getDescription(),
+                    Arrays.asList(new Stream(splitGav[0], splitGav[1], splitGav[2], null)));
         }
         ManifestYamlSupport.write(manifest, base.resolve("manifest.yaml"));
     }

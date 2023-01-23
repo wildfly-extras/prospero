@@ -65,7 +65,7 @@ public class ProvisioningDefinitionTest {
         List<Channel> channels = definition.resolveChannels(VERSION_RESOLVER_FACTORY);
 
         assertEquals(1, channels.size());
-        assertEquals(new URL("file:/tmp/foo.bar"), channels.get(0).getManifestRef().getUrl());
+        assertEquals(new URL("file:/tmp/foo.bar"), channels.get(0).getManifestCoordinate().getUrl());
         assertThat(channels.get(0).getRepositories())
                 .map(r-> Tuple.tuple(r.getId(), r.getUrl()))
                 .containsOnly(CENTRAL_REPO);
@@ -81,7 +81,7 @@ public class ProvisioningDefinitionTest {
         List<Channel> channels = definition.resolveChannels(VERSION_RESOLVER_FACTORY);
 
         assertEquals(1, channels.size());
-        assertEquals(new URL("http://localhost/foo.bar"), channels.get(0).getManifestRef().getUrl());
+        assertEquals(new URL("http://localhost/foo.bar"), channels.get(0).getManifestCoordinate().getUrl());
         assertThat(channels.get(0).getRepositories())
                 .map(r-> Tuple.tuple(r.getId(), r.getUrl()))
                 .containsOnly(CENTRAL_REPO);
@@ -97,7 +97,7 @@ public class ProvisioningDefinitionTest {
         List<Channel> channels = definition.resolveChannels(VERSION_RESOLVER_FACTORY);
 
         assertEquals(1, channels.size());
-        assertEquals(Paths.get("tmp/foo.bar").toAbsolutePath().toUri().toURL(), channels.get(0).getManifestRef().getUrl());
+        assertEquals(Paths.get("tmp/foo.bar").toAbsolutePath().toUri().toURL(), channels.get(0).getManifestCoordinate().getUrl());
         assertThat(channels.get(0).getRepositories())
                 .map(r-> Tuple.tuple(r.getId(), r.getUrl()))
                 .containsOnly(CENTRAL_REPO);
@@ -175,7 +175,7 @@ public class ProvisioningDefinitionTest {
         final ProvisioningDefinition.Builder builder = new ProvisioningDefinition.Builder().setFpl("multi-channel");
 
         final ProvisioningDefinition def = builder.build();
-        assertThat(def.resolveChannels(VERSION_RESOLVER_FACTORY).stream().map(c -> c.getManifestRef().getMaven()))
+        assertThat(def.resolveChannels(VERSION_RESOLVER_FACTORY).stream().map(c -> c.getManifestCoordinate().getMaven()))
                 .contains(
                 new MavenCoordinate("test", "one", null),
                 new MavenCoordinate("test", "two", null));
@@ -195,7 +195,7 @@ public class ProvisioningDefinitionTest {
 
         assertEquals(1, channels.size());
         final Channel channel = channels.get(0);
-        assertEquals(new URL("file:/tmp/foo.bar"), channel.getManifestRef().getUrl());
+        assertEquals(new URL("file:/tmp/foo.bar"), channel.getManifestCoordinate().getUrl());
         assertThat(channel.getRepositories())
                 .map(r-> Tuple.tuple(r.getId(), r.getUrl()))
                 .containsExactlyInAnyOrder(
@@ -208,9 +208,10 @@ public class ProvisioningDefinitionTest {
     public void knownFplWithConfig() throws Exception {
         final File file = temp.newFile();
 
-        new ProsperoConfig(List.of(new Channel("test", null, null, null,
+        new ProsperoConfig(List.of(new Channel("test", null, null,
                 List.of(new Repository("test_repo", "http://custom.repo")),
-                new ChannelManifestCoordinate("new.test", "gav")))).writeConfig(file.toPath());
+                new ChannelManifestCoordinate("new.test", "gav"),
+                null, null))).writeConfig(file.toPath());
 
         ProvisioningDefinition def = new ProvisioningDefinition.Builder().setFpl("multi-channel")
                 .setChannelCoordinates(file.toPath().toString()).build();
@@ -220,7 +221,7 @@ public class ProvisioningDefinitionTest {
 
         assertEquals(1, channels.size());
         final Channel channel = channels.get(0);
-        assertEquals(new MavenCoordinate("new.test", "gav", null), channel.getManifestRef().getMaven());
+        assertEquals(new MavenCoordinate("new.test", "gav", null), channel.getManifestCoordinate().getMaven());
         assertThat(channel.getRepositories())
                 .map(r-> Tuple.tuple(r.getId(), r.getUrl()))
                 .containsExactlyInAnyOrder(

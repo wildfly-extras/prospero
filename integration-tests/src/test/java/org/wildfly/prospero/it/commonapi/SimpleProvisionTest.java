@@ -73,8 +73,8 @@ public class SimpleProvisionTest extends WfCoreTestBase {
         // make sure the channel names are empty
         ProsperoConfig prosperoConfig = ProsperoConfig.readConfig(channelsFile);
         List<Channel> emptyNameChannels = prosperoConfig.getChannels().stream()
-                .map(c -> new Channel(c.getSchemaVersion(), null, null, null, c.getChannelRequirements(), c.getRepositories(),
-                        c.getManifestRef())).collect(Collectors.toList());
+                .map(c -> new Channel(c.getSchemaVersion(), null, null, null, c.getRepositories(),
+                        c.getManifestCoordinate(), null, null)).collect(Collectors.toList());
         new ProsperoConfig(emptyNameChannels).writeConfig(channelsFile);
 
         final ProvisioningDefinition provisioningDefinition = defaultWfCoreDefinition()

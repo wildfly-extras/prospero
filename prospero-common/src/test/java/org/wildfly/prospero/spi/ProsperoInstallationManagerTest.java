@@ -44,13 +44,13 @@ import static org.mockito.Mockito.when;
 
 @RunWith(MockitoJUnitRunner.class)
 public class ProsperoInstallationManagerTest {
-    private static final Channel CHANNEL_1 = new Channel("channel-1", null, null, null,
+    private static final Channel CHANNEL_1 = new Channel("channel-1", null, null,
             List.of(new Repository("repo1", "url1"), new Repository("repo2", "url2")),
-            new ChannelManifestCoordinate("foo", "bar"));
+            new ChannelManifestCoordinate("foo", "bar"), null, null);
 
-    private static final Channel CHANNEL_2 = new Channel("channel-1", null, null, null,
+    private static final Channel CHANNEL_2 = new Channel("channel-1", null, null,
             List.of(new Repository("repo1", "url1b"), new Repository("repo2", "url2")),
-            new ChannelManifestCoordinate("foo", "bar2"));
+            new ChannelManifestCoordinate("foo", "bar2"), null, null);
     @Mock
     private ProsperoInstallationManager.ActionFactory actionFactory;
 
