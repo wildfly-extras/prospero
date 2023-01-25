@@ -124,7 +124,7 @@ public class SimpleProvisionTest extends WfCoreTestBase {
 
         // verify manifest contains versions 17.0.1
         final Optional<Artifact> wildflyCliArtifact = readArtifactFromManifest("org.wildfly.core", "wildfly-core-galleon-pack");
-        assertEquals("19.0.0.Beta12", wildflyCliArtifact.get().getVersion());
+        assertEquals(UPGRADE_VERSION, wildflyCliArtifact.get().getVersion());
     }
 
     @Test
@@ -143,7 +143,7 @@ public class SimpleProvisionTest extends WfCoreTestBase {
 
         // verify manifest contains versions 17.0.1
         final Optional<Artifact> wildflyCliArtifact = readArtifactFromManifest("org.wildfly.core", "wildfly-core-galleon-pack");
-        assertEquals("19.0.0.Beta12", wildflyCliArtifact.get().getVersion());
+        assertEquals(UPGRADE_VERSION, wildflyCliArtifact.get().getVersion());
     }
 
     @Test

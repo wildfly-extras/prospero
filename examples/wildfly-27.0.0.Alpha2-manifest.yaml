@@ -970,7 +970,7 @@ streams:
 
   - groupId: "org.wildfly.galleon-plugins"
     artifactId: "wildfly-config-gen"
-    version: "6.0.0.Alpha6"
+    version: "6.2.2.Final"
 
   - groupId: "org.wildfly"
     artifactId: "wildfly-security"
@@ -1546,7 +1546,7 @@ streams:
 
   - groupId: "org.wildfly.galleon-plugins"
     artifactId: "wildfly-galleon-plugins"
-    version: "6.2.1.Final"
+    version: "6.2.2.Final"
 
   - groupId: "org.wildfly"
     artifactId: "jipijapa-hibernate5"

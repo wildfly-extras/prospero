@@ -112,11 +112,11 @@ public class CloneTest extends WfCoreTestBase {
             assertTrue(channelManifest.getStreams().stream()
               .anyMatch(m -> m.getGroupId().equals("io.undertow")
                 && m.getArtifactId().equals("undertow-core")
-                && m.getVersion().equals("2.2.17.Final")));
+                && m.getVersion().equals(UNDERTOW_VESION)));
             assertTrue(channelManifest.getStreams().stream()
               .anyMatch(m -> m.getGroupId().equals("org.jboss.xnio")
                 && m.getArtifactId().equals("xnio-nio")
-                && m.getVersion().equals("3.8.7.Final")));
+                && m.getVersion().equals(XNIO_VERSION)));
             if (stream == null) {
                 assertThat(channelManifest.getStreams().stream()).containsExactlyElementsOf(installedManifest.getStreams());
             } else {
@@ -157,14 +157,14 @@ public class CloneTest extends WfCoreTestBase {
     @Test
     public void testRestoreOverrideRepositories() throws Exception {
         ChannelManifest installedManifest = install(targetDir, MetadataTestUtils.prepareChannel(CHANNEL_BASE_CORE_19));
-        final Stream stream = new Stream("org.wildfly.core", "wildfly-cli", "19.0.0.Beta12-SNAPSHOT");
+        final Stream stream = new Stream("org.wildfly.core", "wildfly-cli", UPGRADE_VERSION);
         updateManifestStream(targetDir, stream);
         new InstallationExportAction(targetDir).export(exportPath);
         ExecutionUtils.prosperoExecution(CliConstants.Commands.CLONE, CliConstants.Commands.RESTORE,
             CliConstants.DIR, importDir.toString(),
             CliConstants.ARG_PATH, exportPath.toString(),
             CliConstants.NO_LOCAL_MAVEN_CACHE,
-            // mockTemporaryRepo contains org.wildfly.core:wildfly-cli:19.0.0.Beta12-SNAPSHOT
+            // mockTemporaryRepo contains org.wildfly.core:${UPGRADE_VERSION}
             CliConstants.REPOSITORIES, mockTemporaryRepo(false).toString()
           )
           .execute()

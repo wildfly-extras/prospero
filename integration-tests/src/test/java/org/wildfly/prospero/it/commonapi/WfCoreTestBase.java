@@ -59,13 +59,15 @@ import java.util.zip.ZipInputStream;
 
 public class WfCoreTestBase {
 
-    public static final String BASE_VERSION = "19.0.0.Beta11";
+    public static final String BASE_VERSION = "20.0.0.Beta5";
+    public static final String UPGRADE_VERSION = "20.0.0.Beta5-test";
+    public static final String UNDERTOW_VESION = "2.3.0.Final";
+    public static final String XNIO_VERSION = "3.8.8.Final";
     public static final String BASE_JAR = "wildfly-cli-" + BASE_VERSION + ".jar";
-    public static final String UPGRADE_VERSION = "19.0.0.Beta12-SNAPSHOT";
     public static final String UPGRADE_JAR = "wildfly-cli-" + UPGRADE_VERSION + ".jar";
-    public static final String CHANNEL_BASE_CORE_19 = "manifests/wfcore-19-base.yaml";
-    public static final String CHANNEL_FP_UPDATES = "manifests/wfcore-19-upgrade-fp.yaml";
-    public static final String CHANNEL_COMPONENT_UPDATES = "manifests/wfcore-19-upgrade-component.yaml";
+    public static final String CHANNEL_BASE_CORE_19 = "manifests/wfcore-base.yaml";
+    public static final String CHANNEL_FP_UPDATES = "manifests/wfcore-upgrade-fp.yaml";
+    public static final String CHANNEL_COMPONENT_UPDATES = "manifests/wfcore-upgrade-component.yaml";
     public static final Repository REPOSITORY_MAVEN_CENTRAL = new Repository("maven-central", "https://repo1.maven.org/maven2/");
     public static final Repository REPOSITORY_NEXUS = new Repository("nexus", "https://repository.jboss.org/nexus/content/groups/public-jboss");
     public static final Repository REPOSITORY_MRRC_GA = new Repository("maven-redhat-ga", "https://maven.repository.redhat.com/ga");
@@ -89,8 +91,9 @@ public class WfCoreTestBase {
         final RepositorySystem system = msm.newRepositorySystem();
         final DefaultRepositorySystemSession session = msm.newRepositorySystemSession(system, false);
 
-        resolvedUpgradeArtifact = installIfMissing(system, session, "org.wildfly.core", "wildfly-cli", null);
-        resolvedUpgradeClientArtifact = installIfMissing(system, session, "org.wildfly.core", "wildfly-cli", "client");
+        resolvedUpgradeArtifact = installIfMissing(system, session, "org.wildfly.core", "wildfly-cli", null, "jar");
+        resolvedUpgradeClientArtifact = installIfMissing(system, session, "org.wildfly.core", "wildfly-cli", "client", "jar");
+        installIfMissing(system, session, "org.wildfly.core", "wildfly-core-galleon-pack", null, "zip");
     }
 
     @Before
@@ -100,9 +103,9 @@ public class WfCoreTestBase {
         installation = new ProvisioningAction(outputPath, mavenSessionManager, new CliConsole());
     }
 
-    private static Artifact installIfMissing(RepositorySystem system, DefaultRepositorySystemSession session, String groupId, String artifactId, String classifier) throws ArtifactResolutionException, InstallationException {
+    private static Artifact installIfMissing(RepositorySystem system, DefaultRepositorySystemSession session, String groupId, String artifactId, String classifier, String extension) throws ArtifactResolutionException, InstallationException {
         final ArtifactRequest artifactRequest = new ArtifactRequest();
-        Artifact updateCli = new DefaultArtifact(groupId, artifactId, classifier, "jar", UPGRADE_VERSION);
+        Artifact updateCli = new DefaultArtifact(groupId, artifactId, classifier, extension, UPGRADE_VERSION);
         artifactRequest.setArtifact(updateCli);
         Artifact upgradeArtifact;
         try {
@@ -110,7 +113,7 @@ public class WfCoreTestBase {
             upgradeArtifact = result.getArtifact();
         } catch (ArtifactResolutionException e) {
             final InstallRequest installRequest = new InstallRequest();
-            updateCli = updateCli.setFile(resolveExistingCliArtifact(system, session, groupId, artifactId, classifier));
+            updateCli = updateCli.setFile(resolveExistingCliArtifact(system, session, groupId, artifactId, classifier, extension));
             installRequest.addArtifact(updateCli);
             final InstallResult result = system.install(session, installRequest);
             upgradeArtifact = result.getArtifacts().stream().findFirst().get();
@@ -118,8 +121,10 @@ public class WfCoreTestBase {
         return upgradeArtifact;
     }
 
-    private static File resolveExistingCliArtifact(RepositorySystem system, DefaultRepositorySystemSession session, String groupId, String artifactId, String classifier) throws ArtifactResolutionException {
-        final DefaultArtifact existing = new DefaultArtifact(groupId, artifactId, classifier, "jar", BASE_VERSION);
+    private static File resolveExistingCliArtifact(RepositorySystem system, DefaultRepositorySystemSession session,
+                                                   String groupId, String artifactId, String classifier, String extension)
+            throws ArtifactResolutionException {
+        final DefaultArtifact existing = new DefaultArtifact(groupId, artifactId, classifier, extension, BASE_VERSION);
         return resolveArtifact(system, session, existing).getFile();
     }
 
@@ -204,8 +209,8 @@ public class WfCoreTestBase {
         }
 
         // additional artifacts not included in galleon-pack
-        artifacts.put("galleon-pack", "org.wildfly.core:wildfly-core-galleon-pack:19.0.0.Beta11::zip");
-        artifacts.put("galleon-plugins", "org.wildfly.galleon-plugins:wildfly-galleon-plugins:6.2.1.Final::jar");
+        artifacts.put("galleon-pack", "org.wildfly.core:wildfly-core-galleon-pack:"+ BASE_VERSION + "::zip");
+        artifacts.put("galleon-plugins", "org.wildfly.galleon-plugins:wildfly-galleon-plugins:6.2.3.Final::jar");
 
         // resolve all dependencies
         final List<ArtifactRequest> requests = artifacts.values().stream()

@@ -59,7 +59,7 @@ public class PatchingTest {
 
     public static final String PATCHED_GROUP_ID = "io.undertow";
     public static final String PATCHED_ARTIFACT_ID = "undertow-core";
-    public static final String BASE_VERSION = "2.2.17.Final";
+    public static final String BASE_VERSION = WfCoreTestBase.UNDERTOW_VESION;
     public static final String PATCHED_VERSION = BASE_VERSION + "-patch001";
     public static final String PATCHED_JAR_NAME = PATCHED_ARTIFACT_ID + "-" + PATCHED_VERSION + ".jar";
     public static final Path UNDERTOW_MODULE_PATH = Paths.get("io", "undertow", "core", "main");
@@ -178,7 +178,7 @@ public class PatchingTest {
     }
 
     private void installCore() throws Exception {
-        Path channelsFile = MetadataTestUtils.prepareChannel("manifests/wfcore-19-base.yaml");
+        Path channelsFile = MetadataTestUtils.prepareChannel("manifests/wfcore-base.yaml");
 
         ExecutionUtils.prosperoExecution(CliConstants.Commands.INSTALL,
                         CliConstants.CHANNELS, channelsFile.toString(),
