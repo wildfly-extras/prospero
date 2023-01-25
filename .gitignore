@@ -1,3 +1,6 @@
 .idea/
 *.iml
 target/
+
+#OS X index files
+.DS_Store
