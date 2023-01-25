@@ -27,8 +27,10 @@
         <version.org.apache.maven.plugins.pmd>3.16.0</version.org.apache.maven.plugins.pmd>
         <version.org.apache.maven.plugins.dependency>3.1.2</version.org.apache.maven.plugins.dependency>
         <version.org.apache.maven.resolver>1.6.3</version.org.apache.maven.resolver>
-        <version.org.apache.maven.resolver.provider>3.8.6</version.org.apache.maven.resolver.provider>
+        <version.org.apache.maven>3.8.6</version.org.apache.maven>
         <version.org.apache.logging.log4j>2.14.1</version.org.apache.logging.log4j>
+        <version.org.codehaus.plexus-interpolation>1.26</version.org.codehaus.plexus-interpolation>
+        <version.org.codehaus.plexus-utils>3.3.1</version.org.codehaus.plexus-utils>
         <version.commons.io>2.11.0</version.commons.io>
         <version.org.jboss.galleon>5.0.7.Final</version.org.jboss.galleon>
         <version.org.eclipse.jgit>5.13.0.202109080827-r</version.org.eclipse.jgit>
@@ -123,15 +125,65 @@
                 <version>${version.org.apache.maven.resolver}</version>
             </dependency>
             <dependency>
+                <groupId>org.apache.maven.resolver</groupId>
+                <artifactId>maven-resolver-api</artifactId>
+                <version>${version.org.apache.maven.resolver}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.apache.maven.resolver</groupId>
+                <artifactId>maven-resolver-spi</artifactId>
+                <version>${version.org.apache.maven.resolver}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.apache.maven.resolver</groupId>
+                <artifactId>maven-resolver-util</artifactId>
+                <version>${version.org.apache.maven.resolver}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.apache.maven</groupId>
+                <artifactId>maven-artifact</artifactId>
+                <version>${version.org.apache.maven}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.apache.maven</groupId>
+                <artifactId>maven-builder-support</artifactId>
+                <version>${version.org.apache.maven}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.apache.maven</groupId>
+                <artifactId>maven-model</artifactId>
+                <version>${version.org.apache.maven}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.apache.maven</groupId>
+                <artifactId>maven-model-builder</artifactId>
+                <version>${version.org.apache.maven}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.apache.maven</groupId>
+                <artifactId>maven-repository-metadata</artifactId>
+                <version>${version.org.apache.maven}</version>
+            </dependency>
+            <dependency>
                 <groupId>org.apache.maven</groupId>
                 <artifactId>maven-resolver-provider</artifactId>
-                <version>${version.org.apache.maven.resolver.provider}</version>
+                <version>${version.org.apache.maven}</version>
                 <exclusions>
                     <exclusion>
                         <groupId>org.apache.maven.resolver</groupId>
                         <artifactId>*</artifactId>
                     </exclusion>
                 </exclusions>
+            </dependency>
+            <dependency>
+                <groupId>org.codehaus.plexus</groupId>
+                <artifactId>plexus-interpolation</artifactId>
+                <version>${version.org.codehaus.plexus-interpolation}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.codehaus.plexus</groupId>
+                <artifactId>plexus-utils</artifactId>
+                <version>${version.org.codehaus.plexus-utils}</version>
             </dependency>
 
             <dependency>
