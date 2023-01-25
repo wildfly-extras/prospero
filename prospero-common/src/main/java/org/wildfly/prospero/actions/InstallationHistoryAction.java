@@ -50,9 +50,7 @@ public class InstallationHistoryAction {
 
     public InstallationChanges compare(SavedState savedState) throws MetadataException {
         final InstallationMetadata installationMetadata = new InstallationMetadata(installation);
-        if (!installationMetadata.getRevisions().contains(savedState)) {
-            throw Messages.MESSAGES.savedStateNotFound(savedState.getName());
-        }
+        verifyStateExists(savedState, installationMetadata);
         return installationMetadata.getChangesSince(savedState);
     }
 
@@ -81,9 +79,7 @@ public class InstallationHistoryAction {
 
         try (final InstallationMetadata metadata = new InstallationMetadata(installation)) {
 
-            if (!metadata.getRevisions().contains(savedState)) {
-                throw Messages.MESSAGES.savedStateNotFound(savedState.getName());
-            }
+            verifyStateExists(savedState, metadata);
 
             final ProsperoConfig prosperoConfig = new ProsperoConfig(
                     TemporaryRepositoriesHandler.overrideRepositories(metadata.getProsperoConfig().getChannels(), overrideRepositories));
@@ -112,5 +108,11 @@ public class InstallationHistoryAction {
         }
 
         applyAction.applyUpdate();
+    }
+
+    private static void verifyStateExists(SavedState savedState, InstallationMetadata metadata) throws MetadataException {
+        if (!metadata.getRevisions().stream().filter(s->s.getName().equals(savedState.getName())).findFirst().isPresent()) {
+            throw Messages.MESSAGES.savedStateNotFound(savedState.getName());
+        }
     }
 }
