@@ -42,6 +42,7 @@ import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 import static org.mockito.Mockito.verify;
 
 @RunWith(MockitoJUnitRunner.class)
@@ -125,6 +126,21 @@ public class InstallationMetadataTest {
         new InstallationMetadata(base);
 
         verify(gitStorage).record();
+    }
+
+    @Test
+    public void testWriteReadmeFile() throws Exception {
+        // throw away mocked installation from setup
+        base = temp.newFolder().toPath();
+        final Channel channel = createChannel(new ChannelManifestCoordinate("new", "channel"));
+        installationMetadata = new InstallationMetadata(base,
+                new ChannelManifest(null, null, null, null),
+                List.of(channel)
+        );
+
+        installationMetadata.recordProvision(false);
+
+        assertTrue("README.txt file should exist.", Files.exists(base.resolve(InstallationMetadata.METADATA_DIR).resolve(InstallationMetadata.README_FILE_NAME)));
     }
 
     private static Channel createChannel(ChannelManifestCoordinate manifestCoordinate) {
