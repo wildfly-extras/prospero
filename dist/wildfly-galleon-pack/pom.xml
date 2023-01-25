@@ -421,7 +421,7 @@
             <phase>compile</phase>
             <configuration>
               <resources-dir>${basedir}/target/resources</resources-dir>
-              <generate-channel>true</generate-channel>
+              <generate-channel-manifest>true</generate-channel-manifest>
               <configFile>target/wildfly-user-feature-pack-build.xml</configFile>
               <add-feature-packs-as-required-channels>false</add-feature-packs-as-required-channels>
             </configuration>
