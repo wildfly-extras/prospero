@@ -61,8 +61,6 @@
         <module>prospero-common</module>
         <module>prospero-cli</module>
         <module>prospero-metadata</module>
-        <module>prospero-launcher</module>
-        <module>prospero-bootstrap</module>
         <module>integration-tests</module>
     </modules>
 
