@@ -1,0 +1,9 @@
+<?xml version="1.0" ?>
+<layer-spec xmlns="urn:jboss:galleon:layer-spec:1.0" name="prospero">
+    <packages>
+        <package name="org.jboss.prospero"/>
+        <package name="org.jboss.prospero-dep"/>
+    </packages>
+</layer-spec>
+
+

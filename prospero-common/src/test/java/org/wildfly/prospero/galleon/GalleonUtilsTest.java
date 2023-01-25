@@ -51,6 +51,17 @@ public class GalleonUtilsTest {
     }
 
     @Test
+    public void clearAndRestoreMBeanBuilderProperty() throws Exception {
+        System.setProperty(GalleonUtils.JAVAX_MANAGEMENT_BUILDER_INITIAL_PROPERTY, "foo");
+        try {
+            GalleonUtils.executeGalleon((options) -> assertNull(System.getProperty(GalleonUtils.JAVAX_MANAGEMENT_BUILDER_INITIAL_PROPERTY)), Paths.get("test"));
+            assertEquals(System.getProperty(GalleonUtils.JAVAX_MANAGEMENT_BUILDER_INITIAL_PROPERTY), "foo");
+        } finally {
+            System.clearProperty(GalleonUtils.JAVAX_MANAGEMENT_BUILDER_INITIAL_PROPERTY);
+        }
+    }
+
+    @Test
     public void extractFailedArtifactResolutionOnCopy() throws Exception {
         final ProvisioningException test = new ProvisioningException(
                 new UnresolvedMavenArtifactException("test"));

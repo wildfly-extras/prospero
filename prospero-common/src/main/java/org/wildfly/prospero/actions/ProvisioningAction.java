@@ -17,38 +17,35 @@
 
 package org.wildfly.prospero.actions;
 
+import org.apache.commons.lang3.StringUtils;
+import org.jboss.galleon.config.ProvisioningConfig;
+import org.wildfly.channel.Channel;
+import org.wildfly.channel.ChannelManifest;
 import org.wildfly.channel.UnresolvedMavenArtifactException;
 import org.wildfly.prospero.Messages;
 import org.wildfly.prospero.api.InstallationMetadata;
+import org.wildfly.prospero.api.RepositoryUtils;
 import org.wildfly.prospero.api.exceptions.ArtifactResolutionException;
 import org.wildfly.prospero.api.exceptions.MetadataException;
-import org.wildfly.prospero.api.ProvisioningDefinition;
 import org.wildfly.prospero.api.exceptions.OperationException;
-import org.wildfly.prospero.galleon.FeaturePackLocationParser;
+import org.wildfly.prospero.galleon.GalleonArtifactExporter;
 import org.wildfly.prospero.galleon.GalleonEnvironment;
 import org.wildfly.prospero.galleon.GalleonUtils;
 import org.wildfly.prospero.galleon.ChannelMavenArtifactRepositoryManager;
 
-import java.io.IOException;
-import java.nio.file.Files;
+import java.net.MalformedURLException;
 import java.nio.file.Path;
 import java.util.List;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 
-import org.wildfly.prospero.model.ChannelRef;
-import org.wildfly.prospero.model.ProsperoConfig;
-import org.wildfly.prospero.model.RepositoryRef;
 import org.wildfly.prospero.wfchannel.MavenSessionManager;
 import org.eclipse.aether.repository.RemoteRepository;
 import org.jboss.galleon.ProvisioningException;
-import org.jboss.galleon.config.FeaturePackConfig;
-import org.jboss.galleon.config.ProvisioningConfig;
-import org.jboss.galleon.universe.FeaturePackLocation;
-import org.jboss.galleon.xml.ProvisioningXmlParser;
-import org.wildfly.channel.Channel;
 
 public class ProvisioningAction {
 
+    private static final String CHANNEL_NAME_PREFIX = "channel-";
     private final MavenSessionManager mavenSessionManager;
     private final Path installDir;
     private final Console console;
@@ -61,83 +58,61 @@ public class ProvisioningAction {
     }
 
     /**
-     * Installs feature pack defined by {@code fpl} in {@code installDir}. If {@code fpl} doesn't include version,
-     * the newest available version will be used.
+     * Provision installation according to given ProvisioningDefinition.
      *
-     * @param provisioningDefinition
-     * @throws ProvisioningException
-     * @throws MetadataException
+     * @param provisioningConfig prospero provisioning definition
+     * @param channels list of channels to resolve installed artifacts
      */
-    public void provision(ProvisioningDefinition provisioningDefinition) throws ProvisioningException, OperationException {
-        final List<RemoteRepository> repositories = provisioningDefinition.getRepositories();
+    public void provision(ProvisioningConfig provisioningConfig, List<Channel> channels)
+            throws ProvisioningException, OperationException, MalformedURLException {
+        channels = enforceChannelNames(channels);
+
         final GalleonEnvironment galleonEnv = GalleonEnvironment
-                .builder(installDir, provisioningDefinition.getProsperoConfig(), mavenSessionManager)
-                .setConsole(console)
-                .build();
-
-        final ChannelMavenArtifactRepositoryManager repositoryManager = galleonEnv.getRepositoryManager();
-        final ProvisioningConfig config;
-        if (provisioningDefinition.getFpl() != null) {
-            FeaturePackLocation loc = new FeaturePackLocationParser(repositoryManager).resolveFpl(provisioningDefinition.getFpl());
-
-            console.println(Messages.MESSAGES.installingFpl(loc.toString()));
-
-            final FeaturePackConfig.Builder configBuilder = FeaturePackConfig.builder(loc);
-            for (String includedPackage : provisioningDefinition.getIncludedPackages()) {
-                configBuilder.includePackage(includedPackage);
-            }
-            config = ProvisioningConfig.builder().addFeaturePackDep(configBuilder.build()).build();
-        } else {
-            config = ProvisioningXmlParser.parse(provisioningDefinition.getDefinition());
-        }
-
-        try {
-            GalleonUtils.executeGalleon(options -> galleonEnv.getProvisioningManager().provision(config, options),
-                    mavenSessionManager.getProvisioningRepo().toAbsolutePath());
-        } catch (UnresolvedMavenArtifactException e) {
-            throw new ArtifactResolutionException(e, repositories, mavenSessionManager.isOffline());
-        }
-
-        writeProsperoMetadata(installDir, repositoryManager, galleonEnv.getChannelRefs(), repositories);
-    }
-
-    /**
-     * Installs feature pack based on Galleon installation file
-     *
-     * @param installationFile
-     * @param channelRefs
-     * @param repositories
-     * @throws ProvisioningException
-     * @throws IOException
-     * @throws MetadataException
-     */
-    public void provision(Path installationFile, List<ChannelRef> channelRefs, List<RemoteRepository> repositories) throws ProvisioningException, OperationException {
-        if (Files.exists(installDir)) {
-            throw Messages.MESSAGES.installationDirAlreadyExists(installDir);
-        }
-        final ProsperoConfig prosperoConfig = new ProsperoConfig(channelRefs, repositories.stream().map(RepositoryRef::new).collect(Collectors.toList()));
-        final GalleonEnvironment galleonEnv = GalleonEnvironment
-                .builder(installDir, prosperoConfig, mavenSessionManager)
+                .builder(installDir, channels, mavenSessionManager)
                 .setConsole(console)
                 .build();
 
         try {
-            GalleonUtils.executeGalleon(options->galleonEnv.getProvisioningManager().provision(installationFile, options),
+            GalleonUtils.ProvisioningManagerExecution galleonOp = (pm, options) -> pm.provision(
+                    provisioningConfig, options);
+            GalleonUtils.executeGalleon(options -> galleonOp.execute(galleonEnv.getProvisioningManager(), options),
                     mavenSessionManager.getProvisioningRepo().toAbsolutePath());
         } catch (UnresolvedMavenArtifactException e) {
+            final List<RemoteRepository> repositories = galleonEnv.getChannels().stream()
+                    .flatMap(c -> c.getRepositories().stream())
+                    .map(r -> RepositoryUtils.toRemoteRepository(r.getId(), r.getUrl()))
+                    .collect(Collectors.toList());
             throw new ArtifactResolutionException(e, repositories, mavenSessionManager.isOffline());
         }
 
-        writeProsperoMetadata(installDir, galleonEnv.getRepositoryManager(), channelRefs, repositories);
+        writeProsperoMetadata(installDir, galleonEnv.getRepositoryManager(), channels);
+
+        try {
+            new GalleonArtifactExporter().cacheGalleonArtifacts(galleonEnv.getChannels(), mavenSessionManager, installDir, provisioningConfig);
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
     }
 
-    private void writeProsperoMetadata(Path home, ChannelMavenArtifactRepositoryManager maven, List<ChannelRef> channelRefs,
-                                       List<RemoteRepository> repositories) throws MetadataException {
-        final Channel channel = maven.resolvedChannel();
+    private void writeProsperoMetadata(Path home, ChannelMavenArtifactRepositoryManager maven, List<Channel> channels) throws MetadataException {
+        final ChannelManifest manifest = maven.resolvedChannel();
 
-        try (final InstallationMetadata installationMetadata = new InstallationMetadata(home, channel, channelRefs, repositories)) {
+        try (final InstallationMetadata installationMetadata = new InstallationMetadata(home, manifest, channels)) {
             installationMetadata.recordProvision(true);
         }
+    }
+
+    private List<Channel> enforceChannelNames(List<Channel> newChannels) {
+        final AtomicInteger channelCounter = new AtomicInteger(0);
+        return newChannels.stream().map(c->{
+            if (StringUtils.isEmpty(c.getName())) {
+                return new Channel(c.getSchemaVersion(), CHANNEL_NAME_PREFIX + channelCounter.getAndIncrement(), c.getDescription(),
+                        c.getVendor(), c.getRepositories(),
+                        c.getManifestCoordinate(), c.getBlocklistCoordinate(), c.getNoStreamStrategy());
+            } else {
+                return c;
+            }
+        }).collect(Collectors.toList());
     }
 
     private static void verifyInstallDir(Path directory) {

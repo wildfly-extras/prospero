@@ -17,19 +17,22 @@
 
 package org.wildfly.prospero.cli;
 
-
-import java.net.URL;
 import java.nio.file.Path;
 import java.util.List;
 
 import org.jboss.galleon.ProvisioningException;
+import org.wildfly.channel.Repository;
+import org.wildfly.prospero.actions.ApplyCandidateAction;
 import org.wildfly.prospero.actions.Console;
+import org.wildfly.prospero.actions.InstallationExportAction;
 import org.wildfly.prospero.actions.InstallationHistoryAction;
+import org.wildfly.prospero.actions.InstallationRestoreAction;
 import org.wildfly.prospero.actions.MetadataAction;
 import org.wildfly.prospero.actions.PromoteArtifactBundleAction;
 import org.wildfly.prospero.actions.ProvisioningAction;
 import org.wildfly.prospero.actions.UpdateAction;
 import org.wildfly.prospero.api.exceptions.OperationException;
+import org.wildfly.prospero.api.exceptions.MetadataException;
 import org.wildfly.prospero.wfchannel.MavenSessionManager;
 
 public class ActionFactory {
@@ -40,21 +43,35 @@ public class ActionFactory {
 
     // Option for BETA update support
     // TODO: evaluate in GA - replace by repository:add / custom channels?
-    public UpdateAction update(Path targetPath, MavenSessionManager mavenSessionManager, Console console, List<URL> additionalRepositories)
+    public UpdateAction update(Path targetPath, MavenSessionManager mavenSessionManager, Console console, List<Repository> additionalRepositories)
             throws OperationException,
             ProvisioningException {
         return new UpdateAction(targetPath, mavenSessionManager, console, additionalRepositories);
+    }
+
+    public ApplyCandidateAction applyUpdate(Path installationPath, Path updatePath)
+            throws OperationException,
+            ProvisioningException {
+        return new ApplyCandidateAction(installationPath, updatePath);
     }
 
     public InstallationHistoryAction history(Path targetPath, Console console) {
         return new InstallationHistoryAction(targetPath, console);
     }
 
-    public MetadataAction metadataActions(Path targetPath) {
+    public MetadataAction metadataActions(Path targetPath) throws MetadataException {
         return new MetadataAction(targetPath);
     }
 
     public PromoteArtifactBundleAction promoter(Console console) {
         return new PromoteArtifactBundleAction(console);
+    }
+
+    public InstallationExportAction exportAction(Path targetPath) {
+        return new InstallationExportAction(targetPath);
+    }
+
+    public InstallationRestoreAction restoreAction(Path targetPath, MavenSessionManager mavenSessionManager, Console console) {
+        return new InstallationRestoreAction(targetPath, mavenSessionManager, console);
     }
 }

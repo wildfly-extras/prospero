@@ -20,8 +20,8 @@ package org.wildfly.prospero.it.commonapi;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
-import org.wildfly.channel.Channel;
-import org.wildfly.channel.ChannelMapper;
+import org.wildfly.channel.ChannelManifest;
+import org.wildfly.channel.ChannelManifestMapper;
 import org.wildfly.channel.Stream;
 import org.wildfly.prospero.api.ProvisioningDefinition;
 import org.wildfly.prospero.api.exceptions.ArtifactResolutionException;
@@ -41,8 +41,8 @@ public class MissingArtifactTest extends WfCoreTestBase {
 
     @Test
     public void missingArtifactInCopyTask() throws Exception {
-        final Channel source = ChannelMapper.from(MissingArtifactTest.class.getClassLoader().getResource(CHANNEL_BASE_CORE_19));
-        final Channel target = new Channel(source.getSchemaVersion(), source.getName(), source.getDescription(), source.getVendor(), source.getChannelRequirements(),
+        final ChannelManifest source = ChannelManifestMapper.from(MissingArtifactTest.class.getClassLoader().getResource(CHANNEL_BASE_CORE_19));
+        final ChannelManifest target = new ChannelManifest(source.getSchemaVersion(), source.getName(), source.getDescription(),
                 source.getStreams().stream()
                         .map(s->{
                             if (s.getArtifactId().equals("jboss-modules")) {
@@ -53,20 +53,22 @@ public class MissingArtifactTest extends WfCoreTestBase {
                         })
                         .collect(Collectors.toList()));
         final Path channelFile = temporaryFolder.newFile().toPath();
-        Files.writeString(channelFile, ChannelMapper.toYaml(target));
-        final Path provisionConfigFile = temporaryFolder.newFile().toPath();
-        MetadataTestUtils.prepareProvisionConfig(provisionConfigFile, List.of(channelFile.toUri().toURL()));
+        Files.writeString(channelFile, ChannelManifestMapper.toYaml(target));
+        final Path channelsFile = temporaryFolder.newFile().toPath();
+        MetadataTestUtils.prepareChannel(channelsFile, List.of(channelFile.toUri().toURL()));
 
         final ProvisioningDefinition provisioningDefinition = defaultWfCoreDefinition()
-                .setProvisionConfig(provisionConfigFile)
+                .setChannelCoordinates(List.of(channelsFile.toString()))
                 .build();
-        assertThrows(ArtifactResolutionException.class, () -> installation.provision(provisioningDefinition));
+        assertThrows(ArtifactResolutionException.class,
+                () -> installation.provision(provisioningDefinition.toProvisioningConfig(),
+                        provisioningDefinition.resolveChannels(CHANNELS_RESOLVER_FACTORY)));
     }
 
     @Test
     public void missingArtifactInPackages() throws Exception {
-        final Channel source = ChannelMapper.from(MissingArtifactTest.class.getClassLoader().getResource(CHANNEL_BASE_CORE_19));
-        final Channel target = new Channel(source.getSchemaVersion(), source.getName(), source.getDescription(), source.getVendor(), source.getChannelRequirements(),
+        final ChannelManifest source = ChannelManifestMapper.from(MissingArtifactTest.class.getClassLoader().getResource(CHANNEL_BASE_CORE_19));
+        final ChannelManifest target = new ChannelManifest(source.getSchemaVersion(), source.getName(), source.getDescription(),
                 source.getStreams().stream()
                         .map(s->{
                             if (s.getArtifactId().equals("remoting-jmx")) {
@@ -77,13 +79,15 @@ public class MissingArtifactTest extends WfCoreTestBase {
                         })
                         .collect(Collectors.toList()));
         final Path channelFile = temporaryFolder.newFile().toPath();
-        Files.writeString(channelFile, ChannelMapper.toYaml(target));
-        final Path provisionConfigFile = temporaryFolder.newFile().toPath();
-        MetadataTestUtils.prepareProvisionConfig(provisionConfigFile, List.of(channelFile.toUri().toURL()));
+        Files.writeString(channelFile, ChannelManifestMapper.toYaml(target));
+        final Path channelsFile = temporaryFolder.newFile().toPath();
+        MetadataTestUtils.prepareChannel(channelsFile, List.of(channelFile.toUri().toURL()));
 
         final ProvisioningDefinition provisioningDefinition = defaultWfCoreDefinition()
-                .setProvisionConfig(provisionConfigFile)
+                .setChannelCoordinates(List.of(channelsFile.toString()))
                 .build();
-        assertThrows(ArtifactResolutionException.class, () -> installation.provision(provisioningDefinition));
+        assertThrows(ArtifactResolutionException.class,
+                () -> installation.provision(provisioningDefinition.toProvisioningConfig(),
+                        provisioningDefinition.resolveChannels(CHANNELS_RESOLVER_FACTORY)));
     }
 }

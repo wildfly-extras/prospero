@@ -24,10 +24,10 @@ import org.eclipse.aether.repository.RemoteRepository;
 import org.eclipse.aether.resolution.ArtifactResolutionException;
 import org.jboss.galleon.ProvisioningException;
 import org.wildfly.channel.ArtifactCoordinate;
+import org.wildfly.channel.ChannelManifestCoordinate;
 import org.wildfly.channel.maven.ChannelCoordinate;
 import org.wildfly.prospero.Messages;
 import org.wildfly.prospero.api.exceptions.ArtifactPromoteException;
-import org.wildfly.prospero.model.ChannelRef;
 import org.wildfly.prospero.promotion.ArtifactPromoter;
 import org.wildfly.prospero.promotion.ArtifactBundle;
 import org.wildfly.prospero.wfchannel.MavenSessionManager;
@@ -45,13 +45,13 @@ public class PromoteArtifactBundleAction {
         this.console = console;
     }
 
-    public void promote(Path archive, URL targetRepository, ChannelRef coordinate) throws ProvisioningException, ArtifactPromoteException {
+    public void promote(Path archive, URL targetRepository, ChannelManifestCoordinate coordinate) throws ProvisioningException, ArtifactPromoteException {
         Objects.requireNonNull(archive);
         Objects.requireNonNull(targetRepository);
         Objects.requireNonNull(coordinate);
 
-        if (coordinate.getGav() == null || coordinate.getGav().isEmpty()) {
-            throw new IllegalArgumentException("Channel reference has to use Maven GA.");
+        if (coordinate.getMaven() == null) {
+            throw Messages.MESSAGES.nonMavenChannelRef();
         }
 
         try (final ArtifactBundle extracted = ArtifactBundle.extract(archive)) {
@@ -68,12 +68,12 @@ public class PromoteArtifactBundleAction {
 
             final ArtifactPromoter promoter = new ArtifactPromoter(system, session, targetRepo);
             try {
-                promoter.promote(extracted.getArtifactList(), new ChannelCoordinate(coordinate.getGav().split(":")[0], coordinate.getGav().split(":")[1]), sourceRepo);
+                promoter.promote(extracted.getArtifactList(), new ChannelCoordinate(coordinate.getMaven().getGroupId(), coordinate.getMaven().getArtifactId()), sourceRepo);
             } catch (IOException | ArtifactResolutionException | DeploymentException e) {
-                throw new ArtifactPromoteException("Unable to promote artifacts to " + targetRepository, e);
+                throw Messages.MESSAGES.unableToPromote(targetRepository, e);
             }
         } catch (IOException e) {
-            throw new ArtifactPromoteException("Unable to parse the customization bundle", e);
+            throw Messages.MESSAGES.unableToParseCustomizationBundle(archive, e);
         }
     }
 }

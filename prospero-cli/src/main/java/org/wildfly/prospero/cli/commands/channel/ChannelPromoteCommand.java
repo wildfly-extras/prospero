@@ -17,15 +17,19 @@
 
 package org.wildfly.prospero.cli.commands.channel;
 
+import org.wildfly.channel.Channel;
+import org.wildfly.channel.ChannelManifestCoordinate;
+import org.wildfly.channel.MavenCoordinate;
+import org.wildfly.prospero.Messages;
 import org.wildfly.prospero.actions.Console;
 import org.wildfly.prospero.actions.MetadataAction;
+import org.wildfly.prospero.api.ArtifactUtils;
 import org.wildfly.prospero.api.exceptions.MetadataException;
 import org.wildfly.prospero.cli.ActionFactory;
 import org.wildfly.prospero.cli.CliMessages;
 import org.wildfly.prospero.cli.ReturnCodes;
 import org.wildfly.prospero.cli.commands.AbstractCommand;
 import org.wildfly.prospero.cli.commands.CliConstants;
-import org.wildfly.prospero.model.ChannelRef;
 import picocli.CommandLine;
 
 import java.net.MalformedURLException;
@@ -42,7 +46,7 @@ import static org.wildfly.prospero.cli.commands.channel.ChannelInitializeCommand
 )
 public class ChannelPromoteCommand extends AbstractCommand {
     @CommandLine.Option(
-            names = CliConstants.CUSTOMIZATION_CHANNEL_NAME
+            names = CliConstants.CHANNEL_MANIFEST
     )
     private Optional<String> name;
 
@@ -76,43 +80,45 @@ public class ChannelPromoteCommand extends AbstractCommand {
     @Override
     public Integer call() throws Exception {
         if (url.isEmpty()) {
-            final Optional<URL> res = readSetting(a->a.getRepositories().stream()
-                    .filter(r -> r.getId().equals(CUSTOMIZATION_REPO_ID))
+            final Optional<URL> res = readSetting(a->a.getChannels().stream()
+                    .flatMap(c -> c.getRepositories().stream())
+                    .filter(c -> c.getId().equals(CUSTOMIZATION_REPO_ID))
                     .map(r-> {
                         try {
                             return new URL(r.getUrl());
                         } catch (MalformedURLException e) {
-                            throw new IllegalArgumentException("Invalid URL " + r.getUrl(), e);
+                            throw Messages.MESSAGES.invalidUrl(r.getUrl(), e);
                         }
                     })
                     .findFirst());
             if (res.isPresent()) {
                 this.url = res;
             } else {
-                console.error(CliMessages.MESSAGES.noCustomizationConfigFound(CliConstants.CUSTOMIZATION_CHANNEL_NAME, CliConstants.CUSTOMIZATION_REPOSITORY_URL));
+                console.error(CliMessages.MESSAGES.noCustomizationConfigFound(CliConstants.CHANNEL_NAME, CliConstants.CUSTOMIZATION_REPOSITORY_URL));
                 return ReturnCodes.INVALID_ARGUMENTS;
             }
         }
 
         if (name.isEmpty()) {
-            final Optional<String> res = readSetting(a->a.getChannels().stream()
-                    .filter(c -> c.getGav() != null && c.getGav().startsWith(CUSTOM_CHANNELS_GROUP_ID + ":"))
-                    .map(ChannelRef::getGav)
+            final Optional<MavenCoordinate> res = readSetting(a->a.getChannels().stream()
+                    .map(Channel::getManifestCoordinate)
+                    .filter(m -> m.getMaven() != null && m.getMaven().getGroupId().equals(CUSTOM_CHANNELS_GROUP_ID))
+                    .map(ChannelManifestCoordinate::getMaven)
                     .findFirst());
             if (res.isPresent()) {
-                this.name = res;
+                this.name = res.map(this::toGav);
             } else {
-                console.error(CliMessages.MESSAGES.noCustomizationConfigFound(CliConstants.CUSTOMIZATION_CHANNEL_NAME, CliConstants.CUSTOMIZATION_REPOSITORY_URL));
+                console.error(CliMessages.MESSAGES.noCustomizationConfigFound(CliConstants.CHANNEL_NAME, CliConstants.CUSTOMIZATION_REPOSITORY_URL));
                 return ReturnCodes.INVALID_ARGUMENTS;
             }
         }
 
-        if (!isValidChannelCoordinate()) {
+        if (!isValidManifestCoordinate()) {
             console.error(CliMessages.MESSAGES.wrongChannelCoordinateFormat());
             return ReturnCodes.INVALID_ARGUMENTS;
         }
         // TODO: support remote repositories
-        final ChannelRef coordinate = ChannelRef.fromString(name.get());
+        final ChannelManifestCoordinate coordinate = ArtifactUtils.manifestCoordFromString(name.get());
 
         final boolean accepted;
         if (!noPrompt) {
@@ -129,12 +135,22 @@ public class ChannelPromoteCommand extends AbstractCommand {
         return ReturnCodes.SUCCESS;
     }
 
+    private String toGav(MavenCoordinate coord) {
+        final String ga = coord.getGroupId() + ":" + coord.getArtifactId();
+        if (coord.getVersion() != null && !coord.getVersion().isEmpty()) {
+            return ga + ":" + coord.getVersion();
+        }
+        return ga;
+    }
+
     private <T> Optional<T> readSetting(ThrowableFunction<MetadataAction, Optional<T>> reader) throws MetadataException {
         try {
             final Path installation = determineInstallationDirectory(directory);
             // see if we can read the customization configuration
-            final MetadataAction metadataAction = actionFactory.metadataActions(installation);
-            final Optional<T> customChannel = reader.apply(metadataAction);
+            final Optional<T> customChannel;
+            try (final MetadataAction metadataAction = actionFactory.metadataActions(installation)) {
+                customChannel = reader.apply(metadataAction);
+            }
             if (customChannel.isPresent()) {
                 return customChannel;
             } else {
@@ -146,8 +162,8 @@ public class ChannelPromoteCommand extends AbstractCommand {
         }
     }
 
-    private boolean isValidChannelCoordinate() {
-        return name.get() != null && !name.get().isEmpty() && ChannelRef.isValidCoordinate(name.get());
+    private boolean isValidManifestCoordinate() {
+        return name.get() != null && !name.get().isEmpty() && ArtifactUtils.isValidCoordinate(name.get());
     }
 
     interface ThrowableFunction<T,R> {

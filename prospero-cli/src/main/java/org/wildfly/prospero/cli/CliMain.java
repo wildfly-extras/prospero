@@ -21,10 +21,11 @@ import org.jboss.logging.Logger;
 import org.wildfly.prospero.actions.Console;
 import org.wildfly.prospero.cli.commands.ChannelCommand;
 import org.wildfly.prospero.cli.commands.CliConstants;
+import org.wildfly.prospero.cli.commands.CloneCommand;
+import org.wildfly.prospero.cli.commands.CompletionCommand;
 import org.wildfly.prospero.cli.commands.HistoryCommand;
 import org.wildfly.prospero.cli.commands.InstallCommand;
 import org.wildfly.prospero.cli.commands.MainCommand;
-import org.wildfly.prospero.cli.commands.RepositoryCommand;
 import org.wildfly.prospero.cli.commands.RevertCommand;
 import org.wildfly.prospero.cli.commands.UpdateCommand;
 import org.wildfly.prospero.cli.commands.channel.ChannelAddCommand;
@@ -68,16 +69,15 @@ public class CliMain {
         CommandLine commandLine = new CommandLine(new MainCommand(console));
 
         commandLine.addSubcommand(new InstallCommand(console, actionFactory));
-        commandLine.addSubcommand(new UpdateCommand(console, actionFactory));
+        final UpdateCommand updateCommand = new UpdateCommand(console, actionFactory);
+        commandLine.addSubcommand(updateCommand);
+        updateCommand.addSubCommands(commandLine);
         commandLine.addSubcommand(new HistoryCommand(console, actionFactory));
-        commandLine.addSubcommand(new RevertCommand(console, actionFactory));
-        commandLine.addSubcommand(new RepositoryCommand(console, actionFactory));
+        final RevertCommand revertCommand = new RevertCommand(console, actionFactory);
+        commandLine.addSubcommand(revertCommand);
+        revertCommand.addSubCommands(commandLine);
         commandLine.addSubcommand(new ChannelCommand(console, actionFactory));
-
-        CommandLine repoCmd = commandLine.getSubcommands().get(CliConstants.Commands.REPOSITORY);
-        repoCmd.addSubcommand(new RepositoryCommand.RepositoryAddCommand(console, actionFactory));
-        repoCmd.addSubcommand(new RepositoryCommand.RepositoryRemoveCommand(console, actionFactory));
-        repoCmd.addSubcommand(new RepositoryCommand.RepositoryListCommand(console, actionFactory));
+        commandLine.addSubcommand(new CompletionCommand());
 
         CommandLine channelCmd = commandLine.getSubcommands().get(CliConstants.Commands.CHANNEL);
         channelCmd.addSubcommand(new ChannelAddCommand(console, actionFactory));
@@ -85,6 +85,10 @@ public class CliMain {
         channelCmd.addSubcommand(new ChannelCommand.ChannelListCommand(console, actionFactory));
         channelCmd.addSubcommand(new ChannelInitializeCommand(console, actionFactory));
         channelCmd.addSubcommand(new ChannelPromoteCommand(console, actionFactory));
+
+        CloneCommand cloneCommand = new CloneCommand(console, actionFactory);
+        commandLine.addSubcommand(cloneCommand);
+        cloneCommand.addSubCommands(commandLine);
 
         commandLine.setUsageHelpAutoWidth(true);
         commandLine.setExecutionExceptionHandler(new ExecutionExceptionHandler(console));

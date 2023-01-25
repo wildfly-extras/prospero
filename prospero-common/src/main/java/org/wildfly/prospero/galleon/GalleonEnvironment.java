@@ -22,44 +22,62 @@ import org.eclipse.aether.RepositorySystem;
 import org.jboss.galleon.ProvisioningException;
 import org.jboss.galleon.ProvisioningManager;
 import org.jboss.galleon.layout.ProvisioningLayoutFactory;
+import org.jboss.logging.Logger;
 import org.wildfly.channel.Channel;
+import org.wildfly.channel.ChannelManifest;
 import org.wildfly.channel.ChannelSession;
 import org.wildfly.channel.maven.VersionResolverFactory;
+import org.wildfly.channel.spi.MavenVersionsResolver;
 import org.wildfly.prospero.actions.Console;
+import org.wildfly.prospero.api.exceptions.MetadataException;
 import org.wildfly.prospero.api.exceptions.OperationException;
-import org.wildfly.prospero.model.ChannelRef;
-import org.wildfly.prospero.model.ProsperoConfig;
-import org.wildfly.prospero.wfchannel.ChannelRefMapper;
 import org.wildfly.prospero.wfchannel.MavenSessionManager;
 
+import java.io.IOException;
 import java.nio.file.Path;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.function.Consumer;
 
 public class GalleonEnvironment {
 
     private final ProvisioningManager provisioningManager;
     private final ChannelMavenArtifactRepositoryManager repositoryManager;
     private final ChannelSession channelSession;
-    private final List<ChannelRef> channelRefs;
+    private final List<Channel> channels;
 
-    private GalleonEnvironment(Builder builder) throws ProvisioningException, OperationException {
+    private static final Logger logger = Logger.getLogger(GalleonEnvironment.class);
+
+    private GalleonEnvironment(Builder builder) throws ProvisioningException, MetadataException {
         Optional<Console> console = Optional.ofNullable(builder.console);
-        Optional<Channel> restoreManifest = Optional.ofNullable(builder.manifest);
-        channelRefs = builder.prosperoConfig.getChannels();
+        Optional<ChannelManifest> restoreManifest = Optional.ofNullable(builder.manifest);
+        channels = builder.channels;
+        List<Channel> substitutedChannels = new ArrayList<>();
+        System.setProperty("installation.home", builder.installDir.toString());
+        // substitute any properties found in URL of ChannelManifestCoordinate.
+        for (Channel channel : channels) {
+            substitutedChannels.add(ChannelManifestSubstitutor.substitute(channel));
+        }
 
         final RepositorySystem system = builder.mavenSessionManager.newRepositorySystem();
         final DefaultRepositorySystemSession session = builder.mavenSessionManager.newRepositorySystemSession(system);
-        final VersionResolverFactory factory = new VersionResolverFactory(system, session, builder.prosperoConfig.getRemoteRepositories());
-        final List<Channel> channels = new ChannelRefMapper(factory).mapToChannel(builder.prosperoConfig.getChannels());
+        final Path sourceServerPath = builder.sourceServerPath == null? builder.installDir:builder.sourceServerPath;
+        MavenVersionsResolver.Factory factory;
+        try {
+            factory = new CachedVersionResolverFactory(new VersionResolverFactory(system, session), sourceServerPath, system, session);
+        } catch (IOException e) {
+            logger.debug("Unable to read artifact cache, falling back to Maven resolver.", e);
+            factory = new VersionResolverFactory(system, session);
+        }
         channelSession = new ChannelSession(channels, factory);
         if (restoreManifest.isEmpty()) {
             repositoryManager = new ChannelMavenArtifactRepositoryManager(channelSession);
         } else {
             repositoryManager = new ChannelMavenArtifactRepositoryManager(channelSession, restoreManifest.get());
         }
-        provisioningManager = GalleonUtils.getProvisioningManager(builder.installDir, repositoryManager);
+        provisioningManager = GalleonUtils.getProvisioningManager(builder.installDir, repositoryManager, builder.fpTracker);
 
         final ProvisioningLayoutFactory layoutFactory = provisioningManager.getLayoutFactory();
         if (console.isPresent()) {
@@ -82,29 +100,31 @@ public class GalleonEnvironment {
         return channelSession;
     }
 
-    public List<ChannelRef> getChannelRefs() {
-        return channelRefs;
+    public List<Channel> getChannels() {
+        return channels;
     }
 
-    public static Builder builder(Path installDir, ProsperoConfig prosperoConfig, MavenSessionManager mavenSessionManager) {
+    public static Builder builder(Path installDir, List<Channel> channels, MavenSessionManager mavenSessionManager) {
         Objects.requireNonNull(installDir);
-        Objects.requireNonNull(prosperoConfig);
+        Objects.requireNonNull(channels);
         Objects.requireNonNull(mavenSessionManager);
 
-        return new Builder(installDir, prosperoConfig, mavenSessionManager);
+        return new Builder(installDir, channels, mavenSessionManager);
     }
 
     public static class Builder {
 
         private final Path installDir;
-        private final ProsperoConfig prosperoConfig;
+        private final List<Channel> channels;
         private final MavenSessionManager mavenSessionManager;
         private Console console;
-        private Channel manifest;
+        private ChannelManifest manifest;
+        private Consumer<String> fpTracker;
+        private Path sourceServerPath;
 
-        private Builder(Path installDir, ProsperoConfig prosperoConfig, MavenSessionManager mavenSessionManager) {
+        private Builder(Path installDir, List<Channel> channels, MavenSessionManager mavenSessionManager) {
             this.installDir = installDir;
-            this.prosperoConfig = prosperoConfig;
+            this.channels = channels;
             this.mavenSessionManager = mavenSessionManager;
         }
 
@@ -113,13 +133,27 @@ public class GalleonEnvironment {
             return this;
         }
 
-        public Builder setRestoreManifest(Channel manifest) {
+        public Builder setRestoreManifest(ChannelManifest manifest) {
             this.manifest = manifest;
+            return this;
+        }
+
+        public Builder setResolvedFpTracker(Consumer<String> fpTracker) {
+            this.fpTracker = fpTracker;
             return this;
         }
 
         public GalleonEnvironment build() throws ProvisioningException, OperationException {
             return new GalleonEnvironment(this);
+        }
+
+        public Builder setSourceServerPath(Path sourceServerPath) {
+            this.sourceServerPath = sourceServerPath;
+            return this;
+        }
+
+        public Path getSourceServerPath() {
+            return sourceServerPath;
         }
     }
 }

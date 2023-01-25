@@ -14,6 +14,19 @@
 
     <dependencies>
         <dependency>
+            <groupId>org.apache.commons</groupId>
+            <artifactId>commons-text</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.wildfly.installation-manager</groupId>
+            <artifactId>installation-manager-api</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.wildfly.prospero</groupId>
+            <artifactId>prospero-metadata</artifactId>
+        </dependency>
+
+        <dependency>
             <groupId>org.apache.maven.resolver</groupId>
             <artifactId>maven-resolver-impl</artifactId>
         </dependency>

@@ -29,12 +29,14 @@
         <artifact name="${org.codehaus.plexus:plexus-interpolation}"/>
         <artifact name="${org.codehaus.plexus:plexus-utils}"/>
         <artifact name="${org.wildfly.prospero:prospero-common}"/>
+        <artifact name="${org.wildfly.prospero:prospero-metadata}"/>
         <artifact name="${org.wildfly.prospero:prospero-cli}"/>
         <artifact name="${org.jboss.galleon:galleon-core}"/>
         <artifact name="${org.jboss.galleon:galleon-maven-universe}"/>
         <artifact name="${info.picocli:picocli}"/>
         <artifact name="${com.fasterxml.jackson.dataformat:jackson-dataformat-yaml}"/>
         <artifact name="${com.networknt:json-schema-validator}"/>
+        <artifact name="${org.apache.commons:commons-text}"/>
         <artifact name="${org.apache.maven:maven-artifact}"/>
         <artifact name="${org.apache.maven:maven-builder-support}"/>
         <artifact name="${org.apache.maven:maven-model}"/>

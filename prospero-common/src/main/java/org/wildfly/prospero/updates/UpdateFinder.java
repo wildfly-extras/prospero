@@ -21,7 +21,6 @@ import org.eclipse.aether.artifact.Artifact;
 import org.eclipse.aether.artifact.DefaultArtifact;
 import org.jboss.galleon.ProvisioningException;
 import org.jboss.galleon.ProvisioningManager;
-import org.jboss.galleon.layout.ProvisioningPlan;
 import org.wildfly.channel.ChannelSession;
 import org.wildfly.channel.UnresolvedMavenArtifactException;
 import org.wildfly.prospero.Messages;
@@ -82,8 +81,7 @@ public class UpdateFinder implements AutoCloseable {
                 .flatMap(Optional::stream)
                 .collect(Collectors.toList());
 
-        final ProvisioningPlan fpUpdates = findFPUpdates();
-        return new UpdateSet(fpUpdates, updates);
+        return new UpdateSet(updates);
     }
 
     private Optional<ArtifactChange> findUpdates(Artifact artifact) throws ArtifactResolutionException {
@@ -96,7 +94,7 @@ public class UpdateFinder implements AutoCloseable {
             latestVersion = channelSession.findLatestMavenArtifactVersion(artifact.getGroupId(),
                     artifact.getArtifactId(), artifact.getExtension(), artifact.getClassifier(), null);
         } catch (UnresolvedMavenArtifactException e) {
-            return Optional.of(new ArtifactChange(artifact, null));
+            return Optional.of(ArtifactChange.removed(artifact));
         }
         final Artifact latest = new DefaultArtifact(artifact.getGroupId(), artifact.getArtifactId(), artifact.getExtension(), latestVersion);
 
@@ -104,12 +102,16 @@ public class UpdateFinder implements AutoCloseable {
         if (latestVersion == null || latest.getVersion().equals(artifact.getVersion())) {
             return Optional.empty();
         } else {
-            return Optional.of(new ArtifactChange(artifact, latest));
+            ArtifactChange change;
+            if (artifact == null) {
+                change = ArtifactChange.added(latest);
+            } else if (latest == null) {
+                change = ArtifactChange.removed(latest);
+            } else {
+                change = ArtifactChange.updated(artifact, latest);
+            }
+            return Optional.of(change);
         }
-    }
-
-    private ProvisioningPlan findFPUpdates() throws ProvisioningException {
-        return provisioningManager.getUpdates(true);
     }
 
     @Override

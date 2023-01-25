@@ -20,6 +20,8 @@ package org.wildfly.prospero.cli.commands;
 import java.nio.file.Path;
 import java.time.Instant;
 import java.util.Arrays;
+import java.util.Collections;
+import java.util.List;
 
 import org.eclipse.aether.artifact.DefaultArtifact;
 import org.junit.Assert;
@@ -33,6 +35,7 @@ import org.mockito.junit.MockitoJUnitRunner;
 import org.wildfly.prospero.actions.Console;
 import org.wildfly.prospero.actions.InstallationHistoryAction;
 import org.wildfly.prospero.api.ArtifactChange;
+import org.wildfly.prospero.api.InstallationChanges;
 import org.wildfly.prospero.api.SavedState;
 import org.wildfly.prospero.cli.AbstractConsoleTest;
 import org.wildfly.prospero.cli.ActionFactory;
@@ -97,9 +100,11 @@ public class HistoryCommandTest extends AbstractConsoleTest {
 
     @Test
     public void displayDetailsOfStateIfRevisionSet() throws Exception {
-        when(historyAction.compare(any())).thenReturn(Arrays.asList(new ArtifactChange(
-                        new DefaultArtifact("foo", "bar", "jar", "1.1"),
-                        new DefaultArtifact("foo", "bar", "jar", "1.2"))));
+
+        final List<ArtifactChange> changes = Arrays.asList(ArtifactChange.updated(
+                new DefaultArtifact("foo", "bar", "jar", "1.1"),
+                new DefaultArtifact("foo", "bar", "jar", "1.2")));
+        when(historyAction.compare(any())).thenReturn(new InstallationChanges(changes, Collections.emptyList()));
 
         int exitCode = commandLine.execute(CliConstants.Commands.HISTORY, CliConstants.DIR, installationDir.toString(),
                 CliConstants.REVISION, "abcd");

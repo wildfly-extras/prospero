@@ -17,18 +17,22 @@
 
 package org.wildfly.prospero;
 
+import java.net.URI;
 import java.net.URL;
 import java.nio.file.Path;
 
 import org.jboss.galleon.ProvisioningException;
+import org.jboss.galleon.universe.maven.MavenUniverseException;
 import org.jboss.logging.annotations.Cause;
 import org.jboss.logging.annotations.Message;
 import org.jboss.logging.annotations.MessageBundle;
-import org.wildfly.channel.InvalidChannelException;
+import org.wildfly.channel.UnresolvedMavenArtifactException;
+import org.wildfly.prospero.api.exceptions.ArtifactPromoteException;
 import org.wildfly.prospero.api.exceptions.ArtifactResolutionException;
-import org.wildfly.prospero.api.exceptions.ChannelDefinitionException;
+import org.wildfly.prospero.api.exceptions.InvalidUpdateCandidateException;
 import org.wildfly.prospero.api.exceptions.MetadataException;
 import org.wildfly.prospero.api.exceptions.NoChannelException;
+import org.wildfly.prospero.api.exceptions.ProvisioningRuntimeException;
 
 @MessageBundle(projectCode = "PRSP")
 public interface Messages {
@@ -44,35 +48,29 @@ public interface Messages {
     @Message("Installation dir '%s' doesn't exist")
     IllegalArgumentException installationDirDoesNotExist(Path path);
 
-    @Message("Unable to resolve channel configuration")
-    MetadataException unableToResolveChannelConfiguration(@Cause Exception exception);
-
     @Message("Installation dir '%s' already exists")
     ProvisioningException installationDirAlreadyExists(Path installDir);
 
-    @Message("Installing %s")
-    String installingFpl(String fpl);
-
     @Message("Artifact [%s:%s] not found")
-    ArtifactResolutionException artifactNotFound(String g, String a, @Cause Exception e);
+    ArtifactResolutionException artifactNotFound(String g, String a, @Cause UnresolvedMavenArtifactException e);
 
-    @Message("At least one channel reference must be given.")
+    @Message("Given configuration doesn't reference any channel or channel manifest.")
     NoChannelException noChannelReference();
 
-    @Message("[%s] doesn't specify any channels and no additional channels are selected.")
+    @Message("Invalid channel: Channel '%s' doesn't reference a manifest.")
+    NoChannelException noChannelManifestReference(String name);
+
+    @Message("Pre-defined FPL [%s] doesn't specify any channels and no explicit channels were given.")
     NoChannelException fplDefinitionDoesntContainChannel(String fpl);
 
-    @Message("Repository with ID '%s' is not present.")
-    IllegalArgumentException repositoryNotPresent(String repoId);
+    @Message("Channel '%s' is already present.")
+    MetadataException channelExists(String channelName);
 
-    @Message("Channel '%s' is not present.")
-    IllegalArgumentException channelNotPresent(String urlOrGav);
+    @Message("Channel with name [%s] cannot be found.")
+    MetadataException channelNotFound(String channelName);
 
-    @Message("Repository '%s' with URL '%s' is alreay present.")
-    IllegalArgumentException repositoryExists(String repoId, URL url);
-
-    @Message("Channel '%s' is alreay present.")
-    IllegalArgumentException channelExists(String urlOrGav);
+    @Message("Channel name cannot be empty.")
+    MetadataException emptyChannelName();
 
     @Message("Promoting artifacts to %s:")
     String promotingArtifacts(URL targetRepository);
@@ -80,12 +78,103 @@ public interface Messages {
     @Message("Provided FPL has invalid format `%s`.")
     String invalidFpl(String fplText);
 
-    @Message("Invalid channel definition found in one of channel manifests [%s].")
-    ChannelDefinitionException unableToParseChannel(String ref, @Cause InvalidChannelException e);
+    @Message("Unable to parse server configuration at '%s'")
+    MetadataException unableToParseConfiguration(Path path, @Cause Throwable e);
 
     @Message("Unable to parse server configuration at '%s'")
-    MetadataException unableToParseConfiguration(String path, @Cause Exception e);
+    MetadataException unableToParseConfigurationUri(URI uri, @Cause Throwable e);
+
+    @Message("Unable to save server configuration at '%s'")
+    MetadataException unableToSaveConfiguration(Path path, @Cause Exception e);
 
     @Message("Unable to close the update store.")
     MetadataException unableToCloseStore(@Cause Exception e);
+
+    @Message("Path `%s` does not contain a server installation provisioned by prospero.")
+    IllegalArgumentException invalidInstallationDir(Path path);
+
+    @Message("Unable to create history store at [%s]")
+    MetadataException unableToCreateHistoryStorage(Path path, @Cause Exception e);
+
+    @Message("Unable to access history store at [%s]")
+    MetadataException unableToAccessHistoryStorage(Path path, @Cause Exception e);
+
+    @Message("Unable to read file at [%s]")
+    MetadataException unableToReadFile(Path path, @Cause Exception e);
+
+    // provisioning errors
+    @Message("Unable to create temporary cache for provisioning cache folder.")
+    ProvisioningException unableToCreateCache(@Cause Exception e);
+
+    @Message("Failed to initiate maven repository system")
+    ProvisioningRuntimeException failedToInitMaven(@Cause Throwable exception);
+
+    @Message("Invalide URL [%s]")
+    IllegalArgumentException invalidUrl(String text, @Cause Exception e);
+
+    @Message("Incomplete configuration: If the FPL is not one of predefined names (%s) a channel must be given.")
+    IllegalArgumentException predefinedFplOrChannelRequired(String availableFpls);
+
+    @Message("Incomplete configuration: neither FPL nor Galleon provisioning config was given.")
+    IllegalArgumentException fplNorGalleonConfigWereSet();
+
+    @Message("Provided metadata bundle [%s] is missing one or more entries")
+    IllegalArgumentException incompleteMetadataBundle(Path path);
+
+    @Message("Found unexpected artifact [%s]")
+    ProvisioningRuntimeException unexpectedArtifact(String gav);
+
+    @Message("Unable to resolve [%s]")
+    MavenUniverseException unableToResolve(String gav);
+
+    @Message("File already exists [%s]")
+    IllegalArgumentException fileAlreadyExists(Path path);
+
+    @Message("Promoting to non-file repositories is not currently supported")
+    IllegalArgumentException unsupportedPromotionTarget();
+
+    @Message("Wrong format of custom channel version [%s]")
+    IllegalArgumentException wrongVersionFormat(String baseVersion);
+
+    @Message("Custom channel version exceeded limit [%s]")
+    IllegalArgumentException versionLimitExceeded(String baseVersion);
+
+    @Message("Cannot create bundle without artifacts.")
+    IllegalArgumentException noArtifactsToPackage();
+
+    @Message("Channel reference has to use Maven GA.")
+    IllegalArgumentException nonMavenChannelRef();
+
+    @Message("Unable to promote artifacts to [%s].")
+    ArtifactPromoteException unableToPromote(URL target, @Cause Exception e);
+
+    @Message("Unable to parse the customization bundle [%s].")
+    ArtifactPromoteException unableToParseCustomizationBundle(Path path, @Cause Exception e);
+
+    @Message("At least one repository must be set when using the manifest option.")
+    IllegalArgumentException repositoriesMustBeSetWithManifest();
+
+    @Message("Out file [%s] exists already!")
+    IllegalArgumentException outFileExists(Path outPath);
+
+    @Message("Installation metadata is exported to [%s].")
+    String installationExported(Path outPath);
+
+    @Message("The file: [%s] to be restored does not exist.")
+    String restoreFileNotExisted(Path path);
+
+    @Message("Installation meta was restored from: [%s] to [%s].")
+    String installationMetaRestored(Path restorePath, Path installPath);
+
+    @Message("Malformed URL in substituted value : %s from %s")
+    MetadataException invalidPropertySubstitutionValue(String substituted, String url);
+
+    @Message("The installation at %s is not a valid update for %s")
+    InvalidUpdateCandidateException invalidUpdateCandidate(Path update, Path installation);
+
+    @Message("The requested state %s does not exist in server's history.")
+    MetadataException savedStateNotFound(String name);
+
+    @Message("Unable to create temporary directory")
+    ProvisioningException unableToCreateTemporaryDirectory(@Cause Throwable t);
 }

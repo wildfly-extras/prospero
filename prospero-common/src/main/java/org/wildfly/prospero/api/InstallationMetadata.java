@@ -17,20 +17,20 @@
 
 package org.wildfly.prospero.api;
 
+import org.apache.commons.lang3.StringUtils;
+import org.wildfly.channel.Channel;
+import org.wildfly.channel.ChannelManifest;
 import org.apache.commons.io.FileUtils;
 import org.wildfly.prospero.Messages;
 import org.wildfly.prospero.api.exceptions.MetadataException;
 import org.wildfly.prospero.installation.git.GitStorage;
-import org.wildfly.prospero.model.ChannelRef;
+import org.wildfly.prospero.metadata.ProsperoMetadataUtils;
 import org.wildfly.prospero.model.ManifestYamlSupport;
 import org.wildfly.prospero.model.ProsperoConfig;
-import org.wildfly.prospero.model.RepositoryRef;
 import org.eclipse.aether.artifact.Artifact;
 import org.eclipse.aether.artifact.DefaultArtifact;
-import org.eclipse.aether.repository.RemoteRepository;
 import org.jboss.galleon.ProvisioningException;
 import org.jboss.galleon.xml.ProvisioningXmlParser;
-import org.wildfly.channel.Channel;
 import org.wildfly.channel.Stream;
 
 import java.io.File;
@@ -50,94 +50,107 @@ import java.util.zip.ZipOutputStream;
 
 public class InstallationMetadata implements AutoCloseable {
 
-    public static final String METADATA_DIR = ".installation";
-    public static final String MANIFEST_FILE_NAME = "manifest.yaml";
-
-    public static final String README_FILE_NAME = "README.txt";
-    private static final String WARNING_MESSAGE = "WARNING: The files in .installation directory should be only edited by the provisioning tool.";
-    public static final String PROSPERO_CONFIG_FILE_NAME = "installer-config.yaml";
+    @Deprecated
+    public static final String METADATA_DIR = ProsperoMetadataUtils.METADATA_DIR;
+    @Deprecated
+    public static final String MANIFEST_FILE_NAME = ProsperoMetadataUtils.MANIFEST_FILE_NAME;
+    @Deprecated
+    public static final String INSTALLER_CHANNELS_FILE_NAME = ProsperoMetadataUtils.INSTALLER_CHANNELS_FILE_NAME;
     public static final String PROVISIONING_FILE_NAME = "provisioning.xml";
     public static final String GALLEON_INSTALLATION_DIR = ".galleon";
+    public static final String README_FILE_NAME = "README.txt";
+    private static final String WARNING_MESSAGE = "WARNING: The files in .installation directory should be only edited by the provisioning tool.";
     private final Path manifestFile;
+    private final Path channelsFile;
     private final Path readmeFile;
-    private final Path prosperoConfigFile;
     private final Path provisioningFile;
-    private Channel manifest;
+    private ChannelManifest manifest;
     private org.jboss.galleon.config.ProvisioningConfig galleonProvisioningConfig;
-    private List<ChannelRef> channelRefs;
-    private List<RemoteRepository> repositories;
+    private List<Channel> channels;
     private final GitStorage gitStorage;
     private final Path base;
 
-    private InstallationMetadata(Path manifestFile, Path prosperoConfigFile, Path provisioningFile) throws MetadataException {
+    private InstallationMetadata(Path manifestFile, Path channelsFile, Path provisioningFile) throws MetadataException {
         this.base = manifestFile.getParent();
         this.gitStorage = null;
         this.manifestFile = manifestFile;
+        this.channelsFile = channelsFile;
         this.readmeFile = base.resolve(METADATA_DIR).resolve(InstallationMetadata.README_FILE_NAME);
-        this.prosperoConfigFile = prosperoConfigFile;
         this.provisioningFile = provisioningFile;
 
-        doInit(manifestFile, prosperoConfigFile, provisioningFile);
+        doInit(manifestFile, channelsFile, provisioningFile);
     }
 
     public InstallationMetadata(Path base) throws MetadataException {
         this(base, new GitStorage(base));
     }
 
+    /*
+     * Used in tests only
+     */
     protected InstallationMetadata(Path base, GitStorage gitStorage) throws MetadataException {
         this.base = base;
         this.gitStorage = gitStorage;
         this.manifestFile = base.resolve(METADATA_DIR).resolve(InstallationMetadata.MANIFEST_FILE_NAME);
+        this.channelsFile = base.resolve(METADATA_DIR).resolve(InstallationMetadata.INSTALLER_CHANNELS_FILE_NAME);
         this.readmeFile = base.resolve(METADATA_DIR).resolve(InstallationMetadata.README_FILE_NAME);
-        this.prosperoConfigFile = base.resolve(METADATA_DIR).resolve(InstallationMetadata.PROSPERO_CONFIG_FILE_NAME);
         this.provisioningFile = base.resolve(GALLEON_INSTALLATION_DIR).resolve(InstallationMetadata.PROVISIONING_FILE_NAME);
 
-        doInit(manifestFile, prosperoConfigFile, provisioningFile);
+        doInit(manifestFile, channelsFile, provisioningFile);
     }
 
-    public InstallationMetadata(Path base, Channel manifest, List<ChannelRef> channelRefs,
-                                List<RemoteRepository> repositories) throws MetadataException {
+    public InstallationMetadata(Path base, ChannelManifest manifest, List<Channel> channels) throws MetadataException {
         this.base = base;
         this.gitStorage = new GitStorage(base);
         this.manifestFile = base.resolve(METADATA_DIR).resolve(InstallationMetadata.MANIFEST_FILE_NAME);
+        this.channelsFile = base.resolve(METADATA_DIR).resolve(InstallationMetadata.INSTALLER_CHANNELS_FILE_NAME);
         this.readmeFile = base.resolve(METADATA_DIR).resolve(InstallationMetadata.README_FILE_NAME);
-        this.prosperoConfigFile = base.resolve(METADATA_DIR).resolve(InstallationMetadata.PROSPERO_CONFIG_FILE_NAME);
         this.provisioningFile = base.resolve(GALLEON_INSTALLATION_DIR).resolve(InstallationMetadata.PROVISIONING_FILE_NAME);
 
         this.manifest = manifest;
-        this.channelRefs = channelRefs;
-        this.repositories = repositories;
+        this.channels = channels;
+
+        if (channels != null && channels.stream().filter(c-> StringUtils.isEmpty(c.getName())).findAny().isPresent()) {
+            throw Messages.MESSAGES.emptyChannelName();
+        }
+
         try {
             this.galleonProvisioningConfig = ProvisioningXmlParser.parse(provisioningFile);
         } catch (ProvisioningException e) {
-            throw new MetadataException("Error when parsing installation metadata", e);
+            throw Messages.MESSAGES.unableToParseConfiguration(provisioningFile, e);
         }
     }
 
-    private void doInit(Path manifestFile, Path provisionConfig, Path provisioningFile) throws MetadataException {
+    private void doInit(Path manifestFile, Path channelsFile, Path provisioningFile) throws MetadataException {
         try {
             this.manifest = ManifestYamlSupport.parse(manifestFile.toFile());
         } catch (IOException e) {
-            throw Messages.MESSAGES.unableToParseConfiguration(manifestFile.toString(), e);
+            throw Messages.MESSAGES.unableToParseConfiguration(manifestFile, e);
         }
         try {
-            final ProsperoConfig prosperoConfig = ProsperoConfig.readConfig(provisionConfig);
-            this.channelRefs = prosperoConfig.getChannels();
-            this.repositories = prosperoConfig.getRepositories()
-                    .stream().map(r -> r.toRemoteRepository()).collect(Collectors.toList());
-        } catch (IOException e) {
-            throw Messages.MESSAGES.unableToParseConfiguration(provisionConfig.toString(), e);
+            this.channels = ProsperoConfig.readConfig(channelsFile).getChannels();
+        } catch (MetadataException e) {
+            // re-wrap the exception to change the description
+            throw Messages.MESSAGES.unableToParseConfiguration(channelsFile, e.getCause());
         }
         try {
             this.galleonProvisioningConfig = ProvisioningXmlParser.parse(provisioningFile);
         } catch (ProvisioningException e) {
-            throw Messages.MESSAGES.unableToParseConfiguration(provisioningFile.toString(), e);
+            throw Messages.MESSAGES.unableToParseConfiguration(provisioningFile, e);
+        }
+
+        try {
+            if (gitStorage != null && !gitStorage.isStarted()) {
+                gitStorage.record();
+            }
+        } catch (IOException e) {
+            throw Messages.MESSAGES.unableToCreateHistoryStorage(base.resolve(METADATA_DIR), e);
         }
     }
 
     public static InstallationMetadata importMetadata(Path location) throws IOException, MetadataException {
         Path manifestFile = null;
-        Path provisionConfigFile = null;
+        Path channelsFile = null;
         Path provisioningFile = null;
 
         try (ZipInputStream zis = new ZipInputStream(new FileInputStream(location.toFile()))) {
@@ -150,10 +163,10 @@ public class InstallationMetadata implements AutoCloseable {
                     manifestFile.toFile().deleteOnExit();
                 }
 
-                if (entry.getName().equals(PROSPERO_CONFIG_FILE_NAME)) {
-                    provisionConfigFile = Files.createTempFile("channels", "yaml");
-                    Files.copy(zis, provisionConfigFile, StandardCopyOption.REPLACE_EXISTING);
-                    provisionConfigFile.toFile().deleteOnExit();
+                if (entry.getName().equals(INSTALLER_CHANNELS_FILE_NAME)) {
+                    channelsFile = Files.createTempFile("channels", "yaml");
+                    Files.copy(zis, channelsFile, StandardCopyOption.REPLACE_EXISTING);
+                    channelsFile.toFile().deleteOnExit();
                 }
 
                 if (entry.getName().equals(PROVISIONING_FILE_NAME)) {
@@ -164,11 +177,11 @@ public class InstallationMetadata implements AutoCloseable {
             }
         }
 
-        if (manifestFile == null || provisionConfigFile == null || provisioningFile == null) {
-            throw new IllegalArgumentException("Provided metadata bundle is missing one or more entries");
+        if (manifestFile == null || channelsFile == null || provisioningFile == null) {
+            throw Messages.MESSAGES.incompleteMetadataBundle(location);
         }
 
-        return new InstallationMetadata(manifestFile, provisionConfigFile, provisioningFile);
+        return new InstallationMetadata(manifestFile, channelsFile, provisioningFile);
     }
 
     public Path exportMetadataBundle(Path location) throws IOException {
@@ -185,8 +198,8 @@ public class InstallationMetadata implements AutoCloseable {
             }
             zos.closeEntry();
 
-            zos.putNextEntry(new ZipEntry(PROSPERO_CONFIG_FILE_NAME));
-            try(FileInputStream fis = new FileInputStream(prosperoConfigFile.toFile())) {
+            zos.putNextEntry(new ZipEntry(INSTALLER_CHANNELS_FILE_NAME));
+            try(FileInputStream fis = new FileInputStream(channelsFile.toFile())) {
                 byte[] buffer = new byte[1024];
                 int len;
                 while ((len = fis.read(buffer)) > 0) {
@@ -208,7 +221,7 @@ public class InstallationMetadata implements AutoCloseable {
         return file.toPath();
     }
 
-    public Channel getManifest() {
+    public ChannelManifest getManifest() {
         return manifest;
     }
 
@@ -217,10 +230,14 @@ public class InstallationMetadata implements AutoCloseable {
     }
 
     public void recordProvision(boolean overrideProsperoConfig) throws MetadataException {
+        recordProvision(overrideProsperoConfig, true);
+    }
+
+    public void recordProvision(boolean overrideProsperoConfig, boolean gitRecord) throws MetadataException {
         try {
             ManifestYamlSupport.write(this.manifest, this.manifestFile);
         } catch (IOException e) {
-            throw new MetadataException("Unable to save manifest in installation", e);
+            throw Messages.MESSAGES.unableToSaveConfiguration(manifestFile, e);
         }
         // Add README.txt file to .installation directory to warn the files should not be edited.
         if (!Files.exists(readmeFile)) {
@@ -231,20 +248,19 @@ public class InstallationMetadata implements AutoCloseable {
             }
         }
 
-        if (overrideProsperoConfig || !Files.exists(this.prosperoConfigFile)) {
+        if (overrideProsperoConfig || !Files.exists(this.channelsFile)) {
             writeProsperoConfig();
         }
-
-        gitStorage.record();
+        if (gitRecord) {
+            gitStorage.record();
+        }
     }
 
     private void writeProsperoConfig() throws MetadataException {
         try {
-            final ProsperoConfig prosperoConfig = new ProsperoConfig(this.channelRefs,
-                    repositories.stream().map(r -> new RepositoryRef(r.getId(), r.getUrl())).collect(Collectors.toList()));
-            prosperoConfig.writeConfig(this.prosperoConfigFile.toFile());
+            getProsperoConfig().writeConfig(this.channelsFile);
         } catch (IOException e) {
-            throw new MetadataException("Unable to save channel list in installation", e);
+            throw Messages.MESSAGES.unableToSaveConfiguration(channelsFile, e);
         }
     }
 
@@ -261,11 +277,11 @@ public class InstallationMetadata implements AutoCloseable {
         return new InstallationMetadata(base);
     }
 
-    public List<ArtifactChange> getChangesSince(SavedState savedState) throws MetadataException {
-        return gitStorage.getChanges(savedState);
+    public InstallationChanges getChangesSince(SavedState savedState) throws MetadataException {
+        return new InstallationChanges(gitStorage.getArtifactChanges(savedState), gitStorage.getChannelChanges(savedState));
     }
 
-    public void setChannel(Channel resolvedChannel) {
+    public void setManifest(ChannelManifest resolvedChannel) {
         manifest = resolvedChannel;
     }
 
@@ -287,12 +303,11 @@ public class InstallationMetadata implements AutoCloseable {
     }
 
     public ProsperoConfig getProsperoConfig() {
-        return new ProsperoConfig(new ArrayList<>(channelRefs), repositories.stream().map(RepositoryRef::new).collect(Collectors.toList()));
+        return new ProsperoConfig(new ArrayList<>(channels));
     }
 
     public void updateProsperoConfig(ProsperoConfig config) throws MetadataException {
-        this.channelRefs = new ArrayList<>(config.getChannels());
-        this.repositories = config.getRepositories().stream().map(RepositoryRef::toRemoteRepository).collect(Collectors.toList());
+        this.channels = config.getChannels();
 
         writeProsperoConfig();
 

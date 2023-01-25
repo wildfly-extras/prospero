@@ -49,6 +49,10 @@ public class SavedState {
         return this.hash;
     }
 
+    public Instant getTimestamp() {
+        return timestamp;
+    }
+
     public String shortDescription() {
         return String.format("[%s] %s - %s", hash, timestamp.toString(), type.toString().toLowerCase(Locale.ROOT));
     }

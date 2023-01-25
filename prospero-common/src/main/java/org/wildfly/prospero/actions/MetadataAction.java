@@ -17,94 +17,83 @@
 
 package org.wildfly.prospero.actions;
 
-import java.net.URL;
 import java.nio.file.Path;
+import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 
+import org.wildfly.channel.Channel;
 import org.wildfly.prospero.Messages;
 import org.wildfly.prospero.api.InstallationMetadata;
 import org.wildfly.prospero.api.exceptions.MetadataException;
-import org.wildfly.prospero.model.ChannelRef;
 import org.wildfly.prospero.model.ProsperoConfig;
-import org.wildfly.prospero.model.RepositoryRef;
 
 /**
  * Metadata related actions wrapper.
  */
-public class MetadataAction {
+public class MetadataAction implements AutoCloseable {
+    private final InstallationMetadata installationMetadata;
 
-    private final Path installation;
-
-    public MetadataAction(Path installation) {
-        this.installation = installation;
+    public MetadataAction(Path installation) throws MetadataException {
+        this.installationMetadata = new InstallationMetadata(installation);
     }
 
-    /**
-     * Adds a remote maven repository to an installation.
-     */
-    public void addRepository(String name, URL url) throws MetadataException {
-        try (final InstallationMetadata installationMetadata = new InstallationMetadata(installation)) {
-            ProsperoConfig prosperoConfig = installationMetadata.getProsperoConfig();
-            if (prosperoConfig.addRepository(new RepositoryRef(name, url.toString()))) {
-                installationMetadata.updateProsperoConfig(prosperoConfig);
-            } else {
-                throw Messages.MESSAGES.repositoryExists(name, url);
-            }
-        }
+    protected MetadataAction(InstallationMetadata installationMetadata) {
+        this.installationMetadata = installationMetadata;
     }
 
-    /**
-     * Removes a remote maven repository from an installation.
-     */
-    public void removeRepository(String id) throws MetadataException {
-        try (final InstallationMetadata installationMetadata = new InstallationMetadata(installation)) {
-            ProsperoConfig prosperoConfig = installationMetadata.getProsperoConfig();
-            prosperoConfig.removeRepository(id);
-            installationMetadata.updateProsperoConfig(prosperoConfig);
+    public void addChannel(Channel channel) throws MetadataException {
+        final ProsperoConfig prosperoConfig = installationMetadata.getProsperoConfig();
+        final List<Channel> channels = prosperoConfig.getChannels();
+
+        if (channels.stream().filter(c->c.getName().equals(channel.getName())).findAny().isPresent()) {
+            throw Messages.MESSAGES.channelExists(channel.getName());
         }
+
+        channels.add(channel);
+        installationMetadata.updateProsperoConfig(prosperoConfig);
     }
 
-    /**
-     * Retrieves maven remote repositories used by an installation.
-     */
-    public List<RepositoryRef> getRepositories() throws MetadataException {
-        try (final InstallationMetadata installationMetadata = new InstallationMetadata(installation)) {
-            ProsperoConfig prosperoConfig = installationMetadata.getProsperoConfig();
-            return prosperoConfig.getRepositories();
+    public void removeChannel(String channelName) throws MetadataException {
+        final ProsperoConfig prosperoConfig = installationMetadata.getProsperoConfig();
+        final List<Channel> channels = prosperoConfig.getChannels();
+        final Optional<Channel> removedChannel = channels.stream().filter(c -> c.getName().equals(channelName)).findAny();
+        if (removedChannel.isEmpty()) {
+            throw Messages.MESSAGES.channelNotFound(channelName);
         }
+        channels.remove(removedChannel.get());
+        installationMetadata.updateProsperoConfig(prosperoConfig);
     }
 
-    /**
-     * Retrieves channels used by an installation.
-     */
-    public List<ChannelRef> getChannels() throws MetadataException {
-        try (final InstallationMetadata installationMetadata = new InstallationMetadata(installation)) {
-            ProsperoConfig prosperoConfig = installationMetadata.getProsperoConfig();
-            return prosperoConfig.getChannels();
+    public void changeChannel(String channelName, Channel newChannel) throws MetadataException {
+        final ProsperoConfig prosperoConfig = installationMetadata.getProsperoConfig();
+        final List<Channel> channels = prosperoConfig.getChannels();
+        final Optional<Channel> modifiedChannel = channels.stream().filter(c -> c.getName().equals(channelName)).findAny();
+        if (modifiedChannel.isEmpty()) {
+            throw Messages.MESSAGES.channelNotFound(channelName);
         }
+        channels.set(channels.indexOf(modifiedChannel.get()), newChannel);
+        installationMetadata.updateProsperoConfig(prosperoConfig);
     }
 
-    /**
-     * Adds a channel to an installation.
-     */
-    public void addChannel(String gavOrUrl) throws MetadataException {
-        try (final InstallationMetadata installationMetadata = new InstallationMetadata(installation)) {
-            ProsperoConfig prosperoConfig = installationMetadata.getProsperoConfig();
-            ChannelRef channelRef = ChannelRef.fromString(gavOrUrl);
-            prosperoConfig.addChannel(channelRef);
-            installationMetadata.updateProsperoConfig(prosperoConfig);
-        }
+    public List<Channel> getChannels() throws MetadataException {
+        return new ArrayList<>(installationMetadata.getProsperoConfig().getChannels());
     }
 
-    /**
-     * Removes a remote maven repository from an installation.
-     */
-    public void removeChannel(String gavOrUrl) throws MetadataException {
-        try (final InstallationMetadata installationMetadata = new InstallationMetadata(installation)) {
-            ProsperoConfig prosperoConfig = installationMetadata.getProsperoConfig();
-            ChannelRef channelRef = ChannelRef.fromString(gavOrUrl);
-            prosperoConfig.removeChannel(channelRef);
-            installationMetadata.updateProsperoConfig(prosperoConfig);
+    public Channel getChannel(int index) throws MetadataException {
+        if (index < 0) {
+            return null;
         }
+        final ProsperoConfig prosperoConfig = installationMetadata.getProsperoConfig();
+        final List<Channel> channels = prosperoConfig.getChannels();
+        if (channels.size() <= index) {
+            return null;
+        }
+        return channels.get(index);
+    }
+
+    @Override
+    public void close() {
+        this.installationMetadata.close();
     }
 }

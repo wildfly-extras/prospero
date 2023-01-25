@@ -1,0 +1,11 @@
+schemaVersion: 1.0.0
+name: Update channel for WildFly Core 20
+description: |-
+  This channel provides test update for wildfly-cli
+vendor:
+  name: WildFly
+  support: community
+streams:
+  - groupId: org.wildfly.core
+    artifactId: wildfly-core-galleon-pack
+    version: "20.0.0.Beta5-test"

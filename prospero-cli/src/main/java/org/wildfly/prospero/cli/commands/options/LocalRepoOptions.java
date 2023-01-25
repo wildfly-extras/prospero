@@ -29,11 +29,11 @@ import java.util.Optional;
 
 public class LocalRepoOptions {
     @CommandLine.Option(
-            names = CliConstants.LOCAL_REPO,
+            names = CliConstants.LOCAL_CACHE,
             paramLabel = CliConstants.PATH,
             order = 6
     )
-    Path localRepo;
+    Path localMavenCache;
 
     @CommandLine.Option(
             names = CliConstants.NO_LOCAL_MAVEN_CACHE,
@@ -41,16 +41,16 @@ public class LocalRepoOptions {
     )
     boolean noLocalCache;
 
-    public static Optional<Path> getLocalRepo(LocalRepoOptions localRepoParam) throws ArgumentParsingException {
+    public static Optional<Path> getLocalMavenCache(LocalRepoOptions localRepoParam) throws ArgumentParsingException {
         if (localRepoParam == null) {
             return Optional.of(MavenSessionManager.LOCAL_MAVEN_REPO);
         } else if (localRepoParam.noLocalCache) {
             return Optional.empty();
         } else {
-            if (Files.exists(localRepoParam.localRepo) && !Files.isDirectory(localRepoParam.localRepo)) {
-                throw new ArgumentParsingException(CliMessages.MESSAGES.repositoryIsNotDirectory(localRepoParam.localRepo));
+            if (Files.exists(localRepoParam.localMavenCache) && !Files.isDirectory(localRepoParam.localMavenCache)) {
+                throw CliMessages.MESSAGES.repositoryIsNotDirectory(localRepoParam.localMavenCache);
             }
-            return Optional.of(localRepoParam.localRepo);
+            return Optional.of(localRepoParam.localMavenCache);
         }
     }
 }

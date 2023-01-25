@@ -18,12 +18,15 @@
 package org.wildfly.prospero.cli.commands;
 
 import java.nio.file.Path;
+import java.util.List;
 import java.util.Optional;
 
+import org.wildfly.channel.Repository;
 import org.wildfly.prospero.actions.Console;
 import org.wildfly.prospero.actions.InstallationHistoryAction;
 import org.wildfly.prospero.api.SavedState;
 import org.wildfly.prospero.cli.ActionFactory;
+import org.wildfly.prospero.cli.RepositoryDefinition;
 import org.wildfly.prospero.cli.ReturnCodes;
 import org.wildfly.prospero.cli.commands.options.LocalRepoOptions;
 import org.wildfly.prospero.wfchannel.MavenSessionManager;
@@ -33,31 +36,87 @@ import picocli.CommandLine;
         name = CliConstants.Commands.REVERT,
         sortOptions = false
 )
-public class RevertCommand extends AbstractCommand {
+public class RevertCommand extends AbstractParentCommand {
 
-    @CommandLine.Option(names = CliConstants.DIR)
-    Optional<Path> directory;
+    @CommandLine.Command(name = CliConstants.Commands.PERFORM, sortOptions = false)
+    public static class PerformCommand extends AbstractMavenCommand {
 
-    @CommandLine.Option(names = CliConstants.REVISION, required = true)
-    String revision;
+        @CommandLine.Option(names = CliConstants.REVISION, required = true)
+        String revision;
 
-    @CommandLine.ArgGroup(exclusive = true, headingKey = "localRepoOptions.heading")
-    LocalRepoOptions localRepoOptions;
+        public PerformCommand(Console console, ActionFactory actionFactory) {
+            super(console, actionFactory);
+        }
 
-    @CommandLine.Option(names = CliConstants.OFFLINE)
-    boolean offline;
+        @Override
+        public Integer call() throws Exception {
+            final Path installationDirectory = determineInstallationDirectory(directory);
+            final MavenSessionManager mavenSessionManager = new MavenSessionManager(LocalRepoOptions.getLocalMavenCache(localRepoOptions), offline);
 
-    public RevertCommand(Console console, ActionFactory actionFactory) {
-        super(console, actionFactory);
+            final List<Repository> overrideRepositories = RepositoryDefinition.from(temporaryRepositories);
+
+            InstallationHistoryAction historyAction = actionFactory.history(installationDirectory, console);
+            historyAction.rollback(new SavedState(revision), mavenSessionManager, overrideRepositories);
+            return ReturnCodes.SUCCESS;
+        }
     }
 
-    @Override
-    public Integer call() throws Exception {
-        final Path installationDirectory = determineInstallationDirectory(directory);
-        final MavenSessionManager mavenSessionManager = new MavenSessionManager(LocalRepoOptions.getLocalRepo(localRepoOptions), offline);
+    @CommandLine.Command(name = CliConstants.Commands.APPLY, sortOptions = false)
+    public static class ApplyCommand extends AbstractCommand {
 
-        InstallationHistoryAction historyAction = actionFactory.history(installationDirectory, console);
-        historyAction.rollback(new SavedState(revision), mavenSessionManager);
-        return ReturnCodes.SUCCESS;
+        @CommandLine.Option(names = CliConstants.DIR)
+        Optional<Path> directory;
+
+        @CommandLine.Option(names = CliConstants.UPDATE_DIR, required = true)
+        Path updateDirectory;
+
+        public ApplyCommand(Console console, ActionFactory actionFactory) {
+            super(console, actionFactory);
+        }
+
+        @Override
+        public Integer call() throws Exception {
+            final Path installationDirectory = determineInstallationDirectory(directory);
+
+            InstallationHistoryAction historyAction = actionFactory.history(installationDirectory, console);
+            historyAction.applyRevert(updateDirectory);
+            return ReturnCodes.SUCCESS;
+        }
+    }
+
+    @CommandLine.Command(name = CliConstants.Commands.PREPARE, sortOptions = false)
+    public static class PrepareCommand extends AbstractMavenCommand {
+
+        @CommandLine.Option(names = CliConstants.REVISION, required = true)
+        String revision;
+
+        @CommandLine.Option(names = CliConstants.UPDATE_DIR, required = true)
+        Path updateDirectory;
+
+        public PrepareCommand(Console console, ActionFactory actionFactory) {
+            super(console, actionFactory);
+        }
+
+        @Override
+        public Integer call() throws Exception {
+            verifyTargetDirectoryIsEmpty(updateDirectory);
+
+            final Path installationDirectory = determineInstallationDirectory(directory);
+            final MavenSessionManager mavenSessionManager = new MavenSessionManager(LocalRepoOptions.getLocalMavenCache(localRepoOptions), offline);
+
+            final List<Repository> overrideRepositories = RepositoryDefinition.from(temporaryRepositories);
+
+            InstallationHistoryAction historyAction = actionFactory.history(installationDirectory, console);
+            historyAction.prepareRevert(new SavedState(revision), mavenSessionManager, overrideRepositories, updateDirectory);
+            return ReturnCodes.SUCCESS;
+        }
+    }
+
+    public RevertCommand(Console console, ActionFactory actionFactory) {
+        super(console, actionFactory, CliConstants.Commands.REVERT, List.of(
+                new PrepareCommand(console, actionFactory),
+                new ApplyCommand(console, actionFactory),
+                new PerformCommand(console, actionFactory)
+        ));
     }
 }

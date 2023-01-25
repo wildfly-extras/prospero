@@ -17,16 +17,22 @@
     <properties>
         <prospero.dist.name>prospero</prospero.dist.name>
         <prospero.target.server>Wildfly</prospero.target.server>
+        <prospero.base.feature-pack.groupId>org.wildfly</prospero.base.feature-pack.groupId>
+        <prospero.base.feature-pack.artifactId>wildfly-ee-galleon-pack</prospero.base.feature-pack.artifactId>
+        <prospero.base.feature-pack.version>26.1.0.Final</prospero.base.feature-pack.version>
         <version.io.undertow>2.2.17.Final</version.io.undertow>
+        <version.org.apache.commons.commons-text>1.10.0</version.org.apache.commons.commons-text>
         <version.org.apache.maven.plugins.antrun>1.8</version.org.apache.maven.plugins.antrun>
         <version.org.apache.maven.plugins.jar>3.0.2</version.org.apache.maven.plugins.jar>
         <version.org.apache.maven.plugins.pmd>3.16.0</version.org.apache.maven.plugins.pmd>
         <version.org.apache.maven.plugins.dependency>3.1.2</version.org.apache.maven.plugins.dependency>
         <version.org.apache.maven.resolver>1.6.3</version.org.apache.maven.resolver>
-        <version.org.apache.maven.resolver.provider>3.8.6</version.org.apache.maven.resolver.provider>
+        <version.org.apache.maven>3.8.6</version.org.apache.maven>
         <version.org.apache.logging.log4j>2.14.1</version.org.apache.logging.log4j>
+        <version.org.codehaus.plexus-interpolation>1.26</version.org.codehaus.plexus-interpolation>
+        <version.org.codehaus.plexus-utils>3.3.1</version.org.codehaus.plexus-utils>
         <version.commons.io>2.11.0</version.commons.io>
-        <version.org.jboss.galleon>5.0.5.Final</version.org.jboss.galleon>
+        <version.org.jboss.galleon>5.0.7.Final</version.org.jboss.galleon>
         <version.org.eclipse.jgit>5.13.0.202109080827-r</version.org.eclipse.jgit>
         <version.com.fasterxml.jackson>2.13.4</version.com.fasterxml.jackson>
         <version.com.networknt.json-schema-validator>1.0.61</version.com.networknt.json-schema-validator>
@@ -36,13 +42,14 @@
         <version.org.jboss.logging.jboss-logging-processor>2.2.1.Final</version.org.jboss.logging.jboss-logging-processor>
         <version.org.jboss.modules>2.0.2.Final</version.org.jboss.modules>
         <version.org.jboss.xnio>3.8.7.Final</version.org.jboss.xnio>
-        <version.org.wildfly.galleon-plugins>6.0.0.Final</version.org.wildfly.galleon-plugins>
+        <version.org.wildfly.galleon-plugins>6.2.3.Final</version.org.wildfly.galleon-plugins>
+        <version.org.wildfly.installation-manager>1.0.0.Beta1</version.org.wildfly.installation-manager>
         <version.org.mockito>3.12.4</version.org.mockito>
         <version.junit>4.13.2</version.junit>
         <version.maven-shade-plugin>2.3</version.maven-shade-plugin>
-        <version.org.wildfly.channel>1.0.0.Beta3</version.org.wildfly.channel>
+        <version.org.wildfly.channel>1.0.0.Beta4</version.org.wildfly.channel>
         <version.maven-compiler-plugin>3.10.1</version.maven-compiler-plugin>
-        <version.org.wildfly.galleon-pack>26.1.0.Final</version.org.wildfly.galleon-pack>
+        <version.org.wildfly.galleon-pack>${prospero.base.feature-pack.version}</version.org.wildfly.galleon-pack>
         <version.info.picocli>4.6.3</version.info.picocli>
         <version.system-rules>1.19.0</version.system-rules>
         <version.assertj>3.23.1</version.assertj>
@@ -53,8 +60,7 @@
     <modules>
         <module>prospero-common</module>
         <module>prospero-cli</module>
-        <module>prospero-launcher</module>
-        <module>prospero-bootstrap</module>
+        <module>prospero-metadata</module>
         <module>integration-tests</module>
     </modules>
 
@@ -76,10 +82,25 @@
                 <version>${project.version}</version>
             </dependency>
             <dependency>
-                <groupId>org.wildfly</groupId>
-                <artifactId>wildfly-ee-galleon-pack</artifactId>
+                <groupId>org.wildfly.prospero</groupId>
+                <artifactId>prospero-metadata</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.wildfly.installation-manager</groupId>
+                <artifactId>installation-manager-api</artifactId>
+                <version>${version.org.wildfly.installation-manager}</version>
+            </dependency>
+            <dependency>
+                <groupId>${prospero.base.feature-pack.groupId}</groupId>
+                <artifactId>${prospero.base.feature-pack.artifactId}</artifactId>
                 <version>${version.org.wildfly.galleon-pack}</version>
                 <type>zip</type>
+            </dependency>
+            <dependency>
+                <groupId>org.apache.commons</groupId>
+                <artifactId>commons-text</artifactId>
+                <version>${version.org.apache.commons.commons-text}</version>
             </dependency>
             <dependency>
                 <groupId>org.apache.maven.resolver</groupId>
@@ -102,15 +123,65 @@
                 <version>${version.org.apache.maven.resolver}</version>
             </dependency>
             <dependency>
+                <groupId>org.apache.maven.resolver</groupId>
+                <artifactId>maven-resolver-api</artifactId>
+                <version>${version.org.apache.maven.resolver}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.apache.maven.resolver</groupId>
+                <artifactId>maven-resolver-spi</artifactId>
+                <version>${version.org.apache.maven.resolver}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.apache.maven.resolver</groupId>
+                <artifactId>maven-resolver-util</artifactId>
+                <version>${version.org.apache.maven.resolver}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.apache.maven</groupId>
+                <artifactId>maven-artifact</artifactId>
+                <version>${version.org.apache.maven}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.apache.maven</groupId>
+                <artifactId>maven-builder-support</artifactId>
+                <version>${version.org.apache.maven}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.apache.maven</groupId>
+                <artifactId>maven-model</artifactId>
+                <version>${version.org.apache.maven}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.apache.maven</groupId>
+                <artifactId>maven-model-builder</artifactId>
+                <version>${version.org.apache.maven}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.apache.maven</groupId>
+                <artifactId>maven-repository-metadata</artifactId>
+                <version>${version.org.apache.maven}</version>
+            </dependency>
+            <dependency>
                 <groupId>org.apache.maven</groupId>
                 <artifactId>maven-resolver-provider</artifactId>
-                <version>${version.org.apache.maven.resolver.provider}</version>
+                <version>${version.org.apache.maven}</version>
                 <exclusions>
                     <exclusion>
                         <groupId>org.apache.maven.resolver</groupId>
                         <artifactId>*</artifactId>
                     </exclusion>
                 </exclusions>
+            </dependency>
+            <dependency>
+                <groupId>org.codehaus.plexus</groupId>
+                <artifactId>plexus-interpolation</artifactId>
+                <version>${version.org.codehaus.plexus-interpolation}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.codehaus.plexus</groupId>
+                <artifactId>plexus-utils</artifactId>
+                <version>${version.org.codehaus.plexus-utils}</version>
             </dependency>
 
             <dependency>
@@ -310,6 +381,11 @@
                     <groupId>org.apache.maven.plugins</groupId>
                     <artifactId>maven-jar-plugin</artifactId>
                     <version>${version.org.apache.maven.plugins.jar}</version>
+                </plugin>
+                <plugin>
+                    <groupId>org.jboss.galleon</groupId>
+                    <artifactId>galleon-maven-plugin</artifactId>
+                    <version>${version.org.jboss.galleon}</version>
                 </plugin>
             </plugins>
         </pluginManagement>

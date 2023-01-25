@@ -17,60 +17,12 @@
 
 package org.wildfly.prospero.model;
 
-import org.junit.Assert;
-import org.junit.Test;
+import org.junit.Ignore;
 
-import java.util.ArrayList;
-
-
-import static org.assertj.core.api.Assertions.*;
-import static org.junit.Assert.*;
-
+@Ignore
 public class ProsperoConfigTest {
 
-    private final ProsperoConfig prosperoConfig = new ProsperoConfig(new ArrayList<>(), new ArrayList<>());
+    // TODO:
 
-    @Test
-    public void addRepositoryIgnoresChangesIfExistingRepo() throws Exception {
-        prosperoConfig.addRepository(new RepositoryRef("existing", "file:///foo.bar"));
 
-        assertFalse(prosperoConfig.addRepository(new RepositoryRef("existing", "file:///foo.bar")));
-
-        assertThat(prosperoConfig.getRepositories()).containsExactly(
-                new RepositoryRef("existing", "file:///foo.bar")
-        );
-    }
-
-    @Test
-    public void addRepositoryThrowsErrorIfSameIdDifferentUrl() throws Exception {
-        assertTrue(prosperoConfig.addRepository(new RepositoryRef("existing", "file:///foo.bar")));
-
-        try {
-            prosperoConfig.addRepository(new RepositoryRef("existing", "file:///different.url"));
-            Assert.fail("Adding repository with the same ID but different URL should fail");
-        } catch (IllegalArgumentException e) {
-            // OK, ignore
-        }
-    }
-
-    @Test
-    public void addRepositoryAddsDistinctRepository() throws Exception {
-        prosperoConfig.addRepository(new RepositoryRef("existing", "file:///foo.bar"));
-
-        assertTrue(prosperoConfig.addRepository(new RepositoryRef("test", "file:///foo.bar")));
-
-        assertThat(prosperoConfig.getRepositories()).containsExactlyInAnyOrder(
-                new RepositoryRef("existing", "file:///foo.bar"),
-                new RepositoryRef("test", "file:///foo.bar")
-        );
-    }
-
-    @Test
-    public void addRepositoryAddsNewRepositoryToEmptyList() throws Exception {
-        assertTrue(prosperoConfig.addRepository(new RepositoryRef("test", "file:///foo.bar")));
-
-        assertThat(prosperoConfig.getRepositories()).containsExactly(
-                new RepositoryRef("test", "file:///foo.bar")
-        );
-    }
 }

@@ -17,26 +17,38 @@
 
 package org.wildfly.prospero.cli.commands.channel;
 
+import org.wildfly.channel.Channel;
+import org.wildfly.channel.ChannelManifestCoordinate;
+import org.wildfly.channel.Repository;
 import org.wildfly.prospero.actions.Console;
 import org.wildfly.prospero.actions.MetadataAction;
+import org.wildfly.prospero.api.ArtifactUtils;
 import org.wildfly.prospero.cli.ActionFactory;
 import org.wildfly.prospero.cli.CliMessages;
+import org.wildfly.prospero.cli.RepositoryDefinition;
 import org.wildfly.prospero.cli.ReturnCodes;
 import org.wildfly.prospero.cli.commands.AbstractCommand;
 import org.wildfly.prospero.cli.commands.CliConstants;
 import picocli.CommandLine;
 
 import java.nio.file.Path;
+import java.util.List;
 import java.util.Optional;
 
-@CommandLine.Command(name = CliConstants.Commands.ADD)
+@CommandLine.Command(name = CliConstants.Commands.ADD, sortOptions = false)
 public class ChannelAddCommand extends AbstractCommand {
 
-    @CommandLine.Parameters(index = "0", paramLabel = "gav-or-url")
-    String gavOrUrl;
+    @CommandLine.Option(names = CliConstants.CHANNEL_NAME, required = true)
+    private String channelName;
+
+    @CommandLine.Option(names = CliConstants.CHANNEL_MANIFEST, required = true)
+    private String gavUrlOrPath;
 
     @CommandLine.Option(names = CliConstants.DIR)
-    Optional<Path> directory;
+    private Optional<Path> directory;
+
+    @CommandLine.Option(names = CliConstants.REPOSITORIES, split = ",", paramLabel = CliConstants.REPO_URL, required = true)
+    private List<String> repositoryDefs;
 
     public ChannelAddCommand(Console console, ActionFactory actionFactory) {
         super(console, actionFactory);
@@ -45,9 +57,15 @@ public class ChannelAddCommand extends AbstractCommand {
     @Override
     public Integer call() throws Exception {
         Path installationDirectory = determineInstallationDirectory(directory);
-        MetadataAction metadataAction = actionFactory.metadataActions(installationDirectory);
-        metadataAction.addChannel(gavOrUrl);
-        console.println(CliMessages.MESSAGES.channelAdded(gavOrUrl));
+        List<Repository> repositories;
+        repositories = RepositoryDefinition.from(repositoryDefs);
+
+        ChannelManifestCoordinate manifest = ArtifactUtils.manifestCoordFromString(gavUrlOrPath);
+        Channel channel = new Channel(channelName, null, null, repositories, manifest, null, null);
+        try (final MetadataAction metadataAction = actionFactory.metadataActions(installationDirectory)) {
+            metadataAction.addChannel(channel);
+        }
+        console.println(CliMessages.MESSAGES.channelAdded(gavUrlOrPath));
         return ReturnCodes.SUCCESS;
     }
 }

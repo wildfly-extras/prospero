@@ -17,6 +17,7 @@
 
 package org.wildfly.prospero.cli.commands.channel;
 
+import org.wildfly.channel.Channel;
 import org.wildfly.prospero.actions.Console;
 import org.wildfly.prospero.actions.MetadataAction;
 import org.wildfly.prospero.cli.ActionFactory;
@@ -32,8 +33,8 @@ import java.util.Optional;
 @CommandLine.Command(name = CliConstants.Commands.REMOVE)
 public class ChannelRemoveCommand extends AbstractCommand {
 
-    @CommandLine.Parameters(index = "0", paramLabel = "gav-or-url")
-    String gavOrUrl;
+    @CommandLine.Option(names=CliConstants.CHANNEL_NAME)
+    String channelName;
 
     @CommandLine.Option(names = CliConstants.DIR)
     Optional<Path> directory;
@@ -45,9 +46,18 @@ public class ChannelRemoveCommand extends AbstractCommand {
     @Override
     public Integer call() throws Exception {
         Path installationDirectory = determineInstallationDirectory(directory);
-        MetadataAction metadataAction = actionFactory.metadataActions(installationDirectory);
-        metadataAction.removeChannel(gavOrUrl);
-        console.println(CliMessages.MESSAGES.channelRemoved(gavOrUrl));
-        return ReturnCodes.SUCCESS;
+        try (final MetadataAction metadataAction = actionFactory.metadataActions(installationDirectory)) {
+            final Optional<Channel> channel = metadataAction.getChannels().stream().filter(c->c.getName().equals(channelName)).findFirst();
+
+            if (channel.isEmpty()) {
+                console.println("The requested channel doesn't exist");
+                return ReturnCodes.INVALID_ARGUMENTS;
+            }
+
+            metadataAction.removeChannel(channelName);
+
+            console.println(CliMessages.MESSAGES.channelRemoved(channelName));
+            return ReturnCodes.SUCCESS;
+        }
     }
 }

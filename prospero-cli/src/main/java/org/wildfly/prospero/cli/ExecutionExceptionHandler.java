@@ -19,13 +19,13 @@ package org.wildfly.prospero.cli;
 
 import org.jboss.galleon.ProvisioningException;
 import org.wildfly.channel.ArtifactCoordinate;
+import org.wildfly.channel.Repository;
 import org.wildfly.prospero.actions.Console;
 import org.wildfly.prospero.api.exceptions.ArtifactResolutionException;
 import org.wildfly.prospero.api.exceptions.ChannelDefinitionException;
 import org.wildfly.prospero.api.exceptions.NoChannelException;
 import org.wildfly.prospero.api.exceptions.OperationException;
 import org.wildfly.prospero.cli.commands.CliConstants;
-import org.wildfly.prospero.model.RepositoryRef;
 import picocli.CommandLine;
 
 import java.util.Set;
@@ -46,7 +46,7 @@ public class ExecutionExceptionHandler implements CommandLine.IExecutionExceptio
             throws Exception {
         if (ex instanceof NoChannelException) {
             console.error("ERROR: " + ex.getMessage());
-            console.error(CliMessages.MESSAGES.addChannels(CliConstants.CHANNEL));
+            console.error(CliMessages.MESSAGES.addChannels(CliConstants.CHANNEL_MANIFEST));
             return ReturnCodes.INVALID_ARGUMENTS;
         }
         if (ex instanceof IllegalArgumentException || ex instanceof ArgumentParsingException) {
@@ -87,7 +87,7 @@ public class ExecutionExceptionHandler implements CommandLine.IExecutionExceptio
         throw ex;
     }
 
-    private String repositories(Set<RepositoryRef> coordinates) {
+    private String repositories(Set<Repository> coordinates) {
         return coordinates.stream().map(r->r.getId() + " (" + r.getUrl() + ")").collect(Collectors.joining(", "));
     }
 

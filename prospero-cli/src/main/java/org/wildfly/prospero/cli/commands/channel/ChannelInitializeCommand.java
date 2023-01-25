@@ -18,8 +18,12 @@
 package org.wildfly.prospero.cli.commands.channel;
 
 import org.apache.commons.lang3.RandomStringUtils;
+import org.wildfly.channel.Channel;
+import org.wildfly.channel.ChannelManifestCoordinate;
+import org.wildfly.channel.Repository;
 import org.wildfly.prospero.actions.Console;
 import org.wildfly.prospero.actions.MetadataAction;
+import org.wildfly.prospero.api.ArtifactUtils;
 import org.wildfly.prospero.api.InstallationMetadata;
 import org.wildfly.prospero.api.exceptions.MetadataException;
 import org.wildfly.prospero.cli.ActionFactory;
@@ -27,7 +31,6 @@ import org.wildfly.prospero.cli.CliMessages;
 import org.wildfly.prospero.cli.ReturnCodes;
 import org.wildfly.prospero.cli.commands.AbstractCommand;
 import org.wildfly.prospero.cli.commands.CliConstants;
-import org.wildfly.prospero.model.ChannelRef;
 import picocli.CommandLine;
 
 import java.io.File;
@@ -37,6 +40,7 @@ import java.net.URL;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.List;
 import java.util.Optional;
 
 @CommandLine.Command(
@@ -49,9 +53,9 @@ public class ChannelInitializeCommand extends AbstractCommand {
     public static final String CUSTOM_CHANNELS_GROUP_ID = "custom.channels";
     public static final String DEFAULT_CUSTOMIZATION_REPOSITORY = "customization-repository";
     @CommandLine.Option(
-            names = CliConstants.CUSTOMIZATION_CHANNEL_NAME
+            names = CliConstants.CHANNEL_MANIFEST
     )
-    private Optional<String> name;
+    private Optional<String> manifestName;
 
     @CommandLine.Option(
             names = CliConstants.CUSTOMIZATION_REPOSITORY_URL,
@@ -70,47 +74,52 @@ public class ChannelInitializeCommand extends AbstractCommand {
     @Override
     public Integer call() throws Exception {
         Path installationDirectory = determineInstallationDirectory(directory);
-        MetadataAction metadataAction = actionFactory.metadataActions(installationDirectory);
+        try (MetadataAction metadataAction = actionFactory.metadataActions(installationDirectory)) {
 
-        if (!validateRepository(metadataAction) || !validateChannel()) {
-            return ReturnCodes.INVALID_ARGUMENTS;
-        }
+            if (!validateRepository(metadataAction) || !validateChannel()) {
+                return ReturnCodes.INVALID_ARGUMENTS;
+            }
 
-        final URL url;
-        if (repositoryUrl.isPresent()) {
-            url = repositoryUrl.get();
-            if (repositoryUrl.get().getProtocol().equals("file")) {
-                if (!createLocalRepository(Paths.get(repositoryUrl.get().toURI()))) {
+            final URL url;
+            if (repositoryUrl.isPresent()) {
+                url = repositoryUrl.get();
+                if (repositoryUrl.get().getProtocol().equals("file")) {
+                    if (!createLocalRepository(Paths.get(repositoryUrl.get().toURI()))) {
+                        return ReturnCodes.PROCESSING_ERROR;
+                    }
+                }
+            } else {
+                final Path defaultLocalRepoPath = installationDirectory.resolve(InstallationMetadata.METADATA_DIR)
+                        .resolve(DEFAULT_CUSTOMIZATION_REPOSITORY);
+                if (!createLocalRepository(defaultLocalRepoPath)) {
                     return ReturnCodes.PROCESSING_ERROR;
                 }
+                url = defaultLocalRepoPath.toUri().toURL();
             }
-        } else {
-            final Path defaultLocalRepoPath = installationDirectory.resolve(InstallationMetadata.METADATA_DIR)
-                    .resolve(DEFAULT_CUSTOMIZATION_REPOSITORY);
-            if (!createLocalRepository(defaultLocalRepoPath)) {
-                return ReturnCodes.PROCESSING_ERROR;
+
+            if (manifestName.isEmpty()) {
+                if (customizationChannelExists(metadataAction)) {
+                    console.error(CliMessages.MESSAGES.customizationChannelAlreadyExists());
+                    return ReturnCodes.PROCESSING_ERROR;
+                }
+                manifestName = Optional.of(CUSTOM_CHANNELS_GROUP_ID + ":" + RandomStringUtils.randomAlphanumeric(8));
             }
-            url = defaultLocalRepoPath.toUri().toURL();
+
+            // add new channel
+            console.println(CliMessages.MESSAGES.registeringCustomChannel(manifestName.get()));
+            Channel channel = new Channel("customization", null, null,
+                    List.of(new Repository(CUSTOMIZATION_REPO_ID, url.toExternalForm())),
+                    ArtifactUtils.manifestCoordFromString(manifestName.get()), null, null);
+            metadataAction.addChannel(channel);
         }
-
-        if (name.isEmpty()) {
-            if (metadataAction.getChannels().stream().anyMatch(c->c.getGav()!=null && c.getGav().startsWith(CUSTOM_CHANNELS_GROUP_ID + ":"))) {
-                console.error(CliMessages.MESSAGES.customizationChannelAlreadyExists());
-                return ReturnCodes.PROCESSING_ERROR;
-            }
-            name = Optional.of(CUSTOM_CHANNELS_GROUP_ID + ":" + RandomStringUtils.randomAlphanumeric(8));
-        }
-
-        // add new channel
-        console.println(CliMessages.MESSAGES.registeringCustomChannel(name.get()));
-        metadataAction.addChannel(name.get());
-
-        // add new repository
-        console.println(CliMessages.MESSAGES.registeringCustomRepository(url.toString()));
-        metadataAction.addRepository(CUSTOMIZATION_REPO_ID, url);
-        console.println(CliMessages.MESSAGES.repositoryAdded(CUSTOMIZATION_REPO_ID));
 
         return ReturnCodes.SUCCESS;
+    }
+
+    private boolean customizationChannelExists(MetadataAction metadataAction) throws MetadataException {
+        return metadataAction.getChannels().stream()
+                .map(Channel::getManifestCoordinate)
+                .anyMatch(m -> m.getMaven() != null && m.getMaven().getGroupId().equals(CUSTOM_CHANNELS_GROUP_ID));
     }
 
     private boolean createLocalRepository(Path localRepository) throws URISyntaxException {
@@ -120,7 +129,7 @@ public class ChannelInitializeCommand extends AbstractCommand {
             return false;
         }
         if (file.exists() && !Files.isDirectory(file.toPath())) {
-            console.error(CliMessages.MESSAGES.repositoryIsNotDirectory(localRepository));
+            console.error(CliMessages.MESSAGES.repositoryIsNotDirectory(localRepository).getMessage());
             return false;
         }
 
@@ -147,24 +156,24 @@ public class ChannelInitializeCommand extends AbstractCommand {
     }
 
     private boolean validateChannel() {
-        if (name.isEmpty()) {
+        if (manifestName.isEmpty()) {
             return true;
         }
         try {
-            final ChannelRef channelRef = ChannelRef.fromString(name.get());
-            if (channelRef.getGav() == null) {
-                console.error(CliMessages.MESSAGES.illegalChannel(name.get()));
+            final ChannelManifestCoordinate manifestRef = ArtifactUtils.manifestCoordFromString(manifestName.get());
+            if (manifestRef.getMaven() == null) {
+                console.error(CliMessages.MESSAGES.illegalChannel(manifestName.get()));
                 return false;
             }
         } catch (IllegalArgumentException e) {
-            console.error(CliMessages.MESSAGES.illegalChannel(name.get()));
+            console.error(CliMessages.MESSAGES.illegalChannel(manifestName.get()));
             return false;
         }
         return true;
     }
 
     private boolean validateRepository(MetadataAction metadataAction) throws MetadataException {
-        if (metadataAction.getRepositories().stream().anyMatch(r->r.getId().equals(CUSTOMIZATION_REPO_ID))) {
+        if (metadataAction.getChannels().stream().flatMap(c->c.getRepositories().stream()).anyMatch(r->r.getId().equals(CUSTOMIZATION_REPO_ID))) {
             console.error(CliMessages.MESSAGES.customizationRepoExist(CUSTOMIZATION_REPO_ID));
             return false;
         }

@@ -17,16 +17,17 @@
 
 package org.wildfly.prospero.galleon;
 
+import org.wildfly.channel.ChannelManifest;
 import org.wildfly.channel.spi.ChannelResolvable;
 import org.wildfly.channel.ArtifactCoordinate;
 import org.eclipse.aether.artifact.DefaultArtifact;
 import org.jboss.galleon.universe.maven.MavenArtifact;
 import org.jboss.galleon.universe.maven.MavenUniverseException;
 import org.jboss.galleon.universe.maven.repo.MavenRepoManager;
-import org.wildfly.channel.Channel;
 import org.wildfly.channel.ChannelSession;
 import org.wildfly.channel.Stream;
 import org.wildfly.channel.UnresolvedMavenArtifactException;
+import org.wildfly.prospero.Messages;
 
 import java.nio.file.Path;
 import java.util.ArrayList;
@@ -37,14 +38,14 @@ import java.util.regex.Pattern;
 
 public class ChannelMavenArtifactRepositoryManager implements MavenRepoManager, ChannelResolvable {
     private final ChannelSession channelSession;
-    private final Channel manifest;
+    private final ChannelManifest manifest;
 
     public ChannelMavenArtifactRepositoryManager(ChannelSession channelSession) {
         this.channelSession = channelSession;
         this.manifest = null;
     }
 
-    public ChannelMavenArtifactRepositoryManager(ChannelSession channelSession, Channel manifest) {
+    public ChannelMavenArtifactRepositoryManager(ChannelSession channelSession, ChannelManifest manifest) {
         this.channelSession = channelSession;
         this.manifest = manifest;
     }
@@ -66,7 +67,7 @@ public class ChannelMavenArtifactRepositoryManager implements MavenRepoManager, 
                     result = channelSession.resolveMavenArtifact(artifact.getGroupId(), artifact.getArtifactId(), artifact.getExtension(),
                             artifact.getClassifier(), null);
                 } else {
-                    throw new MavenUniverseException("Unable to resolve " + artifact);
+                    throw Messages.MESSAGES.unableToResolve(artifact.getCoordsAsString());
                 }
             }
 
@@ -100,7 +101,7 @@ public class ChannelMavenArtifactRepositoryManager implements MavenRepoManager, 
 
                         MavenArtifactMapper.resolve(artifact, result);
                     } else {
-                        throw new MavenUniverseException("Unable to resolve " + artifact);
+                        throw Messages.MESSAGES.unableToResolve(artifact.getCoordsAsString());
                     }
                 }
             }
@@ -121,7 +122,7 @@ public class ChannelMavenArtifactRepositoryManager implements MavenRepoManager, 
                         found.get().getVersion()
                 ));
             } else {
-                throw new MavenUniverseException("Unable to resolve " + coord);
+                throw Messages.MESSAGES.unableToResolve(coord.getGroupId()+ ":" + coord.getGroupId()+":"+coord.getExtension());
             }
         }
 
@@ -193,7 +194,7 @@ public class ChannelMavenArtifactRepositoryManager implements MavenRepoManager, 
         throw new UnsupportedOperationException("Not yet implemented");
     }
 
-    public Channel resolvedChannel() {
+    public ChannelManifest resolvedChannel() {
         return channelSession.getRecordedChannel();
     }
 }

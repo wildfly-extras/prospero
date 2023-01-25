@@ -19,11 +19,8 @@ package org.wildfly.prospero.model;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
-import org.eclipse.aether.repository.RemoteRepository;
 
 import java.util.Objects;
-
-import static org.wildfly.prospero.api.ProvisioningDefinition.DEFAULT_REPOSITORY_POLICY;
 
 
 public class RepositoryRef {
@@ -37,23 +34,12 @@ public class RepositoryRef {
         this.url = url;
     }
 
-    public RepositoryRef(RemoteRepository remoteRepository) {
-        this.id = remoteRepository.getId();
-        this.url = remoteRepository.getUrl();
-    }
-
     public String getId() {
         return id;
     }
 
     public String getUrl() {
         return url;
-    }
-
-    public RemoteRepository toRemoteRepository() {
-        return new RemoteRepository.Builder(id, "default", url)
-                .setPolicy(DEFAULT_REPOSITORY_POLICY)
-                .build();
     }
 
     @Override

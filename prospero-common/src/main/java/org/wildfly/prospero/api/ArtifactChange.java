@@ -20,46 +20,45 @@ package org.wildfly.prospero.api;
 import org.eclipse.aether.artifact.Artifact;
 import org.wildfly.channel.version.VersionMatcher;
 
+import java.util.Objects;
 import java.util.Optional;
 
-public class ArtifactChange {
-    private Artifact oldVersion;
-    private Artifact newVersion;
-
-    public ArtifactChange(Artifact oldVersion, Artifact newVersion) {
-        this.oldVersion = oldVersion;
-        this.newVersion = newVersion;
+public class ArtifactChange extends Diff {
+    public static ArtifactChange added(Artifact newVersion) {
+        Objects.requireNonNull(newVersion);
+        return new ArtifactChange(toGav(newVersion), null, newVersion.getVersion());
     }
 
+    public static ArtifactChange removed(Artifact oldVersion) {
+        Objects.requireNonNull(oldVersion);
+        return new ArtifactChange(toGav(oldVersion), oldVersion.getVersion(), null);
+    }
+
+    public static ArtifactChange updated(Artifact oldVersion, Artifact newVersion) {
+        Objects.requireNonNull(oldVersion);
+        Objects.requireNonNull(newVersion);
+        return new ArtifactChange(toGav(oldVersion), oldVersion.getVersion(), newVersion.getVersion());
+    }
+
+    private ArtifactChange(String gav, String oldVersion, String newVersion) {
+        super(gav, oldVersion, newVersion);
+    }
+
+    @SuppressWarnings("OptionalGetWithoutIsPresent")
     public String getArtifactName() {
-        if (oldVersion == null) {
-            return toGav(newVersion);
-        } else {
-            return toGav(oldVersion);
-        }
+        // the name has to be present, as it's either old or new artifact's gav
+        return getName().get();
     }
 
     public Optional<String> getOldVersion() {
-        return oldVersion==null?Optional.empty():Optional.of(oldVersion.getVersion());
+        return getOldValue();
     }
 
     public Optional<String> getNewVersion() {
-        return newVersion==null?Optional.empty():Optional.of(newVersion.getVersion());
+        return getNewValue();
     }
 
-    @Override
-    public String toString() {
-        if (oldVersion == null) {
-            return String.format("Install [%s]:\t\t [] ==> %s", toGav(newVersion), newVersion.getVersion());
-        }
-        if (newVersion == null) {
-            return String.format("Remove [%s]:\t\t %s ==> []", toGav(oldVersion), oldVersion.getVersion());
-        }
-        final String gac = toGav(oldVersion);
-        return String.format("Update [%s]:\t\t %s ==> %s", gac, oldVersion.getVersion(), newVersion.getVersion());
-    }
-
-    private String toGav(Artifact artifact) {
+    private static String toGav(Artifact artifact) {
         final String gac;
         if (artifact.getClassifier() == null || artifact.getClassifier().isEmpty()) {
             gac = String.format("%s:%s", artifact.getGroupId(), artifact.getArtifactId());
@@ -70,10 +69,22 @@ public class ArtifactChange {
     }
 
     public boolean isDowngrade() {
-        if (getNewVersion().isPresent() && getOldVersion().isPresent()) {
-            return VersionMatcher.COMPARATOR.compare(getNewVersion().get(), getOldVersion().get()) < 0;
+        if (getNewValue().isPresent() && getOldValue().isPresent()) {
+            return VersionMatcher.COMPARATOR.compare(getNewValue().get(), getOldValue().get()) < 0;
         } else {
             return false;
         }
+    }
+
+    public boolean isInstalled() {
+        return getOldValue().isEmpty();
+    }
+
+    public boolean isRemoved() {
+        return getNewValue().isEmpty();
+    }
+
+    public boolean isUpdated() {
+        return getOldValue().isPresent() && getNewValue().isPresent();
     }
 }

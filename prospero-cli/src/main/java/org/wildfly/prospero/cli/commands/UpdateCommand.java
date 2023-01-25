@@ -17,23 +17,29 @@
 
 package org.wildfly.prospero.cli.commands;
 
-import java.net.URL;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
 import org.jboss.galleon.ProvisioningException;
 import org.jboss.logging.Logger;
+import org.wildfly.channel.Repository;
+import org.wildfly.prospero.actions.ApplyCandidateAction;
 import org.wildfly.prospero.actions.Console;
 import org.wildfly.prospero.actions.UpdateAction;
+import org.wildfly.prospero.api.FileConflict;
+import org.wildfly.prospero.api.exceptions.OperationException;
 import org.wildfly.prospero.cli.ActionFactory;
 import org.wildfly.prospero.cli.ArgumentParsingException;
 import org.wildfly.prospero.cli.CliMessages;
+import org.wildfly.prospero.cli.FileConflictPrinter;
+import org.wildfly.prospero.cli.RepositoryDefinition;
 import org.wildfly.prospero.cli.ReturnCodes;
 import org.wildfly.prospero.cli.commands.options.LocalRepoOptions;
 import org.wildfly.prospero.galleon.GalleonUtils;
+import org.wildfly.prospero.updates.UpdateSet;
 import org.wildfly.prospero.wfchannel.MavenSessionManager;
 import picocli.CommandLine;
 
@@ -41,100 +47,225 @@ import picocli.CommandLine;
         name = CliConstants.Commands.UPDATE,
         sortOptions = false
 )
-public class UpdateCommand extends AbstractCommand {
+public class UpdateCommand extends AbstractParentCommand {
+
+    private static final Logger log = Logger.getLogger(UpdateCommand.class);
 
     public static final String JBOSS_MODULE_PATH = "module.path";
     public static final String PROSPERO_FP_GA = "org.wildfly.prospero:prospero-standalone-galleon-pack";
     public static final String PROSPERO_FP_ZIP = PROSPERO_FP_GA + "::zip";
 
-    private final Logger logger = Logger.getLogger(this.getClass());
+    @CommandLine.Command(name = CliConstants.Commands.PERFORM, sortOptions = false)
+    public static class PerformCommand extends AbstractMavenCommand {
 
-    @CommandLine.Option(names = CliConstants.SELF)
-    boolean self;
+        @CommandLine.Option(names = CliConstants.SELF)
+        boolean self;
 
-    @CommandLine.Option(names = CliConstants.DIR)
-    Optional<Path> directory;
+        @CommandLine.Option(names = {CliConstants.Y, CliConstants.YES})
+        boolean yes;
 
-    @CommandLine.Option(names = CliConstants.DRY_RUN)
-    boolean dryRun;
+        public PerformCommand(Console console, ActionFactory actionFactory) {
+            super(console, actionFactory);
+        }
 
-    @CommandLine.Option(names = CliConstants.OFFLINE)
-    boolean offline;
+        @Override
+        public Integer call() throws Exception {
+            final long startTime = System.currentTimeMillis();
+            final Path installationDir;
 
-    @CommandLine.Option(names = {CliConstants.Y, CliConstants.YES})
-    boolean yes;
+            if (self) {
+                if (directory.isPresent()) {
+                    installationDir = directory.get().toAbsolutePath();
+                } else {
+                    installationDir = detectProsperoInstallationPath().toAbsolutePath();
+                }
+                verifyInstallationContainsOnlyProspero(installationDir);
+            } else {
+                installationDir = determineInstallationDirectory(directory);
+            }
 
-    @CommandLine.ArgGroup(exclusive = true, headingKey = "localRepoOptions.heading")
-    LocalRepoOptions localRepoOptions;
+            final MavenSessionManager mavenSessionManager = new MavenSessionManager(LocalRepoOptions.getLocalMavenCache(localRepoOptions), offline);
+            final List<Repository> repositories = RepositoryDefinition.from(temporaryRepositories);
 
-    // Option for BETA update support
-    // TODO: evaluate in GA - replace by repository:add / custom channels?
-    @CommandLine.Option(
-            names = CliConstants.REMOTE_REPOSITORIES,
-            paramLabel = CliConstants.REPO_URL,
-            descriptionKey = "update.remote-repositories",
-            split = ",",
-            order = 5
-    )
-    List<URL> remoteRepositories = new ArrayList<>();
+            log.tracef("Perform full update");
+
+            try (UpdateAction updateAction = actionFactory.update(installationDir, mavenSessionManager, console, repositories)) {
+                performUpdate(updateAction, yes, console);
+            }
+
+            final float totalTime = (System.currentTimeMillis() - startTime) / 1000f;
+            console.println(CliMessages.MESSAGES.operationCompleted(totalTime));
+
+            return ReturnCodes.SUCCESS;
+        }
+    }
+
+    @CommandLine.Command(name = CliConstants.Commands.PREPARE, sortOptions = false)
+    public static class PrepareCommand extends AbstractMavenCommand {
+
+        @CommandLine.Option(names = CliConstants.UPDATE_DIR, required = true)
+        Path updateDirectory;
+
+        @CommandLine.Option(names = {CliConstants.Y, CliConstants.YES})
+        boolean yes;
+
+        public PrepareCommand(Console console, ActionFactory actionFactory) {
+            super(console, actionFactory);
+        }
+
+        @Override
+        public Integer call() throws Exception {
+            final long startTime = System.currentTimeMillis();
+            final Path installationDir = determineInstallationDirectory(directory);
+
+            final MavenSessionManager mavenSessionManager = new MavenSessionManager(LocalRepoOptions.getLocalMavenCache(localRepoOptions), offline);
+            final List<Repository> repositories = RepositoryDefinition.from(temporaryRepositories);
+
+            log.tracef("Generate update in %s", updateDirectory);
+
+            verifyTargetDirectoryIsEmpty(updateDirectory);
+
+            try (UpdateAction updateAction = actionFactory.update(installationDir,
+                    mavenSessionManager, console, repositories)) {
+                buildUpdate(updateAction, updateDirectory, yes, console);
+            }
+
+            final float totalTime = (System.currentTimeMillis() - startTime) / 1000f;
+            console.println(CliMessages.MESSAGES.operationCompleted(totalTime));
+
+            return ReturnCodes.SUCCESS;
+        }
+    }
+
+    @CommandLine.Command(name = CliConstants.Commands.APPLY, sortOptions = false)
+    public static class ApplyCommand extends AbstractCommand {
+
+        @CommandLine.Option(names = CliConstants.DIR)
+        Optional<Path> directory;
+
+        @CommandLine.Option(names = CliConstants.UPDATE_DIR, required = true)
+        Path updateDir;
+
+        public ApplyCommand(Console console, ActionFactory actionFactory) {
+            super(console, actionFactory);
+        }
+
+        @Override
+        public Integer call() throws Exception {
+            final long startTime = System.currentTimeMillis();
+
+            final Path installationDir = determineInstallationDirectory(directory);
+
+            verifyDirectoryContainsInstallation(updateDir);
+
+            if (!Files.exists(updateDir.resolve(ApplyCandidateAction.UPDATE_MARKER_FILE))) {
+                throw CliMessages.MESSAGES.invalidUpdateCandidate(updateDir);
+            }
+
+            final ApplyCandidateAction applyCandidateAction = actionFactory.applyUpdate(installationDir.toAbsolutePath(), updateDir.toAbsolutePath());
+
+            if (!applyCandidateAction.verifyUpdateCandidate()) {
+                throw CliMessages.MESSAGES.updateCandidateStateNotMatched(installationDir, updateDir.toAbsolutePath());
+            }
+
+            final List<FileConflict> fileConflicts = applyCandidateAction.applyUpdate();
+
+            FileConflictPrinter.print(fileConflicts, console);
+
+            final float totalTime = (System.currentTimeMillis() - startTime) / 1000f;
+            console.println(CliMessages.MESSAGES.operationCompleted(totalTime));
+
+            return ReturnCodes.SUCCESS;
+        }
+    }
+
+    @CommandLine.Command(name = CliConstants.Commands.LIST, sortOptions = false)
+    public static class ListCommand extends AbstractMavenCommand {
+
+        public ListCommand(Console console, ActionFactory actionFactory) {
+            super(console, actionFactory);
+        }
+        @Override
+        public Integer call() throws Exception {
+            final Path installationDir = determineInstallationDirectory(directory);
+
+            final MavenSessionManager mavenSessionManager = new MavenSessionManager(LocalRepoOptions.getLocalMavenCache(localRepoOptions), offline);
+            final List<Repository> repositories = RepositoryDefinition.from(temporaryRepositories);
+
+            try (UpdateAction updateAction = actionFactory.update(installationDir, mavenSessionManager, console, repositories)) {
+                final UpdateSet updateSet = updateAction.findUpdates();
+                console.updatesFound(updateSet.getArtifactUpdates());
+                return ReturnCodes.SUCCESS;
+            }
+        }
+    }
 
     public UpdateCommand(Console console, ActionFactory actionFactory) {
-        super(console, actionFactory);
+        super(console, actionFactory, CliConstants.Commands.UPDATE,
+                List.of(
+                    new UpdateCommand.PrepareCommand(console, actionFactory),
+                    new UpdateCommand.ApplyCommand(console, actionFactory),
+                    new UpdateCommand.PerformCommand(console, actionFactory),
+                    new UpdateCommand.ListCommand(console, actionFactory))
+        );
     }
 
-    @Override
-    public Integer call() throws Exception {
-        final long startTime = System.currentTimeMillis();
-        final Path installationDir;
+    private static void performUpdate(UpdateAction updateAction, boolean yes, Console console) throws OperationException, ProvisioningException {
+        final UpdateSet updateSet = updateAction.findUpdates();
 
-        if (self) {
-            if (directory.isPresent()) {
-                installationDir = directory.get().toAbsolutePath();
-            } else {
-                installationDir = detectProsperoInstallationPath().toAbsolutePath();
-            }
-            verifyInstallationContainsOnlyProspero(installationDir);
-        } else {
-            installationDir = determineInstallationDirectory(directory);
+        console.updatesFound(updateSet.getArtifactUpdates());
+        if (updateSet.isEmpty()) {
+            return;
         }
 
-        final MavenSessionManager mavenSessionManager = new MavenSessionManager(LocalRepoOptions.getLocalRepo(localRepoOptions), offline);
-
-        try (UpdateAction updateAction = actionFactory.update(installationDir, mavenSessionManager, console, remoteRepositories)) {
-            if (!dryRun) {
-                updateAction.doUpdateAll(yes);
-            } else {
-                updateAction.listUpdates();
-            }
+        if (!yes && !console.confirmUpdates()) {
+            return;
         }
 
-        final float totalTime = (System.currentTimeMillis() - startTime) / 1000f;
-        console.println(CliMessages.MESSAGES.operationCompleted(totalTime));
+        final List<FileConflict> fileConflicts = updateAction.performUpdate();
 
-        return ReturnCodes.SUCCESS;
+        FileConflictPrinter.print(fileConflicts, console);
+
+        console.updatesComplete();
     }
 
+    private static void buildUpdate(UpdateAction updateAction, Path updateDirectory, boolean yes, Console console) throws OperationException, ProvisioningException {
+        final UpdateSet updateSet = updateAction.findUpdates();
 
-    private static void verifyInstallationContainsOnlyProspero(Path dir) throws ArgumentParsingException {
-        verifyInstallationDirectory(dir);
+        console.updatesFound(updateSet.getArtifactUpdates());
+        if (updateSet.isEmpty()) {
+            return;
+        }
+
+        if (!yes && !console.confirmBuildUpdates()) {
+            return;
+        }
+
+        updateAction.buildUpdate(updateDirectory.toAbsolutePath());
+
+        console.buildUpdatesComplete();
+    }
+
+    public static void verifyInstallationContainsOnlyProspero(Path dir) throws ArgumentParsingException {
+        verifyDirectoryContainsInstallation(dir);
 
         try {
             final List<String> fpNames = GalleonUtils.getInstalledPacks(dir.toAbsolutePath());
             if (fpNames.size() != 1) {
-                throw new ArgumentParsingException(CliMessages.MESSAGES.unexpectedPackageInSelfUpdate(dir.toString()));
+                throw CliMessages.MESSAGES.unexpectedPackageInSelfUpdate(dir.toString());
             }
             if (!fpNames.stream().allMatch(PROSPERO_FP_ZIP::equals)) {
-                throw new ArgumentParsingException(CliMessages.MESSAGES.unexpectedPackageInSelfUpdate(dir.toString()));
+                throw CliMessages.MESSAGES.unexpectedPackageInSelfUpdate(dir.toString());
             }
         } catch (ProvisioningException e) {
-            throw new ArgumentParsingException(CliMessages.MESSAGES.unableToParseSelfUpdateData(), e);
+            throw CliMessages.MESSAGES.unableToParseSelfUpdateData(e);
         }
     }
 
-    private static Path detectProsperoInstallationPath() throws ArgumentParsingException {
+    public static Path detectProsperoInstallationPath() throws ArgumentParsingException {
         final String modulePath = System.getProperty(JBOSS_MODULE_PATH);
         if (modulePath == null) {
-            throw new ArgumentParsingException(CliMessages.MESSAGES.unableToLocateProsperoInstallation());
+            throw CliMessages.MESSAGES.unableToLocateProsperoInstallation();
         }
         return Paths.get(modulePath).toAbsolutePath().getParent();
     }

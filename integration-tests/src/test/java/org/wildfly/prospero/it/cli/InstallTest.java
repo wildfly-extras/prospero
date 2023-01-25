@@ -45,11 +45,11 @@ public class InstallTest {
 
     @Test
     public void testInstallWithProvisionConfig() throws Exception {
-        Path provisionConfig = MetadataTestUtils.prepareProvisionConfig("channels/wfcore-19-base.yaml");
+        Path channelsFile = MetadataTestUtils.prepareChannel("manifests/wfcore-base.yaml");
 
         ExecutionUtils.prosperoExecution(CliConstants.Commands.INSTALL,
-                        CliConstants.PROVISION_CONFIG, provisionConfig.toString(),
-                        CliConstants.FPL, "wildfly-core@maven(org.jboss.universe:community-universe):19.0",
+                        CliConstants.CHANNELS, channelsFile.toString(),
+                        CliConstants.FPL, "org.wildfly.core:wildfly-core-galleon-pack::zip",
                         CliConstants.DIR, targetDir.getAbsolutePath())
                 .withTimeLimit(10, TimeUnit.MINUTES)
                 .execute()

@@ -35,6 +35,7 @@ import org.wildfly.prospero.api.InstallationMetadata;
 import org.wildfly.prospero.api.exceptions.MetadataException;
 import org.wildfly.prospero.cli.ReturnCodes;
 import org.wildfly.prospero.cli.commands.CliConstants;
+import org.wildfly.prospero.it.commonapi.WfCoreTestBase;
 import org.wildfly.prospero.promotion.ArtifactBundle;
 import org.wildfly.prospero.it.ExecutionUtils;
 import org.wildfly.prospero.test.MetadataTestUtils;
@@ -58,7 +59,7 @@ public class PatchingTest {
 
     public static final String PATCHED_GROUP_ID = "io.undertow";
     public static final String PATCHED_ARTIFACT_ID = "undertow-core";
-    public static final String BASE_VERSION = "2.2.17.Final";
+    public static final String BASE_VERSION = WfCoreTestBase.UNDERTOW_VESION;
     public static final String PATCHED_VERSION = BASE_VERSION + "-patch001";
     public static final String PATCHED_JAR_NAME = PATCHED_ARTIFACT_ID + "-" + PATCHED_VERSION + ".jar";
     public static final Path UNDERTOW_MODULE_PATH = Paths.get("io", "undertow", "core", "main");
@@ -96,7 +97,7 @@ public class PatchingTest {
                 .assertReturnCode(ReturnCodes.SUCCESS);
 
         // apply update
-        ExecutionUtils.prosperoExecution(CliConstants.Commands.UPDATE,
+        ExecutionUtils.prosperoExecution(CliConstants.Commands.UPDATE, CliConstants.Commands.PERFORM,
                         CliConstants.DIR, targetDir.getAbsolutePath(),
                         CliConstants.Y)
                 .execute()
@@ -137,7 +138,7 @@ public class PatchingTest {
             ExecutionUtils.prosperoExecution(CliConstants.Commands.CHANNEL, CliConstants.Commands.CUSTOMIZATION_INIT_CHANNEL,
                             CliConstants.DIR, targetDir.getAbsolutePath(),
                             CliConstants.CUSTOMIZATION_REPOSITORY_URL, repositoryUrl,
-                            CliConstants.CUSTOMIZATION_CHANNEL_NAME, TEST_CUSTOM_CHANNEL)
+                            CliConstants.CHANNEL_MANIFEST, TEST_CUSTOM_CHANNEL)
                     .execute()
                     .assertReturnCode(ReturnCodes.SUCCESS);
 
@@ -149,12 +150,12 @@ public class PatchingTest {
                             CliConstants.Y,
                             CliConstants.CUSTOMIZATION_ARCHIVE, customizationArchive.toString(),
                             CliConstants.CUSTOMIZATION_REPOSITORY_URL, repositoryPath.toUri().toURL().toString(),
-                            CliConstants.CUSTOMIZATION_CHANNEL_NAME, TEST_CUSTOM_CHANNEL)
+                            CliConstants.CHANNEL_MANIFEST, TEST_CUSTOM_CHANNEL)
                     .execute()
                     .assertReturnCode(ReturnCodes.SUCCESS);
 
             // apply update
-            ExecutionUtils.prosperoExecution(CliConstants.Commands.UPDATE,
+            ExecutionUtils.prosperoExecution(CliConstants.Commands.UPDATE, CliConstants.Commands.PERFORM,
                             CliConstants.DIR, targetDir.getAbsolutePath(),
                             CliConstants.Y)
                     .execute()
@@ -177,11 +178,11 @@ public class PatchingTest {
     }
 
     private void installCore() throws Exception {
-        Path provisionConfig = MetadataTestUtils.prepareProvisionConfig("channels/wfcore-19-base.yaml");
+        Path channelsFile = MetadataTestUtils.prepareChannel("manifests/wfcore-base.yaml");
 
         ExecutionUtils.prosperoExecution(CliConstants.Commands.INSTALL,
-                        CliConstants.PROVISION_CONFIG, provisionConfig.toString(),
-                        CliConstants.FPL, "wildfly-core@maven(org.jboss.universe:community-universe):19.0",
+                        CliConstants.CHANNELS, channelsFile.toString(),
+                        CliConstants.FPL, "org.wildfly.core:wildfly-core-galleon-pack::zip",
                         CliConstants.DIR, targetDir.getAbsolutePath())
                 .execute()
                 .assertReturnCode(ReturnCodes.SUCCESS);
@@ -203,7 +204,7 @@ public class PatchingTest {
         final DefaultRepositorySystemSession session = msm.newRepositorySystemSession(system);
         final ArtifactRequest req = new ArtifactRequest();
         req.setArtifact(new DefaultArtifact(PATCHED_GROUP_ID, PATCHED_ARTIFACT_ID, "jar", BASE_VERSION));
-        req.setRepositories(Arrays.asList(REPOSITORY_MAVEN_CENTRAL.toRemoteRepository()));
+        req.setRepositories(Arrays.asList(WfCoreTestBase.toRemoteRepository(REPOSITORY_MAVEN_CENTRAL)));
         final ArtifactResult res = system.resolveArtifact(session, req);
         final File resolvedFile = res.getArtifact().getFile();
         return resolvedFile;

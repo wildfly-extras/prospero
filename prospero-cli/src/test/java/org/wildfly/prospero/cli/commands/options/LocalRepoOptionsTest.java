@@ -37,7 +37,7 @@ public class LocalRepoOptionsTest {
 
     @Test
     public void defaultLocalPathIfNoOptionsSpecified() throws Exception {
-        assertEquals(Optional.of(MavenSessionManager.LOCAL_MAVEN_REPO), LocalRepoOptions.getLocalRepo(null));
+        assertEquals(Optional.of(MavenSessionManager.LOCAL_MAVEN_REPO), LocalRepoOptions.getLocalMavenCache(null));
     }
 
     @Test
@@ -45,25 +45,25 @@ public class LocalRepoOptionsTest {
         final LocalRepoOptions localRepoParam = new LocalRepoOptions();
         localRepoParam.noLocalCache = true;
 
-        assertEquals(Optional.empty(), LocalRepoOptions.getLocalRepo(localRepoParam));
+        assertEquals(Optional.empty(), LocalRepoOptions.getLocalMavenCache(localRepoParam));
     }
 
     @Test
     public void customLocalPathIfLocalRepoSpecified() throws Exception {
         final LocalRepoOptions localRepoParam = new LocalRepoOptions();
         final Path localRepo = temp.newFolder().toPath();
-        localRepoParam.localRepo = localRepo;
+        localRepoParam.localMavenCache = localRepo;
 
-        assertEquals(Optional.of(localRepo), LocalRepoOptions.getLocalRepo(localRepoParam));
+        assertEquals(Optional.of(localRepo), LocalRepoOptions.getLocalMavenCache(localRepoParam));
     }
 
     @Test
     public void localRepoPointsAtFile() throws Exception {
         final LocalRepoOptions localRepoParam = new LocalRepoOptions();
         File file = temp.newFile();
-        localRepoParam.localRepo = file.toPath();
+        localRepoParam.localMavenCache = file.toPath();
         Assert.assertThrows(ArgumentParsingException.class, () ->
-                LocalRepoOptions.getLocalRepo(localRepoParam)
+                LocalRepoOptions.getLocalMavenCache(localRepoParam)
         );
     }
 }

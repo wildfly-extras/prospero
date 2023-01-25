@@ -20,33 +20,38 @@ package org.wildfly.prospero.promotion;
 import org.eclipse.aether.DefaultRepositorySystemSession;
 import org.eclipse.aether.RepositorySystem;
 import org.eclipse.aether.artifact.DefaultArtifact;
+import org.eclipse.aether.deployment.DeployRequest;
 import org.eclipse.aether.deployment.DeploymentException;
 import org.eclipse.aether.repository.RemoteRepository;
 import org.eclipse.aether.resolution.ArtifactResolutionException;
 import org.eclipse.aether.resolution.VersionRangeRequest;
 import org.eclipse.aether.resolution.VersionRangeResult;
 import org.eclipse.aether.version.Version;
+import org.jboss.galleon.ProvisioningException;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
-import org.wildfly.channel.Channel;
-import org.wildfly.channel.ChannelMapper;
+import org.wildfly.channel.ChannelManifest;
+import org.wildfly.channel.ChannelManifestMapper;
+import org.wildfly.channel.Repository;
 import org.wildfly.channel.Stream;
 import org.wildfly.channel.UnresolvedMavenArtifactException;
 import org.wildfly.channel.maven.ChannelCoordinate;
 import org.wildfly.channel.maven.VersionResolverFactory;
+import org.wildfly.channel.spi.MavenVersionsResolver;
+import org.wildfly.channel.version.VersionMatcher;
 import org.wildfly.prospero.wfchannel.MavenSessionManager;
 
 import java.io.File;
 import java.io.IOException;
-import java.net.MalformedURLException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.Assert.assertEquals;
@@ -97,7 +102,7 @@ public class ArtifactPromoterTest {
         mockDeployArtifact(artifact, sourceRepositoryPath);
 
         List<Stream> streams = Arrays.asList(new Stream("stream", "one", "1.2.3"));
-        mockDeployedChannel(streams, "1.0.0.Final-rev00000001");
+        mockDeployedManifest(streams, "1.0.0.Final-rev00000001");
 
         final ChannelCoordinate channelGa = new ChannelCoordinate("test", "channel");
         promote(new CustomArtifactList(Arrays.asList(artifact)), channelGa);
@@ -107,9 +112,19 @@ public class ArtifactPromoterTest {
         assertStreamMatches("stream", "one", "1.2.3", channelGa);
     }
 
-    private void mockDeployArtifact(CustomArtifact artifact, Path sourceRepositoryPath) throws IOException {
-        Files.createDirectories(artifactPath(artifact, sourceRepositoryPath).getParent());
-        Files.createFile(artifactPath(artifact, sourceRepositoryPath));
+    private void mockDeployArtifact(CustomArtifact artifact, Path sourceRepositoryPath) throws IOException, ProvisioningException, DeploymentException {
+        final MavenSessionManager msm = new MavenSessionManager();
+        final RepositorySystem system = msm.newRepositorySystem();
+        final DefaultRepositorySystemSession session = msm.newRepositorySystemSession(system);
+
+        final DeployRequest deployRequest = new DeployRequest();
+        final File file = temp.newFile();
+        Files.writeString(file.toPath(), "test");
+        final DefaultArtifact mvnArtifact = new DefaultArtifact(artifact.getGroupId(), artifact.getArtifactId(),
+                artifact.getClassifier(), artifact.getExtension(), artifact.getVersion(), null, file);
+        deployRequest.setArtifacts(List.of(mvnArtifact));
+        deployRequest.setRepository(new RemoteRepository.Builder("source", "default", sourceRepositoryPath.toUri().toURL().toString()).build());
+        system.deploy(session, deployRequest);
     }
 
     @Test
@@ -157,13 +172,13 @@ public class ArtifactPromoterTest {
         mockDeployArtifact(artifact, targetRepositoryPath);
 
         List<Stream> streams = Arrays.asList(new Stream("stream", "one", "1.2.3"));
-        mockDeployedChannel(streams, "1.0.0.Final-rev00000001");
+        mockDeployedManifest(streams, "1.0.0.Final-rev00000001");
 
         final ChannelCoordinate channelGa = new ChannelCoordinate("test", "channel");
         promote(new CustomArtifactList(Arrays.asList(artifact)), channelGa);
 
         final VersionRangeRequest request = new VersionRangeRequest(
-                new DefaultArtifact("test", "channel",  "channel", "yaml", "[0,)"),
+                new DefaultArtifact("test", "channel",  ChannelManifest.CLASSIFIER, ChannelManifest.EXTENSION, "[0,)"),
                 Arrays.asList(targetRepository), null);
         VersionRangeResult versions = system.resolveVersionRange(session, request);
         assertThat(versions.getVersions().stream().map(Version::toString)).containsOnly(
@@ -177,7 +192,7 @@ public class ArtifactPromoterTest {
         mockDeployArtifact(artifact, sourceRepositoryPath);
 
         List<Stream> streams = Arrays.asList(new Stream("stream", "one", "1.2.3"));
-        mockDeployedChannel(streams, "1.0.0.Final-rev99999999");
+        mockDeployedManifest(streams, "1.0.0.Final-rev99999999");
 
         final ChannelCoordinate channelGa = new ChannelCoordinate("test", "channel");
         try {
@@ -194,7 +209,7 @@ public class ArtifactPromoterTest {
         mockDeployArtifact(artifact, sourceRepositoryPath);
 
         List<Stream> streams = Arrays.asList(new Stream("stream", "one", "1.2.3"));
-        mockDeployedChannel(streams, "1.0.0.Final-wrongsuffix");
+        mockDeployedManifest(streams, "1.0.0.Final-wrongsuffix");
 
         final ChannelCoordinate channelGa = new ChannelCoordinate("test", "channel");
         try {
@@ -205,47 +220,54 @@ public class ArtifactPromoterTest {
         }
     }
 
-    private void mockDeployedChannel(List<Stream> streams, String version) throws IOException {
-        Channel channel = new Channel("custom-channel", null, null, null, streams);
-        final CustomArtifact existingChannel = new CustomArtifact("test", "channel",  "channel", "yaml", version);
-        Files.createDirectories(artifactPath(existingChannel, targetRepositoryPath).getParent());
+    private void mockDeployedManifest(List<Stream> streams, String version) throws IOException, DeploymentException {
+        ChannelManifest manifest = new ChannelManifest("custom-channel", null, null, streams);
 
-        final Path file = Files.createFile(artifactPath(existingChannel, targetRepositoryPath));
-        Files.writeString(file, ChannelMapper.toYaml(channel));
-        Files.writeString(file.getParent().getParent().resolve("maven-metadata.xml"),
-                "<metadata>" +
-                        "<groupId>test</groupId>" +
-                        "<artifactId>channel</artifactId>" +
-                        "<versioning>" +
-                        "<versions><version>" + version + "</version></versions>" +
-                        "</versioning>" +
-                        "</metadata>");
+        final DeployRequest deployRequest = new DeployRequest();
+        final File file = temp.newFile();
+        Files.writeString(file.toPath(), ChannelManifestMapper.toYaml(manifest));
+        final DefaultArtifact mvnArtifact = new DefaultArtifact("test", "channel", ChannelManifest.CLASSIFIER,
+                ChannelManifest.EXTENSION, version, null, file);
+        deployRequest.setArtifacts(List.of(mvnArtifact));
+        deployRequest.setRepository(new RemoteRepository.Builder("source", "default", targetRepositoryPath.toUri().toURL().toString()).build());
+        system.deploy(session, deployRequest);
     }
 
-    private void assertChannelFileNotCreated(ChannelCoordinate channelGa) throws MalformedURLException {
+    private void assertChannelFileNotCreated(ChannelCoordinate channelGa) throws IOException {
         try {
-            getChannels(channelGa).isEmpty();
+            getManifest(channelGa);
             fail("The channel file should not have been created when no artifacts are given");
         } catch (UnresolvedMavenArtifactException e) {
             // OK
         }
     }
 
-    private void assertStreamMatches(String groupId, String artifactId, String version, ChannelCoordinate channelGa) throws MalformedURLException {
+    private void assertStreamMatches(String groupId, String artifactId, String version, ChannelCoordinate channelGa) throws IOException {
 
-        final List<Channel> channels = getChannels(channelGa);
+        final ChannelManifest manifest = getManifest(channelGa);
 
-        final Channel channel = channels.get(0);
-        final Optional<Stream> stream = channel.getStreams().stream()
+        final Optional<Stream> stream = manifest.getStreams().stream()
                 .filter(s -> s.getGroupId().equals(groupId) && s.getArtifactId().equals(artifactId))
                 .findFirst();
         assertTrue(stream.isPresent());
         assertEquals(version, stream.get().getVersion());
     }
 
-    private List<Channel> getChannels(ChannelCoordinate channelGa) throws MalformedURLException {
-        return new VersionResolverFactory(system, session, Arrays.asList(targetRepository))
-                .resolveChannels(Arrays.asList(channelGa));
+    private ChannelManifest getManifest(ChannelCoordinate channelGa) throws IOException {
+        // TODO: that's wrong
+        final MavenVersionsResolver resolver = new VersionResolverFactory(system, session).create(Arrays.asList(new Repository(targetRepository.getId(), targetRepository.getUrl())));
+
+        final Set<String> allVersions = resolver.getAllVersions(channelGa.getGroupId(), channelGa.getArtifactId(),
+                ChannelManifest.EXTENSION, ChannelManifest.CLASSIFIER);
+        final Optional<String> latestVersion = allVersions.stream().sorted(VersionMatcher.COMPARATOR.reversed()).findFirst();
+
+        if (latestVersion.isEmpty()) {
+            throw new UnresolvedMavenArtifactException();
+        }
+
+        final File file = resolver.resolveArtifact(channelGa.getGroupId(), channelGa.getArtifactId(),
+                ChannelManifest.EXTENSION, ChannelManifest.CLASSIFIER, latestVersion.get());
+        return ChannelManifestMapper.fromString(Files.readString(file.toPath()));
     }
 
     private void assertArtifactInRepository(CustomArtifact artifactCoordinate) throws IOException {

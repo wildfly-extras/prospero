@@ -32,14 +32,17 @@ import org.eclipse.aether.resolution.VersionRangeResolutionException;
 import org.eclipse.aether.resolution.VersionRangeResult;
 import org.jboss.logging.Logger;
 import org.wildfly.channel.ArtifactCoordinate;
-import org.wildfly.channel.Channel;
-import org.wildfly.channel.ChannelMapper;
+import org.wildfly.channel.ChannelManifest;
+import org.wildfly.channel.ChannelManifestMapper;
+import org.wildfly.channel.Repository;
 import org.wildfly.channel.Stream;
 import org.wildfly.channel.maven.ChannelCoordinate;
 import org.wildfly.channel.maven.VersionResolverFactory;
+import org.wildfly.channel.spi.MavenVersionsResolver;
+import org.wildfly.prospero.Messages;
 
+import java.io.File;
 import java.io.IOException;
-import java.net.MalformedURLException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
@@ -64,7 +67,7 @@ public class ArtifactPromoter {
         this.targetRepository = targetRepository;
 
         if (!targetRepository.getProtocol().equals("file")) {
-            throw new IllegalArgumentException("Promoting to non-file repositories is not currently supported");
+            throw Messages.MESSAGES.unsupportedPromotionTarget();
         }
     }
 
@@ -92,13 +95,13 @@ public class ArtifactPromoter {
 
         Optional<String> version = latestAvailableChannelVersion(vr);
 
-        final Channel channel = resolveDeployedChannel(coordinate, version);
+        final ChannelManifest manifest = resolveDeployedChannel(coordinate, version);
 
-        if (!channel.getStreams().addAll(streams)) {
+        if (!manifest.getStreams().addAll(streams)) {
             return;
         }
 
-        deployChannel(coordinate, version, channel);
+        deployChannel(coordinate, version, manifest);
     }
 
     private List<ArtifactResult> resolveArtifactsFromBundle(List<ArtifactCoordinate> artifacts, RemoteRepository sourceRepository) throws ArtifactResolutionException {
@@ -135,31 +138,34 @@ public class ArtifactPromoter {
         return Optional.empty();
     }
 
-    private Channel resolveDeployedChannel(ChannelCoordinate coordinate, Optional<String> version) throws MalformedURLException {
+    private ChannelManifest resolveDeployedChannel(ChannelCoordinate coordinate, Optional<String> version) throws IOException {
 
         if (version.isPresent()) {
             log.debugf("Found existing customization channel with version %s", version.get());
             ChannelCoordinate fullCoordinate = new ChannelCoordinate(coordinate.getGroupId(), coordinate.getArtifactId(), version.get());
 
-            return new VersionResolverFactory(system, session, Arrays.asList(targetRepository))
-                    .resolveChannels(Arrays.asList(fullCoordinate)).get(0);
+            final MavenVersionsResolver resolver = new VersionResolverFactory(system, session).create(Arrays.asList(new Repository(targetRepository.getId(), targetRepository.getUrl())));
+
+            final File file = resolver.resolveArtifact(coordinate.getGroupId(), coordinate.getArtifactId(),
+                    ChannelManifest.EXTENSION, ChannelManifest.CLASSIFIER, version.get());
+            return ChannelManifestMapper.fromString(Files.readString(file.toPath()));
         } else {
             log.debugf("No existing customization channel found, creating new channel");
-            return new Channel("custom-channel", "Customization channel", null, null, new ArrayList<>());
+            return new ChannelManifest("custom-channel", "custom-channel", "Customization channel", new ArrayList<>());
         }
     }
 
-    private void deployChannel(ChannelCoordinate coordinate, Optional<String> version, Channel channel) throws IOException, DeploymentException {
-        final Path tempFile = Files.createTempFile("channel", "yaml");
+    private void deployChannel(ChannelCoordinate coordinate, Optional<String> version, ChannelManifest manifest) throws IOException, DeploymentException {
+        final Path tempFile = Files.createTempFile(ChannelManifest.CLASSIFIER, ChannelManifest.EXTENSION);
         try {
             log.debugf("Writing new customization channel to %s", tempFile);
-            Files.writeString(tempFile, ChannelMapper.toYaml(channel));
+            Files.writeString(tempFile, ChannelManifestMapper.toYaml(manifest));
             String newVersion = incrementVersion(version.orElse("1.0.0.Final-rev00000001"));
 
 
             log.debugf("Deploying new customization channel as version %s to %s", newVersion, targetRepository);
             final DefaultArtifact channelArtifact = new DefaultArtifact(coordinate.getGroupId(), coordinate.getArtifactId(),
-                    "channel", "yaml", newVersion, null, tempFile.toFile());
+                    ChannelManifest.CLASSIFIER, ChannelManifest.EXTENSION, newVersion, null, tempFile.toFile());
             channelArtifact.setFile(tempFile.toFile());
 
             final DeployRequest deployRequest = new DeployRequest();
@@ -174,7 +180,7 @@ public class ArtifactPromoter {
     private String incrementVersion(String baseVersion) {
         final Pattern versionSuffixFormat = Pattern.compile(".*-rev\\d{8}");
         if (!versionSuffixFormat.matcher(baseVersion).matches()) {
-            throw new IllegalArgumentException("Wrong format of custom channel version " + baseVersion);
+            throw Messages.MESSAGES.wrongVersionFormat(baseVersion);
         }
 
         final String suffix = "-rev";
@@ -185,7 +191,7 @@ public class ArtifactPromoter {
         int currentVersion = Integer.parseInt(suffixVersion);
 
         if (currentVersion == 99_999_999) {
-            throw new IllegalArgumentException("Custom channel version exceeded limit " + baseVersion);
+            throw Messages.MESSAGES.versionLimitExceeded(baseVersion);
         }
 
         return String.format("%s%08d", coreVersion, (currentVersion + 1));

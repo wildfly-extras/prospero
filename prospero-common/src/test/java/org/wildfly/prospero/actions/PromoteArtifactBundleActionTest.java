@@ -18,20 +18,18 @@
 package org.wildfly.prospero.actions;
 
 import org.eclipse.aether.artifact.DefaultArtifact;
-import org.jboss.galleon.layout.FeaturePackUpdatePlan;
 import org.jboss.galleon.progresstracking.ProgressCallback;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
 import org.wildfly.prospero.api.ArtifactChange;
-import org.wildfly.prospero.model.ChannelRef;
+import org.wildfly.prospero.api.ArtifactUtils;
 import org.wildfly.prospero.promotion.ArtifactBundle;
 
 import java.net.URL;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 
@@ -47,7 +45,7 @@ public class PromoteArtifactBundleActionTest {
     public void channelCoordinateMustHaveGA() throws Exception {
         try {
             new PromoteArtifactBundleAction(new TestConsole()).promote(createCustomArchive(), new URL("file://test/test-repo"),
-                    ChannelRef.fromString("file://test/test.zip"));
+                    ArtifactUtils.manifestCoordFromString("file://test/test.zip"));
             fail("URL Channel GA should not be allowed");
         } catch (IllegalArgumentException e) {
             assertTrue(e.getMessage().contains("Channel reference has to use Maven GA."));
@@ -59,7 +57,8 @@ public class PromoteArtifactBundleActionTest {
         final PromoteArtifactBundleAction action = new PromoteArtifactBundleAction(new TestConsole());
         final Path targetRepo = temp.newFolder().toPath();
 
-        action.promote(createCustomArchive(), targetRepo.toUri().toURL(), ChannelRef.fromString("org.test:test-channel"));
+        action.promote(createCustomArchive(), targetRepo.toUri().toURL(),
+                ArtifactUtils.manifestCoordFromString("org.test:test-channel"));
 
         assertTrue(Files.exists(targetRepo.resolve(Paths.get("foo", "bar", "test", "1.2.3", "test-1.2.3.jar"))));
     }
@@ -69,7 +68,7 @@ public class PromoteArtifactBundleActionTest {
         return ArtifactBundle.createCustomizationArchive(Collections.singletonList(testArtifact), temp.newFile("archive.zip"));
     }
 
-    private class TestConsole implements Console {
+    private static class TestConsole implements Console {
 
         @Override
         public void installationComplete() {
@@ -82,7 +81,7 @@ public class PromoteArtifactBundleActionTest {
         }
 
         @Override
-        public void updatesFound(Collection<FeaturePackUpdatePlan> updates, List<ArtifactChange> changes) {
+        public void updatesFound(List<ArtifactChange> changes) {
 
         }
 
@@ -99,6 +98,16 @@ public class PromoteArtifactBundleActionTest {
         @Override
         public void updatesComplete() {
 
+        }
+
+        @Override
+        public void buildUpdatesComplete() {
+
+        }
+
+        @Override
+        public boolean confirmBuildUpdates() {
+            return false;
         }
     }
 }

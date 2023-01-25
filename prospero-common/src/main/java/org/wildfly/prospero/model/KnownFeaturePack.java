@@ -18,38 +18,30 @@
 package org.wildfly.prospero.model;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
-import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
-import org.eclipse.aether.repository.RemoteRepository;
+import org.wildfly.channel.Channel;
 
 import java.io.File;
 import java.io.IOException;
+import java.net.URI;
 import java.net.URL;
-import java.util.Collections;
 import java.util.List;
-import java.util.stream.Collectors;
 
 public class KnownFeaturePack {
-    private String name;
-    private String location;
-    private List<String> channelGavs;
-    private List<String> packages;
-    private List<RepositoryRef> repositories;
+    private final String name;
+    private final List<Channel> channels;
+    private final URI galleonConfiguration;
 
     @JsonCreator
     public KnownFeaturePack(@JsonProperty(value = "name") String name,
-                            @JsonProperty(value = "location") String location,
-                            @JsonProperty(value = "channelGavs") List<String> channelGav,
-                            @JsonProperty(value = "packages") List<String> packages,
-                            @JsonProperty(value = "repositories") List<RepositoryRef> repositories) {
+                            @JsonProperty(value = "channels") List<Channel> channels,
+                            @JsonProperty(value = "galleonConfiguration") URI galleonConfiguration) {
         this.name = name;
-        this.location = location;
-        this.channelGavs = channelGav;
-        this.packages = packages;
-        this.repositories = repositories;
+        this.channels = channels;
+        this.galleonConfiguration = galleonConfiguration;
     }
 
     public static void write(List<KnownFeaturePack> packs, File configFile) throws IOException {
@@ -66,34 +58,20 @@ public class KnownFeaturePack {
         return name;
     }
 
-    public String getLocation() {
-        return location;
+    public List<Channel> getChannels() {
+        return channels;
     }
 
-    public List<String> getPackages() {
-        return packages==null?Collections.emptyList():packages;
-    }
-
-    public List<RepositoryRef> getRepositories() {
-        return repositories;
-    }
-
-    public List<String> getChannelGavs() {
-        return channelGavs==null?Collections.emptyList():channelGavs;
-    }
-
-    @JsonIgnore
-    public List<RemoteRepository> getRemoteRepositories() {
-        return repositories.stream().map(RepositoryRef::toRemoteRepository).collect(Collectors.toList());
+    public URI getGalleonConfiguration() {
+        return galleonConfiguration;
     }
 
     @Override
     public String toString() {
-        return "SupportedFpls{" +
+        return "KnownFeaturePack{" +
                 "name='" + name + '\'' +
-                ", location='" + location + '\'' +
-                ", packages=" + packages +
-                ", repositories=" + repositories +
+                ", channels=" + channels +
+                ", galleonConfiguration=" + galleonConfiguration +
                 '}';
     }
 }

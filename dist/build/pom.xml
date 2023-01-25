@@ -61,7 +61,7 @@
                                     <artifactId>prospero-standalone-galleon-pack</artifactId>
                                     <version>${project.version}</version>
                                     <type>yaml</type>
-                                    <classifier>channel</classifier>
+                                    <classifier>manifest</classifier>
                                     <outputDirectory>${basedir}/target/${project.build.finalName}/.installation</outputDirectory>
                                     <destFileName>manifest.yaml</destFileName>
                                 </artifactItem>

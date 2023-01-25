@@ -21,7 +21,6 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.List;
 
 import org.apache.commons.io.FileUtils;
@@ -32,6 +31,9 @@ import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
 import org.wildfly.channel.Channel;
+import org.wildfly.channel.ChannelManifest;
+import org.wildfly.channel.ChannelManifestCoordinate;
+import org.wildfly.channel.Repository;
 import org.wildfly.channel.Stream;
 import org.wildfly.prospero.api.ArtifactChange;
 import org.wildfly.prospero.api.InstallationMetadata;
@@ -106,7 +108,7 @@ public class LocalInstallationHistoryTest {
 
         final SavedState previousState = metadata.getRevisions().get(1);
 
-        final List<ArtifactChange> changes = metadata.getChangesSince(previousState);
+        final List<ArtifactChange> changes = metadata.getChangesSince(previousState).getArtifactChanges();
         assertEquals(1, changes.size());
         assertEquals("foo:bar", changes.get(0).getArtifactName());
         assertEquals("1.1.1", changes.get(0).getOldVersion().get());
@@ -121,21 +123,24 @@ public class LocalInstallationHistoryTest {
 
         final SavedState previousState = metadata.getRevisions().get(0);
 
-        final List<ArtifactChange> changes = metadata.getChangesSince(previousState);
+        final List<ArtifactChange> changes = metadata.getChangesSince(previousState).getArtifactChanges();
         assertEquals(0, changes.size());
     }
 
     private void updateManifest(InstallationMetadata metadata) throws MetadataException {
-        final Channel channel = new Channel("test", "", null, null,
+        final ChannelManifest manifest = new ChannelManifest("test", "test-id", "",
                 Arrays.asList(new Stream("foo", "bar", "1.1.2", null)));
-        metadata.setChannel(channel);
+        metadata.setManifest(manifest);
         metadata.recordProvision(true);
     }
 
     private InstallationMetadata mockInstallation() throws Exception {
-        final Channel channel = MetadataTestUtils.createManifest(Arrays.asList(new Stream("foo", "bar", "1.1.1", null)));
-        InstallationMetadata installationMetadata = MetadataTestUtils.createInstallationMetadata(installation, channel,
-                Collections.emptyList(), Collections.emptyList());
+        final ChannelManifest manifest = MetadataTestUtils.createManifest(Arrays.asList(new Stream("foo", "bar", "1.1.1", null)));
+        InstallationMetadata installationMetadata = MetadataTestUtils.createInstallationMetadata(installation, manifest,
+                List.of(new Channel("test", "", null,
+                        List.of(new Repository("test", "file://test.org/test")),
+                        new ChannelManifestCoordinate("org.test", "manifest"),
+                        null, null)));
         return installationMetadata;
     }
 }
