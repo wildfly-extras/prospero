@@ -11,7 +11,7 @@
 
     <groupId>org.wildfly.prospero</groupId>
     <artifactId>prospero</artifactId>
-    <version>1.0.0.Beta5</version>
+    <version>1.0.0.Beta6-SNAPSHOT</version>
     <packaging>pom</packaging>
 
     <properties>
@@ -484,8 +484,4 @@
             <layout>default</layout>
         </repository>
     </repositories>
-
-  <scm>
-    <tag>1.0.0.Beta5</tag>
-  </scm>
 </project>
