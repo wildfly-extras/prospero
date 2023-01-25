@@ -43,7 +43,7 @@
         <version.org.jboss.modules>2.0.2.Final</version.org.jboss.modules>
         <version.org.jboss.xnio>3.8.7.Final</version.org.jboss.xnio>
         <version.org.wildfly.galleon-plugins>6.0.0.Final</version.org.wildfly.galleon-plugins>
-        <version.org.wildfly.installation-manager>1.0-SNAPSHOT</version.org.wildfly.installation-manager>
+        <version.org.wildfly.installation-manager>1.0.0.Beta1</version.org.wildfly.installation-manager>
         <version.org.mockito>3.12.4</version.org.mockito>
         <version.junit>4.13.2</version.junit>
         <version.maven-shade-plugin>2.3</version.maven-shade-plugin>
