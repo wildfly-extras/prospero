@@ -77,7 +77,7 @@
                     <groupId>org.wildfly.prospero</groupId>
                     <artifactId>prospero-wildfly-galleon-pack</artifactId>
                     <version>${project.version}</version>
-                    <classifier>channel</classifier>
+                    <classifier>manifest</classifier>
                     <type>yaml</type>
                     <scope>test</scope>
                     <exclusions>
@@ -106,7 +106,7 @@
                                             <groupId>org.wildfly.prospero</groupId>
                                             <artifactId>prospero-wildfly-galleon-pack</artifactId>
                                             <version>${project.version}</version>
-                                            <classifier>channel</classifier>
+                                            <classifier>manifest</classifier>
                                             <type>yaml</type>
                                             <overWrite>true</overWrite>
                                             <outputDirectory>target/test-classes/manifests</outputDirectory>

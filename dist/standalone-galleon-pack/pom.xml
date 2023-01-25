@@ -89,7 +89,7 @@
                         <phase>compile</phase>
                         <configuration>
                           <resources-dir>${basedir}/target/resources</resources-dir>
-                          <generate-channel>true</generate-channel>
+                          <generate-channel-manifest>true</generate-channel-manifest>
                         </configuration>
                     </execution>
                 </executions>
