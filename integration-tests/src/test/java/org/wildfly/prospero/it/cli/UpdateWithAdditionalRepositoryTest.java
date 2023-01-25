@@ -53,7 +53,7 @@ public class UpdateWithAdditionalRepositoryTest extends CliTestBase {
     public void updateCli() throws Exception {
         final Path manifestPath = temp.newFile().toPath();
         final Path provisionConfig = temp.newFile().toPath();
-        MetadataTestUtils.copyManifest("manifests/wfcore-19-base.yaml", manifestPath);
+        MetadataTestUtils.copyManifest("manifests/wfcore-base.yaml", manifestPath);
         MetadataTestUtils.prepareChannel(provisionConfig, List.of(manifestPath.toUri().toURL()));
 
         install(provisionConfig, targetDir.toPath());

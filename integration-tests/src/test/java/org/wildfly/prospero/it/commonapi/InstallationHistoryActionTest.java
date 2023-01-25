@@ -120,7 +120,7 @@ public class InstallationHistoryActionTest extends WfCoreTestBase {
         // install server
         final Path manifestPath = temp.newFile().toPath();
         channelsFile = temp.newFile().toPath();
-        MetadataTestUtils.copyManifest("manifests/wfcore-19-base.yaml", manifestPath);
+        MetadataTestUtils.copyManifest("manifests/wfcore-base.yaml", manifestPath);
         MetadataTestUtils.prepareChannel(channelsFile, List.of(manifestPath.toUri().toURL()));
 
         final Path modulesPaths = outputPath.resolve(Paths.get("modules", "system", "layers", "base"));
