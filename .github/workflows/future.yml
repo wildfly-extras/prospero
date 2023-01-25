@@ -22,12 +22,6 @@ jobs:
       - uses: actions/checkout@v2
         with:
           fetch-depth: 0
-      - uses: actions/checkout@v2
-        with:
-          fetch-depth: 0
-          repository: spyrkob/wildfly-channel
-          path: wildfly-channel
-          ref: manifest
       - uses: actions/cache@v1
         with:
           path: ~/.m2/repository
@@ -40,8 +34,6 @@ jobs:
           java-version: ${{ matrix.jdk }}
           distribution: 'adopt'
           cache: maven
-      - name: Build wildfly-channel
-        run: cd wildfly-channel && mvn clean install -DskipTests
       - name: Build and test
         run: mvn clean install -DallTests -Pdist
       - uses: actions/upload-artifact@v2
