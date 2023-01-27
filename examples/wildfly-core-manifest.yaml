@@ -277,7 +277,7 @@ streams:
     version: "1.2.1.Final"
   - groupId: "org.wildfly.galleon-plugins"
     artifactId: "wildfly-config-gen"
-    version: "6.2.3.Final"
+    version: "6.2.2.Final"
   - groupId: "org.wildfly.galleon-plugins"
     artifactId: "wildfly-galleon-plugins"
     version: "6.2.3.Final"
