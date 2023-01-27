@@ -19,7 +19,7 @@ setModularJdk() {
 setDefaultModularJvmOptions() {
   setModularJdk
   if [ "$MODULAR_JDK" = "true" ]; then
-    DEFAULT_MODULAR_JVM_OPTIONS=`echo $* | $GREP "\-\-add\-modules"`
+    DEFAULT_MODULAR_JVM_OPTIONS=`echo $* | $GREP "\--add-modules"`
     if [ "x$DEFAULT_MODULAR_JVM_OPTIONS" = "x" ]; then
       # Set default modular jdk options
       # NB: In case an update is made to these exports and opens, make sure that bootable-jar/boot/pom.xml script is in sync.
