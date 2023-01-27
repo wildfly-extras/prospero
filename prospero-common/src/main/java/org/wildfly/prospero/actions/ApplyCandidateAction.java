@@ -63,13 +63,13 @@ import org.wildfly.prospero.galleon.ArtifactCache;
 import org.wildfly.prospero.galleon.GalleonEnvironment;
 import org.wildfly.prospero.installation.git.GitStorage;
 import org.wildfly.prospero.metadata.ProsperoMetadataUtils;
+import org.wildfly.prospero.updates.MarkerFile;
 import org.wildfly.prospero.wfchannel.MavenSessionManager;
 
 /**
  * Merges a "candidate" server into base server. The "candidate" can be an update or revert.
  */
 public class ApplyCandidateAction {
-    public static final Path UPDATE_MARKER_FILE = Path.of(InstallationMetadata.METADATA_DIR, ".update.txt");
     private static final Logger LOGGER = Logger.getLogger(ApplyCandidateAction.class);
     public static final Path STANDALONE_STARTUP_MARKER = Path.of("standalone", "tmp", "startup-marker");
     public static final Path DOMAIN_STARTUP_MARKER = Path.of("domain", "tmp", "startup-marker");
@@ -79,7 +79,28 @@ public class ApplyCandidateAction {
     private final ProvisioningManager provisioningManager;
 
     public enum Type {
-        UPDATE, ROLLBACK
+        UPDATE("UPDATE"), ROLLBACK("ROLLBACK");
+
+        private final String text;
+
+        Type(String text) {
+            this.text = text;
+        }
+
+        public String getText() {
+            return text;
+        }
+
+        public static Type from (final String text) {
+            switch (text) {
+                case "UPDATE":
+                    return ApplyCandidateAction.Type.UPDATE;
+                case "ROLLBACK":
+                    return ApplyCandidateAction.Type.ROLLBACK;
+                default:
+                    throw new IllegalArgumentException("Unexpected operation in the marker file: " + text);
+            }
+        }
     }
 
     public ApplyCandidateAction(Path installationDir, Path updateDir)
@@ -115,7 +136,7 @@ public class ApplyCandidateAction {
      * @throws MetadataException - if unable to read or write the installation of update metadata
      */
     public List<FileConflict> applyUpdate(Type operation) throws ProvisioningException, InvalidUpdateCandidateException, MetadataException {
-        if (!verifyUpdateCandidate()) {
+        if (!verifyCandidate(operation)) {
             throw Messages.MESSAGES.invalidUpdateCandidate(updateDir, installationDir);
         }
 
@@ -140,19 +161,28 @@ public class ApplyCandidateAction {
      * @throws InvalidUpdateCandidateException - if the candidate has no marker file
      * @throws MetadataException - if the metadata of candidate or installation cannot be read
      */
-    public boolean verifyUpdateCandidate() throws InvalidUpdateCandidateException, MetadataException {
-        final Path updateMarkerPath = updateDir.resolve(UPDATE_MARKER_FILE);
+    public boolean verifyCandidate(Type operation) throws InvalidUpdateCandidateException, MetadataException {
+        final Path updateMarkerPath = updateDir.resolve(MarkerFile.UPDATE_MARKER_FILE);
         if (!Files.exists(updateMarkerPath)) {
             if (LOGGER.isDebugEnabled()) {
-                LOGGER.debugf("The update candidate [%s] doesn't have a marker file", updateDir);
+                LOGGER.debugf("The candidate [%s] doesn't have a marker file", updateDir);
             }
             throw Messages.MESSAGES.invalidUpdateCandidate(updateDir, installationDir);
         }
         try {
-            final String hash = Files.readString(updateMarkerPath);
+            final MarkerFile marker = MarkerFile.read(updateDir);
+
+            final String hash = marker.getState();
             if (!new InstallationMetadata(installationDir).getRevisions().get(0).getName().equals(hash)) {
                 if (LOGGER.isDebugEnabled()) {
-                    LOGGER.debugf("The installation state has changed from the update candidate [%s].", updateDir);
+                    LOGGER.debugf("The installation state has changed from the candidate [%s].", updateDir);
+                }
+                return false;
+            }
+
+            if (marker.getOperation() != operation) {
+                if (LOGGER.isDebugEnabled()) {
+                    LOGGER.debugf("The candidate server has been prepared for different operation [%s].", marker.getOperation().getText());
                 }
                 return false;
             }

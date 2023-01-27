@@ -32,6 +32,7 @@ import org.wildfly.prospero.cli.ActionFactory;
 import org.wildfly.prospero.cli.CliMessages;
 import org.wildfly.prospero.cli.ReturnCodes;
 import org.wildfly.prospero.test.MetadataTestUtils;
+import org.wildfly.prospero.updates.MarkerFile;
 
 import javax.xml.stream.XMLStreamException;
 import java.io.IOException;
@@ -64,7 +65,7 @@ public class ApplyUpdateCommandTest extends AbstractConsoleTest {
     @Before
     public void setUp() throws Exception {
         super.setUp();
-        when(applyCandidateAction.verifyUpdateCandidate()).thenReturn(true);
+        when(applyCandidateAction.verifyCandidate(ApplyCandidateAction.Type.UPDATE)).thenReturn(true);
         when(actionFactory.applyUpdate(any(), any())).thenReturn(applyCandidateAction);
     }
 
@@ -134,7 +135,7 @@ public class ApplyUpdateCommandTest extends AbstractConsoleTest {
     public void updateCandidateNeedsToContainUpdateMarkupFile() throws Exception {
         final Path updatePath = mockInstallation("update");
         final Path targetPath = mockInstallation("target");
-        Files.deleteIfExists(updatePath.resolve(ApplyCandidateAction.UPDATE_MARKER_FILE));
+        Files.deleteIfExists(updatePath.resolve(MarkerFile.UPDATE_MARKER_FILE));
 
         int exitCode = commandLine.execute(CliConstants.Commands.UPDATE, CliConstants.Commands.APPLY,
                 CliConstants.UPDATE_DIR, updatePath.toString(),
@@ -151,7 +152,7 @@ public class ApplyUpdateCommandTest extends AbstractConsoleTest {
         final Path updatePath = mockInstallation("update");
         final Path targetPath = mockInstallation("target");
 
-        when(applyCandidateAction.verifyUpdateCandidate()).thenReturn(false);
+        when(applyCandidateAction.verifyCandidate(ApplyCandidateAction.Type.UPDATE)).thenReturn(false);
 
         int exitCode = commandLine.execute(CliConstants.Commands.UPDATE, CliConstants.Commands.APPLY,
                 CliConstants.UPDATE_DIR, updatePath.toString(),
@@ -168,7 +169,7 @@ public class ApplyUpdateCommandTest extends AbstractConsoleTest {
         MetadataTestUtils.createInstallationMetadata(targetPath);
         MetadataTestUtils.createGalleonProvisionedState(targetPath, UpdateCommand.PROSPERO_FP_GA);
 
-        Files.writeString(targetPath.resolve(ApplyCandidateAction.UPDATE_MARKER_FILE), "abcd1234");
+        new MarkerFile("abcd1234", ApplyCandidateAction.Type.UPDATE).write(targetPath);
         return targetPath;
     }
 

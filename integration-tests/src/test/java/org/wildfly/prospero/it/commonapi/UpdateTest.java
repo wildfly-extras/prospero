@@ -59,7 +59,7 @@ import java.util.stream.Collectors;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
-import static org.wildfly.prospero.actions.ApplyCandidateAction.UPDATE_MARKER_FILE;
+import static org.wildfly.prospero.updates.MarkerFile.UPDATE_MARKER_FILE;
 
 public class UpdateTest extends WfCoreTestBase {
 

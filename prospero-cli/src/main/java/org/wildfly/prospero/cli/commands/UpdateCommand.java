@@ -39,6 +39,7 @@ import org.wildfly.prospero.cli.RepositoryDefinition;
 import org.wildfly.prospero.cli.ReturnCodes;
 import org.wildfly.prospero.cli.commands.options.LocalRepoOptions;
 import org.wildfly.prospero.galleon.GalleonUtils;
+import org.wildfly.prospero.updates.MarkerFile;
 import org.wildfly.prospero.updates.UpdateSet;
 import org.wildfly.prospero.wfchannel.MavenSessionManager;
 import picocli.CommandLine;
@@ -158,13 +159,13 @@ public class UpdateCommand extends AbstractParentCommand {
 
             verifyDirectoryContainsInstallation(updateDir);
 
-            if (!Files.exists(updateDir.resolve(ApplyCandidateAction.UPDATE_MARKER_FILE))) {
+            if (!Files.exists(updateDir.resolve(MarkerFile.UPDATE_MARKER_FILE))) {
                 throw CliMessages.MESSAGES.invalidUpdateCandidate(updateDir);
             }
 
             final ApplyCandidateAction applyCandidateAction = actionFactory.applyUpdate(installationDir.toAbsolutePath(), updateDir.toAbsolutePath());
 
-            if (!applyCandidateAction.verifyUpdateCandidate()) {
+            if (!applyCandidateAction.verifyCandidate(ApplyCandidateAction.Type.UPDATE)) {
                 throw CliMessages.MESSAGES.updateCandidateStateNotMatched(installationDir, updateDir.toAbsolutePath());
             }
 

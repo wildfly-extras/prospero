@@ -34,10 +34,10 @@ import org.wildfly.prospero.galleon.ChannelMavenArtifactRepositoryManager;
 import org.wildfly.prospero.galleon.GalleonEnvironment;
 import org.wildfly.prospero.galleon.GalleonUtils;
 import org.wildfly.prospero.model.ProsperoConfig;
+import org.wildfly.prospero.updates.MarkerFile;
 import org.wildfly.prospero.wfchannel.MavenSessionManager;
 
 import java.io.IOException;
-import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
 
@@ -58,12 +58,12 @@ class PrepareCandidateAction implements AutoCloseable{
         this.mavenSessionManager = mavenSessionManager;
     }
 
-    boolean buildUpdate(Path targetDir, GalleonEnvironment galleonEnv) throws ProvisioningException, OperationException {
+    boolean buildCandidate(Path targetDir, GalleonEnvironment galleonEnv, ApplyCandidateAction.Type operation) throws ProvisioningException, OperationException {
         doBuildUpdate(targetDir, galleonEnv);
 
         try {
             final SavedState savedState = metadata.getRevisions().get(0);
-            Files.writeString(targetDir.resolve(ApplyCandidateAction.UPDATE_MARKER_FILE), savedState.getName());
+            new MarkerFile(savedState.getName(), operation).write(targetDir);
         } catch (IOException e) {
             throw new RuntimeException(e);
         }

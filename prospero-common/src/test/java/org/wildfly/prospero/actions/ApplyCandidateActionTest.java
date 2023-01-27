@@ -39,6 +39,7 @@ import org.wildfly.prospero.api.InstallationMetadata;
 import org.wildfly.prospero.api.exceptions.InvalidUpdateCandidateException;
 import org.wildfly.prospero.galleon.ArtifactCache;
 import org.wildfly.prospero.installation.git.GitStorage;
+import org.wildfly.prospero.updates.MarkerFile;
 import org.wildfly.prospero.utils.filestate.DirState;
 
 import java.io.File;
@@ -55,7 +56,7 @@ import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertThrows;
 import static org.junit.Assert.assertTrue;
 
-public class ApplyUpdateActionTest {
+public class ApplyCandidateActionTest {
 
     private static final String FPL_100 = "org.test:pack-one:1.0.0:zip";
     private static final String FPL_101 = "org.test:pack-one:1.0.1:zip";
@@ -247,7 +248,7 @@ public class ApplyUpdateActionTest {
         install(installationPath, FPL_100);
         prepareUpdate(updatePath, installationPath, FPL_101);
 
-        Files.deleteIfExists(updatePath.resolve(ApplyCandidateAction.UPDATE_MARKER_FILE));
+        Files.deleteIfExists(updatePath.resolve(MarkerFile.UPDATE_MARKER_FILE));
 
         assertThrows(InvalidUpdateCandidateException.class, ()->new ApplyCandidateAction(installationPath, updatePath).applyUpdate(ApplyCandidateAction.Type.UPDATE));
     }
@@ -259,7 +260,7 @@ public class ApplyUpdateActionTest {
         install(installationPath, FPL_100);
         prepareUpdate(updatePath, installationPath, FPL_101);
 
-        Files.writeString(updatePath.resolve(ApplyCandidateAction.UPDATE_MARKER_FILE), "abcd1234");
+        new MarkerFile("abcd1234", ApplyCandidateAction.Type.UPDATE).write(updatePath);
 
         assertThrows(InvalidUpdateCandidateException.class, ()->new ApplyCandidateAction(installationPath, updatePath).applyUpdate(ApplyCandidateAction.Type.UPDATE));
     }
@@ -273,7 +274,7 @@ public class ApplyUpdateActionTest {
 
         new ApplyCandidateAction(installationPath, updatePath).applyUpdate(ApplyCandidateAction.Type.UPDATE);
 
-        assertFalse(Files.exists(installationPath.resolve(ApplyCandidateAction.UPDATE_MARKER_FILE)));
+        assertFalse(Files.exists(installationPath.resolve(MarkerFile.UPDATE_MARKER_FILE)));
     }
 
     @Test
@@ -300,6 +301,18 @@ public class ApplyUpdateActionTest {
         Files.writeString(installationPath.resolve(ApplyCandidateAction.DOMAIN_STARTUP_MARKER), "test");
 
         assertThrows(ProvisioningException.class, () -> new ApplyCandidateAction(installationPath, updatePath).applyUpdate(ApplyCandidateAction.Type.UPDATE));
+    }
+
+    @Test
+    public void operationInMarkerFileHasToMatch() throws Exception {
+        createSimpleFeaturePacks();
+
+        install(installationPath, FPL_100);
+        prepareUpdate(updatePath, installationPath, FPL_101);
+
+        new MarkerFile("abcd1234", ApplyCandidateAction.Type.UPDATE).write(updatePath);
+
+        assertThrows(InvalidUpdateCandidateException.class, ()->new ApplyCandidateAction(installationPath, updatePath).applyUpdate(ApplyCandidateAction.Type.ROLLBACK));
     }
 
     private void createSimpleFeaturePacks() throws ProvisioningException {
@@ -356,7 +369,7 @@ public class ApplyUpdateActionTest {
         // create update marker file
         try (final GitStorage gitStorage = new GitStorage(basePath)) {
             final String revHash = gitStorage.getRevisions().get(0).getName();
-            Files.writeString(updatePath.resolve(ApplyCandidateAction.UPDATE_MARKER_FILE), revHash);
+            new MarkerFile(revHash, ApplyCandidateAction.Type.UPDATE).write(updatePath);
         }
     }
 
