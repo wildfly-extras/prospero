@@ -36,6 +36,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
 
+import static org.wildfly.prospero.actions.ApplyCandidateAction.Type.ROLLBACK;
 import static org.wildfly.prospero.galleon.GalleonUtils.MAVEN_REPO_LOCAL;
 
 public class InstallationHistoryAction {
@@ -64,7 +65,7 @@ public class InstallationHistoryAction {
         try {
             tempDirectory = Files.createTempDirectory("eap-revert");
             prepareRevert(savedState, mavenSessionManager, overrideRepositories, tempDirectory);
-            new ApplyCandidateAction(installation, tempDirectory).applyUpdate();
+            new ApplyCandidateAction(installation, tempDirectory).applyUpdate(ApplyCandidateAction.Type.ROLLBACK);
         } catch (IOException e) {
             throw Messages.MESSAGES.unableToCreateTemporaryDirectory(e);
         } finally {
@@ -84,7 +85,7 @@ public class InstallationHistoryAction {
             final ProsperoConfig prosperoConfig = new ProsperoConfig(
                     TemporaryRepositoriesHandler.overrideRepositories(metadata.getProsperoConfig().getChannels(), overrideRepositories));
 
-            try (final InstallationMetadata revertMetadata = metadata.rollback(savedState)) {
+            try (final InstallationMetadata revertMetadata = metadata.getSavedState(savedState)) {
                 final GalleonEnvironment galleonEnv = GalleonEnvironment
                         .builder(targetDir, prosperoConfig.getChannels(), mavenSessionManager)
                         .setConsole(console)
@@ -93,7 +94,7 @@ public class InstallationHistoryAction {
 
                 System.setProperty(MAVEN_REPO_LOCAL, mavenSessionManager.getProvisioningRepo().toAbsolutePath().toString());
                 try(final PrepareCandidateAction prepareCandidateAction = new PrepareCandidateAction(installation, mavenSessionManager, console, prosperoConfig)) {
-                    prepareCandidateAction.buildUpdate(targetDir, galleonEnv);
+                    prepareCandidateAction.buildCandidate(targetDir, galleonEnv, ROLLBACK);
                 }
             } finally {
                 System.clearProperty(MAVEN_REPO_LOCAL);
@@ -103,11 +104,11 @@ public class InstallationHistoryAction {
 
     public void applyRevert(Path updateDirectory) throws OperationException, ProvisioningException {
         final ApplyCandidateAction applyAction = new ApplyCandidateAction(installation, updateDirectory);
-        if (!applyAction.verifyUpdateCandidate()) {
-            throw Messages.MESSAGES.invalidUpdateCandidate(updateDirectory, installation);
+        if (!applyAction.verifyCandidate(ApplyCandidateAction.Type.ROLLBACK)) {
+            throw Messages.MESSAGES.invalidRollbackCandidate(updateDirectory, installation);
         }
 
-        applyAction.applyUpdate();
+        applyAction.applyUpdate(ApplyCandidateAction.Type.ROLLBACK);
     }
 
     private static void verifyStateExists(SavedState savedState, InstallationMetadata metadata) throws MetadataException {

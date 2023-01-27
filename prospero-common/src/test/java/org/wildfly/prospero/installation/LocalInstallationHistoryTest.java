@@ -79,25 +79,25 @@ public class LocalInstallationHistoryTest {
 
         final SavedState previousState = metadata.getRevisions().get(1);
 
-        final InstallationMetadata reverted = metadata.rollback(previousState);
+        final InstallationMetadata reverted = metadata.getSavedState(previousState);
         assertEquals("1.1.1", reverted.find(new DefaultArtifact("foo:bar:1.1.0")).getVersion());
 
     }
 
     @Test
-    public void statusRepresentsAction() throws Exception {
+    public void getSaveStateDoesntChangeCurrentState() throws Exception {
         final InstallationMetadata metadata = mockInstallation();
 
         updateManifest(metadata);
 
         final SavedState previousState = metadata.getRevisions().get(1);
 
-        final InstallationMetadata reverted = metadata.rollback(previousState);
+        metadata.getSavedState(previousState);
 
-        final List<SavedState> revisions = reverted.getRevisions();
-        assertEquals(SavedState.Type.ROLLBACK, revisions.get(0).getType());
-        assertEquals(SavedState.Type.UPDATE, revisions.get(1).getType());
-        assertEquals(SavedState.Type.INSTALL, revisions.get(2).getType());
+        final List<SavedState> revisions = metadata.getRevisions();
+        assertEquals(SavedState.Type.UPDATE, revisions.get(0).getType());
+        assertEquals(SavedState.Type.INSTALL, revisions.get(1).getType());
+        assertEquals("1.1.2", metadata.find(new DefaultArtifact("foo:bar:1.1.0")).getVersion());
     }
 
     @Test

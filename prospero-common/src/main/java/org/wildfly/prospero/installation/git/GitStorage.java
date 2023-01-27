@@ -17,6 +17,7 @@
 
 package org.wildfly.prospero.installation.git;
 
+import org.eclipse.jgit.api.ResetCommand;
 import org.eclipse.jgit.lib.StoredConfig;
 import org.wildfly.channel.Channel;
 import org.wildfly.channel.ChannelManifest;
@@ -85,19 +86,37 @@ public class GitStorage implements AutoCloseable {
 
     public void record() throws MetadataException {
         try {
-            git.add().addFilepattern(InstallationMetadata.MANIFEST_FILE_NAME).call();
-
-            final PersonIdent author;
-            final SavedState.Type commitType;
             if (isRepositoryEmpty(git)) {
+                final PersonIdent author = adjustCommitDateToCreationDate(getCommitter());
+                final SavedState.Type commitType = SavedState.Type.INSTALL;
+                git.add().addFilepattern(InstallationMetadata.MANIFEST_FILE_NAME).call();
                 git.add().addFilepattern(InstallationMetadata.INSTALLER_CHANNELS_FILE_NAME).call();
                 // adjust the date so that when taking over a non-prosper installation date matches creation
-                author = adjustCommitDateToCreationDate(getCommitter());
-                commitType = SavedState.Type.INSTALL;
+                git.commit()
+                        .setAuthor(author)
+                        .setCommitter(author)
+                        .setMessage(commitType.name())
+                        .call();
             } else {
-                author = getCommitter();
-                commitType = SavedState.Type.UPDATE;
+                recordChange(SavedState.Type.UPDATE);
             }
+        } catch (IOException | GitAPIException e) {
+            throw Messages.MESSAGES.unableToAccessHistoryStorage(base, e);
+        }
+
+
+    }
+
+    public void recordChange(SavedState.Type operation) throws MetadataException {
+        try {
+            if (isRepositoryEmpty(git)) {
+                throw new IllegalStateException("This operation cannot be performed on empty repository");
+            }
+
+            git.add().addFilepattern(InstallationMetadata.MANIFEST_FILE_NAME).call();
+
+            final PersonIdent author = getCommitter();
+            final SavedState.Type commitType = operation;
 
             git.commit()
                     .setAuthor(author)
@@ -140,14 +159,18 @@ public class GitStorage implements AutoCloseable {
         try {
             git.checkout()
                     .setStartPoint(savedState.getName())
-                    .addPath(InstallationMetadata.MANIFEST_FILE_NAME)
+                    .setAllPaths(true)
                     .call();
-            git.add().addFilepattern(InstallationMetadata.MANIFEST_FILE_NAME).call();
-            final PersonIdent author = getCommitter();
-            git.commit()
-                    .setAuthor(author)
-                    .setCommitter(author)
-                    .setMessage(SavedState.Type.ROLLBACK.name())
+        } catch (GitAPIException e) {
+            throw Messages.MESSAGES.unableToAccessHistoryStorage(base, e);
+        }
+    }
+
+    public void reset() throws MetadataException {
+        try {
+            git.reset()
+                    .setRef("HEAD")
+                    .setMode(ResetCommand.ResetType.HARD)
                     .call();
         } catch (GitAPIException e) {
             throw Messages.MESSAGES.unableToAccessHistoryStorage(base, e);

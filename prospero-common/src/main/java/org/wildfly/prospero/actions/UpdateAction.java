@@ -38,6 +38,8 @@ import org.wildfly.prospero.updates.UpdateSet;
 import org.wildfly.prospero.wfchannel.MavenSessionManager;
 import org.jboss.galleon.ProvisioningException;
 
+import static org.wildfly.prospero.actions.ApplyCandidateAction.Type.UPDATE;
+
 public class UpdateAction implements AutoCloseable {
 
     private final InstallationMetadata metadata;
@@ -61,7 +63,7 @@ public class UpdateAction implements AutoCloseable {
             targetDir = Files.createTempDirectory("update-eap");
             if (buildUpdate(targetDir)) {
                 ApplyCandidateAction applyCandidateAction = new ApplyCandidateAction(installDir, targetDir);
-                return applyCandidateAction.applyUpdate();
+                return applyCandidateAction.applyUpdate(ApplyCandidateAction.Type.UPDATE);
             } else {
                 return Collections.emptyList();
             }
@@ -79,7 +81,7 @@ public class UpdateAction implements AutoCloseable {
             return false;
         }
         try(final PrepareCandidateAction prepareCandidateAction = new PrepareCandidateAction(installDir, mavenSessionManager, console, prosperoConfig)) {
-            return prepareCandidateAction.buildUpdate(targetDir, getGalleonEnv(targetDir));
+            return prepareCandidateAction.buildCandidate(targetDir, getGalleonEnv(targetDir), UPDATE);
         }
     }
 

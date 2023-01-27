@@ -79,7 +79,7 @@ public class RevertCommand extends AbstractParentCommand {
             final Path installationDirectory = determineInstallationDirectory(directory);
 
             InstallationHistoryAction historyAction = actionFactory.history(installationDirectory, console);
-            historyAction.applyRevert(updateDirectory);
+            historyAction.applyRevert(updateDirectory.toAbsolutePath());
             return ReturnCodes.SUCCESS;
         }
     }
@@ -107,7 +107,7 @@ public class RevertCommand extends AbstractParentCommand {
             final List<Repository> overrideRepositories = RepositoryDefinition.from(temporaryRepositories);
 
             InstallationHistoryAction historyAction = actionFactory.history(installationDirectory, console);
-            historyAction.prepareRevert(new SavedState(revision), mavenSessionManager, overrideRepositories, updateDirectory);
+            historyAction.prepareRevert(new SavedState(revision), mavenSessionManager, overrideRepositories, updateDirectory.toAbsolutePath());
             return ReturnCodes.SUCCESS;
         }
     }
