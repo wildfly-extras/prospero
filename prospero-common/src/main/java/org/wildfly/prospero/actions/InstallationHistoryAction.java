@@ -64,7 +64,7 @@ public class InstallationHistoryAction {
         try {
             tempDirectory = Files.createTempDirectory("eap-revert");
             prepareRevert(savedState, mavenSessionManager, overrideRepositories, tempDirectory);
-            new ApplyCandidateAction(installation, tempDirectory).applyUpdate();
+            new ApplyCandidateAction(installation, tempDirectory).applyUpdate(ApplyCandidateAction.Type.ROLLBACK);
         } catch (IOException e) {
             throw Messages.MESSAGES.unableToCreateTemporaryDirectory(e);
         } finally {
@@ -84,7 +84,7 @@ public class InstallationHistoryAction {
             final ProsperoConfig prosperoConfig = new ProsperoConfig(
                     TemporaryRepositoriesHandler.overrideRepositories(metadata.getProsperoConfig().getChannels(), overrideRepositories));
 
-            try (final InstallationMetadata revertMetadata = metadata.rollback(savedState)) {
+            try (final InstallationMetadata revertMetadata = metadata.getSavedState(savedState)) {
                 final GalleonEnvironment galleonEnv = GalleonEnvironment
                         .builder(targetDir, prosperoConfig.getChannels(), mavenSessionManager)
                         .setConsole(console)
@@ -107,7 +107,7 @@ public class InstallationHistoryAction {
             throw Messages.MESSAGES.invalidUpdateCandidate(updateDirectory, installation);
         }
 
-        applyAction.applyUpdate();
+        applyAction.applyUpdate(ApplyCandidateAction.Type.ROLLBACK);
     }
 
     private static void verifyStateExists(SavedState savedState, InstallationMetadata metadata) throws MetadataException {

@@ -268,13 +268,17 @@ public class InstallationMetadata implements AutoCloseable {
         return gitStorage.getRevisions();
     }
 
-    public InstallationMetadata rollback(SavedState savedState) throws MetadataException {
+    public InstallationMetadata getSavedState(SavedState savedState) throws MetadataException {
         // checkout previous version
         // record as rollback operation
-        gitStorage.revert(savedState);
+        try {
+            gitStorage.revert(savedState);
 
-        // re-parse metadata
-        return new InstallationMetadata(base);
+            // re-parse metadata
+            return new InstallationMetadata(base);
+        } finally {
+            gitStorage.reset();
+        }
     }
 
     public InstallationChanges getChangesSince(SavedState savedState) throws MetadataException {

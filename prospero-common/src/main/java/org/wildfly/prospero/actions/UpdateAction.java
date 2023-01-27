@@ -61,7 +61,7 @@ public class UpdateAction implements AutoCloseable {
             targetDir = Files.createTempDirectory("update-eap");
             if (buildUpdate(targetDir)) {
                 ApplyCandidateAction applyCandidateAction = new ApplyCandidateAction(installDir, targetDir);
-                return applyCandidateAction.applyUpdate();
+                return applyCandidateAction.applyUpdate(ApplyCandidateAction.Type.UPDATE);
             } else {
                 return Collections.emptyList();
             }

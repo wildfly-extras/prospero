@@ -85,7 +85,7 @@ public class ApplyUpdateCommandTest extends AbstractConsoleTest {
                 CliConstants.DIR, targetPath.toString());
 
         Assert.assertEquals(getErrorOutput(), ReturnCodes.SUCCESS, exitCode);
-        verify(applyCandidateAction).applyUpdate();
+        verify(applyCandidateAction).applyUpdate(ApplyCandidateAction.Type.UPDATE);
     }
 
     @Test
@@ -127,7 +127,7 @@ public class ApplyUpdateCommandTest extends AbstractConsoleTest {
         Assert.assertEquals(getErrorOutput(), ReturnCodes.INVALID_ARGUMENTS, exitCode);
         assertTrue(getErrorOutput().contains(CliMessages.MESSAGES.invalidInstallationDir(targetPath)
                 .getMessage()));
-        verify(applyCandidateAction, never()).applyUpdate();
+        verify(applyCandidateAction, never()).applyUpdate(ApplyCandidateAction.Type.UPDATE);
     }
 
     @Test
@@ -143,7 +143,7 @@ public class ApplyUpdateCommandTest extends AbstractConsoleTest {
         Assert.assertEquals(getErrorOutput(), ReturnCodes.INVALID_ARGUMENTS, exitCode);
         assertTrue(getErrorOutput().contains(CliMessages.MESSAGES.invalidUpdateCandidate(updatePath)
                 .getMessage()));
-        verify(applyCandidateAction, never()).applyUpdate();
+        verify(applyCandidateAction, never()).applyUpdate(ApplyCandidateAction.Type.UPDATE);
     }
 
     @Test
@@ -160,7 +160,7 @@ public class ApplyUpdateCommandTest extends AbstractConsoleTest {
         Assert.assertEquals(getErrorOutput(), ReturnCodes.INVALID_ARGUMENTS, exitCode);
         assertTrue(getErrorOutput().contains(CliMessages.MESSAGES.updateCandidateStateNotMatched(targetPath, updatePath)
                 .getMessage()));
-        verify(applyCandidateAction, never()).applyUpdate();
+        verify(applyCandidateAction, never()).applyUpdate(ApplyCandidateAction.Type.UPDATE);
     }
 
     private Path mockInstallation(String target) throws IOException, MetadataException, XMLStreamException {

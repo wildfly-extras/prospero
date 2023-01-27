@@ -168,7 +168,7 @@ public class UpdateCommand extends AbstractParentCommand {
                 throw CliMessages.MESSAGES.updateCandidateStateNotMatched(installationDir, updateDir.toAbsolutePath());
             }
 
-            final List<FileConflict> fileConflicts = applyCandidateAction.applyUpdate();
+            final List<FileConflict> fileConflicts = applyCandidateAction.applyUpdate(ApplyCandidateAction.Type.UPDATE);
 
             FileConflictPrinter.print(fileConflicts, console);
 

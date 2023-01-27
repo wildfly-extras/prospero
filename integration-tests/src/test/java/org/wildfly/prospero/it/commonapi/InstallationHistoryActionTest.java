@@ -113,6 +113,46 @@ public class InstallationHistoryActionTest extends WfCoreTestBase {
         wildflyCliArtifact = readArtifactFromManifest("org.wildfly.core", "wildfly-cli");
         assertEquals(BASE_VERSION, wildflyCliArtifact.get().getVersion());
         assertTrue("Reverted jar should be present in module", wildflyCliModulePath.resolve(BASE_JAR).toFile().exists());
+
+        // assert we only have INSTALL,UPDATE and ROLLBACK states
+        assertThat(historyAction.getRevisions())
+                .map(SavedState::getType)
+                .contains(SavedState.Type.ROLLBACK, SavedState.Type.UPDATE, SavedState.Type.INSTALL);
+    }
+
+    @Test
+    public void prepareRollbackDoesntChangeSourceServer() throws Exception {
+        channelsFile = MetadataTestUtils.prepareChannel(CHANNEL_BASE_CORE_19);
+        final Path modulesPaths = outputPath.resolve(Paths.get("modules", "system", "layers", "base"));
+        final Path wildflyCliModulePath = modulesPaths.resolve(Paths.get("org", "jboss", "as", "cli", "main"));
+        final Path candidate = temp.newFolder().toPath();
+
+        final ProvisioningDefinition provisioningDefinition = defaultWfCoreDefinition()
+                .setChannelCoordinates(channelsFile.toString())
+                .build();
+        installation.provision(provisioningDefinition.toProvisioningConfig(),
+                provisioningDefinition.resolveChannels(CHANNELS_RESOLVER_FACTORY));
+
+        MetadataTestUtils.prepareChannel(outputPath.resolve(MetadataTestUtils.INSTALLER_CHANNELS_FILE_PATH), CHANNEL_COMPONENT_UPDATES, CHANNEL_BASE_CORE_19);
+        updateAction().performUpdate();
+        Optional<Artifact> wildflyCliArtifact = readArtifactFromManifest("org.wildfly.core", "wildfly-cli");
+        assertEquals(UPGRADE_VERSION, wildflyCliArtifact.get().getVersion());
+        assertTrue("Updated jar should be present in module", wildflyCliModulePath.resolve(UPGRADE_JAR).toFile().exists());
+
+        final InstallationHistoryAction historyAction = new InstallationHistoryAction(outputPath, new AcceptingConsole());
+        final List<SavedState> revisions = historyAction.getRevisions();
+
+        final SavedState savedState = revisions.get(1);
+        historyAction.prepareRevert(savedState, mavenSessionManager, Collections.emptyList(), candidate);
+
+        wildflyCliArtifact = readArtifactFromManifest("org.wildfly.core", "wildfly-cli");
+        assertEquals(UPGRADE_VERSION, wildflyCliArtifact.get().getVersion());
+        assertTrue("Reverted jar should be present in module", wildflyCliModulePath.resolve(UPGRADE_JAR).toFile().exists());
+
+        // assert we don't have ROLLBACK state
+        assertThat(historyAction.getRevisions())
+                .map(SavedState::getType)
+                .contains(SavedState.Type.UPDATE, SavedState.Type.INSTALL);
     }
 
     @Test

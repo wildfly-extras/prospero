@@ -121,7 +121,7 @@ public class RevertPrepareCommandTest extends AbstractMavenCommandTest {
                 CliConstants.REVISION, "abcd");
 
         assertEquals(ReturnCodes.SUCCESS, exitCode);
-        verify(historyAction).prepareRevert(eq(new SavedState("abcd")), any(), any(), eq(Path.of("update_test")));
+        verify(historyAction).prepareRevert(eq(new SavedState("abcd")), any(), any(), eq(Path.of("update_test").toAbsolutePath()));
     }
 
     @Test
@@ -133,7 +133,7 @@ public class RevertPrepareCommandTest extends AbstractMavenCommandTest {
                 CliConstants.OFFLINE, CliConstants.LOCAL_CACHE, "local-repo");
 
         assertEquals(ReturnCodes.SUCCESS, exitCode);
-        verify(historyAction).prepareRevert(eq(new SavedState("abcd")), mavenSessionManager.capture(), any(), eq(Path.of("update_test")));
+        verify(historyAction).prepareRevert(eq(new SavedState("abcd")), mavenSessionManager.capture(), any(), eq(Path.of("update_test").toAbsolutePath()));
         assertTrue(mavenSessionManager.getValue().isOffline());
     }
 
@@ -147,7 +147,7 @@ public class RevertPrepareCommandTest extends AbstractMavenCommandTest {
                 CliConstants.LOCAL_CACHE, "local-repo");
 
         assertEquals(ReturnCodes.SUCCESS, exitCode);
-        verify(historyAction).prepareRevert(eq(new SavedState("abcd")), any(), repositories.capture(), eq(Path.of("update_test")));
+        verify(historyAction).prepareRevert(eq(new SavedState("abcd")), any(), repositories.capture(), eq(Path.of("update_test").toAbsolutePath()));
 
         assertThat(repositories.getValue())
                 .map(Repository::getUrl)
@@ -156,7 +156,7 @@ public class RevertPrepareCommandTest extends AbstractMavenCommandTest {
 
     @Override
     protected MavenSessionManager getCapturedSessionManager() throws Exception {
-        verify(historyAction).prepareRevert(eq(new SavedState("abcd")), mavenSessionManager.capture(), any(), eq(Path.of("update_test")));
+        verify(historyAction).prepareRevert(eq(new SavedState("abcd")), mavenSessionManager.capture(), any(), eq(Path.of("update_test").toAbsolutePath()));
         return mavenSessionManager.getValue();
     }
 

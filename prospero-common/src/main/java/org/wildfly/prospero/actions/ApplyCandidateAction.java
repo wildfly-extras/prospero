@@ -36,6 +36,7 @@ import org.jboss.galleon.Errors;
 import org.jboss.galleon.ProvisioningManager;
 import org.wildfly.prospero.api.FileConflict;
 import org.wildfly.prospero.api.InstallationMetadata;
+import org.wildfly.prospero.api.SavedState;
 import org.wildfly.prospero.api.exceptions.InvalidUpdateCandidateException;
 import org.wildfly.prospero.api.exceptions.MetadataException;
 import org.wildfly.prospero.api.exceptions.OperationException;
@@ -77,6 +78,10 @@ public class ApplyCandidateAction {
     private final SystemPaths systemPaths;
     private final ProvisioningManager provisioningManager;
 
+    public enum Type {
+        UPDATE, ROLLBACK
+    }
+
     public ApplyCandidateAction(Path installationDir, Path updateDir)
             throws ProvisioningException, OperationException {
         this.updateDir = updateDir;
@@ -109,7 +114,7 @@ public class ApplyCandidateAction {
      * @throws InvalidUpdateCandidateException - if the folder at {@code updateDir} is not a valid update
      * @throws MetadataException - if unable to read or write the installation of update metadata
      */
-    public List<FileConflict> applyUpdate() throws ProvisioningException, InvalidUpdateCandidateException, MetadataException {
+    public List<FileConflict> applyUpdate(Type operation) throws ProvisioningException, InvalidUpdateCandidateException, MetadataException {
         if (!verifyUpdateCandidate()) {
             throw Messages.MESSAGES.invalidUpdateCandidate(updateDir, installationDir);
         }
@@ -121,7 +126,7 @@ public class ApplyCandidateAction {
         FsDiff diffs = findChanges();
         try {
             final List<FileConflict> conflicts = doApplyUpdate(diffs);
-            updateMetadata();
+            updateMetadata(operation);
             return conflicts;
         } catch (IOException ex) {
             throw new ProvisioningException(ex);
@@ -168,9 +173,9 @@ public class ApplyCandidateAction {
         return provisioningManager.getFsDiff();
     }
 
-    private void updateMetadata() throws ProvisioningException, MetadataException {
+    private void updateMetadata(Type operation) throws ProvisioningException, MetadataException {
         try {
-            writeProsperoMetadata();
+            writeProsperoMetadata(operation);
             updateInstallationCache();
             Path installationGalleonPath = PathsUtils.getProvisionedStateDir(installationDir);
             Path updateGalleonPath = PathsUtils.getProvisionedStateDir(updateDir);
@@ -181,7 +186,7 @@ public class ApplyCandidateAction {
         }
     }
 
-    private void writeProsperoMetadata() throws MetadataException, IOException {
+    private void writeProsperoMetadata(Type operation) throws MetadataException, IOException {
         Path updateMetadataDir = updateDir.resolve(ProsperoMetadataUtils.METADATA_DIR);
         Path updateManifest = updateMetadataDir.resolve(ProsperoMetadataUtils.MANIFEST_FILE_NAME);
 
@@ -191,7 +196,7 @@ public class ApplyCandidateAction {
 
         GitStorage git = new GitStorage(installationDir);
         try {
-            git.record();
+            git.recordChange(operation==Type.UPDATE? SavedState.Type.UPDATE:SavedState.Type.ROLLBACK);
         } finally {
             try {
                 git.close();
