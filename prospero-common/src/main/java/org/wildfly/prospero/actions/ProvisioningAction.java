@@ -37,6 +37,7 @@ import java.io.IOException;
 import java.net.MalformedURLException;
 import java.nio.file.Path;
 import java.util.List;
+import java.util.Objects;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 
@@ -52,16 +53,21 @@ public class ProvisioningAction {
     private final MavenSessionManager mavenSessionManager;
     private final Path installDir;
     private final Console console;
+    private final LicenseManager licenseManager;
 
     public ProvisioningAction(Path installDir, MavenSessionManager mavenSessionManager, Console console) {
         this.installDir = installDir;
         this.console = console;
         this.mavenSessionManager = mavenSessionManager;
+        this.licenseManager = new LicenseManager();
+
         verifyInstallDir(installDir);
     }
 
     /**
      * Provision installation according to given ProvisioningDefinition.
+     *
+     * <b>NOTE:</b> All required licenses are assumed to be accepted by calling this method.
      *
      * @param provisioningConfig prospero provisioning definition
      * @param channels list of channels to resolve installed artifacts
@@ -89,17 +95,38 @@ public class ProvisioningAction {
         writeProsperoMetadata(installDir, galleonEnv.getRepositoryManager(), channels);
 
         try {
-            new GalleonFeaturePackAnalyzer(galleonEnv.getChannels(), mavenSessionManager).cacheGalleonArtifacts(installDir, provisioningConfig);
+            final GalleonFeaturePackAnalyzer galleonFeaturePackAnalyzer = new GalleonFeaturePackAnalyzer(galleonEnv.getChannels(), mavenSessionManager);
+
+            // all agreements are implicitly accepted at this point
+            licenseManager.recordAgreements(getPendingLicenses(provisioningConfig, galleonFeaturePackAnalyzer), installDir);
+
+            galleonFeaturePackAnalyzer.cacheGalleonArtifacts(installDir, provisioningConfig);
+        } catch (IOException e) {
+            throw Messages.MESSAGES.unableToWriteFile(installDir.resolve(LicenseManager.LICENSES_FOLDER), e);
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
     }
 
+    /**
+     * List agreements and licenses that need to be accepted before installing the required Feature Packs.
+     *
+     * @param provisioningConfig - list of Feature Packs being installed
+     * @param channels - list of channels used to resolve the Feature Packs
+     * @return - list of {@code License}, or empty list if no licenses were required
+     */
     public List<License> getPendingLicenses(ProvisioningConfig provisioningConfig, List<Channel> channels) {
+        Objects.requireNonNull(provisioningConfig);
+        Objects.requireNonNull(channels);
+
+        final GalleonFeaturePackAnalyzer exporter = new GalleonFeaturePackAnalyzer(channels, mavenSessionManager);
+        return getPendingLicenses(provisioningConfig, exporter);
+    }
+
+    private List<License> getPendingLicenses(ProvisioningConfig provisioningConfig, GalleonFeaturePackAnalyzer exporter) {
         try {
-            final GalleonFeaturePackAnalyzer exporter = new GalleonFeaturePackAnalyzer(channels, mavenSessionManager);
             final List<String> featurePacks = exporter.getFeaturePacks(provisioningConfig);
-            return new LicenseManager().getLicenses(featurePacks);
+            return licenseManager.getLicenses(featurePacks);
         } catch (IOException | ProvisioningException | OperationException e) {
             throw new RuntimeException(e);
         }

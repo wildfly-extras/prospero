@@ -17,50 +17,120 @@
 
 package org.wildfly.prospero.licenses;
 
+import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
+import org.wildfly.prospero.metadata.ProsperoMetadataUtils;
 
 import java.io.File;
+import java.io.FileInputStream;
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.util.Collections;
 import java.util.List;
+import java.util.Properties;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.wildfly.prospero.licenses.LicenseManager.LICENSES_FOLDER;
+import static org.wildfly.prospero.licenses.LicenseManager.LICENSE_AGREEMENT_FILENAME;
+import static org.wildfly.prospero.licenses.LicenseManager.LICENSE_DEFINITION_NAME;
 
 public class LicenseManagerTest {
 
+    private static final String A_FEATURE_PACK = "test:test";
+    private static final String UNKNOWN_FEATURE_PACK = "idont:exist";
+    private static final License LICENSE_ONE = new License("name", A_FEATURE_PACK, "title", "text");
+    private static final License LICENSE_TWO = new License("name2", A_FEATURE_PACK, "title2", "text2");
+
     @Rule
     public TemporaryFolder temp = new TemporaryFolder();
+    private Path serverPath;
+    private File licenseFile;
+
+    @Before
+    public void setUp() throws Exception {
+        serverPath = temp.newFolder("server").toPath();
+        Files.createDirectory(serverPath.resolve(ProsperoMetadataUtils.METADATA_DIR));
+        licenseFile = temp.newFile(LICENSE_DEFINITION_NAME);
+    }
 
     @Test
     public void noLicenseFileDoesNothing() throws Exception {
-        assertThat(new LicenseManager(null).getLicenses(List.of("test:test")))
+        assertThat(new LicenseManager(null).getLicenses(List.of(A_FEATURE_PACK)))
                 .isEmpty();
     }
 
     @Test
     public void emptyListIfNoLicensesMatched() throws Exception {
-        final File licenseFile = temp.newFile();
-        License.writeLicenses(List.of(new License("name", "foo:bar", "title", "text")), licenseFile);
-        assertThat(new LicenseManager(licenseFile.toURI().toURL()).getLicenses(List.of("test:test")))
+        License.writeLicenses(List.of(LICENSE_ONE), licenseFile);
+        assertThat(new LicenseManager(licenseFile.toURI().toURL()).getLicenses(List.of(UNKNOWN_FEATURE_PACK)))
                 .isEmpty();
     }
 
     @Test
     public void matchesLicenseByFpGav() throws Exception {
-        final File licenseFile = temp.newFile();
-        final License l1 = new License("name", "test:test", "title", "text");
-        License.writeLicenses(List.of(l1), licenseFile);
-        assertThat(new LicenseManager(licenseFile.toURI().toURL()).getLicenses(List.of("test:test")))
-                .contains(l1);
+        License.writeLicenses(List.of(LICENSE_ONE), licenseFile);
+        assertThat(new LicenseManager(licenseFile.toURI().toURL()).getLicenses(List.of(A_FEATURE_PACK)))
+                .contains(LICENSE_ONE);
     }
 
     @Test
     public void matchesMultipleLicenseByFpGav() throws Exception {
-        final File licenseFile = temp.newFile();
-        final License l1 = new License("name", "test:test", "title", "text");
-        final License l2 = new License("name2", "test:test", "title2", "text2");
-        License.writeLicenses(List.of(l1, l2), licenseFile);
-        assertThat(new LicenseManager(licenseFile.toURI().toURL()).getLicenses(List.of("test:test")))
-                .contains(l1, l2);
+        License.writeLicenses(List.of(LICENSE_ONE, LICENSE_TWO), licenseFile);
+        assertThat(new LicenseManager(licenseFile.toURI().toURL()).getLicenses(List.of(A_FEATURE_PACK)))
+                .contains(LICENSE_ONE, LICENSE_TWO);
+    }
+
+    @Test
+    public void printAcceptedLicenses() throws Exception {
+        new LicenseManager().recordAgreements(List.of(LICENSE_ONE, LICENSE_TWO), serverPath);
+
+        final Path licensesPath = licensesFolder(serverPath);
+        assertThat(licensesPath.resolve("name.txt"))
+                .exists()
+                .hasContent(LICENSE_ONE.getText());
+        assertThat(licensesPath.resolve("name2.txt"))
+                .exists()
+                .hasContent(LICENSE_TWO.getText());
+        assertThat(readProperties(licensesPath.resolve(LICENSE_AGREEMENT_FILENAME)))
+                .containsEntry("username", System.getProperty("user.name"))
+                .containsEntry("license.0.name", "name")
+                .containsEntry("license.1.name", "name2")
+                .containsEntry("license.0.file", "name.txt")
+                .containsEntry("license.1.file", "name2.txt")
+                .containsKey("timestamp");
+    }
+
+    @Test
+    public void dontGenerateAnyFilesIfLicenseListEmpty() throws Exception {
+        new LicenseManager().recordAgreements(Collections.emptyList(), serverPath);
+
+        assertThat(licensesFolder(serverPath)).doesNotExist();
+    }
+
+    @Test
+    public void acceptedLicenseFilenameReplacesWhitespacesAndLowerCases() throws Exception {
+        final License l1 = new License("test NAME", A_FEATURE_PACK, "title", "text");
+
+        new LicenseManager().recordAgreements(List.of(l1), serverPath);
+
+        System.out.println(serverPath);
+        assertThat(licensesFolder(serverPath).resolve("test-name.txt"))
+                .exists();
+    }
+
+    private static Properties readProperties(Path resolve) throws IOException {
+        final Properties acceptedProperties = new Properties();
+        try (FileInputStream fis = new FileInputStream(resolve.toFile())) {
+            acceptedProperties.load(fis);
+        }
+        return acceptedProperties;
+    }
+
+    private static Path licensesFolder(Path serverPath) {
+        final Path licensesPath = serverPath.resolve(ProsperoMetadataUtils.METADATA_DIR).resolve(LICENSES_FOLDER);
+        return licensesPath;
     }
 }

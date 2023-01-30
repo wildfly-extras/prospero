@@ -17,6 +17,7 @@
 
 package org.wildfly.prospero.it;
 
+import java.io.File;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Arrays;
@@ -51,7 +52,7 @@ public class ExecutionUtils {
         String[] execArray = mergeArrays(new String[] {script.toString()}, execution.args);
         Process process = new ProcessBuilder(execArray)
                 .redirectErrorStream(true)
-                .redirectOutput(ProcessBuilder.Redirect.INHERIT)
+                .redirectOutput(new File("test-out.log"))
                 .start();
 
         if (!process.waitFor(execution.timeLimit, execution.timeUnit)) {
