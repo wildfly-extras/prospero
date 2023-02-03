@@ -8,6 +8,7 @@ import org.wildfly.installationmanager.ChannelChange;
 import org.wildfly.installationmanager.HistoryResult;
 import org.wildfly.installationmanager.InstallationChanges;
 import org.wildfly.installationmanager.MavenOptions;
+import org.wildfly.installationmanager.OperationNotAvailableException;
 import org.wildfly.installationmanager.Repository;
 import org.wildfly.installationmanager.spi.InstallationManager;
 import org.wildfly.prospero.Messages;
@@ -15,6 +16,7 @@ import org.wildfly.prospero.actions.InstallationExportAction;
 import org.wildfly.prospero.actions.InstallationHistoryAction;
 import org.wildfly.prospero.actions.MetadataAction;
 import org.wildfly.prospero.actions.UpdateAction;
+import org.wildfly.prospero.spi.internal.CliProvider;
 import org.wildfly.prospero.api.SavedState;
 import org.wildfly.prospero.api.exceptions.MetadataException;
 import org.wildfly.prospero.api.exceptions.OperationException;
@@ -31,17 +33,20 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.ServiceLoader;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
 public class ProsperoInstallationManager implements InstallationManager {
 
     private final ActionFactory actionFactory;
+    private Path installationDir;
 
     public ProsperoInstallationManager(Path installationDir, MavenOptions mavenOptions) throws Exception {
         MavenSessionManager mavenSessionManager = new MavenSessionManager(
                 Optional.ofNullable(mavenOptions.getLocalRepository()), mavenOptions.isOffline());
         actionFactory = new ActionFactory(installationDir, mavenSessionManager);
+        this.installationDir = installationDir;
     }
 
     // Used for tests to mock up action creation
@@ -91,9 +96,9 @@ public class ProsperoInstallationManager implements InstallationManager {
     }
 
     @Override
-    public void prepareUpdate(Path targetDir, List<Repository> repositories) throws Exception {
+    public boolean prepareUpdate(Path targetDir, List<Repository> repositories) throws Exception {
         try (final UpdateAction prepareUpdateAction = actionFactory.getUpdateAction(map(repositories, ProsperoInstallationManager::mapRepository))) {
-            prepareUpdateAction.buildUpdate(targetDir);
+            return prepareUpdateAction.buildUpdate(targetDir);
         }
     }
 
@@ -158,6 +163,28 @@ public class ProsperoInstallationManager implements InstallationManager {
         installationExportAction.export(snapshotPath);
 
         return snapshotPath;
+    }
+
+    @Override
+    public String generateApplyUpdateCommand(Path candidatePath) throws OperationNotAvailableException {
+        final Optional<CliProvider> cliProviderLoader = ServiceLoader.load(CliProvider.class).findFirst();
+        if (cliProviderLoader.isEmpty()) {
+            throw new OperationNotAvailableException("Installation manager does not support CLI operations.");
+        }
+
+        final CliProvider cliProvider = cliProviderLoader.get();
+        return cliProvider.getScriptName() + " " + cliProvider.getApplyUpdateCommand(installationDir, candidatePath);
+    }
+
+    @Override
+    public String generateApplyRevertCommand(Path candidatePath) throws OperationNotAvailableException {
+        final Optional<CliProvider> cliProviderLoader = ServiceLoader.load(CliProvider.class).findFirst();
+        if (cliProviderLoader.isEmpty()) {
+            throw new OperationNotAvailableException("Installation manager does not support CLI operations.");
+        }
+
+        final CliProvider cliProvider = cliProviderLoader.get();
+        return cliProvider.getScriptName() + " " + cliProvider.getApplyRevertCommand(installationDir, candidatePath);
     }
 
     private static Channel mapChannel(org.wildfly.channel.Channel channel) {
