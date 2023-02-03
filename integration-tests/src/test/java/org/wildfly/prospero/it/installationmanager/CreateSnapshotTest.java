@@ -88,7 +88,7 @@ public class CreateSnapshotTest extends WfCoreTestBase {
 
 
         final ProsperoInstallationManager manager = (ProsperoInstallationManager) new ProsperoInstallationManagerFactory().create(outputPath, new MavenOptions(MavenSessionManager.LOCAL_MAVEN_REPO, false));
-        final String command = manager.generateApplyUpdateCommand(Paths.get("foo")).get();
+        final String command = manager.generateApplyUpdateCommand(Paths.get("foo"));
         assertEquals(expected.toString(), command);
     }
 }
