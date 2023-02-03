@@ -280,7 +280,7 @@ streams:
     version: "6.2.2.Final"
   - groupId: "org.wildfly.galleon-plugins"
     artifactId: "wildfly-galleon-plugins"
-    version: "6.2.3.Final"
+    version: "6.2.2.Final"
   - groupId: "org.wildfly.openssl"
     artifactId: "wildfly-openssl-java"
     version: "2.2.5.Final"
