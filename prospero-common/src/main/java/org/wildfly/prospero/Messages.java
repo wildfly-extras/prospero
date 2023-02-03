@@ -102,6 +102,9 @@ public interface Messages {
     @Message("Unable to read file at [%s]")
     MetadataException unableToReadFile(Path path, @Cause Exception e);
 
+    @Message("Unable to write file at [%s]")
+    MetadataException unableToWriteFile(Path path, @Cause Exception e);
+
     // provisioning errors
     @Message("Unable to create temporary cache for provisioning cache folder.")
     ProvisioningException unableToCreateCache(@Cause Exception e);

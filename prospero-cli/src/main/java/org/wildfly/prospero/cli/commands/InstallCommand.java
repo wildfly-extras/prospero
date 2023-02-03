@@ -18,12 +18,10 @@
 package org.wildfly.prospero.cli.commands;
 
 import java.nio.file.Path;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
-import org.eclipse.aether.DefaultRepositorySystemSession;
-import org.eclipse.aether.RepositorySystem;
+import org.jboss.galleon.config.ProvisioningConfig;
 import org.wildfly.channel.Channel;
 import org.wildfly.channel.maven.VersionResolverFactory;
 import org.wildfly.prospero.actions.Console;
@@ -32,10 +30,10 @@ import org.wildfly.prospero.api.KnownFeaturePacks;
 import org.wildfly.prospero.api.ProvisioningDefinition;
 import org.wildfly.prospero.cli.ActionFactory;
 import org.wildfly.prospero.cli.CliMessages;
-import org.wildfly.prospero.cli.RepositoryDefinition;
+import org.wildfly.prospero.cli.LicensePrinter;
 import org.wildfly.prospero.cli.ReturnCodes;
-import org.wildfly.prospero.cli.commands.options.LocalRepoOptions;
 import org.wildfly.prospero.cli.commands.options.FeaturePackCandidates;
+import org.wildfly.prospero.licenses.License;
 import org.wildfly.prospero.wfchannel.MavenSessionManager;
 import picocli.CommandLine;
 
@@ -43,15 +41,7 @@ import picocli.CommandLine;
         name = CliConstants.Commands.INSTALL,
         sortOptions = false
 )
-public class InstallCommand extends AbstractCommand {
-
-    @CommandLine.ArgGroup(
-            heading = "%nInstallation source:%n",
-            exclusive = true,
-            multiplicity = "1",
-            order = 1
-    )
-    FeaturePackOrDefinition featurePackOrDefinition;
+public class InstallCommand extends AbstractInstallCommand {
 
     @CommandLine.Option(
             names = CliConstants.DIR,
@@ -61,36 +51,10 @@ public class InstallCommand extends AbstractCommand {
     Path directory;
 
     @CommandLine.Option(
-            names = {CliConstants.CHANNELS, CliConstants.CHANNEL},
-            paramLabel = CliConstants.CHANNEL_REFERENCE,
-            order = 3,
-            split = ","
-    )
-    List<String> channelCoordinates = new ArrayList<>();
-
-    @CommandLine.Option(
-            names = CliConstants.CHANNEL_MANIFEST,
-            paramLabel = CliConstants.CHANNEL_MANIFEST_REFERENCE,
-            order = 4
-    )
-    Optional<String> manifestCoordinate;
-
-    @CommandLine.Option(
-            names = CliConstants.REPOSITORIES,
-            paramLabel = CliConstants.REPO_URL,
-            split = ",",
-            order = 5
-    )
-    List<String> remoteRepositories = new ArrayList<>();
-
-    @CommandLine.ArgGroup(exclusive = true, order = 6, headingKey = "localRepoOptions.heading")
-    LocalRepoOptions localRepoOptions;
-
-    @CommandLine.Option(
-            names = CliConstants.OFFLINE,
+            names = CliConstants.ACCEPT_AGREEMENTS,
             order = 8
     )
-    boolean offline;
+    boolean acceptAgreements;
 
     static class FeaturePackOrDefinition {
         @CommandLine.Option(
@@ -132,36 +96,35 @@ public class InstallCommand extends AbstractCommand {
 
         verifyTargetDirectoryIsEmpty(directory);
 
-        final Optional<Path> localMavenCache = LocalRepoOptions.getLocalMavenCache(localRepoOptions);
-
-        final MavenSessionManager mavenSessionManager = new MavenSessionManager(localMavenCache, offline);
-
-        final ProvisioningDefinition provisioningDefinition = ProvisioningDefinition.builder()
-                .setFpl(featurePackOrDefinition.fpl.orElse(null))
-                .setManifest(manifestCoordinate.orElse(null))
-                .setChannelCoordinates(channelCoordinates)
-                .setOverrideRepositories(RepositoryDefinition.from(remoteRepositories))
-                .setDefinitionFile(featurePackOrDefinition.definition.map(Path::toUri).orElse(null))
-                .build();
-
-        final VersionResolverFactory versionResolverFactory = createVersionResolverFactory(mavenSessionManager);
+        final ProvisioningDefinition provisioningDefinition = buildDefinition();
+        final MavenSessionManager mavenSessionManager = createMavenSession();
+        final ProvisioningConfig provisioningConfig = provisioningDefinition.toProvisioningConfig();
+        final VersionResolverFactory versionResolverFactory = InstallCommand.createVersionResolverFactory(mavenSessionManager);
         final List<Channel> channels = provisioningDefinition.resolveChannels(versionResolverFactory);
 
-        ProvisioningAction provisioningAction = actionFactory.install(directory.toAbsolutePath(), mavenSessionManager,
+        final ProvisioningAction provisioningAction = actionFactory.install(directory.toAbsolutePath(), mavenSessionManager,
                 console);
-        provisioningAction.provision(provisioningDefinition.toProvisioningConfig(), channels);
+
+        final List<License> pendingLicenses = provisioningAction.getPendingLicenses(provisioningConfig, channels);
+        if (!pendingLicenses.isEmpty()) {
+            new LicensePrinter().print(pendingLicenses);
+            System.out.println();
+            if (acceptAgreements) {
+                System.out.println(CliMessages.MESSAGES.agreementSkipped(CliConstants.ACCEPT_AGREEMENTS));
+                System.out.println();
+            } else {
+                if (!console.confirm(CliMessages.MESSAGES.acceptAgreements(), "", CliMessages.MESSAGES.installationCancelled())) {
+                    return ReturnCodes.PROCESSING_ERROR;
+                }
+            }
+        }
+
+        provisioningAction.provision(provisioningConfig, channels);
 
         final float totalTime = (System.currentTimeMillis() - startTime) / 1000f;
         console.println(CliMessages.MESSAGES.operationCompleted(totalTime));
 
         return ReturnCodes.SUCCESS;
-    }
-
-    private static VersionResolverFactory createVersionResolverFactory(MavenSessionManager mavenSessionManager) {
-        final RepositorySystem repositorySystem = mavenSessionManager.newRepositorySystem();
-        final DefaultRepositorySystemSession repositorySystemSession = mavenSessionManager.newRepositorySystemSession(
-                repositorySystem);
-        return new VersionResolverFactory(repositorySystem, repositorySystemSession);
     }
 
     private boolean isStandardFpl(String fpl) {

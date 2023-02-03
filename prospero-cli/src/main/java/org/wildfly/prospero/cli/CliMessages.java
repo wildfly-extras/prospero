@@ -237,4 +237,19 @@ public interface CliMessages {
     IllegalArgumentException nonEmptyTargetFolder();
 
     // end - changes diff
+
+    @Message("Accept the agreement(s) [y/N]")
+    String acceptAgreements();
+
+    @Message("Installation cancelled")
+    String installationCancelled();
+
+    @Message("To install the requested server, following Agreements need to be accepted:")
+    String listAgreementsHeader();
+
+    @Message("The requested software does not require any Agreements.")
+    String noAgreementsNeeded();
+
+    @Message("The Agreement(s) has been accepted via %s")
+    String agreementSkipped(String optionName);
 }
