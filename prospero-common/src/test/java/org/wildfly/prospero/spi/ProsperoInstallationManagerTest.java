@@ -41,6 +41,7 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
+import static org.wildfly.common.Assert.assertFalse;
 
 @RunWith(MockitoJUnitRunner.class)
 public class ProsperoInstallationManagerTest {
@@ -136,6 +137,15 @@ public class ProsperoInstallationManagerTest {
         when(updateAction.buildUpdate(any())).thenReturn(true);
 
         mgr.prepareUpdate(Path.of("test"), null);
+    }
+
+    @Test
+    public void prepareUpdateReturnsStatusOfCandidate() throws Exception {
+        final ProsperoInstallationManager mgr = new ProsperoInstallationManager(actionFactory);
+        when(actionFactory.getUpdateAction(Collections.emptyList())).thenReturn(updateAction);
+        when(updateAction.buildUpdate(any())).thenReturn(false);
+
+        assertFalse(mgr.prepareUpdate(Path.of("test"), null));
     }
 
     @Test

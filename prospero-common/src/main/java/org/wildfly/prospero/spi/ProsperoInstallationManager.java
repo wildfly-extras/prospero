@@ -96,9 +96,9 @@ public class ProsperoInstallationManager implements InstallationManager {
     }
 
     @Override
-    public void prepareUpdate(Path targetDir, List<Repository> repositories) throws Exception {
+    public boolean prepareUpdate(Path targetDir, List<Repository> repositories) throws Exception {
         try (final UpdateAction prepareUpdateAction = actionFactory.getUpdateAction(map(repositories, ProsperoInstallationManager::mapRepository))) {
-            prepareUpdateAction.buildUpdate(targetDir);
+            return prepareUpdateAction.buildUpdate(targetDir);
         }
     }
 
