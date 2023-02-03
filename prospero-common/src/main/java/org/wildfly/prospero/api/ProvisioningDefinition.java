@@ -24,11 +24,9 @@ import java.net.URI;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
-import java.util.Set;
 import java.util.stream.Collectors;
 
 import javax.xml.stream.XMLStreamException;
@@ -78,11 +76,6 @@ public class ProvisioningDefinition {
     private final List<ChannelCoordinate> channelCoordinates = new ArrayList<>();
 
     /**
-     * List of Galleon packages to include (see https://docs.wildfly.org/galleon/#_feature_pack_archive_structure).
-     */
-    private final Set<String> includedPackages = new HashSet<>();
-
-    /**
      * Maven repositories to download artifacts from. If set, this list is going to override default repositories defined in the
      * channels.
      */
@@ -95,7 +88,6 @@ public class ProvisioningDefinition {
     private final URI definition;
 
     private ProvisioningDefinition(Builder builder) throws NoChannelException {
-        this.includedPackages.addAll(builder.includedPackages);
         this.overrideRepositories.addAll(builder.overrideRepositories);
         this.channelCoordinates.addAll(builder.channelCoordinates);
 
@@ -155,9 +147,6 @@ public class ProvisioningDefinition {
             FeaturePackLocation loc = FeaturePackLocationParser.resolveFpl(getFpl());
 
             final FeaturePackConfig.Builder configBuilder = FeaturePackConfig.builder(loc);
-            for (String includedPackage : includedPackages) {
-                configBuilder.includePackage(includedPackage);
-            }
             return ProvisioningConfig.builder().addFeaturePackDep(configBuilder.build()).build();
         } else if (definition != null) {
             try {
@@ -249,7 +238,6 @@ public class ProvisioningDefinition {
         private Optional<String> fpl = Optional.empty();
         private Optional<URI> definitionFile = Optional.empty();
         private List<Repository> overrideRepositories = Collections.emptyList();
-        private Set<String> includedPackages = Collections.emptySet();
         private Optional<ChannelManifestCoordinate> manifest = Optional.empty();
         private List<ChannelCoordinate> channelCoordinates = Collections.emptyList();
 
@@ -264,11 +252,6 @@ public class ProvisioningDefinition {
 
         public Builder setOverrideRepositories(List<Repository> repositories) {
             this.overrideRepositories = repositories;
-            return this;
-        }
-
-        public Builder setIncludedPackages(Set<String> includedPackages) {
-            this.includedPackages = includedPackages;
             return this;
         }
 
