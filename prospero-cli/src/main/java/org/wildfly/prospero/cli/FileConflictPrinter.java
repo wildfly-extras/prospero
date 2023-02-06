@@ -30,7 +30,7 @@ import static org.wildfly.prospero.api.FileConflict.Resolution.UPDATE;
 public class FileConflictPrinter {
 
     public static void print(List<FileConflict> fileConflicts, Console console) {
-        if (fileConflicts.isEmpty()) {
+        if (!fileConflicts.isEmpty()) {
             console.println("\n");
             console.println(CliMessages.MESSAGES.conflictingChangesDetected());
             for (FileConflict fileConflict : fileConflicts) {
