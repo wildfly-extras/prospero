@@ -26,6 +26,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Collections;
+import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.Assert.assertFalse;
@@ -64,6 +65,24 @@ public class ArtifactBundleTest {
     @Test(expected = IllegalArgumentException.class)
     public void createArchiveWithNoArtifacts() throws Exception {
         ArtifactBundle.createCustomizationArchive(Collections.emptyList(), temp.newFile("archive.zip"));
+    }
+
+    @Test
+    public void createBundleWithArtifactsFromSamePackage() throws Exception {
+        // create archive
+        final DefaultArtifact testArtifact = new DefaultArtifact("foo.bar", "test", null, null, "1.2.3", null, temp.newFile("test-1.2.3.jar"));
+        final DefaultArtifact testArtifact2 = new DefaultArtifact("foo.bar", "test2", null, null, "1.2.3", null, temp.newFile("test2-1.2.3.jar"));
+        final Path archiveFile = ArtifactBundle.createCustomizationArchive(List.of(testArtifact, testArtifact2), temp.newFile("archive.zip"));
+
+        // install
+        try (final ArtifactBundle archive = ArtifactBundle.extract(archiveFile)) {
+            assertThat(archive.getArtifactList()).containsOnly(
+                    new ArtifactCoordinate("foo.bar", "test", "", "", "1.2.3"),
+                    new ArtifactCoordinate("foo.bar", "test2", "", "", "1.2.3")
+            );
+            assertTrue(Files.exists(archive.getRepository().resolve(Paths.get("foo/bar/test/1.2.3/test-1.2.3.jar"))));
+            assertTrue(Files.exists(archive.getRepository().resolve(Paths.get("foo/bar/test2/1.2.3/test2-1.2.3.jar"))));
+        }
     }
 
     // TODO: createArchiveWithArtifactWithoutFile

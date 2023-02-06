@@ -31,6 +31,7 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Objects;
 import java.util.stream.Collectors;
@@ -92,12 +93,16 @@ public class ArtifactBundle implements AutoCloseable {
             final String listYaml = artifactList.writeToString();
             zos.write(listYaml.getBytes(StandardCharsets.UTF_8), 0, listYaml.length());
 
+            final HashSet<String> createdPaths = new HashSet<>();
             zos.putNextEntry(new ZipEntry(BUNDLE_REPO_FOLDER + FS));
             for (Artifact artifact : artifacts) {
                 String entry = BUNDLE_REPO_FOLDER + FS;
                 for (String dir : artifact.getGroupId().split("\\.")) {
                     entry += dir + FS;
-                    zos.putNextEntry(new ZipEntry(entry));
+                    if (!createdPaths.contains(entry)) {
+                        zos.putNextEntry(new ZipEntry(entry));
+                        createdPaths.add(entry);
+                    }
                 }
                 entry += artifact.getArtifactId() + FS;
                 zos.putNextEntry(new ZipEntry(entry));
