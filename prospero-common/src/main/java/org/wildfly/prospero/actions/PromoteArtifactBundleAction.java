@@ -68,7 +68,8 @@ public class PromoteArtifactBundleAction {
 
             final ArtifactPromoter promoter = new ArtifactPromoter(system, session, targetRepo);
             try {
-                promoter.promote(extracted.getArtifactList(), new ChannelCoordinate(coordinate.getMaven().getGroupId(), coordinate.getMaven().getArtifactId()), sourceRepo);
+                promoter.promote(extracted.getArtifactList(),
+                        new ChannelCoordinate(coordinate.getMaven().getGroupId(), coordinate.getMaven().getArtifactId()), sourceRepo);
             } catch (IOException | ArtifactResolutionException | DeploymentException e) {
                 throw Messages.MESSAGES.unableToPromote(targetRepository, e);
             }
