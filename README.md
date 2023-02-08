@@ -12,16 +12,16 @@ The demo below provisions and updates Wildfly 27.0.0.Alpha2.
    ```
 2. Provision server
    ```
-      ./<PROSPERO_HOME>/prospero install --fpl=wildfly --dir=wfly-27 --channel=examples/wildfly-27.0.0.Alpha2-channel.yaml
+      ./prospero install --fpl=wildfly --dir=wfly-27 --channel=examples/wildfly-27.0.0.Alpha2-channel.yaml
    ```
 3. Update server
-   1. Edit `examples/wildfly-27.0.0.Alpha2-channel.yaml` and update undertow-core version to:
+   1. Edit `examples/wildfly-27.0.0.Alpha2-manifest.yaml` (configured in the wildfly-27.0.0.Alpha2-channel.yaml) and update undertow-core version to:
    ```
       - groupId: "io.undertow"
         artifactId: "undertow-core"
-        version: "2.2.17.Final"
+        version: "2.2.18.Final"
    ```
    2. Update server
    ```
-      ./<PROSPERO_HOME>/prospero update --dir=wfly-27
+      ./prospero update perform --dir=wfly-27
    ```
