@@ -97,12 +97,14 @@ public class ProvisioningAction {
         try {
             final GalleonFeaturePackAnalyzer galleonFeaturePackAnalyzer = new GalleonFeaturePackAnalyzer(galleonEnv.getChannels(), mavenSessionManager);
 
-            // all agreements are implicitly accepted at this point
-            licenseManager.recordAgreements(getPendingLicenses(provisioningConfig, galleonFeaturePackAnalyzer), installDir);
+            try {
+                // all agreements are implicitly accepted at this point
+                licenseManager.recordAgreements(getPendingLicenses(provisioningConfig, galleonFeaturePackAnalyzer), installDir);
+            } catch (IOException e) {
+                throw Messages.MESSAGES.unableToWriteFile(installDir.resolve(LicenseManager.LICENSES_FOLDER), e);
+            }
 
             galleonFeaturePackAnalyzer.cacheGalleonArtifacts(installDir, provisioningConfig);
-        } catch (IOException e) {
-            throw Messages.MESSAGES.unableToWriteFile(installDir.resolve(LicenseManager.LICENSES_FOLDER), e);
         } catch (Exception e) {
             throw new RuntimeException(e);
         }

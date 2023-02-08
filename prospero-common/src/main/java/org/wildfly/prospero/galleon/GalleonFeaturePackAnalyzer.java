@@ -18,6 +18,7 @@
 package org.wildfly.prospero.galleon;
 
 import org.apache.commons.io.FileUtils;
+import org.jboss.galleon.Constants;
 import org.jboss.galleon.ProvisioningException;
 import org.jboss.galleon.ProvisioningManager;
 import org.jboss.galleon.config.ProvisioningConfig;
@@ -25,11 +26,13 @@ import org.jboss.galleon.layout.FeaturePackLayout;
 import org.jboss.galleon.layout.ProvisioningLayout;
 import org.jboss.galleon.layout.ProvisioningLayoutFactory;
 import org.jboss.galleon.spec.FeaturePackPlugin;
+import org.jboss.galleon.util.HashUtils;
 import org.wildfly.channel.Channel;
 import org.wildfly.channel.MavenArtifact;
 import org.wildfly.prospero.api.exceptions.OperationException;
 import org.wildfly.prospero.wfchannel.MavenSessionManager;
 
+import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -91,9 +94,24 @@ public class GalleonFeaturePackAnalyzer {
                 // cache it in the
                 artifactCache.cache(mavenArtifact);
             }
+
+            updateHashes(installedDir);
         } finally {
             FileUtils.deleteQuietly(tempInstallationPath.toFile());
         }
+    }
+
+    private void updateHashes(Path installedDir) throws IOException {
+        final Path hashesFile = installedDir.resolve(Constants.PROVISIONED_STATE_DIR).resolve(Constants.HASHES)
+                .resolve(ArtifactCache.CACHE_FOLDER).resolve(Constants.HASHES);
+        final Path cachesDir = installedDir.resolve(ArtifactCache.CACHE_FOLDER);
+
+        StringBuilder sb = new StringBuilder();
+        for (File file : cachesDir.toFile().listFiles()) {
+            sb.append(file.getName()).append(System.lineSeparator());
+            sb.append(HashUtils.bytesToHexString(HashUtils.hashPath(file.toPath()))).append(System.lineSeparator());
+        }
+        Files.writeString(hashesFile, sb.toString());
     }
 
     /**
