@@ -20,6 +20,7 @@ package org.wildfly.prospero.actions;
 import org.jboss.galleon.Constants;
 import org.jboss.galleon.ProvisioningException;
 import org.jboss.galleon.ProvisioningManager;
+import org.jboss.galleon.config.ProvisioningConfig;
 import org.jboss.galleon.util.PathsUtils;
 import org.jboss.galleon.xml.ProvisioningXmlParser;
 import org.wildfly.channel.Channel;
@@ -32,6 +33,7 @@ import org.wildfly.prospero.api.exceptions.MetadataException;
 import org.wildfly.prospero.api.exceptions.OperationException;
 import org.wildfly.prospero.galleon.ChannelMavenArtifactRepositoryManager;
 import org.wildfly.prospero.galleon.GalleonEnvironment;
+import org.wildfly.prospero.galleon.GalleonFeaturePackAnalyzer;
 import org.wildfly.prospero.galleon.GalleonUtils;
 import org.wildfly.prospero.model.ProsperoConfig;
 import org.wildfly.prospero.updates.MarkerFile;
@@ -73,10 +75,11 @@ class PrepareCandidateAction implements AutoCloseable{
 
     private void doBuildUpdate(Path targetDir, GalleonEnvironment galleonEnv) throws ProvisioningException, OperationException {
         final ProvisioningManager provMgr = galleonEnv.getProvisioningManager();
+        final ProvisioningConfig provisioningConfig = ProvisioningXmlParser.parse(PathsUtils.getProvisioningXml(installDir));
         try {
             GalleonUtils.executeGalleon((options) -> {
                         options.put(Constants.EXPORT_SYSTEM_PATHS, "true");
-                        provMgr.provision(ProvisioningXmlParser.parse(PathsUtils.getProvisioningXml(installDir)), options);
+                        provMgr.provision(provisioningConfig, options);
                     },
                     mavenSessionManager.getProvisioningRepo().toAbsolutePath());
         } catch (UnresolvedMavenArtifactException e) {
@@ -86,6 +89,14 @@ class PrepareCandidateAction implements AutoCloseable{
             writeProsperoMetadata(targetDir, galleonEnv.getRepositoryManager(), metadata.getProsperoConfig().getChannels());
         } catch (MetadataException ex) {
             throw new ProvisioningException(ex);
+        }
+
+        try {
+            final GalleonFeaturePackAnalyzer galleonFeaturePackAnalyzer = new GalleonFeaturePackAnalyzer(galleonEnv.getChannels(), mavenSessionManager);
+
+            galleonFeaturePackAnalyzer.cacheGalleonArtifacts(targetDir, provisioningConfig);
+        } catch (Exception e) {
+            throw new RuntimeException(e);
         }
     }
 
