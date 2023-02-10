@@ -21,6 +21,7 @@ import org.apache.commons.io.FileUtils;
 import org.wildfly.channel.Repository;
 import org.wildfly.prospero.Messages;
 import org.wildfly.prospero.api.InstallationChanges;
+import org.wildfly.prospero.api.MavenOptions;
 import org.wildfly.prospero.api.TemporaryRepositoriesHandler;
 import org.wildfly.prospero.api.exceptions.OperationException;
 import org.wildfly.prospero.api.InstallationMetadata;
@@ -60,11 +61,11 @@ public class InstallationHistoryAction {
         return installationMetadata.getRevisions();
     }
 
-    public void rollback(SavedState savedState, MavenSessionManager mavenSessionManager, List<Repository> overrideRepositories) throws OperationException, ProvisioningException {
+    public void rollback(SavedState savedState, MavenOptions mavenOptions, List<Repository> overrideRepositories) throws OperationException, ProvisioningException {
         Path tempDirectory = null;
         try {
             tempDirectory = Files.createTempDirectory("eap-revert");
-            prepareRevert(savedState, mavenSessionManager, overrideRepositories, tempDirectory);
+            prepareRevert(savedState, mavenOptions, overrideRepositories, tempDirectory);
             new ApplyCandidateAction(installation, tempDirectory).applyUpdate(ApplyCandidateAction.Type.ROLLBACK);
         } catch (IOException e) {
             throw Messages.MESSAGES.unableToCreateTemporaryDirectory(e);
@@ -75,7 +76,7 @@ public class InstallationHistoryAction {
         }
     }
 
-    public void prepareRevert(SavedState savedState, MavenSessionManager mavenSessionManager, List<Repository> overrideRepositories, Path targetDir)
+    public void prepareRevert(SavedState savedState, MavenOptions mavenOptions, List<Repository> overrideRepositories, Path targetDir)
             throws OperationException, ProvisioningException {
 
         try (final InstallationMetadata metadata = new InstallationMetadata(installation)) {
@@ -85,6 +86,7 @@ public class InstallationHistoryAction {
             final ProsperoConfig prosperoConfig = new ProsperoConfig(
                     TemporaryRepositoriesHandler.overrideRepositories(metadata.getProsperoConfig().getChannels(), overrideRepositories));
 
+            MavenSessionManager mavenSessionManager = new MavenSessionManager(mavenOptions);
             try (final InstallationMetadata revertMetadata = metadata.getSavedState(savedState)) {
                 final GalleonEnvironment galleonEnv = GalleonEnvironment
                         .builder(targetDir, prosperoConfig.getChannels(), mavenSessionManager)

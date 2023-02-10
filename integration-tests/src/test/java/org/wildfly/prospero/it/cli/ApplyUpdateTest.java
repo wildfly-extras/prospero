@@ -29,7 +29,6 @@ import org.wildfly.prospero.it.commonapi.WfCoreTestBase;
 import org.wildfly.prospero.test.MetadataTestUtils;
 
 import java.io.File;
-import java.io.IOException;
 import java.net.URL;
 import java.nio.file.Path;
 import java.util.List;
@@ -46,7 +45,8 @@ public class ApplyUpdateTest extends CliTestBase  {
     private File targetDir;
 
     @Before
-    public void setUp() throws IOException {
+    public void setUp() throws Exception {
+        super.setUp();
         targetDir = tempDir.newFolder();
     }
 

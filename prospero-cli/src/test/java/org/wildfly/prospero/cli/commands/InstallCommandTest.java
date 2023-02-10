@@ -42,12 +42,11 @@ import org.wildfly.channel.Channel;
 import org.wildfly.channel.ChannelManifestCoordinate;
 import org.wildfly.channel.Repository;
 import org.wildfly.prospero.actions.ProvisioningAction;
+import org.wildfly.prospero.api.MavenOptions;
 import org.wildfly.prospero.cli.ActionFactory;
 import org.wildfly.prospero.cli.CliMessages;
 import org.wildfly.prospero.cli.ReturnCodes;
-import org.wildfly.prospero.model.ProsperoConfig;
 import org.wildfly.prospero.test.MetadataTestUtils;
-import org.wildfly.prospero.wfchannel.MavenSessionManager;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.Assert.assertEquals;
@@ -76,7 +75,7 @@ public class InstallCommandTest extends AbstractMavenCommandTest {
     private ArgumentCaptor<List<Channel>> channelCaptor;
 
     @Captor
-    private ArgumentCaptor<MavenSessionManager> mavenSessionManager;
+    private ArgumentCaptor<MavenOptions> mavenOptions;
 
     @Override
     protected ActionFactory createActionFactory() {
@@ -119,7 +118,7 @@ public class InstallCommandTest extends AbstractMavenCommandTest {
     public void callProvisionOnInstallCommandWithCustomFpl() throws Exception {
         final File channelsFile = temporaryFolder.newFile();
         Channel channel = createChannel("test", "test", "http://test.org", "org.test");
-        new ProsperoConfig(List.of(channel)).writeConfig(channelsFile.toPath());
+        MetadataTestUtils.writeChannels(channelsFile.toPath(), List.of(channel));
 
         int exitCode = commandLine.execute(CliConstants.Commands.INSTALL, CliConstants.DIR, "test",
                 CliConstants.FPL, "org.wildfly:wildfly-ee-galleon-pack",
@@ -148,7 +147,7 @@ public class InstallCommandTest extends AbstractMavenCommandTest {
     public void callProvisionOnInstallKnownFplOverrideChannelsCommand() throws Exception {
         final File channelsFile = temporaryFolder.newFile();
         Channel channel = createChannel("dev", "wildfly-channel", "http://test.test", "org.wildfly");
-        new ProsperoConfig(List.of(channel)).writeConfig(channelsFile.toPath());
+        MetadataTestUtils.writeChannels(channelsFile.toPath(), List.of(channel));
 
         int exitCode = commandLine.execute(CliConstants.Commands.INSTALL, CliConstants.DIR, "test", CliConstants.FPL, KNOWN_FPL,
                 CliConstants.CHANNELS, channelsFile.getAbsolutePath());
@@ -174,7 +173,7 @@ public class InstallCommandTest extends AbstractMavenCommandTest {
 
         final File channelsFile = temporaryFolder.newFile();
         Channel channel = createChannel("dev", "wildfly-channel", "http://test.test", "org.wildfly");
-        new ProsperoConfig(List.of(channel)).writeConfig(channelsFile.toPath());
+        MetadataTestUtils.writeChannels(channelsFile.toPath(), List.of(channel));
 
         int exitCode = commandLine.execute(CliConstants.Commands.INSTALL, CliConstants.DIR, "test",
                 CliConstants.CHANNELS, channelsFile.getAbsolutePath(),
@@ -249,10 +248,9 @@ public class InstallCommandTest extends AbstractMavenCommandTest {
     }
 
     @Override
-    protected MavenSessionManager getCapturedSessionManager() {
-        Mockito.verify(actionFactory).install(any(), mavenSessionManager.capture(), any());
-        MavenSessionManager msm = mavenSessionManager.getValue();
-        return msm;
+    protected MavenOptions getCapturedMavenOptions() throws Exception {
+        Mockito.verify(actionFactory).install(any(), mavenOptions.capture(), any());
+        return mavenOptions.getValue();
     }
 
     @Override

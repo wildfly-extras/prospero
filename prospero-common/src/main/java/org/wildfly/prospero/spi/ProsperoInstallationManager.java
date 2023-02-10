@@ -1,5 +1,6 @@
 package org.wildfly.prospero.spi;
 
+import org.jboss.galleon.ProvisioningException;
 import org.wildfly.channel.ChannelManifestCoordinate;
 import org.wildfly.channel.MavenCoordinate;
 import org.wildfly.installationmanager.ArtifactChange;
@@ -43,9 +44,11 @@ public class ProsperoInstallationManager implements InstallationManager {
     private Path installationDir;
 
     public ProsperoInstallationManager(Path installationDir, MavenOptions mavenOptions) throws Exception {
-        MavenSessionManager mavenSessionManager = new MavenSessionManager(
-                Optional.ofNullable(mavenOptions.getLocalRepository()), mavenOptions.isOffline());
-        actionFactory = new ActionFactory(installationDir, mavenSessionManager);
+        final org.wildfly.prospero.api.MavenOptions options = org.wildfly.prospero.api.MavenOptions.builder()
+                .setOffline(mavenOptions.isOffline())
+                .setLocalCachePath(mavenOptions.getLocalRepository())
+                .build();
+        actionFactory = new ActionFactory(installationDir, options);
         this.installationDir = installationDir;
     }
 
@@ -91,7 +94,7 @@ public class ProsperoInstallationManager implements InstallationManager {
         Objects.requireNonNull(revision);
         Objects.requireNonNull(targetDir);
         final InstallationHistoryAction historyAction = actionFactory.getHistoryAction();
-        historyAction.prepareRevert(new SavedState(revision), actionFactory.mavenSessionManager,
+        historyAction.prepareRevert(new SavedState(revision), actionFactory.mavenOptions,
                 map(repositories, ProsperoInstallationManager::mapRepository), targetDir);
     }
 
@@ -267,18 +270,20 @@ public class ProsperoInstallationManager implements InstallationManager {
 
         private final Path server;
         private final MavenSessionManager mavenSessionManager;
+        private final org.wildfly.prospero.api.MavenOptions mavenOptions;
 
-        private ActionFactory(Path server, MavenSessionManager mavenSessionManager) {
+        private ActionFactory(Path server, org.wildfly.prospero.api.MavenOptions mavenOptions) throws ProvisioningException {
             this.server = server;
-            this.mavenSessionManager = mavenSessionManager;
+            this.mavenOptions = mavenOptions;
+            this.mavenSessionManager = new MavenSessionManager(mavenOptions);
         }
 
         protected InstallationHistoryAction getHistoryAction() {
             return new InstallationHistoryAction(server, null);
         }
 
-        protected UpdateAction getUpdateAction(List<org.wildfly.channel.Repository> repositories) throws OperationException {
-            return new UpdateAction(server, mavenSessionManager, null, repositories);
+        protected UpdateAction getUpdateAction(List<org.wildfly.channel.Repository> repositories) throws OperationException, ProvisioningException {
+            return new UpdateAction(server, mavenOptions, null, repositories);
         }
 
         protected MetadataAction getMetadataAction() throws MetadataException {

@@ -30,6 +30,7 @@ import org.wildfly.prospero.actions.ApplyCandidateAction;
 import org.wildfly.prospero.actions.Console;
 import org.wildfly.prospero.actions.UpdateAction;
 import org.wildfly.prospero.api.FileConflict;
+import org.wildfly.prospero.api.MavenOptions;
 import org.wildfly.prospero.api.exceptions.OperationException;
 import org.wildfly.prospero.cli.ActionFactory;
 import org.wildfly.prospero.cli.ArgumentParsingException;
@@ -37,11 +38,9 @@ import org.wildfly.prospero.cli.CliMessages;
 import org.wildfly.prospero.cli.FileConflictPrinter;
 import org.wildfly.prospero.cli.RepositoryDefinition;
 import org.wildfly.prospero.cli.ReturnCodes;
-import org.wildfly.prospero.cli.commands.options.LocalRepoOptions;
 import org.wildfly.prospero.galleon.GalleonUtils;
 import org.wildfly.prospero.updates.MarkerFile;
 import org.wildfly.prospero.updates.UpdateSet;
-import org.wildfly.prospero.wfchannel.MavenSessionManager;
 import picocli.CommandLine;
 
 @CommandLine.Command(
@@ -85,12 +84,12 @@ public class UpdateCommand extends AbstractParentCommand {
                 installationDir = determineInstallationDirectory(directory);
             }
 
-            final MavenSessionManager mavenSessionManager = new MavenSessionManager(LocalRepoOptions.getLocalMavenCache(localRepoOptions), offline);
+            final MavenOptions mavenOptions = parseMavenOptions();
             final List<Repository> repositories = RepositoryDefinition.from(temporaryRepositories);
 
             log.tracef("Perform full update");
 
-            try (UpdateAction updateAction = actionFactory.update(installationDir, mavenSessionManager, console, repositories)) {
+            try (UpdateAction updateAction = actionFactory.update(installationDir, mavenOptions, console, repositories)) {
                 performUpdate(updateAction, yes, console);
             }
 
@@ -119,7 +118,7 @@ public class UpdateCommand extends AbstractParentCommand {
             final long startTime = System.currentTimeMillis();
             final Path installationDir = determineInstallationDirectory(directory);
 
-            final MavenSessionManager mavenSessionManager = new MavenSessionManager(LocalRepoOptions.getLocalMavenCache(localRepoOptions), offline);
+            final MavenOptions mavenOptions = parseMavenOptions();
             final List<Repository> repositories = RepositoryDefinition.from(temporaryRepositories);
 
             log.tracef("Generate update in %s", updateDirectory);
@@ -127,7 +126,7 @@ public class UpdateCommand extends AbstractParentCommand {
             verifyTargetDirectoryIsEmpty(updateDirectory);
 
             try (UpdateAction updateAction = actionFactory.update(installationDir,
-                    mavenSessionManager, console, repositories)) {
+                    mavenOptions, console, repositories)) {
                 buildUpdate(updateAction, updateDirectory, yes, console);
             }
 
@@ -190,10 +189,10 @@ public class UpdateCommand extends AbstractParentCommand {
         public Integer call() throws Exception {
             final Path installationDir = determineInstallationDirectory(directory);
 
-            final MavenSessionManager mavenSessionManager = new MavenSessionManager(LocalRepoOptions.getLocalMavenCache(localRepoOptions), offline);
+            final MavenOptions mavenOptions = parseMavenOptions();
             final List<Repository> repositories = RepositoryDefinition.from(temporaryRepositories);
 
-            try (UpdateAction updateAction = actionFactory.update(installationDir, mavenSessionManager, console, repositories)) {
+            try (UpdateAction updateAction = actionFactory.update(installationDir, mavenOptions, console, repositories)) {
                 final UpdateSet updateSet = updateAction.findUpdates();
                 console.updatesFound(updateSet.getArtifactUpdates());
                 return ReturnCodes.SUCCESS;

@@ -41,6 +41,7 @@ import org.wildfly.channel.maven.ChannelCoordinate;
 import org.wildfly.channel.maven.VersionResolverFactory;
 import org.wildfly.channel.spi.MavenVersionsResolver;
 import org.wildfly.channel.version.VersionMatcher;
+import org.wildfly.prospero.api.MavenOptions;
 import org.wildfly.prospero.wfchannel.MavenSessionManager;
 
 import java.io.File;
@@ -73,7 +74,9 @@ public class ArtifactPromoterTest {
 
     @Before
     public void setUp() throws Exception {
-        sessionManager = new MavenSessionManager();
+        sessionManager = new MavenSessionManager(MavenOptions.builder()
+                .setNoLocalCache(true)
+                .build());
         system = sessionManager.newRepositorySystem();
         session = sessionManager.newRepositorySystemSession(system, false);
 

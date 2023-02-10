@@ -30,12 +30,12 @@ import org.mockito.junit.MockitoJUnitRunner;
 import org.wildfly.channel.Repository;
 import org.wildfly.prospero.actions.Console;
 import org.wildfly.prospero.actions.InstallationHistoryAction;
+import org.wildfly.prospero.api.MavenOptions;
 import org.wildfly.prospero.api.SavedState;
 import org.wildfly.prospero.cli.ActionFactory;
 import org.wildfly.prospero.cli.CliMessages;
 import org.wildfly.prospero.cli.ReturnCodes;
 import org.wildfly.prospero.test.MetadataTestUtils;
-import org.wildfly.prospero.wfchannel.MavenSessionManager;
 
 import java.nio.file.Path;
 import java.util.List;
@@ -54,7 +54,7 @@ public class RevertPrepareCommandTest extends AbstractMavenCommandTest {
     private InstallationHistoryAction historyAction;
 
     @Captor
-    private ArgumentCaptor<MavenSessionManager> mavenSessionManager;
+    private ArgumentCaptor<MavenOptions> mavenOptions;
 
     @Captor
     private ArgumentCaptor<List<Repository>> repositories;
@@ -133,8 +133,8 @@ public class RevertPrepareCommandTest extends AbstractMavenCommandTest {
                 CliConstants.OFFLINE, CliConstants.LOCAL_CACHE, "local-repo");
 
         assertEquals(ReturnCodes.SUCCESS, exitCode);
-        verify(historyAction).prepareRevert(eq(new SavedState("abcd")), mavenSessionManager.capture(), any(), eq(Path.of("update_test").toAbsolutePath()));
-        assertTrue(mavenSessionManager.getValue().isOffline());
+        verify(historyAction).prepareRevert(eq(new SavedState("abcd")), mavenOptions.capture(), any(), eq(Path.of("update_test").toAbsolutePath()));
+        assertTrue(mavenOptions.getValue().isOffline());
     }
 
     @Test
@@ -155,9 +155,9 @@ public class RevertPrepareCommandTest extends AbstractMavenCommandTest {
     }
 
     @Override
-    protected MavenSessionManager getCapturedSessionManager() throws Exception {
-        verify(historyAction).prepareRevert(eq(new SavedState("abcd")), mavenSessionManager.capture(), any(), eq(Path.of("update_test").toAbsolutePath()));
-        return mavenSessionManager.getValue();
+    protected MavenOptions getCapturedMavenOptions() throws Exception {
+        verify(historyAction).prepareRevert(eq(new SavedState("abcd")), mavenOptions.capture(), any(), eq(Path.of("update_test").toAbsolutePath()));
+        return mavenOptions.getValue();
     }
 
     @Override

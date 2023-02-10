@@ -18,11 +18,10 @@
 package org.wildfly.prospero.cli.commands;
 
 import org.junit.Test;
+import org.wildfly.prospero.api.MavenOptions;
 import org.wildfly.prospero.cli.AbstractConsoleTest;
 import org.wildfly.prospero.cli.ReturnCodes;
-import org.wildfly.prospero.wfchannel.MavenSessionManager;
 
-import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
@@ -30,6 +29,8 @@ import java.util.Arrays;
 import java.util.List;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 
 public abstract class AbstractMavenCommandTest extends AbstractConsoleTest {
@@ -40,8 +41,9 @@ public abstract class AbstractMavenCommandTest extends AbstractConsoleTest {
         int exitCode = commandLine.execute(getArgs());
 
         assertEquals(ReturnCodes.SUCCESS, exitCode);
-        MavenSessionManager msm = getCapturedSessionManager();
-        assertEquals(MavenSessionManager.LOCAL_MAVEN_REPO, msm.getProvisioningRepo());
+        MavenOptions options = getCapturedMavenOptions();
+        assertEquals(null, options.getLocalCache());
+        assertFalse(options.isNoLocalCache());
     }
 
     @Test
@@ -51,8 +53,8 @@ public abstract class AbstractMavenCommandTest extends AbstractConsoleTest {
         int exitCode = commandLine.execute(getArgs(CliConstants.LOCAL_CACHE, "test-path"));
 
         assertEquals(ReturnCodes.SUCCESS, exitCode);
-        MavenSessionManager msm = getCapturedSessionManager();
-        assertEquals(Paths.get("test-path").toAbsolutePath(), msm.getProvisioningRepo());
+        MavenOptions options = getCapturedMavenOptions();
+        assertEquals(Paths.get("test-path").toAbsolutePath(), options.getLocalCache());
     }
 
     private String[] getArgs(String... additional) {
@@ -68,15 +70,11 @@ public abstract class AbstractMavenCommandTest extends AbstractConsoleTest {
         int exitCode = commandLine.execute(getArgs(CliConstants.NO_LOCAL_MAVEN_CACHE));
 
         assertEquals(ReturnCodes.SUCCESS, exitCode);
-        MavenSessionManager msm = getCapturedSessionManager();
-        final Path provisioningRepo = msm.getProvisioningRepo();
+        MavenOptions options = getCapturedMavenOptions();
+        final Path provisioningRepo = options.getLocalCache();
 
-        // JDK 17 reads the java.io.tmpdir property before it's altered by mvn
-        final Path test = Files.createTempDirectory("test");
-        final Path defaultTempPath = test.getParent();
-        Files.delete(test);
-
-        assertTrue(provisioningRepo.toString() + " should start with  " + defaultTempPath, provisioningRepo.startsWith(defaultTempPath));
+        assertNull(provisioningRepo);
+        assertTrue(options.isNoLocalCache());
     }
 
     @Test
@@ -86,7 +84,7 @@ public abstract class AbstractMavenCommandTest extends AbstractConsoleTest {
         assertEquals(ReturnCodes.INVALID_ARGUMENTS, exitCode);
     }
 
-    protected abstract MavenSessionManager getCapturedSessionManager() throws Exception;
+    protected abstract MavenOptions getCapturedMavenOptions() throws Exception;
 
     protected abstract String[] getDefaultArguments();
 

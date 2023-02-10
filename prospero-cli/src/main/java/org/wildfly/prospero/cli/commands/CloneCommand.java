@@ -19,11 +19,11 @@ package org.wildfly.prospero.cli.commands;
 
 import org.wildfly.prospero.Messages;
 import org.wildfly.prospero.actions.Console;
+import org.wildfly.prospero.api.MavenOptions;
 import org.wildfly.prospero.cli.ActionFactory;
 import org.wildfly.prospero.cli.RepositoryDefinition;
 import org.wildfly.prospero.cli.ReturnCodes;
 import org.wildfly.prospero.cli.commands.options.LocalRepoOptions;
-import org.wildfly.prospero.wfchannel.MavenSessionManager;
 import picocli.CommandLine;
 
 import java.nio.file.Files;
@@ -95,10 +95,10 @@ public class CloneCommand extends AbstractCommand {
         List<String> remoteRepositories = new ArrayList<>();
 
         @CommandLine.ArgGroup(headingKey = "localRepoOptions.heading", order = 4)
-        LocalRepoOptions localRepoOptions;
+        LocalRepoOptions localRepoOptions = new LocalRepoOptions();
 
         @CommandLine.Option(names = CliConstants.OFFLINE, order = 5)
-        boolean offline;
+        Optional<Boolean> offline = Optional.empty();
 
         CloneRestoreCommand(Console console, ActionFactory actionFactory) {
             super(console, actionFactory);
@@ -110,11 +110,12 @@ public class CloneCommand extends AbstractCommand {
                 console.println(Messages.MESSAGES.restoreFileNotExisted(inPath));
                 return ReturnCodes.INVALID_ARGUMENTS;
             }
-            final Optional<Path> localMavenCache = LocalRepoOptions.getLocalMavenCache(localRepoOptions);
-            final MavenSessionManager mavenSessionManager = new MavenSessionManager(localMavenCache, offline);
-            Path installationDirectory =  directory.orElse(currentDir()).toAbsolutePath();
+
+            final MavenOptions.Builder mavenOptions = localRepoOptions.toOptions();
+            offline.map(mavenOptions::setOffline);
+            Path installationDirectory = directory.orElse(currentDir()).toAbsolutePath();
             actionFactory
-              .restoreAction(installationDirectory, mavenSessionManager, console)
+              .restoreAction(installationDirectory, mavenOptions.build(), console)
               .restore(inPath, RepositoryDefinition.from(remoteRepositories));
             console.println(Messages.MESSAGES.installationMetaRestored(inPath, installationDirectory));
             return ReturnCodes.SUCCESS;

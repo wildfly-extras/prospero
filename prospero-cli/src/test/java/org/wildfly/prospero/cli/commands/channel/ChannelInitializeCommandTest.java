@@ -272,7 +272,7 @@ public class ChannelInitializeCommandTest extends AbstractConsoleTest {
                 new ChannelManifestCoordinate(CUSTOM_CHANNELS_GROUP_ID, "existing"),
                 null, null);
         new ProsperoConfig(List.of(channel))
-                .writeConfig(installationDir.resolve(InstallationMetadata.METADATA_DIR).resolve(InstallationMetadata.INSTALLER_CHANNELS_FILE_NAME));
+                .writeConfig(installationDir.resolve(InstallationMetadata.METADATA_DIR));
         int exitCode = commandLine.execute(
                 CliConstants.Commands.CHANNEL, CliConstants.Commands.CUSTOMIZATION_INIT_CHANNEL,
                 CliConstants.CUSTOMIZATION_REPOSITORY_URL, "http://test.repo2",

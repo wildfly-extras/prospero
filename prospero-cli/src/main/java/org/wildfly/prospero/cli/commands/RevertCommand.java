@@ -24,12 +24,11 @@ import java.util.Optional;
 import org.wildfly.channel.Repository;
 import org.wildfly.prospero.actions.Console;
 import org.wildfly.prospero.actions.InstallationHistoryAction;
+import org.wildfly.prospero.api.MavenOptions;
 import org.wildfly.prospero.api.SavedState;
 import org.wildfly.prospero.cli.ActionFactory;
 import org.wildfly.prospero.cli.RepositoryDefinition;
 import org.wildfly.prospero.cli.ReturnCodes;
-import org.wildfly.prospero.cli.commands.options.LocalRepoOptions;
-import org.wildfly.prospero.wfchannel.MavenSessionManager;
 import picocli.CommandLine;
 
 @CommandLine.Command(
@@ -51,12 +50,12 @@ public class RevertCommand extends AbstractParentCommand {
         @Override
         public Integer call() throws Exception {
             final Path installationDirectory = determineInstallationDirectory(directory);
-            final MavenSessionManager mavenSessionManager = new MavenSessionManager(LocalRepoOptions.getLocalMavenCache(localRepoOptions), offline);
+            final MavenOptions mavenOptions = parseMavenOptions();
 
             final List<Repository> overrideRepositories = RepositoryDefinition.from(temporaryRepositories);
 
             InstallationHistoryAction historyAction = actionFactory.history(installationDirectory, console);
-            historyAction.rollback(new SavedState(revision), mavenSessionManager, overrideRepositories);
+            historyAction.rollback(new SavedState(revision), mavenOptions, overrideRepositories);
             return ReturnCodes.SUCCESS;
         }
     }
@@ -102,12 +101,12 @@ public class RevertCommand extends AbstractParentCommand {
             verifyTargetDirectoryIsEmpty(updateDirectory);
 
             final Path installationDirectory = determineInstallationDirectory(directory);
-            final MavenSessionManager mavenSessionManager = new MavenSessionManager(LocalRepoOptions.getLocalMavenCache(localRepoOptions), offline);
+            final MavenOptions mavenOptions = parseMavenOptions();
 
             final List<Repository> overrideRepositories = RepositoryDefinition.from(temporaryRepositories);
 
             InstallationHistoryAction historyAction = actionFactory.history(installationDirectory, console);
-            historyAction.prepareRevert(new SavedState(revision), mavenSessionManager, overrideRepositories, updateDirectory.toAbsolutePath());
+            historyAction.prepareRevert(new SavedState(revision), mavenOptions, overrideRepositories, updateDirectory.toAbsolutePath());
             return ReturnCodes.SUCCESS;
         }
     }

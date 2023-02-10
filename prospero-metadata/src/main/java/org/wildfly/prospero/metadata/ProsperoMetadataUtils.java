@@ -43,6 +43,7 @@ public class ProsperoMetadataUtils {
      * Name of the file containing list of channels the server is subscribed to.
      */
     public static final String INSTALLER_CHANNELS_FILE_NAME = "installer-channels.yaml";
+    public static final String MAVEN_OPTS_FILE = "maven_opts.json";
 
     /**
      * Generate installer metadata inside {@code serverDir}. The generated metadata files allow the server to be

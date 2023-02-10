@@ -23,11 +23,13 @@ import org.wildfly.channel.Channel;
 import org.wildfly.channel.Repository;
 import org.wildfly.prospero.api.ArtifactChange;
 import org.wildfly.prospero.actions.InstallationHistoryAction;
+import org.wildfly.prospero.api.MavenOptions;
 import org.wildfly.prospero.api.SavedState;
 import org.wildfly.prospero.actions.UpdateAction;
 import org.wildfly.prospero.api.ProvisioningDefinition;
 import org.wildfly.prospero.api.exceptions.OperationException;
 import org.wildfly.prospero.it.AcceptingConsole;
+import org.wildfly.prospero.metadata.ProsperoMetadataUtils;
 import org.wildfly.prospero.model.ManifestYamlSupport;
 import org.eclipse.aether.artifact.Artifact;
 import org.eclipse.aether.artifact.DefaultArtifact;
@@ -35,7 +37,6 @@ import org.junit.After;
 import org.junit.Test;
 import org.wildfly.prospero.model.ProsperoConfig;
 import org.wildfly.prospero.test.MetadataTestUtils;
-import org.wildfly.prospero.wfchannel.MavenSessionManager;
 
 import java.io.File;
 import java.io.IOException;
@@ -108,7 +109,7 @@ public class InstallationHistoryActionTest extends WfCoreTestBase {
         final List<SavedState> revisions = historyAction.getRevisions();
 
         final SavedState savedState = revisions.get(1);
-        historyAction.rollback(savedState, mavenSessionManager, Collections.emptyList());
+        historyAction.rollback(savedState, mavenOptions, Collections.emptyList());
 
         wildflyCliArtifact = readArtifactFromManifest("org.wildfly.core", "wildfly-cli");
         assertEquals(BASE_VERSION, wildflyCliArtifact.get().getVersion());
@@ -143,7 +144,7 @@ public class InstallationHistoryActionTest extends WfCoreTestBase {
         final List<SavedState> revisions = historyAction.getRevisions();
 
         final SavedState savedState = revisions.get(1);
-        historyAction.prepareRevert(savedState, mavenSessionManager, Collections.emptyList(), candidate);
+        historyAction.prepareRevert(savedState, mavenOptions, Collections.emptyList(), candidate);
 
         wildflyCliArtifact = readArtifactFromManifest("org.wildfly.core", "wildfly-cli");
         assertEquals(UPGRADE_VERSION, wildflyCliArtifact.get().getVersion());
@@ -184,13 +185,13 @@ public class InstallationHistoryActionTest extends WfCoreTestBase {
 
         // perform the rollback using temporary repository only. Offline mode disables other repositories
         final URL temporaryRepo = mockTemporaryRepo(false);
-        final MavenSessionManager offlineSessionManager = new MavenSessionManager(Optional.empty(), true);
-        historyAction.rollback(savedState, offlineSessionManager, List.of(new Repository("temp-repo", temporaryRepo.toExternalForm())));
+        final MavenOptions offlineOptions = MavenOptions.OFFLINE;
+        historyAction.rollback(savedState, offlineOptions, List.of(new Repository("temp-repo", temporaryRepo.toExternalForm())));
 
         wildflyCliArtifact = readArtifactFromManifest("org.wildfly.core", "wildfly-cli");
         assertEquals(BASE_VERSION, wildflyCliArtifact.get().getVersion());
         assertTrue("Reverted jar should be present in module", wildflyCliModulePath.resolve(BASE_JAR).toFile().exists());
-        assertThat(ProsperoConfig.readConfig(outputPath.resolve(MetadataTestUtils.INSTALLER_CHANNELS_FILE_PATH)).getChannels())
+        assertThat(ProsperoConfig.readConfig(outputPath.resolve(ProsperoMetadataUtils.METADATA_DIR)).getChannels())
                 .withFailMessage("Temporary repository should not be listed")
                 .flatMap(Channel::getRepositories)
                 .map(Repository::getUrl)
@@ -235,7 +236,7 @@ public class InstallationHistoryActionTest extends WfCoreTestBase {
     }
 
     private UpdateAction updateAction() throws ProvisioningException, OperationException {
-        return new UpdateAction(outputPath, mavenSessionManager, new AcceptingConsole(), Collections.emptyList());
+        return new UpdateAction(outputPath, mavenOptions, new AcceptingConsole(), Collections.emptyList());
     }
 
     private Optional<Artifact> readArtifactFromManifest(String groupId, String artifactId) throws IOException {

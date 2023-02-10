@@ -18,7 +18,9 @@
 package org.wildfly.prospero.cli.commands;
 
 import org.wildfly.prospero.actions.Console;
+import org.wildfly.prospero.api.MavenOptions;
 import org.wildfly.prospero.cli.ActionFactory;
+import org.wildfly.prospero.cli.ArgumentParsingException;
 import org.wildfly.prospero.cli.commands.options.LocalRepoOptions;
 import picocli.CommandLine;
 
@@ -35,12 +37,18 @@ public abstract class AbstractMavenCommand extends AbstractCommand {
     List<String> temporaryRepositories = new ArrayList<>();
 
     @CommandLine.ArgGroup(exclusive = true, headingKey = "localRepoOptions.heading")
-    LocalRepoOptions localRepoOptions;
+    LocalRepoOptions localRepoOptions = new LocalRepoOptions();
 
     @CommandLine.Option(names = CliConstants.OFFLINE)
-    boolean offline;
+    Optional<Boolean> offline = Optional.empty();
 
     public AbstractMavenCommand(Console console, ActionFactory actionFactory) {
         super(console, actionFactory);
+    }
+
+    protected MavenOptions parseMavenOptions() throws ArgumentParsingException {
+        final MavenOptions.Builder builder = localRepoOptions.toOptions();
+        offline.map(builder::setOffline);
+        return builder.build();
     }
 }

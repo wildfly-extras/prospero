@@ -26,6 +26,7 @@ import org.wildfly.prospero.cli.ReturnCodes;
 import org.wildfly.prospero.cli.commands.CliConstants;
 import org.wildfly.prospero.it.ExecutionUtils;
 import org.wildfly.prospero.it.commonapi.WfCoreTestBase;
+import org.wildfly.prospero.metadata.ProsperoMetadataUtils;
 import org.wildfly.prospero.model.ProsperoConfig;
 import org.wildfly.prospero.test.MetadataTestUtils;
 
@@ -74,7 +75,7 @@ public class UpdateWithAdditionalRepositoryTest extends CliTestBase {
 
         assertEquals(WfCoreTestBase.UPGRADE_VERSION, wildflyCliStream.get().getVersion());
         // verify the temporary repository has not been added
-        assertThat(ProsperoConfig.readConfig(targetDir.toPath().resolve(MetadataTestUtils.INSTALLER_CHANNELS_FILE_PATH)).getChannels())
+        assertThat(ProsperoConfig.readConfig(targetDir.toPath().resolve(ProsperoMetadataUtils.METADATA_DIR)).getChannels())
                 .flatMap(Channel::getRepositories)
                 .map(Repository::getUrl)
                 .containsExactlyInAnyOrder("https://repo1.maven.org/maven2/",

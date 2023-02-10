@@ -21,7 +21,9 @@ import org.eclipse.aether.repository.RemoteRepository;
 import org.wildfly.channel.Channel;
 import org.wildfly.channel.ChannelMapper;
 import org.wildfly.prospero.Messages;
+import org.wildfly.prospero.api.MavenOptions;
 import org.wildfly.prospero.api.exceptions.MetadataException;
+import org.wildfly.prospero.metadata.ProsperoMetadataUtils;
 
 import java.io.IOException;
 import java.nio.file.Files;
@@ -32,10 +34,18 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 public class ProsperoConfig {
+
     private final List<Channel> channels;
+    private final MavenOptions mavenOptions;
 
     public ProsperoConfig(List<Channel> channels) {
         this.channels = channels;
+        this.mavenOptions = null;
+    }
+
+    public ProsperoConfig(List<Channel> channels, MavenOptions mavenOptions) {
+        this.channels = channels;
+        this.mavenOptions = mavenOptions;
     }
 
     public List<Channel> getChannels() {
@@ -43,21 +53,30 @@ public class ProsperoConfig {
     }
 
     public void writeConfig(Path configFile) throws IOException {
-        Files.writeString(configFile, ChannelMapper.toYaml(channels));
+        Files.writeString(configFile.resolve(ProsperoMetadataUtils.INSTALLER_CHANNELS_FILE_NAME), ChannelMapper.toYaml(channels));
     }
 
     public static ProsperoConfig readConfig(Path path) throws MetadataException {
         final String yamlContent;
+        MavenOptions opts = null;
         try {
-            yamlContent = Files.readString(path);
+            yamlContent = Files.readString(path.resolve(ProsperoMetadataUtils.INSTALLER_CHANNELS_FILE_NAME));
         } catch (IOException e) {
             throw Messages.MESSAGES.unableToReadFile(path, e);
         }
 
+        if (Files.exists(path.resolve(ProsperoMetadataUtils.MAVEN_OPTS_FILE))) {
+            try {
+                opts = MavenOptions.read(path.resolve(ProsperoMetadataUtils.MAVEN_OPTS_FILE));
+            } catch (IOException e) {
+                throw new RuntimeException(e);
+            }
+        }
+
         if (yamlContent.isEmpty()) {
-            return new ProsperoConfig(Collections.emptyList());
+            return new ProsperoConfig(Collections.emptyList(), opts);
         } else {
-            return new ProsperoConfig(ChannelMapper.fromString(yamlContent));
+            return new ProsperoConfig(ChannelMapper.fromString(yamlContent), opts);
         }
     }
 
@@ -66,5 +85,9 @@ public class ProsperoConfig {
                 .flatMap(c->c.getRepositories().stream())
                 .map(r->new RemoteRepository.Builder(r.getId(), "default", r.getUrl()).build())
                 .collect(Collectors.toSet());
+    }
+
+    public MavenOptions getMavenOptions() {
+        return mavenOptions==null?MavenOptions.DEFAULT_OPTIONS:mavenOptions;
     }
 }

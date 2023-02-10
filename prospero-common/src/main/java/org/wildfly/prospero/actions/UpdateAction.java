@@ -28,6 +28,7 @@ import org.wildfly.channel.Channel;
 import org.wildfly.channel.Repository;
 import org.wildfly.prospero.Messages;
 import org.wildfly.prospero.api.FileConflict;
+import org.wildfly.prospero.api.MavenOptions;
 import org.wildfly.prospero.api.TemporaryRepositoriesHandler;
 import org.wildfly.prospero.api.InstallationMetadata;
 import org.wildfly.prospero.api.exceptions.OperationException;
@@ -47,14 +48,17 @@ public class UpdateAction implements AutoCloseable {
     private final Path installDir;
     private final Console console;
     private final ProsperoConfig prosperoConfig;
+    private final MavenOptions mavenOptions;
 
-    public UpdateAction(Path installDir, MavenSessionManager mavenSessionManager, Console console, List<Repository> overrideRepositories)
-            throws OperationException {
+    public UpdateAction(Path installDir, MavenOptions mavenOptions, Console console, List<Repository> overrideRepositories)
+            throws OperationException, ProvisioningException {
         this.metadata = new InstallationMetadata(installDir);
         this.installDir = installDir;
         this.console = console;
         this.prosperoConfig = addTemporaryRepositories(overrideRepositories);
-        this.mavenSessionManager = mavenSessionManager;
+        this.mavenOptions = prosperoConfig.getMavenOptions().merge(mavenOptions);
+
+        this.mavenSessionManager = new MavenSessionManager(this.mavenOptions);
     }
 
     public List<FileConflict> performUpdate() throws OperationException, ProvisioningException {
@@ -110,6 +114,6 @@ public class UpdateAction implements AutoCloseable {
 
         final List<Channel> channels = TemporaryRepositoriesHandler.overrideRepositories(prosperoConfig.getChannels(), repositories);
 
-        return new ProsperoConfig(channels);
+        return new ProsperoConfig(channels, prosperoConfig.getMavenOptions());
     }
 }

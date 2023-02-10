@@ -64,7 +64,7 @@ public class InstallationRestoreActionTest extends WfCoreTestBase {
         final ProvisioningDefinition provisioningDefinition = defaultWfCoreDefinition()
                 .setChannelCoordinates(channelsFile.toString())
                 .build();
-        new ProvisioningAction(outputPath, mavenSessionManager, new AcceptingConsole())
+        new ProvisioningAction(outputPath, mavenOptions, new AcceptingConsole())
                 .provision(provisioningDefinition.toProvisioningConfig(),
                         provisioningDefinition.resolveChannels(CHANNELS_RESOLVER_FACTORY));
 
@@ -72,7 +72,7 @@ public class InstallationRestoreActionTest extends WfCoreTestBase {
 
         new InstallationExportAction(outputPath).export(Paths.get("target/bundle.zip"));
 
-        new InstallationRestoreAction(restoredServerDir, mavenSessionManager, new AcceptingConsole()).restore(Paths.get("target/bundle.zip"), Collections.emptyList());
+        new InstallationRestoreAction(restoredServerDir, mavenOptions, new AcceptingConsole()).restore(Paths.get("target/bundle.zip"), Collections.emptyList());
 
         final Optional<Artifact> wildflyCliArtifact = readArtifactFromManifest("org.wildfly.core", "wildfly-cli");
         assertEquals(BASE_VERSION, wildflyCliArtifact.get().getVersion());
@@ -100,7 +100,7 @@ public class InstallationRestoreActionTest extends WfCoreTestBase {
                     new ChannelManifestCoordinate(channelUrls.get(i)), null, null));
         }
 
-        new ProsperoConfig(channels).writeConfig(provisionConfigFile);
+        new ProsperoConfig(channels).writeConfig(provisionConfigFile.getParent());
     }
 
 }
