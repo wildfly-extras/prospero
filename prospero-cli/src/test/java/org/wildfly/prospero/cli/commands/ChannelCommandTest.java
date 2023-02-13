@@ -126,7 +126,7 @@ public class ChannelCommandTest extends AbstractConsoleTest {
                 CliConstants.REPOSITORIES, "test_repo::http://test.te");
         Assert.assertEquals(ReturnCodes.SUCCESS, exitCode);
 
-        InstallationMetadata installationMetadata = new InstallationMetadata(dir);
+        InstallationMetadata installationMetadata = InstallationMetadata.loadInstallation(dir);
         assertThat(installationMetadata.getProsperoConfig().getChannels())
                 .flatMap(c->c.getRepositories())
                 .map(r->Tuple.tuple(r.getId(), r.getUrl()))
@@ -198,14 +198,14 @@ public class ChannelCommandTest extends AbstractConsoleTest {
 
     @Test
     public void testRemove() throws Exception {
-        try (InstallationMetadata installationMetadata = new InstallationMetadata(dir)) {
+        try (InstallationMetadata installationMetadata = InstallationMetadata.loadInstallation(dir)) {
             installationMetadata.getProsperoConfig().getChannels().forEach(System.out::println);
         }
         int exitCode = commandLine.execute(CliConstants.Commands.CHANNEL, CliConstants.Commands.REMOVE,
                 CliConstants.DIR, dir.toString(),
                 CliConstants.CHANNEL_NAME, "test2");
         Assert.assertEquals(ReturnCodes.SUCCESS, exitCode);
-        try (InstallationMetadata installationMetadata = new InstallationMetadata(dir)) {
+        try (InstallationMetadata installationMetadata = InstallationMetadata.loadInstallation(dir)) {
             assertThat(installationMetadata.getProsperoConfig().getChannels())
                     .map(c->c.getManifestCoordinate())
                     .map(r->Tuple.tuple(r.getMaven(), r.getUrl()))
@@ -219,7 +219,7 @@ public class ChannelCommandTest extends AbstractConsoleTest {
                 CliConstants.DIR, dir.toString(),
                 CliConstants.CHANNEL_NAME, "test1");
         Assert.assertEquals(ReturnCodes.SUCCESS, exitCode);
-        try (InstallationMetadata installationMetadata = new InstallationMetadata(dir)) {
+        try (InstallationMetadata installationMetadata = InstallationMetadata.loadInstallation(dir)) {
             assertThat(installationMetadata.getProsperoConfig().getChannels())
                     .map(c->c.getManifestCoordinate())
                     .map(r->Tuple.tuple(r.getMaven(), r.getUrl()))
@@ -232,7 +232,7 @@ public class ChannelCommandTest extends AbstractConsoleTest {
                 CliConstants.DIR, dir.toString(),
                 CliConstants.CHANNEL_NAME, "test3");
         Assert.assertEquals(ReturnCodes.SUCCESS, exitCode);
-        try (InstallationMetadata installationMetadata = new InstallationMetadata(dir)) {
+        try (InstallationMetadata installationMetadata = InstallationMetadata.loadInstallation(dir)) {
             assertThat(installationMetadata.getProsperoConfig().getChannels())
                     .map(c->c.getManifestCoordinate())
                     .map(r->Tuple.tuple(r.getMaven(), r.getUrl()))

@@ -53,7 +53,7 @@ class PrepareCandidateAction implements AutoCloseable{
 
     PrepareCandidateAction(Path installDir, MavenSessionManager mavenSessionManager, Console console, ProsperoConfig prosperoConfig)
             throws OperationException, ProvisioningException {
-        this.metadata = new InstallationMetadata(installDir);
+        this.metadata = InstallationMetadata.loadInstallation(installDir);
         this.installDir = installDir;
         this.console = console;
         this.prosperoConfig = prosperoConfig;
@@ -108,7 +108,7 @@ class PrepareCandidateAction implements AutoCloseable{
     private void writeProsperoMetadata(Path home, ChannelMavenArtifactRepositoryManager maven, List<Channel> channels) throws MetadataException {
         final ChannelManifest manifest = maven.resolvedChannel();
 
-        try (final InstallationMetadata installationMetadata = new InstallationMetadata(home, manifest, channels, null)) {
+        try (final InstallationMetadata installationMetadata = InstallationMetadata.newInstallation(home, manifest, new ProsperoConfig(channels))) {
             installationMetadata.recordProvision(true, false);
         }
     }

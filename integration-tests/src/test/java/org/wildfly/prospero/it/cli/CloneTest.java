@@ -87,7 +87,7 @@ public class CloneTest extends WfCoreTestBase {
           )
                 .execute()
                 .assertReturnCode(ReturnCodes.SUCCESS);
-        checkMetaData(InstallationMetadata.importMetadata(exportPath), null, installedManifest);
+        checkMetaData(InstallationMetadata.fromMetadataBundle(exportPath), null, installedManifest);
     }
 
     private ChannelManifest install(Path installDir, Path provisionConfig) throws Exception {
@@ -151,7 +151,7 @@ public class CloneTest extends WfCoreTestBase {
           )
           .execute()
           .assertReturnCode(ReturnCodes.SUCCESS);
-        checkMetaData(new InstallationMetadata(importDir), null, installedManifest);
+        checkMetaData(InstallationMetadata.loadInstallation(importDir), null, installedManifest);
     }
 
     @Test
@@ -169,7 +169,7 @@ public class CloneTest extends WfCoreTestBase {
           )
           .execute()
           .assertReturnCode(ReturnCodes.SUCCESS);
-        checkMetaData(new InstallationMetadata(importDir), stream, installedManifest);
+        checkMetaData(InstallationMetadata.loadInstallation(importDir), stream, installedManifest);
     }
 
     private void updateManifestStream(Path installDir, Stream stream) throws Exception {

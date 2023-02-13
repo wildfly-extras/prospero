@@ -102,7 +102,7 @@ public class ChannelInitializeCommandTest extends AbstractConsoleTest {
     @Test
     public void customRepositoryAlreadyExists() throws Exception {
         final String customRepoUrl = tempFolder.newFolder().toURI().toURL().toString();
-        final InstallationMetadata im = new InstallationMetadata(installationDir);
+        final InstallationMetadata im = InstallationMetadata.loadInstallation(installationDir);
         Channel channel = new Channel("Customization channel", null, null,
                 List.of(new Repository(CUSTOMIZATION_REPO_ID, customRepoUrl)),
                 new ChannelManifestCoordinate("org.test", "test"),
@@ -267,7 +267,7 @@ public class ChannelInitializeCommandTest extends AbstractConsoleTest {
 
     @Test
     public void onlyOneDefaultChannelCanBeCreated() throws Exception {
-        Channel channel = new Channel(null, null, null,
+        Channel channel = new Channel("base", null, null,
                 List.of(new Repository("test", "http://test.org/repo")),
                 new ChannelManifestCoordinate(CUSTOM_CHANNELS_GROUP_ID, "existing"),
                 null, null);
@@ -293,11 +293,11 @@ public class ChannelInitializeCommandTest extends AbstractConsoleTest {
     }
 
     private List<Channel> actualChannels() throws MetadataException {
-        return new InstallationMetadata(installationDir).getProsperoConfig().getChannels();
+        return InstallationMetadata.loadInstallation(installationDir).getProsperoConfig().getChannels();
     }
 
     private List<Repository> actualRepositories() throws MetadataException {
-        return new InstallationMetadata(installationDir).getProsperoConfig()
+        return InstallationMetadata.loadInstallation(installationDir).getProsperoConfig()
                 .getChannels().stream()
                 .flatMap((Channel channel) -> channel.getRepositories().stream())
                 .collect(Collectors.toList());

@@ -35,7 +35,7 @@ public class MetadataAction implements AutoCloseable {
     private final InstallationMetadata installationMetadata;
 
     public MetadataAction(Path installation) throws MetadataException {
-        this.installationMetadata = new InstallationMetadata(installation);
+        this.installationMetadata = InstallationMetadata.loadInstallation(installation);
     }
 
     protected MetadataAction(InstallationMetadata installationMetadata) {

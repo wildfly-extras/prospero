@@ -52,7 +52,7 @@ public class UpdateAction implements AutoCloseable {
 
     public UpdateAction(Path installDir, MavenOptions mavenOptions, Console console, List<Repository> overrideRepositories)
             throws OperationException, ProvisioningException {
-        this.metadata = new InstallationMetadata(installDir);
+        this.metadata = InstallationMetadata.loadInstallation(installDir);
         this.installDir = installDir;
         this.console = console;
         this.prosperoConfig = addTemporaryRepositories(overrideRepositories);

@@ -110,7 +110,7 @@ public class PatchingTest {
     }
 
     private Optional<String> getInstalledUndertowVersion() throws MetadataException {
-        final InstallationMetadata meta = new InstallationMetadata(targetDir.toPath());
+        final InstallationMetadata meta = InstallationMetadata.loadInstallation(targetDir.toPath());
         final Optional<String> undertowVersion = meta.getManifest().getStreams().stream()
                 .filter(s -> s.getGroupId().equals(PATCHED_GROUP_ID) && s.getArtifactId().equals(PATCHED_ARTIFACT_ID))
                 .map(Stream::getVersion)

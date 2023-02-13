@@ -53,6 +53,7 @@ import org.wildfly.channel.Stream;
 import org.wildfly.prospero.api.InstallationMetadata;
 import org.wildfly.prospero.api.SavedState;
 import org.wildfly.prospero.api.exceptions.MetadataException;
+import org.wildfly.prospero.model.ProsperoConfig;
 
 public final class MetadataTestUtils {
 
@@ -78,7 +79,7 @@ public final class MetadataTestUtils {
 
     public static InstallationMetadata createInstallationMetadata(Path installation, ChannelManifest manifest, List<Channel> channels) throws MetadataException {
         Runtime.getRuntime().addShutdownHook(new Thread(() -> FileUtils.deleteQuietly(installation.toFile())));
-        final InstallationMetadata metadata = new InstallationMetadata(installation, manifest, channels, null);
+        final InstallationMetadata metadata = InstallationMetadata.newInstallation(installation, manifest, new ProsperoConfig(channels));
         metadata.recordProvision(true);
         return metadata;
     }
@@ -163,7 +164,7 @@ public final class MetadataTestUtils {
     }
 
     public static String getLatestRevision(Path installationPath) throws MetadataException {
-        final InstallationMetadata im = new InstallationMetadata(installationPath);
+        final InstallationMetadata im = InstallationMetadata.loadInstallation(installationPath);
         return im.getRevisions().stream().sorted(Comparator.comparing(SavedState::getTimestamp)).findFirst().get().getName();
     }
 }

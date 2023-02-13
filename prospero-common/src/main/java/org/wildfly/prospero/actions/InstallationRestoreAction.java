@@ -58,7 +58,7 @@ public class InstallationRestoreAction {
             throw Messages.MESSAGES.installationDirAlreadyExists(installDir);
         }
 
-        try (final InstallationMetadata metadataBundle = InstallationMetadata.importMetadata(metadataBundleZip)) {
+        try (final InstallationMetadata metadataBundle = InstallationMetadata.fromMetadataBundle(metadataBundleZip)) {
             final ProsperoConfig prosperoConfig = metadataBundle.getProsperoConfig();
             List<Channel> originalChannels = new ArrayList<>(prosperoConfig.getChannels());
             if (remoteRepositories != null && !remoteRepositories.isEmpty()) {
@@ -85,8 +85,8 @@ public class InstallationRestoreAction {
     private void writeProsperoMetadata(ChannelMavenArtifactRepositoryManager maven, List<Channel> channels) throws MetadataException {
         final ChannelManifest manifest = maven.resolvedChannel();
 
-        try (final InstallationMetadata installationMetadata = new InstallationMetadata(installDir, manifest, channels, null)) {
-            installationMetadata.recordProvision(true);
+        try (final InstallationMetadata installationMetadata = InstallationMetadata.newInstallation(installDir, manifest, new ProsperoConfig(channels))) {
+            installationMetadata.recordProvision(true, true);
         }
     }
 }
