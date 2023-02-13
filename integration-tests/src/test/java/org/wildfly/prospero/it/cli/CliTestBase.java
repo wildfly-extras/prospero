@@ -39,7 +39,7 @@ public abstract class CliTestBase extends WfCoreTestBase {
                         CliConstants.DIR, targetDir.toAbsolutePath().toString())
                 .withTimeLimit(10, TimeUnit.MINUTES)
                 .execute()
-                .assertReturnCode(ReturnCodes.SUCCESS);
+                .assertReturnCode(ReturnCodes.SUCCESS_LOCAL_CHANGES);
     }
 
     protected static Optional<Stream> getInstalledArtifact(String artifactId, Path serverPath) throws IOException {

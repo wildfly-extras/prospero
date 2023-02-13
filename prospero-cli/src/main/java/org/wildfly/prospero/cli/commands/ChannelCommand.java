@@ -78,7 +78,7 @@ public class ChannelCommand extends AbstractCommand {
                 console.println("-------");
             }
 
-            return ReturnCodes.SUCCESS;
+            return ReturnCodes.SUCCESS_NO_CHANGE;
         }
         private static String toGav(MavenCoordinate coord) {
             final String ga = coord.getGroupId() + ":" + coord.getArtifactId();

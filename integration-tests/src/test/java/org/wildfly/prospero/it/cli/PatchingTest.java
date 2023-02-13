@@ -83,7 +83,7 @@ public class PatchingTest {
         ExecutionUtils.prosperoExecution(CliConstants.Commands.CHANNEL, CliConstants.Commands.CUSTOMIZATION_INIT_CHANNEL,
                         CliConstants.DIR, targetDir.getAbsolutePath())
                 .execute()
-                .assertReturnCode(ReturnCodes.SUCCESS);
+                .assertReturnCode(ReturnCodes.SUCCESS_LOCAL_CHANGES);
 
         // create bundle with upgraded artifact
         final Path customizationArchive = createCustomizationArchive();
@@ -94,14 +94,14 @@ public class PatchingTest {
                         CliConstants.Y,
                         CliConstants.CUSTOMIZATION_ARCHIVE, customizationArchive.toString())
                 .execute()
-                .assertReturnCode(ReturnCodes.SUCCESS);
+                .assertReturnCode(ReturnCodes.SUCCESS_LOCAL_CHANGES);
 
         // apply update
         ExecutionUtils.prosperoExecution(CliConstants.Commands.UPDATE, CliConstants.Commands.PERFORM,
                         CliConstants.DIR, targetDir.getAbsolutePath(),
                         CliConstants.Y)
                 .execute()
-                .assertReturnCode(ReturnCodes.SUCCESS);
+                .assertReturnCode(ReturnCodes.SUCCESS_LOCAL_CHANGES);
 
         // verify updated
         assertEquals(PATCHED_VERSION, getInstalledUndertowVersion().get());
@@ -140,7 +140,7 @@ public class PatchingTest {
                             CliConstants.CUSTOMIZATION_REPOSITORY_URL, repositoryUrl,
                             CliConstants.CHANNEL_MANIFEST, TEST_CUSTOM_CHANNEL)
                     .execute()
-                    .assertReturnCode(ReturnCodes.SUCCESS);
+                    .assertReturnCode(ReturnCodes.SUCCESS_LOCAL_CHANGES);
 
             // create bundle with upgraded artifact
             final Path customizationArchive = createCustomizationArchive();
@@ -152,14 +152,14 @@ public class PatchingTest {
                             CliConstants.CUSTOMIZATION_REPOSITORY_URL, repositoryPath.toUri().toURL().toString(),
                             CliConstants.CHANNEL_MANIFEST, TEST_CUSTOM_CHANNEL)
                     .execute()
-                    .assertReturnCode(ReturnCodes.SUCCESS);
+                    .assertReturnCode(ReturnCodes.SUCCESS_LOCAL_CHANGES);
 
             // apply update
             ExecutionUtils.prosperoExecution(CliConstants.Commands.UPDATE, CliConstants.Commands.PERFORM,
                             CliConstants.DIR, targetDir.getAbsolutePath(),
                             CliConstants.Y)
                     .execute()
-                    .assertReturnCode(ReturnCodes.SUCCESS);
+                    .assertReturnCode(ReturnCodes.SUCCESS_LOCAL_CHANGES);
 
             // verify updated
             assertEquals(PATCHED_VERSION, getInstalledUndertowVersion().get());
@@ -185,7 +185,7 @@ public class PatchingTest {
                         CliConstants.FPL, "org.wildfly.core:wildfly-core-galleon-pack::zip",
                         CliConstants.DIR, targetDir.getAbsolutePath())
                 .execute()
-                .assertReturnCode(ReturnCodes.SUCCESS);
+                .assertReturnCode(ReturnCodes.SUCCESS_LOCAL_CHANGES);
     }
 
     private Path createCustomizationArchive() throws Exception {

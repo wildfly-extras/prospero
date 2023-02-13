@@ -86,7 +86,7 @@ public class CloneTest extends WfCoreTestBase {
             CliConstants.ARG_PATH, exportPath.toString()
           )
                 .execute()
-                .assertReturnCode(ReturnCodes.SUCCESS);
+                .assertReturnCode(ReturnCodes.SUCCESS_LOCAL_CHANGES);
         checkMetaData(InstallationMetadata.fromMetadataBundle(exportPath), null, installedManifest);
     }
 
@@ -97,7 +97,7 @@ public class CloneTest extends WfCoreTestBase {
                         CliConstants.DIR, installDir.toString())
                 .withTimeLimit(10, TimeUnit.MINUTES)
                 .execute()
-                .assertReturnCode(ReturnCodes.SUCCESS);
+                .assertReturnCode(ReturnCodes.SUCCESS_LOCAL_CHANGES);
         return ManifestYamlSupport.parse(installDir.resolve(METADATA_DIR).resolve(MANIFEST_FILE_NAME).toFile());
     }
 
@@ -150,7 +150,7 @@ public class CloneTest extends WfCoreTestBase {
             CliConstants.ARG_PATH, exportPath.toString()
           )
           .execute()
-          .assertReturnCode(ReturnCodes.SUCCESS);
+          .assertReturnCode(ReturnCodes.SUCCESS_LOCAL_CHANGES);
         checkMetaData(InstallationMetadata.loadInstallation(importDir), null, installedManifest);
     }
 
@@ -168,7 +168,7 @@ public class CloneTest extends WfCoreTestBase {
             CliConstants.REPOSITORIES, mockTemporaryRepo(false).toString()
           )
           .execute()
-          .assertReturnCode(ReturnCodes.SUCCESS);
+          .assertReturnCode(ReturnCodes.SUCCESS_LOCAL_CHANGES);
         checkMetaData(InstallationMetadata.loadInstallation(importDir), stream, installedManifest);
     }
 

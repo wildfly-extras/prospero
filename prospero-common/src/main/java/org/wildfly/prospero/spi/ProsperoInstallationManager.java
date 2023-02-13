@@ -22,7 +22,6 @@ import org.wildfly.prospero.api.SavedState;
 import org.wildfly.prospero.api.exceptions.MetadataException;
 import org.wildfly.prospero.api.exceptions.OperationException;
 import org.wildfly.prospero.updates.UpdateSet;
-import org.wildfly.prospero.wfchannel.MavenSessionManager;
 
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -269,13 +268,11 @@ public class ProsperoInstallationManager implements InstallationManager {
     protected static class ActionFactory {
 
         private final Path server;
-        private final MavenSessionManager mavenSessionManager;
         private final org.wildfly.prospero.api.MavenOptions mavenOptions;
 
         private ActionFactory(Path server, org.wildfly.prospero.api.MavenOptions mavenOptions) throws ProvisioningException {
             this.server = server;
             this.mavenOptions = mavenOptions;
-            this.mavenSessionManager = new MavenSessionManager(mavenOptions);
         }
 
         protected InstallationHistoryAction getHistoryAction() {

@@ -132,7 +132,7 @@ public class ChannelPromoteCommand extends AbstractCommand {
             actionFactory.promoter(console).promote(archive.normalize().toAbsolutePath(), url.get(), coordinate);
         }
 
-        return ReturnCodes.SUCCESS;
+        return ReturnCodes.SUCCESS_LOCAL_CHANGES;
     }
 
     private String toGav(MavenCoordinate coord) {

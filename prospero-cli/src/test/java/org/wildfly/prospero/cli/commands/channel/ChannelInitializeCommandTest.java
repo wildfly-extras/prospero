@@ -86,7 +86,7 @@ public class ChannelInitializeCommandTest extends AbstractConsoleTest {
                 CliConstants.DIR, installationDir.toString(),
                 CliConstants.CHANNEL_MANIFEST, "org.test:custom-channel",
                 CliConstants.CUSTOMIZATION_REPOSITORY_URL, customRepoUrl);
-        Assert.assertEquals(ReturnCodes.SUCCESS, exitCode);
+        Assert.assertEquals(ReturnCodes.SUCCESS_LOCAL_CHANGES, exitCode);
         assertThat(actualChannels())
                 .map(c -> c.getManifestCoordinate().getMaven())
                 .contains(
@@ -157,7 +157,7 @@ public class ChannelInitializeCommandTest extends AbstractConsoleTest {
                 CliConstants.CHANNEL_MANIFEST, "org.test:custom-channel",
                 CliConstants.CUSTOMIZATION_REPOSITORY_URL, customRepoUrl);
 
-        Assert.assertEquals(ReturnCodes.SUCCESS, exitCode);
+        Assert.assertEquals(ReturnCodes.SUCCESS_LOCAL_CHANGES, exitCode);
         assertTrue(Files.exists(repositoryPath));
     }
 
@@ -226,7 +226,7 @@ public class ChannelInitializeCommandTest extends AbstractConsoleTest {
                 CliConstants.DIR, installationDir.toString(),
                 CliConstants.CHANNEL_MANIFEST, "org.test:custom-channel");
 
-        Assert.assertEquals(ReturnCodes.SUCCESS, exitCode);
+        Assert.assertEquals(ReturnCodes.SUCCESS_LOCAL_CHANGES, exitCode);
         assertThat(actualRepositories())
                 .map(r-> tuple(r.getId(), r.getUrl()))
                 .contains(
@@ -246,7 +246,7 @@ public class ChannelInitializeCommandTest extends AbstractConsoleTest {
                 CliConstants.Commands.CHANNEL, CliConstants.Commands.CUSTOMIZATION_INIT_CHANNEL,
                 CliConstants.DIR, installationDir.toString());
 
-        Assert.assertEquals(ReturnCodes.SUCCESS, exitCode);
+        Assert.assertEquals(ReturnCodes.SUCCESS_LOCAL_CHANGES, exitCode);
         final Matcher matcher = Pattern.compile("Registering custom channel `(.*)`").matcher(getStandardOutput());
         assertTrue(matcher.find());
         final String channelName = matcher.group(1);
