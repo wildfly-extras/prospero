@@ -20,32 +20,26 @@ package org.wildfly.prospero.cli.commands;
 import org.eclipse.aether.DefaultRepositorySystemSession;
 import org.eclipse.aether.RepositorySystem;
 import org.jboss.galleon.ProvisioningException;
-import org.jboss.galleon.config.ProvisioningConfig;
 import org.wildfly.channel.Channel;
 import org.wildfly.channel.maven.VersionResolverFactory;
 import org.wildfly.prospero.actions.Console;
-import org.wildfly.prospero.actions.ProvisioningAction;
+import org.wildfly.prospero.api.MavenOptions;
 import org.wildfly.prospero.api.ProvisioningDefinition;
 import org.wildfly.prospero.api.exceptions.MetadataException;
 import org.wildfly.prospero.api.exceptions.NoChannelException;
 import org.wildfly.prospero.cli.ActionFactory;
 import org.wildfly.prospero.cli.ArgumentParsingException;
-import org.wildfly.prospero.cli.CliMessages;
-import org.wildfly.prospero.cli.LicensePrinter;
 import org.wildfly.prospero.cli.RepositoryDefinition;
-import org.wildfly.prospero.cli.ReturnCodes;
 import org.wildfly.prospero.cli.commands.options.LocalRepoOptions;
-import org.wildfly.prospero.licenses.License;
 import org.wildfly.prospero.wfchannel.MavenSessionManager;
 import picocli.CommandLine;
 
-import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
-public class AbstractInstallCommand extends AbstractCommand {
+public abstract class AbstractInstallCommand extends AbstractCommand {
 
     @CommandLine.ArgGroup(
             heading = "%nInstallation source:%n",
@@ -79,53 +73,29 @@ public class AbstractInstallCommand extends AbstractCommand {
     List<String> remoteRepositories = new ArrayList<>();
 
     @CommandLine.ArgGroup(exclusive = true, order = 5, headingKey = "localRepoOptions.heading")
-    LocalRepoOptions localRepoOptions;
+    LocalRepoOptions localRepoOptions = new LocalRepoOptions();
 
     @CommandLine.Option(
             names = CliConstants.OFFLINE,
             order = 6
     )
-    boolean offline;
+    Optional<Boolean> offline = Optional.empty();
 
     public AbstractInstallCommand(Console console, ActionFactory actionFactory) {
         super(console, actionFactory);
     }
 
-    @Override
-    public Integer call() throws Exception {
-
-        final Path tempDirectory = Files.createTempDirectory("eap-installer");
-        try {
-            final ProvisioningDefinition provisioningDefinition = buildDefinition();
-            final MavenSessionManager mavenSessionManager = createMavenSession();
-            final ProvisioningConfig provisioningConfig = provisioningDefinition.toProvisioningConfig();
-            final VersionResolverFactory versionResolverFactory = InstallCommand.createVersionResolverFactory(mavenSessionManager);
-            final List<Channel> channels = provisioningDefinition.resolveChannels(versionResolverFactory);
-
-            final ProvisioningAction provisioningAction = actionFactory.install(tempDirectory.toAbsolutePath(), mavenSessionManager,
-                    console);
-
-            final List<License> pendingLicenses = provisioningAction.getPendingLicenses(provisioningConfig, channels);
-            if (!pendingLicenses.isEmpty()) {
-                System.out.println();
-                System.out.println(CliMessages.MESSAGES.listAgreementsHeader());
-                System.out.println();
-                new LicensePrinter().print(pendingLicenses);
-            } else {
-                System.out.println();
-                System.out.println(CliMessages.MESSAGES.noAgreementsNeeded());
-            }
-            return ReturnCodes.SUCCESS;
-        } finally {
-            tempDirectory.toFile().delete();
-        }
+    protected List<Channel> resolveChannels(ProvisioningDefinition provisioningDefinition, MavenOptions mavenOptions) throws ArgumentParsingException, ProvisioningException, NoChannelException {
+        final MavenSessionManager mavenSessionManager = new MavenSessionManager(mavenOptions);
+        final VersionResolverFactory versionResolverFactory = InstallCommand.createVersionResolverFactory(mavenSessionManager);
+        final List<Channel> channels = provisioningDefinition.resolveChannels(versionResolverFactory);
+        return channels;
     }
 
-    protected MavenSessionManager createMavenSession() throws ArgumentParsingException, ProvisioningException {
-        final Optional<Path> localMavenCache = LocalRepoOptions.getLocalMavenCache(localRepoOptions);
-
-        final MavenSessionManager mavenSessionManager = createMavenSessionManager(localMavenCache);
-        return mavenSessionManager;
+    protected MavenOptions getMavenOptions() throws ArgumentParsingException {
+        final MavenOptions.Builder mavenOptions = localRepoOptions.toOptions();
+        offline.map(mavenOptions::setOffline);
+        return mavenOptions.build();
     }
 
     protected ProvisioningDefinition buildDefinition() throws MetadataException, NoChannelException, ArgumentParsingException {
@@ -137,11 +107,6 @@ public class AbstractInstallCommand extends AbstractCommand {
                 .setDefinitionFile(featurePackOrDefinition.definition.map(Path::toUri).orElse(null))
                 .build();
         return provisioningDefinition;
-    }
-
-    protected MavenSessionManager createMavenSessionManager(Optional<Path> localMavenCache) throws ProvisioningException {
-        final MavenSessionManager mavenSessionManager = new MavenSessionManager(localMavenCache, offline);
-        return mavenSessionManager;
     }
 
     protected static VersionResolverFactory createVersionResolverFactory(MavenSessionManager mavenSessionManager) {

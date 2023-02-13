@@ -35,6 +35,7 @@ import org.wildfly.channel.Repository;
 import org.wildfly.channel.Stream;
 import org.wildfly.prospero.actions.UpdateAction;
 import org.wildfly.prospero.api.InstallationMetadata;
+import org.wildfly.prospero.api.MavenOptions;
 import org.wildfly.prospero.api.ProvisioningDefinition;
 import org.wildfly.prospero.api.RepositoryUtils;
 import org.wildfly.prospero.it.AcceptingConsole;
@@ -100,7 +101,7 @@ public class UpdateTest extends WfCoreTestBase {
         deployManifestFile(mockRepo.toURI().toURL(), updatedManifest, "1.0.1");
 
         // update installation
-        new UpdateAction(outputPath, mavenSessionManager, new AcceptingConsole(), Collections.emptyList())
+        new UpdateAction(outputPath, mavenOptions, new AcceptingConsole(), Collections.emptyList())
                 .performUpdate();
 
         wildflyCliArtifact = readArtifactFromManifest("org.wildfly.core", "wildfly-cli");
@@ -131,7 +132,7 @@ public class UpdateTest extends WfCoreTestBase {
         deployManifestFile(mockRepo.toURI().toURL(), updatedChannel, "1.0.1");
 
         // update installation
-        new UpdateAction(outputPath, mavenSessionManager, new AcceptingConsole(), Collections.emptyList())
+        new UpdateAction(outputPath, mavenOptions, new AcceptingConsole(), Collections.emptyList())
                 .performUpdate();
 
         assertTrue(Files.readString(channelsFile).contains("# test comment"));
@@ -158,7 +159,7 @@ public class UpdateTest extends WfCoreTestBase {
 
         // update installation
         final Path preparedUpdatePath = temp.newFolder().toPath();
-        new UpdateAction(outputPath, mavenSessionManager, new AcceptingConsole(), Collections.emptyList())
+        new UpdateAction(outputPath, mavenOptions, new AcceptingConsole(), Collections.emptyList())
                 .buildUpdate(preparedUpdatePath);
 
         final Path markerFile = preparedUpdatePath.resolve(UPDATE_MARKER_FILE);
@@ -185,10 +186,10 @@ public class UpdateTest extends WfCoreTestBase {
         deployManifestFile(tempRepo, updatedChannel, "1.0.1");
 
         // offline MSM will disable http(s) repositories and local maven cache
-        MavenSessionManager offlineMsm = new MavenSessionManager(Optional.empty(), true);
+        final MavenOptions offlineOptions = MavenOptions.OFFLINE;
 
         // update installation
-        new UpdateAction(outputPath, offlineMsm, new AcceptingConsole(),
+        new UpdateAction(outputPath, offlineOptions, new AcceptingConsole(),
                 List.of(new Repository("temp", tempRepo.toExternalForm())))
                 .performUpdate();
 
@@ -217,7 +218,7 @@ public class UpdateTest extends WfCoreTestBase {
         repositories.add(new Repository("test-repo", mockRepo.toURI().toURL().toString()));
         Channel channel = new Channel("test", "", null, repositories,
                 new ChannelManifestCoordinate("test", "channel"), null, null);
-        new ProsperoConfig(List.of(channel)).writeConfig(channelsFile.toPath());
+        new ProsperoConfig(List.of(channel)).writeConfig(channelsFile.toPath().getParent());
         return channelsFile;
     }
 

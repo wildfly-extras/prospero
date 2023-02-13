@@ -21,7 +21,7 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.Optional;
+import java.util.Objects;
 
 import org.apache.commons.io.FileUtils;
 import org.eclipse.aether.repository.LocalRepository;
@@ -41,6 +41,7 @@ import org.eclipse.aether.spi.connector.transport.TransporterFactory;
 import org.eclipse.aether.transport.file.FileTransporterFactory;
 import org.eclipse.aether.transport.http.HttpTransporterFactory;
 import org.jboss.galleon.ProvisioningException;
+import org.wildfly.prospero.api.MavenOptions;
 
 public class MavenSessionManager {
 
@@ -52,17 +53,23 @@ public class MavenSessionManager {
     private final Path provisioningRepo;
     private boolean offline;
 
-    public MavenSessionManager(Optional<Path> provisioningRepo, boolean offline) throws ProvisioningException {
-        this.offline = offline;
-        if (provisioningRepo.isPresent()) {
-            this.provisioningRepo = provisioningRepo.get().toAbsolutePath();
-        } else {
+    public MavenSessionManager(MavenOptions mavenOptions) throws ProvisioningException {
+        Objects.requireNonNull(mavenOptions);
+
+        this.offline = mavenOptions.isOffline();
+
+        if (mavenOptions.isNoLocalCache()) {
+            // generate temp folder
             try {
                 this.provisioningRepo = Files.createTempDirectory("provisioning-repo");
                 Runtime.getRuntime().addShutdownHook(new Thread(() -> FileUtils.deleteQuietly(this.provisioningRepo.toFile())));
             } catch (IOException e) {
                 throw Messages.MESSAGES.unableToCreateCache(e);
             }
+        } else if (!mavenOptions.overridesLocalCache()) {
+            this.provisioningRepo = MavenSessionManager.LOCAL_MAVEN_REPO;
+        } else {
+            this.provisioningRepo = mavenOptions.getLocalCache().toAbsolutePath();
         }
 
         // allow to resolve file-system repositories in offline mode
@@ -72,12 +79,8 @@ public class MavenSessionManager {
         }
     }
 
-    public MavenSessionManager(Path provisioningRepo) {
-        this.provisioningRepo = provisioningRepo.toAbsolutePath();
-    }
-
     public MavenSessionManager() throws ProvisioningException {
-        this(Optional.empty(), false);
+        this(MavenOptions.DEFAULT_OPTIONS);
     }
 
     public RepositorySystem newRepositorySystem() {

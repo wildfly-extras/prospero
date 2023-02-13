@@ -17,10 +17,10 @@
 
 package org.wildfly.prospero.cli.commands.options;
 
+import org.wildfly.prospero.api.MavenOptions;
 import org.wildfly.prospero.cli.ArgumentParsingException;
 import org.wildfly.prospero.cli.CliMessages;
 import org.wildfly.prospero.cli.commands.CliConstants;
-import org.wildfly.prospero.wfchannel.MavenSessionManager;
 import picocli.CommandLine;
 
 import java.nio.file.Files;
@@ -39,18 +39,19 @@ public class LocalRepoOptions {
             names = CliConstants.NO_LOCAL_MAVEN_CACHE,
             order = 7
     )
-    boolean noLocalCache;
+    Optional<Boolean> noLocalCache = Optional.empty();
 
-    public static Optional<Path> getLocalMavenCache(LocalRepoOptions localRepoParam) throws ArgumentParsingException {
-        if (localRepoParam == null) {
-            return Optional.of(MavenSessionManager.LOCAL_MAVEN_REPO);
-        } else if (localRepoParam.noLocalCache) {
-            return Optional.empty();
-        } else {
-            if (Files.exists(localRepoParam.localMavenCache) && !Files.isDirectory(localRepoParam.localMavenCache)) {
-                throw CliMessages.MESSAGES.repositoryIsNotDirectory(localRepoParam.localMavenCache);
-            }
-            return Optional.of(localRepoParam.localMavenCache);
+    public MavenOptions.Builder toOptions() throws ArgumentParsingException {
+        final MavenOptions.Builder builder = MavenOptions.builder();
+        if (noLocalCache.isPresent()) {
+            builder.setNoLocalCache(noLocalCache.get());
         }
+        if (localMavenCache != null) {
+            if (Files.exists(this.localMavenCache) && !Files.isDirectory(this.localMavenCache)) {
+                throw CliMessages.MESSAGES.repositoryIsNotDirectory(this.localMavenCache);
+            }
+            builder.setLocalCachePath(localMavenCache.toAbsolutePath());
+        }
+        return builder;
     }
 }

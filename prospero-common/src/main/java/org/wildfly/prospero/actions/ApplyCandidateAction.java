@@ -28,7 +28,6 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
-import java.util.Optional;
 
 import org.jboss.galleon.Constants;
 import org.jboss.galleon.Errors;
@@ -36,6 +35,7 @@ import org.jboss.galleon.Errors;
 import org.jboss.galleon.ProvisioningManager;
 import org.wildfly.prospero.api.FileConflict;
 import org.wildfly.prospero.api.InstallationMetadata;
+import org.wildfly.prospero.api.MavenOptions;
 import org.wildfly.prospero.api.SavedState;
 import org.wildfly.prospero.api.exceptions.InvalidUpdateCandidateException;
 import org.wildfly.prospero.api.exceptions.MetadataException;
@@ -117,8 +117,12 @@ public class ApplyCandidateAction {
             LOGGER.debug("System paths " + this.systemPaths.getPaths());
         }
         // offline is enough - we just need to read the configuration
+        final MavenOptions mavenOptions = MavenOptions.builder()
+                .setOffline(true)
+                .setNoLocalCache(true)
+                .build();
         provisioningManager = GalleonEnvironment.builder(installationDir, Collections.emptyList(),
-                new MavenSessionManager(Optional.empty(), true))
+                new MavenSessionManager(mavenOptions))
                 .build().getProvisioningManager();
     }
 

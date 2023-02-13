@@ -31,7 +31,7 @@ import org.wildfly.channel.maven.VersionResolverFactory;
 import org.wildfly.prospero.Messages;
 import org.wildfly.prospero.api.exceptions.NoChannelException;
 import org.wildfly.prospero.galleon.GalleonUtils;
-import org.wildfly.prospero.model.ProsperoConfig;
+import org.wildfly.prospero.test.MetadataTestUtils;
 
 import java.net.URL;
 import java.io.File;
@@ -208,10 +208,10 @@ public class ProvisioningDefinitionTest {
     public void knownFplWithConfig() throws Exception {
         final File file = temp.newFile();
 
-        new ProsperoConfig(List.of(new Channel("test", null, null,
+        MetadataTestUtils.writeChannels(file.toPath(), List.of(new Channel("test", null, null,
                 List.of(new Repository("test_repo", "http://custom.repo")),
                 new ChannelManifestCoordinate("new.test", "gav"),
-                null, null))).writeConfig(file.toPath());
+                null, null)));
 
         ProvisioningDefinition def = new ProvisioningDefinition.Builder().setFpl("multi-channel")
                 .setChannelCoordinates(file.toPath().toString()).build();

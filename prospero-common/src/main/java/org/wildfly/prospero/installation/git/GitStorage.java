@@ -208,8 +208,8 @@ public class GitStorage implements AutoCloseable {
     public List<ChannelChange> getChannelChanges(SavedState savedState) throws MetadataException {
         Parser<ChannelChange> parser = (path) -> {
 
-            final List<Channel> oldChannels = ProsperoConfig.readConfig(path.resolve(InstallationMetadata.INSTALLER_CHANNELS_FILE_NAME)).getChannels();
-            final List<Channel> currentChannels = ProsperoConfig.readConfig(base.resolve(InstallationMetadata.INSTALLER_CHANNELS_FILE_NAME)).getChannels();
+            final List<Channel> oldChannels = ProsperoConfig.readConfig(path).getChannels();
+            final List<Channel> currentChannels = ProsperoConfig.readConfig(base).getChannels();
 
             final ArrayList<ChannelChange> channelChanges = new ArrayList<>();
 

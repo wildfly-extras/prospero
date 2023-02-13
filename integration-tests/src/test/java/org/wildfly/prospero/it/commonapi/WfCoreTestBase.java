@@ -27,6 +27,7 @@ import org.junit.rules.TemporaryFolder;
 import org.wildfly.channel.Repository;
 import org.wildfly.channel.maven.VersionResolverFactory;
 import org.wildfly.prospero.actions.ProvisioningAction;
+import org.wildfly.prospero.api.MavenOptions;
 import org.wildfly.prospero.api.ProvisioningDefinition;
 import org.wildfly.prospero.api.RepositoryUtils;
 import org.wildfly.prospero.cli.CliConsole;
@@ -80,14 +81,18 @@ public class WfCoreTestBase {
     protected ProvisioningAction installation;
 
     protected final List<Repository> repositories = defaultRemoteRepositories();
-    protected MavenSessionManager mavenSessionManager = new MavenSessionManager(MavenSessionManager.LOCAL_MAVEN_REPO);
+    protected MavenOptions mavenOptions;
+    protected MavenSessionManager mavenSessionManager;
 
     @Rule
     public TemporaryFolder temp = new TemporaryFolder();
 
     @BeforeClass
-    public static void deployUpgrade() throws InstallationException, ArtifactResolutionException {
-        final MavenSessionManager msm = new MavenSessionManager(MavenSessionManager.LOCAL_MAVEN_REPO);
+    public static void deployUpgrade() throws Exception {
+        final MavenSessionManager msm = new MavenSessionManager(MavenOptions.builder()
+                .setLocalCachePath(MavenSessionManager.LOCAL_MAVEN_REPO)
+                .setOffline(false)
+                .build());
         final RepositorySystem system = msm.newRepositorySystem();
         final DefaultRepositorySystemSession session = msm.newRepositorySystemSession(system, false);
 
@@ -98,9 +103,14 @@ public class WfCoreTestBase {
 
     @Before
     public void setUp() throws Exception {
+        mavenOptions = MavenOptions.builder()
+                .setLocalCachePath(MavenSessionManager.LOCAL_MAVEN_REPO)
+                .setOffline(false)
+                .build();
+        mavenSessionManager = new MavenSessionManager(mavenOptions);
         outputPath = temp.newFolder().toPath().resolve("test-server");
         manifestPath = outputPath.resolve(MetadataTestUtils.MANIFEST_FILE_PATH);
-        installation = new ProvisioningAction(outputPath, mavenSessionManager, new CliConsole());
+        installation = new ProvisioningAction(outputPath, mavenOptions, new CliConsole());
     }
 
     private static Artifact installIfMissing(RepositorySystem system, DefaultRepositorySystemSession session, String groupId, String artifactId, String classifier, String extension) throws ArtifactResolutionException, InstallationException {
@@ -132,15 +142,6 @@ public class WfCoreTestBase {
         return ProvisioningDefinition.builder()
                 .setFpl("org.wildfly.core:wildfly-core-galleon-pack::zip")
                 .setOverrideRepositories(repositories);
-    }
-
-    protected Artifact resolveArtifact(String groupId, String artifactId, String version) throws ArtifactResolutionException {
-        final MavenSessionManager msm = new MavenSessionManager(MavenSessionManager.LOCAL_MAVEN_REPO);
-        final RepositorySystem system = msm.newRepositorySystem();
-        final DefaultRepositorySystemSession session = msm.newRepositorySystemSession(system, false);
-
-        final DefaultArtifact existing = new DefaultArtifact(groupId, artifactId, null, "jar", version);
-        return resolveArtifact(system, session, existing);
     }
 
     private static Artifact resolveArtifact(RepositorySystem system, DefaultRepositorySystemSession session, DefaultArtifact existing) throws ArtifactResolutionException {

@@ -19,16 +19,15 @@ package org.wildfly.prospero.cli.commands;
 
 import org.jboss.galleon.config.ProvisioningConfig;
 import org.wildfly.channel.Channel;
-import org.wildfly.channel.maven.VersionResolverFactory;
 import org.wildfly.prospero.actions.Console;
 import org.wildfly.prospero.actions.ProvisioningAction;
+import org.wildfly.prospero.api.MavenOptions;
 import org.wildfly.prospero.api.ProvisioningDefinition;
 import org.wildfly.prospero.cli.ActionFactory;
 import org.wildfly.prospero.cli.CliMessages;
 import org.wildfly.prospero.cli.LicensePrinter;
 import org.wildfly.prospero.cli.ReturnCodes;
 import org.wildfly.prospero.licenses.License;
-import org.wildfly.prospero.wfchannel.MavenSessionManager;
 import picocli.CommandLine;
 
 import java.nio.file.Files;
@@ -51,13 +50,12 @@ public class PrintLicensesCommand extends AbstractInstallCommand {
         final Path tempDirectory = Files.createTempDirectory("eap-installer");
         try {
             final ProvisioningDefinition provisioningDefinition = buildDefinition();
-            final MavenSessionManager mavenSessionManager = createMavenSession();
+            final MavenOptions mavenOptions = getMavenOptions();
             final ProvisioningConfig provisioningConfig = provisioningDefinition.toProvisioningConfig();
-            final VersionResolverFactory versionResolverFactory = AbstractInstallCommand.createVersionResolverFactory(mavenSessionManager);
-            final List<Channel> channels = provisioningDefinition.resolveChannels(versionResolverFactory);
+            final List<Channel> channels = resolveChannels(provisioningDefinition, mavenOptions);
 
-            final ProvisioningAction provisioningAction = actionFactory.install(tempDirectory.toAbsolutePath(), mavenSessionManager,
-                    console);
+            final ProvisioningAction provisioningAction = actionFactory.install(tempDirectory.toAbsolutePath(),
+                    mavenOptions, console);
 
             final List<License> pendingLicenses = provisioningAction.getPendingLicenses(provisioningConfig, channels);
             if (!pendingLicenses.isEmpty()) {

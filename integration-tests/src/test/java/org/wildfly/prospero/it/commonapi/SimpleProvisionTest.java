@@ -78,11 +78,10 @@ public class SimpleProvisionTest extends WfCoreTestBase {
         final Path channelsFile = MetadataTestUtils.prepareChannel(CHANNEL_BASE_CORE_19);
 
         // make sure the channel names are empty
-        ProsperoConfig prosperoConfig = ProsperoConfig.readConfig(channelsFile);
-        List<Channel> emptyNameChannels = prosperoConfig.getChannels().stream()
+        List<Channel> emptyNameChannels = MetadataTestUtils.readChannels(channelsFile).stream()
                 .map(c -> new Channel(c.getSchemaVersion(), null, null, null, c.getRepositories(),
                         c.getManifestCoordinate(), null, null)).collect(Collectors.toList());
-        new ProsperoConfig(emptyNameChannels).writeConfig(channelsFile);
+        MetadataTestUtils.writeChannels(channelsFile, emptyNameChannels);
 
         final ProvisioningDefinition provisioningDefinition = defaultWfCoreDefinition()
                 .setChannelCoordinates(List.of(channelsFile.toString()))
@@ -91,7 +90,7 @@ public class SimpleProvisionTest extends WfCoreTestBase {
         installation.provision(provisioningDefinition.toProvisioningConfig(),
                 provisioningDefinition.resolveChannels(CHANNELS_RESOLVER_FACTORY));
 
-        final ProsperoConfig persistedConfig = ProsperoConfig.readConfig(outputPath.resolve(InstallationMetadata.METADATA_DIR).resolve(InstallationMetadata.INSTALLER_CHANNELS_FILE_NAME));
+        final ProsperoConfig persistedConfig = ProsperoConfig.readConfig(outputPath.resolve(InstallationMetadata.METADATA_DIR));
         assertThat(persistedConfig.getChannels())
                 .map(Channel::getName)
                 .noneMatch(StringUtils::isEmpty)
@@ -167,7 +166,7 @@ public class SimpleProvisionTest extends WfCoreTestBase {
                 provisioningDefinition.resolveChannels(CHANNELS_RESOLVER_FACTORY));
 
         MetadataTestUtils.prepareChannel(outputPath.resolve(MetadataTestUtils.INSTALLER_CHANNELS_FILE_PATH), CHANNEL_COMPONENT_UPDATES, CHANNEL_BASE_CORE_19);
-        final Set<String> updates = new UpdateAction(outputPath, mavenSessionManager, new AcceptingConsole(), Collections.emptyList())
+        final Set<String> updates = new UpdateAction(outputPath, mavenOptions, new AcceptingConsole(), Collections.emptyList())
                 .findUpdates().getArtifactUpdates().stream()
                 .map(ArtifactChange::getArtifactName)
                 .collect(Collectors.toSet());
@@ -200,7 +199,7 @@ public class SimpleProvisionTest extends WfCoreTestBase {
     }
 
     private UpdateAction getUpdateAction() throws ProvisioningException, OperationException {
-        return new UpdateAction(outputPath, mavenSessionManager, new AcceptingConsole(), Collections.emptyList());
+        return new UpdateAction(outputPath, mavenOptions, new AcceptingConsole(), Collections.emptyList());
     }
 
     private Optional<Artifact> readArtifactFromManifest(String groupId, String artifactId) throws IOException {

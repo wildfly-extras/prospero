@@ -61,7 +61,7 @@ public class GalleonPackInspectorTest {
 
         final ChannelManifest manifest = new ChannelManifest("test", "test-id", "",
                 Arrays.asList(new Stream("io.undertow", "undertow-core", "1.2.3.Final", null)));
-        installationMetadata = new InstallationMetadata(basePath, manifest, null);
+        installationMetadata = new InstallationMetadata(basePath, manifest, null, null);
 
         wildflyCoreFP = downloadFeaturePack("org.wildfly.core:wildfly-core-galleon-pack:zip:17.0.0.Final");
     }

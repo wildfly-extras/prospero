@@ -31,6 +31,7 @@ import org.wildfly.channel.ChannelManifestMapper;
 import org.wildfly.channel.MavenCoordinate;
 import org.wildfly.channel.Repository;
 import org.wildfly.prospero.installation.git.GitStorage;
+import org.wildfly.prospero.metadata.ProsperoMetadataUtils;
 import org.wildfly.prospero.model.ProsperoConfig;
 
 import java.io.IOException;
@@ -42,6 +43,7 @@ import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.Mockito.verify;
 
@@ -105,7 +107,7 @@ public class InstallationMetadataTest {
         final Channel channel = createChannel(new ChannelManifestCoordinate("new", "channel"));
         installationMetadata = new InstallationMetadata(base,
                 new ChannelManifest(null, null, null, null),
-                List.of(channel)
+                List.of(channel), null
         );
 
         installationMetadata.recordProvision(false);
@@ -135,12 +137,52 @@ public class InstallationMetadataTest {
         final Channel channel = createChannel(new ChannelManifestCoordinate("new", "channel"));
         installationMetadata = new InstallationMetadata(base,
                 new ChannelManifest(null, null, null, null),
-                List.of(channel)
+                List.of(channel), null
         );
 
         installationMetadata.recordProvision(false);
 
-        assertTrue("README.txt file should exist.", Files.exists(base.resolve(InstallationMetadata.METADATA_DIR).resolve(InstallationMetadata.README_FILE_NAME)));
+        assertTrue("README.txt file should exist.", Files.exists(base.resolve(InstallationMetadata.METADATA_DIR)));
+    }
+
+    @Test
+    public void testReadMavenOptions() throws Exception {
+        final Channel channel = createChannel(new ChannelManifestCoordinate("new", "channel"));
+        base = temp.newFolder().toPath();
+        installationMetadata = new InstallationMetadata(base,
+                new ChannelManifest(null, null, null, null),
+                List.of(channel), null
+        );
+
+        installationMetadata.recordProvision(false);
+
+        final MavenOptions opts = MavenOptions.builder()
+                .setLocalCachePath(Path.of("foo"))
+                .build();
+
+        opts.write(base.resolve(ProsperoMetadataUtils.METADATA_DIR).resolve(ProsperoMetadataUtils.MAVEN_OPTS_FILE));
+
+        final InstallationMetadata readMetadata = new InstallationMetadata(base);
+        assertEquals(Path.of("foo").toAbsolutePath(), readMetadata.getProsperoConfig().getMavenOptions().getLocalCache());
+    }
+
+    @Test
+    public void testReadNoMavenOptions() throws Exception {
+        final Channel channel = createChannel(new ChannelManifestCoordinate("new", "channel"));
+        base = temp.newFolder().toPath();
+        installationMetadata = new InstallationMetadata(base,
+                new ChannelManifest(null, null, null, null),
+                List.of(channel), MavenOptions.builder()
+                .setLocalCachePath(Path.of("foo"))
+                .build()
+        );
+
+        installationMetadata.recordProvision(false);
+
+        Files.deleteIfExists(base.resolve(ProsperoMetadataUtils.METADATA_DIR).resolve(ProsperoMetadataUtils.MAVEN_OPTS_FILE));
+
+        final InstallationMetadata readMetadata = new InstallationMetadata(base);
+        assertNull(readMetadata.getProsperoConfig().getMavenOptions().getLocalCache());
     }
 
     private static Channel createChannel(ChannelManifestCoordinate manifestCoordinate) {
@@ -159,7 +201,7 @@ public class InstallationMetadataTest {
                 ChannelManifestMapper.toYaml(new ChannelManifest(null, null, null, Collections.emptyList())),
                 StandardOpenOption.CREATE_NEW);
         final Channel channel = createChannel(new ChannelManifestCoordinate("foo","bar"));
-        new ProsperoConfig(List.of(channel)).writeConfig(metadataDir.resolve(InstallationMetadata.INSTALLER_CHANNELS_FILE_NAME));
+        new ProsperoConfig(List.of(channel)).writeConfig(metadataDir);
         return base;
     }
 

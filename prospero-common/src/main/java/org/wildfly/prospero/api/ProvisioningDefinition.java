@@ -50,7 +50,6 @@ import org.wildfly.prospero.api.exceptions.NoChannelException;
 import org.wildfly.prospero.galleon.FeaturePackLocationParser;
 import org.wildfly.prospero.galleon.GalleonUtils;
 import org.wildfly.prospero.model.KnownFeaturePack;
-import org.wildfly.prospero.model.ProsperoConfig;
 
 public class ProvisioningDefinition {
 
@@ -136,10 +135,6 @@ public class ProvisioningDefinition {
 
     public URI getDefinition() {
         return definition;
-    }
-
-    public ProsperoConfig getProsperoConfig() {
-        return new ProsperoConfig(channels);
     }
 
     public ProvisioningConfig toProvisioningConfig() throws MetadataException, ProvisioningException {

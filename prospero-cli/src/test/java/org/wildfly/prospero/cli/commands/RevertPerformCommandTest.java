@@ -33,12 +33,12 @@ import org.mockito.junit.MockitoJUnitRunner;
 import org.wildfly.channel.Repository;
 import org.wildfly.prospero.actions.Console;
 import org.wildfly.prospero.actions.InstallationHistoryAction;
+import org.wildfly.prospero.api.MavenOptions;
 import org.wildfly.prospero.api.SavedState;
 import org.wildfly.prospero.cli.ActionFactory;
 import org.wildfly.prospero.cli.CliMessages;
 import org.wildfly.prospero.cli.ReturnCodes;
 import org.wildfly.prospero.test.MetadataTestUtils;
-import org.wildfly.prospero.wfchannel.MavenSessionManager;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.Assert.assertEquals;
@@ -54,7 +54,7 @@ public class RevertPerformCommandTest extends AbstractMavenCommandTest {
     private InstallationHistoryAction historyAction;
 
     @Captor
-    private ArgumentCaptor<MavenSessionManager> mavenSessionManager;
+    private ArgumentCaptor<MavenOptions> mavenOptions;
 
     @Captor
     private ArgumentCaptor<List<Repository>> repositories;
@@ -115,8 +115,8 @@ public class RevertPerformCommandTest extends AbstractMavenCommandTest {
                 CliConstants.OFFLINE, CliConstants.LOCAL_CACHE, "local-repo");
 
         assertEquals(ReturnCodes.SUCCESS, exitCode);
-        verify(historyAction).rollback(eq(new SavedState("abcd")), mavenSessionManager.capture(), any());
-        assertTrue(mavenSessionManager.getValue().isOffline());
+        verify(historyAction).rollback(eq(new SavedState("abcd")), mavenOptions.capture(), any());
+        assertTrue(mavenOptions.getValue().isOffline());
     }
 
     @Test
@@ -135,9 +135,9 @@ public class RevertPerformCommandTest extends AbstractMavenCommandTest {
     }
 
     @Override
-    protected MavenSessionManager getCapturedSessionManager() throws Exception {
-        verify(historyAction).rollback(eq(new SavedState("abcd")), mavenSessionManager.capture(), any());
-        return mavenSessionManager.getValue();
+    protected MavenOptions getCapturedMavenOptions() throws Exception {
+        verify(historyAction).rollback(eq(new SavedState("abcd")), mavenOptions.capture(), any());
+        return mavenOptions.getValue();
     }
 
     @Override

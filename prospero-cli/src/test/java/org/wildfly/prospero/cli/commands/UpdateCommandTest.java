@@ -37,11 +37,11 @@ import org.mockito.Mockito;
 import org.mockito.junit.MockitoJUnitRunner;
 import org.wildfly.prospero.actions.UpdateAction;
 import org.wildfly.prospero.api.ArtifactChange;
+import org.wildfly.prospero.api.MavenOptions;
 import org.wildfly.prospero.cli.ActionFactory;
 import org.wildfly.prospero.cli.CliMessages;
 import org.wildfly.prospero.cli.ReturnCodes;
 import org.wildfly.prospero.updates.UpdateSet;
-import org.wildfly.prospero.wfchannel.MavenSessionManager;
 import org.wildfly.prospero.test.MetadataTestUtils;
 
 import static org.junit.Assert.assertEquals;
@@ -65,7 +65,7 @@ public class UpdateCommandTest extends AbstractMavenCommandTest {
     private ActionFactory actionFactory;
 
     @Captor
-    private ArgumentCaptor<MavenSessionManager> mavenSessionManager;
+    private ArgumentCaptor<MavenOptions> mavenOptions;
 
     @Rule
     public TemporaryFolder tempFolder = new TemporaryFolder();
@@ -282,10 +282,9 @@ public class UpdateCommandTest extends AbstractMavenCommandTest {
     }
 
     @Override
-    protected MavenSessionManager getCapturedSessionManager() throws Exception {
-        Mockito.verify(actionFactory).update(any(), mavenSessionManager.capture(), any(), any());
-        MavenSessionManager msm = mavenSessionManager.getValue();
-        return msm;
+    protected MavenOptions getCapturedMavenOptions() throws Exception {
+        Mockito.verify(actionFactory).update(any(), mavenOptions.capture(), any(), any());
+        return mavenOptions.getValue();
     }
 
     @Override

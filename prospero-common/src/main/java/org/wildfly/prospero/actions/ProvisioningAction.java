@@ -24,6 +24,7 @@ import org.wildfly.channel.ChannelManifest;
 import org.wildfly.channel.UnresolvedMavenArtifactException;
 import org.wildfly.prospero.Messages;
 import org.wildfly.prospero.api.InstallationMetadata;
+import org.wildfly.prospero.api.MavenOptions;
 import org.wildfly.prospero.api.RepositoryUtils;
 import org.wildfly.prospero.api.exceptions.ArtifactResolutionException;
 import org.wildfly.prospero.api.exceptions.MetadataException;
@@ -54,11 +55,13 @@ public class ProvisioningAction {
     private final Path installDir;
     private final Console console;
     private final LicenseManager licenseManager;
+    private final MavenOptions mvnOptions;
 
-    public ProvisioningAction(Path installDir, MavenSessionManager mavenSessionManager, Console console) {
+    public ProvisioningAction(Path installDir, MavenOptions mvnOptions, Console console) throws ProvisioningException {
         this.installDir = installDir;
         this.console = console;
-        this.mavenSessionManager = mavenSessionManager;
+        this.mvnOptions = mvnOptions;
+        this.mavenSessionManager = new MavenSessionManager(mvnOptions);
         this.licenseManager = new LicenseManager();
 
         verifyInstallDir(installDir);
@@ -137,7 +140,7 @@ public class ProvisioningAction {
     private void writeProsperoMetadata(Path home, ChannelMavenArtifactRepositoryManager maven, List<Channel> channels) throws MetadataException {
         final ChannelManifest manifest = maven.resolvedChannel();
 
-        try (final InstallationMetadata installationMetadata = new InstallationMetadata(home, manifest, channels)) {
+        try (final InstallationMetadata installationMetadata = new InstallationMetadata(home, manifest, channels, mvnOptions)) {
             installationMetadata.recordProvision(true);
         }
     }

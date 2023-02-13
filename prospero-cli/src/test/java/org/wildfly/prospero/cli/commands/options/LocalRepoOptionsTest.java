@@ -21,14 +21,16 @@ import org.junit.Assert;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
+import org.wildfly.prospero.api.MavenOptions;
 import org.wildfly.prospero.cli.ArgumentParsingException;
-import org.wildfly.prospero.wfchannel.MavenSessionManager;
 
 import java.io.File;
 import java.nio.file.Path;
 import java.util.Optional;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
 
 public class LocalRepoOptionsTest {
 
@@ -37,15 +39,19 @@ public class LocalRepoOptionsTest {
 
     @Test
     public void defaultLocalPathIfNoOptionsSpecified() throws Exception {
-        assertEquals(Optional.of(MavenSessionManager.LOCAL_MAVEN_REPO), LocalRepoOptions.getLocalMavenCache(null));
+        final MavenOptions mavenOptions = new LocalRepoOptions().toOptions().build();
+        assertEquals(null, mavenOptions.getLocalCache());
+        assertFalse(mavenOptions.isNoLocalCache());
     }
 
     @Test
     public void emptyLocalPathIfNoLocalCacheSpecified() throws Exception {
         final LocalRepoOptions localRepoParam = new LocalRepoOptions();
-        localRepoParam.noLocalCache = true;
+        localRepoParam.noLocalCache = Optional.of(true);
 
-        assertEquals(Optional.empty(), LocalRepoOptions.getLocalMavenCache(localRepoParam));
+        final MavenOptions mavenOptions = localRepoParam.toOptions().build();
+        assertEquals(null, mavenOptions.getLocalCache());
+        assertTrue(mavenOptions.isNoLocalCache());
     }
 
     @Test
@@ -54,7 +60,10 @@ public class LocalRepoOptionsTest {
         final Path localRepo = temp.newFolder().toPath();
         localRepoParam.localMavenCache = localRepo;
 
-        assertEquals(Optional.of(localRepo), LocalRepoOptions.getLocalMavenCache(localRepoParam));
+        final MavenOptions mavenOptions = localRepoParam.toOptions().build();
+        assertEquals(localRepo, mavenOptions.getLocalCache());
+        assertEquals(localRepo, mavenOptions.getLocalCache());
+        assertFalse(mavenOptions.isNoLocalCache());
     }
 
     @Test
@@ -63,7 +72,7 @@ public class LocalRepoOptionsTest {
         File file = temp.newFile();
         localRepoParam.localMavenCache = file.toPath();
         Assert.assertThrows(ArgumentParsingException.class, () ->
-                LocalRepoOptions.getLocalMavenCache(localRepoParam)
+                localRepoParam.toOptions()
         );
     }
 }

@@ -31,22 +31,22 @@ import org.wildfly.prospero.actions.MetadataAction;
 import org.wildfly.prospero.actions.PromoteArtifactBundleAction;
 import org.wildfly.prospero.actions.ProvisioningAction;
 import org.wildfly.prospero.actions.UpdateAction;
+import org.wildfly.prospero.api.MavenOptions;
 import org.wildfly.prospero.api.exceptions.OperationException;
 import org.wildfly.prospero.api.exceptions.MetadataException;
-import org.wildfly.prospero.wfchannel.MavenSessionManager;
 
 public class ActionFactory {
 
-    public ProvisioningAction install(Path targetPath, MavenSessionManager mavenSessionManager, Console console) {
-        return new ProvisioningAction(targetPath, mavenSessionManager, console);
+    public ProvisioningAction install(Path targetPath, MavenOptions mavenOptions, Console console) throws ProvisioningException {
+        return new ProvisioningAction(targetPath, mavenOptions, console);
     }
 
     // Option for BETA update support
     // TODO: evaluate in GA - replace by repository:add / custom channels?
-    public UpdateAction update(Path targetPath, MavenSessionManager mavenSessionManager, Console console, List<Repository> additionalRepositories)
+    public UpdateAction update(Path targetPath, MavenOptions mavenOptions, Console console, List<Repository> additionalRepositories)
             throws OperationException,
             ProvisioningException {
-        return new UpdateAction(targetPath, mavenSessionManager, console, additionalRepositories);
+        return new UpdateAction(targetPath, mavenOptions, console, additionalRepositories);
     }
 
     public ApplyCandidateAction applyUpdate(Path installationPath, Path updatePath)
@@ -71,7 +71,7 @@ public class ActionFactory {
         return new InstallationExportAction(targetPath);
     }
 
-    public InstallationRestoreAction restoreAction(Path targetPath, MavenSessionManager mavenSessionManager, Console console) {
-        return new InstallationRestoreAction(targetPath, mavenSessionManager, console);
+    public InstallationRestoreAction restoreAction(Path targetPath, MavenOptions mavenOptions, Console console) throws ProvisioningException {
+        return new InstallationRestoreAction(targetPath, mavenOptions, console);
     }
 }

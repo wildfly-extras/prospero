@@ -27,6 +27,7 @@ import org.wildfly.channel.ArtifactCoordinate;
 import org.wildfly.channel.ChannelManifestCoordinate;
 import org.wildfly.channel.maven.ChannelCoordinate;
 import org.wildfly.prospero.Messages;
+import org.wildfly.prospero.api.MavenOptions;
 import org.wildfly.prospero.api.exceptions.ArtifactPromoteException;
 import org.wildfly.prospero.promotion.ArtifactPromoter;
 import org.wildfly.prospero.promotion.ArtifactBundle;
@@ -59,7 +60,7 @@ public class PromoteArtifactBundleAction {
             for (ArtifactCoordinate artifact : extracted.getArtifactList()) {
                 console.println("  * " + String.format("%s:%s:%s", artifact.getGroupId(), artifact.getArtifactId(), artifact.getVersion()));
             }
-            final MavenSessionManager msm = new MavenSessionManager();
+            final MavenSessionManager msm = new MavenSessionManager(MavenOptions.OFFLINE_NO_CACHE);
             final RepositorySystem system = msm.newRepositorySystem();
             final DefaultRepositorySystemSession session = msm.newRepositorySystemSession(system);
 
