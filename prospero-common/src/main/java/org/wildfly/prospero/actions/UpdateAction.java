@@ -27,6 +27,7 @@ import org.apache.commons.io.FileUtils;
 import org.wildfly.channel.Channel;
 import org.wildfly.channel.Repository;
 import org.wildfly.prospero.Messages;
+import org.wildfly.prospero.api.Console;
 import org.wildfly.prospero.api.FileConflict;
 import org.wildfly.prospero.api.MavenOptions;
 import org.wildfly.prospero.api.TemporaryRepositoriesHandler;

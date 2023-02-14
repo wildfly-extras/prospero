@@ -23,7 +23,7 @@ import java.util.List;
 import org.jboss.galleon.ProvisioningException;
 import org.wildfly.channel.Repository;
 import org.wildfly.prospero.actions.ApplyCandidateAction;
-import org.wildfly.prospero.actions.Console;
+import org.wildfly.prospero.api.Console;
 import org.wildfly.prospero.actions.InstallationExportAction;
 import org.wildfly.prospero.actions.InstallationHistoryAction;
 import org.wildfly.prospero.actions.InstallationRestoreAction;

@@ -23,98 +23,77 @@ import java.util.List;
 import java.util.Optional;
 import java.util.Scanner;
 
-import org.jboss.galleon.progresstracking.ProgressCallback;
-import org.jboss.galleon.progresstracking.ProgressTracker;
-import org.wildfly.prospero.actions.Console;
+import org.wildfly.prospero.api.Console;
+import org.wildfly.prospero.api.ProvisioningProgressEvent;
 import org.wildfly.prospero.api.ArtifactChange;
 
 public class CliConsole implements Console {
 
-    public static final int PULSE_INTERVAL = 500;
-    public static final int PULSE_PCT = 5;
-
     @Override
-    public ProgressCallback<?> getProgressCallback(String id) {
-        return new ProgressCallback<>() {
+    public void progressUpdate(ProvisioningProgressEvent update) {
+        if (update.getEventType() != ProvisioningProgressEvent.EventType.STARTING) {
+            getStdOut().print("\r");
+        }
 
-            @Override
-            public long getProgressPulsePct() {
-                return PULSE_PCT;
+        if (update.getEventType() == ProvisioningProgressEvent.EventType.STARTING) {
+            switch (update.getStage()) {
+                case "LAYOUT_BUILD":
+                    getStdOut().print(CliMessages.MESSAGES.resolvingFeaturePack());
+                    break;
+                case "PACKAGES":
+                    getStdOut().print(CliMessages.MESSAGES.installingPackages());
+                    break;
+                case "CONFIGS":
+                    getStdOut().print(CliMessages.MESSAGES.generatingConfiguration());
+                    break;
+                case "JBMODULES":
+                    getStdOut().print(CliMessages.MESSAGES.installingJBossModules());
+                    break;
             }
+        }
 
-            @Override
-            public long getMinPulseIntervalMs() {
-                return PULSE_INTERVAL;
+        if (update.getEventType() == ProvisioningProgressEvent.EventType.PULSE) {
+            final double progress = update.getProgress();
+            switch (update.getStage()) {
+                case "LAYOUT_BUILD":
+                    getStdOut().print("\r");
+                    getStdOut().printf(CliMessages.MESSAGES.resolvingFeaturePack() + " %.0f%%", progress);
+                    break;
+                case "PACKAGES":
+                    getStdOut().print("\r");
+                    getStdOut().printf(CliMessages.MESSAGES.installingPackages() + " %.0f%%", progress);
+                    break;
+                case "CONFIGS":
+                    getStdOut().print("\r");
+                    getStdOut().printf(CliMessages.MESSAGES.generatingConfiguration() + " %.0f%%", progress);
+                    break;
+                case "JBMODULES":
+                    getStdOut().print("\r");
+                    getStdOut().printf(CliMessages.MESSAGES.installingJBossModules() + " %.0f%%", progress);
+                    break;
             }
+        }
 
-            @Override
-            public long getMaxPulseIntervalMs() {
-                return PULSE_INTERVAL;
+        if (update.getEventType() == ProvisioningProgressEvent.EventType.COMPLETED) {
+            switch (update.getStage()) {
+                case "LAYOUT_BUILD":
+                    getStdOut().print("\r");
+                    getStdOut().println(CliMessages.MESSAGES.featurePacksResolved());
+                    break;
+                case "PACKAGES":
+                    getStdOut().print("\r");
+                    getStdOut().println(CliMessages.MESSAGES.packagesInstalled());
+                    break;
+                case "CONFIGS":
+                    getStdOut().print("\r");
+                    getStdOut().println(CliMessages.MESSAGES.configurationsGenerated());
+                    break;
+                case "JBMODULES":
+                    getStdOut().print("\r");
+                    getStdOut().println(CliMessages.MESSAGES.jbossModulesInstalled());
+                    break;
             }
-
-            @Override
-            public void starting(ProgressTracker tracker) {
-                switch (id) {
-                    case "LAYOUT_BUILD":
-                        getStdOut().print(CliMessages.MESSAGES.resolvingFeaturePack());
-                        break;
-                    case "PACKAGES":
-                        getStdOut().print(CliMessages.MESSAGES.installingPackages());
-                        break;
-                    case "CONFIGS":
-                        getStdOut().print(CliMessages.MESSAGES.generatingConfiguration());
-                        break;
-                    case "JBMODULES":
-                        getStdOut().print(CliMessages.MESSAGES.installingJBossModules());
-                        break;
-                }
-            }
-
-            @Override
-            public void pulse(ProgressTracker tracker) {
-                final double progress = tracker.getProgress();
-                switch (id) {
-                    case "LAYOUT_BUILD":
-                        getStdOut().print("\r");
-                        getStdOut().printf(CliMessages.MESSAGES.resolvingFeaturePack() + " %.0f%%", progress);
-                        break;
-                    case "PACKAGES":
-                        getStdOut().print("\r");
-                        getStdOut().printf(CliMessages.MESSAGES.installingPackages() + " %.0f%%", progress);
-                        break;
-                    case "CONFIGS":
-                        getStdOut().print("\r");
-                        getStdOut().printf(CliMessages.MESSAGES.generatingConfiguration() + " %.0f%%", progress);
-                        break;
-                    case "JBMODULES":
-                        getStdOut().print("\r");
-                        getStdOut().printf(CliMessages.MESSAGES.installingJBossModules() + " %.0f%%", progress);
-                        break;
-                }
-            }
-
-            @Override
-            public void complete(ProgressTracker tracker) {
-                switch (id) {
-                    case "LAYOUT_BUILD":
-                        getStdOut().print("\r");
-                        getStdOut().println(CliMessages.MESSAGES.featurePacksResolved());
-                        break;
-                    case "PACKAGES":
-                        getStdOut().print("\r");
-                        getStdOut().println(CliMessages.MESSAGES.packagesInstalled());
-                        break;
-                    case "CONFIGS":
-                        getStdOut().print("\r");
-                        getStdOut().println(CliMessages.MESSAGES.configurationsGenerated());
-                        break;
-                    case "JBMODULES":
-                        getStdOut().print("\r");
-                        getStdOut().println(CliMessages.MESSAGES.jbossModulesInstalled());
-                        break;
-                }
-            }
-        };
+        }
     }
 
     public void updatesFound(List<ArtifactChange> artifactUpdates) {

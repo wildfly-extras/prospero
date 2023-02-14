@@ -18,11 +18,12 @@
 package org.wildfly.prospero.actions;
 
 import org.eclipse.aether.artifact.DefaultArtifact;
-import org.jboss.galleon.progresstracking.ProgressCallback;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
 import org.wildfly.prospero.api.ArtifactUtils;
+import org.wildfly.prospero.api.Console;
+import org.wildfly.prospero.api.ProvisioningProgressEvent;
 import org.wildfly.prospero.promotion.ArtifactBundle;
 
 import java.net.URL;
@@ -69,8 +70,8 @@ public class PromoteArtifactBundleActionTest {
     private static class TestConsole implements Console {
 
         @Override
-        public ProgressCallback<?> getProgressCallback(String id) {
-            return null;
+        public void progressUpdate(ProvisioningProgressEvent update) {
+
         }
 
         @Override

@@ -1,5 +1,5 @@
 /*
- * Copyright 2022 Red Hat, Inc. and/or its affiliates
+ * Copyright 2023 Red Hat, Inc. and/or its affiliates
  * and other contributors as indicated by the @author tags.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -15,15 +15,22 @@
  * limitations under the License.
  */
 
-package org.wildfly.prospero.actions;
-
-import org.jboss.galleon.progresstracking.ProgressCallback;
+package org.wildfly.prospero.api;
 
 public interface Console {
 
-    //   galleon progress
-    ProgressCallback<?> getProgressCallback(String id);
+    /**
+     * print provisioning progress update
+     *
+     * @param update
+     * @return
+     */
+    void progressUpdate(ProvisioningProgressEvent update);
 
-    // CLI only
+    /**
+     * print user message
+     *
+     * @param text
+     */
     void println(String text);
 }

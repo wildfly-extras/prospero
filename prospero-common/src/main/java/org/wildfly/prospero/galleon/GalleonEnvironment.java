@@ -28,7 +28,7 @@ import org.wildfly.channel.ChannelManifest;
 import org.wildfly.channel.ChannelSession;
 import org.wildfly.channel.maven.VersionResolverFactory;
 import org.wildfly.channel.spi.MavenVersionsResolver;
-import org.wildfly.prospero.actions.Console;
+import org.wildfly.prospero.api.Console;
 import org.wildfly.prospero.api.exceptions.MetadataException;
 import org.wildfly.prospero.api.exceptions.OperationException;
 import org.wildfly.prospero.wfchannel.MavenSessionManager;
@@ -81,10 +81,10 @@ public class GalleonEnvironment {
 
         final ProvisioningLayoutFactory layoutFactory = provisioningManager.getLayoutFactory();
         if (console.isPresent()) {
-            layoutFactory.setProgressCallback("LAYOUT_BUILD", console.get().getProgressCallback("LAYOUT_BUILD"));
-            layoutFactory.setProgressCallback("PACKAGES", console.get().getProgressCallback("PACKAGES"));
-            layoutFactory.setProgressCallback("CONFIGS", console.get().getProgressCallback("CONFIGS"));
-            layoutFactory.setProgressCallback("JBMODULES", console.get().getProgressCallback("JBMODULES"));
+            layoutFactory.setProgressCallback("LAYOUT_BUILD", new GalleonCallbackAdapter(console.get(), "LAYOUT_BUILD"));
+            layoutFactory.setProgressCallback("PACKAGES", new GalleonCallbackAdapter(console.get(), "PACKAGES"));
+            layoutFactory.setProgressCallback("CONFIGS", new GalleonCallbackAdapter(console.get(), "CONFIGS"));
+            layoutFactory.setProgressCallback("JBMODULES", new GalleonCallbackAdapter(console.get(), "JBMODULES"));
         }
     }
 
