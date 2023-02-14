@@ -19,6 +19,7 @@ package org.wildfly.prospero.api;
 
 import org.apache.commons.lang3.StringUtils;
 import org.jboss.galleon.Constants;
+import org.jboss.galleon.config.ProvisioningConfig;
 import org.wildfly.channel.Channel;
 import org.wildfly.channel.ChannelManifest;
 import org.apache.commons.io.FileUtils;
@@ -42,6 +43,7 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 import java.util.zip.ZipEntry;
@@ -64,100 +66,80 @@ public class InstallationMetadata implements AutoCloseable {
     private final Path channelsFile;
     private final Path readmeFile;
     private final Path provisioningFile;
-    private ChannelManifest manifest;
-    private org.jboss.galleon.config.ProvisioningConfig galleonProvisioningConfig;
+    private final ProvisioningConfig galleonProvisioningConfig;
     private final GitStorage gitStorage;
     private final Path base;
     private ProsperoConfig prosperoConfig;
+    private ChannelManifest manifest;
 
-    // TODO: sort this out
-    private InstallationMetadata(Path manifestFile, Path channelsFile, Path provisioningFile) throws MetadataException {
-        this.base = manifestFile.getParent().getParent();
-        this.gitStorage = null;
-        this.manifestFile = manifestFile;
-        this.channelsFile = channelsFile;
-        this.readmeFile = base.resolve(METADATA_DIR).resolve(InstallationMetadata.README_FILE_NAME);
-        this.provisioningFile = provisioningFile;
-
-        doInit(manifestFile, provisioningFile);
-    }
-
-    public InstallationMetadata(Path base) throws MetadataException {
-        this(base, new GitStorage(base));
-    }
-
-    /*
-     * Used in tests only
+    /**
+     * load the metadata of an existing installation. If the history is not available, it will be started.
+     *
+     * @param base
+     * @return
+     * @throws MetadataException
      */
-    protected InstallationMetadata(Path base, GitStorage gitStorage) throws MetadataException {
-        this.base = base;
-        this.gitStorage = gitStorage;
-        this.manifestFile = base.resolve(METADATA_DIR).resolve(InstallationMetadata.MANIFEST_FILE_NAME);
-        this.channelsFile = base.resolve(METADATA_DIR).resolve(InstallationMetadata.INSTALLER_CHANNELS_FILE_NAME);
-        this.readmeFile = base.resolve(METADATA_DIR).resolve(InstallationMetadata.README_FILE_NAME);
-        this.provisioningFile = base.resolve(GALLEON_INSTALLATION_DIR).resolve(InstallationMetadata.PROVISIONING_FILE_NAME);
+    public static InstallationMetadata loadInstallation(Path base) throws MetadataException {
+        final Path manifestFile = base.resolve(METADATA_DIR).resolve(InstallationMetadata.MANIFEST_FILE_NAME);
 
-        doInit(manifestFile, provisioningFile);
-    }
-
-    public InstallationMetadata(Path base, ChannelManifest manifest, List<Channel> channels, MavenOptions mavenOptions) throws MetadataException {
-        this.base = base;
-        this.gitStorage = new GitStorage(base);
-        this.manifestFile = base.resolve(METADATA_DIR).resolve(InstallationMetadata.MANIFEST_FILE_NAME);
-        this.channelsFile = base.resolve(METADATA_DIR).resolve(InstallationMetadata.INSTALLER_CHANNELS_FILE_NAME);
-        this.readmeFile = base.resolve(METADATA_DIR).resolve(InstallationMetadata.README_FILE_NAME);
-        this.provisioningFile = base.resolve(GALLEON_INSTALLATION_DIR).resolve(InstallationMetadata.PROVISIONING_FILE_NAME);
-
-        this.manifest = manifest;
-        this.prosperoConfig = new ProsperoConfig(channels, mavenOptions);
-
-        if (channels != null && channels.stream().filter(c-> StringUtils.isEmpty(c.getName())).findAny().isPresent()) {
-            throw Messages.MESSAGES.emptyChannelName();
-        }
+        ChannelManifest manifest;
+        ProsperoConfig prosperoConfig;
 
         try {
-            this.galleonProvisioningConfig = ProvisioningXmlParser.parse(provisioningFile);
-        } catch (ProvisioningException e) {
-            throw Messages.MESSAGES.unableToParseConfiguration(provisioningFile, e);
-        }
-    }
-
-    private void doInit(Path manifestFile, Path provisioningFile) throws MetadataException {
-        try {
-            this.manifest = ManifestYamlSupport.parse(manifestFile.toFile());
+            manifest = ManifestYamlSupport.parse(manifestFile.toFile());
         } catch (IOException e) {
             throw Messages.MESSAGES.unableToParseConfiguration(manifestFile, e);
         }
         try {
-            this.prosperoConfig = ProsperoConfig.readConfig(base.resolve(METADATA_DIR));
+            prosperoConfig = ProsperoConfig.readConfig(base.resolve(METADATA_DIR));
         } catch (MetadataException e) {
             // re-wrap the exception to change the description
             throw Messages.MESSAGES.unableToParseConfiguration(base, e.getCause());
         }
 
+        final GitStorage gitStorage = new GitStorage(base);
+        final InstallationMetadata metadata = new InstallationMetadata(base, manifest, prosperoConfig, gitStorage);
         try {
-            this.galleonProvisioningConfig = ProvisioningXmlParser.parse(provisioningFile);
-        } catch (ProvisioningException e) {
-            throw Messages.MESSAGES.unableToParseConfiguration(provisioningFile, e);
-        }
-
-        try {
-            if (gitStorage != null && !gitStorage.isStarted()) {
+            if (!gitStorage.isStarted()) {
                 gitStorage.record();
             }
         } catch (IOException e) {
             throw Messages.MESSAGES.unableToCreateHistoryStorage(base.resolve(METADATA_DIR), e);
         }
+        return metadata;
     }
 
-    public static InstallationMetadata importMetadata(Path location) throws IOException, MetadataException {
-        Path manifestFile = null;
-        Path channelsFile = null;
-        Path provisioningFile = null;
+    /**
+     * create an in-memory installation metadata. No information is recorded until {@link InstallationMetadata#recordProvision(boolean)}
+     * is called.
+     *
+     * @param base
+     * @param manifest
+     * @param prosperoConfig
+     * @return
+     * @throws MetadataException
+     */
+    public static InstallationMetadata newInstallation(Path base, ChannelManifest manifest, ProsperoConfig prosperoConfig) throws MetadataException {
+        return new InstallationMetadata(base, manifest, prosperoConfig, new GitStorage(base));
+    }
 
-        try (ZipInputStream zis = new ZipInputStream(new FileInputStream(location.toFile()))) {
+    /**
+     * read the metadata from an exported zip containing configuration files
+     *
+     * @param archiveLocation path to the exported zip
+     * @return
+     * @throws IOException
+     * @throws MetadataException
+     */
+    public static InstallationMetadata fromMetadataBundle(Path archiveLocation) throws IOException, MetadataException {
+
+        final Path tempDirectory = Files.createTempDirectory("installer-import");
+        tempDirectory.toFile().deleteOnExit();
+        try (ZipInputStream zis = new ZipInputStream(new FileInputStream(archiveLocation.toFile()))) {
+            Path manifestFile = null;
+            Path channelsFile = null;
+            Path provisioningFile = null;
             ZipEntry entry;
-            final Path tempDirectory = Files.createTempDirectory("installer-import");
             Files.createDirectory(tempDirectory.resolve(ProsperoMetadataUtils.METADATA_DIR));
             Files.createDirectory(tempDirectory.resolve(Constants.PROVISIONED_STATE_DIR));
             while ((entry = zis.getNextEntry()) != null) {
@@ -180,13 +162,36 @@ public class InstallationMetadata implements AutoCloseable {
                     provisioningFile.toFile().deleteOnExit();
                 }
             }
+
+            if (manifestFile == null || channelsFile == null || provisioningFile == null) {
+                throw Messages.MESSAGES.incompleteMetadataBundle(archiveLocation);
+            }
         }
 
-        if (manifestFile == null || channelsFile == null || provisioningFile == null) {
-            throw Messages.MESSAGES.incompleteMetadataBundle(location);
+        return InstallationMetadata.loadInstallation(tempDirectory);
+    }
+
+    protected InstallationMetadata(Path base, ChannelManifest manifest, ProsperoConfig prosperoConfig, GitStorage gitStorage) throws MetadataException {
+        this.base = base;
+        this.gitStorage = gitStorage;
+        this.manifestFile = base.resolve(METADATA_DIR).resolve(InstallationMetadata.MANIFEST_FILE_NAME);
+        this.channelsFile = base.resolve(METADATA_DIR).resolve(InstallationMetadata.INSTALLER_CHANNELS_FILE_NAME);
+        this.readmeFile = base.resolve(METADATA_DIR).resolve(InstallationMetadata.README_FILE_NAME);
+        this.provisioningFile = base.resolve(GALLEON_INSTALLATION_DIR).resolve(InstallationMetadata.PROVISIONING_FILE_NAME);
+
+        this.manifest = manifest;
+        this.prosperoConfig = new ProsperoConfig(new ArrayList<>(prosperoConfig.getChannels()), prosperoConfig.getMavenOptions());
+
+        final List<Channel> channels = prosperoConfig.getChannels();
+        if (channels != null && channels.stream().filter(c-> StringUtils.isEmpty(c.getName())).findAny().isPresent()) {
+            throw Messages.MESSAGES.emptyChannelName();
         }
 
-        return new InstallationMetadata(manifestFile, channelsFile, provisioningFile);
+        try {
+            this.galleonProvisioningConfig = ProvisioningXmlParser.parse(provisioningFile);
+        } catch (ProvisioningException e) {
+            throw Messages.MESSAGES.unableToParseConfiguration(provisioningFile, e);
+        }
     }
 
     public Path exportMetadataBundle(Path location) throws IOException {
@@ -230,7 +235,7 @@ public class InstallationMetadata implements AutoCloseable {
         return manifest;
     }
 
-    public org.jboss.galleon.config.ProvisioningConfig getGalleonProvisioningConfig() {
+    public ProvisioningConfig getGalleonProvisioningConfig() {
         return galleonProvisioningConfig;
     }
 
@@ -280,7 +285,7 @@ public class InstallationMetadata implements AutoCloseable {
             gitStorage.revert(savedState);
 
             // re-parse metadata
-            return new InstallationMetadata(base);
+            return InstallationMetadata.loadInstallation(base);
         } finally {
             gitStorage.reset();
         }
@@ -316,7 +321,7 @@ public class InstallationMetadata implements AutoCloseable {
     }
 
     public void updateProsperoConfig(ProsperoConfig config) throws MetadataException {
-        this.prosperoConfig = prosperoConfig;
+        this.prosperoConfig = config;
 
         writeProsperoConfig();
 

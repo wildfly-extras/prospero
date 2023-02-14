@@ -30,6 +30,7 @@ import org.wildfly.channel.ChannelManifestCoordinate;
 import org.wildfly.channel.ChannelManifestMapper;
 import org.wildfly.channel.MavenCoordinate;
 import org.wildfly.channel.Repository;
+import org.wildfly.prospero.api.exceptions.MetadataException;
 import org.wildfly.prospero.installation.git.GitStorage;
 import org.wildfly.prospero.metadata.ProsperoMetadataUtils;
 import org.wildfly.prospero.model.ProsperoConfig;
@@ -59,8 +60,8 @@ public class InstallationMetadataTest {
 
     @Before
     public void setUp() throws Exception {
-        base = mockServer();
-        installationMetadata = new InstallationMetadata(base, gitStorage);
+        base = temp.newFolder().toPath();
+        installationMetadata = mockServer(base);
     }
 
     @Test
@@ -90,7 +91,7 @@ public class InstallationMetadataTest {
 
         installationMetadata.recordProvision(false);
 
-        try (final InstallationMetadata im = new InstallationMetadata(base)) {
+        try (final InstallationMetadata im = InstallationMetadata.loadInstallation(base)) {
             final ProsperoConfig newConfig = im.getProsperoConfig();
             assertThat(newConfig.getChannels())
                 .map(channel1 -> channel1.getManifestCoordinate().getMaven())
@@ -105,14 +106,14 @@ public class InstallationMetadataTest {
         // throw away mocked installation from setup
         base = temp.newFolder().toPath();
         final Channel channel = createChannel(new ChannelManifestCoordinate("new", "channel"));
-        installationMetadata = new InstallationMetadata(base,
+        installationMetadata = InstallationMetadata.newInstallation(base,
                 new ChannelManifest(null, null, null, null),
-                List.of(channel), null
+                new ProsperoConfig(List.of(channel))
         );
 
         installationMetadata.recordProvision(false);
 
-        try (final InstallationMetadata im = new InstallationMetadata(base)) {
+        try (final InstallationMetadata im = InstallationMetadata.loadInstallation(base)) {
             final ProsperoConfig newConfig = im.getProsperoConfig();
             assertEquals(1, newConfig.getChannels().size());
             assertEquals(new MavenCoordinate("new", "channel", null), newConfig.getChannels().get(0).getManifestCoordinate().getMaven());
@@ -123,11 +124,23 @@ public class InstallationMetadataTest {
 
     @Test
     public void initStorageIfItDoesNotExist() throws Exception {
-        mockServer();
+        base = temp.newFolder().toPath();
+        final Path metadataDir = base.resolve(InstallationMetadata.METADATA_DIR);
 
-        new InstallationMetadata(base);
+        Files.createDirectory(metadataDir);
+        final ChannelManifest manifest = new ChannelManifest(null, null, null, Collections.emptyList());
+        Files.writeString(metadataDir.resolve(InstallationMetadata.MANIFEST_FILE_NAME),
+                ChannelManifestMapper.toYaml(manifest),
+                StandardOpenOption.CREATE_NEW);
+        final Channel channel = createChannel(new ChannelManifestCoordinate("foo","bar"));
+        final ProsperoConfig prosperoConfig = new ProsperoConfig(List.of(channel));
+        prosperoConfig.writeConfig(metadataDir);
 
-        verify(gitStorage).record();
+        assertThat(base.resolve(ProsperoMetadataUtils.METADATA_DIR).resolve(".git")).doesNotExist();
+
+        InstallationMetadata.loadInstallation(base);
+
+        assertThat(base.resolve(ProsperoMetadataUtils.METADATA_DIR).resolve(".git")).exists();
     }
 
     @Test
@@ -135,9 +148,9 @@ public class InstallationMetadataTest {
         // throw away mocked installation from setup
         base = temp.newFolder().toPath();
         final Channel channel = createChannel(new ChannelManifestCoordinate("new", "channel"));
-        installationMetadata = new InstallationMetadata(base,
+        installationMetadata = InstallationMetadata.newInstallation(base,
                 new ChannelManifest(null, null, null, null),
-                List.of(channel), null
+                new ProsperoConfig(List.of(channel))
         );
 
         installationMetadata.recordProvision(false);
@@ -149,11 +162,8 @@ public class InstallationMetadataTest {
     public void testReadMavenOptions() throws Exception {
         final Channel channel = createChannel(new ChannelManifestCoordinate("new", "channel"));
         base = temp.newFolder().toPath();
-        installationMetadata = new InstallationMetadata(base,
-                new ChannelManifest(null, null, null, null),
-                List.of(channel), null
-        );
-
+        ChannelManifest manifest = new ChannelManifest(null, null, null, null);
+        installationMetadata = InstallationMetadata.newInstallation(base, manifest, new ProsperoConfig(List.of(channel)));
         installationMetadata.recordProvision(false);
 
         final MavenOptions opts = MavenOptions.builder()
@@ -162,7 +172,7 @@ public class InstallationMetadataTest {
 
         opts.write(base.resolve(ProsperoMetadataUtils.METADATA_DIR).resolve(ProsperoMetadataUtils.MAVEN_OPTS_FILE));
 
-        final InstallationMetadata readMetadata = new InstallationMetadata(base);
+        final InstallationMetadata readMetadata = InstallationMetadata.loadInstallation(base);
         assertEquals(Path.of("foo").toAbsolutePath(), readMetadata.getProsperoConfig().getMavenOptions().getLocalCache());
     }
 
@@ -170,18 +180,18 @@ public class InstallationMetadataTest {
     public void testReadNoMavenOptions() throws Exception {
         final Channel channel = createChannel(new ChannelManifestCoordinate("new", "channel"));
         base = temp.newFolder().toPath();
-        installationMetadata = new InstallationMetadata(base,
+        installationMetadata = InstallationMetadata.newInstallation(base,
                 new ChannelManifest(null, null, null, null),
-                List.of(channel), MavenOptions.builder()
+                new ProsperoConfig(List.of(channel), MavenOptions.builder()
                 .setLocalCachePath(Path.of("foo"))
-                .build()
+                .build())
         );
 
         installationMetadata.recordProvision(false);
 
         Files.deleteIfExists(base.resolve(ProsperoMetadataUtils.METADATA_DIR).resolve(ProsperoMetadataUtils.MAVEN_OPTS_FILE));
 
-        final InstallationMetadata readMetadata = new InstallationMetadata(base);
+        final InstallationMetadata readMetadata = InstallationMetadata.loadInstallation(base);
         assertNull(readMetadata.getProsperoConfig().getMavenOptions().getLocalCache());
     }
 
@@ -192,17 +202,16 @@ public class InstallationMetadataTest {
         return channel;
     }
 
-    private Path mockServer() throws IOException {
-        final Path base = temp.newFolder().toPath();
+    private InstallationMetadata mockServer(Path base) throws IOException, MetadataException {
         final Path metadataDir = base.resolve(InstallationMetadata.METADATA_DIR);
 
         Files.createDirectory(metadataDir);
-        Files.writeString(metadataDir.resolve(InstallationMetadata.MANIFEST_FILE_NAME),
-                ChannelManifestMapper.toYaml(new ChannelManifest(null, null, null, Collections.emptyList())),
-                StandardOpenOption.CREATE_NEW);
+        final ChannelManifest manifest = new ChannelManifest(null, null, null, Collections.emptyList());
         final Channel channel = createChannel(new ChannelManifestCoordinate("foo","bar"));
-        new ProsperoConfig(List.of(channel)).writeConfig(metadataDir);
-        return base;
+        final ProsperoConfig prosperoConfig = new ProsperoConfig(List.of(channel));
+        final InstallationMetadata metadata = new InstallationMetadata(base, manifest, prosperoConfig, gitStorage);
+        metadata.recordProvision(true);
+        return metadata;
     }
 
 }

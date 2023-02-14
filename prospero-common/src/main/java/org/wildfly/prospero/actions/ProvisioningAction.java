@@ -44,6 +44,7 @@ import java.util.stream.Collectors;
 
 import org.wildfly.prospero.licenses.License;
 import org.wildfly.prospero.licenses.LicenseManager;
+import org.wildfly.prospero.model.ProsperoConfig;
 import org.wildfly.prospero.wfchannel.MavenSessionManager;
 import org.eclipse.aether.repository.RemoteRepository;
 import org.jboss.galleon.ProvisioningException;
@@ -140,8 +141,8 @@ public class ProvisioningAction {
     private void writeProsperoMetadata(Path home, ChannelMavenArtifactRepositoryManager maven, List<Channel> channels) throws MetadataException {
         final ChannelManifest manifest = maven.resolvedChannel();
 
-        try (final InstallationMetadata installationMetadata = new InstallationMetadata(home, manifest, channels, mvnOptions)) {
-            installationMetadata.recordProvision(true);
+        try (final InstallationMetadata installationMetadata = InstallationMetadata.newInstallation(home, manifest, new ProsperoConfig(channels, mvnOptions))) {
+            installationMetadata.recordProvision(true, true);
         }
     }
 

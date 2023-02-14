@@ -59,7 +59,7 @@ public class CreateSnapshotTest extends WfCoreTestBase {
         assertTrue(Files.exists(snapshot));
 
         // import snapshot
-        final InstallationMetadata installationMetadata = InstallationMetadata.importMetadata(snapshot);
+        final InstallationMetadata installationMetadata = InstallationMetadata.fromMetadataBundle(snapshot);
         assertEquals(1, installationMetadata.getProsperoConfig().getChannels().size());
     }
 

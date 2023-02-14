@@ -177,7 +177,7 @@ public class ApplyCandidateAction {
             final MarkerFile marker = MarkerFile.read(updateDir);
 
             final String hash = marker.getState();
-            if (!new InstallationMetadata(installationDir).getRevisions().get(0).getName().equals(hash)) {
+            if (!InstallationMetadata.loadInstallation(installationDir).getRevisions().get(0).getName().equals(hash)) {
                 if (LOGGER.isDebugEnabled()) {
                     LOGGER.debugf("The installation state has changed from the candidate [%s].", updateDir);
                 }

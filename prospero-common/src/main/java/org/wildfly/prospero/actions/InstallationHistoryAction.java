@@ -51,13 +51,13 @@ public class InstallationHistoryAction {
     }
 
     public InstallationChanges compare(SavedState savedState) throws MetadataException {
-        final InstallationMetadata installationMetadata = new InstallationMetadata(installation);
+        final InstallationMetadata installationMetadata = InstallationMetadata.loadInstallation(installation);
         verifyStateExists(savedState, installationMetadata);
         return installationMetadata.getChangesSince(savedState);
     }
 
     public List<SavedState> getRevisions() throws MetadataException {
-        final InstallationMetadata installationMetadata = new InstallationMetadata(installation);
+        final InstallationMetadata installationMetadata = InstallationMetadata.loadInstallation(installation);
         return installationMetadata.getRevisions();
     }
 
@@ -79,7 +79,7 @@ public class InstallationHistoryAction {
     public void prepareRevert(SavedState savedState, MavenOptions mavenOptions, List<Repository> overrideRepositories, Path targetDir)
             throws OperationException, ProvisioningException {
 
-        try (final InstallationMetadata metadata = new InstallationMetadata(installation)) {
+        try (final InstallationMetadata metadata = InstallationMetadata.loadInstallation(installation)) {
 
             verifyStateExists(savedState, metadata);
 

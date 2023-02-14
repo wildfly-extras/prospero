@@ -19,6 +19,7 @@ package org.wildfly.prospero.galleon.inspect;
 
 import org.wildfly.channel.ChannelManifest;
 import org.wildfly.prospero.api.InstallationMetadata;
+import org.wildfly.prospero.model.ProsperoConfig;
 import org.wildfly.prospero.wfchannel.MavenSessionManager;
 import org.eclipse.aether.DefaultRepositorySystemSession;
 import org.eclipse.aether.RepositorySystem;
@@ -37,6 +38,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 
 import static org.junit.Assert.*;
@@ -61,7 +63,7 @@ public class GalleonPackInspectorTest {
 
         final ChannelManifest manifest = new ChannelManifest("test", "test-id", "",
                 Arrays.asList(new Stream("io.undertow", "undertow-core", "1.2.3.Final", null)));
-        installationMetadata = new InstallationMetadata(basePath, manifest, null, null);
+        installationMetadata = InstallationMetadata.newInstallation(basePath, manifest, new ProsperoConfig(Collections.emptyList()));
 
         wildflyCoreFP = downloadFeaturePack("org.wildfly.core:wildfly-core-galleon-pack:zip:17.0.0.Final");
     }
