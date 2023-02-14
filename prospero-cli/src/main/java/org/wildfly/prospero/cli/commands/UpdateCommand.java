@@ -27,13 +27,13 @@ import org.jboss.galleon.ProvisioningException;
 import org.jboss.logging.Logger;
 import org.wildfly.channel.Repository;
 import org.wildfly.prospero.actions.ApplyCandidateAction;
-import org.wildfly.prospero.actions.Console;
 import org.wildfly.prospero.actions.UpdateAction;
 import org.wildfly.prospero.api.FileConflict;
 import org.wildfly.prospero.api.MavenOptions;
 import org.wildfly.prospero.api.exceptions.OperationException;
 import org.wildfly.prospero.cli.ActionFactory;
 import org.wildfly.prospero.cli.ArgumentParsingException;
+import org.wildfly.prospero.cli.CliConsole;
 import org.wildfly.prospero.cli.CliMessages;
 import org.wildfly.prospero.cli.FileConflictPrinter;
 import org.wildfly.prospero.cli.RepositoryDefinition;
@@ -64,7 +64,7 @@ public class UpdateCommand extends AbstractParentCommand {
         @CommandLine.Option(names = {CliConstants.Y, CliConstants.YES})
         boolean yes;
 
-        public PerformCommand(Console console, ActionFactory actionFactory) {
+        public PerformCommand(CliConsole console, ActionFactory actionFactory) {
             super(console, actionFactory);
         }
 
@@ -109,7 +109,7 @@ public class UpdateCommand extends AbstractParentCommand {
         @CommandLine.Option(names = {CliConstants.Y, CliConstants.YES})
         boolean yes;
 
-        public PrepareCommand(Console console, ActionFactory actionFactory) {
+        public PrepareCommand(CliConsole console, ActionFactory actionFactory) {
             super(console, actionFactory);
         }
 
@@ -146,7 +146,7 @@ public class UpdateCommand extends AbstractParentCommand {
         @CommandLine.Option(names = CliConstants.UPDATE_DIR, required = true)
         Path updateDir;
 
-        public ApplyCommand(Console console, ActionFactory actionFactory) {
+        public ApplyCommand(CliConsole console, ActionFactory actionFactory) {
             super(console, actionFactory);
         }
 
@@ -182,7 +182,7 @@ public class UpdateCommand extends AbstractParentCommand {
     @CommandLine.Command(name = CliConstants.Commands.LIST, sortOptions = false)
     public static class ListCommand extends AbstractMavenCommand {
 
-        public ListCommand(Console console, ActionFactory actionFactory) {
+        public ListCommand(CliConsole console, ActionFactory actionFactory) {
             super(console, actionFactory);
         }
         @Override
@@ -200,7 +200,7 @@ public class UpdateCommand extends AbstractParentCommand {
         }
     }
 
-    public UpdateCommand(Console console, ActionFactory actionFactory) {
+    public UpdateCommand(CliConsole console, ActionFactory actionFactory) {
         super(console, actionFactory, CliConstants.Commands.UPDATE,
                 List.of(
                     new UpdateCommand.PrepareCommand(console, actionFactory),
@@ -210,7 +210,7 @@ public class UpdateCommand extends AbstractParentCommand {
         );
     }
 
-    private static void performUpdate(UpdateAction updateAction, boolean yes, Console console) throws OperationException, ProvisioningException {
+    private static void performUpdate(UpdateAction updateAction, boolean yes, CliConsole console) throws OperationException, ProvisioningException {
         final UpdateSet updateSet = updateAction.findUpdates();
 
         console.updatesFound(updateSet.getArtifactUpdates());
@@ -229,7 +229,7 @@ public class UpdateCommand extends AbstractParentCommand {
         console.updatesComplete();
     }
 
-    private static void buildUpdate(UpdateAction updateAction, Path updateDirectory, boolean yes, Console console) throws OperationException, ProvisioningException {
+    private static void buildUpdate(UpdateAction updateAction, Path updateDirectory, boolean yes, CliConsole console) throws OperationException, ProvisioningException {
         final UpdateSet updateSet = updateAction.findUpdates();
 
         console.updatesFound(updateSet.getArtifactUpdates());

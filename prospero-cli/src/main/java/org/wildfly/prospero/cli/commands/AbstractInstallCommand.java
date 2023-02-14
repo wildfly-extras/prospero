@@ -22,13 +22,13 @@ import org.eclipse.aether.RepositorySystem;
 import org.jboss.galleon.ProvisioningException;
 import org.wildfly.channel.Channel;
 import org.wildfly.channel.maven.VersionResolverFactory;
-import org.wildfly.prospero.actions.Console;
 import org.wildfly.prospero.api.MavenOptions;
 import org.wildfly.prospero.api.ProvisioningDefinition;
 import org.wildfly.prospero.api.exceptions.MetadataException;
 import org.wildfly.prospero.api.exceptions.NoChannelException;
 import org.wildfly.prospero.cli.ActionFactory;
 import org.wildfly.prospero.cli.ArgumentParsingException;
+import org.wildfly.prospero.cli.CliConsole;
 import org.wildfly.prospero.cli.RepositoryDefinition;
 import org.wildfly.prospero.cli.commands.options.LocalRepoOptions;
 import org.wildfly.prospero.wfchannel.MavenSessionManager;
@@ -81,7 +81,7 @@ public abstract class AbstractInstallCommand extends AbstractCommand {
     )
     Optional<Boolean> offline = Optional.empty();
 
-    public AbstractInstallCommand(Console console, ActionFactory actionFactory) {
+    public AbstractInstallCommand(CliConsole console, ActionFactory actionFactory) {
         super(console, actionFactory);
     }
 

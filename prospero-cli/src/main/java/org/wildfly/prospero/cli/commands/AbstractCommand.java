@@ -25,15 +25,15 @@ import java.util.Optional;
 import java.util.concurrent.Callable;
 
 import org.jboss.logging.Logger;
-import org.wildfly.prospero.actions.Console;
 import org.wildfly.prospero.api.InstallationMetadata;
 import org.wildfly.prospero.cli.ActionFactory;
+import org.wildfly.prospero.cli.CliConsole;
 import org.wildfly.prospero.cli.CliMessages;
 import picocli.CommandLine;
 
 public abstract class AbstractCommand implements Callable<Integer> {
 
-    protected final Console console;
+    protected final CliConsole console;
     protected final ActionFactory actionFactory;
 
     private static final Logger log = Logger.getLogger(AbstractCommand.class);
@@ -46,7 +46,7 @@ public abstract class AbstractCommand implements Callable<Integer> {
     )
     boolean help;
 
-    public AbstractCommand(Console console, ActionFactory actionFactory) {
+    public AbstractCommand(CliConsole console, ActionFactory actionFactory) {
         this.console = console;
         this.actionFactory = actionFactory;
     }

@@ -23,12 +23,12 @@ import java.util.Optional;
 
 import org.jboss.galleon.config.ProvisioningConfig;
 import org.wildfly.channel.Channel;
-import org.wildfly.prospero.actions.Console;
 import org.wildfly.prospero.actions.ProvisioningAction;
 import org.wildfly.prospero.api.KnownFeaturePacks;
 import org.wildfly.prospero.api.MavenOptions;
 import org.wildfly.prospero.api.ProvisioningDefinition;
 import org.wildfly.prospero.cli.ActionFactory;
+import org.wildfly.prospero.cli.CliConsole;
 import org.wildfly.prospero.cli.CliMessages;
 import org.wildfly.prospero.cli.LicensePrinter;
 import org.wildfly.prospero.cli.ReturnCodes;
@@ -74,7 +74,7 @@ public class InstallCommand extends AbstractInstallCommand {
         Optional<Path> definition;
     }
 
-    public InstallCommand(Console console, ActionFactory actionFactory) {
+    public InstallCommand(CliConsole console, ActionFactory actionFactory) {
         super(console, actionFactory);
     }
 

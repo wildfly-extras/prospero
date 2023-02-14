@@ -22,7 +22,6 @@ import org.jboss.galleon.progresstracking.ProgressCallback;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
-import org.wildfly.prospero.api.ArtifactChange;
 import org.wildfly.prospero.api.ArtifactUtils;
 import org.wildfly.prospero.promotion.ArtifactBundle;
 
@@ -31,7 +30,6 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Collections;
-import java.util.List;
 
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
@@ -71,43 +69,13 @@ public class PromoteArtifactBundleActionTest {
     private static class TestConsole implements Console {
 
         @Override
-        public void installationComplete() {
-
-        }
-
-        @Override
         public ProgressCallback<?> getProgressCallback(String id) {
             return null;
         }
 
         @Override
-        public void updatesFound(List<ArtifactChange> changes) {
+        public void println(String text) {
 
-        }
-
-        @Override
-        public boolean confirmUpdates() {
-            return false;
-        }
-
-        @Override
-        public boolean confirm(String prompt, String accepted, String cancelled) {
-            return false;
-        }
-
-        @Override
-        public void updatesComplete() {
-
-        }
-
-        @Override
-        public void buildUpdatesComplete() {
-
-        }
-
-        @Override
-        public boolean confirmBuildUpdates() {
-            return false;
         }
     }
 }

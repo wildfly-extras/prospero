@@ -21,12 +21,12 @@ import org.apache.commons.lang3.RandomStringUtils;
 import org.wildfly.channel.Channel;
 import org.wildfly.channel.ChannelManifestCoordinate;
 import org.wildfly.channel.Repository;
-import org.wildfly.prospero.actions.Console;
 import org.wildfly.prospero.actions.MetadataAction;
 import org.wildfly.prospero.api.ArtifactUtils;
 import org.wildfly.prospero.api.InstallationMetadata;
 import org.wildfly.prospero.api.exceptions.MetadataException;
 import org.wildfly.prospero.cli.ActionFactory;
+import org.wildfly.prospero.cli.CliConsole;
 import org.wildfly.prospero.cli.CliMessages;
 import org.wildfly.prospero.cli.ReturnCodes;
 import org.wildfly.prospero.cli.commands.AbstractCommand;
@@ -67,7 +67,7 @@ public class ChannelInitializeCommand extends AbstractCommand {
     Optional<Path> directory;
 
 
-    public ChannelInitializeCommand(Console console, ActionFactory actionFactory) {
+    public ChannelInitializeCommand(CliConsole console, ActionFactory actionFactory) {
         super(console, actionFactory);
     }
 

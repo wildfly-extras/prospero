@@ -18,9 +18,9 @@
 package org.wildfly.prospero.cli.commands.channel;
 
 import org.wildfly.channel.Channel;
-import org.wildfly.prospero.actions.Console;
 import org.wildfly.prospero.actions.MetadataAction;
 import org.wildfly.prospero.cli.ActionFactory;
+import org.wildfly.prospero.cli.CliConsole;
 import org.wildfly.prospero.cli.CliMessages;
 import org.wildfly.prospero.cli.ReturnCodes;
 import org.wildfly.prospero.cli.commands.AbstractCommand;
@@ -39,7 +39,7 @@ public class ChannelRemoveCommand extends AbstractCommand {
     @CommandLine.Option(names = CliConstants.DIR)
     Optional<Path> directory;
 
-    public ChannelRemoveCommand(Console console, ActionFactory actionFactory) {
+    public ChannelRemoveCommand(CliConsole console, ActionFactory actionFactory) {
         super(console, actionFactory);
     }
 

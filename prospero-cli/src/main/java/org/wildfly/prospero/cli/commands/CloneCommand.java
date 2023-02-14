@@ -18,9 +18,9 @@
 package org.wildfly.prospero.cli.commands;
 
 import org.wildfly.prospero.Messages;
-import org.wildfly.prospero.actions.Console;
 import org.wildfly.prospero.api.MavenOptions;
 import org.wildfly.prospero.cli.ActionFactory;
+import org.wildfly.prospero.cli.CliConsole;
 import org.wildfly.prospero.cli.RepositoryDefinition;
 import org.wildfly.prospero.cli.ReturnCodes;
 import org.wildfly.prospero.cli.commands.options.LocalRepoOptions;
@@ -38,7 +38,7 @@ public class CloneCommand extends AbstractCommand {
     @CommandLine.Spec
     protected CommandLine.Model.CommandSpec spec;
 
-    public CloneCommand(Console console, ActionFactory actionFactory) {
+    public CloneCommand(CliConsole console, ActionFactory actionFactory) {
         super(console, actionFactory);
     }
 
@@ -63,7 +63,7 @@ public class CloneCommand extends AbstractCommand {
         @CommandLine.Option(names = CliConstants.ARG_PATH, required = true, paramLabel = CliConstants.PATH, order = 2)
         Path outPath;
 
-        CloneExportCommand(Console console, ActionFactory actionFactory) {
+        CloneExportCommand(CliConsole console, ActionFactory actionFactory) {
             super(console, actionFactory);
         }
 
@@ -100,7 +100,7 @@ public class CloneCommand extends AbstractCommand {
         @CommandLine.Option(names = CliConstants.OFFLINE, order = 5)
         Optional<Boolean> offline = Optional.empty();
 
-        CloneRestoreCommand(Console console, ActionFactory actionFactory) {
+        CloneRestoreCommand(CliConsole console, ActionFactory actionFactory) {
             super(console, actionFactory);
         }
 

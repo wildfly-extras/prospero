@@ -21,11 +21,11 @@ import java.nio.file.Path;
 import java.util.List;
 import java.util.Optional;
 
-import org.wildfly.prospero.actions.Console;
 import org.wildfly.prospero.actions.InstallationHistoryAction;
 import org.wildfly.prospero.api.InstallationChanges;
 import org.wildfly.prospero.api.SavedState;
 import org.wildfly.prospero.cli.ActionFactory;
+import org.wildfly.prospero.cli.CliConsole;
 import org.wildfly.prospero.cli.CliMessages;
 import org.wildfly.prospero.cli.DiffPrinter;
 import org.wildfly.prospero.cli.ReturnCodes;
@@ -43,7 +43,7 @@ public class HistoryCommand extends AbstractCommand {
     @CommandLine.Option(names = CliConstants.REVISION)
     Optional<String> revision;
 
-    public HistoryCommand(Console console, ActionFactory actionFactory) {
+    public HistoryCommand(CliConsole console, ActionFactory actionFactory) {
         super(console, actionFactory);
     }
 

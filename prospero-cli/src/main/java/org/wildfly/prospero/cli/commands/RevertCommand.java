@@ -22,11 +22,11 @@ import java.util.List;
 import java.util.Optional;
 
 import org.wildfly.channel.Repository;
-import org.wildfly.prospero.actions.Console;
 import org.wildfly.prospero.actions.InstallationHistoryAction;
 import org.wildfly.prospero.api.MavenOptions;
 import org.wildfly.prospero.api.SavedState;
 import org.wildfly.prospero.cli.ActionFactory;
+import org.wildfly.prospero.cli.CliConsole;
 import org.wildfly.prospero.cli.RepositoryDefinition;
 import org.wildfly.prospero.cli.ReturnCodes;
 import picocli.CommandLine;
@@ -43,7 +43,7 @@ public class RevertCommand extends AbstractParentCommand {
         @CommandLine.Option(names = CliConstants.REVISION, required = true)
         String revision;
 
-        public PerformCommand(Console console, ActionFactory actionFactory) {
+        public PerformCommand(CliConsole console, ActionFactory actionFactory) {
             super(console, actionFactory);
         }
 
@@ -69,7 +69,7 @@ public class RevertCommand extends AbstractParentCommand {
         @CommandLine.Option(names = CliConstants.UPDATE_DIR, required = true)
         Path updateDirectory;
 
-        public ApplyCommand(Console console, ActionFactory actionFactory) {
+        public ApplyCommand(CliConsole console, ActionFactory actionFactory) {
             super(console, actionFactory);
         }
 
@@ -92,7 +92,7 @@ public class RevertCommand extends AbstractParentCommand {
         @CommandLine.Option(names = CliConstants.UPDATE_DIR, required = true)
         Path updateDirectory;
 
-        public PrepareCommand(Console console, ActionFactory actionFactory) {
+        public PrepareCommand(CliConsole console, ActionFactory actionFactory) {
             super(console, actionFactory);
         }
 
@@ -111,7 +111,7 @@ public class RevertCommand extends AbstractParentCommand {
         }
     }
 
-    public RevertCommand(Console console, ActionFactory actionFactory) {
+    public RevertCommand(CliConsole console, ActionFactory actionFactory) {
         super(console, actionFactory, CliConstants.Commands.REVERT, List.of(
                 new PrepareCommand(console, actionFactory),
                 new ApplyCommand(console, actionFactory),
