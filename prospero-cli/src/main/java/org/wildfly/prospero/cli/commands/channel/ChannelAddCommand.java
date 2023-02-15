@@ -66,6 +66,6 @@ public class ChannelAddCommand extends AbstractCommand {
             metadataAction.addChannel(channel);
         }
         console.println(CliMessages.MESSAGES.channelAdded(gavUrlOrPath));
-        return ReturnCodes.SUCCESS;
+        return ReturnCodes.SUCCESS_LOCAL_CHANGES;
     }
 }

@@ -93,7 +93,7 @@ public class HistoryCommandTest extends AbstractConsoleTest {
                 new SavedState("abcd", Instant.ofEpochSecond(System.currentTimeMillis()), SavedState.Type.INSTALL)));
 
         int exitCode = commandLine.execute(CliConstants.Commands.HISTORY, CliConstants.DIR, installationDir.toString());
-        assertEquals(ReturnCodes.SUCCESS, exitCode);
+        assertEquals(ReturnCodes.SUCCESS_NO_CHANGE, exitCode);
         verify(historyAction).getRevisions();
         assertTrue(getStandardOutput().contains("abcd"));
     }
@@ -108,7 +108,7 @@ public class HistoryCommandTest extends AbstractConsoleTest {
 
         int exitCode = commandLine.execute(CliConstants.Commands.HISTORY, CliConstants.DIR, installationDir.toString(),
                 CliConstants.REVISION, "abcd");
-        assertEquals(ReturnCodes.SUCCESS, exitCode);
+        assertEquals(ReturnCodes.SUCCESS_NO_CHANGE, exitCode);
         verify(historyAction).compare(eq(new SavedState("abcd")));
         assertTrue(getStandardOutput().contains("foo:bar"));
     }

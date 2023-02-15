@@ -78,7 +78,7 @@ public class ChannelPromoteCommandTest extends AbstractConsoleTest {
                 CliConstants.CUSTOMIZATION_ARCHIVE, "test/archive.zip",
                 CliConstants.CHANNEL_MANIFEST, "org.test:custom-channel");
 
-        assertEquals(ReturnCodes.SUCCESS, exitCode);
+        assertEquals(ReturnCodes.SUCCESS_LOCAL_CHANGES, exitCode);
         verify(promoter).promote(Paths.get("test/archive.zip").toAbsolutePath(), new URL("file:///test/test"),
                 ArtifactUtils.manifestCoordFromString("org.test:custom-channel"));
     }
@@ -148,7 +148,7 @@ public class ChannelPromoteCommandTest extends AbstractConsoleTest {
                 CliConstants.CUSTOMIZATION_ARCHIVE, "test/archive.zip",
                 CliConstants.DIR, installationDir.toString()
                 );
-        assertEquals(ReturnCodes.SUCCESS, exitCode);
+        assertEquals(ReturnCodes.SUCCESS_LOCAL_CHANGES, exitCode);
         verify(promoter).promote(Paths.get("test/archive.zip").toAbsolutePath(), new URL("file:///test/test"),
                 ArtifactUtils.manifestCoordFromString(CUSTOM_CHANNELS_GROUP_ID + ":test1"));
     }
@@ -168,7 +168,7 @@ public class ChannelPromoteCommandTest extends AbstractConsoleTest {
                 CliConstants.CUSTOMIZATION_ARCHIVE, "test/archive.zip",
                 CliConstants.DIR, installationDir.toString()
         );
-        assertEquals(ReturnCodes.SUCCESS, exitCode);
+        assertEquals(ReturnCodes.SUCCESS_LOCAL_CHANGES, exitCode);
         verify(promoter).promote(Paths.get("test/archive.zip").toAbsolutePath(), new URL("http://test.repo"),
                 ArtifactUtils.manifestCoordFromString("org.custom:test"));
     }
@@ -194,7 +194,7 @@ public class ChannelPromoteCommandTest extends AbstractConsoleTest {
                 CliConstants.CUSTOMIZATION_ARCHIVE, "test/archive.zip",
                 CliConstants.DIR, installationDir.toString()
         );
-        assertEquals(ReturnCodes.SUCCESS, exitCode);
+        assertEquals(ReturnCodes.SUCCESS_LOCAL_CHANGES, exitCode);
         verify(promoter).promote(Paths.get("test/archive.zip").toAbsolutePath(), new URL("http://test.repo"),
                 ArtifactUtils.manifestCoordFromString(CUSTOM_CHANNELS_GROUP_ID + ":test1"));
     }

@@ -94,7 +94,18 @@ public class CliMain {
         commandLine.setUsageHelpAutoWidth(true);
         commandLine.setExecutionExceptionHandler(new ExecutionExceptionHandler(console));
 
+        applyDefaults(commandLine);
+
         return commandLine;
+    }
+
+    private static void applyDefaults(CommandLine cmd) {
+        cmd.getCommandSpec().exitCodeOnInvalidInput(ReturnCodes.INVALID_ARGUMENTS);
+        cmd.getCommandSpec().exitCodeOnExecutionException(ReturnCodes.PROCESSING_ERROR);
+
+        for (CommandLine subCmd : cmd.getSubcommands().values()) {
+            applyDefaults(subCmd);
+        }
     }
 
 }

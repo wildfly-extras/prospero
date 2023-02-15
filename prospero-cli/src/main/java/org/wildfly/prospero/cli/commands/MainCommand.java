@@ -59,7 +59,7 @@ public class MainCommand implements Callable<Integer> {
 
         // print main command usage
         spec.commandLine().usage(console.getStdOut());
-        return ReturnCodes.SUCCESS;
+        return ReturnCodes.SUCCESS_NO_CHANGE;
     }
 
     static class VersionProvider implements CommandLine.IVersionProvider {

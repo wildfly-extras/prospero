@@ -61,7 +61,7 @@ public class WildflyFpTest {
                         CliConstants.DIR, targetDir.toAbsolutePath().toString())
                 .withTimeLimit(20, TimeUnit.MINUTES)
                 .execute()
-                .assertReturnCode(ReturnCodes.SUCCESS);
+                .assertReturnCode(ReturnCodes.SUCCESS_LOCAL_CHANGES);
 
         final Path installedProspero = targetDir.resolve("bin").resolve(ExecutionUtils.isWindows()?"prospero.bat":"prospero.sh");
         assertTrue(Files.exists(installedProspero));
@@ -72,6 +72,6 @@ public class WildflyFpTest {
                 CliConstants.DIR, targetDir.toAbsolutePath().toString())
                 .withTimeLimit(10, TimeUnit.MINUTES)
                 .execute(installedProspero)
-                .assertReturnCode(ReturnCodes.SUCCESS);
+                .assertReturnCode(ReturnCodes.SUCCESS_NO_CHANGE);
     }
 }

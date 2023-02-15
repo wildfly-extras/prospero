@@ -107,7 +107,7 @@ public class UpdateCommandTest extends AbstractMavenCommandTest {
         int exitCode = commandLine.execute(CliConstants.Commands.UPDATE, CliConstants.Commands.PERFORM,
                 CliConstants.DIR, installationDir.toString());
 
-        assertEquals(ReturnCodes.SUCCESS, exitCode);
+        assertEquals(ReturnCodes.SUCCESS_LOCAL_CHANGES, exitCode);
         Mockito.verify(updateAction).performUpdate();
     }
 
@@ -126,7 +126,7 @@ public class UpdateCommandTest extends AbstractMavenCommandTest {
 
         int exitCode = commandLine.execute(CliConstants.Commands.UPDATE, CliConstants.Commands.PERFORM, CliConstants.SELF);
 
-        assertEquals(ReturnCodes.SUCCESS, exitCode);
+        assertEquals(ReturnCodes.SUCCESS_LOCAL_CHANGES, exitCode);
         Mockito.verify(actionFactory).update(eq(installationDir.toAbsolutePath()), any(), any(), any());
         Mockito.verify(updateAction).performUpdate();
     }
@@ -139,7 +139,7 @@ public class UpdateCommandTest extends AbstractMavenCommandTest {
         int exitCode = commandLine.execute(CliConstants.Commands.UPDATE, CliConstants.Commands.PERFORM, CliConstants.SELF,
                 CliConstants.DIR, installationDir.toAbsolutePath().toString());
 
-        assertEquals(ReturnCodes.SUCCESS, exitCode);
+        assertEquals(ReturnCodes.SUCCESS_LOCAL_CHANGES, exitCode);
         Mockito.verify(actionFactory).update(eq(installationDir.toAbsolutePath()), any(), any(), any());
         Mockito.verify(updateAction).performUpdate();
     }
@@ -175,7 +175,7 @@ public class UpdateCommandTest extends AbstractMavenCommandTest {
         int exitCode = commandLine.execute(CliConstants.Commands.UPDATE, CliConstants.Commands.PERFORM, CliConstants.SELF,
                 CliConstants.DIR, installationDir.toAbsolutePath().toString());
 
-        assertEquals(ReturnCodes.SUCCESS, exitCode);
+        assertEquals(ReturnCodes.SUCCESS_NO_CHANGE, exitCode);
         Mockito.verify(actionFactory).update(eq(installationDir.toAbsolutePath()), any(), any(), any());
         assertEquals(1, getAskedConfirmation());
         Mockito.verify(updateAction, never()).performUpdate();
@@ -189,7 +189,7 @@ public class UpdateCommandTest extends AbstractMavenCommandTest {
         int exitCode = commandLine.execute(CliConstants.Commands.UPDATE, CliConstants.Commands.PERFORM, CliConstants.SELF,
                 CliConstants.DIR, installationDir.toAbsolutePath().toString());
 
-        assertEquals(ReturnCodes.SUCCESS, exitCode);
+        assertEquals(ReturnCodes.SUCCESS_LOCAL_CHANGES, exitCode);
         Mockito.verify(actionFactory).update(eq(installationDir.toAbsolutePath()), any(), any(), any());
         assertEquals(1, getAskedConfirmation());
         Mockito.verify(updateAction).performUpdate();
@@ -203,7 +203,7 @@ public class UpdateCommandTest extends AbstractMavenCommandTest {
         int exitCode = commandLine.execute(CliConstants.Commands.UPDATE, CliConstants.Commands.LIST,
                 CliConstants.DIR, installationDir.toAbsolutePath().toString());
 
-        assertEquals(ReturnCodes.SUCCESS, exitCode);
+        assertEquals(ReturnCodes.SUCCESS_NO_CHANGE, exitCode);
         Mockito.verify(actionFactory).update(eq(installationDir.toAbsolutePath()), any(), any(), any());
         Mockito.verify(updateAction, never()).performUpdate();
         Mockito.verify(updateAction).findUpdates();
@@ -227,7 +227,7 @@ public class UpdateCommandTest extends AbstractMavenCommandTest {
         int exitCode = commandLine.execute(CliConstants.Commands.UPDATE, CliConstants.Commands.PREPARE, CliConstants.UPDATE_DIR, updatePath.toString(),
                 CliConstants.DIR, installationDir.toAbsolutePath().toString());
 
-        assertEquals(ReturnCodes.SUCCESS, exitCode);
+        assertEquals(ReturnCodes.SUCCESS_LOCAL_CHANGES, exitCode);
         Mockito.verify(actionFactory).update(eq(installationDir.toAbsolutePath()), any(), any(), any());
         assertEquals(1, getAskedConfirmation());
         Mockito.verify(updateAction).buildUpdate(updatePath);
@@ -242,7 +242,7 @@ public class UpdateCommandTest extends AbstractMavenCommandTest {
         int exitCode = commandLine.execute(CliConstants.Commands.UPDATE, CliConstants.Commands.PREPARE, CliConstants.UPDATE_DIR, updatePath.toString(),
                 CliConstants.DIR, installationDir.toAbsolutePath().toString());
 
-        assertEquals(ReturnCodes.SUCCESS, exitCode);
+        assertEquals(ReturnCodes.SUCCESS_NO_CHANGE, exitCode);
         Mockito.verify(actionFactory).update(eq(installationDir.toAbsolutePath()), any(), any(), any());
         assertEquals(0, getAskedConfirmation());
         Mockito.verify(updateAction, never()).buildUpdate(updatePath);

@@ -71,7 +71,7 @@ public class ApplyUpdateTest extends CliTestBase  {
                         CliConstants.Y,
                         CliConstants.DIR, targetDir.getAbsolutePath())
                 .execute()
-                .assertReturnCode(ReturnCodes.SUCCESS);
+                .assertReturnCode(ReturnCodes.SUCCESS_LOCAL_CHANGES);
 
         // verify the original server has not been modified
         Optional<Stream> wildflyCliStream = getInstalledArtifact(resolvedUpgradeArtifact.getArtifactId(), targetDir.toPath());
@@ -82,7 +82,7 @@ public class ApplyUpdateTest extends CliTestBase  {
                         CliConstants.UPDATE_DIR, updatePath.toAbsolutePath().toString(),
                         CliConstants.DIR, targetDir.getAbsolutePath())
                 .execute()
-                .assertReturnCode(ReturnCodes.SUCCESS);
+                .assertReturnCode(ReturnCodes.SUCCESS_LOCAL_CHANGES);
 
         // verify the original server has been modified
         wildflyCliStream = getInstalledArtifact(resolvedUpgradeArtifact.getArtifactId(), targetDir.toPath());

@@ -113,7 +113,7 @@ public class ChannelInitializeCommand extends AbstractCommand {
             metadataAction.addChannel(channel);
         }
 
-        return ReturnCodes.SUCCESS;
+        return ReturnCodes.SUCCESS_LOCAL_CHANGES;
     }
 
     private boolean customizationChannelExists(MetadataAction metadataAction) throws MetadataException {

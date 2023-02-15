@@ -57,7 +57,7 @@ public class ChannelRemoveCommand extends AbstractCommand {
             metadataAction.removeChannel(channelName);
 
             console.println(CliMessages.MESSAGES.channelRemoved(channelName));
-            return ReturnCodes.SUCCESS;
+            return ReturnCodes.SUCCESS_LOCAL_CHANGES;
         }
     }
 }

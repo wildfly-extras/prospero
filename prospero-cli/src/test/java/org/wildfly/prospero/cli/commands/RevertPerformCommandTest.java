@@ -104,7 +104,7 @@ public class RevertPerformCommandTest extends AbstractMavenCommandTest {
         int exitCode = commandLine.execute(CliConstants.Commands.REVERT, CliConstants.Commands.PERFORM, CliConstants.DIR, installationDir.toString(),
                 CliConstants.REVISION, "abcd");
 
-        assertEquals(ReturnCodes.SUCCESS, exitCode);
+        assertEquals(ReturnCodes.SUCCESS_LOCAL_CHANGES, exitCode);
         verify(historyAction).rollback(eq(new SavedState("abcd")), any(), any());
     }
 
@@ -114,7 +114,7 @@ public class RevertPerformCommandTest extends AbstractMavenCommandTest {
                 CliConstants.REVISION, "abcd",
                 CliConstants.OFFLINE, CliConstants.LOCAL_CACHE, "local-repo");
 
-        assertEquals(ReturnCodes.SUCCESS, exitCode);
+        assertEquals(ReturnCodes.SUCCESS_LOCAL_CHANGES, exitCode);
         verify(historyAction).rollback(eq(new SavedState("abcd")), mavenOptions.capture(), any());
         assertTrue(mavenOptions.getValue().isOffline());
     }
@@ -126,7 +126,7 @@ public class RevertPerformCommandTest extends AbstractMavenCommandTest {
                 CliConstants.REPOSITORIES, "http://temp.repo.te",
                 CliConstants.LOCAL_CACHE, "local-repo");
 
-        assertEquals(ReturnCodes.SUCCESS, exitCode);
+        assertEquals(ReturnCodes.SUCCESS_LOCAL_CHANGES, exitCode);
         verify(historyAction).rollback(eq(new SavedState("abcd")), any(), repositories.capture());
 
         assertThat(repositories.getValue())

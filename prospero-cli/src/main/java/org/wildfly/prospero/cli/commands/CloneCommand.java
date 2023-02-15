@@ -76,7 +76,7 @@ public class CloneCommand extends AbstractCommand {
               .exportAction(determineInstallationDirectory(directory))
               .export(outPath);
             console.println(Messages.MESSAGES.installationExported(outPath));
-            return ReturnCodes.SUCCESS;
+            return ReturnCodes.SUCCESS_LOCAL_CHANGES;
         }
     }
 
@@ -118,7 +118,7 @@ public class CloneCommand extends AbstractCommand {
               .restoreAction(installationDirectory, mavenOptions.build(), console)
               .restore(inPath, RepositoryDefinition.from(remoteRepositories));
             console.println(Messages.MESSAGES.installationMetaRestored(inPath, installationDirectory));
-            return ReturnCodes.SUCCESS;
+            return ReturnCodes.SUCCESS_LOCAL_CHANGES;
         }
     }
 }

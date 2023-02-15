@@ -89,14 +89,15 @@ public class UpdateCommand extends AbstractParentCommand {
 
             log.tracef("Perform full update");
 
+            final boolean changesApplied;
             try (UpdateAction updateAction = actionFactory.update(installationDir, mavenOptions, console, repositories)) {
-                performUpdate(updateAction, yes, console);
+                changesApplied = performUpdate(updateAction, yes, console);
             }
 
             final float totalTime = (System.currentTimeMillis() - startTime) / 1000f;
             console.println(CliMessages.MESSAGES.operationCompleted(totalTime));
 
-            return ReturnCodes.SUCCESS;
+            return changesApplied?ReturnCodes.SUCCESS_LOCAL_CHANGES:ReturnCodes.SUCCESS_NO_CHANGE;
         }
     }
 
@@ -125,15 +126,16 @@ public class UpdateCommand extends AbstractParentCommand {
 
             verifyTargetDirectoryIsEmpty(updateDirectory);
 
+            final boolean updatesFound;
             try (UpdateAction updateAction = actionFactory.update(installationDir,
                     mavenOptions, console, repositories)) {
-                buildUpdate(updateAction, updateDirectory, yes, console);
+                updatesFound = buildUpdate(updateAction, updateDirectory, yes, console);
             }
 
             final float totalTime = (System.currentTimeMillis() - startTime) / 1000f;
             console.println(CliMessages.MESSAGES.operationCompleted(totalTime));
 
-            return ReturnCodes.SUCCESS;
+            return updatesFound?ReturnCodes.SUCCESS_LOCAL_CHANGES:ReturnCodes.SUCCESS_NO_CHANGE;
         }
     }
 
@@ -175,7 +177,7 @@ public class UpdateCommand extends AbstractParentCommand {
             final float totalTime = (System.currentTimeMillis() - startTime) / 1000f;
             console.println(CliMessages.MESSAGES.operationCompleted(totalTime));
 
-            return ReturnCodes.SUCCESS;
+            return ReturnCodes.SUCCESS_LOCAL_CHANGES;
         }
     }
 
@@ -195,7 +197,7 @@ public class UpdateCommand extends AbstractParentCommand {
             try (UpdateAction updateAction = actionFactory.update(installationDir, mavenOptions, console, repositories)) {
                 final UpdateSet updateSet = updateAction.findUpdates();
                 console.updatesFound(updateSet.getArtifactUpdates());
-                return ReturnCodes.SUCCESS;
+                return ReturnCodes.SUCCESS_NO_CHANGE;
             }
         }
     }
@@ -210,16 +212,16 @@ public class UpdateCommand extends AbstractParentCommand {
         );
     }
 
-    private static void performUpdate(UpdateAction updateAction, boolean yes, CliConsole console) throws OperationException, ProvisioningException {
+    private static boolean performUpdate(UpdateAction updateAction, boolean yes, CliConsole console) throws OperationException, ProvisioningException {
         final UpdateSet updateSet = updateAction.findUpdates();
 
         console.updatesFound(updateSet.getArtifactUpdates());
         if (updateSet.isEmpty()) {
-            return;
+            return false;
         }
 
         if (!yes && !console.confirmUpdates()) {
-            return;
+            return false;
         }
 
         final List<FileConflict> fileConflicts = updateAction.performUpdate();
@@ -227,23 +229,26 @@ public class UpdateCommand extends AbstractParentCommand {
         FileConflictPrinter.print(fileConflicts, console);
 
         console.updatesComplete();
+        return true;
     }
 
-    private static void buildUpdate(UpdateAction updateAction, Path updateDirectory, boolean yes, CliConsole console) throws OperationException, ProvisioningException {
+    private static boolean buildUpdate(UpdateAction updateAction, Path updateDirectory, boolean yes, CliConsole console) throws OperationException, ProvisioningException {
         final UpdateSet updateSet = updateAction.findUpdates();
 
         console.updatesFound(updateSet.getArtifactUpdates());
         if (updateSet.isEmpty()) {
-            return;
+            return false;
         }
 
         if (!yes && !console.confirmBuildUpdates()) {
-            return;
+            return false;
         }
 
         updateAction.buildUpdate(updateDirectory.toAbsolutePath());
 
         console.buildUpdatesComplete();
+
+        return true;
     }
 
     public static void verifyInstallationContainsOnlyProspero(Path dir) throws ArgumentParsingException {

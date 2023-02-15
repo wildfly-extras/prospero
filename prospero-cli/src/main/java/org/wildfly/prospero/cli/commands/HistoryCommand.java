@@ -77,6 +77,6 @@ public class HistoryCommand extends AbstractCommand {
             }
         }
 
-        return ReturnCodes.SUCCESS;
+        return ReturnCodes.SUCCESS_NO_CHANGE;
     }
 }

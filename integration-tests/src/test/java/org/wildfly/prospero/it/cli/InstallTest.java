@@ -53,6 +53,6 @@ public class InstallTest {
                         CliConstants.DIR, targetDir.getAbsolutePath())
                 .withTimeLimit(10, TimeUnit.MINUTES)
                 .execute()
-                .assertReturnCode(ReturnCodes.SUCCESS);
+                .assertReturnCode(ReturnCodes.SUCCESS_LOCAL_CHANGES);
     }
 }

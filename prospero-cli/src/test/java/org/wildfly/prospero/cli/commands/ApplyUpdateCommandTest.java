@@ -85,7 +85,7 @@ public class ApplyUpdateCommandTest extends AbstractConsoleTest {
                 CliConstants.UPDATE_DIR, updatePath.toString(),
                 CliConstants.DIR, targetPath.toString());
 
-        Assert.assertEquals(getErrorOutput(), ReturnCodes.SUCCESS, exitCode);
+        Assert.assertEquals(getErrorOutput(), ReturnCodes.SUCCESS_LOCAL_CHANGES, exitCode);
         verify(applyCandidateAction).applyUpdate(ApplyCandidateAction.Type.UPDATE);
     }
 

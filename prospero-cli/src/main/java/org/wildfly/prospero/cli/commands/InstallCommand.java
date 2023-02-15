@@ -122,7 +122,7 @@ public class InstallCommand extends AbstractInstallCommand {
         final float totalTime = (System.currentTimeMillis() - startTime) / 1000f;
         console.println(CliMessages.MESSAGES.operationCompleted(totalTime));
 
-        return ReturnCodes.SUCCESS;
+        return ReturnCodes.SUCCESS_LOCAL_CHANGES;
     }
 
     private boolean isStandardFpl(String fpl) {
