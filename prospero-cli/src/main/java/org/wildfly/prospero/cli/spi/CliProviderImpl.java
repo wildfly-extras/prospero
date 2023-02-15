@@ -28,22 +28,28 @@ import java.util.Locale;
  * implementation of {@link CliProvider}
  */
 public class CliProviderImpl implements CliProvider {
+
+    private boolean isWindows = System.getProperty("os.name").toLowerCase(Locale.ENGLISH).contains("windows");
+
     @Override
     public String getScriptName() {
-        final boolean isWindows = System.getProperty("os.name").toLowerCase(Locale.ENGLISH).contains("windows");
-        final String suffix = isWindows?".bat":".sh";
+        final String suffix = isWindows ?".bat":".sh";
         return DistributionInfo.DIST_NAME + suffix;
     }
 
     @Override
     public String getApplyUpdateCommand(Path installationPath, Path candidatePath) {
         return CliConstants.Commands.UPDATE + " " + CliConstants.Commands.APPLY + " " + CliConstants.DIR + "="
-                + installationPath.toAbsolutePath() + " " + CliConstants.UPDATE_DIR + "=" + candidatePath.toAbsolutePath();
+                + escape(installationPath.toAbsolutePath()) + " " + CliConstants.UPDATE_DIR + "=" + escape(candidatePath.toAbsolutePath());
     }
 
     @Override
     public String getApplyRevertCommand(Path installationPath, Path candidatePath) {
         return CliConstants.Commands.REVERT + " " + CliConstants.Commands.APPLY + " " + CliConstants.DIR + "="
-                + installationPath.toAbsolutePath() + " " + CliConstants.UPDATE_DIR + "=" + candidatePath.toAbsolutePath();
+                + escape(installationPath.toAbsolutePath()) + " " + CliConstants.UPDATE_DIR + "=" + escape(candidatePath.toAbsolutePath());
+    }
+
+    private String escape(Path absolutePath) {
+        return "\"" + absolutePath.toString() + "\"";
     }
 }
