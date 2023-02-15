@@ -95,6 +95,10 @@ public class GalleonFeaturePackAnalyzer {
                 artifactCache.cache(mavenArtifact);
             }
 
+            // cache wildfly-config-gen as it's not added in galleon-plugin - TODO: remove when fixed in galleon-plugins
+            final MavenArtifact mavenArtifact = galleonEnv.getChannelSession().resolveMavenArtifact("org.wildfly.galleon-plugins", "wildfly-config-gen", "jar", null, null);
+            artifactCache.cache(mavenArtifact);
+
             updateHashes(installedDir);
         } finally {
             FileUtils.deleteQuietly(tempInstallationPath.toFile());
