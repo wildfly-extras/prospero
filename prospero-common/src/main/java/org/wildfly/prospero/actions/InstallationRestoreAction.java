@@ -22,6 +22,7 @@ import org.wildfly.channel.ChannelManifest;
 import org.wildfly.channel.Repository;
 import org.wildfly.channel.UnresolvedMavenArtifactException;
 import org.wildfly.prospero.Messages;
+import org.wildfly.prospero.api.Console;
 import org.wildfly.prospero.api.MavenOptions;
 import org.wildfly.prospero.api.TemporaryRepositoriesHandler;
 import org.wildfly.prospero.api.exceptions.ArtifactResolutionException;

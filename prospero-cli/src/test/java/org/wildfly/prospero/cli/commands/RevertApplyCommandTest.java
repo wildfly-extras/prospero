@@ -25,7 +25,7 @@ import org.junit.rules.TemporaryFolder;
 import org.junit.runner.RunWith;
 import org.mockito.Mock;
 import org.mockito.junit.MockitoJUnitRunner;
-import org.wildfly.prospero.actions.Console;
+import org.wildfly.prospero.api.Console;
 import org.wildfly.prospero.actions.InstallationHistoryAction;
 import org.wildfly.prospero.cli.AbstractConsoleTest;
 import org.wildfly.prospero.cli.ActionFactory;

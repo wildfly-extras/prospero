@@ -17,10 +17,10 @@
 
 package org.wildfly.prospero.cli.commands;
 
-import org.wildfly.prospero.actions.Console;
 import org.wildfly.prospero.api.MavenOptions;
 import org.wildfly.prospero.cli.ActionFactory;
 import org.wildfly.prospero.cli.ArgumentParsingException;
+import org.wildfly.prospero.cli.CliConsole;
 import org.wildfly.prospero.cli.commands.options.LocalRepoOptions;
 import picocli.CommandLine;
 
@@ -42,7 +42,7 @@ public abstract class AbstractMavenCommand extends AbstractCommand {
     @CommandLine.Option(names = CliConstants.OFFLINE)
     Optional<Boolean> offline = Optional.empty();
 
-    public AbstractMavenCommand(Console console, ActionFactory actionFactory) {
+    public AbstractMavenCommand(CliConsole console, ActionFactory actionFactory) {
         super(console, actionFactory);
     }
 

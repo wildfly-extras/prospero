@@ -20,10 +20,10 @@ package org.wildfly.prospero.cli.commands.channel;
 import org.wildfly.channel.Channel;
 import org.wildfly.channel.ChannelManifestCoordinate;
 import org.wildfly.channel.Repository;
-import org.wildfly.prospero.actions.Console;
 import org.wildfly.prospero.actions.MetadataAction;
 import org.wildfly.prospero.api.ArtifactUtils;
 import org.wildfly.prospero.cli.ActionFactory;
+import org.wildfly.prospero.cli.CliConsole;
 import org.wildfly.prospero.cli.CliMessages;
 import org.wildfly.prospero.cli.RepositoryDefinition;
 import org.wildfly.prospero.cli.ReturnCodes;
@@ -50,7 +50,7 @@ public class ChannelAddCommand extends AbstractCommand {
     @CommandLine.Option(names = CliConstants.REPOSITORIES, split = ",", paramLabel = CliConstants.REPO_URL, required = true)
     private List<String> repositoryDefs;
 
-    public ChannelAddCommand(Console console, ActionFactory actionFactory) {
+    public ChannelAddCommand(CliConsole console, ActionFactory actionFactory) {
         super(console, actionFactory);
     }
 

@@ -19,21 +19,10 @@ package org.wildfly.prospero.it;
 
 import java.util.List;
 
-import org.jboss.galleon.progresstracking.ProgressCallback;
-import org.wildfly.prospero.actions.Console;
 import org.wildfly.prospero.api.ArtifactChange;
+import org.wildfly.prospero.cli.CliConsole;
 
-public class AcceptingConsole implements Console {
-
-    @Override
-    public void installationComplete() {
-        // no op
-    }
-
-    @Override
-    public ProgressCallback<?> getProgressCallback(String id) {
-        return null;
-    }
+public class AcceptingConsole extends CliConsole {
 
     @Override
     public void updatesFound(List<ArtifactChange> changes) {

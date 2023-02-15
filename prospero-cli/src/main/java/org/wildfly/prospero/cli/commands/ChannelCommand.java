@@ -24,9 +24,9 @@ import java.util.Optional;
 import org.wildfly.channel.Channel;
 import org.wildfly.channel.MavenCoordinate;
 import org.wildfly.channel.Repository;
-import org.wildfly.prospero.actions.Console;
 import org.wildfly.prospero.actions.MetadataAction;
 import org.wildfly.prospero.cli.ActionFactory;
+import org.wildfly.prospero.cli.CliConsole;
 import org.wildfly.prospero.cli.ReturnCodes;
 import picocli.CommandLine;
 
@@ -36,7 +36,7 @@ public class ChannelCommand extends AbstractCommand {
     @CommandLine.Spec
     protected CommandLine.Model.CommandSpec spec;
 
-    public ChannelCommand(Console console, ActionFactory actionFactory) {
+    public ChannelCommand(CliConsole console, ActionFactory actionFactory) {
         super(console, actionFactory);
     }
 
@@ -52,7 +52,7 @@ public class ChannelCommand extends AbstractCommand {
         @CommandLine.Option(names = CliConstants.DIR)
         Optional<Path> directory;
 
-        public ChannelListCommand(Console console, ActionFactory actionFactory) {
+        public ChannelListCommand(CliConsole console, ActionFactory actionFactory) {
             super(console, actionFactory);
         }
 

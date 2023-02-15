@@ -27,6 +27,7 @@ import org.wildfly.channel.ArtifactCoordinate;
 import org.wildfly.channel.ChannelManifestCoordinate;
 import org.wildfly.channel.maven.ChannelCoordinate;
 import org.wildfly.prospero.Messages;
+import org.wildfly.prospero.api.Console;
 import org.wildfly.prospero.api.MavenOptions;
 import org.wildfly.prospero.api.exceptions.ArtifactPromoteException;
 import org.wildfly.prospero.promotion.ArtifactPromoter;

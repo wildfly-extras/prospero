@@ -26,6 +26,7 @@ import org.jboss.galleon.xml.ProvisioningXmlParser;
 import org.wildfly.channel.Channel;
 import org.wildfly.channel.ChannelManifest;
 import org.wildfly.channel.UnresolvedMavenArtifactException;
+import org.wildfly.prospero.api.Console;
 import org.wildfly.prospero.api.InstallationMetadata;
 import org.wildfly.prospero.api.SavedState;
 import org.wildfly.prospero.api.exceptions.ArtifactResolutionException;

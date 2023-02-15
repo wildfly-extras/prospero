@@ -19,11 +19,11 @@ package org.wildfly.prospero.cli.commands;
 
 import org.jboss.galleon.config.ProvisioningConfig;
 import org.wildfly.channel.Channel;
-import org.wildfly.prospero.actions.Console;
 import org.wildfly.prospero.actions.ProvisioningAction;
 import org.wildfly.prospero.api.MavenOptions;
 import org.wildfly.prospero.api.ProvisioningDefinition;
 import org.wildfly.prospero.cli.ActionFactory;
+import org.wildfly.prospero.cli.CliConsole;
 import org.wildfly.prospero.cli.CliMessages;
 import org.wildfly.prospero.cli.LicensePrinter;
 import org.wildfly.prospero.cli.ReturnCodes;
@@ -40,7 +40,7 @@ import java.util.List;
 )
 public class PrintLicensesCommand extends AbstractInstallCommand {
 
-    public PrintLicensesCommand(Console console, ActionFactory actionFactory) {
+    public PrintLicensesCommand(CliConsole console, ActionFactory actionFactory) {
         super(console, actionFactory);
     }
 

@@ -18,7 +18,6 @@
 package org.wildfly.prospero.cli;
 
 import org.jboss.logging.Logger;
-import org.wildfly.prospero.actions.Console;
 import org.wildfly.prospero.cli.commands.ChannelCommand;
 import org.wildfly.prospero.cli.commands.CliConstants;
 import org.wildfly.prospero.cli.commands.CloneCommand;
@@ -51,7 +50,7 @@ public class CliMain {
 
     public static void main(String[] args) {
         try {
-            Console console = new CliConsole();
+            CliConsole console = new CliConsole();
             CommandLine commandLine = createCommandLine(console);
             int exitCode = commandLine.execute(args);
             System.exit(exitCode);
@@ -62,11 +61,11 @@ public class CliMain {
         }
     }
 
-    public static CommandLine createCommandLine(Console console) {
+    public static CommandLine createCommandLine(CliConsole console) {
         return createCommandLine(console, new ActionFactory());
     }
 
-    public static CommandLine createCommandLine(Console console, ActionFactory actionFactory) {
+    public static CommandLine createCommandLine(CliConsole console, ActionFactory actionFactory) {
         CommandLine commandLine = new CommandLine(new MainCommand(console));
 
         commandLine.addSubcommand(new InstallCommand(console, actionFactory));

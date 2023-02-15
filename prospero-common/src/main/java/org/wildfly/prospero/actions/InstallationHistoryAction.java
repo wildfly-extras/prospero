@@ -20,6 +20,7 @@ package org.wildfly.prospero.actions;
 import org.apache.commons.io.FileUtils;
 import org.wildfly.channel.Repository;
 import org.wildfly.prospero.Messages;
+import org.wildfly.prospero.api.Console;
 import org.wildfly.prospero.api.InstallationChanges;
 import org.wildfly.prospero.api.MavenOptions;
 import org.wildfly.prospero.api.TemporaryRepositoriesHandler;

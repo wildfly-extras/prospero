@@ -24,7 +24,7 @@ import java.util.PropertyResourceBundle;
 import java.util.concurrent.Callable;
 import java.util.jar.Manifest;
 
-import org.wildfly.prospero.actions.Console;
+import org.wildfly.prospero.cli.CliConsole;
 import org.wildfly.prospero.cli.ReturnCodes;
 import picocli.CommandLine;
 
@@ -35,7 +35,7 @@ public class MainCommand implements Callable<Integer> {
     @CommandLine.Spec
     protected CommandLine.Model.CommandSpec spec;
 
-    private final Console console;
+    private final CliConsole console;
 
     @SuppressWarnings("unused")
     @CommandLine.Option(names = {CliConstants.H, CliConstants.HELP}, usageHelp = true)
@@ -45,7 +45,7 @@ public class MainCommand implements Callable<Integer> {
     @CommandLine.Option(names = {CliConstants.V, CliConstants.VERSION}, versionHelp = true)
     boolean version;
 
-    public MainCommand(Console console) {
+    public MainCommand(CliConsole console) {
         this.console = console;
     }
 

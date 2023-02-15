@@ -18,7 +18,7 @@
 package org.wildfly.prospero.cli;
 
 import org.jboss.galleon.diff.FsDiff;
-import org.wildfly.prospero.actions.Console;
+import org.wildfly.prospero.api.Console;
 import org.wildfly.prospero.api.FileConflict;
 
 import java.util.List;

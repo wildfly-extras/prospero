@@ -21,11 +21,11 @@ import org.wildfly.channel.Channel;
 import org.wildfly.channel.ChannelManifestCoordinate;
 import org.wildfly.channel.MavenCoordinate;
 import org.wildfly.prospero.Messages;
-import org.wildfly.prospero.actions.Console;
 import org.wildfly.prospero.actions.MetadataAction;
 import org.wildfly.prospero.api.ArtifactUtils;
 import org.wildfly.prospero.api.exceptions.MetadataException;
 import org.wildfly.prospero.cli.ActionFactory;
+import org.wildfly.prospero.cli.CliConsole;
 import org.wildfly.prospero.cli.CliMessages;
 import org.wildfly.prospero.cli.ReturnCodes;
 import org.wildfly.prospero.cli.commands.AbstractCommand;
@@ -73,7 +73,7 @@ public class ChannelPromoteCommand extends AbstractCommand {
     private boolean noPrompt;
 
 
-    public ChannelPromoteCommand(Console console, ActionFactory actionFactory) {
+    public ChannelPromoteCommand(CliConsole console, ActionFactory actionFactory) {
         super(console, actionFactory);
     }
 

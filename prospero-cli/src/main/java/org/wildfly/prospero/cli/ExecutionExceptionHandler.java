@@ -20,7 +20,6 @@ package org.wildfly.prospero.cli;
 import org.jboss.galleon.ProvisioningException;
 import org.wildfly.channel.ArtifactCoordinate;
 import org.wildfly.channel.Repository;
-import org.wildfly.prospero.actions.Console;
 import org.wildfly.prospero.api.exceptions.ArtifactResolutionException;
 import org.wildfly.prospero.api.exceptions.ChannelDefinitionException;
 import org.wildfly.prospero.api.exceptions.NoChannelException;
@@ -35,9 +34,9 @@ import java.util.stream.Collectors;
  * Handles exceptions that happen during command executions.
  */
 public class ExecutionExceptionHandler implements CommandLine.IExecutionExceptionHandler {
-    private final Console console;
+    private final CliConsole console;
 
-    public ExecutionExceptionHandler(Console console) {
+    public ExecutionExceptionHandler(CliConsole console) {
         this.console = console;
     }
 

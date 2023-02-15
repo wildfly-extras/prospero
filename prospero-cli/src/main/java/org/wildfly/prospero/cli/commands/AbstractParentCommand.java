@@ -17,8 +17,8 @@
 
 package org.wildfly.prospero.cli.commands;
 
-import org.wildfly.prospero.actions.Console;
 import org.wildfly.prospero.cli.ActionFactory;
+import org.wildfly.prospero.cli.CliConsole;
 import org.wildfly.prospero.cli.ReturnCodes;
 import picocli.CommandLine;
 
@@ -31,7 +31,7 @@ public abstract class AbstractParentCommand extends AbstractCommand {
     @CommandLine.Spec
     protected CommandLine.Model.CommandSpec spec;
 
-    protected AbstractParentCommand(Console console, ActionFactory actionFactory, String name, List<AbstractCommand> subcommands) {
+    protected AbstractParentCommand(CliConsole console, ActionFactory actionFactory, String name, List<AbstractCommand> subcommands) {
         super(console, actionFactory);
         this.name = name;
         this.subcommands = subcommands;
