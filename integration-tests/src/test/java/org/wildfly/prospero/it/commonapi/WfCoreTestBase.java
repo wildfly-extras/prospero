@@ -17,10 +17,12 @@
 
 package org.wildfly.prospero.it.commonapi;
 
+import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.IOUtils;
 import org.eclipse.aether.deployment.DeployRequest;
 import org.eclipse.aether.installation.InstallResult;
 import org.eclipse.aether.repository.RemoteRepository;
+import org.junit.AfterClass;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.rules.TemporaryFolder;
@@ -48,6 +50,7 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.net.URL;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -76,6 +79,7 @@ public class WfCoreTestBase {
 
     protected static Artifact resolvedUpgradeArtifact;
     protected static Artifact resolvedUpgradeClientArtifact;
+    private static Path localCachePath;
     protected Path outputPath;
     protected Path manifestPath;
     protected ProvisioningAction installation;
@@ -89,8 +93,9 @@ public class WfCoreTestBase {
 
     @BeforeClass
     public static void deployUpgrade() throws Exception {
+        localCachePath = Files.createTempDirectory("local-cache").toAbsolutePath();
         final MavenSessionManager msm = new MavenSessionManager(MavenOptions.builder()
-                .setLocalCachePath(MavenSessionManager.LOCAL_MAVEN_REPO)
+                .setLocalCachePath(localCachePath)
                 .setOffline(false)
                 .build());
         final RepositorySystem system = msm.newRepositorySystem();
@@ -101,10 +106,15 @@ public class WfCoreTestBase {
         installIfMissing(system, session, "org.wildfly.core", "wildfly-core-galleon-pack", null, "zip");
     }
 
+    @AfterClass
+    public static void removeCache() throws Exception {
+        FileUtils.deleteQuietly(localCachePath.toFile());
+    }
+
     @Before
     public void setUp() throws Exception {
         mavenOptions = MavenOptions.builder()
-                .setLocalCachePath(MavenSessionManager.LOCAL_MAVEN_REPO)
+                .setLocalCachePath(localCachePath)
                 .setOffline(false)
                 .build();
         mavenSessionManager = new MavenSessionManager(mavenOptions);

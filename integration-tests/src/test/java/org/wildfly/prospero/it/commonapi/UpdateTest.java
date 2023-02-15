@@ -186,7 +186,7 @@ public class UpdateTest extends WfCoreTestBase {
         deployManifestFile(tempRepo, updatedChannel, "1.0.1");
 
         // offline MSM will disable http(s) repositories and local maven cache
-        final MavenOptions offlineOptions = MavenOptions.OFFLINE;
+        final MavenOptions offlineOptions = MavenOptions.OFFLINE_NO_CACHE;
 
         // update installation
         new UpdateAction(outputPath, offlineOptions, new AcceptingConsole(),
@@ -223,7 +223,7 @@ public class UpdateTest extends WfCoreTestBase {
     }
 
     private void deployManifestFile(URL repoUrl, File channelFile, String version) throws ProvisioningException, MalformedURLException, DeploymentException {
-        final MavenSessionManager msm = new MavenSessionManager();
+        final MavenSessionManager msm = new MavenSessionManager(MavenOptions.OFFLINE_NO_CACHE);
         final RepositorySystem system = msm.newRepositorySystem();
         final DefaultRepositorySystemSession session = msm.newRepositorySystemSession(system);
         final DeployRequest request = new DeployRequest();
