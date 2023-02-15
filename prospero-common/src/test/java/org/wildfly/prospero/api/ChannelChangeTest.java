@@ -94,4 +94,19 @@ public class ChannelChangeTest {
         assertTrue(diff.getChildren().isEmpty());
     }
 
+    @Test
+    public void changeWithChannelWithoutManifest() throws Exception {
+        final Channel channel = new Channel("channel-1", null, null,
+                List.of(new Repository("repo1", "url1"), new Repository("repo2", "url2")),
+                null, null, null);
+
+        ChannelChange diff = ChannelChange.modified(channel1, channel);
+        assertTrue(diff.getChild("manifest").get().getNewValue().isEmpty());
+        assertEquals(Optional.of("foo:bar"), diff.getChild("manifest").get().getOldValue());
+
+        diff = ChannelChange.modified(channel, channel1);
+        assertEquals(Optional.of("foo:bar"), diff.getChild("manifest").get().getNewValue());
+        assertTrue(diff.getChild("manifest").get().getOldValue().isEmpty());
+    }
+
 }
