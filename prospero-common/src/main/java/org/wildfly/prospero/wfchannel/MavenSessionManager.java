@@ -25,6 +25,7 @@ import java.util.Objects;
 
 import org.apache.commons.io.FileUtils;
 import org.eclipse.aether.repository.LocalRepository;
+import org.eclipse.aether.repository.LocalRepositoryManager;
 import org.jboss.logging.Logger;
 import org.wildfly.prospero.Messages;
 import org.apache.maven.repository.internal.MavenRepositorySystemUtils;
@@ -115,9 +116,13 @@ public class MavenSessionManager {
         if (resolveLocalCache) {
             copyResolvedArtifactsToProvisiongRepository(session);
         }
-        session.setLocalRepositoryManager(system.newLocalRepositoryManager(session, localRepo));
+        session.setLocalRepositoryManager(excludeLocalArtifacts(system.newLocalRepositoryManager(session, localRepo)));
         session.setOffline(offline);
         return session;
+    }
+
+    private LocalRepositoryManager excludeLocalArtifacts(LocalRepositoryManager delegate) {
+        return new CacheOnlyLocalRepositoryManager(delegate);
     }
 
     private void copyResolvedArtifactsToProvisiongRepository(DefaultRepositorySystemSession session) {
@@ -156,4 +161,5 @@ public class MavenSessionManager {
     public boolean isOffline() {
         return offline;
     }
+
 }
