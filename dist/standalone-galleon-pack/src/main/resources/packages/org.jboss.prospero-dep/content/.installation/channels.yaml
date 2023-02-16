@@ -1,6 +1,0 @@
----
-channels:
-  - gav: "${project.groupId}:${project.artifactId}:${project.version}"
-repositories:
-  - id: "central"
-    url: "https://repo1.maven.org/maven2"

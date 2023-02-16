@@ -1,0 +1,11 @@
+---
+schemaVersion: 2.0.0
+name: "${prospero.dist.name}"
+resolve-if-no-stream: none
+manifest:
+  maven:
+    groupId: "${project.groupId}"
+    artifactId: "${project.artifactId}"
+repositories:
+  - id: "${prospero.repo.id}"
+    url: "${prospero.repo.url}"
