@@ -46,7 +46,7 @@ public class UpdateFinderTest {
     public void testDowngradeIsPossible() throws Exception {
         when(channelSession.findLatestMavenArtifactVersion("org.foo", "bar", "jar", "", null)).thenReturn("1.0.0");
 
-        UpdateFinder finder = new UpdateFinder(channelSession, provMgr);
+        UpdateFinder finder = new UpdateFinder(channelSession);
         final List<Artifact> artifacts = Arrays.asList(
                 new DefaultArtifact("org.foo", "bar", "jar", "1.0.1")
                 );
@@ -62,7 +62,7 @@ public class UpdateFinderTest {
     public void testExcludeSameVersion() throws Exception {
         when(channelSession.findLatestMavenArtifactVersion("org.foo", "bar", "jar", "", null)).thenReturn("1.0.0");
 
-        UpdateFinder finder = new UpdateFinder(channelSession, provMgr);
+        UpdateFinder finder = new UpdateFinder(channelSession);
         final List<Artifact> artifacts = Arrays.asList(
                 new DefaultArtifact("org.foo", "bar", "jar", "1.0.0")
         );
@@ -75,7 +75,7 @@ public class UpdateFinderTest {
     public void testIncludeUpgradeVersion() throws Exception {
         when(channelSession.findLatestMavenArtifactVersion("org.foo", "bar", "jar", "", null)).thenReturn("1.0.1");
 
-        UpdateFinder finder = new UpdateFinder(channelSession, provMgr);
+        UpdateFinder finder = new UpdateFinder(channelSession);
         final List<Artifact> artifacts = Arrays.asList(
                 new DefaultArtifact("org.foo", "bar", "jar", "1.0.0")
         );
@@ -92,7 +92,7 @@ public class UpdateFinderTest {
         when(channelSession.findLatestMavenArtifactVersion("org.foo", "bar", "jar", "", null))
                 .thenThrow(new UnresolvedMavenArtifactException());
 
-        UpdateFinder finder = new UpdateFinder(channelSession, provMgr);
+        UpdateFinder finder = new UpdateFinder(channelSession);
         final List<Artifact> artifacts = Arrays.asList(
                 new DefaultArtifact("org.foo", "bar", "jar", "1.0.0")
         );

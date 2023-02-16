@@ -17,15 +17,19 @@
 
 package org.wildfly.prospero.cli.commands;
 
+import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.List;
 import java.util.Optional;
+import java.util.function.Supplier;
 
+import org.apache.commons.io.FileUtils;
 import org.jboss.galleon.ProvisioningException;
 import org.jboss.logging.Logger;
 import org.wildfly.channel.Repository;
+import org.wildfly.prospero.Messages;
 import org.wildfly.prospero.actions.ApplyCandidateAction;
 import org.wildfly.prospero.actions.UpdateAction;
 import org.wildfly.prospero.api.FileConflict;
@@ -91,13 +95,43 @@ public class UpdateCommand extends AbstractParentCommand {
 
             final boolean changesApplied;
             try (UpdateAction updateAction = actionFactory.update(installationDir, mavenOptions, console, repositories)) {
-                changesApplied = performUpdate(updateAction, yes, console);
+                changesApplied = performUpdate(updateAction, yes, console, installationDir);
             }
 
             final float totalTime = (System.currentTimeMillis() - startTime) / 1000f;
             console.println(CliMessages.MESSAGES.operationCompleted(totalTime));
 
             return changesApplied?ReturnCodes.SUCCESS_LOCAL_CHANGES:ReturnCodes.SUCCESS_NO_CHANGE;
+        }
+
+        private boolean performUpdate(UpdateAction updateAction, boolean yes, CliConsole console, Path installDir) throws OperationException, ProvisioningException {
+            Path targetDir = null;
+            try {
+                targetDir = Files.createTempDirectory("update-candidate");
+                if (buildUpdate(updateAction, targetDir, yes, console, () -> console.confirmUpdates())) {
+                    ApplyCandidateAction applyCandidateAction = actionFactory.applyUpdate(installDir, targetDir);
+                    final List<FileConflict> conflicts = applyCandidateAction.getConflicts();
+                    if (!conflicts.isEmpty()) {
+                        FileConflictPrinter.print(conflicts, console);
+                        if (!yes && !console.confirm(CliMessages.MESSAGES.continueWithUpdate(), "", CliMessages.MESSAGES.updateCancelled())) {
+                            return false;
+                        }
+                    }
+
+                    applyCandidateAction.applyUpdate(ApplyCandidateAction.Type.UPDATE);
+                } else {
+                    return false;
+                }
+            } catch (IOException e) {
+                throw Messages.MESSAGES.unableToCreateTemporaryDirectory(e);
+            } finally {
+                if (targetDir != null) {
+                    FileUtils.deleteQuietly(targetDir.toFile());
+                }
+            }
+
+            console.updatesComplete();
+            return true;
         }
     }
 
@@ -129,7 +163,7 @@ public class UpdateCommand extends AbstractParentCommand {
             final boolean updatesFound;
             try (UpdateAction updateAction = actionFactory.update(installationDir,
                     mavenOptions, console, repositories)) {
-                updatesFound = buildUpdate(updateAction, updateDirectory, yes, console);
+                updatesFound = buildUpdate(updateAction, updateDirectory, yes, console, ()->console.confirmBuildUpdates());
             }
 
             final float totalTime = (System.currentTimeMillis() - startTime) / 1000f;
@@ -147,6 +181,9 @@ public class UpdateCommand extends AbstractParentCommand {
 
         @CommandLine.Option(names = CliConstants.UPDATE_DIR, required = true)
         Path updateDir;
+
+        @CommandLine.Option(names = {CliConstants.Y, CliConstants.YES})
+        boolean yes;
 
         public ApplyCommand(CliConsole console, ActionFactory actionFactory) {
             super(console, actionFactory);
@@ -170,9 +207,16 @@ public class UpdateCommand extends AbstractParentCommand {
                 throw CliMessages.MESSAGES.updateCandidateStateNotMatched(installationDir, updateDir.toAbsolutePath());
             }
 
-            final List<FileConflict> fileConflicts = applyCandidateAction.applyUpdate(ApplyCandidateAction.Type.UPDATE);
+            console.updatesFound(applyCandidateAction.findUpdates().getArtifactUpdates());
+            final List<FileConflict> conflicts = applyCandidateAction.getConflicts();
+            FileConflictPrinter.print(conflicts, console);
 
-            FileConflictPrinter.print(fileConflicts, console);
+            // there always should be updates, so confirm update
+            if (!yes && !console.confirm(CliMessages.MESSAGES.continueWithUpdate(), "", CliMessages.MESSAGES.updateCancelled())) {
+                return ReturnCodes.SUCCESS_NO_CHANGE;
+            }
+
+            applyCandidateAction.applyUpdate(ApplyCandidateAction.Type.UPDATE);
 
             final float totalTime = (System.currentTimeMillis() - startTime) / 1000f;
             console.println(CliMessages.MESSAGES.operationCompleted(totalTime));
@@ -212,7 +256,7 @@ public class UpdateCommand extends AbstractParentCommand {
         );
     }
 
-    private static boolean performUpdate(UpdateAction updateAction, boolean yes, CliConsole console) throws OperationException, ProvisioningException {
+    private static boolean buildUpdate(UpdateAction updateAction, Path updateDirectory, boolean yes, CliConsole console, Supplier<Boolean> confirmation) throws OperationException, ProvisioningException {
         final UpdateSet updateSet = updateAction.findUpdates();
 
         console.updatesFound(updateSet.getArtifactUpdates());
@@ -220,27 +264,7 @@ public class UpdateCommand extends AbstractParentCommand {
             return false;
         }
 
-        if (!yes && !console.confirmUpdates()) {
-            return false;
-        }
-
-        final List<FileConflict> fileConflicts = updateAction.performUpdate();
-
-        FileConflictPrinter.print(fileConflicts, console);
-
-        console.updatesComplete();
-        return true;
-    }
-
-    private static boolean buildUpdate(UpdateAction updateAction, Path updateDirectory, boolean yes, CliConsole console) throws OperationException, ProvisioningException {
-        final UpdateSet updateSet = updateAction.findUpdates();
-
-        console.updatesFound(updateSet.getArtifactUpdates());
-        if (updateSet.isEmpty()) {
-            return false;
-        }
-
-        if (!yes && !console.confirmBuildUpdates()) {
+        if (!yes && !confirmation.get()) {
             return false;
         }
 

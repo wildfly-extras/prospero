@@ -17,16 +17,26 @@
 
 package org.wildfly.prospero.cli.commands;
 
+import java.io.IOException;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
 import java.util.Optional;
 
+import org.apache.commons.io.FileUtils;
+import org.jboss.galleon.ProvisioningException;
 import org.wildfly.channel.Repository;
+import org.wildfly.prospero.Messages;
+import org.wildfly.prospero.actions.ApplyCandidateAction;
 import org.wildfly.prospero.actions.InstallationHistoryAction;
+import org.wildfly.prospero.api.FileConflict;
 import org.wildfly.prospero.api.MavenOptions;
 import org.wildfly.prospero.api.SavedState;
+import org.wildfly.prospero.api.exceptions.OperationException;
 import org.wildfly.prospero.cli.ActionFactory;
 import org.wildfly.prospero.cli.CliConsole;
+import org.wildfly.prospero.cli.CliMessages;
+import org.wildfly.prospero.cli.FileConflictPrinter;
 import org.wildfly.prospero.cli.RepositoryDefinition;
 import org.wildfly.prospero.cli.ReturnCodes;
 import picocli.CommandLine;
@@ -37,11 +47,27 @@ import picocli.CommandLine;
 )
 public class RevertCommand extends AbstractParentCommand {
 
+    private static int applyUpdate(CliConsole console, ApplyCandidateAction applyCandidateAction, boolean yes) throws OperationException, ProvisioningException {
+        console.updatesFound(applyCandidateAction.findUpdates().getArtifactUpdates());
+        final List<FileConflict> conflicts = applyCandidateAction.getConflicts();
+        FileConflictPrinter.print(conflicts, console);
+
+        if (!yes && !console.confirm(CliMessages.MESSAGES.continueWithUpdate(), "", CliMessages.MESSAGES.updateCancelled())) {
+            return ReturnCodes.SUCCESS_NO_CHANGE;
+        }
+
+        applyCandidateAction.applyUpdate(ApplyCandidateAction.Type.ROLLBACK);
+        return ReturnCodes.SUCCESS_LOCAL_CHANGES;
+    }
+
     @CommandLine.Command(name = CliConstants.Commands.PERFORM, sortOptions = false)
     public static class PerformCommand extends AbstractMavenCommand {
 
         @CommandLine.Option(names = CliConstants.REVISION, required = true)
         String revision;
+
+        @CommandLine.Option(names = {CliConstants.Y, CliConstants.YES})
+        boolean yes;
 
         public PerformCommand(CliConsole console, ActionFactory actionFactory) {
             super(console, actionFactory);
@@ -55,8 +81,20 @@ public class RevertCommand extends AbstractParentCommand {
             final List<Repository> overrideRepositories = RepositoryDefinition.from(temporaryRepositories);
 
             InstallationHistoryAction historyAction = actionFactory.history(installationDirectory, console);
-            historyAction.rollback(new SavedState(revision), mavenOptions, overrideRepositories);
-            return ReturnCodes.SUCCESS_LOCAL_CHANGES;
+            Path tempDirectory = null;
+            try {
+                tempDirectory = Files.createTempDirectory("revert-candidate");
+                historyAction.prepareRevert(new SavedState(revision), mavenOptions, overrideRepositories, tempDirectory);
+                final ApplyCandidateAction applyCandidateAction = actionFactory.applyUpdate(installationDirectory, tempDirectory);
+
+                return applyUpdate(console, applyCandidateAction, yes);
+            } catch (IOException e) {
+                throw Messages.MESSAGES.unableToCreateTemporaryDirectory(e);
+            } finally {
+                if (tempDirectory != null) {
+                    FileUtils.deleteQuietly(tempDirectory.toFile());
+                }
+            }
         }
     }
 
@@ -69,6 +107,9 @@ public class RevertCommand extends AbstractParentCommand {
         @CommandLine.Option(names = CliConstants.UPDATE_DIR, required = true)
         Path updateDirectory;
 
+        @CommandLine.Option(names = {CliConstants.Y, CliConstants.YES})
+        boolean yes;
+
         public ApplyCommand(CliConsole console, ActionFactory actionFactory) {
             super(console, actionFactory);
         }
@@ -77,9 +118,7 @@ public class RevertCommand extends AbstractParentCommand {
         public Integer call() throws Exception {
             final Path installationDirectory = determineInstallationDirectory(directory);
 
-            InstallationHistoryAction historyAction = actionFactory.history(installationDirectory, console);
-            historyAction.applyRevert(updateDirectory.toAbsolutePath());
-            return ReturnCodes.SUCCESS_LOCAL_CHANGES;
+            return applyUpdate(console, actionFactory.applyUpdate(installationDirectory, updateDirectory.toAbsolutePath()), yes);
         }
     }
 

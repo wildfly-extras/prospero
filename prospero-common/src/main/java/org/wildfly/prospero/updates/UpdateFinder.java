@@ -19,8 +19,6 @@ package org.wildfly.prospero.updates;
 
 import org.eclipse.aether.artifact.Artifact;
 import org.eclipse.aether.artifact.DefaultArtifact;
-import org.jboss.galleon.ProvisioningException;
-import org.jboss.galleon.ProvisioningManager;
 import org.wildfly.channel.ChannelSession;
 import org.wildfly.channel.UnresolvedMavenArtifactException;
 import org.wildfly.prospero.Messages;
@@ -41,16 +39,14 @@ public class UpdateFinder implements AutoCloseable {
     public static final int UPDATES_SEARCH_PARALLELISM = 10;
 
     private final ChannelSession channelSession;
-    private final ProvisioningManager provisioningManager;
     private final ExecutorService executorService;
 
-    public UpdateFinder(ChannelSession channelSession, ProvisioningManager provisioningManager) {
+    public UpdateFinder(ChannelSession channelSession) {
         this.channelSession = channelSession;
-        this.provisioningManager = provisioningManager;
         this.executorService = Executors.newWorkStealingPool(UPDATES_SEARCH_PARALLELISM);
     }
 
-    public UpdateSet findUpdates(List<Artifact> artifacts) throws ArtifactResolutionException, ProvisioningException {
+    public UpdateSet findUpdates(List<Artifact> artifacts) throws ArtifactResolutionException {
         // use parallel executor to speed up the artifact resolution
         List<CompletableFuture<Optional<ArtifactChange>>> allPackages = new ArrayList<>();
         for (Artifact artifact : artifacts) {

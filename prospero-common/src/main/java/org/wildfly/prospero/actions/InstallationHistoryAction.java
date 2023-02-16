@@ -65,7 +65,7 @@ public class InstallationHistoryAction {
     public void rollback(SavedState savedState, MavenOptions mavenOptions, List<Repository> overrideRepositories) throws OperationException, ProvisioningException {
         Path tempDirectory = null;
         try {
-            tempDirectory = Files.createTempDirectory("eap-revert");
+            tempDirectory = Files.createTempDirectory("revert-candidate");
             prepareRevert(savedState, mavenOptions, overrideRepositories, tempDirectory);
             new ApplyCandidateAction(installation, tempDirectory).applyUpdate(ApplyCandidateAction.Type.ROLLBACK);
         } catch (IOException e) {
