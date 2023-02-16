@@ -148,7 +148,7 @@ public class ProsperoInstallationManager implements InstallationManager {
     public Path createSnapshot(Path targetPath) throws Exception {
         final Path snapshotPath;
         if (!Files.exists(targetPath)) {
-            if (targetPath.endsWith(".zip")) {
+            if (targetPath.toString().toLowerCase().endsWith(".zip")) {
                 snapshotPath = targetPath.toAbsolutePath();
             } else {
                 String timestamp = LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyyMMddHHmmss"));
