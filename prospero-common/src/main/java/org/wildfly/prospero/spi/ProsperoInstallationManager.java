@@ -220,7 +220,11 @@ public class ProsperoInstallationManager implements InstallationManager {
             return new ChannelManifestCoordinate(c.getManifestUrl().get());
         } else if (c.getManifestCoordinate().isPresent()) {
             final String[] coordinate = c.getManifestCoordinate().get().split(":");
-            return new ChannelManifestCoordinate(coordinate[0], coordinate[1]);
+            if (coordinate.length == 3) {
+                return new ChannelManifestCoordinate(coordinate[0], coordinate[1], coordinate[2]);
+            } else {
+                return new ChannelManifestCoordinate(coordinate[0], coordinate[1]);
+            }
         } else {
             return null;
         }
