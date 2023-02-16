@@ -18,6 +18,7 @@
 package org.wildfly.prospero.installation.git;
 
 import org.eclipse.jgit.api.ResetCommand;
+import org.eclipse.jgit.lib.ObjectId;
 import org.eclipse.jgit.lib.StoredConfig;
 import org.wildfly.channel.Channel;
 import org.wildfly.channel.ChannelManifest;
@@ -47,6 +48,7 @@ import java.nio.file.attribute.FileTime;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
@@ -178,11 +180,16 @@ public class GitStorage implements AutoCloseable {
     }
 
     public List<ArtifactChange> getArtifactChanges(SavedState savedState) throws MetadataException {
-        Parser<ArtifactChange> parser = (path) -> {
-            final ChannelManifest parseOld = ManifestYamlSupport.parse(path.resolve(InstallationMetadata.MANIFEST_FILE_NAME).toFile());
-            final ChannelManifest parseCurrent = ManifestYamlSupport.parse(base.resolve(InstallationMetadata.MANIFEST_FILE_NAME).toFile());
+        Parser<ArtifactChange> parser = (changed, base) -> {
+            final Map<String, Artifact> oldArtifacts;
+            if (base != null ) {
+                final ChannelManifest parseOld = ManifestYamlSupport.parse(base.resolve(InstallationMetadata.MANIFEST_FILE_NAME).toFile());
+                oldArtifacts = toMap(parseOld.getStreams());
+            } else {
+                oldArtifacts = Collections.emptyMap();
+            }
 
-            final Map<String, Artifact> oldArtifacts = toMap(parseOld.getStreams());
+            final ChannelManifest parseCurrent = ManifestYamlSupport.parse(changed.resolve(InstallationMetadata.MANIFEST_FILE_NAME).toFile());
             final Map<String, Artifact> currentArtifacts = toMap(parseCurrent.getStreams());
 
             final ArrayList<ArtifactChange> artifactChanges = new ArrayList<>();
@@ -206,10 +213,9 @@ public class GitStorage implements AutoCloseable {
     }
 
     public List<ChannelChange> getChannelChanges(SavedState savedState) throws MetadataException {
-        Parser<ChannelChange> parser = (path) -> {
-
-            final List<Channel> oldChannels = ProsperoConfig.readConfig(path).getChannels();
-            final List<Channel> currentChannels = ProsperoConfig.readConfig(base).getChannels();
+        Parser<ChannelChange> parser = (changed, base) -> {
+            final List<Channel> oldChannels = base == null?Collections.emptyList():ProsperoConfig.readConfig(base).getChannels();
+            final List<Channel> currentChannels = ProsperoConfig.readConfig(changed).getChannels();
 
             final ArrayList<ChannelChange> channelChanges = new ArrayList<>();
 
@@ -242,20 +248,26 @@ public class GitStorage implements AutoCloseable {
         return getChanges(savedState, InstallationMetadata.INSTALLER_CHANNELS_FILE_NAME, parser);
     }
 
-    public <T> List<T> getChanges(SavedState savedState, String manifestFileName, Parser<T> parser) throws MetadataException {
-        Path hist = null;
+    private <T> List<T> getChanges(SavedState savedState, String manifestFileName, Parser<T> parser) throws MetadataException {
+        Path change = null;
+        Path base = null;
         try {
-            hist = checkoutPastState(savedState, manifestFileName);
+            final ObjectId parentRef = git.getRepository().resolve(savedState.getName() + "^");
+            change = checkoutPastState(savedState, manifestFileName);
 
-            return parser.parse(hist);
+            if (parentRef != null) {
+                base = checkoutPastState(new SavedState(parentRef.getName()), manifestFileName);
+            }
+
+            return parser.parse(change, base);
         } catch (GitAPIException e) {
             throw new RuntimeException(e);
         } catch (IOException e) {
-            throw Messages.MESSAGES.unableToParseConfiguration(hist, e);
+            throw Messages.MESSAGES.unableToParseConfiguration(change, e);
         } finally {
             try {
-                if (hist != null) {
-                    FileUtils.deleteDirectory(hist.toFile());
+                if (change != null) {
+                    FileUtils.deleteDirectory(change.toFile());
                 }
             } catch (IOException e) {
                 throw new RuntimeException(e);
@@ -318,6 +330,6 @@ public class GitStorage implements AutoCloseable {
     }
 
     private interface Parser<T> {
-        List<T> parse(Path checkoutPath) throws IOException, MetadataException;
+        List<T> parse(Path changedPath, Path basePath) throws IOException, MetadataException;
     }
 }

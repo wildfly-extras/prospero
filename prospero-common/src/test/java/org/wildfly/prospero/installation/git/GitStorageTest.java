@@ -50,6 +50,7 @@ import java.util.Collections;
 import java.util.Date;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Optional;
 import java.util.function.Function;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -80,7 +81,7 @@ public class GitStorageTest {
         gitStorage.record();
 
         final List<SavedState> revisions = gitStorage.getRevisions();
-        final SavedState savedState = revisions.get(1);
+        final SavedState savedState = revisions.get(0);
 
         final List<ArtifactChange> changes = gitStorage.getArtifactChanges(savedState);
         assertEquals(1, changes.size());
@@ -100,7 +101,7 @@ public class GitStorageTest {
         gitStorage.record();
 
         final List<SavedState> revisions = gitStorage.getRevisions();
-        final SavedState savedState = revisions.get(1);
+        final SavedState savedState = revisions.get(0);
 
         final List<ArtifactChange> changes = gitStorage.getArtifactChanges(savedState);
         assertEquals(1, changes.size());
@@ -119,7 +120,7 @@ public class GitStorageTest {
         gitStorage.record();
 
         final List<SavedState> revisions = gitStorage.getRevisions();
-        final SavedState savedState = revisions.get(1);
+        final SavedState savedState = revisions.get(0);
 
         final List<ArtifactChange> changes = gitStorage.getArtifactChanges(savedState);
         assertEquals(1, changes.size());
@@ -160,7 +161,7 @@ public class GitStorageTest {
                 .writeConfig(base);
         gitStorage.recordConfigChange();
 
-        final SavedState savedState = gitStorage.getRevisions().get(1);
+        final SavedState savedState = gitStorage.getRevisions().get(0);
         final List<ChannelChange> changes = gitStorage.getChannelChanges(savedState);
 
         assertThat(changes)
@@ -189,7 +190,7 @@ public class GitStorageTest {
                 .writeConfig(base);
         gitStorage.recordConfigChange();
 
-        final SavedState savedState = gitStorage.getRevisions().get(1);
+        final SavedState savedState = gitStorage.getRevisions().get(0);
         final List<ChannelChange> changes = gitStorage.getChannelChanges(savedState);
 
         assertThat(changes)
@@ -218,7 +219,7 @@ public class GitStorageTest {
                 .writeConfig(base);
         gitStorage.recordConfigChange();
 
-        final SavedState savedState = gitStorage.getRevisions().get(1);
+        final SavedState savedState = gitStorage.getRevisions().get(0);
         final List<ChannelChange> changes = gitStorage.getChannelChanges(savedState);
 
         assertThat(changes)
@@ -247,7 +248,7 @@ public class GitStorageTest {
                 .writeConfig(base);
         gitStorage.recordConfigChange();
 
-        final SavedState savedState = gitStorage.getRevisions().get(1);
+        final SavedState savedState = gitStorage.getRevisions().get(0);
         final List<ChannelChange> changes = gitStorage.getChannelChanges(savedState);
 
         assertThat(changes)
@@ -277,6 +278,35 @@ public class GitStorageTest {
 
         assertEquals(metadataDirCreationTime.truncatedTo(ChronoUnit.SECONDS),
                 getDateOfLastCommit().toInstant().truncatedTo(ChronoUnit.SECONDS));
+    }
+
+    @Test
+    public void showChangesForInitialCommit() throws Exception {
+        final GitStorage gitStorage = new GitStorage(base.getParent());
+        setArtifact(manifest, "org.test:test:1.2.3");
+        final Channel channel1 = new Channel("channel-1", "old", null,
+                List.of(new Repository("test", "http://test.te")),
+                new ChannelManifestCoordinate("foo", "bar"),
+                null, null);
+
+        new ProsperoConfig(List.of(channel1))
+                .writeConfig(base);
+
+        gitStorage.record();
+
+        final List<SavedState> revisions = gitStorage.getRevisions();
+        final SavedState savedState = revisions.get(0);
+
+        final List<ArtifactChange> changes = gitStorage.getArtifactChanges(savedState);
+        assertEquals(1, changes.size());
+        assertEquals(Optional.empty(), changes.get(0).getOldVersion());
+        assertEquals("1.2.3", changes.get(0).getNewVersion().get());
+
+        final List<ChannelChange> channelChanges = gitStorage.getChannelChanges(savedState);
+
+        assertThat(channelChanges)
+                .map(compareAttr((c)->c.getName()))
+                .containsExactly("[]::channel-1");
     }
 
     private HashSet<String> getPathsInCommit() throws IOException, GitAPIException {
