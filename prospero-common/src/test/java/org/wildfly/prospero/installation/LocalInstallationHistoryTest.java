@@ -22,6 +22,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Optional;
 
 import org.apache.commons.io.FileUtils;
 import org.eclipse.aether.artifact.DefaultArtifact;
@@ -106,7 +107,7 @@ public class LocalInstallationHistoryTest {
 
         updateManifest(metadata);
 
-        final SavedState previousState = metadata.getRevisions().get(1);
+        final SavedState previousState = metadata.getRevisions().get(0);
 
         final List<ArtifactChange> changes = metadata.getChangesSince(previousState).getArtifactChanges();
         assertEquals(1, changes.size());
@@ -116,15 +117,18 @@ public class LocalInstallationHistoryTest {
     }
 
     @Test
-    public void showDifferences_noChanges() throws Exception {
+    public void showDifferences_initialInstallation() throws Exception {
         final InstallationMetadata metadata = mockInstallation();
 
         updateManifest(metadata);
 
-        final SavedState previousState = metadata.getRevisions().get(0);
+        final SavedState previousState = metadata.getRevisions().get(1);
 
         final List<ArtifactChange> changes = metadata.getChangesSince(previousState).getArtifactChanges();
-        assertEquals(0, changes.size());
+        assertEquals(1, changes.size());
+        assertEquals("foo:bar", changes.get(0).getArtifactName());
+        assertEquals(Optional.empty(), changes.get(0).getOldVersion());
+        assertEquals("1.1.1", changes.get(0).getNewVersion().get());
     }
 
     private void updateManifest(InstallationMetadata metadata) throws MetadataException {
