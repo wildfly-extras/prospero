@@ -80,6 +80,7 @@ public class ApplyUpdateTest extends CliTestBase  {
         // apply update-candidate
         ExecutionUtils.prosperoExecution(CliConstants.Commands.UPDATE, CliConstants.Commands.APPLY,
                         CliConstants.UPDATE_DIR, updatePath.toAbsolutePath().toString(),
+                        CliConstants.Y,
                         CliConstants.DIR, targetDir.getAbsolutePath())
                 .execute()
                 .assertReturnCode(ReturnCodes.SUCCESS_LOCAL_CHANGES);

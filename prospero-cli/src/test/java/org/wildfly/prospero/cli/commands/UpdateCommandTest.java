@@ -35,6 +35,7 @@ import org.mockito.Captor;
 import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.junit.MockitoJUnitRunner;
+import org.wildfly.prospero.actions.ApplyCandidateAction;
 import org.wildfly.prospero.actions.UpdateAction;
 import org.wildfly.prospero.api.ArtifactChange;
 import org.wildfly.prospero.api.MavenOptions;
@@ -62,6 +63,9 @@ public class UpdateCommandTest extends AbstractMavenCommandTest {
     private UpdateAction updateAction;
 
     @Mock
+    private ApplyCandidateAction applyCandidateAction;
+
+    @Mock
     private ActionFactory actionFactory;
 
     @Captor
@@ -81,6 +85,7 @@ public class UpdateCommandTest extends AbstractMavenCommandTest {
     public void setUp() throws Exception {
         super.setUp();
         when(actionFactory.update(any(), any(), any(), any())).thenReturn(updateAction);
+        when(actionFactory.applyUpdate(any(), any())).thenReturn(applyCandidateAction);
         installationDir = tempFolder.newFolder().toPath();
 
         MetadataTestUtils.createInstallationMetadata(installationDir);
@@ -104,11 +109,13 @@ public class UpdateCommandTest extends AbstractMavenCommandTest {
     @Test
     public void callUpdate() throws Exception {
         when(updateAction.findUpdates()).thenReturn(new UpdateSet(List.of(change("1.0.0", "1.0.1"))));
+        when(updateAction.buildUpdate(any())).thenReturn(true);
         int exitCode = commandLine.execute(CliConstants.Commands.UPDATE, CliConstants.Commands.PERFORM,
                 CliConstants.DIR, installationDir.toString());
 
         assertEquals(ReturnCodes.SUCCESS_LOCAL_CHANGES, exitCode);
-        Mockito.verify(updateAction).performUpdate();
+        Mockito.verify(updateAction).buildUpdate(any());
+        Mockito.verify(applyCandidateAction).applyUpdate(ApplyCandidateAction.Type.UPDATE);
     }
 
     @Test
@@ -123,25 +130,29 @@ public class UpdateCommandTest extends AbstractMavenCommandTest {
     public void selfUpdatePassesModulePathAsDir() throws Exception {
         System.setProperty(UpdateCommand.JBOSS_MODULE_PATH, installationDir.resolve(MODULES_DIR).toString());
         when(updateAction.findUpdates()).thenReturn(new UpdateSet(List.of(change("1.0.0", "1.0.1"))));
+        when(updateAction.buildUpdate(any())).thenReturn(true);
 
         int exitCode = commandLine.execute(CliConstants.Commands.UPDATE, CliConstants.Commands.PERFORM, CliConstants.SELF);
 
         assertEquals(ReturnCodes.SUCCESS_LOCAL_CHANGES, exitCode);
         Mockito.verify(actionFactory).update(eq(installationDir.toAbsolutePath()), any(), any(), any());
-        Mockito.verify(updateAction).performUpdate();
+        Mockito.verify(updateAction).buildUpdate(any());
+        Mockito.verify(applyCandidateAction).applyUpdate(ApplyCandidateAction.Type.UPDATE);
     }
 
     @Test
     public void dirParameterOverridesModulePathInSelfUpdate() throws Exception {
         System.setProperty(UpdateCommand.JBOSS_MODULE_PATH, installationDir.toString());
         when(updateAction.findUpdates()).thenReturn(new UpdateSet(List.of(change("1.0.0", "1.0.1"))));
+        when(updateAction.buildUpdate(any())).thenReturn(true);
 
         int exitCode = commandLine.execute(CliConstants.Commands.UPDATE, CliConstants.Commands.PERFORM, CliConstants.SELF,
                 CliConstants.DIR, installationDir.toAbsolutePath().toString());
 
         assertEquals(ReturnCodes.SUCCESS_LOCAL_CHANGES, exitCode);
         Mockito.verify(actionFactory).update(eq(installationDir.toAbsolutePath()), any(), any(), any());
-        Mockito.verify(updateAction).performUpdate();
+        Mockito.verify(updateAction).buildUpdate(any());
+        Mockito.verify(applyCandidateAction).applyUpdate(ApplyCandidateAction.Type.UPDATE);
     }
 
     @Test
@@ -185,6 +196,7 @@ public class UpdateCommandTest extends AbstractMavenCommandTest {
     public void testConfirmedConfirmation() throws Exception {
         System.setProperty(UpdateCommand.JBOSS_MODULE_PATH, installationDir.toString());
         when(updateAction.findUpdates()).thenReturn(new UpdateSet(List.of(change("1.0.0", "1.0.1"))));
+        when(updateAction.buildUpdate(any())).thenReturn(true);
 
         int exitCode = commandLine.execute(CliConstants.Commands.UPDATE, CliConstants.Commands.PERFORM, CliConstants.SELF,
                 CliConstants.DIR, installationDir.toAbsolutePath().toString());
@@ -192,7 +204,8 @@ public class UpdateCommandTest extends AbstractMavenCommandTest {
         assertEquals(ReturnCodes.SUCCESS_LOCAL_CHANGES, exitCode);
         Mockito.verify(actionFactory).update(eq(installationDir.toAbsolutePath()), any(), any(), any());
         assertEquals(1, getAskedConfirmation());
-        Mockito.verify(updateAction).performUpdate();
+        Mockito.verify(updateAction).buildUpdate(any());
+        Mockito.verify(applyCandidateAction).applyUpdate(ApplyCandidateAction.Type.UPDATE);
     }
 
     @Test

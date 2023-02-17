@@ -17,6 +17,7 @@
 
 package org.wildfly.prospero.cli.commands;
 
+import org.jboss.galleon.ProvisioningException;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Rule;
@@ -25,19 +26,24 @@ import org.junit.rules.TemporaryFolder;
 import org.junit.runner.RunWith;
 import org.mockito.Mock;
 import org.mockito.junit.MockitoJUnitRunner;
+import org.wildfly.prospero.actions.ApplyCandidateAction;
 import org.wildfly.prospero.api.Console;
 import org.wildfly.prospero.actions.InstallationHistoryAction;
+import org.wildfly.prospero.api.exceptions.OperationException;
 import org.wildfly.prospero.cli.AbstractConsoleTest;
 import org.wildfly.prospero.cli.ActionFactory;
 import org.wildfly.prospero.cli.CliMessages;
 import org.wildfly.prospero.cli.ReturnCodes;
 import org.wildfly.prospero.test.MetadataTestUtils;
+import org.wildfly.prospero.updates.UpdateSet;
 
 import java.nio.file.Path;
+import java.util.Collections;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 @RunWith(MockitoJUnitRunner.class)
 public class RevertApplyCommandTest extends AbstractConsoleTest {
@@ -45,10 +51,14 @@ public class RevertApplyCommandTest extends AbstractConsoleTest {
     @Mock
     private InstallationHistoryAction historyAction;
 
+    @Mock
+    private ApplyCandidateAction applyCandidateAction;
+
     @Rule
     public TemporaryFolder tempDir = new TemporaryFolder();
 
     private Path installationDir;
+    private Path updateDir;
 
     @Override
     protected ActionFactory createActionFactory() {
@@ -57,15 +67,26 @@ public class RevertApplyCommandTest extends AbstractConsoleTest {
             public InstallationHistoryAction history(Path targetPath, Console console) {
                 return historyAction;
             }
+
+            @Override
+            public ApplyCandidateAction applyUpdate(Path installationPath, Path updatePath) throws OperationException, ProvisioningException {
+                return applyCandidateAction;
+            }
         };
     }
 
     @Before
     public void setUp() throws Exception {
         super.setUp();
-        this.installationDir = tempDir.newFolder().toPath();
+        this.installationDir = tempDir.newFolder("base").toPath();
         MetadataTestUtils.createInstallationMetadata(installationDir);
         MetadataTestUtils.createGalleonProvisionedState(installationDir);
+
+        this.updateDir = tempDir.newFolder("update").toPath();
+        MetadataTestUtils.createInstallationMetadata(updateDir);
+        MetadataTestUtils.createGalleonProvisionedState(updateDir);
+
+        when(applyCandidateAction.findUpdates()).thenReturn(new UpdateSet(Collections.emptyList()));
     }
     @Test
     public void invalidInstallationDir() {
@@ -91,9 +112,9 @@ public class RevertApplyCommandTest extends AbstractConsoleTest {
     public void callApplyOperation() throws Exception {
         int exitCode = commandLine.execute(CliConstants.Commands.REVERT, CliConstants.Commands.APPLY,
                 CliConstants.DIR, installationDir.toString(),
-                CliConstants.UPDATE_DIR, "update_test");
+                CliConstants.UPDATE_DIR, updateDir.toString());
 
         assertEquals(ReturnCodes.SUCCESS_LOCAL_CHANGES, exitCode);
-        verify(historyAction).applyRevert(Path.of("update_test").toAbsolutePath());
+        verify(applyCandidateAction).applyUpdate(ApplyCandidateAction.Type.ROLLBACK);
     }
 }

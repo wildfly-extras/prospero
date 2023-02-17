@@ -27,12 +27,16 @@ import java.nio.file.attribute.BasicFileAttributes;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
+import org.eclipse.aether.artifact.Artifact;
 import org.jboss.galleon.Constants;
 import org.jboss.galleon.Errors;
 
 import org.jboss.galleon.ProvisioningManager;
+import org.wildfly.prospero.api.ArtifactChange;
 import org.wildfly.prospero.api.FileConflict;
 import org.wildfly.prospero.api.InstallationMetadata;
 import org.wildfly.prospero.api.MavenOptions;
@@ -64,6 +68,7 @@ import org.wildfly.prospero.galleon.GalleonEnvironment;
 import org.wildfly.prospero.installation.git.GitStorage;
 import org.wildfly.prospero.metadata.ProsperoMetadataUtils;
 import org.wildfly.prospero.updates.MarkerFile;
+import org.wildfly.prospero.updates.UpdateSet;
 import org.wildfly.prospero.wfchannel.MavenSessionManager;
 
 /**
@@ -197,6 +202,68 @@ public class ApplyCandidateAction {
             throw Messages.MESSAGES.unableToReadFile(updateMarkerPath, e);
         }
         return true;
+    }
+
+    /**
+     * list conflicts between the candidate ({@code installationDir} and target server {@code updateDir}.
+     *
+     *
+     * @return list of {@code FileConflict} or empty list if no conflicts found.
+     * @throws ProvisioningException
+     * @throws InvalidUpdateCandidateException
+     * @throws MetadataException
+     */
+    public List<FileConflict> getConflicts() throws ProvisioningException, InvalidUpdateCandidateException, MetadataException {
+        try {
+            return compareServers(findChanges());
+        } catch (IOException ex) {
+            throw new ProvisioningException(ex);
+        }
+    }
+
+    /**
+     * list artifacts changed between base and candidate servers.
+     *
+     * @return list of changes
+     * @throws OperationException
+     */
+    public UpdateSet findUpdates() throws OperationException {
+        final Map<String, Artifact> baseMap = new HashMap<>();
+        final Map<String, Artifact> candidateMap = new HashMap<>();
+        final List<Artifact> base;
+        final List<Artifact> candidate;
+
+        try (final InstallationMetadata metadata = InstallationMetadata.loadInstallation(installationDir)) {
+            base = metadata.getArtifacts();
+        }
+        try (final InstallationMetadata metadata = InstallationMetadata.loadInstallation(updateDir)) {
+            candidate = metadata.getArtifacts();
+        }
+
+        for (Artifact artifact : base) {
+            baseMap.put(artifact.getGroupId() + ":" + artifact.getArtifactId(), artifact);
+        }
+        for (Artifact artifact : candidate) {
+            candidateMap.put(artifact.getGroupId() + ":" + artifact.getArtifactId(), artifact);
+        }
+        List<ArtifactChange> changes = new ArrayList<>();
+        for (String key : baseMap.keySet()) {
+            if (candidateMap.containsKey(key)) {
+                if (!baseMap.get(key).getVersion().equals(candidateMap.get(key).getVersion())) {
+                    changes.add(ArtifactChange.updated(baseMap.get(key), candidateMap.get(key)));
+                }
+            } else {
+                changes.add(ArtifactChange.removed(baseMap.get(key)));
+            }
+        }
+
+        for (String key : candidateMap.keySet()) {
+            if (!baseMap.containsKey(key)) {
+                changes.add(ArtifactChange.added(baseMap.get(key)));
+            }
+        }
+
+        return new UpdateSet(changes);
     }
 
     private boolean targetServerIsRunning() {
@@ -391,6 +458,15 @@ public class ApplyCandidateAction {
             }
         }
         return conflictList;
+    }
+
+    private List<FileConflict> compareServers(FsDiff fsDiff) throws IOException, ProvisioningException {
+        List<FileConflict> conflicts = new ArrayList<>();
+        // Handles user added/removed/modified files
+        conflicts.addAll(handleRemovedFiles(fsDiff));
+        conflicts.addAll(handleAddedFiles(fsDiff));
+        conflicts.addAll(handleModifiedFiles(fsDiff));
+        return Collections.unmodifiableList(conflicts);
     }
 
     private List<FileConflict> doApplyUpdate(FsDiff fsDiff) throws IOException, ProvisioningException {

@@ -18,8 +18,10 @@
 package org.wildfly.prospero.cli.commands;
 
 import java.nio.file.Path;
+import java.util.Collections;
 import java.util.List;
 
+import org.jboss.galleon.ProvisioningException;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Rule;
@@ -31,14 +33,17 @@ import org.mockito.Captor;
 import org.mockito.Mock;
 import org.mockito.junit.MockitoJUnitRunner;
 import org.wildfly.channel.Repository;
+import org.wildfly.prospero.actions.ApplyCandidateAction;
 import org.wildfly.prospero.api.Console;
 import org.wildfly.prospero.actions.InstallationHistoryAction;
 import org.wildfly.prospero.api.MavenOptions;
 import org.wildfly.prospero.api.SavedState;
+import org.wildfly.prospero.api.exceptions.OperationException;
 import org.wildfly.prospero.cli.ActionFactory;
 import org.wildfly.prospero.cli.CliMessages;
 import org.wildfly.prospero.cli.ReturnCodes;
 import org.wildfly.prospero.test.MetadataTestUtils;
+import org.wildfly.prospero.updates.UpdateSet;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.Assert.assertEquals;
@@ -46,12 +51,16 @@ import static org.junit.Assert.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 @RunWith(MockitoJUnitRunner.class)
 public class RevertPerformCommandTest extends AbstractMavenCommandTest {
 
     @Mock
     private InstallationHistoryAction historyAction;
+
+    @Mock
+    private ApplyCandidateAction applyCandidateAction;
 
     @Captor
     private ArgumentCaptor<MavenOptions> mavenOptions;
@@ -71,6 +80,11 @@ public class RevertPerformCommandTest extends AbstractMavenCommandTest {
             public InstallationHistoryAction history(Path targetPath, Console console) {
                 return historyAction;
             }
+
+            @Override
+            public ApplyCandidateAction applyUpdate(Path installationPath, Path updatePath) throws OperationException, ProvisioningException {
+                return applyCandidateAction;
+            }
         };
     }
     @Before
@@ -80,6 +94,8 @@ public class RevertPerformCommandTest extends AbstractMavenCommandTest {
         this.installationDir = tempDir.newFolder().toPath();
         MetadataTestUtils.createInstallationMetadata(installationDir);
         MetadataTestUtils.createGalleonProvisionedState(installationDir);
+
+        when(applyCandidateAction.findUpdates()).thenReturn(new UpdateSet(Collections.emptyList()));
     }
     @Test
     public void invalidInstallationDir() {
@@ -105,7 +121,8 @@ public class RevertPerformCommandTest extends AbstractMavenCommandTest {
                 CliConstants.REVISION, "abcd");
 
         assertEquals(ReturnCodes.SUCCESS_LOCAL_CHANGES, exitCode);
-        verify(historyAction).rollback(eq(new SavedState("abcd")), any(), any());
+        verify(historyAction).prepareRevert(eq(new SavedState("abcd")), any(), any(), any());
+        verify(applyCandidateAction).applyUpdate(ApplyCandidateAction.Type.ROLLBACK);
     }
 
     @Test
@@ -115,7 +132,9 @@ public class RevertPerformCommandTest extends AbstractMavenCommandTest {
                 CliConstants.OFFLINE, CliConstants.LOCAL_CACHE, "local-repo");
 
         assertEquals(ReturnCodes.SUCCESS_LOCAL_CHANGES, exitCode);
-        verify(historyAction).rollback(eq(new SavedState("abcd")), mavenOptions.capture(), any());
+        verify(historyAction).prepareRevert(eq(new SavedState("abcd")), mavenOptions.capture(), any(), any());
+        verify(applyCandidateAction).applyUpdate(ApplyCandidateAction.Type.ROLLBACK);
+        verify(applyCandidateAction).applyUpdate(ApplyCandidateAction.Type.ROLLBACK);
         assertTrue(mavenOptions.getValue().isOffline());
     }
 
@@ -127,7 +146,7 @@ public class RevertPerformCommandTest extends AbstractMavenCommandTest {
                 CliConstants.LOCAL_CACHE, "local-repo");
 
         assertEquals(ReturnCodes.SUCCESS_LOCAL_CHANGES, exitCode);
-        verify(historyAction).rollback(eq(new SavedState("abcd")), any(), repositories.capture());
+        verify(historyAction).prepareRevert(eq(new SavedState("abcd")), any(), repositories.capture(), any());
 
         assertThat(repositories.getValue())
                 .map(Repository::getUrl)
@@ -136,7 +155,7 @@ public class RevertPerformCommandTest extends AbstractMavenCommandTest {
 
     @Override
     protected MavenOptions getCapturedMavenOptions() throws Exception {
-        verify(historyAction).rollback(eq(new SavedState("abcd")), mavenOptions.capture(), any());
+        verify(historyAction).prepareRevert(eq(new SavedState("abcd")), mavenOptions.capture(), any(), any());
         return mavenOptions.getValue();
     }
 

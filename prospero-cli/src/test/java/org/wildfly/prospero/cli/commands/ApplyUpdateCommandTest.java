@@ -26,6 +26,7 @@ import org.junit.runner.RunWith;
 import org.mockito.Mock;
 import org.mockito.junit.MockitoJUnitRunner;
 import org.wildfly.prospero.actions.ApplyCandidateAction;
+import org.wildfly.prospero.api.FileConflict;
 import org.wildfly.prospero.api.exceptions.MetadataException;
 import org.wildfly.prospero.cli.AbstractConsoleTest;
 import org.wildfly.prospero.cli.ActionFactory;
@@ -33,14 +34,19 @@ import org.wildfly.prospero.cli.CliMessages;
 import org.wildfly.prospero.cli.ReturnCodes;
 import org.wildfly.prospero.test.MetadataTestUtils;
 import org.wildfly.prospero.updates.MarkerFile;
+import org.wildfly.prospero.updates.UpdateSet;
 
 import javax.xml.stream.XMLStreamException;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.Collections;
+import java.util.List;
 
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -67,6 +73,7 @@ public class ApplyUpdateCommandTest extends AbstractConsoleTest {
         super.setUp();
         when(applyCandidateAction.verifyCandidate(ApplyCandidateAction.Type.UPDATE)).thenReturn(true);
         when(actionFactory.applyUpdate(any(), any())).thenReturn(applyCandidateAction);
+        when(applyCandidateAction.findUpdates()).thenReturn(new UpdateSet(Collections.emptyList()));
     }
 
     @Test
@@ -162,6 +169,19 @@ public class ApplyUpdateCommandTest extends AbstractConsoleTest {
         assertTrue(getErrorOutput().contains(CliMessages.MESSAGES.updateCandidateStateNotMatched(targetPath, updatePath)
                 .getMessage()));
         verify(applyCandidateAction, never()).applyUpdate(ApplyCandidateAction.Type.UPDATE);
+    }
+
+    @Test
+    public void testAskForConfirmationIfConflictsPresent() throws Exception {
+        final Path updatePath = mockInstallation("update");
+        final Path targetPath = mockInstallation("target");
+        when(applyCandidateAction.getConflicts()).thenReturn(List.of(mock(FileConflict.class)));
+        int exitCode = commandLine.execute(CliConstants.Commands.UPDATE, CliConstants.Commands.APPLY,
+                CliConstants.UPDATE_DIR, updatePath.toString(),
+                CliConstants.DIR, targetPath.toString());
+
+        Assert.assertEquals(getErrorOutput(), ReturnCodes.SUCCESS_LOCAL_CHANGES, exitCode);
+        assertEquals(1, askedConfirmation);
     }
 
     private Path mockInstallation(String target) throws IOException, MetadataException, XMLStreamException {

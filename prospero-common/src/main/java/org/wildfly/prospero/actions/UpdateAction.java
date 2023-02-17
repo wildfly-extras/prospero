@@ -62,12 +62,20 @@ public class UpdateAction implements AutoCloseable {
         this.mavenSessionManager = new MavenSessionManager(this.mavenOptions);
     }
 
+    /**
+     * performs a full in-place update of {@code installDir}.
+     *
+     * @return list of conflicts if any found during update.
+     *
+     * @throws OperationException
+     * @throws ProvisioningException
+     */
     public List<FileConflict> performUpdate() throws OperationException, ProvisioningException {
         Path targetDir = null;
         try {
-            targetDir = Files.createTempDirectory("update-eap");
+            targetDir = Files.createTempDirectory("update-candidate");
             if (buildUpdate(targetDir)) {
-                ApplyCandidateAction applyCandidateAction = new ApplyCandidateAction(installDir, targetDir);
+                final ApplyCandidateAction applyCandidateAction = new ApplyCandidateAction(installDir, targetDir);
                 return applyCandidateAction.applyUpdate(ApplyCandidateAction.Type.UPDATE);
             } else {
                 return Collections.emptyList();
@@ -81,6 +89,15 @@ public class UpdateAction implements AutoCloseable {
         }
     }
 
+    /**
+     * builds an update candidate for {@code installDir}. The candidate is placed in {@code targetDir}.
+     * The candidate is only built if there are
+     *
+     * @param targetDir path where the update candidate should be placed.
+     * @return true if the candidate was created, false if no updates were found.
+     * @throws ProvisioningException
+     * @throws OperationException
+     */
     public boolean buildUpdate(Path targetDir) throws ProvisioningException, OperationException {
         if (findUpdates().isEmpty()) {
             return false;
@@ -90,19 +107,26 @@ public class UpdateAction implements AutoCloseable {
         }
     }
 
+    /**
+     * generate a list of updates that can be applied to server at {@code installDir}.
+     *
+     * @return
+     * @throws OperationException
+     * @throws ProvisioningException
+     */
+    public UpdateSet findUpdates() throws OperationException, ProvisioningException {
+        final GalleonEnvironment galleonEnv = getGalleonEnv(installDir);
+        try (final UpdateFinder updateFinder = new UpdateFinder(galleonEnv.getChannelSession())) {
+            return updateFinder.findUpdates(metadata.getArtifacts());
+        }
+    }
+
     private GalleonEnvironment getGalleonEnv(Path target) throws ProvisioningException, OperationException {
         return GalleonEnvironment
                 .builder(target, prosperoConfig.getChannels(), mavenSessionManager)
                 .setSourceServerPath(this.installDir)
                 .setConsole(console)
                 .build();
-    }
-
-    public UpdateSet findUpdates() throws OperationException, ProvisioningException {
-        final GalleonEnvironment galleonEnv = getGalleonEnv(installDir);
-        try (final UpdateFinder updateFinder = new UpdateFinder(galleonEnv.getChannelSession(), galleonEnv.getProvisioningManager())) {
-            return updateFinder.findUpdates(metadata.getArtifacts());
-        }
     }
 
     @Override
