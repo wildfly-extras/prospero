@@ -40,9 +40,13 @@ import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.function.Consumer;
+import java.util.stream.Stream;
 
 public class GalleonEnvironment {
 
+    public static final String TRACK_JBMODULES = "JBMODULES";
+    public static final String TRACK_JBEXAMPLES = "JBEXTRACONFIGS";
+    public static final String TRACK_JB_ARTIFACTS_RESOLVE = "JB_ARTIFACTS_RESOLVE";
     private final ProvisioningManager provisioningManager;
     private final ChannelMavenArtifactRepositoryManager repositoryManager;
     private final ChannelSession channelSession;
@@ -81,10 +85,13 @@ public class GalleonEnvironment {
 
         final ProvisioningLayoutFactory layoutFactory = provisioningManager.getLayoutFactory();
         if (console.isPresent()) {
-            layoutFactory.setProgressCallback("LAYOUT_BUILD", new GalleonCallbackAdapter(console.get(), "LAYOUT_BUILD"));
-            layoutFactory.setProgressCallback("PACKAGES", new GalleonCallbackAdapter(console.get(), "PACKAGES"));
-            layoutFactory.setProgressCallback("CONFIGS", new GalleonCallbackAdapter(console.get(), "CONFIGS"));
-            layoutFactory.setProgressCallback("JBMODULES", new GalleonCallbackAdapter(console.get(), "JBMODULES"));
+            Stream.of(ProvisioningLayoutFactory.TRACK_LAYOUT_BUILD,
+                      ProvisioningLayoutFactory.TRACK_PACKAGES,
+                      ProvisioningLayoutFactory.TRACK_CONFIGS,
+                      TRACK_JBMODULES,
+                      TRACK_JBEXAMPLES,
+                      TRACK_JB_ARTIFACTS_RESOLVE)
+                    .forEach(t->layoutFactory.setProgressCallback(t, new GalleonCallbackAdapter(console.get(), t)));
         }
     }
 

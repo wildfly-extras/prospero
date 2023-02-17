@@ -46,6 +46,12 @@ public interface CliMessages {
     @Message("Installing JBoss modules")
     String installingJBossModules();
 
+    @Message("Downloading artifacts")
+    String downloadingArtifacts();
+
+    @Message("Installing JBoss examples")
+    String installingJBossExamples();
+
     @Message("Feature-packs resolved.")
     String featurePacksResolved();
 
@@ -57,6 +63,15 @@ public interface CliMessages {
 
     @Message("JBoss modules installed.")
     String jbossModulesInstalled();
+
+    @Message("JBoss examples installed.")
+    String jbossExamplesInstalled();
+
+    @Message("Downloaded artifacts.")
+    String artifactsDownloaded();
+
+    @Message("APPLYING CHANGES")
+    String applyingChanges();
 
     @Message("No updates found.")
     String noUpdatesFound();
