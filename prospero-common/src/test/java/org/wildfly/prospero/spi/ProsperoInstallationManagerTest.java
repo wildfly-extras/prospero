@@ -36,12 +36,12 @@ import java.util.Collections;
 import java.util.List;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNull;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
-import static org.wildfly.common.Assert.assertFalse;
 
 @RunWith(MockitoJUnitRunner.class)
 public class ProsperoInstallationManagerTest {
