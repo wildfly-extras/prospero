@@ -23,11 +23,13 @@ import org.eclipse.jgit.lib.StoredConfig;
 import org.wildfly.channel.Channel;
 import org.wildfly.channel.ChannelManifest;
 import org.wildfly.prospero.Messages;
+import org.wildfly.prospero.model.ManifestVersionRecord;
 import org.wildfly.prospero.api.ChannelChange;
 import org.wildfly.prospero.api.InstallationMetadata;
 import org.wildfly.prospero.api.exceptions.MetadataException;
 import org.wildfly.prospero.api.SavedState;
 import org.wildfly.prospero.api.ArtifactChange;
+import org.wildfly.prospero.metadata.ProsperoMetadataUtils;
 import org.wildfly.prospero.model.ManifestYamlSupport;
 import org.apache.commons.io.FileUtils;
 import org.eclipse.aether.artifact.Artifact;
@@ -55,6 +57,8 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
 
+import static org.wildfly.prospero.metadata.ProsperoMetadataUtils.CURRENT_VERSION_FILE;
+
 public class GitStorage implements AutoCloseable {
 
     public static final String GIT_HISTORY_USER = "Wildfly Installer";
@@ -75,9 +79,21 @@ public class GitStorage implements AutoCloseable {
             final Iterable<RevCommit> call = git.log().call();
             List<SavedState> history = new ArrayList<>();
             for (RevCommit revCommit : call) {
+                final String shortMessage = revCommit.getShortMessage().trim();
+                final int endOfTypeIndex = shortMessage.indexOf(' ');
+                final String type;
+                final String msg;
+                if (endOfTypeIndex < 0) {
+                    type = shortMessage;
+                    msg = "";
+                } else {
+                    type = shortMessage.substring(0, endOfTypeIndex).trim();
+                    msg = shortMessage.substring(endOfTypeIndex + 1).trim();
+
+                }
                 history.add(new SavedState(revCommit.getName().substring(0,8),
                         Instant.ofEpochSecond(revCommit.getCommitTime()),
-                        SavedState.Type.valueOf(revCommit.getShortMessage().toUpperCase(Locale.ROOT))));
+                        SavedState.Type.valueOf(type.toUpperCase(Locale.ROOT)), msg));
             }
 
             return history;
@@ -88,16 +104,19 @@ public class GitStorage implements AutoCloseable {
 
     public void record() throws MetadataException {
         try {
+
             if (isRepositoryEmpty(git)) {
                 final PersonIdent author = adjustCommitDateToCreationDate(getCommitter());
                 final SavedState.Type commitType = SavedState.Type.INSTALL;
+                final String msg = readCommitMessage();
                 git.add().addFilepattern(InstallationMetadata.MANIFEST_FILE_NAME).call();
                 git.add().addFilepattern(InstallationMetadata.INSTALLER_CHANNELS_FILE_NAME).call();
+                git.add().addFilepattern(CURRENT_VERSION_FILE).call();
                 // adjust the date so that when taking over a non-prosper installation date matches creation
                 git.commit()
                         .setAuthor(author)
                         .setCommitter(author)
-                        .setMessage(commitType.name())
+                        .setMessage(commitType.name() + (msg==null?"":(" " + msg)))
                         .call();
             } else {
                 recordChange(SavedState.Type.UPDATE);
@@ -109,6 +128,10 @@ public class GitStorage implements AutoCloseable {
 
     }
 
+    private String readCommitMessage() throws MetadataException {
+        return ManifestVersionRecord.read(base.resolve(CURRENT_VERSION_FILE)).map(ManifestVersionRecord::getSummary).orElse(null);
+    }
+
     public void recordChange(SavedState.Type operation) throws MetadataException {
         try {
             if (isRepositoryEmpty(git)) {
@@ -116,14 +139,17 @@ public class GitStorage implements AutoCloseable {
             }
 
             git.add().addFilepattern(InstallationMetadata.MANIFEST_FILE_NAME).call();
+            git.add().addFilepattern(CURRENT_VERSION_FILE).call();
 
             final PersonIdent author = getCommitter();
             final SavedState.Type commitType = operation;
 
+            String msg = readCommitMessage();
+
             git.commit()
                     .setAuthor(author)
                     .setCommitter(author)
-                    .setMessage(commitType.name())
+                    .setMessage(commitType.name()+ (msg==null?"":(" " + msg)))
                     .call();
 
         } catch (IOException | GitAPIException e) {
@@ -157,13 +183,21 @@ public class GitStorage implements AutoCloseable {
         }
     }
 
-    public void revert(SavedState savedState) throws MetadataException {
+    public Path revert(SavedState savedState) throws MetadataException {
         try {
-            git.checkout()
-                    .setStartPoint(savedState.getName())
-                    .setAllPaths(true)
-                    .call();
-        } catch (GitAPIException e) {
+            Path hist = Files.createTempDirectory("hist").resolve(ProsperoMetadataUtils.METADATA_DIR);
+            try (Git temp =  Git.cloneRepository()
+                    .setDirectory(hist.toFile())
+                    .setRemote("origin")
+                    .setURI(base.toUri().toString())
+                    .call()) {
+                temp.reset()
+                        .setMode(ResetCommand.ResetType.HARD)
+                        .setRef(savedState.getName())
+                        .call();
+                return hist.getParent();
+            }
+        } catch (GitAPIException | IOException e) {
             throw Messages.MESSAGES.unableToAccessHistoryStorage(base, e);
         }
     }

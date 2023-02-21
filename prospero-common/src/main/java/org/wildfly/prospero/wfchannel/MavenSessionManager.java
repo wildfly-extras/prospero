@@ -79,6 +79,11 @@ public class MavenSessionManager {
         }
     }
 
+    public MavenSessionManager(MavenSessionManager base) {
+        this.offline = base.isOffline();
+        this.provisioningRepo = base.provisioningRepo;
+    }
+
     public MavenSessionManager() throws ProvisioningException {
         this(MavenOptions.DEFAULT_OPTIONS);
     }

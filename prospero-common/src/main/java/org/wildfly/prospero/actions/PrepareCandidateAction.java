@@ -36,6 +36,7 @@ import org.wildfly.prospero.galleon.ChannelMavenArtifactRepositoryManager;
 import org.wildfly.prospero.galleon.GalleonEnvironment;
 import org.wildfly.prospero.galleon.GalleonFeaturePackAnalyzer;
 import org.wildfly.prospero.galleon.GalleonUtils;
+import org.wildfly.prospero.model.ManifestVersionRecord;
 import org.wildfly.prospero.model.ProsperoConfig;
 import org.wildfly.prospero.updates.MarkerFile;
 import org.wildfly.prospero.wfchannel.MavenSessionManager;
@@ -43,6 +44,7 @@ import org.wildfly.prospero.wfchannel.MavenSessionManager;
 import java.io.IOException;
 import java.nio.file.Path;
 import java.util.List;
+import java.util.Optional;
 
 class PrepareCandidateAction implements AutoCloseable{
 
@@ -53,7 +55,7 @@ class PrepareCandidateAction implements AutoCloseable{
     private final MavenSessionManager mavenSessionManager;
 
     PrepareCandidateAction(Path installDir, MavenSessionManager mavenSessionManager, Console console, ProsperoConfig prosperoConfig)
-            throws OperationException, ProvisioningException {
+            throws OperationException {
         this.metadata = InstallationMetadata.loadInstallation(installDir);
         this.installDir = installDir;
         this.console = console;
@@ -86,8 +88,12 @@ class PrepareCandidateAction implements AutoCloseable{
         } catch (UnresolvedMavenArtifactException e) {
             throw new ArtifactResolutionException(e, prosperoConfig.listAllRepositories(), mavenSessionManager.isOffline());
         }
+
         try {
-            writeProsperoMetadata(targetDir, galleonEnv.getRepositoryManager(), metadata.getProsperoConfig().getChannels());
+            final ManifestVersionRecord manifestRecord = new ManifestVersionResolver(mavenSessionManager)
+                    .getCurrentVersions(galleonEnv.getChannels());
+            writeProsperoMetadata(targetDir, galleonEnv.getRepositoryManager(), metadata.getProsperoConfig().getChannels(),
+                    manifestRecord);
         } catch (MetadataException ex) {
             throw new ProvisioningException(ex);
         }
@@ -106,10 +112,11 @@ class PrepareCandidateAction implements AutoCloseable{
         metadata.close();
     }
 
-    private void writeProsperoMetadata(Path home, ChannelMavenArtifactRepositoryManager maven, List<Channel> channels) throws MetadataException {
+    private void writeProsperoMetadata(Path home, ChannelMavenArtifactRepositoryManager maven, List<Channel> channels, ManifestVersionRecord manifestVersions) throws MetadataException {
         final ChannelManifest manifest = maven.resolvedChannel();
 
-        try (final InstallationMetadata installationMetadata = InstallationMetadata.newInstallation(home, manifest, new ProsperoConfig(channels))) {
+        try (final InstallationMetadata installationMetadata = InstallationMetadata.newInstallation(home, manifest,
+                new ProsperoConfig(channels), Optional.of(manifestVersions))) {
             installationMetadata.recordProvision(true, false);
         }
     }

@@ -39,6 +39,8 @@ import org.wildfly.prospero.api.InstallationMetadata;
 import org.wildfly.prospero.api.exceptions.InvalidUpdateCandidateException;
 import org.wildfly.prospero.galleon.ArtifactCache;
 import org.wildfly.prospero.installation.git.GitStorage;
+import org.wildfly.prospero.metadata.ProsperoMetadataUtils;
+import org.wildfly.prospero.model.ManifestVersionRecord;
 import org.wildfly.prospero.updates.MarkerFile;
 import org.wildfly.prospero.utils.filestate.DirState;
 
@@ -55,6 +57,8 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertThrows;
 import static org.junit.Assert.assertTrue;
+import static org.wildfly.prospero.metadata.ProsperoMetadataUtils.CURRENT_VERSION_FILE;
+import static org.wildfly.prospero.metadata.ProsperoMetadataUtils.METADATA_DIR;
 
 public class ApplyCandidateActionTest {
 
@@ -313,6 +317,25 @@ public class ApplyCandidateActionTest {
         new MarkerFile("abcd1234", ApplyCandidateAction.Type.UPDATE).write(updatePath);
 
         assertThrows(InvalidUpdateCandidateException.class, ()->new ApplyCandidateAction(installationPath, updatePath).applyUpdate(ApplyCandidateAction.Type.ROLLBACK));
+    }
+
+    @Test
+    public void manifestVersionIsUpdated() throws Exception {
+        createSimpleFeaturePacks();
+
+        install(installationPath, FPL_100);
+        final ManifestVersionRecord manifestVersionRecord = new ManifestVersionRecord();
+        manifestVersionRecord.addManifest(new ManifestVersionRecord.MavenManifest("org.foo", "bar", "1.0.0"));
+        ManifestVersionRecord.write(manifestVersionRecord, installationPath.resolve(METADATA_DIR).resolve(CURRENT_VERSION_FILE));
+
+        prepareUpdate(updatePath, installationPath, FPL_101);
+        final ManifestVersionRecord manifestVersionRecord2 = new ManifestVersionRecord();
+        manifestVersionRecord2.addManifest(new ManifestVersionRecord.MavenManifest("org.foo", "bar", "1.0.1"));
+        ManifestVersionRecord.write(manifestVersionRecord2, updatePath.resolve(METADATA_DIR).resolve(CURRENT_VERSION_FILE));
+
+        new ApplyCandidateAction(installationPath, updatePath).applyUpdate(ApplyCandidateAction.Type.UPDATE);
+
+        assertEquals(manifestVersionRecord2.getSummary(), ManifestVersionRecord.read(installationPath.resolve(ProsperoMetadataUtils.METADATA_DIR).resolve(CURRENT_VERSION_FILE)).get().getSummary());
     }
 
     private void createSimpleFeaturePacks() throws ProvisioningException {

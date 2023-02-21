@@ -26,10 +26,12 @@ import org.wildfly.channel.Channel;
 import org.wildfly.channel.ChannelManifest;
 import org.wildfly.channel.ChannelManifestCoordinate;
 import org.wildfly.channel.Repository;
+import org.wildfly.prospero.model.ManifestVersionRecord;
 import org.wildfly.prospero.api.ArtifactChange;
 import org.wildfly.prospero.api.ChannelChange;
 import org.wildfly.prospero.api.InstallationMetadata;
 import org.wildfly.prospero.api.SavedState;
+import org.wildfly.prospero.metadata.ProsperoMetadataUtils;
 import org.wildfly.prospero.model.ManifestYamlSupport;
 import org.junit.Before;
 import org.junit.Rule;
@@ -307,6 +309,78 @@ public class GitStorageTest {
         assertThat(channelChanges)
                 .map(compareAttr((c)->c.getName()))
                 .containsExactly("[]::channel-1");
+    }
+
+    @Test
+    public void recordWithAdditionalInformation() throws Exception {
+        final GitStorage gitStorage = new GitStorage(base.getParent());
+        setArtifact(manifest, "org.test:test:1.2.3");
+        final Channel channel1 = new Channel("channel-1", "old", null,
+                List.of(new Repository("test", "http://test.te")),
+                new ChannelManifestCoordinate("foo", "bar"),
+                null, null);
+
+        new ProsperoConfig(List.of(channel1)).writeConfig(base);
+        // create the manifest version record to provide version info for commit
+        final ManifestVersionRecord record = new ManifestVersionRecord();
+        record.addManifest(new ManifestVersionRecord.MavenManifest("foo", "bar", "1.0.0"));
+        ManifestVersionRecord.write(record, base.resolve(ProsperoMetadataUtils.CURRENT_VERSION_FILE));
+
+        gitStorage.record();
+
+        assertEquals(SavedState.Type.INSTALL, gitStorage.getRevisions().get(0).getType());
+        assertEquals("[foo:bar::1.0.0]", gitStorage.getRevisions().get(0).getMsg());
+    }
+
+    @Test
+    public void readCommitWithOnlyType() throws Exception {
+        final GitStorage gitStorage = new GitStorage(base.getParent());
+        setArtifact(manifest, "org.test:test:1.2.3");
+        final Channel channel1 = new Channel("channel-1", "old", null,
+                List.of(new Repository("test", "http://test.te")),
+                new ChannelManifestCoordinate("foo", "bar"),
+                null, null);
+
+        new ProsperoConfig(List.of(channel1)).writeConfig(base);
+
+        gitStorage.record();
+
+        assertEquals(SavedState.Type.INSTALL, gitStorage.getRevisions().get(0).getType());
+    }
+
+    @Test
+    public void testRevert() throws Exception {
+        // record INSTALL and UPDATE
+        final GitStorage gitStorage = new GitStorage(base.getParent());
+
+        setArtifact(manifest, "org.test:test:1.2.3");
+        ManifestVersionRecord record = new ManifestVersionRecord();
+        record.addManifest(new ManifestVersionRecord.MavenManifest("foo", "bar", "1.0.0"));
+        ManifestVersionRecord.write(record, base.resolve(ProsperoMetadataUtils.CURRENT_VERSION_FILE));
+        gitStorage.record();
+
+        setArtifact(manifest, "org.test:test:1.2.4");
+        record = new ManifestVersionRecord();
+        record.addManifest(new ManifestVersionRecord.MavenManifest("foo", "bar", "1.0.1"));
+        ManifestVersionRecord.write(record, base.resolve(ProsperoMetadataUtils.CURRENT_VERSION_FILE));
+        gitStorage.record();
+
+        final Path revert = gitStorage.revert(gitStorage.getRevisions().get(1));
+
+        // verify the new folder contains reverted values
+        final Path revertedMetadata = revert.resolve(ProsperoMetadataUtils.METADATA_DIR);
+        assertTrue(ManifestYamlSupport.parse(revertedMetadata.resolve(ProsperoMetadataUtils.MANIFEST_FILE_NAME).toFile())
+                .getStreams().stream()
+                    .filter(s->s.getArtifactId().equals("test") && s.getVersion().equals("1.2.3")).findFirst().isPresent());
+        assertEquals("1.0.0", ManifestVersionRecord.read(revertedMetadata.resolve(ProsperoMetadataUtils.CURRENT_VERSION_FILE))
+                .get().getMavenManifests().get(0).getVersion());
+
+        // verify the base folder has not been changed
+        assertTrue(ManifestYamlSupport.parse(base.resolve(ProsperoMetadataUtils.MANIFEST_FILE_NAME).toFile())
+                .getStreams().stream()
+                .filter(s->s.getArtifactId().equals("test") && s.getVersion().equals("1.2.4")).findFirst().isPresent());
+        assertEquals("1.0.1", ManifestVersionRecord.read(base.resolve(ProsperoMetadataUtils.CURRENT_VERSION_FILE))
+                .get().getMavenManifests().get(0).getVersion());
     }
 
     private HashSet<String> getPathsInCommit() throws IOException, GitAPIException {

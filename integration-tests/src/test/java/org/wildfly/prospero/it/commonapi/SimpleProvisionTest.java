@@ -35,6 +35,7 @@ import org.jboss.galleon.Constants;
 import org.jboss.galleon.ProvisioningException;
 import org.junit.Test;
 import org.wildfly.channel.Channel;
+import org.wildfly.prospero.model.ManifestVersionRecord;
 import org.wildfly.prospero.actions.UpdateAction;
 import org.wildfly.prospero.api.ArtifactChange;
 import org.wildfly.prospero.api.InstallationMetadata;
@@ -42,6 +43,7 @@ import org.wildfly.prospero.api.ProvisioningDefinition;
 import org.wildfly.prospero.api.exceptions.OperationException;
 import org.wildfly.prospero.galleon.ArtifactCache;
 import org.wildfly.prospero.it.AcceptingConsole;
+import org.wildfly.prospero.metadata.ProsperoMetadataUtils;
 import org.wildfly.prospero.model.ManifestYamlSupport;
 import org.wildfly.prospero.model.ProsperoConfig;
 import org.wildfly.prospero.test.MetadataTestUtils;
@@ -71,6 +73,14 @@ public class SimpleProvisionTest extends WfCoreTestBase {
         // verify the galleon pack has been added
         assertThat(Files.readAllLines(hashesPath()))
                 .contains("wildfly-core-galleon-pack-" + BASE_VERSION + ".zip");
+
+        // verify the URL of the manifest was recorded
+        final Path manifestVersionsFile = outputPath.resolve(ProsperoMetadataUtils.METADATA_DIR).resolve(ProsperoMetadataUtils.CURRENT_VERSION_FILE);
+        final Optional<ManifestVersionRecord> record = ManifestVersionRecord.read(manifestVersionsFile);
+        assertTrue("Manifest version record should be present", record.isPresent());
+        assertThat(record.get().getUrlManifests())
+                .map(ManifestVersionRecord.UrlManifest::getUrl)
+                .containsExactly(MetadataTestUtils.class.getClassLoader().getResource(CHANNEL_BASE_CORE_19).toExternalForm());
     }
 
     @Test

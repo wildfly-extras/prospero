@@ -28,11 +28,13 @@ public class SavedState {
     private String hash;
     private Instant timestamp;
     private Type type;
+    private String msg = "";
 
-    public SavedState(String hash, Instant timestamp, Type type) {
+    public SavedState(String hash, Instant timestamp, Type type, String msg) {
         this.hash = hash;
         this.timestamp = timestamp;
         this.type = type;
+        this.msg = msg;
     }
 
     public SavedState(String hash) {
@@ -53,8 +55,12 @@ public class SavedState {
         return timestamp;
     }
 
+    public String getMsg() {
+        return msg;
+    }
+
     public String shortDescription() {
-        return String.format("[%s] %s - %s", hash, timestamp.toString(), type.toString().toLowerCase(Locale.ROOT));
+        return String.format("[%s] %s - %s %s", hash, timestamp.toString(), type.toString().toLowerCase(Locale.ROOT), this.msg);
     }
 
     @Override

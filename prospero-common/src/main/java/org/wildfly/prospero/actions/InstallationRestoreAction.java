@@ -40,6 +40,7 @@ import java.io.IOException;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 
 public class InstallationRestoreAction {
 
@@ -86,7 +87,8 @@ public class InstallationRestoreAction {
     private void writeProsperoMetadata(ChannelMavenArtifactRepositoryManager maven, List<Channel> channels) throws MetadataException {
         final ChannelManifest manifest = maven.resolvedChannel();
 
-        try (final InstallationMetadata installationMetadata = InstallationMetadata.newInstallation(installDir, manifest, new ProsperoConfig(channels))) {
+        try (final InstallationMetadata installationMetadata = InstallationMetadata.newInstallation(installDir, manifest,
+                new ProsperoConfig(channels), Optional.empty())) {
             installationMetadata.recordProvision(true, true);
         }
     }

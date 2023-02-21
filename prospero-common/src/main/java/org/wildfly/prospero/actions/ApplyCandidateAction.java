@@ -23,6 +23,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.SimpleFileVisitor;
+import java.nio.file.StandardCopyOption;
 import java.nio.file.attribute.BasicFileAttributes;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -55,6 +56,8 @@ import static org.jboss.galleon.diff.FsDiff.HAS_CHANGED_IN_THE_UPDATED_VERSION;
 import static org.jboss.galleon.diff.FsDiff.MODIFIED;
 import static org.jboss.galleon.diff.FsDiff.REMOVED;
 import static org.jboss.galleon.diff.FsDiff.formatMessage;
+import static org.wildfly.prospero.metadata.ProsperoMetadataUtils.CURRENT_VERSION_FILE;
+import static org.wildfly.prospero.metadata.ProsperoMetadataUtils.METADATA_DIR;
 
 import org.jboss.galleon.diff.FsEntry;
 import org.jboss.galleon.layout.SystemPaths;
@@ -276,6 +279,7 @@ public class ApplyCandidateAction {
 
     private void updateMetadata(Type operation) throws ProvisioningException, MetadataException {
         try {
+            copyCurrentVersions();
             writeProsperoMetadata(operation);
             updateInstallationCache();
             Path installationGalleonPath = PathsUtils.getProvisionedStateDir(installationDir);
@@ -284,6 +288,13 @@ public class ApplyCandidateAction {
             IoUtils.copy(updateGalleonPath, installationGalleonPath, true);
         } catch (IOException ex) {
             throw new ProvisioningException(ex);
+        }
+    }
+
+    private void copyCurrentVersions() throws IOException {
+        Path sourceVersions = updateDir.resolve(METADATA_DIR).resolve(CURRENT_VERSION_FILE);
+        if (Files.exists(sourceVersions)) {
+            Files.copy(sourceVersions, installationDir.resolve(METADATA_DIR).resolve(CURRENT_VERSION_FILE), StandardCopyOption.REPLACE_EXISTING);
         }
     }
 

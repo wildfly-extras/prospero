@@ -30,6 +30,7 @@ import org.wildfly.channel.ChannelManifestCoordinate;
 import org.wildfly.channel.ChannelManifestMapper;
 import org.wildfly.channel.MavenCoordinate;
 import org.wildfly.channel.Repository;
+import org.wildfly.prospero.model.ManifestVersionRecord;
 import org.wildfly.prospero.api.exceptions.MetadataException;
 import org.wildfly.prospero.installation.git.GitStorage;
 import org.wildfly.prospero.metadata.ProsperoMetadataUtils;
@@ -41,6 +42,7 @@ import java.nio.file.Path;
 import java.nio.file.StandardOpenOption;
 import java.util.Collections;
 import java.util.List;
+import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.Assert.assertEquals;
@@ -108,7 +110,8 @@ public class InstallationMetadataTest {
         final Channel channel = createChannel(new ChannelManifestCoordinate("new", "channel"));
         installationMetadata = InstallationMetadata.newInstallation(base,
                 new ChannelManifest(null, null, null, null),
-                new ProsperoConfig(List.of(channel))
+                new ProsperoConfig(List.of(channel)),
+                Optional.empty()
         );
 
         installationMetadata.recordProvision(false);
@@ -150,7 +153,8 @@ public class InstallationMetadataTest {
         final Channel channel = createChannel(new ChannelManifestCoordinate("new", "channel"));
         installationMetadata = InstallationMetadata.newInstallation(base,
                 new ChannelManifest(null, null, null, null),
-                new ProsperoConfig(List.of(channel))
+                new ProsperoConfig(List.of(channel)),
+                Optional.empty()
         );
 
         installationMetadata.recordProvision(false);
@@ -163,7 +167,8 @@ public class InstallationMetadataTest {
         final Channel channel = createChannel(new ChannelManifestCoordinate("new", "channel"));
         base = temp.newFolder().toPath();
         ChannelManifest manifest = new ChannelManifest(null, null, null, null);
-        installationMetadata = InstallationMetadata.newInstallation(base, manifest, new ProsperoConfig(List.of(channel)));
+        installationMetadata = InstallationMetadata.newInstallation(base, manifest, new ProsperoConfig(List.of(channel)),
+                Optional.empty());
         installationMetadata.recordProvision(false);
 
         final MavenOptions opts = MavenOptions.builder()
@@ -184,7 +189,8 @@ public class InstallationMetadataTest {
                 new ChannelManifest(null, null, null, null),
                 new ProsperoConfig(List.of(channel), MavenOptions.builder()
                 .setLocalCachePath(Path.of("foo"))
-                .build())
+                .build()),
+                Optional.empty()
         );
 
         installationMetadata.recordProvision(false);
@@ -193,6 +199,37 @@ public class InstallationMetadataTest {
 
         final InstallationMetadata readMetadata = InstallationMetadata.loadInstallation(base);
         assertNull(readMetadata.getProsperoConfig().getMavenOptions().getLocalCache());
+    }
+
+    @Test
+    public void testLoadMetadataWithoutRecord() throws Exception {
+        try (final InstallationMetadata metadata = InstallationMetadata.loadInstallation(base)) {
+            assertTrue("Version record should be empty", metadata.getManifestVersions().isEmpty());
+        }
+    }
+
+    @Test
+    public void testLoadMetadataWithRecord() throws Exception {
+        final Channel channel = createChannel(new ChannelManifestCoordinate("new", "channel"));
+        base = temp.newFolder().toPath();
+        final ManifestVersionRecord record = new ManifestVersionRecord();
+        record.addManifest(new ManifestVersionRecord.MavenManifest("foo", "bar", "1.0.0"));
+        installationMetadata = InstallationMetadata.newInstallation(base,
+                new ChannelManifest(null, null, null, null),
+                new ProsperoConfig(List.of(channel), MavenOptions.builder()
+                        .setLocalCachePath(Path.of("foo"))
+                        .build()),
+                Optional.of(record)
+        );
+
+        installationMetadata.recordProvision(true);
+        installationMetadata.close();
+
+        installationMetadata = InstallationMetadata.loadInstallation(base);
+        final Optional<ManifestVersionRecord> loadedRecord = installationMetadata.getManifestVersions();
+
+        assertTrue("Manifest version record should be present", loadedRecord.isPresent());
+        assertEquals(record.getSummary(), loadedRecord.get().getSummary());
     }
 
     private static Channel createChannel(ChannelManifestCoordinate manifestCoordinate) {
@@ -209,7 +246,8 @@ public class InstallationMetadataTest {
         final ChannelManifest manifest = new ChannelManifest(null, null, null, Collections.emptyList());
         final Channel channel = createChannel(new ChannelManifestCoordinate("foo","bar"));
         final ProsperoConfig prosperoConfig = new ProsperoConfig(List.of(channel));
-        final InstallationMetadata metadata = new InstallationMetadata(base, manifest, prosperoConfig, gitStorage);
+        final InstallationMetadata metadata = new InstallationMetadata(base, manifest, prosperoConfig, gitStorage,
+                Optional.empty());
         metadata.recordProvision(true);
         return metadata;
     }

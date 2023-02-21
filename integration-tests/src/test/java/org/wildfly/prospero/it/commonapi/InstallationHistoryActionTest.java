@@ -17,12 +17,15 @@
 
 package org.wildfly.prospero.it.commonapi;
 
+import org.apache.commons.io.FileUtils;
 import org.jboss.galleon.ProvisioningException;
 import org.junit.Assert;
 import org.wildfly.channel.Channel;
 import org.wildfly.channel.Repository;
+import org.wildfly.prospero.model.ManifestVersionRecord;
 import org.wildfly.prospero.api.ArtifactChange;
 import org.wildfly.prospero.actions.InstallationHistoryAction;
+import org.wildfly.prospero.api.InstallationMetadata;
 import org.wildfly.prospero.api.MavenOptions;
 import org.wildfly.prospero.api.SavedState;
 import org.wildfly.prospero.actions.UpdateAction;
@@ -122,7 +125,7 @@ public class InstallationHistoryActionTest extends WfCoreTestBase {
     }
 
     @Test
-    public void prepareRollbackDoesntChangeSourceServer() throws Exception {
+    public void prepareRevertDoesntChangeSourceServer() throws Exception {
         channelsFile = MetadataTestUtils.prepareChannel(CHANNEL_BASE_CORE_19);
         final Path modulesPaths = outputPath.resolve(Paths.get("modules", "system", "layers", "base"));
         final Path wildflyCliModulePath = modulesPaths.resolve(Paths.get("org", "jboss", "as", "cli", "main"));
@@ -140,6 +143,12 @@ public class InstallationHistoryActionTest extends WfCoreTestBase {
         assertEquals(UPGRADE_VERSION, wildflyCliArtifact.get().getVersion());
         assertTrue("Updated jar should be present in module", wildflyCliModulePath.resolve(UPGRADE_JAR).toFile().exists());
 
+        Optional<ManifestVersionRecord> manifestVersionRecord = ManifestVersionRecord.read(
+                outputPath.resolve(ProsperoMetadataUtils.METADATA_DIR).resolve(ProsperoMetadataUtils.CURRENT_VERSION_FILE));
+        assertTrue("Manifest version record should be present", manifestVersionRecord.isPresent());
+        assertEquals("Manifest version record should contain base and update channels",
+                2, manifestVersionRecord.get().getUrlManifests().size());
+
         final InstallationHistoryAction historyAction = new InstallationHistoryAction(outputPath, new AcceptingConsole());
         final List<SavedState> revisions = historyAction.getRevisions();
 
@@ -149,6 +158,64 @@ public class InstallationHistoryActionTest extends WfCoreTestBase {
         wildflyCliArtifact = readArtifactFromManifest("org.wildfly.core", "wildfly-cli");
         assertEquals(UPGRADE_VERSION, wildflyCliArtifact.get().getVersion());
         assertTrue("Reverted jar should be present in module", wildflyCliModulePath.resolve(UPGRADE_JAR).toFile().exists());
+
+        manifestVersionRecord = ManifestVersionRecord.read(
+                candidate.resolve(ProsperoMetadataUtils.METADATA_DIR).resolve(ProsperoMetadataUtils.CURRENT_VERSION_FILE));
+        assertTrue("Manifest version record should be present", manifestVersionRecord.isPresent());
+        assertEquals("Manifest record version should be restored to initial installation (single channel)",
+                1, manifestVersionRecord.get().getUrlManifests().size());
+
+        // assert we don't have ROLLBACK state
+        assertThat(historyAction.getRevisions())
+                .map(SavedState::getType)
+                .contains(SavedState.Type.UPDATE, SavedState.Type.INSTALL);
+    }
+
+    @Test
+    public void prepareRevertWithoutInitialManifestVersionsRemovesVersionRecord() throws Exception {
+        channelsFile = MetadataTestUtils.prepareChannel(CHANNEL_BASE_CORE_19);
+        final Path modulesPaths = outputPath.resolve(Paths.get("modules", "system", "layers", "base"));
+        final Path wildflyCliModulePath = modulesPaths.resolve(Paths.get("org", "jboss", "as", "cli", "main"));
+        final Path candidate = temp.newFolder().toPath();
+
+        final ProvisioningDefinition provisioningDefinition = defaultWfCoreDefinition()
+                .setChannelCoordinates(channelsFile.toString())
+                .build();
+        installation.provision(provisioningDefinition.toProvisioningConfig(),
+                provisioningDefinition.resolveChannels(CHANNELS_RESOLVER_FACTORY));
+
+        // delete the .installation folder and recreate it
+        try (final InstallationMetadata oldMetadata = InstallationMetadata.loadInstallation(outputPath)) {
+            FileUtils.deleteQuietly(outputPath.resolve(ProsperoMetadataUtils.METADATA_DIR).toFile());
+            InstallationMetadata.newInstallation(outputPath, oldMetadata.getManifest(), oldMetadata.getProsperoConfig(),
+                    Optional.empty()).recordProvision(true);
+        }
+
+        MetadataTestUtils.prepareChannel(outputPath.resolve(MetadataTestUtils.INSTALLER_CHANNELS_FILE_PATH), CHANNEL_COMPONENT_UPDATES, CHANNEL_BASE_CORE_19);
+        updateAction().performUpdate();
+        Optional<Artifact> wildflyCliArtifact = readArtifactFromManifest("org.wildfly.core", "wildfly-cli");
+        assertEquals(UPGRADE_VERSION, wildflyCliArtifact.get().getVersion());
+        assertTrue("Updated jar should be present in module", wildflyCliModulePath.resolve(UPGRADE_JAR).toFile().exists());
+
+        Optional<ManifestVersionRecord> manifestVersionRecord = ManifestVersionRecord.read(
+                outputPath.resolve(ProsperoMetadataUtils.METADATA_DIR).resolve(ProsperoMetadataUtils.CURRENT_VERSION_FILE));
+        assertTrue("Manifest version record should be present", manifestVersionRecord.isPresent());
+        assertEquals("Manifest version record should contain base and update channels",
+                2, manifestVersionRecord.get().getUrlManifests().size());
+
+        final InstallationHistoryAction historyAction = new InstallationHistoryAction(outputPath, new AcceptingConsole());
+        final List<SavedState> revisions = historyAction.getRevisions();
+
+        final SavedState savedState = revisions.get(1);
+        historyAction.prepareRevert(savedState, mavenOptions, Collections.emptyList(), candidate);
+
+        wildflyCliArtifact = readArtifactFromManifest("org.wildfly.core", "wildfly-cli");
+        assertEquals(UPGRADE_VERSION, wildflyCliArtifact.get().getVersion());
+        assertTrue("Reverted jar should be present in module", wildflyCliModulePath.resolve(UPGRADE_JAR).toFile().exists());
+
+        manifestVersionRecord = ManifestVersionRecord.read(
+                candidate.resolve(ProsperoMetadataUtils.METADATA_DIR).resolve(ProsperoMetadataUtils.CURRENT_VERSION_FILE));
+        assertTrue("Manifest version record should not be present", manifestVersionRecord.isEmpty());
 
         // assert we don't have ROLLBACK state
         assertThat(historyAction.getRevisions())
