@@ -168,7 +168,7 @@ public class MavenOptions {
         }
 
         public Builder setLocalCachePath(Path localCachePath) {
-            this.localCachePath = Optional.of(localCachePath);
+            this.localCachePath = Optional.ofNullable(localCachePath);
             return this;
         }
     }
