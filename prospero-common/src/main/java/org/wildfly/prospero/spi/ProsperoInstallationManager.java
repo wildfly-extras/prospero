@@ -17,6 +17,7 @@ import org.wildfly.prospero.actions.InstallationExportAction;
 import org.wildfly.prospero.actions.InstallationHistoryAction;
 import org.wildfly.prospero.actions.MetadataAction;
 import org.wildfly.prospero.actions.UpdateAction;
+import org.wildfly.prospero.api.MavenOptions.Builder;
 import org.wildfly.prospero.spi.internal.CliProvider;
 import org.wildfly.prospero.api.SavedState;
 import org.wildfly.prospero.api.exceptions.MetadataException;
@@ -43,11 +44,14 @@ public class ProsperoInstallationManager implements InstallationManager {
     private Path installationDir;
 
     public ProsperoInstallationManager(Path installationDir, MavenOptions mavenOptions) throws Exception {
-        final org.wildfly.prospero.api.MavenOptions options = org.wildfly.prospero.api.MavenOptions.builder()
-                .setOffline(mavenOptions.isOffline())
-                .setLocalCachePath(mavenOptions.getLocalRepository())
-                .build();
-        actionFactory = new ActionFactory(installationDir, options);
+        final Builder options = org.wildfly.prospero.api.MavenOptions.builder()
+                .setOffline(mavenOptions.isOffline());
+        if (mavenOptions.getLocalRepository() == null) {
+            options.setNoLocalCache(true);
+        } else {
+            options.setLocalCachePath(mavenOptions.getLocalRepository());
+        }
+        actionFactory = new ActionFactory(installationDir, options.build());
         this.installationDir = installationDir;
     }
 
@@ -269,6 +273,10 @@ public class ProsperoInstallationManager implements InstallationManager {
         }
     }
 
+    ActionFactory getActionFactory() {
+        return actionFactory;
+    }
+
     protected static class ActionFactory {
 
         private final Path server;
@@ -293,6 +301,10 @@ public class ProsperoInstallationManager implements InstallationManager {
 
         protected InstallationExportAction getInstallationExportAction() {
             return new InstallationExportAction(server);
+        }
+
+        org.wildfly.prospero.api.MavenOptions getMavenOptions() {
+            return mavenOptions;
         }
     }
 }
