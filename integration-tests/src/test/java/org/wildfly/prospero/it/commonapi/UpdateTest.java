@@ -33,12 +33,14 @@ import org.wildfly.channel.ChannelManifest;
 import org.wildfly.channel.ChannelManifestCoordinate;
 import org.wildfly.channel.Repository;
 import org.wildfly.channel.Stream;
+import org.wildfly.prospero.model.ManifestVersionRecord;
 import org.wildfly.prospero.actions.UpdateAction;
 import org.wildfly.prospero.api.InstallationMetadata;
 import org.wildfly.prospero.api.MavenOptions;
 import org.wildfly.prospero.api.ProvisioningDefinition;
 import org.wildfly.prospero.api.RepositoryUtils;
 import org.wildfly.prospero.it.AcceptingConsole;
+import org.wildfly.prospero.metadata.ProsperoMetadataUtils;
 import org.wildfly.prospero.model.ManifestYamlSupport;
 import org.wildfly.prospero.model.ProsperoConfig;
 import org.wildfly.prospero.test.MetadataTestUtils;
@@ -58,6 +60,7 @@ import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 import static org.wildfly.prospero.updates.MarkerFile.UPDATE_MARKER_FILE;
@@ -151,7 +154,6 @@ public class UpdateTest extends WfCoreTestBase {
                 .build();
         installation.provision(provisioningDefinition.toProvisioningConfig(),
                 provisioningDefinition.resolveChannels(CHANNELS_RESOLVER_FACTORY));
-        final String latestRevision = MetadataTestUtils.getLatestRevision(outputPath);
 
         // update manifest file
         final File updatedChannel = upgradeTestArtifactIn(manifestFile);
@@ -164,6 +166,14 @@ public class UpdateTest extends WfCoreTestBase {
 
         final Path markerFile = preparedUpdatePath.resolve(UPDATE_MARKER_FILE);
         assertTrue(Files.exists(markerFile));
+
+        // check that the generated manifest version record contains updated version
+        final Path manifestVersionsFile = preparedUpdatePath.resolve(ProsperoMetadataUtils.METADATA_DIR).resolve(ProsperoMetadataUtils.CURRENT_VERSION_FILE);
+        final Optional<ManifestVersionRecord> record = ManifestVersionRecord.read(manifestVersionsFile);
+        assertTrue("Manifest version record should be present", record.isPresent());
+        assertThat(record.get().getMavenManifests())
+                .map(ManifestVersionRecord.MavenManifest::getVersion)
+                .containsExactly("1.0.1");
     }
 
     @Test

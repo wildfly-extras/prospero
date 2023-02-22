@@ -29,6 +29,8 @@ import org.wildfly.prospero.api.InstallationMetadata;
 import org.wildfly.prospero.api.exceptions.MetadataException;
 import org.wildfly.prospero.api.SavedState;
 import org.wildfly.prospero.galleon.GalleonEnvironment;
+import org.wildfly.prospero.metadata.ProsperoMetadataUtils;
+import org.wildfly.prospero.model.ManifestVersionRecord;
 import org.wildfly.prospero.model.ProsperoConfig;
 import org.wildfly.prospero.wfchannel.MavenSessionManager;
 import org.jboss.galleon.ProvisioningException;
@@ -37,9 +39,12 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
+import java.util.Optional;
 
 import static org.wildfly.prospero.actions.ApplyCandidateAction.Type.ROLLBACK;
 import static org.wildfly.prospero.galleon.GalleonUtils.MAVEN_REPO_LOCAL;
+import static org.wildfly.prospero.metadata.ProsperoMetadataUtils.CURRENT_VERSION_FILE;
+import static org.wildfly.prospero.metadata.ProsperoMetadataUtils.METADATA_DIR;
 
 public class InstallationHistoryAction {
 
@@ -99,9 +104,28 @@ public class InstallationHistoryAction {
                 try(final PrepareCandidateAction prepareCandidateAction = new PrepareCandidateAction(installation, mavenSessionManager, console, prosperoConfig)) {
                     prepareCandidateAction.buildCandidate(targetDir, galleonEnv, ROLLBACK);
                 }
+
+                revertCurrentVersions(targetDir, revertMetadata);
+
             } finally {
                 System.clearProperty(MAVEN_REPO_LOCAL);
             }
+        }
+    }
+
+    private static void revertCurrentVersions(Path targetDir, InstallationMetadata revertMetadata) throws MetadataException {
+        try {
+            final Optional<ManifestVersionRecord> manifestHistory = revertMetadata.getManifestVersions();
+            if (manifestHistory.isPresent()) {
+                ManifestVersionRecord.write(manifestHistory.get(), targetDir.resolve(METADATA_DIR).resolve(CURRENT_VERSION_FILE));
+            } else {
+                Path versionsFile = targetDir.resolve(METADATA_DIR).resolve(CURRENT_VERSION_FILE);
+                if (Files.exists(versionsFile)) {
+                    Files.delete(versionsFile);
+                }
+            }
+        } catch (IOException e) {
+            throw Messages.MESSAGES.unableToWriteFile(targetDir.resolve(ProsperoMetadataUtils.METADATA_DIR).resolve(ProsperoMetadataUtils.CURRENT_VERSION_FILE), e);
         }
     }
 

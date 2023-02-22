@@ -40,6 +40,7 @@ import java.nio.file.Paths;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
+import java.util.Optional;
 
 import static org.junit.Assert.*;
 
@@ -63,7 +64,8 @@ public class GalleonPackInspectorTest {
 
         final ChannelManifest manifest = new ChannelManifest("test", "test-id", "",
                 Arrays.asList(new Stream("io.undertow", "undertow-core", "1.2.3.Final", null)));
-        installationMetadata = InstallationMetadata.newInstallation(basePath, manifest, new ProsperoConfig(Collections.emptyList()));
+        installationMetadata = InstallationMetadata.newInstallation(basePath, manifest, new ProsperoConfig(Collections.emptyList()),
+                Optional.empty());
 
         wildflyCoreFP = downloadFeaturePack("org.wildfly.core:wildfly-core-galleon-pack:zip:17.0.0.Final");
     }

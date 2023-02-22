@@ -17,6 +17,7 @@
 
 package org.wildfly.prospero;
 
+import java.io.IOException;
 import java.net.URI;
 import java.net.URL;
 import java.nio.file.Path;
@@ -101,6 +102,9 @@ public interface Messages {
 
     @Message("Unable to read file at [%s]")
     MetadataException unableToReadFile(Path path, @Cause Exception e);
+
+    @Message("Unable to download file from [%s]")
+    MetadataException unableToDownloadFile(URL url, @Cause IOException e);
 
     @Message("Unable to write file at [%s]")
     MetadataException unableToWriteFile(Path path, @Cause Exception e);

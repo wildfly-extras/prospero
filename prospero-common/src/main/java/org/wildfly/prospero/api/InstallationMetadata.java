@@ -24,6 +24,7 @@ import org.wildfly.channel.Channel;
 import org.wildfly.channel.ChannelManifest;
 import org.apache.commons.io.FileUtils;
 import org.wildfly.prospero.Messages;
+import org.wildfly.prospero.model.ManifestVersionRecord;
 import org.wildfly.prospero.api.exceptions.MetadataException;
 import org.wildfly.prospero.installation.git.GitStorage;
 import org.wildfly.prospero.metadata.ProsperoMetadataUtils;
@@ -45,10 +46,13 @@ import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 import java.util.stream.Collectors;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
 import java.util.zip.ZipOutputStream;
+
+import static org.wildfly.prospero.metadata.ProsperoMetadataUtils.CURRENT_VERSION_FILE;
 
 public class InstallationMetadata implements AutoCloseable {
 
@@ -69,6 +73,7 @@ public class InstallationMetadata implements AutoCloseable {
     private final ProvisioningConfig galleonProvisioningConfig;
     private final GitStorage gitStorage;
     private final Path base;
+    private final Optional<ManifestVersionRecord> manifestVersion;
     private ProsperoConfig prosperoConfig;
     private ChannelManifest manifest;
 
@@ -84,6 +89,7 @@ public class InstallationMetadata implements AutoCloseable {
 
         ChannelManifest manifest;
         ProsperoConfig prosperoConfig;
+        Optional<ManifestVersionRecord> currentVersion = Optional.empty();
 
         try {
             manifest = ManifestYamlSupport.parse(manifestFile.toFile());
@@ -97,8 +103,10 @@ public class InstallationMetadata implements AutoCloseable {
             throw Messages.MESSAGES.unableToParseConfiguration(base, e.getCause());
         }
 
+        currentVersion = ManifestVersionRecord.read(base.resolve(ProsperoMetadataUtils.METADATA_DIR).resolve(CURRENT_VERSION_FILE));
+
         final GitStorage gitStorage = new GitStorage(base);
-        final InstallationMetadata metadata = new InstallationMetadata(base, manifest, prosperoConfig, gitStorage);
+        final InstallationMetadata metadata = new InstallationMetadata(base, manifest, prosperoConfig, gitStorage, currentVersion);
         try {
             if (!gitStorage.isStarted()) {
                 gitStorage.record();
@@ -116,11 +124,13 @@ public class InstallationMetadata implements AutoCloseable {
      * @param base
      * @param manifest
      * @param prosperoConfig
+     * @param currentVersions - manifest versions used to provision the installation
      * @return
      * @throws MetadataException
      */
-    public static InstallationMetadata newInstallation(Path base, ChannelManifest manifest, ProsperoConfig prosperoConfig) throws MetadataException {
-        return new InstallationMetadata(base, manifest, prosperoConfig, new GitStorage(base));
+    public static InstallationMetadata newInstallation(Path base, ChannelManifest manifest, ProsperoConfig prosperoConfig,
+                                                       Optional<ManifestVersionRecord> currentVersions) throws MetadataException {
+        return new InstallationMetadata(base, manifest, prosperoConfig, new GitStorage(base), currentVersions);
     }
 
     /**
@@ -171,7 +181,8 @@ public class InstallationMetadata implements AutoCloseable {
         return InstallationMetadata.loadInstallation(tempDirectory);
     }
 
-    protected InstallationMetadata(Path base, ChannelManifest manifest, ProsperoConfig prosperoConfig, GitStorage gitStorage) throws MetadataException {
+    protected InstallationMetadata(Path base, ChannelManifest manifest, ProsperoConfig prosperoConfig,
+                                   GitStorage gitStorage, Optional<ManifestVersionRecord> currentVersions) throws MetadataException {
         this.base = base;
         this.gitStorage = gitStorage;
         this.manifestFile = base.resolve(METADATA_DIR).resolve(InstallationMetadata.MANIFEST_FILE_NAME);
@@ -192,6 +203,8 @@ public class InstallationMetadata implements AutoCloseable {
         } catch (ProvisioningException e) {
             throw Messages.MESSAGES.unableToParseConfiguration(provisioningFile, e);
         }
+
+        this.manifestVersion = currentVersions;
     }
 
     public Path exportMetadataBundle(Path location) throws IOException {
@@ -261,6 +274,11 @@ public class InstallationMetadata implements AutoCloseable {
         if (overrideProsperoConfig || !Files.exists(this.channelsFile)) {
             writeProsperoConfig();
         }
+
+        if (manifestVersion.isPresent()) {
+            ManifestVersionRecord.write(manifestVersion.get(), base.resolve(ProsperoMetadataUtils.METADATA_DIR).resolve(CURRENT_VERSION_FILE));
+        }
+
         if (gitRecord) {
             gitStorage.record();
         }
@@ -281,13 +299,17 @@ public class InstallationMetadata implements AutoCloseable {
     public InstallationMetadata getSavedState(SavedState savedState) throws MetadataException {
         // checkout previous version
         // record as rollback operation
+        Path revert = null;
         try {
-            gitStorage.revert(savedState);
+            revert = gitStorage.revert(savedState);
 
             // re-parse metadata
-            return InstallationMetadata.loadInstallation(base);
+            return InstallationMetadata.loadInstallation(revert);
         } finally {
             gitStorage.reset();
+            if (revert != null && Files.exists(revert)) {
+                FileUtils.deleteQuietly(revert.toFile());
+            }
         }
     }
 
@@ -326,6 +348,10 @@ public class InstallationMetadata implements AutoCloseable {
         writeProsperoConfig();
 
         gitStorage.recordConfigChange();
+    }
+
+    public Optional<ManifestVersionRecord> getManifestVersions() throws IOException {
+        return manifestVersion;
     }
 
     @Override

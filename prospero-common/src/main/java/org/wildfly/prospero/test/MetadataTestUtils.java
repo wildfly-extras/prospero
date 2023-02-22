@@ -30,6 +30,7 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.Comparator;
 import java.util.List;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 import javax.xml.stream.XMLStreamException;
@@ -79,7 +80,8 @@ public final class MetadataTestUtils {
 
     public static InstallationMetadata createInstallationMetadata(Path installation, ChannelManifest manifest, List<Channel> channels) throws MetadataException {
         Runtime.getRuntime().addShutdownHook(new Thread(() -> FileUtils.deleteQuietly(installation.toFile())));
-        final InstallationMetadata metadata = InstallationMetadata.newInstallation(installation, manifest, new ProsperoConfig(channels));
+        final InstallationMetadata metadata = InstallationMetadata.newInstallation(installation, manifest,
+                new ProsperoConfig(channels), Optional.empty());
         metadata.recordProvision(true);
         return metadata;
     }

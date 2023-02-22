@@ -40,11 +40,13 @@ import java.net.MalformedURLException;
 import java.nio.file.Path;
 import java.util.List;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 
 import org.wildfly.prospero.licenses.License;
 import org.wildfly.prospero.licenses.LicenseManager;
+import org.wildfly.prospero.model.ManifestVersionRecord;
 import org.wildfly.prospero.model.ProsperoConfig;
 import org.wildfly.prospero.wfchannel.MavenSessionManager;
 import org.eclipse.aether.repository.RemoteRepository;
@@ -97,7 +99,9 @@ public class ProvisioningAction {
             throw new ArtifactResolutionException(e, repositories, mavenSessionManager.isOffline());
         }
 
-        writeProsperoMetadata(installDir, galleonEnv.getRepositoryManager(), channels);
+        final ManifestVersionRecord manifestRecord = new ManifestVersionResolver(mavenSessionManager).getCurrentVersions(channels);
+
+        writeProsperoMetadata(installDir, galleonEnv.getRepositoryManager(), channels, manifestRecord);
 
         try {
             final GalleonFeaturePackAnalyzer galleonFeaturePackAnalyzer = new GalleonFeaturePackAnalyzer(galleonEnv.getChannels(), mavenSessionManager);
@@ -139,10 +143,12 @@ public class ProvisioningAction {
         }
     }
 
-    private void writeProsperoMetadata(Path home, ChannelMavenArtifactRepositoryManager maven, List<Channel> channels) throws MetadataException {
+    private void writeProsperoMetadata(Path home, ChannelMavenArtifactRepositoryManager maven, List<Channel> channels,
+                                       ManifestVersionRecord manifestVersions) throws MetadataException {
         final ChannelManifest manifest = maven.resolvedChannel();
 
-        try (final InstallationMetadata installationMetadata = InstallationMetadata.newInstallation(home, manifest, new ProsperoConfig(channels, mvnOptions))) {
+        try (final InstallationMetadata installationMetadata = InstallationMetadata.newInstallation(home, manifest,
+                new ProsperoConfig(channels, mvnOptions), Optional.of(manifestVersions))) {
             installationMetadata.recordProvision(true, true);
         }
     }

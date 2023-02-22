@@ -90,7 +90,7 @@ public class HistoryCommandTest extends AbstractConsoleTest {
     @Test
     public void displayListOfStates() throws Exception {
         when(historyAction.getRevisions()).thenReturn(Arrays.asList(
-                new SavedState("abcd", Instant.ofEpochSecond(System.currentTimeMillis()), SavedState.Type.INSTALL)));
+                new SavedState("abcd", Instant.ofEpochSecond(System.currentTimeMillis()), SavedState.Type.INSTALL, null)));
 
         int exitCode = commandLine.execute(CliConstants.Commands.HISTORY, CliConstants.DIR, installationDir.toString());
         assertEquals(ReturnCodes.SUCCESS_NO_CHANGE, exitCode);
