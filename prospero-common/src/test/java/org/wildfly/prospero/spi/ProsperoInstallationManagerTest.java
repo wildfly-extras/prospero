@@ -17,7 +17,9 @@
 
 package org.wildfly.prospero.spi;
 
+import org.junit.Rule;
 import org.junit.Test;
+import org.junit.rules.TemporaryFolder;
 import org.junit.runner.RunWith;
 import org.mockito.Mock;
 import org.mockito.junit.MockitoJUnitRunner;
@@ -25,6 +27,7 @@ import org.wildfly.channel.Channel;
 import org.wildfly.channel.ChannelManifestCoordinate;
 import org.wildfly.channel.Repository;
 import org.wildfly.installationmanager.InstallationChanges;
+import org.wildfly.installationmanager.MavenOptions;
 import org.wildfly.prospero.actions.InstallationHistoryAction;
 import org.wildfly.prospero.actions.UpdateAction;
 import org.wildfly.prospero.api.ChannelChange;
@@ -38,6 +41,7 @@ import java.util.List;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.verify;
@@ -60,6 +64,9 @@ public class ProsperoInstallationManagerTest {
 
     @Mock
     private InstallationHistoryAction historyAction;
+
+    @Rule
+    public TemporaryFolder temp = new TemporaryFolder();
 
     @Test
     public void testChannelChanges() throws Exception {
@@ -194,5 +201,45 @@ public class ProsperoInstallationManagerTest {
         mgr.prepareRevert("abcd1234", Path.of("test"), List.of(new org.wildfly.installationmanager.Repository("test", "http://test.te")));
         verify(historyAction).prepareRevert(eq(new SavedState("abcd1234")), any(),
                 eq(List.of(new Repository("test", "http://test.te"))), eq(Path.of("test")));
+    }
+
+    @Test
+    public void mapMavenOptions() throws Exception {
+        // no local cache
+        org.wildfly.prospero.api.MavenOptions mavenOptions = new ProsperoInstallationManager(temp.newFolder().toPath(),
+                new MavenOptions(null, true, true))
+                .getActionFactory().getMavenOptions();
+
+        assertTrue(mavenOptions.isOffline());
+        assertTrue(mavenOptions.isNoLocalCache());
+        assertNull(mavenOptions.getLocalCache());
+
+        // local cache path set
+        final Path localRepository = temp.newFile().toPath();
+        mavenOptions = new ProsperoInstallationManager(temp.newFolder().toPath(),
+                new MavenOptions(localRepository, false, true))
+                        .getActionFactory().getMavenOptions();
+
+        assertTrue(mavenOptions.isOffline());
+        assertFalse(mavenOptions.isNoLocalCache());
+        assertEquals(localRepository, mavenOptions.getLocalCache());
+
+        // default local cache
+        mavenOptions = new ProsperoInstallationManager(temp.newFolder().toPath(),
+                new MavenOptions(null, false, true))
+                .getActionFactory().getMavenOptions();
+
+        assertTrue(mavenOptions.isOffline());
+        assertFalse(mavenOptions.isNoLocalCache());
+        assertEquals(MavenOptions.LOCAL_MAVEN_REPO, mavenOptions.getLocalCache());
+
+        // online
+        mavenOptions = new ProsperoInstallationManager(temp.newFolder().toPath(),
+                new MavenOptions(null, true, false))
+                .getActionFactory().getMavenOptions();
+
+        assertFalse(mavenOptions.isOffline());
+        assertTrue(mavenOptions.isNoLocalCache());
+        assertNull(mavenOptions.getLocalCache());
     }
 }
