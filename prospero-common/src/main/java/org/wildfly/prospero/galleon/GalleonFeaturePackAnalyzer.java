@@ -29,6 +29,7 @@ import org.jboss.galleon.spec.FeaturePackPlugin;
 import org.jboss.galleon.util.HashUtils;
 import org.wildfly.channel.Channel;
 import org.wildfly.channel.MavenArtifact;
+import org.wildfly.channel.UnresolvedMavenArtifactException;
 import org.wildfly.prospero.api.exceptions.OperationException;
 import org.wildfly.prospero.wfchannel.MavenSessionManager;
 
@@ -95,9 +96,13 @@ public class GalleonFeaturePackAnalyzer {
                 artifactCache.cache(mavenArtifact);
             }
 
-            // cache wildfly-config-gen as it's not added in galleon-plugin - TODO: remove when fixed in galleon-plugins
-            final MavenArtifact mavenArtifact = galleonEnv.getChannelSession().resolveMavenArtifact("org.wildfly.galleon-plugins", "wildfly-config-gen", "jar", null, null);
-            artifactCache.cache(mavenArtifact);
+            try {
+                // cache wildfly-config-gen as it's not added in galleon-plugin - TODO: remove when fixed in galleon-plugins
+                final MavenArtifact mavenArtifact = galleonEnv.getChannelSession().resolveMavenArtifact("org.wildfly.galleon-plugins", "wildfly-config-gen", "jar", null, null);
+                artifactCache.cache(mavenArtifact);
+            } catch (UnresolvedMavenArtifactException e) {
+                // ignore - wildfly-config-gen has not been defined
+            }
 
             updateHashes(installedDir);
         } finally {
