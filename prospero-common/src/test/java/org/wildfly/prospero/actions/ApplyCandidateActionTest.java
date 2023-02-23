@@ -316,7 +316,7 @@ public class ApplyCandidateActionTest {
 
         new MarkerFile("abcd1234", ApplyCandidateAction.Type.UPDATE).write(updatePath);
 
-        assertThrows(InvalidUpdateCandidateException.class, ()->new ApplyCandidateAction(installationPath, updatePath).applyUpdate(ApplyCandidateAction.Type.ROLLBACK));
+        assertThrows(InvalidUpdateCandidateException.class, ()->new ApplyCandidateAction(installationPath, updatePath).applyUpdate(ApplyCandidateAction.Type.REVERT));
     }
 
     @Test
@@ -336,6 +336,64 @@ public class ApplyCandidateActionTest {
         new ApplyCandidateAction(installationPath, updatePath).applyUpdate(ApplyCandidateAction.Type.UPDATE);
 
         assertEquals(manifestVersionRecord2.getSummary(), ManifestVersionRecord.read(installationPath.resolve(ProsperoMetadataUtils.METADATA_DIR).resolve(CURRENT_VERSION_FILE)).get().getSummary());
+    }
+
+    @Test
+    public void verifyCandidateNoMarkerFile() throws Exception {
+        createSimpleFeaturePacks();
+
+        install(installationPath, FPL_100);
+        prepareUpdate(updatePath, installationPath, FPL_101);
+
+        Files.delete(updatePath.resolve(MarkerFile.UPDATE_MARKER_FILE));
+
+        final ApplyCandidateAction.ValidationResult validationResult = new ApplyCandidateAction(installationPath, updatePath)
+                .verifyCandidate(ApplyCandidateAction.Type.UPDATE);
+
+        assertEquals(ApplyCandidateAction.ValidationResult.NOT_CANDIDATE, validationResult);
+    }
+
+    @Test
+    public void verifyCandidateWrongOperation() throws Exception {
+        createSimpleFeaturePacks();
+
+        install(installationPath, FPL_100);
+        prepareUpdate(updatePath, installationPath, FPL_101);
+
+        final ApplyCandidateAction.ValidationResult validationResult = new ApplyCandidateAction(installationPath, updatePath)
+                .verifyCandidate(ApplyCandidateAction.Type.REVERT);
+
+        assertEquals(ApplyCandidateAction.ValidationResult.WRONG_TYPE, validationResult);
+    }
+
+    @Test
+    public void verifyCandidateOldHash() throws Exception {
+        createSimpleFeaturePacks();
+        final ApplyCandidateAction applyCandidateAction = new ApplyCandidateAction(installationPath, updatePath);
+
+        install(installationPath, FPL_100);
+        prepareUpdate(updatePath, installationPath, FPL_101);
+        // apply the update to move base to a new hash
+        applyCandidateAction.applyUpdate(ApplyCandidateAction.Type.UPDATE);
+
+        final ApplyCandidateAction.ValidationResult validationResult = applyCandidateAction
+                .verifyCandidate(ApplyCandidateAction.Type.UPDATE);
+
+        assertEquals(ApplyCandidateAction.ValidationResult.STALE, validationResult);
+    }
+
+    @Test
+    public void verifyCandidateValidMarker() throws Exception {
+        createSimpleFeaturePacks();
+        final ApplyCandidateAction applyCandidateAction = new ApplyCandidateAction(installationPath, updatePath);
+
+        install(installationPath, FPL_100);
+        prepareUpdate(updatePath, installationPath, FPL_101);
+
+        final ApplyCandidateAction.ValidationResult validationResult = applyCandidateAction
+                .verifyCandidate(ApplyCandidateAction.Type.UPDATE);
+
+        assertEquals(ApplyCandidateAction.ValidationResult.OK, validationResult);
     }
 
     private void createSimpleFeaturePacks() throws ProvisioningException {

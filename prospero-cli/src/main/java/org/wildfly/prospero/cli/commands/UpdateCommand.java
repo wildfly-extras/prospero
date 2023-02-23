@@ -203,8 +203,13 @@ public class UpdateCommand extends AbstractParentCommand {
 
             final ApplyCandidateAction applyCandidateAction = actionFactory.applyUpdate(installationDir.toAbsolutePath(), updateDir.toAbsolutePath());
 
-            if (!applyCandidateAction.verifyCandidate(ApplyCandidateAction.Type.UPDATE)) {
+            final ApplyCandidateAction.ValidationResult result = applyCandidateAction.verifyCandidate(ApplyCandidateAction.Type.UPDATE);
+            if (ApplyCandidateAction.ValidationResult.STALE == result) {
                 throw CliMessages.MESSAGES.updateCandidateStateNotMatched(installationDir, updateDir.toAbsolutePath());
+            } else if (ApplyCandidateAction.ValidationResult.WRONG_TYPE == result) {
+                throw CliMessages.MESSAGES.updateCandidateWrongType(installationDir, ApplyCandidateAction.Type.UPDATE);
+            } else if (ApplyCandidateAction.ValidationResult.NOT_CANDIDATE == result) {
+                throw CliMessages.MESSAGES.notCandidate(updateDir.toAbsolutePath());
             }
 
             console.updatesFound(applyCandidateAction.findUpdates().getArtifactUpdates());

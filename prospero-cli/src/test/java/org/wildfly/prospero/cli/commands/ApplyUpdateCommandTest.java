@@ -71,7 +71,7 @@ public class ApplyUpdateCommandTest extends AbstractConsoleTest {
     @Before
     public void setUp() throws Exception {
         super.setUp();
-        when(applyCandidateAction.verifyCandidate(ApplyCandidateAction.Type.UPDATE)).thenReturn(true);
+        when(applyCandidateAction.verifyCandidate(ApplyCandidateAction.Type.UPDATE)).thenReturn(ApplyCandidateAction.ValidationResult.OK);
         when(actionFactory.applyUpdate(any(), any())).thenReturn(applyCandidateAction);
         when(applyCandidateAction.findUpdates()).thenReturn(new UpdateSet(Collections.emptyList()));
     }
@@ -159,14 +159,14 @@ public class ApplyUpdateCommandTest extends AbstractConsoleTest {
         final Path updatePath = mockInstallation("update");
         final Path targetPath = mockInstallation("target");
 
-        when(applyCandidateAction.verifyCandidate(ApplyCandidateAction.Type.UPDATE)).thenReturn(false);
+        when(applyCandidateAction.verifyCandidate(ApplyCandidateAction.Type.UPDATE)).thenReturn(ApplyCandidateAction.ValidationResult.NOT_CANDIDATE);
 
         int exitCode = commandLine.execute(CliConstants.Commands.UPDATE, CliConstants.Commands.APPLY,
                 CliConstants.UPDATE_DIR, updatePath.toString(),
                 CliConstants.DIR, targetPath.toString());
 
         Assert.assertEquals(getErrorOutput(), ReturnCodes.INVALID_ARGUMENTS, exitCode);
-        assertTrue(getErrorOutput().contains(CliMessages.MESSAGES.updateCandidateStateNotMatched(targetPath, updatePath)
+        assertTrue(getErrorOutput().contains(CliMessages.MESSAGES.notCandidate(updatePath)
                 .getMessage()));
         verify(applyCandidateAction, never()).applyUpdate(ApplyCandidateAction.Type.UPDATE);
     }

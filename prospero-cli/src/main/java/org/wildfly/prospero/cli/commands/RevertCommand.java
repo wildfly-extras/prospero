@@ -32,6 +32,8 @@ import org.wildfly.prospero.actions.InstallationHistoryAction;
 import org.wildfly.prospero.api.FileConflict;
 import org.wildfly.prospero.api.MavenOptions;
 import org.wildfly.prospero.api.SavedState;
+import org.wildfly.prospero.api.exceptions.InvalidUpdateCandidateException;
+import org.wildfly.prospero.api.exceptions.MetadataException;
 import org.wildfly.prospero.api.exceptions.OperationException;
 import org.wildfly.prospero.cli.ActionFactory;
 import org.wildfly.prospero.cli.CliConsole;
@@ -47,7 +49,7 @@ import picocli.CommandLine;
 )
 public class RevertCommand extends AbstractParentCommand {
 
-    private static int applyUpdate(CliConsole console, ApplyCandidateAction applyCandidateAction, boolean yes) throws OperationException, ProvisioningException {
+    private static int applyCandidate(CliConsole console, ApplyCandidateAction applyCandidateAction, boolean yes) throws OperationException, ProvisioningException {
         console.updatesFound(applyCandidateAction.findUpdates().getArtifactUpdates());
         final List<FileConflict> conflicts = applyCandidateAction.getConflicts();
         FileConflictPrinter.print(conflicts, console);
@@ -56,8 +58,19 @@ public class RevertCommand extends AbstractParentCommand {
             return ReturnCodes.SUCCESS_NO_CHANGE;
         }
 
-        applyCandidateAction.applyUpdate(ApplyCandidateAction.Type.ROLLBACK);
+        applyCandidateAction.applyUpdate(ApplyCandidateAction.Type.REVERT);
         return ReturnCodes.SUCCESS_LOCAL_CHANGES;
+    }
+
+    private static void validateRevertCandidate(Path installationDirectory, Path updateDirectory, ApplyCandidateAction applyCandidateAction) throws InvalidUpdateCandidateException, MetadataException {
+        final ApplyCandidateAction.ValidationResult result = applyCandidateAction.verifyCandidate(ApplyCandidateAction.Type.REVERT);
+        if (ApplyCandidateAction.ValidationResult.STALE == result) {
+            throw CliMessages.MESSAGES.updateCandidateStateNotMatched(installationDirectory, updateDirectory.toAbsolutePath());
+        } else if (ApplyCandidateAction.ValidationResult.WRONG_TYPE == result) {
+            throw CliMessages.MESSAGES.updateCandidateWrongType(installationDirectory, ApplyCandidateAction.Type.REVERT);
+        } else if (ApplyCandidateAction.ValidationResult.NOT_CANDIDATE == result) {
+            throw CliMessages.MESSAGES.notCandidate(updateDirectory.toAbsolutePath());
+        }
     }
 
     @CommandLine.Command(name = CliConstants.Commands.PERFORM, sortOptions = false)
@@ -87,7 +100,9 @@ public class RevertCommand extends AbstractParentCommand {
                 historyAction.prepareRevert(new SavedState(revision), mavenOptions, overrideRepositories, tempDirectory);
                 final ApplyCandidateAction applyCandidateAction = actionFactory.applyUpdate(installationDirectory, tempDirectory);
 
-                return applyUpdate(console, applyCandidateAction, yes);
+                validateRevertCandidate(installationDirectory, tempDirectory, applyCandidateAction);
+
+                return applyCandidate(console, applyCandidateAction, yes);
             } catch (IOException e) {
                 throw Messages.MESSAGES.unableToCreateTemporaryDirectory(e);
             } finally {
@@ -117,8 +132,11 @@ public class RevertCommand extends AbstractParentCommand {
         @Override
         public Integer call() throws Exception {
             final Path installationDirectory = determineInstallationDirectory(directory);
+            final ApplyCandidateAction applyCandidateAction = actionFactory.applyUpdate(installationDirectory, updateDirectory.toAbsolutePath());
 
-            return applyUpdate(console, actionFactory.applyUpdate(installationDirectory, updateDirectory.toAbsolutePath()), yes);
+            validateRevertCandidate(installationDirectory, updateDirectory, applyCandidateAction);
+
+            return applyCandidate(console, applyCandidateAction, yes);
         }
     }
 

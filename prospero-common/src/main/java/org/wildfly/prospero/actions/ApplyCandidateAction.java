@@ -87,7 +87,7 @@ public class ApplyCandidateAction {
     private final ProvisioningManager provisioningManager;
 
     public enum Type {
-        UPDATE("UPDATE"), ROLLBACK("ROLLBACK");
+        UPDATE("UPDATE"), REVERT("REVERT");
 
         private final String text;
 
@@ -103,8 +103,8 @@ public class ApplyCandidateAction {
             switch (text) {
                 case "UPDATE":
                     return ApplyCandidateAction.Type.UPDATE;
-                case "ROLLBACK":
-                    return ApplyCandidateAction.Type.ROLLBACK;
+                case "REVERT":
+                    return ApplyCandidateAction.Type.REVERT;
                 default:
                     throw new IllegalArgumentException("Unexpected operation in the marker file: " + text);
             }
@@ -148,7 +148,7 @@ public class ApplyCandidateAction {
      * @throws MetadataException - if unable to read or write the installation of update metadata
      */
     public List<FileConflict> applyUpdate(Type operation) throws ProvisioningException, InvalidUpdateCandidateException, MetadataException {
-        if (!verifyCandidate(operation)) {
+        if (ValidationResult.OK != verifyCandidate(operation)) {
             throw Messages.MESSAGES.invalidUpdateCandidate(updateDir, installationDir);
         }
 
@@ -166,6 +166,10 @@ public class ApplyCandidateAction {
         }
     }
 
+    public enum ValidationResult {
+        OK, NOT_CANDIDATE, STALE, WRONG_TYPE;
+    }
+
     /**
      * checks that the candidate is an update of a current state of installation
      *
@@ -173,13 +177,13 @@ public class ApplyCandidateAction {
      * @throws InvalidUpdateCandidateException - if the candidate has no marker file
      * @throws MetadataException - if the metadata of candidate or installation cannot be read
      */
-    public boolean verifyCandidate(Type operation) throws InvalidUpdateCandidateException, MetadataException {
+    public ValidationResult verifyCandidate(Type operation) throws InvalidUpdateCandidateException, MetadataException {
         final Path updateMarkerPath = updateDir.resolve(MarkerFile.UPDATE_MARKER_FILE);
         if (!Files.exists(updateMarkerPath)) {
             if (LOGGER.isDebugEnabled()) {
                 LOGGER.debugf("The candidate [%s] doesn't have a marker file", updateDir);
             }
-            throw Messages.MESSAGES.invalidUpdateCandidate(updateDir, installationDir);
+            return ValidationResult.NOT_CANDIDATE;
         }
         try {
             final MarkerFile marker = MarkerFile.read(updateDir);
@@ -189,14 +193,14 @@ public class ApplyCandidateAction {
                 if (LOGGER.isDebugEnabled()) {
                     LOGGER.debugf("The installation state has changed from the candidate [%s].", updateDir);
                 }
-                return false;
+                return ValidationResult.STALE;
             }
 
             if (marker.getOperation() != operation) {
                 if (LOGGER.isDebugEnabled()) {
                     LOGGER.debugf("The candidate server has been prepared for different operation [%s].", marker.getOperation().getText());
                 }
-                return false;
+                return ValidationResult.WRONG_TYPE;
             }
         } catch (IOException e) {
             if (LOGGER.isDebugEnabled()) {
@@ -204,7 +208,7 @@ public class ApplyCandidateAction {
             }
             throw Messages.MESSAGES.unableToReadFile(updateMarkerPath, e);
         }
-        return true;
+        return ValidationResult.OK;
     }
 
     /**

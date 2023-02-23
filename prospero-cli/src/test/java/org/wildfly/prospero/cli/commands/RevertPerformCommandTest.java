@@ -122,7 +122,7 @@ public class RevertPerformCommandTest extends AbstractMavenCommandTest {
 
         assertEquals(ReturnCodes.SUCCESS_LOCAL_CHANGES, exitCode);
         verify(historyAction).prepareRevert(eq(new SavedState("abcd")), any(), any(), any());
-        verify(applyCandidateAction).applyUpdate(ApplyCandidateAction.Type.ROLLBACK);
+        verify(applyCandidateAction).applyUpdate(ApplyCandidateAction.Type.REVERT);
     }
 
     @Test
@@ -133,8 +133,8 @@ public class RevertPerformCommandTest extends AbstractMavenCommandTest {
 
         assertEquals(ReturnCodes.SUCCESS_LOCAL_CHANGES, exitCode);
         verify(historyAction).prepareRevert(eq(new SavedState("abcd")), mavenOptions.capture(), any(), any());
-        verify(applyCandidateAction).applyUpdate(ApplyCandidateAction.Type.ROLLBACK);
-        verify(applyCandidateAction).applyUpdate(ApplyCandidateAction.Type.ROLLBACK);
+        verify(applyCandidateAction).applyUpdate(ApplyCandidateAction.Type.REVERT);
+        verify(applyCandidateAction).applyUpdate(ApplyCandidateAction.Type.REVERT);
         assertTrue(mavenOptions.getValue().isOffline());
     }
 

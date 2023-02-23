@@ -41,7 +41,7 @@ import java.nio.file.Path;
 import java.util.List;
 import java.util.Optional;
 
-import static org.wildfly.prospero.actions.ApplyCandidateAction.Type.ROLLBACK;
+import static org.wildfly.prospero.actions.ApplyCandidateAction.Type.REVERT;
 import static org.wildfly.prospero.galleon.GalleonUtils.MAVEN_REPO_LOCAL;
 import static org.wildfly.prospero.metadata.ProsperoMetadataUtils.CURRENT_VERSION_FILE;
 import static org.wildfly.prospero.metadata.ProsperoMetadataUtils.METADATA_DIR;
@@ -72,7 +72,7 @@ public class InstallationHistoryAction {
         try {
             tempDirectory = Files.createTempDirectory("revert-candidate");
             prepareRevert(savedState, mavenOptions, overrideRepositories, tempDirectory);
-            new ApplyCandidateAction(installation, tempDirectory).applyUpdate(ApplyCandidateAction.Type.ROLLBACK);
+            new ApplyCandidateAction(installation, tempDirectory).applyUpdate(ApplyCandidateAction.Type.REVERT);
         } catch (IOException e) {
             throw Messages.MESSAGES.unableToCreateTemporaryDirectory(e);
         } finally {
@@ -102,7 +102,7 @@ public class InstallationHistoryAction {
 
                 System.setProperty(MAVEN_REPO_LOCAL, mavenSessionManager.getProvisioningRepo().toAbsolutePath().toString());
                 try(final PrepareCandidateAction prepareCandidateAction = new PrepareCandidateAction(installation, mavenSessionManager, console, prosperoConfig)) {
-                    prepareCandidateAction.buildCandidate(targetDir, galleonEnv, ROLLBACK);
+                    prepareCandidateAction.buildCandidate(targetDir, galleonEnv, REVERT);
                 }
 
                 revertCurrentVersions(targetDir, revertMetadata);
@@ -131,11 +131,11 @@ public class InstallationHistoryAction {
 
     public void applyRevert(Path updateDirectory) throws OperationException, ProvisioningException {
         final ApplyCandidateAction applyAction = new ApplyCandidateAction(installation, updateDirectory);
-        if (!applyAction.verifyCandidate(ApplyCandidateAction.Type.ROLLBACK)) {
+        if (ApplyCandidateAction.ValidationResult.OK != applyAction.verifyCandidate(ApplyCandidateAction.Type.REVERT)) {
             throw Messages.MESSAGES.invalidRollbackCandidate(updateDirectory, installation);
         }
 
-        applyAction.applyUpdate(ApplyCandidateAction.Type.ROLLBACK);
+        applyAction.applyUpdate(ApplyCandidateAction.Type.REVERT);
     }
 
     private static void verifyStateExists(SavedState savedState, InstallationMetadata metadata) throws MetadataException {
