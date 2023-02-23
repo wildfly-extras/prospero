@@ -41,7 +41,7 @@ import java.util.zip.ZipOutputStream;
 
 public class ArtifactBundle implements AutoCloseable {
 
-    public static final String BUNDLE_REPO_FOLDER = "repository";
+    public static final String BUNDLE_REPO_FOLDER = "maven-repository";
     public static final String FS = "/";
     public static final String ARTIFACT_LIST_YAML = "artifact-list.yaml";
     private final Path extracted;
