@@ -19,8 +19,17 @@ package org.wildfly.prospero.galleon;
 
 import org.jboss.galleon.progresstracking.ProgressCallback;
 import org.jboss.galleon.progresstracking.ProgressTracker;
+import org.jboss.galleon.state.ProvisionedConfig;
+import org.jboss.galleon.universe.FeaturePackLocation;
+import org.jboss.galleon.universe.maven.MavenArtifact;
 import org.wildfly.prospero.api.Console;
 import org.wildfly.prospero.api.ProvisioningProgressEvent;
+
+import java.nio.file.Path;
+import java.util.List;
+
+import static org.jboss.galleon.layout.ProvisioningLayoutFactory.TRACK_CONFIGS;
+import static org.jboss.galleon.layout.ProvisioningLayoutFactory.TRACK_LAYOUT_BUILD;
 
 /**
  * Translates Galleon {@link ProgressCallback} into {@link Console#progressUpdate(ProvisioningProgressEvent)}.
@@ -56,19 +65,55 @@ public class GalleonCallbackAdapter implements ProgressCallback<Object> {
 
     @Override
     public void starting(ProgressTracker tracker) {
-        final ProvisioningProgressEvent progress = new ProvisioningProgressEvent(id, ProvisioningProgressEvent.EventType.STARTING, tracker.getProcessedVolume(), tracker.getTotalVolume());
+        final ProvisioningProgressEvent progress = new ProvisioningProgressEvent(id, ProvisioningProgressEvent.EventType.STARTING,
+                tracker.getProcessedVolume(), tracker.getTotalVolume());
         this.console.progressUpdate(progress);
     }
 
     @Override
     public void pulse(ProgressTracker tracker) {
-        final ProvisioningProgressEvent progress = new ProvisioningProgressEvent(id, ProvisioningProgressEvent.EventType.PULSE, tracker.getProcessedVolume(), tracker.getTotalVolume());
-        this.console.progressUpdate(progress);
     }
 
     @Override
     public void complete(ProgressTracker tracker) {
-        final ProvisioningProgressEvent progress = new ProvisioningProgressEvent(id, ProvisioningProgressEvent.EventType.COMPLETED, tracker.getProcessedVolume(), tracker.getTotalVolume());
+        final ProvisioningProgressEvent progress = new ProvisioningProgressEvent(id, ProvisioningProgressEvent.EventType.COMPLETED,
+                tracker.getProcessedVolume(), tracker.getTotalVolume());
+        this.console.progressUpdate(progress);
+    }
+
+    @Override
+    public void processing(ProgressTracker<Object> tracker) {
+        String item = null;
+        boolean slowPhase = false;
+
+        switch (id) {
+            case TRACK_LAYOUT_BUILD:
+                item = ((FeaturePackLocation.FPID)tracker.getItem()).getLocation().toString();
+                break;
+            case TRACK_CONFIGS:
+                if (tracker.getItem() != null) {
+                    item = ((ProvisionedConfig) tracker.getItem()).getModel() + "/" + ((ProvisionedConfig) tracker.getItem()).getName();
+                } else {
+                    slowPhase = true;
+                }
+                break;
+            case GalleonEnvironment.TRACK_JBEXAMPLES:
+                List<Object> items = (List<Object>) tracker.getItem();
+                if(items.get(1) instanceof ProvisionedConfig) {
+                    item = "Generating " + ((ProvisionedConfig) items.get(1)).getName();
+                } else if (items.get(1) instanceof Path) {
+                    item = "Installing config " + ((Path) items.get(1)).getFileName();
+                }
+                if (items.get(0).equals(TRACK_CONFIGS)) {
+                    slowPhase = true;
+                }
+                break;
+            case GalleonEnvironment.TRACK_JB_ARTIFACTS_RESOLVE:
+                item = tracker.getItem() != null?((MavenArtifact)tracker.getItem()).toString():"";
+                break;
+        }
+        final ProvisioningProgressEvent progress = new ProvisioningProgressEvent(id, ProvisioningProgressEvent.EventType.UPDATE,
+                tracker.getProcessedVolume(), tracker.getTotalVolume(), item, slowPhase);
         this.console.progressUpdate(progress);
     }
 }

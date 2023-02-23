@@ -19,80 +19,117 @@ package org.wildfly.prospero.cli;
 
 import java.io.InputStream;
 import java.io.PrintStream;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Optional;
 import java.util.Scanner;
 
+import org.apache.commons.lang3.StringUtils;
 import org.wildfly.prospero.api.Console;
 import org.wildfly.prospero.api.ProvisioningProgressEvent;
 import org.wildfly.prospero.api.ArtifactChange;
 
+import static org.jboss.galleon.layout.ProvisioningLayoutFactory.TRACK_CONFIGS;
+import static org.jboss.galleon.layout.ProvisioningLayoutFactory.TRACK_LAYOUT_BUILD;
+import static org.jboss.galleon.layout.ProvisioningLayoutFactory.TRACK_PACKAGES;
+import static org.wildfly.prospero.galleon.GalleonEnvironment.TRACK_JBEXAMPLES;
+import static org.wildfly.prospero.galleon.GalleonEnvironment.TRACK_JBMODULES;
+import static org.wildfly.prospero.galleon.GalleonEnvironment.TRACK_JB_ARTIFACTS_RESOLVE;
+
 public class CliConsole implements Console {
+
+    private class ProgressLogger {
+        private String starting;
+        private String completed;
+        private String progress;
+
+        ProgressLogger(String starting, String completed, String progress) {
+            this.starting = starting;
+            this.completed = completed;
+            this.progress = progress;
+        }
+
+        ProgressLogger(String starting, String completed) {
+            this.starting = starting;
+            this.completed = completed;
+            this.progress = starting;
+        }
+
+        String starting() {
+            return starting;
+        }
+        String completed() {
+            return completed;
+        }
+        String progress() {
+            return progress;
+        }
+    }
+
+    private class Cli {
+        int lastLength;
+        PrintStream out;
+
+        Cli(PrintStream out) {
+            this.out = out;
+        }
+
+        void print(String msg) {
+            final String eraser = StringUtils.repeat(' ', this.lastLength);
+            out.print("\r" + eraser + "\r");
+            lastLength = msg.length();
+            out.print(msg);
+        }
+
+        void println(String msg) {
+            final String eraser = StringUtils.repeat(' ', this.lastLength);
+            out.print("\r" + eraser + "\r");
+            lastLength = msg.length();
+            out.println(msg);
+        }
+    }
+
+    private static HashMap<String, ProgressLogger> loggers = new HashMap<>();
+
+    public CliConsole() {
+        loggers.put(TRACK_LAYOUT_BUILD, new ProgressLogger(CliMessages.MESSAGES.resolvingFeaturePack(), CliMessages.MESSAGES.featurePacksResolved()));
+        loggers.put(TRACK_PACKAGES, new ProgressLogger(CliMessages.MESSAGES.installingPackages(), CliMessages.MESSAGES.packagesInstalled()));
+        loggers.put(TRACK_CONFIGS, new ProgressLogger(CliMessages.MESSAGES.generatingConfiguration(), CliMessages.MESSAGES.configurationsGenerated()));
+        loggers.put(TRACK_JBMODULES, new ProgressLogger(CliMessages.MESSAGES.installingJBossModules(), CliMessages.MESSAGES.jbossModulesInstalled()));
+        loggers.put(TRACK_JBEXAMPLES, new ProgressLogger(CliMessages.MESSAGES.installingJBossExamples(), CliMessages.MESSAGES.jbossExamplesInstalled()));
+        loggers.put(TRACK_JB_ARTIFACTS_RESOLVE, new ProgressLogger(CliMessages.MESSAGES.downloadingArtifacts(), CliMessages.MESSAGES.artifactsDownloaded()));
+    }
+
+    private Cli cli = new Cli(getStdOut());
 
     @Override
     public void progressUpdate(ProvisioningProgressEvent update) {
-        if (update.getEventType() != ProvisioningProgressEvent.EventType.STARTING) {
-            getStdOut().print("\r");
-        }
+        ProgressLogger logger = loggers.get(update.getStage());
 
         if (update.getEventType() == ProvisioningProgressEvent.EventType.STARTING) {
-            switch (update.getStage()) {
-                case "LAYOUT_BUILD":
-                    getStdOut().print(CliMessages.MESSAGES.resolvingFeaturePack());
-                    break;
-                case "PACKAGES":
-                    getStdOut().print(CliMessages.MESSAGES.installingPackages());
-                    break;
-                case "CONFIGS":
-                    getStdOut().print(CliMessages.MESSAGES.generatingConfiguration());
-                    break;
-                case "JBMODULES":
-                    getStdOut().print(CliMessages.MESSAGES.installingJBossModules());
-                    break;
-            }
+            cli.print(logger.starting());
         }
 
-        if (update.getEventType() == ProvisioningProgressEvent.EventType.PULSE) {
-            final double progress = update.getProgress();
-            switch (update.getStage()) {
-                case "LAYOUT_BUILD":
-                    getStdOut().print("\r");
-                    getStdOut().printf(CliMessages.MESSAGES.resolvingFeaturePack() + " %.0f%%", progress);
-                    break;
-                case "PACKAGES":
-                    getStdOut().print("\r");
-                    getStdOut().printf(CliMessages.MESSAGES.installingPackages() + " %.0f%%", progress);
-                    break;
-                case "CONFIGS":
-                    getStdOut().print("\r");
-                    getStdOut().printf(CliMessages.MESSAGES.generatingConfiguration() + " %.0f%%", progress);
-                    break;
-                case "JBMODULES":
-                    getStdOut().print("\r");
-                    getStdOut().printf(CliMessages.MESSAGES.installingJBossModules() + " %.0f%%", progress);
-                    break;
-            }
-        }
+        if (update.getEventType() == ProvisioningProgressEvent.EventType.UPDATE) {
 
+            final String item;
+            if (update.isSlowPhase()) {
+                item = " " + CliMessages.MESSAGES.applyingChanges() + "...";
+            } else {
+                 item = update.getCurrentItem();
+            }
+
+            final String progressMsg;
+            if (update.getTotal() > 0) {
+                progressMsg = String.format(" %d/%d(%.0f%%) %s", update.getCompleted(), update.getTotal(), update.getProgress(), item == null ? "" : item);
+            } else {
+                progressMsg = String.format(" %s", item == null ? "" : item);
+            }
+
+            cli.print(logger.progress() + progressMsg);
+        }
         if (update.getEventType() == ProvisioningProgressEvent.EventType.COMPLETED) {
-            switch (update.getStage()) {
-                case "LAYOUT_BUILD":
-                    getStdOut().print("\r");
-                    getStdOut().println(CliMessages.MESSAGES.featurePacksResolved());
-                    break;
-                case "PACKAGES":
-                    getStdOut().print("\r");
-                    getStdOut().println(CliMessages.MESSAGES.packagesInstalled());
-                    break;
-                case "CONFIGS":
-                    getStdOut().print("\r");
-                    getStdOut().println(CliMessages.MESSAGES.configurationsGenerated());
-                    break;
-                case "JBMODULES":
-                    getStdOut().print("\r");
-                    getStdOut().println(CliMessages.MESSAGES.jbossModulesInstalled());
-                    break;
-            }
+            cli.println(logger.completed());
         }
     }
 

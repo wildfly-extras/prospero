@@ -21,6 +21,7 @@ package org.wildfly.prospero.api;
  * Represents provisioning progress. Emitted periodically during provisioning of servers.
  */
 public class ProvisioningProgressEvent {
+
     public enum EventType {
         /**
          * new stage has been started
@@ -29,7 +30,7 @@ public class ProvisioningProgressEvent {
         /**
          * progress update on current stage
          */
-        PULSE,
+        UPDATE,
         /**
          * current stage has been finished
          */
@@ -41,12 +42,38 @@ public class ProvisioningProgressEvent {
     private final long total;
     private final String stage;
     private final EventType eventType;
+    private String item = null;
+    private boolean slowPhase = false;
 
     public ProvisioningProgressEvent(String stage, EventType eventType, long completed, long total) {
         this.completed = completed;
         this.total = total;
         this.stage = stage;
         this.eventType = eventType;
+    }
+
+    public ProvisioningProgressEvent(String stage, EventType eventType, long completed, long total, String item, boolean slowPhase) {
+        this(stage, eventType, completed, total);
+        this.item = item;
+        this.slowPhase = slowPhase;
+    }
+
+    /**
+     * details of currently processed item.
+     *
+     * @return description of item if available, null otherwise
+     */
+    public String getCurrentItem() {
+        return item;
+    }
+
+    /**
+     * if set, the current phase doesn't receive any updates and can be a relatively slow process
+     *
+     * @return
+     */
+    public boolean isSlowPhase() {
+        return slowPhase;
     }
 
     /**
