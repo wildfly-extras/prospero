@@ -21,6 +21,7 @@ import org.jboss.logging.Messages;
 import org.jboss.logging.annotations.Cause;
 import org.jboss.logging.annotations.Message;
 import org.jboss.logging.annotations.MessageBundle;
+import org.wildfly.prospero.actions.ApplyCandidateAction;
 import org.wildfly.prospero.cli.commands.CliConstants;
 
 import java.nio.file.Path;
@@ -232,6 +233,13 @@ public interface CliMessages {
 
     @Message("Unable to apply update.%n  Installation at [%s] has been updated since the update candidate [%s] was created.")
     IllegalArgumentException updateCandidateStateNotMatched(Path targetDir, Path updateDir);
+
+    @Message("Unable to apply update.%n  The candidate at [%s] was not prepared for %s operation.")
+    IllegalArgumentException updateCandidateWrongType(Path updateDir, ApplyCandidateAction.Type operation);
+
+    @Message("Unable to apply update.%n  Installation at [%s] doesn't have a candidate marker file.")
+    IllegalArgumentException notCandidate(Path updateDir);
+
 
     @Message("The target path needs to point to an empty, writable folder.")
     IllegalArgumentException nonEmptyTargetFolder();
