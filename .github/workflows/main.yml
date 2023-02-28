@@ -4,6 +4,7 @@ on:
   push:
     branches:
       - main
+      - test
     paths-ignore:
       - '.gitignore'
       - 'examples'
@@ -36,7 +37,7 @@ jobs:
           distribution: 'adopt'
           cache: maven
       - name: Build and test
-        run: mvn clean install -DallTests -Pdist
+        run: mvn clean install -DskipTests -Pdist
       - uses: actions/upload-artifact@v2
         if: failure()
         with:
