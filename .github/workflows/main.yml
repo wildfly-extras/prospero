@@ -37,7 +37,7 @@ jobs:
           distribution: 'adopt'
           cache: maven
       - name: Build and test
-        run: mvn clean install -DskipTests -Pdist
+        run: mvn clean install -DallTests -Pdist
       - uses: actions/upload-artifact@v2
         if: failure()
         with:
