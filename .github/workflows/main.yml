@@ -34,7 +34,6 @@ jobs:
         with:
           java-version: ${{ matrix.jdk }}
           distribution: 'adopt'
-          cache: maven
       - name: Build and test
         run: mvn clean install -DallTests -Pdist
       - uses: actions/upload-artifact@v2
