@@ -34,7 +34,7 @@
         <version.org.codehaus.plexus-interpolation>1.26</version.org.codehaus.plexus-interpolation>
         <version.org.codehaus.plexus-utils>3.3.1</version.org.codehaus.plexus-utils>
         <version.commons.io>2.11.0</version.commons.io>
-        <version.org.jboss.galleon>5.0.7.Final</version.org.jboss.galleon>
+        <version.org.jboss.galleon>5.0.8.Final</version.org.jboss.galleon>
         <version.org.eclipse.jgit>5.13.0.202109080827-r</version.org.eclipse.jgit>
         <version.com.fasterxml.jackson>2.13.4.1</version.com.fasterxml.jackson>
         <version.com.fasterxml.jackson.dataformat-yaml>2.13.4</version.com.fasterxml.jackson.dataformat-yaml>
