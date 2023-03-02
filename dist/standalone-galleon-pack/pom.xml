@@ -19,6 +19,11 @@
         <dependency>
             <groupId>org.wildfly.galleon-plugins</groupId>
             <artifactId>wildfly-config-gen</artifactId>
+            <type>pom</type>
+        </dependency>
+        <dependency>
+            <groupId>org.wildfly.galleon-plugins</groupId>
+            <artifactId>wildfly-config-gen</artifactId>
             <scope>provided</scope>
         </dependency>
         <dependency>
