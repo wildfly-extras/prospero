@@ -304,6 +304,13 @@
                 <groupId>org.wildfly.galleon-plugins</groupId>
                 <artifactId>wildfly-config-gen</artifactId>
                 <version>${version.org.wildfly.galleon-plugins}</version>
+                <type>pom</type>
+                <scope>provided</scope>
+            </dependency>
+            <dependency>
+                <groupId>org.wildfly.galleon-plugins</groupId>
+                <artifactId>wildfly-config-gen</artifactId>
+                <version>${version.org.wildfly.galleon-plugins}</version>
                 <scope>provided</scope>
             </dependency>
 
@@ -487,9 +494,9 @@
                 <enabled>true</enabled>
                 <updatePolicy>never</updatePolicy>
             </snapshots>
-            <id>jboss-public-repository-group</id>
-            <name>JBoss Public Repository Group</name>
-            <url>https://repository.jboss.org/</url>
+            <id>jboss-public-repository</id>
+            <name>JBoss Public Repository</name>
+            <url>https://repository.jboss.org/nexus/content/groups/public/</url>
             <layout>default</layout>
         </repository>
     </repositories>
