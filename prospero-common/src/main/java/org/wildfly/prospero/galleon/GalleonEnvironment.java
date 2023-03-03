@@ -89,9 +89,12 @@ public class GalleonEnvironment {
                       ProvisioningLayoutFactory.TRACK_PACKAGES,
                       ProvisioningLayoutFactory.TRACK_CONFIGS,
                       TRACK_JBMODULES,
-                      TRACK_JBEXAMPLES,
-                      TRACK_JB_ARTIFACTS_RESOLVE)
+                      TRACK_JBEXAMPLES)
                     .forEach(t->layoutFactory.setProgressCallback(t, new GalleonCallbackAdapter(console.get(), t)));
+
+            final DownloadsCallbackAdapter callback = new DownloadsCallbackAdapter(console.get());
+            session.setTransferListener(callback);
+            layoutFactory.setProgressCallback(TRACK_JB_ARTIFACTS_RESOLVE, callback);
         }
     }
 
