@@ -38,6 +38,8 @@ import static org.wildfly.prospero.galleon.GalleonEnvironment.TRACK_JB_ARTIFACTS
 
 public class CliConsole implements Console {
 
+    private static final int MAX_LENGTH = 120;
+
     private class ProgressLogger {
         private String starting;
         private String completed;
@@ -74,14 +76,14 @@ public class CliConsole implements Console {
             this.out = out;
         }
 
-        void print(String msg) {
+        synchronized void  print(String msg) {
             final String eraser = StringUtils.repeat(' ', this.lastLength);
             out.print("\r" + eraser + "\r");
             lastLength = msg.length();
             out.print(msg);
         }
 
-        void println(String msg) {
+        synchronized void println(String msg) {
             final String eraser = StringUtils.repeat(' ', this.lastLength);
             out.print("\r" + eraser + "\r");
             lastLength = msg.length();
@@ -120,13 +122,26 @@ public class CliConsole implements Console {
             }
 
             final String progressMsg;
+            final String details = item == null ? "" : item;
+
             if (update.getTotal() > 0) {
-                progressMsg = String.format(" %d/%d(%.0f%%) %s", update.getCompleted(), update.getTotal(), update.getProgress(), item == null ? "" : item);
+                progressMsg = String.format(" %d/%d(%.0f%%) ", update.getCompleted(), update.getTotal(), update.getProgress());
             } else {
-                progressMsg = String.format(" %s", item == null ? "" : item);
+                progressMsg = "";
             }
 
-            cli.print(logger.progress() + progressMsg);
+            final String text;
+            if (logger.progress.length() + progressMsg.length() > MAX_LENGTH) {
+                text = (logger.progress() + progressMsg).substring(0, MAX_LENGTH);
+            } else if (logger.progress.length() + progressMsg.length() + details.length() > MAX_LENGTH) {
+                int used = logger.progress.length() + progressMsg.length();
+                int left = MAX_LENGTH - used;
+                text = logger.progress() + progressMsg + "..." + details.substring(details.length() - left);
+            } else {
+                text = logger.progress() + progressMsg + details;
+            }
+
+            cli.print(text);
         }
         if (update.getEventType() == ProvisioningProgressEvent.EventType.COMPLETED) {
             cli.println(logger.completed());
