@@ -35,6 +35,7 @@ import org.mockito.Captor;
 import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.junit.MockitoJUnitRunner;
+import org.wildfly.channel.Repository;
 import org.wildfly.prospero.actions.ApplyCandidateAction;
 import org.wildfly.prospero.actions.UpdateAction;
 import org.wildfly.prospero.api.ArtifactChange;
@@ -45,6 +46,7 @@ import org.wildfly.prospero.cli.ReturnCodes;
 import org.wildfly.prospero.updates.UpdateSet;
 import org.wildfly.prospero.test.MetadataTestUtils;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
@@ -70,6 +72,9 @@ public class UpdateCommandTest extends AbstractMavenCommandTest {
 
     @Captor
     private ArgumentCaptor<MavenOptions> mavenOptions;
+
+    @Captor
+    private ArgumentCaptor<List<Repository>> repositories;
 
     @Rule
     public TemporaryFolder tempFolder = new TemporaryFolder();
@@ -284,6 +289,20 @@ public class UpdateCommandTest extends AbstractMavenCommandTest {
                 CliMessages.MESSAGES.nonEmptyTargetFolder().getMessage()));
     }
 
+    @Test
+    public void spliRepositoriesFromArgument() throws Exception {
+        doLocalMock();
+        int exitCode = commandLine.execute(CliConstants.Commands.UPDATE, CliConstants.Commands.PERFORM,
+                CliConstants.DIR, installationDir.toAbsolutePath().toString(),
+                CliConstants.REPOSITORIES, "http://foo,http://bar");
+
+        assertEquals(ReturnCodes.SUCCESS_LOCAL_CHANGES, exitCode);
+        assertThat(getCapturedRepositories())
+                .map(Repository::getUrl)
+                .containsExactly("http://foo", "http://bar");
+
+    }
+
     private ArtifactChange change(String oldVersion, String newVersion) {
         return ArtifactChange.updated(new DefaultArtifact("org.foo", "bar", null, oldVersion),
                 new DefaultArtifact("org.foo", "bar", null, newVersion));
@@ -298,6 +317,11 @@ public class UpdateCommandTest extends AbstractMavenCommandTest {
     protected MavenOptions getCapturedMavenOptions() throws Exception {
         Mockito.verify(actionFactory).update(any(), mavenOptions.capture(), any(), any());
         return mavenOptions.getValue();
+    }
+
+    protected List<Repository> getCapturedRepositories() throws Exception {
+        Mockito.verify(actionFactory).update(any(), any(), any(), repositories.capture());
+        return repositories.getValue();
     }
 
     @Override
