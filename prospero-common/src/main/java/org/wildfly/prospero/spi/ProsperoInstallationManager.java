@@ -67,7 +67,7 @@ public class ProsperoInstallationManager implements InstallationManager {
         final List<HistoryResult> results = new ArrayList<>();
 
         for (SavedState savedState : revisions) {
-            results.add(new HistoryResult(savedState.getName(), savedState.getTimestamp(), savedState.getType().toString()));
+            results.add(new HistoryResult(savedState.getName(), savedState.getTimestamp(), savedState.getType().toString(), savedState.getMsg()));
         }
         return results;
     }
@@ -142,9 +142,12 @@ public class ProsperoInstallationManager implements InstallationManager {
     }
 
     @Override
-    public void changeChannel(String channelName, Channel newChannel) throws OperationException {
+    public void changeChannel(Channel newChannel) throws OperationException {
+        if (newChannel.getName() == null || newChannel.getName().isEmpty()) {
+            throw Messages.MESSAGES.emptyChannelName();
+        }
         try (final MetadataAction metadataAction = actionFactory.getMetadataAction()) {
-            metadataAction.changeChannel(channelName, mapChannel(newChannel));
+            metadataAction.changeChannel(newChannel.getName(), mapChannel(newChannel));
         }
     }
 
