@@ -23,7 +23,12 @@
         <prospero.repo.id>central</prospero.repo.id>
         <prospero.repo.url>https://repo1.maven.org/maven2/</prospero.repo.url>
         <version.io.undertow>2.2.19.Final</version.io.undertow>
+        <version.commons-codec>1.15</version.commons-codec>
+        <version.commons-io>2.11.0</version.commons-io>
+        <version.org.apache.commons.commons-lang3>3.12.0</version.org.apache.commons.commons-lang3>
         <version.org.apache.commons.commons-text>1.10.0</version.org.apache.commons.commons-text>
+        <version.org.apache.httpcomponents.httpclient>4.5.14</version.org.apache.httpcomponents.httpclient>
+        <version.org.apache.httpcomponents.httpcore>4.4.16</version.org.apache.httpcomponents.httpcore>
         <version.org.apache.maven.plugins.antrun>1.8</version.org.apache.maven.plugins.antrun>
         <version.org.apache.maven.plugins.jar>3.0.2</version.org.apache.maven.plugins.jar>
         <version.org.apache.maven.plugins.pmd>3.16.0</version.org.apache.maven.plugins.pmd>
@@ -34,20 +39,23 @@
         <version.org.codehaus.plexus-interpolation>1.26</version.org.codehaus.plexus-interpolation>
         <version.org.codehaus.plexus-utils>3.3.1</version.org.codehaus.plexus-utils>
         <version.commons.io>2.11.0</version.commons.io>
+        <version.org.jboss.staxmapper>1.3.0.Final</version.org.jboss.staxmapper>
         <version.org.jboss.galleon>5.0.8.Final</version.org.jboss.galleon>
         <version.org.eclipse.jgit>5.13.0.202109080827-r</version.org.eclipse.jgit>
-        <version.com.fasterxml.jackson>2.13.4.1</version.com.fasterxml.jackson>
-        <version.com.fasterxml.jackson.dataformat-yaml>2.13.4</version.com.fasterxml.jackson.dataformat-yaml>
+        <version.com.fasterxml.jackson.databind>2.13.4.1</version.com.fasterxml.jackson.databind>
+        <version.com.fasterxml.jackson>2.13.4</version.com.fasterxml.jackson>
         <version.com.networknt.json-schema-validator>1.0.61</version.com.networknt.json-schema-validator>
         <version.org.jboss.logging>3.3.1.Final</version.org.jboss.logging>
         <version.org.jboss.logmanager>2.0.6.Final</version.org.jboss.logmanager>
-        <version.org.jboss.logging.slf4j-jboss-logging>1.1.0.Final</version.org.jboss.logging.slf4j-jboss-logging>
+        <version.org.jboss.logging.slf4j-jboss-logmanager>2.0.1.Final</version.org.jboss.logging.slf4j-jboss-logmanager>
         <version.org.jboss.logging.jboss-logging-processor>2.2.1.Final</version.org.jboss.logging.jboss-logging-processor>
         <version.org.jboss.modules>2.0.2.Final</version.org.jboss.modules>
         <version.org.jboss.xnio>3.8.7.Final</version.org.jboss.xnio>
         <version.org.wildfly.galleon-plugins>6.3.2.Final</version.org.wildfly.galleon-plugins>
         <version.org.wildfly.installation-manager>1.0.0.Beta4</version.org.wildfly.installation-manager>
         <version.org.mockito>3.12.4</version.org.mockito>
+        <version.org.slf4j>2.0.6</version.org.slf4j>
+        <version.org.yaml.snakeyaml>1.33</version.org.yaml.snakeyaml>
         <version.junit>4.13.2</version.junit>
         <version.maven-shade-plugin>2.3</version.maven-shade-plugin>
         <version.org.wildfly.channel>1.0.0.Beta5</version.org.wildfly.channel>
@@ -101,9 +109,34 @@
                 <type>zip</type>
             </dependency>
             <dependency>
+                <groupId>commons-codec</groupId>
+                <artifactId>commons-codec</artifactId>
+                <version>${version.commons-codec}</version>
+            </dependency>
+            <dependency>
+                <groupId>commons-io</groupId>
+                <artifactId>commons-io</artifactId>
+                <version>${version.commons-io}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.apache.commons</groupId>
+                <artifactId>commons-lang3</artifactId>
+                <version>${version.org.apache.commons.commons-lang3}</version>
+            </dependency>
+            <dependency>
                 <groupId>org.apache.commons</groupId>
                 <artifactId>commons-text</artifactId>
                 <version>${version.org.apache.commons.commons-text}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.apache.httpcomponents</groupId>
+                <artifactId>httpclient</artifactId>
+                <version>${version.org.apache.httpcomponents.httpclient}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.apache.httpcomponents</groupId>
+                <artifactId>httpcore</artifactId>
+                <version>${version.org.apache.httpcomponents.httpcore}</version>
             </dependency>
             <dependency>
                 <groupId>org.apache.maven.resolver</groupId>
@@ -212,6 +245,18 @@
             </dependency>
 
             <dependency>
+                <groupId>org.jboss</groupId>
+                <artifactId>staxmapper</artifactId>
+                <version>${version.org.jboss.staxmapper}</version>
+                <exclusions>
+                    <exclusion>
+                        <groupId>*</groupId>
+                        <artifactId>*</artifactId>
+                    </exclusion>
+                </exclusions>
+            </dependency>
+
+            <dependency>
                 <groupId>org.jboss.galleon</groupId>
                 <artifactId>galleon-core</artifactId>
                 <version>${version.org.jboss.galleon}</version>
@@ -242,15 +287,43 @@
             </dependency>
 
             <dependency>
+                <groupId>org.slf4j</groupId>
+                <artifactId>jcl-over-slf4j</artifactId>
+                <version>${version.org.slf4j}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.slf4j</groupId>
+                <artifactId>slf4j-api</artifactId>
+                <version>${version.org.slf4j}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.yaml</groupId>
+                <artifactId>snakeyaml</artifactId>
+                <version>${version.org.yaml.snakeyaml}</version>
+            </dependency>
+
+            <dependency>
                 <groupId>com.fasterxml.jackson.core</groupId>
                 <artifactId>jackson-databind</artifactId>
+                <version>${version.com.fasterxml.jackson.databind}</version>
+            </dependency>
+
+            <dependency>
+                <groupId>com.fasterxml.jackson.core</groupId>
+                <artifactId>jackson-annotations</artifactId>
+                <version>${version.com.fasterxml.jackson}</version>
+            </dependency>
+
+            <dependency>
+                <groupId>com.fasterxml.jackson.core</groupId>
+                <artifactId>jackson-core</artifactId>
                 <version>${version.com.fasterxml.jackson}</version>
             </dependency>
 
             <dependency>
                 <groupId>com.fasterxml.jackson.dataformat</groupId>
                 <artifactId>jackson-dataformat-yaml</artifactId>
-                <version>${version.com.fasterxml.jackson.dataformat-yaml}</version>
+                <version>${version.com.fasterxml.jackson}</version>
             </dependency>
 
             <dependency>
@@ -285,8 +358,8 @@
 
             <dependency>
                 <groupId>org.jboss.slf4j</groupId>
-                <artifactId>slf4j-jboss-logging</artifactId>
-                <version>${version.org.jboss.logging.slf4j-jboss-logging}</version>
+                <artifactId>slf4j-jboss-logmanager</artifactId>
+                <version>${version.org.jboss.logging.slf4j-jboss-logmanager}</version>
             </dependency>
 
             <dependency>
