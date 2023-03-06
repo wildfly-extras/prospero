@@ -37,6 +37,7 @@ import java.io.IOException;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.function.Consumer;
@@ -59,10 +60,10 @@ public class GalleonEnvironment {
         Optional<ChannelManifest> restoreManifest = Optional.ofNullable(builder.manifest);
         channels = builder.channels;
         List<Channel> substitutedChannels = new ArrayList<>();
-        System.setProperty("installation.home", builder.installDir.toString());
+        final ChannelManifestSubstitutor substitutor = new ChannelManifestSubstitutor(Map.of("installation.home", builder.installDir.toString()));
         // substitute any properties found in URL of ChannelManifestCoordinate.
         for (Channel channel : channels) {
-            substitutedChannels.add(ChannelManifestSubstitutor.substitute(channel));
+            substitutedChannels.add(substitutor.substitute(channel));
         }
 
         final RepositorySystem system = builder.mavenSessionManager.newRepositorySystem();
