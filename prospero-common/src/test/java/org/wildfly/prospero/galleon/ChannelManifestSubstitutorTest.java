@@ -25,17 +25,19 @@ import org.wildfly.channel.Repository;
 import org.wildfly.prospero.api.exceptions.MetadataException;
 
 import java.net.MalformedURLException;
+import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 
 public class ChannelManifestSubstitutorTest {
     @Test
     public void testChannelManifestSubstituted() throws MalformedURLException, MetadataException {
         String url = "file:${propName}/examples/wildfly-27.0.0.Alpha2-manifest.yaml";
-        System.setProperty("propName", "propValue");
+        final ChannelManifestSubstitutor substitutor = new ChannelManifestSubstitutor(Map.of("propName", "propValue"));
         String expected = "file:propValue/examples/wildfly-27.0.0.Alpha2-manifest.yaml";
         Channel channel = new Channel("channel1", "", null, null, List.of(new Repository("test", "http://test.org")),
                 ChannelManifestCoordinate.create(url, null), null, null);
-        Channel substitutedChannel = ChannelManifestSubstitutor.substitute(channel);
+        Channel substitutedChannel = substitutor.substitute(channel);
         System.clearProperty("propName");
         Assert.assertEquals(expected, substitutedChannel.getManifestCoordinate().getUrl().toString());
     }
@@ -43,9 +45,10 @@ public class ChannelManifestSubstitutorTest {
     @Test
     public void testChannelManifestNotSubstituted() throws MalformedURLException, MetadataException {
         String url = "file:/Users/examples/wildfly-27.0.0.Alpha2-manifest.yaml";
+        final ChannelManifestSubstitutor substitutor = new ChannelManifestSubstitutor(Collections.emptyMap());
         Channel channel = new Channel("channel1", "", null, List.of(new Repository("test", "http://test.org")),
                 ChannelManifestCoordinate.create(url, null), null, null);
-        Channel substitutedChannel = ChannelManifestSubstitutor.substitute(channel);
+        Channel substitutedChannel = substitutor.substitute(channel);
         Assert.assertEquals(url, substitutedChannel.getManifestCoordinate().getUrl().toString());
     }
 }

@@ -17,7 +17,6 @@
 
 package org.wildfly.prospero.galleon;
 
-import org.apache.commons.text.StringSubstitutor;
 import org.jboss.logging.Logger;
 import org.wildfly.channel.Channel;
 import org.wildfly.channel.ChannelManifestCoordinate;
@@ -26,19 +25,27 @@ import org.wildfly.prospero.api.exceptions.MetadataException;
 
 import java.net.MalformedURLException;
 import java.net.URL;
+import java.util.Map;
 
 public class ChannelManifestSubstitutor {
 
     private static final Logger logger = Logger.getLogger(ChannelManifestSubstitutor.class);
+    private final Map<String, String> properties;
 
-    public static Channel substitute(Channel channel) throws MetadataException {
+    public ChannelManifestSubstitutor(Map<String, String> properties) {
+        this.properties = properties;
+    }
+
+    public Channel substitute(Channel channel) throws MetadataException {
         ChannelManifestCoordinate channelManifestCoordinate = channel.getManifestCoordinate();
         if (channelManifestCoordinate.getUrl() == null) {
             return channel;
         } else {
             String url = channelManifestCoordinate.getUrl().toString();
-            String substitutedFromSystemProperty = StringSubstitutor.replaceSystemProperties(url);
-            String substituted = !url.equals(substitutedFromSystemProperty) ? substitutedFromSystemProperty : StringSubstitutor.replace(url, System.getenv());
+            String substituted = url;
+            for (String key: properties.keySet()) {
+                substituted = substituted.replaceAll("\\$\\{"+key+"\\}", properties.get(key));
+            }
             if (url.equals(substituted)) {
                 return channel;
             } else {
