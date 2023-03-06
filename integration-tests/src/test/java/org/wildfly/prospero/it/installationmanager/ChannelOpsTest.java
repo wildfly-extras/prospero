@@ -1,5 +1,5 @@
 /*
- * Copyright 2022 Red Hat, Inc. and/or its affiliates
+ * Copyright 2023 Red Hat, Inc. and/or its affiliates
  * and other contributors as indicated by the @author tags.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -72,8 +72,7 @@ public class ChannelOpsTest extends WfCoreTestBase {
         );
 
         // edit channel
-        manager.changeChannel("test",
-                new Channel("test", List.of(new Repository("test-repo2", "http://test.te/repo")),
+        manager.changeChannel(new Channel("test", List.of(new Repository("test-repo2", "http://test.te/repo")),
                         "foo:bar2"));
 
         assertThat(manager.listChannels()).containsExactly(
