@@ -17,7 +17,7 @@
 
 package org.wildfly.prospero.api.exceptions;
 
-public class NoChannelException extends Exception {
+public class NoChannelException extends OperationException {
 
     public NoChannelException(String msg) {
         super(msg);

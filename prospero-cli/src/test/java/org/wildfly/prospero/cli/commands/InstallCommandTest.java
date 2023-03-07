@@ -20,7 +20,9 @@ package org.wildfly.prospero.cli.commands;
 import java.io.File;
 import java.io.IOException;
 import java.net.URL;
+import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -40,7 +42,9 @@ import org.mockito.Mockito;
 import org.mockito.junit.MockitoJUnitRunner;
 import org.wildfly.channel.Channel;
 import org.wildfly.channel.ChannelManifestCoordinate;
+import org.wildfly.channel.InvalidChannelMetadataException;
 import org.wildfly.channel.Repository;
+import org.wildfly.prospero.Messages;
 import org.wildfly.prospero.actions.ProvisioningAction;
 import org.wildfly.prospero.api.MavenOptions;
 import org.wildfly.prospero.cli.ActionFactory;
@@ -112,6 +116,17 @@ public class InstallCommandTest extends AbstractMavenCommandTest {
         assertEquals(ReturnCodes.INVALID_ARGUMENTS, exitCode);
         assertTrue("output: " + getErrorOutput(), getErrorOutput().contains(CliMessages.MESSAGES
                 .channelsMandatoryWhenCustomFpl().getMessage()));
+    }
+
+    @Test
+    public void errorIfChannelsIsNotValid() throws Exception {
+        final File channelsFile = temporaryFolder.newFile();
+        Files.writeString(channelsFile.toPath(), "schemaVersion: 2.0.0\n");
+        int exitCode = commandLine.execute(CliConstants.Commands.INSTALL, CliConstants.DIR, "test", CliConstants.FPL, KNOWN_FPL,
+                CliConstants.CHANNELS, channelsFile.getAbsolutePath());
+        assertEquals(ReturnCodes.PROCESSING_ERROR, exitCode);
+        assertTrue("output: " + getErrorOutput(), getErrorOutput().contains(Messages.MESSAGES
+                .invalidChannel(new InvalidChannelMetadataException(null, Collections.emptyList())).getMessage()));
     }
 
     @Test

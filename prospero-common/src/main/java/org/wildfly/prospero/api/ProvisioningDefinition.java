@@ -45,6 +45,7 @@ import org.wildfly.channel.Repository;
 import org.wildfly.channel.maven.ChannelCoordinate;
 import org.wildfly.channel.maven.VersionResolverFactory;
 import org.wildfly.prospero.Messages;
+import org.wildfly.prospero.api.exceptions.ChannelDefinitionException;
 import org.wildfly.prospero.api.exceptions.MetadataException;
 import org.wildfly.prospero.api.exceptions.NoChannelException;
 import org.wildfly.prospero.galleon.FeaturePackLocationParser;
@@ -160,7 +161,7 @@ public class ProvisioningDefinition {
      * @param versionResolverFactory a VersionResolverFactory instance to perform the channel resolution
      * @return Channel instances
      */
-    public List<Channel> resolveChannels(VersionResolverFactory versionResolverFactory) throws NoChannelException {
+    public List<Channel> resolveChannels(VersionResolverFactory versionResolverFactory) throws NoChannelException, ChannelDefinitionException {
         try {
             List<Channel> channels = new ArrayList<>(this.channels);
 
@@ -182,6 +183,8 @@ public class ProvisioningDefinition {
 
             validateResolvedChannels(channels);
             return channels;
+        } catch (InvalidChannelMetadataException e) {
+            throw Messages.MESSAGES.invalidChannel(e);
         } catch (MalformedURLException e) {
             // I believe the MalformedURLException is declared mistakenly by VersionResolverFactory#resolveChannels().
             throw new IllegalArgumentException(e);

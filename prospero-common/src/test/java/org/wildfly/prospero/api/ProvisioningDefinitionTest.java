@@ -29,12 +29,14 @@ import org.wildfly.channel.MavenCoordinate;
 import org.wildfly.channel.Repository;
 import org.wildfly.channel.maven.VersionResolverFactory;
 import org.wildfly.prospero.Messages;
+import org.wildfly.prospero.api.exceptions.ChannelDefinitionException;
 import org.wildfly.prospero.api.exceptions.NoChannelException;
 import org.wildfly.prospero.galleon.GalleonUtils;
 import org.wildfly.prospero.test.MetadataTestUtils;
 
 import java.net.URL;
 import java.io.File;
+import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.Arrays;
 import java.util.List;
@@ -45,6 +47,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.tuple;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertThrows;
 import static org.junit.Assert.fail;
 
 public class ProvisioningDefinitionTest {
@@ -227,6 +230,17 @@ public class ProvisioningDefinitionTest {
                 .containsExactlyInAnyOrder(
                         Tuple.tuple("test_repo" ,"http://custom.repo")
                 );
+    }
+
+    @Test
+    public void resolveInvalidChannelThrowsException() throws Exception {
+        final File channel = temp.newFile();
+        Files.writeString(channel.toPath(), "schemaVersion: 2.0.0");
+        final ProvisioningDefinition def = new ProvisioningDefinition.Builder().setFpl("multi-channel")
+                .setChannelCoordinates(channel.toURI().toString())
+                .build();
+
+        assertThrows(ChannelDefinitionException.class, ()-> def.resolveChannels(null));
     }
 
     private void verifyFeaturePackLocation(ProvisioningDefinition definition) throws ProvisioningException, XMLStreamException {

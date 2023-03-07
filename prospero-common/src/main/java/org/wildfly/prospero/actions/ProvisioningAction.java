@@ -126,7 +126,7 @@ public class ProvisioningAction {
      * @param channels - list of channels used to resolve the Feature Packs
      * @return - list of {@code License}, or empty list if no licenses were required
      */
-    public List<License> getPendingLicenses(ProvisioningConfig provisioningConfig, List<Channel> channels) {
+    public List<License> getPendingLicenses(ProvisioningConfig provisioningConfig, List<Channel> channels) throws OperationException {
         Objects.requireNonNull(provisioningConfig);
         Objects.requireNonNull(channels);
 
@@ -134,11 +134,11 @@ public class ProvisioningAction {
         return getPendingLicenses(provisioningConfig, exporter);
     }
 
-    private List<License> getPendingLicenses(ProvisioningConfig provisioningConfig, GalleonFeaturePackAnalyzer exporter) {
+    private List<License> getPendingLicenses(ProvisioningConfig provisioningConfig, GalleonFeaturePackAnalyzer exporter) throws OperationException {
         try {
             final List<String> featurePacks = exporter.getFeaturePacks(provisioningConfig);
             return licenseManager.getLicenses(featurePacks);
-        } catch (IOException | ProvisioningException | OperationException e) {
+        } catch (IOException | ProvisioningException e) {
             throw new RuntimeException(e);
         }
     }
