@@ -303,6 +303,9 @@ public class GitStorage implements AutoCloseable {
                 if (change != null) {
                     FileUtils.deleteDirectory(change.toFile());
                 }
+                if (base != null) {
+                    FileUtils.deleteDirectory(base.toFile());
+                }
             } catch (IOException e) {
                 throw new RuntimeException(e);
             }

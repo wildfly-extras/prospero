@@ -17,11 +17,13 @@
 
 package org.wildfly.prospero.installation.git;
 
+import org.apache.commons.io.FileUtils;
 import org.assertj.core.api.iterable.ThrowingExtractor;
 import org.eclipse.jgit.api.Git;
 import org.eclipse.jgit.api.errors.GitAPIException;
 import org.eclipse.jgit.revwalk.RevCommit;
 import org.eclipse.jgit.treewalk.TreeWalk;
+import org.junit.After;
 import org.wildfly.channel.Channel;
 import org.wildfly.channel.ChannelManifest;
 import org.wildfly.channel.ChannelManifestCoordinate;
@@ -64,12 +66,20 @@ public class GitStorageTest {
     @Rule
     public TemporaryFolder folder = new TemporaryFolder();
     private Path base;
+    private Path revertPath;
 
     private final ChannelManifest manifest = new ChannelManifest("test", "test-id", "", new ArrayList<>());
 
     @Before
     public void setUp() throws Exception {
         base = folder.newFolder().toPath().resolve(InstallationMetadata.METADATA_DIR);
+    }
+
+    @After
+    public void tearDown() throws Exception {
+        if (revertPath != null) {
+            FileUtils.deleteQuietly(revertPath.toFile());
+        }
     }
 
     @Test
@@ -365,10 +375,10 @@ public class GitStorageTest {
         ManifestVersionRecord.write(record, base.resolve(ProsperoMetadataUtils.CURRENT_VERSION_FILE));
         gitStorage.record();
 
-        final Path revert = gitStorage.revert(gitStorage.getRevisions().get(1));
+        revertPath = gitStorage.revert(gitStorage.getRevisions().get(1));
 
         // verify the new folder contains reverted values
-        final Path revertedMetadata = revert.resolve(ProsperoMetadataUtils.METADATA_DIR);
+        final Path revertedMetadata = revertPath.resolve(ProsperoMetadataUtils.METADATA_DIR);
         assertTrue(ManifestYamlSupport.parse(revertedMetadata.resolve(ProsperoMetadataUtils.MANIFEST_FILE_NAME).toFile())
                 .getStreams().stream()
                     .filter(s->s.getArtifactId().equals("test") && s.getVersion().equals("1.2.3")).findFirst().isPresent());
