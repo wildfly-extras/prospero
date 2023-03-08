@@ -26,9 +26,12 @@ import org.jboss.logging.Logger;
 import org.wildfly.channel.Channel;
 import org.wildfly.channel.ChannelManifest;
 import org.wildfly.channel.ChannelSession;
+import org.wildfly.channel.InvalidChannelMetadataException;
 import org.wildfly.channel.maven.VersionResolverFactory;
 import org.wildfly.channel.spi.MavenVersionsResolver;
+import org.wildfly.prospero.Messages;
 import org.wildfly.prospero.api.Console;
+import org.wildfly.prospero.api.exceptions.ChannelDefinitionException;
 import org.wildfly.prospero.api.exceptions.MetadataException;
 import org.wildfly.prospero.api.exceptions.OperationException;
 import org.wildfly.prospero.wfchannel.MavenSessionManager;
@@ -55,7 +58,7 @@ public class GalleonEnvironment {
 
     private static final Logger logger = Logger.getLogger(GalleonEnvironment.class);
 
-    private GalleonEnvironment(Builder builder) throws ProvisioningException, MetadataException {
+    private GalleonEnvironment(Builder builder) throws ProvisioningException, MetadataException, ChannelDefinitionException {
         Optional<Console> console = Optional.ofNullable(builder.console);
         Optional<ChannelManifest> restoreManifest = Optional.ofNullable(builder.manifest);
         channels = builder.channels;
@@ -76,7 +79,11 @@ public class GalleonEnvironment {
             logger.debug("Unable to read artifact cache, falling back to Maven resolver.", e);
             factory = new VersionResolverFactory(system, session);
         }
-        channelSession = new ChannelSession(channels, factory);
+        try {
+            channelSession = new ChannelSession(channels, factory);
+        } catch (InvalidChannelMetadataException e) {
+            throw Messages.MESSAGES.invalidManifest(e);
+        }
         if (restoreManifest.isEmpty()) {
             repositoryManager = new ChannelMavenArtifactRepositoryManager(channelSession);
         } else {

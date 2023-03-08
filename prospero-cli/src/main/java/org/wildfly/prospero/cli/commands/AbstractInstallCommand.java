@@ -24,6 +24,7 @@ import org.wildfly.channel.Channel;
 import org.wildfly.channel.maven.VersionResolverFactory;
 import org.wildfly.prospero.api.MavenOptions;
 import org.wildfly.prospero.api.ProvisioningDefinition;
+import org.wildfly.prospero.api.exceptions.ChannelDefinitionException;
 import org.wildfly.prospero.api.exceptions.MetadataException;
 import org.wildfly.prospero.api.exceptions.NoChannelException;
 import org.wildfly.prospero.cli.ActionFactory;
@@ -85,7 +86,8 @@ public abstract class AbstractInstallCommand extends AbstractCommand {
         super(console, actionFactory);
     }
 
-    protected List<Channel> resolveChannels(ProvisioningDefinition provisioningDefinition, MavenOptions mavenOptions) throws ArgumentParsingException, ProvisioningException, NoChannelException {
+    protected List<Channel> resolveChannels(ProvisioningDefinition provisioningDefinition, MavenOptions mavenOptions)
+            throws ArgumentParsingException, ProvisioningException, NoChannelException, ChannelDefinitionException {
         final MavenSessionManager mavenSessionManager = new MavenSessionManager(mavenOptions);
         final VersionResolverFactory versionResolverFactory = InstallCommand.createVersionResolverFactory(mavenSessionManager);
         final List<Channel> channels = provisioningDefinition.resolveChannels(versionResolverFactory);

@@ -27,9 +27,11 @@ import org.jboss.galleon.universe.maven.MavenUniverseException;
 import org.jboss.logging.annotations.Cause;
 import org.jboss.logging.annotations.Message;
 import org.jboss.logging.annotations.MessageBundle;
+import org.wildfly.channel.InvalidChannelMetadataException;
 import org.wildfly.channel.UnresolvedMavenArtifactException;
 import org.wildfly.prospero.api.exceptions.ArtifactPromoteException;
 import org.wildfly.prospero.api.exceptions.ArtifactResolutionException;
+import org.wildfly.prospero.api.exceptions.ChannelDefinitionException;
 import org.wildfly.prospero.api.exceptions.InvalidUpdateCandidateException;
 import org.wildfly.prospero.api.exceptions.MetadataException;
 import org.wildfly.prospero.api.exceptions.NoChannelException;
@@ -42,6 +44,12 @@ public interface Messages {
 
     @Message("Given path '%s' is a regular file. An empty directory or a non-existing path must be given.")
     IllegalArgumentException dirMustBeDirectory(Path path);
+
+    @Message("Invalid channel manifest definition")
+    ChannelDefinitionException invalidManifest(@Cause InvalidChannelMetadataException e);
+
+    @Message("Invalid channel definition")
+    ChannelDefinitionException invalidChannel(@Cause InvalidChannelMetadataException e);
 
     @Message("Can't install into a non empty directory '%s'. Use `update` command if you want to modify existing installation.")
     IllegalArgumentException cannotInstallIntoNonEmptyDirectory(Path path);
