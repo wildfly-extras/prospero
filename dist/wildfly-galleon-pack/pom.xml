@@ -423,7 +423,7 @@
               <resources-dir>${basedir}/target/resources</resources-dir>
               <generate-channel-manifest>true</generate-channel-manifest>
               <configFile>target/wildfly-user-feature-pack-build.xml</configFile>
-              <add-feature-packs-as-required-channels>false</add-feature-packs-as-required-channels>
+              <add-feature-packs-as-required-manifests>false</add-feature-packs-as-required-manifests>
             </configuration>
           </execution>
         </executions>
