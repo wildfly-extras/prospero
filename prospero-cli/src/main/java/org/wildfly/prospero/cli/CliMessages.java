@@ -275,4 +275,19 @@ public interface CliMessages {
 
     @Message("The Agreement(s) has been accepted via %s")
     String agreementSkipped(String optionName);
+
+    @Message("ERROR: %s")
+    String errorHeader(String msg);
+
+    @Message("Unable to resolve required channel metadata:")
+    String unableToResolveChannelMetadata();
+
+    @Message("Unable to resolve artifacts:")
+    String unableToResolveArtifacts();
+
+    @Message("Attempted repositories:")
+    String attemptedRepositories();
+
+    @Message("offline")
+    String offline();
 }

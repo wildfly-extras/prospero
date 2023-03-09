@@ -20,6 +20,7 @@ package org.wildfly.prospero.api;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.maven.artifact.versioning.ComparableVersion;
 import org.eclipse.aether.artifact.Artifact;
+import org.wildfly.channel.ArtifactCoordinate;
 import org.wildfly.channel.ChannelManifestCoordinate;
 import org.wildfly.prospero.Messages;
 import org.wildfly.channel.ChannelMetadataCoordinate;
@@ -87,5 +88,34 @@ public class ArtifactUtils {
         }
 
         return true;
+    }
+
+    public static String printCoordinate(ArtifactCoordinate coord) {
+        return printCoordinate(coord.getGroupId(), coord.getArtifactId(), coord.getClassifier(),
+                coord.getExtension(), coord.getVersion());
+    }
+
+    public static String printCoordinate(ChannelMetadataCoordinate coord) {
+        if (coord.getUrl() != null) {
+            return coord.getUrl().toString();
+        }
+
+        return printCoordinate(coord.getGroupId(), coord.getArtifactId(), coord.getClassifier(),
+                coord.getExtension(), coord.getVersion());
+    }
+
+    private static String printCoordinate(String groupId, String artifactId, String coordinate, String extension, String version) {
+        StringBuilder sb = new StringBuilder();
+        sb.append(groupId).append(":").append(artifactId);
+        if (coordinate !=null && !coordinate.isEmpty()) {
+            sb.append(":").append(coordinate);
+        }
+        if (extension !=null && !extension.isEmpty()) {
+            sb.append(":").append(extension);
+        }
+        if (version !=null && !version.isEmpty()) {
+            sb.append(":").append(version);
+        }
+        return sb.toString();
     }
 }
