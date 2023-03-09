@@ -40,6 +40,7 @@ import static org.junit.Assert.assertTrue;
 import static org.wildfly.prospero.metadata.ProsperoMetadataUtils.MANIFEST_FILE_NAME;
 import static org.wildfly.prospero.metadata.ProsperoMetadataUtils.METADATA_DIR;
 import static org.wildfly.prospero.metadata.ProsperoMetadataUtils.INSTALLER_CHANNELS_FILE_NAME;
+import static org.wildfly.prospero.metadata.ProsperoMetadataUtils.README_FILE_NAME;
 
 public class ProsperoMetadataUtilsTest {
 
@@ -52,12 +53,14 @@ public class ProsperoMetadataUtilsTest {
     private Path server;
     private Path manifestPath;
     private Path channelPath;
+    private Path readmeFile;
 
     @Before
     public void setUp() throws Exception {
         server = temp.newFolder().toPath();
         manifestPath = server.resolve(METADATA_DIR).resolve(MANIFEST_FILE_NAME);
         channelPath = server.resolve(METADATA_DIR).resolve(INSTALLER_CHANNELS_FILE_NAME);
+        readmeFile = server.resolve(METADATA_DIR).resolve(README_FILE_NAME);
     }
 
     @Test
@@ -66,6 +69,7 @@ public class ProsperoMetadataUtilsTest {
 
         assertTrue(Files.exists(manifestPath));
         assertTrue(Files.exists(channelPath));
+        assertTrue(Files.exists(readmeFile));
 
         assertMetadataWritten();
     }
@@ -77,6 +81,7 @@ public class ProsperoMetadataUtilsTest {
 
         assertTrue(Files.exists(manifestPath));
         assertTrue(Files.exists(channelPath));
+        assertTrue(Files.exists(readmeFile));
 
         assertMetadataWritten();
     }

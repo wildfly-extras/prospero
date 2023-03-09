@@ -22,6 +22,7 @@ import org.wildfly.channel.ChannelManifest;
 import org.wildfly.channel.ChannelManifestMapper;
 import org.wildfly.channel.ChannelMapper;
 
+import java.io.File;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
@@ -45,6 +46,9 @@ public class ProsperoMetadataUtils {
     public static final String INSTALLER_CHANNELS_FILE_NAME = "installer-channels.yaml";
     public static final String MAVEN_OPTS_FILE = "maven_opts.yaml";
     public static final String CURRENT_VERSION_FILE = "manifest_version.yaml";
+    public static final String README_FILE_NAME = "README.txt";
+
+    private static final String WARNING_MESSAGE = "WARNING: The files in .installation directory should be only edited by the provisioning tool.";
 
     /**
      * Generate installer metadata inside {@code serverDir}. The generated metadata files allow the server to be
@@ -66,6 +70,7 @@ public class ProsperoMetadataUtils {
         final Path metadataDir = serverDir.resolve(METADATA_DIR);
         final Path manifestPath = metadataDir.resolve(MANIFEST_FILE_NAME);
         final Path configPath = metadataDir.resolve(INSTALLER_CHANNELS_FILE_NAME);
+        final Path readmeFile = metadataDir.resolve(README_FILE_NAME);
 
         if (Files.exists(metadataDir) && !Files.isDirectory(metadataDir)) {
             throw new IllegalArgumentException(String.format("The target path %s is not a directory.", metadataDir));
@@ -81,5 +86,10 @@ public class ProsperoMetadataUtils {
 
         Files.writeString(manifestPath, ChannelManifestMapper.toYaml(manifest), StandardCharsets.UTF_8);
         Files.writeString(configPath, ChannelMapper.toYaml(channels), StandardCharsets.UTF_8);
+
+        // Add README.txt file to .installation directory to warn the files should not be edited.
+        if (!Files.exists(readmeFile)) {
+            Files.writeString(readmeFile, WARNING_MESSAGE , StandardCharsets.UTF_8);
+        }
     }
 }

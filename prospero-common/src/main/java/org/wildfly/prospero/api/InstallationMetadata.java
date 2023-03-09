@@ -64,7 +64,6 @@ public class InstallationMetadata implements AutoCloseable {
     public static final String INSTALLER_CHANNELS_FILE_NAME = ProsperoMetadataUtils.INSTALLER_CHANNELS_FILE_NAME;
     public static final String PROVISIONING_FILE_NAME = "provisioning.xml";
     public static final String GALLEON_INSTALLATION_DIR = ".galleon";
-    public static final String README_FILE_NAME = "README.txt";
     private static final String WARNING_MESSAGE = "WARNING: The files in .installation directory should be only edited by the provisioning tool.";
     private final Path manifestFile;
     private final Path channelsFile;
@@ -187,7 +186,7 @@ public class InstallationMetadata implements AutoCloseable {
         this.gitStorage = gitStorage;
         this.manifestFile = base.resolve(METADATA_DIR).resolve(InstallationMetadata.MANIFEST_FILE_NAME);
         this.channelsFile = base.resolve(METADATA_DIR).resolve(InstallationMetadata.INSTALLER_CHANNELS_FILE_NAME);
-        this.readmeFile = base.resolve(METADATA_DIR).resolve(InstallationMetadata.README_FILE_NAME);
+        this.readmeFile = base.resolve(METADATA_DIR).resolve(ProsperoMetadataUtils.README_FILE_NAME);
         this.provisioningFile = base.resolve(GALLEON_INSTALLATION_DIR).resolve(InstallationMetadata.PROVISIONING_FILE_NAME);
 
         this.manifest = manifest;
