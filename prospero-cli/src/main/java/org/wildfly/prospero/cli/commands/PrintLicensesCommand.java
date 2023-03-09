@@ -67,7 +67,7 @@ public class PrintLicensesCommand extends AbstractInstallCommand {
                 System.out.println();
                 System.out.println(CliMessages.MESSAGES.noAgreementsNeeded());
             }
-            return ReturnCodes.SUCCESS_NO_CHANGE;
+            return ReturnCodes.SUCCESS;
         } finally {
             tempDirectory.toFile().delete();
         }

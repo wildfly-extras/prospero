@@ -120,7 +120,7 @@ public class RevertPrepareCommandTest extends AbstractMavenCommandTest {
                 CliConstants.UPDATE_DIR, "update_test",
                 CliConstants.REVISION, "abcd");
 
-        assertEquals(ReturnCodes.SUCCESS_LOCAL_CHANGES, exitCode);
+        assertEquals(ReturnCodes.SUCCESS, exitCode);
         verify(historyAction).prepareRevert(eq(new SavedState("abcd")), any(), any(), eq(Path.of("update_test").toAbsolutePath()));
     }
 
@@ -132,7 +132,7 @@ public class RevertPrepareCommandTest extends AbstractMavenCommandTest {
                 CliConstants.REVISION, "abcd",
                 CliConstants.OFFLINE, CliConstants.LOCAL_CACHE, "local-repo");
 
-        assertEquals(ReturnCodes.SUCCESS_LOCAL_CHANGES, exitCode);
+        assertEquals(ReturnCodes.SUCCESS, exitCode);
         verify(historyAction).prepareRevert(eq(new SavedState("abcd")), mavenOptions.capture(), any(), eq(Path.of("update_test").toAbsolutePath()));
         assertTrue(mavenOptions.getValue().isOffline());
     }
@@ -146,7 +146,7 @@ public class RevertPrepareCommandTest extends AbstractMavenCommandTest {
                 CliConstants.REPOSITORIES, "http://temp.repo.te",
                 CliConstants.LOCAL_CACHE, "local-repo");
 
-        assertEquals(ReturnCodes.SUCCESS_LOCAL_CHANGES, exitCode);
+        assertEquals(ReturnCodes.SUCCESS, exitCode);
         verify(historyAction).prepareRevert(eq(new SavedState("abcd")), any(), repositories.capture(), eq(Path.of("update_test").toAbsolutePath()));
 
         assertThat(repositories.getValue())

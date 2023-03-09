@@ -138,7 +138,7 @@ public class InstallCommandTest extends AbstractMavenCommandTest {
         int exitCode = commandLine.execute(CliConstants.Commands.INSTALL, CliConstants.DIR, "test",
                 CliConstants.FPL, "org.wildfly:wildfly-ee-galleon-pack",
                 CliConstants.CHANNELS, channelsFile.getAbsolutePath());
-        assertEquals(ReturnCodes.SUCCESS_LOCAL_CHANGES, exitCode);
+        assertEquals(ReturnCodes.SUCCESS, exitCode);
         Mockito.verify(provisionAction).provision(configCaptor.capture(), channelCaptor.capture());
         assertThat(configCaptor.getValue().getFeaturePackDeps())
                 .map(fp->fp.getLocation().getProducerName())
@@ -151,7 +151,7 @@ public class InstallCommandTest extends AbstractMavenCommandTest {
         commandLine.getOut();
         commandLine.getErr();
 
-        assertEquals(ReturnCodes.SUCCESS_LOCAL_CHANGES, exitCode);
+        assertEquals(ReturnCodes.SUCCESS, exitCode);
         Mockito.verify(provisionAction).provision(configCaptor.capture(), channelCaptor.capture());
         assertThat(configCaptor.getValue().getFeaturePackDeps())
                 .map(fp->fp.getLocation().getProducerName())
@@ -167,7 +167,7 @@ public class InstallCommandTest extends AbstractMavenCommandTest {
         int exitCode = commandLine.execute(CliConstants.Commands.INSTALL, CliConstants.DIR, "test", CliConstants.FPL, KNOWN_FPL,
                 CliConstants.CHANNELS, channelsFile.getAbsolutePath());
 
-        assertEquals(ReturnCodes.SUCCESS_LOCAL_CHANGES, exitCode);
+        assertEquals(ReturnCodes.SUCCESS, exitCode);
         Mockito.verify(provisionAction).provision(configCaptor.capture(), channelCaptor.capture());
         assertThat(configCaptor.getValue().getFeaturePackDeps())
                 .map(fp->fp.getLocation().getProducerName())
@@ -194,7 +194,7 @@ public class InstallCommandTest extends AbstractMavenCommandTest {
                 CliConstants.CHANNELS, channelsFile.getAbsolutePath(),
                 CliConstants.DEFINITION, provisionDefinitionFile.getAbsolutePath());
 
-        assertEquals(ReturnCodes.SUCCESS_LOCAL_CHANGES, exitCode);
+        assertEquals(ReturnCodes.SUCCESS, exitCode);
         Mockito.verify(provisionAction).provision(configCaptor.capture(), channelCaptor.capture());
         assertThat(configCaptor.getValue().getFeaturePackDeps())
                 .map(fp->fp.getLocation().getProducerName())
@@ -255,7 +255,7 @@ public class InstallCommandTest extends AbstractMavenCommandTest {
                 CliConstants.REPOSITORIES, "file:/test",
                 CliConstants.FPL, "g:a");
 
-        assertEquals(ReturnCodes.SUCCESS_LOCAL_CHANGES, exitCode);
+        assertEquals(ReturnCodes.SUCCESS, exitCode);
         Mockito.verify(provisionAction).provision(configCaptor.capture(), channelCaptor.capture());
         assertThat(channelCaptor.getValue().get(0).getRepositories()
                 .stream().map(Repository::getUrl).collect(Collectors.toList()))

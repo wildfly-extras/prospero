@@ -55,11 +55,11 @@ public class RevertCommand extends AbstractParentCommand {
         FileConflictPrinter.print(conflicts, console);
 
         if (!yes && !console.confirm(CliMessages.MESSAGES.continueWithUpdate(), "", CliMessages.MESSAGES.updateCancelled())) {
-            return ReturnCodes.SUCCESS_NO_CHANGE;
+            return ReturnCodes.SUCCESS;
         }
 
         applyCandidateAction.applyUpdate(ApplyCandidateAction.Type.REVERT);
-        return ReturnCodes.SUCCESS_LOCAL_CHANGES;
+        return ReturnCodes.SUCCESS;
     }
 
     private static void validateRevertCandidate(Path installationDirectory, Path updateDirectory, ApplyCandidateAction applyCandidateAction) throws InvalidUpdateCandidateException, MetadataException {
@@ -164,7 +164,7 @@ public class RevertCommand extends AbstractParentCommand {
 
             InstallationHistoryAction historyAction = actionFactory.history(installationDirectory, console);
             historyAction.prepareRevert(new SavedState(revision), mavenOptions, overrideRepositories, updateDirectory.toAbsolutePath());
-            return ReturnCodes.SUCCESS_LOCAL_CHANGES;
+            return ReturnCodes.SUCCESS;
         }
     }
 

@@ -93,15 +93,14 @@ public class UpdateCommand extends AbstractParentCommand {
 
             log.tracef("Perform full update");
 
-            final boolean changesApplied;
             try (UpdateAction updateAction = actionFactory.update(installationDir, mavenOptions, console, repositories)) {
-                changesApplied = performUpdate(updateAction, yes, console, installationDir);
+                performUpdate(updateAction, yes, console, installationDir);
             }
 
             final float totalTime = (System.currentTimeMillis() - startTime) / 1000f;
             console.println(CliMessages.MESSAGES.operationCompleted(totalTime));
 
-            return changesApplied?ReturnCodes.SUCCESS_LOCAL_CHANGES:ReturnCodes.SUCCESS_NO_CHANGE;
+            return ReturnCodes.SUCCESS;
         }
 
         private boolean performUpdate(UpdateAction updateAction, boolean yes, CliConsole console, Path installDir) throws OperationException, ProvisioningException {
@@ -160,16 +159,15 @@ public class UpdateCommand extends AbstractParentCommand {
 
             verifyTargetDirectoryIsEmpty(updateDirectory);
 
-            final boolean updatesFound;
             try (UpdateAction updateAction = actionFactory.update(installationDir,
                     mavenOptions, console, repositories)) {
-                updatesFound = buildUpdate(updateAction, updateDirectory, yes, console, ()->console.confirmBuildUpdates());
+                buildUpdate(updateAction, updateDirectory, yes, console, ()->console.confirmBuildUpdates());
             }
 
             final float totalTime = (System.currentTimeMillis() - startTime) / 1000f;
             console.println(CliMessages.MESSAGES.operationCompleted(totalTime));
 
-            return updatesFound?ReturnCodes.SUCCESS_LOCAL_CHANGES:ReturnCodes.SUCCESS_NO_CHANGE;
+            return ReturnCodes.SUCCESS;
         }
     }
 
@@ -218,7 +216,7 @@ public class UpdateCommand extends AbstractParentCommand {
 
             // there always should be updates, so confirm update
             if (!yes && !console.confirm(CliMessages.MESSAGES.continueWithUpdate(), "", CliMessages.MESSAGES.updateCancelled())) {
-                return ReturnCodes.SUCCESS_NO_CHANGE;
+                return ReturnCodes.SUCCESS;
             }
 
             applyCandidateAction.applyUpdate(ApplyCandidateAction.Type.UPDATE);
@@ -226,7 +224,7 @@ public class UpdateCommand extends AbstractParentCommand {
             final float totalTime = (System.currentTimeMillis() - startTime) / 1000f;
             console.println(CliMessages.MESSAGES.operationCompleted(totalTime));
 
-            return ReturnCodes.SUCCESS_LOCAL_CHANGES;
+            return ReturnCodes.SUCCESS;
         }
     }
 
@@ -246,7 +244,7 @@ public class UpdateCommand extends AbstractParentCommand {
             try (UpdateAction updateAction = actionFactory.update(installationDir, mavenOptions, console, repositories)) {
                 final UpdateSet updateSet = updateAction.findUpdates();
                 console.updatesFound(updateSet.getArtifactUpdates());
-                return ReturnCodes.SUCCESS_NO_CHANGE;
+                return ReturnCodes.SUCCESS;
             }
         }
     }
