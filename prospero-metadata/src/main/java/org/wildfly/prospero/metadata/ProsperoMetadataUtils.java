@@ -22,7 +22,6 @@ import org.wildfly.channel.ChannelManifest;
 import org.wildfly.channel.ChannelManifestMapper;
 import org.wildfly.channel.ChannelMapper;
 
-import java.io.File;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
@@ -84,12 +83,68 @@ public class ProsperoMetadataUtils {
             Files.createDirectory(metadataDir);
         }
 
-        Files.writeString(manifestPath, ChannelManifestMapper.toYaml(manifest), StandardCharsets.UTF_8);
-        Files.writeString(configPath, ChannelMapper.toYaml(channels), StandardCharsets.UTF_8);
+        writeManifest(manifestPath, manifest);
+        writeChannelsConfiguration(configPath, channels);
 
         // Add README.txt file to .installation directory to warn the files should not be edited.
         if (!Files.exists(readmeFile)) {
-            Files.writeString(readmeFile, WARNING_MESSAGE , StandardCharsets.UTF_8);
+            writeToFile(readmeFile, WARNING_MESSAGE);
         }
+    }
+
+    /**
+     * record {@code channels} to the file at {@channelPath}. If the file already exist, it will be overwritten.
+     * If the file doesn't exist, the parent directory needs to be present, otherwise an exception is thrown.
+     *
+     * @param channelPath - {@code Path} where the data should be saved
+     * @param channels - {@code Channel}s to record
+     * @throws IOException - if unable to write the file
+     * @throws IllegalArgumentException - if the parent folder does not exist.
+     */
+    public static void writeChannelsConfiguration(Path channelPath, List<Channel> channels) throws IOException {
+        Objects.requireNonNull(channelPath);
+        Objects.requireNonNull(channels);
+
+        if (!Files.exists(channelPath.getParent())) {
+            throw new IllegalArgumentException(String.format("The target path %s does not exist.", channelPath.getParent()));
+        }
+
+
+        writeToFile(channelPath, ChannelMapper.toYaml(channels));
+    }
+
+    /**
+     * record {@code ChannelManifest} to the file at {@manifestPath}. If the file already exist, it will be overwritten.
+     * If the file doesn't exist, the parent directory needs to be present, otherwise an exception is thrown.
+     *
+     * @param manifestPath - {@code Path} where the data should be saved
+     * @param manifest - {@code ChannelManifest} to record
+     * @throws IOException - if unable to write the file
+     * @throws IllegalArgumentException - if the parent folder does not exist.
+     */
+    public static void writeManifest(Path manifestPath, ChannelManifest manifest) throws IOException {
+        Objects.requireNonNull(manifestPath);
+        Objects.requireNonNull(manifest);
+
+        if (!Files.exists(manifestPath.getParent())) {
+            throw new IllegalArgumentException(String.format("The target path %s does not exist.", manifestPath.getParent()));
+        }
+
+        writeToFile(manifestPath, ChannelManifestMapper.toYaml(manifest));
+    }
+
+    public static Path manifestPath(Path serverDir) {
+        return serverDir.resolve(METADATA_DIR).resolve(MANIFEST_FILE_NAME);
+    }
+
+    public static Path configurationPath(Path serverDir) {
+        return serverDir.resolve(METADATA_DIR).resolve(INSTALLER_CHANNELS_FILE_NAME);
+    }
+
+    protected static void writeToFile(Path path, String text) throws IOException {
+        if (!text.endsWith("\n")) {
+            text += "\n";
+        }
+        Files.writeString(path, text, StandardCharsets.UTF_8);
     }
 }

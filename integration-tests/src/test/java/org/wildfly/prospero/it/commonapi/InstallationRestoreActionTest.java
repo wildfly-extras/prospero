@@ -25,12 +25,12 @@ import org.wildfly.prospero.actions.InstallationRestoreAction;
 import org.wildfly.prospero.actions.ProvisioningAction;
 import org.wildfly.prospero.api.ProvisioningDefinition;
 import org.wildfly.prospero.it.AcceptingConsole;
+import org.wildfly.prospero.metadata.ProsperoMetadataUtils;
 import org.wildfly.prospero.model.ManifestYamlSupport;
 import org.eclipse.aether.artifact.Artifact;
 import org.eclipse.aether.artifact.DefaultArtifact;
 import org.junit.Before;
 import org.junit.Test;
-import org.wildfly.prospero.model.ProsperoConfig;
 import org.wildfly.prospero.test.MetadataTestUtils;
 
 import java.io.File;
@@ -68,7 +68,7 @@ public class InstallationRestoreActionTest extends WfCoreTestBase {
                 .provision(provisioningDefinition.toProvisioningConfig(),
                         provisioningDefinition.resolveChannels(CHANNELS_RESOLVER_FACTORY));
 
-        prepareInstallerConfig(outputPath.resolve(MetadataTestUtils.INSTALLER_CHANNELS_FILE_PATH), CHANNEL_COMPONENT_UPDATES, CHANNEL_BASE_CORE_19);
+        prepareInstallerConfig(CHANNEL_COMPONENT_UPDATES, CHANNEL_BASE_CORE_19);
 
         new InstallationExportAction(outputPath).export(Paths.get("target/bundle.zip"));
 
@@ -87,7 +87,7 @@ public class InstallationRestoreActionTest extends WfCoreTestBase {
     }
 
     // config including correct channel names
-    private static void prepareInstallerConfig(Path provisionConfigFile, String... channelDescriptor)
+    private void prepareInstallerConfig(String... channelDescriptor)
             throws IOException {
         List<URL> channelUrls = Arrays.stream(channelDescriptor)
                 .map(d->InstallationRestoreActionTest.class.getClassLoader().getResource(d))
@@ -100,7 +100,8 @@ public class InstallationRestoreActionTest extends WfCoreTestBase {
                     new ChannelManifestCoordinate(channelUrls.get(i)), null, null));
         }
 
-        new ProsperoConfig(channels).writeConfig(provisionConfigFile.getParent());
+        final Path configFilePath = ProsperoMetadataUtils.configurationPath(outputPath);
+        ProsperoMetadataUtils.writeChannelsConfiguration(configFilePath, channels);
     }
 
 }

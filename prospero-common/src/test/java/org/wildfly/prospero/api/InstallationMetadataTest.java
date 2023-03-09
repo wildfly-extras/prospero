@@ -136,8 +136,8 @@ public class InstallationMetadataTest {
                 ChannelManifestMapper.toYaml(manifest),
                 StandardOpenOption.CREATE_NEW);
         final Channel channel = createChannel(new ChannelManifestCoordinate("foo","bar"));
-        final ProsperoConfig prosperoConfig = new ProsperoConfig(List.of(channel));
-        prosperoConfig.writeConfig(metadataDir);
+        final Path configFilePath = ProsperoMetadataUtils.configurationPath(base);
+        ProsperoMetadataUtils.writeChannelsConfiguration(configFilePath, List.of(channel));
 
         assertThat(base.resolve(ProsperoMetadataUtils.METADATA_DIR).resolve(".git")).doesNotExist();
 

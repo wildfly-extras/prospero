@@ -184,8 +184,8 @@ public class InstallationMetadata implements AutoCloseable {
                                    GitStorage gitStorage, Optional<ManifestVersionRecord> currentVersions) throws MetadataException {
         this.base = base;
         this.gitStorage = gitStorage;
-        this.manifestFile = base.resolve(METADATA_DIR).resolve(InstallationMetadata.MANIFEST_FILE_NAME);
-        this.channelsFile = base.resolve(METADATA_DIR).resolve(InstallationMetadata.INSTALLER_CHANNELS_FILE_NAME);
+        this.manifestFile = ProsperoMetadataUtils.manifestPath(base);
+        this.channelsFile = ProsperoMetadataUtils.configurationPath(base);
         this.readmeFile = base.resolve(METADATA_DIR).resolve(ProsperoMetadataUtils.README_FILE_NAME);
         this.provisioningFile = base.resolve(GALLEON_INSTALLATION_DIR).resolve(InstallationMetadata.PROVISIONING_FILE_NAME);
 
@@ -257,7 +257,7 @@ public class InstallationMetadata implements AutoCloseable {
 
     public void recordProvision(boolean overrideProsperoConfig, boolean gitRecord) throws MetadataException {
         try {
-            ManifestYamlSupport.write(this.manifest, this.manifestFile);
+            ProsperoMetadataUtils.writeManifest(this.manifestFile, this.manifest);
         } catch (IOException e) {
             throw Messages.MESSAGES.unableToSaveConfiguration(manifestFile, e);
         }
@@ -285,7 +285,7 @@ public class InstallationMetadata implements AutoCloseable {
 
     private void writeProsperoConfig() throws MetadataException {
         try {
-            getProsperoConfig().writeConfig(this.base.resolve(METADATA_DIR));
+            ProsperoMetadataUtils.writeChannelsConfiguration(channelsFile, getProsperoConfig().getChannels());
         } catch (IOException e) {
             throw Messages.MESSAGES.unableToSaveConfiguration(channelsFile, e);
         }

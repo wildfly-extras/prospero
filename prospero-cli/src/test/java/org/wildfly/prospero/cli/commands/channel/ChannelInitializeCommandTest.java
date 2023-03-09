@@ -33,6 +33,7 @@ import org.wildfly.prospero.cli.AbstractConsoleTest;
 import org.wildfly.prospero.cli.CliMessages;
 import org.wildfly.prospero.cli.ReturnCodes;
 import org.wildfly.prospero.cli.commands.CliConstants;
+import org.wildfly.prospero.metadata.ProsperoMetadataUtils;
 import org.wildfly.prospero.model.ProsperoConfig;
 import org.wildfly.prospero.test.MetadataTestUtils;
 
@@ -271,8 +272,9 @@ public class ChannelInitializeCommandTest extends AbstractConsoleTest {
                 List.of(new Repository("test", "http://test.org/repo")),
                 new ChannelManifestCoordinate(CUSTOM_CHANNELS_GROUP_ID, "existing"),
                 null, null);
-        new ProsperoConfig(List.of(channel))
-                .writeConfig(installationDir.resolve(InstallationMetadata.METADATA_DIR));
+
+        final Path configFilePath = ProsperoMetadataUtils.configurationPath(installationDir);
+        ProsperoMetadataUtils.writeChannelsConfiguration(configFilePath, List.of(channel));
         int exitCode = commandLine.execute(
                 CliConstants.Commands.CHANNEL, CliConstants.Commands.CUSTOMIZATION_INIT_CHANNEL,
                 CliConstants.CUSTOMIZATION_REPOSITORY_URL, "http://test.repo2",

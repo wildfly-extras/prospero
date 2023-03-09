@@ -34,6 +34,7 @@ import org.wildfly.prospero.cli.ReturnCodes;
 import org.wildfly.prospero.cli.commands.CliConstants;
 import org.wildfly.prospero.it.ExecutionUtils;
 import org.wildfly.prospero.it.commonapi.WfCoreTestBase;
+import org.wildfly.prospero.metadata.ProsperoMetadataUtils;
 import org.wildfly.prospero.model.ManifestYamlSupport;
 import org.wildfly.prospero.model.ProsperoConfig;
 import org.wildfly.prospero.test.MetadataTestUtils;
@@ -158,7 +159,12 @@ public class CloneTest extends WfCoreTestBase {
     public void testRestoreOverrideRepositories() throws Exception {
         ChannelManifest installedManifest = install(targetDir, MetadataTestUtils.prepareChannel(CHANNEL_BASE_CORE_19));
         final Stream stream = new Stream("org.wildfly.core", "wildfly-cli", UPGRADE_VERSION);
-        updateManifestStream(targetDir, stream);
+        ChannelManifest manifest = ManifestYamlSupport.parse(ProsperoMetadataUtils.manifestPath(targetDir).toFile());
+        manifest.findStreamFor(stream.getGroupId(), stream.getArtifactId()).ifPresent(s -> {
+            manifest.getStreams().remove(s);
+            manifest.getStreams().add(stream);
+        });
+        ProsperoMetadataUtils.writeManifest(ProsperoMetadataUtils.manifestPath(targetDir), manifest);
         new InstallationExportAction(targetDir).export(exportPath);
         ExecutionUtils.prosperoExecution(CliConstants.Commands.CLONE, CliConstants.Commands.RESTORE,
             CliConstants.DIR, importDir.toString(),
@@ -170,15 +176,6 @@ public class CloneTest extends WfCoreTestBase {
           .execute()
           .assertReturnCode(ReturnCodes.SUCCESS);
         checkMetaData(InstallationMetadata.loadInstallation(importDir), stream, installedManifest);
-    }
-
-    private void updateManifestStream(Path installDir, Stream stream) throws Exception {
-        ChannelManifest manifest = ManifestYamlSupport.parse(installDir.resolve(METADATA_DIR).resolve(MANIFEST_FILE_NAME).toFile());
-        manifest.findStreamFor(stream.getGroupId(), stream.getArtifactId()).ifPresent(s -> {
-            manifest.getStreams().remove(s);
-            manifest.getStreams().add(stream);
-        });
-        ManifestYamlSupport.write(manifest, installDir.resolve(METADATA_DIR).resolve(MANIFEST_FILE_NAME));
     }
 
 }

@@ -52,15 +52,11 @@ public class ProsperoConfig {
         return channels;
     }
 
-    public void writeConfig(Path configFile) throws IOException {
-        Files.writeString(configFile.resolve(ProsperoMetadataUtils.INSTALLER_CHANNELS_FILE_NAME), ChannelMapper.toYaml(channels));
-    }
-
     public static ProsperoConfig readConfig(Path path) throws MetadataException {
         final String yamlContent;
         MavenOptions opts = null;
         try {
-            yamlContent = Files.readString(path.resolve(ProsperoMetadataUtils.INSTALLER_CHANNELS_FILE_NAME));
+            yamlContent = Files.readString(path.resolve(ProsperoMetadataUtils.INSTALLER_CHANNELS_FILE_NAME)).trim();
         } catch (IOException e) {
             throw Messages.MESSAGES.unableToReadFile(path, e);
         }
