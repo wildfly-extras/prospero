@@ -22,7 +22,7 @@ import org.jboss.galleon.util.HashUtils;
 import org.jboss.galleon.util.IoUtils;
 import org.jboss.logging.Logger;
 import org.wildfly.channel.MavenArtifact;
-import org.wildfly.prospero.api.InstallationMetadata;
+import org.wildfly.prospero.metadata.ProsperoMetadataUtils;
 
 import java.io.BufferedWriter;
 import java.io.File;
@@ -55,7 +55,7 @@ public class ArtifactCache {
 
     static final String CACHE_LINE_SEPARATOR = "::";
     static final String CACHE_FILENAME = "artifacts.txt";
-    public static final Path CACHE_FOLDER = Path.of(InstallationMetadata.METADATA_DIR, ".cache");
+    public static final Path CACHE_FOLDER = Path.of(ProsperoMetadataUtils.METADATA_DIR, ".cache");
 
     private final Path cacheDir;
     private final Path installationDir;

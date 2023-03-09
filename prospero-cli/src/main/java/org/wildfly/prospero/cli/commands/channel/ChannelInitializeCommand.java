@@ -23,7 +23,6 @@ import org.wildfly.channel.ChannelManifestCoordinate;
 import org.wildfly.channel.Repository;
 import org.wildfly.prospero.actions.MetadataAction;
 import org.wildfly.prospero.api.ArtifactUtils;
-import org.wildfly.prospero.api.InstallationMetadata;
 import org.wildfly.prospero.api.exceptions.MetadataException;
 import org.wildfly.prospero.cli.ActionFactory;
 import org.wildfly.prospero.cli.CliConsole;
@@ -31,6 +30,7 @@ import org.wildfly.prospero.cli.CliMessages;
 import org.wildfly.prospero.cli.ReturnCodes;
 import org.wildfly.prospero.cli.commands.AbstractCommand;
 import org.wildfly.prospero.cli.commands.CliConstants;
+import org.wildfly.prospero.metadata.ProsperoMetadataUtils;
 import picocli.CommandLine;
 
 import java.io.File;
@@ -89,7 +89,7 @@ public class ChannelInitializeCommand extends AbstractCommand {
                     }
                 }
             } else {
-                final Path defaultLocalRepoPath = installationDirectory.resolve(InstallationMetadata.METADATA_DIR)
+                final Path defaultLocalRepoPath = installationDirectory.resolve(ProsperoMetadataUtils.METADATA_DIR)
                         .resolve(DEFAULT_CUSTOMIZATION_REPOSITORY);
                 if (!createLocalRepository(defaultLocalRepoPath)) {
                     return ReturnCodes.PROCESSING_ERROR;

@@ -232,7 +232,7 @@ public class ChannelInitializeCommandTest extends AbstractConsoleTest {
                 .map(r-> tuple(r.getId(), r.getUrl()))
                 .contains(
                     tuple(CUSTOMIZATION_REPO_ID,
-                        installationDir.resolve(InstallationMetadata.METADATA_DIR).resolve(DEFAULT_CUSTOMIZATION_REPOSITORY).toUri().toURL().toString())
+                        installationDir.resolve(ProsperoMetadataUtils.METADATA_DIR).resolve(DEFAULT_CUSTOMIZATION_REPOSITORY).toUri().toURL().toString())
                 );
         assertThat(actualChannels())
                 .map(c -> c.getManifestCoordinate().getMaven())
@@ -257,7 +257,7 @@ public class ChannelInitializeCommandTest extends AbstractConsoleTest {
                 .map(r-> tuple(r.getId(), r.getUrl()))
                 .contains(
                     tuple(CUSTOMIZATION_REPO_ID,
-                        installationDir.resolve(InstallationMetadata.METADATA_DIR).resolve(DEFAULT_CUSTOMIZATION_REPOSITORY).toUri().toURL().toString())
+                        installationDir.resolve(ProsperoMetadataUtils.METADATA_DIR).resolve(DEFAULT_CUSTOMIZATION_REPOSITORY).toUri().toURL().toString())
         );
         assertThat(actualChannels())
                 .map(c -> c.getManifestCoordinate().getMaven())

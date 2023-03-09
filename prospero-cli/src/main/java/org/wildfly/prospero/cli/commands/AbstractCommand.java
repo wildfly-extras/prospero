@@ -29,6 +29,7 @@ import org.wildfly.prospero.api.InstallationMetadata;
 import org.wildfly.prospero.cli.ActionFactory;
 import org.wildfly.prospero.cli.CliConsole;
 import org.wildfly.prospero.cli.CliMessages;
+import org.wildfly.prospero.metadata.ProsperoMetadataUtils;
 import picocli.CommandLine;
 
 public abstract class AbstractCommand implements Callable<Integer> {
@@ -59,8 +60,8 @@ public abstract class AbstractCommand implements Callable<Integer> {
 
     static void verifyDirectoryContainsInstallation(Path path) {
         File dotGalleonDir = path.resolve(InstallationMetadata.GALLEON_INSTALLATION_DIR).toFile();
-        File channelsFile = path.resolve(InstallationMetadata.METADATA_DIR)
-                .resolve(InstallationMetadata.INSTALLER_CHANNELS_FILE_NAME).toFile();
+        File channelsFile = path.resolve(ProsperoMetadataUtils.METADATA_DIR)
+                .resolve(ProsperoMetadataUtils.INSTALLER_CHANNELS_FILE_NAME).toFile();
         if (!dotGalleonDir.isDirectory() || !channelsFile.isFile()) {
             if (currentDir().equals(path)) {
                 // if the path is the current directory, user may have forgotten to specify the --dir option

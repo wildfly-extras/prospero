@@ -49,8 +49,6 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
-import static org.wildfly.prospero.api.InstallationMetadata.MANIFEST_FILE_NAME;
-import static org.wildfly.prospero.api.InstallationMetadata.METADATA_DIR;
 
 public class CloneTest extends WfCoreTestBase {
 
@@ -99,7 +97,7 @@ public class CloneTest extends WfCoreTestBase {
                 .withTimeLimit(10, TimeUnit.MINUTES)
                 .execute()
                 .assertReturnCode(ReturnCodes.SUCCESS);
-        return ManifestYamlSupport.parse(installDir.resolve(METADATA_DIR).resolve(MANIFEST_FILE_NAME).toFile());
+        return ManifestYamlSupport.parse(installDir.resolve(ProsperoMetadataUtils.METADATA_DIR).resolve(ProsperoMetadataUtils.MANIFEST_FILE_NAME).toFile());
     }
 
     private void checkMetaData(InstallationMetadata metadata, Stream stream, ChannelManifest installedManifest) throws Exception {

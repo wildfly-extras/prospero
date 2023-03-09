@@ -35,7 +35,6 @@ import org.wildfly.channel.ChannelManifestMapper;
 import org.wildfly.channel.ChannelMapper;
 import org.wildfly.channel.Repository;
 import org.wildfly.prospero.api.FileConflict;
-import org.wildfly.prospero.api.InstallationMetadata;
 import org.wildfly.prospero.api.exceptions.InvalidUpdateCandidateException;
 import org.wildfly.prospero.galleon.ArtifactCache;
 import org.wildfly.prospero.installation.git.GitStorage;
@@ -82,7 +81,7 @@ public class ApplyCandidateActionTest {
         creator = FeaturePackCreator.getInstance().addArtifactResolver(repo);
         dirBuilder = DirState.rootBuilder()
                 .skip(Constants.PROVISIONED_STATE_DIR)
-                .skip(InstallationMetadata.METADATA_DIR);
+                .skip(METADATA_DIR);
     }
 
     @Test
@@ -218,11 +217,11 @@ public class ApplyCandidateActionTest {
 
         final DirState expectedState = DirState.rootBuilder()
                 .skip("prod1")
-                .skip(InstallationMetadata.METADATA_DIR + "/" + ".git")
+                .skip(METADATA_DIR + "/" + ".git")
                 .skip(Constants.PROVISIONED_STATE_DIR)
-                .addFile(InstallationMetadata.METADATA_DIR + "/" + InstallationMetadata.MANIFEST_FILE_NAME,
+                .addFile(METADATA_DIR + "/" + ProsperoMetadataUtils.MANIFEST_FILE_NAME,
                         manifest("manifest " + FPL_101).trim())
-                .addFile(InstallationMetadata.METADATA_DIR + "/" + InstallationMetadata.INSTALLER_CHANNELS_FILE_NAME,
+                .addFile(METADATA_DIR + "/" + ProsperoMetadataUtils.INSTALLER_CHANNELS_FILE_NAME,
                         channel("channels " + FPL_100).trim())
                 .addFile(ArtifactCache.CACHE_FOLDER.toString().replace(File.separatorChar, '/') + "/" + "artifacts.txt" , FPL_101+"::abcd::foo/bar")
                 .build();
@@ -417,10 +416,10 @@ public class ApplyCandidateActionTest {
         options.put(Constants.EXPORT_SYSTEM_PATHS, "true");
         getPm(path).install(FeaturePackLocation.fromString(fpl), options);
         // mock the installation metadata
-        final Path metadataPath = path.resolve(InstallationMetadata.METADATA_DIR);
+        final Path metadataPath = path.resolve(METADATA_DIR);
         Files.createDirectory(metadataPath);
-        Files.writeString(metadataPath.resolve(InstallationMetadata.MANIFEST_FILE_NAME), manifest("manifest " + fpl));
-        Files.writeString(metadataPath.resolve(InstallationMetadata.INSTALLER_CHANNELS_FILE_NAME), channel("channels " + fpl));
+        Files.writeString(metadataPath.resolve(ProsperoMetadataUtils.MANIFEST_FILE_NAME), manifest("manifest " + fpl));
+        Files.writeString(metadataPath.resolve(ProsperoMetadataUtils.INSTALLER_CHANNELS_FILE_NAME), channel("channels " + fpl));
         try (final GitStorage gitStorage = new GitStorage(path)) {
             gitStorage.record();
         }

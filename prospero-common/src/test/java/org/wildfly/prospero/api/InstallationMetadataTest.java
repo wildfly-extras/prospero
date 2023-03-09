@@ -128,11 +128,11 @@ public class InstallationMetadataTest {
     @Test
     public void initStorageIfItDoesNotExist() throws Exception {
         base = temp.newFolder().toPath();
-        final Path metadataDir = base.resolve(InstallationMetadata.METADATA_DIR);
+        final Path metadataDir = base.resolve(ProsperoMetadataUtils.METADATA_DIR);
 
         Files.createDirectory(metadataDir);
         final ChannelManifest manifest = new ChannelManifest(null, null, null, Collections.emptyList());
-        Files.writeString(metadataDir.resolve(InstallationMetadata.MANIFEST_FILE_NAME),
+        Files.writeString(metadataDir.resolve(ProsperoMetadataUtils.MANIFEST_FILE_NAME),
                 ChannelManifestMapper.toYaml(manifest),
                 StandardOpenOption.CREATE_NEW);
         final Channel channel = createChannel(new ChannelManifestCoordinate("foo","bar"));
@@ -159,7 +159,7 @@ public class InstallationMetadataTest {
 
         installationMetadata.recordProvision(false);
 
-        assertTrue("README.txt file should exist.", Files.exists(base.resolve(InstallationMetadata.METADATA_DIR)));
+        assertTrue("README.txt file should exist.", Files.exists(base.resolve(ProsperoMetadataUtils.METADATA_DIR)));
     }
 
     @Test
@@ -240,7 +240,7 @@ public class InstallationMetadataTest {
     }
 
     private InstallationMetadata mockServer(Path base) throws IOException, MetadataException {
-        final Path metadataDir = base.resolve(InstallationMetadata.METADATA_DIR);
+        final Path metadataDir = base.resolve(ProsperoMetadataUtils.METADATA_DIR);
 
         Files.createDirectory(metadataDir);
         final ChannelManifest manifest = new ChannelManifest(null, null, null, Collections.emptyList());

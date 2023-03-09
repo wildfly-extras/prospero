@@ -56,12 +56,6 @@ import static org.wildfly.prospero.metadata.ProsperoMetadataUtils.CURRENT_VERSIO
 
 public class InstallationMetadata implements AutoCloseable {
 
-    @Deprecated
-    public static final String METADATA_DIR = ProsperoMetadataUtils.METADATA_DIR;
-    @Deprecated
-    public static final String MANIFEST_FILE_NAME = ProsperoMetadataUtils.MANIFEST_FILE_NAME;
-    @Deprecated
-    public static final String INSTALLER_CHANNELS_FILE_NAME = ProsperoMetadataUtils.INSTALLER_CHANNELS_FILE_NAME;
     public static final String PROVISIONING_FILE_NAME = "provisioning.xml";
     public static final String GALLEON_INSTALLATION_DIR = ".galleon";
     private static final String WARNING_MESSAGE = "WARNING: The files in .installation directory should be only edited by the provisioning tool.";
@@ -84,7 +78,7 @@ public class InstallationMetadata implements AutoCloseable {
      * @throws MetadataException
      */
     public static InstallationMetadata loadInstallation(Path base) throws MetadataException {
-        final Path manifestFile = base.resolve(METADATA_DIR).resolve(InstallationMetadata.MANIFEST_FILE_NAME);
+        final Path manifestFile = base.resolve(ProsperoMetadataUtils.METADATA_DIR).resolve(ProsperoMetadataUtils.MANIFEST_FILE_NAME);
 
         ChannelManifest manifest;
         ProsperoConfig prosperoConfig;
@@ -96,7 +90,7 @@ public class InstallationMetadata implements AutoCloseable {
             throw Messages.MESSAGES.unableToParseConfiguration(manifestFile, e);
         }
         try {
-            prosperoConfig = ProsperoConfig.readConfig(base.resolve(METADATA_DIR));
+            prosperoConfig = ProsperoConfig.readConfig(base.resolve(ProsperoMetadataUtils.METADATA_DIR));
         } catch (MetadataException e) {
             // re-wrap the exception to change the description
             throw Messages.MESSAGES.unableToParseConfiguration(base, e.getCause());
@@ -111,7 +105,7 @@ public class InstallationMetadata implements AutoCloseable {
                 gitStorage.record();
             }
         } catch (IOException e) {
-            throw Messages.MESSAGES.unableToCreateHistoryStorage(base.resolve(METADATA_DIR), e);
+            throw Messages.MESSAGES.unableToCreateHistoryStorage(base.resolve(ProsperoMetadataUtils.METADATA_DIR), e);
         }
         return metadata;
     }
@@ -153,13 +147,13 @@ public class InstallationMetadata implements AutoCloseable {
             Files.createDirectory(tempDirectory.resolve(Constants.PROVISIONED_STATE_DIR));
             while ((entry = zis.getNextEntry()) != null) {
 
-                if (entry.getName().equals(MANIFEST_FILE_NAME)) {
+                if (entry.getName().equals(ProsperoMetadataUtils.MANIFEST_FILE_NAME)) {
                     manifestFile = tempDirectory.resolve(ProsperoMetadataUtils.METADATA_DIR).resolve(ProsperoMetadataUtils.MANIFEST_FILE_NAME);
                     Files.copy(zis, manifestFile, StandardCopyOption.REPLACE_EXISTING);
                     manifestFile.toFile().deleteOnExit();
                 }
 
-                if (entry.getName().equals(INSTALLER_CHANNELS_FILE_NAME)) {
+                if (entry.getName().equals(ProsperoMetadataUtils.INSTALLER_CHANNELS_FILE_NAME)) {
                     channelsFile = tempDirectory.resolve(ProsperoMetadataUtils.METADATA_DIR).resolve(ProsperoMetadataUtils.INSTALLER_CHANNELS_FILE_NAME);
                     Files.copy(zis, channelsFile, StandardCopyOption.REPLACE_EXISTING);
                     channelsFile.toFile().deleteOnExit();
@@ -186,7 +180,7 @@ public class InstallationMetadata implements AutoCloseable {
         this.gitStorage = gitStorage;
         this.manifestFile = ProsperoMetadataUtils.manifestPath(base);
         this.channelsFile = ProsperoMetadataUtils.configurationPath(base);
-        this.readmeFile = base.resolve(METADATA_DIR).resolve(ProsperoMetadataUtils.README_FILE_NAME);
+        this.readmeFile = base.resolve(ProsperoMetadataUtils.METADATA_DIR).resolve(ProsperoMetadataUtils.README_FILE_NAME);
         this.provisioningFile = base.resolve(GALLEON_INSTALLATION_DIR).resolve(InstallationMetadata.PROVISIONING_FILE_NAME);
 
         this.manifest = manifest;
@@ -210,7 +204,7 @@ public class InstallationMetadata implements AutoCloseable {
         final File file = location.toFile();
 
         try (ZipOutputStream zos = new ZipOutputStream(new FileOutputStream(file))) {
-            zos.putNextEntry(new ZipEntry(MANIFEST_FILE_NAME));
+            zos.putNextEntry(new ZipEntry(ProsperoMetadataUtils.MANIFEST_FILE_NAME));
             try(FileInputStream fis = new FileInputStream(manifestFile.toFile())) {
                 byte[] buffer = new byte[1024];
                 int len;
@@ -220,7 +214,7 @@ public class InstallationMetadata implements AutoCloseable {
             }
             zos.closeEntry();
 
-            zos.putNextEntry(new ZipEntry(INSTALLER_CHANNELS_FILE_NAME));
+            zos.putNextEntry(new ZipEntry(ProsperoMetadataUtils.INSTALLER_CHANNELS_FILE_NAME));
             try(FileInputStream fis = new FileInputStream(channelsFile.toFile())) {
                 byte[] buffer = new byte[1024];
                 int len;

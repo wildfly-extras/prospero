@@ -25,7 +25,6 @@ import org.wildfly.channel.ChannelManifest;
 import org.wildfly.prospero.Messages;
 import org.wildfly.prospero.model.ManifestVersionRecord;
 import org.wildfly.prospero.api.ChannelChange;
-import org.wildfly.prospero.api.InstallationMetadata;
 import org.wildfly.prospero.api.exceptions.MetadataException;
 import org.wildfly.prospero.api.SavedState;
 import org.wildfly.prospero.api.ArtifactChange;
@@ -66,7 +65,7 @@ public class GitStorage implements AutoCloseable {
     private Path base;
 
     public GitStorage(Path base) throws MetadataException {
-        this.base = base.resolve(InstallationMetadata.METADATA_DIR);
+        this.base = base.resolve(ProsperoMetadataUtils.METADATA_DIR);
         try {
             git = initGit();
         } catch (GitAPIException | IOException e) {
@@ -109,8 +108,8 @@ public class GitStorage implements AutoCloseable {
                 final PersonIdent author = adjustCommitDateToCreationDate(getCommitter());
                 final SavedState.Type commitType = SavedState.Type.INSTALL;
                 final String msg = readCommitMessage();
-                git.add().addFilepattern(InstallationMetadata.MANIFEST_FILE_NAME).call();
-                git.add().addFilepattern(InstallationMetadata.INSTALLER_CHANNELS_FILE_NAME).call();
+                git.add().addFilepattern(ProsperoMetadataUtils.MANIFEST_FILE_NAME).call();
+                git.add().addFilepattern(ProsperoMetadataUtils.INSTALLER_CHANNELS_FILE_NAME).call();
                 git.add().addFilepattern(CURRENT_VERSION_FILE).call();
                 // adjust the date so that when taking over a non-prosper installation date matches creation
                 git.commit()
@@ -138,7 +137,7 @@ public class GitStorage implements AutoCloseable {
                 throw new IllegalStateException("This operation cannot be performed on empty repository");
             }
 
-            git.add().addFilepattern(InstallationMetadata.MANIFEST_FILE_NAME).call();
+            git.add().addFilepattern(ProsperoMetadataUtils.MANIFEST_FILE_NAME).call();
             git.add().addFilepattern(CURRENT_VERSION_FILE).call();
 
             final PersonIdent author = getCommitter();
@@ -171,7 +170,7 @@ public class GitStorage implements AutoCloseable {
 
     public void recordConfigChange() throws MetadataException {
         try {
-            git.add().addFilepattern(InstallationMetadata.INSTALLER_CHANNELS_FILE_NAME).call();
+            git.add().addFilepattern(ProsperoMetadataUtils.INSTALLER_CHANNELS_FILE_NAME).call();
             final PersonIdent author = getCommitter();
             git.commit()
                     .setAuthor(author)
@@ -217,13 +216,13 @@ public class GitStorage implements AutoCloseable {
         Parser<ArtifactChange> parser = (changed, base) -> {
             final Map<String, Artifact> oldArtifacts;
             if (base != null ) {
-                final ChannelManifest parseOld = ManifestYamlSupport.parse(base.resolve(InstallationMetadata.MANIFEST_FILE_NAME).toFile());
+                final ChannelManifest parseOld = ManifestYamlSupport.parse(base.resolve(ProsperoMetadataUtils.MANIFEST_FILE_NAME).toFile());
                 oldArtifacts = toMap(parseOld.getStreams());
             } else {
                 oldArtifacts = Collections.emptyMap();
             }
 
-            final ChannelManifest parseCurrent = ManifestYamlSupport.parse(changed.resolve(InstallationMetadata.MANIFEST_FILE_NAME).toFile());
+            final ChannelManifest parseCurrent = ManifestYamlSupport.parse(changed.resolve(ProsperoMetadataUtils.MANIFEST_FILE_NAME).toFile());
             final Map<String, Artifact> currentArtifacts = toMap(parseCurrent.getStreams());
 
             final ArrayList<ArtifactChange> artifactChanges = new ArrayList<>();
@@ -243,7 +242,7 @@ public class GitStorage implements AutoCloseable {
             return artifactChanges;
         };
 
-        return getChanges(savedState, InstallationMetadata.MANIFEST_FILE_NAME, parser);
+        return getChanges(savedState, ProsperoMetadataUtils.MANIFEST_FILE_NAME, parser);
     }
 
     public List<ChannelChange> getChannelChanges(SavedState savedState) throws MetadataException {
@@ -279,7 +278,7 @@ public class GitStorage implements AutoCloseable {
             return channelChanges;
         };
 
-        return getChanges(savedState, InstallationMetadata.INSTALLER_CHANNELS_FILE_NAME, parser);
+        return getChanges(savedState, ProsperoMetadataUtils.INSTALLER_CHANNELS_FILE_NAME, parser);
     }
 
     private <T> List<T> getChanges(SavedState savedState, String manifestFileName, Parser<T> parser) throws MetadataException {
