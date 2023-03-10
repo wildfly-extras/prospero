@@ -17,13 +17,14 @@
 
 package org.wildfly.prospero.cli;
 
+import picocli.CommandLine;
+
 public final class ReturnCodes {
 
     private ReturnCodes() {
     }
 
-    public static final int SUCCESS_NO_CHANGE = 0;
-    public static final int SUCCESS_LOCAL_CHANGES = 1;
-    public static final int INVALID_ARGUMENTS = -1;
-    public static final int PROCESSING_ERROR = -2;
+    public static final int SUCCESS = CommandLine.ExitCode.OK;
+    public static final int INVALID_ARGUMENTS = CommandLine.ExitCode.USAGE;
+    public static final int PROCESSING_ERROR = CommandLine.ExitCode.SOFTWARE;
 }

@@ -285,7 +285,7 @@ public class ProsperoInstallationManager implements InstallationManager {
         private final Path server;
         private final org.wildfly.prospero.api.MavenOptions mavenOptions;
 
-        private ActionFactory(Path server, org.wildfly.prospero.api.MavenOptions mavenOptions) throws ProvisioningException {
+        private ActionFactory(Path server, org.wildfly.prospero.api.MavenOptions mavenOptions) {
             this.server = server;
             this.mavenOptions = mavenOptions;
         }

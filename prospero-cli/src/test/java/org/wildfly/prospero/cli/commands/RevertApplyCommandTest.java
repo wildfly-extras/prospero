@@ -114,7 +114,7 @@ public class RevertApplyCommandTest extends AbstractConsoleTest {
                 CliConstants.DIR, installationDir.toString(),
                 CliConstants.UPDATE_DIR, updateDir.toString());
 
-        assertEquals(ReturnCodes.SUCCESS_LOCAL_CHANGES, exitCode);
+        assertEquals(ReturnCodes.SUCCESS, exitCode);
         verify(applyCandidateAction).applyUpdate(ApplyCandidateAction.Type.REVERT);
     }
 }

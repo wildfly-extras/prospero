@@ -40,7 +40,7 @@ public abstract class AbstractMavenCommandTest extends AbstractConsoleTest {
         doLocalMock();
         int exitCode = commandLine.execute(getArgs());
 
-        assertEquals(ReturnCodes.SUCCESS_LOCAL_CHANGES, exitCode);
+        assertEquals(ReturnCodes.SUCCESS, exitCode);
         MavenOptions options = getCapturedMavenOptions();
         assertEquals(null, options.getLocalCache());
         assertFalse(options.isNoLocalCache());
@@ -52,7 +52,7 @@ public abstract class AbstractMavenCommandTest extends AbstractConsoleTest {
 
         int exitCode = commandLine.execute(getArgs(CliConstants.LOCAL_CACHE, "test-path"));
 
-        assertEquals(ReturnCodes.SUCCESS_LOCAL_CHANGES, exitCode);
+        assertEquals(ReturnCodes.SUCCESS, exitCode);
         MavenOptions options = getCapturedMavenOptions();
         assertEquals(Paths.get("test-path").toAbsolutePath(), options.getLocalCache());
     }
@@ -69,7 +69,7 @@ public abstract class AbstractMavenCommandTest extends AbstractConsoleTest {
         doLocalMock();
         int exitCode = commandLine.execute(getArgs(CliConstants.NO_LOCAL_MAVEN_CACHE));
 
-        assertEquals(ReturnCodes.SUCCESS_LOCAL_CHANGES, exitCode);
+        assertEquals(ReturnCodes.SUCCESS, exitCode);
         MavenOptions options = getCapturedMavenOptions();
         final Path provisioningRepo = options.getLocalCache();
 

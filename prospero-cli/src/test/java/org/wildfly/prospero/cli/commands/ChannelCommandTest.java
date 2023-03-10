@@ -110,21 +110,21 @@ public class ChannelCommandTest extends AbstractConsoleTest {
                 CliConstants.CHANNEL_NAME, "channel-0",
                 CliConstants.CHANNEL_MANIFEST, "org.test:test",
                 CliConstants.REPOSITORIES, "test_repo::http://test.te");
-        Assert.assertEquals(ReturnCodes.SUCCESS_LOCAL_CHANGES, exitCode);
+        Assert.assertEquals(ReturnCodes.SUCCESS, exitCode);
 
         exitCode = commandLine.execute(CliConstants.Commands.CHANNEL, CliConstants.Commands.ADD,
                 CliConstants.DIR, dir.toString(),
                 CliConstants.CHANNEL_NAME, "channel-1",
                 CliConstants.CHANNEL_MANIFEST, "g:a2",
                 CliConstants.REPOSITORIES, "test_repo::http://test.te");
-        Assert.assertEquals(ReturnCodes.SUCCESS_LOCAL_CHANGES, exitCode);
+        Assert.assertEquals(ReturnCodes.SUCCESS, exitCode);
 
         exitCode = commandLine.execute(CliConstants.Commands.CHANNEL, CliConstants.Commands.ADD,
                 CliConstants.DIR, dir.toString(),
                 CliConstants.CHANNEL_NAME, "channel-2",
                 CliConstants.CHANNEL_MANIFEST, "file:/path",
                 CliConstants.REPOSITORIES, "test_repo::http://test.te");
-        Assert.assertEquals(ReturnCodes.SUCCESS_LOCAL_CHANGES, exitCode);
+        Assert.assertEquals(ReturnCodes.SUCCESS, exitCode);
 
         InstallationMetadata installationMetadata = InstallationMetadata.loadInstallation(dir);
         assertThat(installationMetadata.getProsperoConfig().getChannels())
@@ -177,7 +177,7 @@ public class ChannelCommandTest extends AbstractConsoleTest {
     public void testList() {
         int exitCode = commandLine.execute(CliConstants.Commands.CHANNEL, CliConstants.Commands.LIST,
                 CliConstants.DIR, dir.toString());
-        Assert.assertEquals(ReturnCodes.SUCCESS_NO_CHANGE, exitCode);
+        Assert.assertEquals(ReturnCodes.SUCCESS, exitCode);
         Assert.assertEquals(3, getStandardOutput().lines().filter(l->l.contains("manifest")).count());
     }
 
@@ -204,7 +204,7 @@ public class ChannelCommandTest extends AbstractConsoleTest {
         int exitCode = commandLine.execute(CliConstants.Commands.CHANNEL, CliConstants.Commands.REMOVE,
                 CliConstants.DIR, dir.toString(),
                 CliConstants.CHANNEL_NAME, "test2");
-        Assert.assertEquals(ReturnCodes.SUCCESS_LOCAL_CHANGES, exitCode);
+        Assert.assertEquals(ReturnCodes.SUCCESS, exitCode);
         try (InstallationMetadata installationMetadata = InstallationMetadata.loadInstallation(dir)) {
             assertThat(installationMetadata.getProsperoConfig().getChannels())
                     .map(c->c.getManifestCoordinate())
@@ -218,7 +218,7 @@ public class ChannelCommandTest extends AbstractConsoleTest {
         exitCode = commandLine.execute(CliConstants.Commands.CHANNEL, CliConstants.Commands.REMOVE,
                 CliConstants.DIR, dir.toString(),
                 CliConstants.CHANNEL_NAME, "test1");
-        Assert.assertEquals(ReturnCodes.SUCCESS_LOCAL_CHANGES, exitCode);
+        Assert.assertEquals(ReturnCodes.SUCCESS, exitCode);
         try (InstallationMetadata installationMetadata = InstallationMetadata.loadInstallation(dir)) {
             assertThat(installationMetadata.getProsperoConfig().getChannels())
                     .map(c->c.getManifestCoordinate())
@@ -231,7 +231,7 @@ public class ChannelCommandTest extends AbstractConsoleTest {
         exitCode = commandLine.execute(CliConstants.Commands.CHANNEL, CliConstants.Commands.REMOVE,
                 CliConstants.DIR, dir.toString(),
                 CliConstants.CHANNEL_NAME, "test3");
-        Assert.assertEquals(ReturnCodes.SUCCESS_LOCAL_CHANGES, exitCode);
+        Assert.assertEquals(ReturnCodes.SUCCESS, exitCode);
         try (InstallationMetadata installationMetadata = InstallationMetadata.loadInstallation(dir)) {
             assertThat(installationMetadata.getProsperoConfig().getChannels())
                     .map(c->c.getManifestCoordinate())

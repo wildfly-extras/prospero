@@ -69,7 +69,7 @@ public class UpdateWithAdditionalRepositoryTest extends CliTestBase {
                         CliConstants.NO_LOCAL_MAVEN_CACHE,
                         CliConstants.DIR, targetDir.getAbsolutePath())
                 .execute()
-                .assertReturnCode(ReturnCodes.SUCCESS_LOCAL_CHANGES);
+                .assertReturnCode(ReturnCodes.SUCCESS);
 
         final Optional<Stream> wildflyCliStream = getInstalledArtifact(resolvedUpgradeArtifact.getArtifactId(), targetDir.toPath());
 
