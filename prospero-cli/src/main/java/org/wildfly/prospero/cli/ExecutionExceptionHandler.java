@@ -55,18 +55,26 @@ public class ExecutionExceptionHandler implements CommandLine.IExecutionExceptio
             console.error(CliMessages.MESSAGES.addChannels(CliConstants.CHANNEL_MANIFEST));
             return ReturnCodes.INVALID_ARGUMENTS;
         }
-        if (ex instanceof IllegalArgumentException || ex instanceof ArgumentParsingException) {
+        if (ex instanceof IllegalArgumentException) {
             // used to indicate invalid arguments
             console.error(CliMessages.MESSAGES.errorHeader(ex.getLocalizedMessage()));
+            return ReturnCodes.INVALID_ARGUMENTS;
+        } else if (ex instanceof ArgumentParsingException) {
+            ArgumentParsingException ape = (ArgumentParsingException) ex;
+            // used to indicate invalid arguments
+            console.error(CliMessages.MESSAGES.errorHeader(ape.getLocalizedMessage()));
+            for (String detail : ape.getDetails()) {
+                console.error("  " + detail);
+            }
             return ReturnCodes.INVALID_ARGUMENTS;
         } else if (ex instanceof OperationException) {
             if (ex instanceof ChannelDefinitionException) {
                 console.error(CliMessages.MESSAGES.errorHeader(ex.getLocalizedMessage()));
                 console.error(((ChannelDefinitionException) ex).getValidationMessages());
             } else if (ex instanceof ArtifactResolutionException) {
-                ArtifactResolutionException are = (ArtifactResolutionException)ex;
+                ArtifactResolutionException are = (ArtifactResolutionException) ex;
                 printResolutionException(are);
-            } else  if (ex instanceof UnresolvedChannelMetadataException) {
+            } else if (ex instanceof UnresolvedChannelMetadataException) {
                 UnresolvedChannelMetadataException mcme = (UnresolvedChannelMetadataException) ex;
                 printMissingMetadataException(mcme);
             } else {

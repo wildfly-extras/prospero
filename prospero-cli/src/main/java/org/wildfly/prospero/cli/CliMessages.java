@@ -17,12 +17,14 @@
 
 package org.wildfly.prospero.cli;
 
+import org.jboss.galleon.Constants;
 import org.jboss.logging.Messages;
 import org.jboss.logging.annotations.Cause;
 import org.jboss.logging.annotations.Message;
 import org.jboss.logging.annotations.MessageBundle;
 import org.wildfly.prospero.actions.ApplyCandidateAction;
 import org.wildfly.prospero.cli.commands.CliConstants;
+import org.wildfly.prospero.metadata.ProsperoMetadataUtils;
 
 import java.nio.file.Path;
 
@@ -151,21 +153,21 @@ public interface CliMessages {
      * @see #invalidInstallationDir(Path)
      */
     @Message("Path `%s` does not contain a server installation provisioned by the %s.")
-    IllegalArgumentException invalidInstallationDir(Path path, String distName);
+    String invalidInstallationDir(Path path, String distName);
 
-    default IllegalArgumentException invalidInstallationDir(Path path) {
-        return invalidInstallationDir(path, DistributionInfo.DIST_NAME);
+    default ArgumentParsingException invalidInstallationDir(Path path) {
+        return new ArgumentParsingException(invalidInstallationDir(path, DistributionInfo.DIST_NAME), requiredMetadata());
     }
 
-    /**
-     * @see #invalidInstallationDirMaybeUseDirOption(Path)
-     */
-    @Message("Path `%s` does not contain a server installation provisioned by the %s."
-            + " Maybe you forgot to specify path to the installation (" + CliConstants.DIR + ")?")
-    IllegalArgumentException invalidInstallationDirMaybeUseDirOption(Path path, String distName);
+    @Message("Server installation needs to contain a `" + Constants.PROVISIONED_STATE_DIR + "` folder and an `"
+            + ProsperoMetadataUtils.METADATA_DIR + "/" + ProsperoMetadataUtils.INSTALLER_CHANNELS_FILE_NAME + "` file.")
+    String requiredMetadata();
 
-    default IllegalArgumentException invalidInstallationDirMaybeUseDirOption(Path path) {
-        return invalidInstallationDirMaybeUseDirOption(path, DistributionInfo.DIST_NAME);
+    @Message("Maybe you forgot to specify path to the installation (" + CliConstants.DIR + ")?")
+    String forgottenDirArgQuestion();
+
+    default ArgumentParsingException invalidInstallationDirMaybeUseDirOption(Path path) {
+        return new ArgumentParsingException(invalidInstallationDir(path, DistributionInfo.DIST_NAME), forgottenDirArgQuestion(), requiredMetadata());
     }
 
     @Message("Add required channels using [%s] argument.")

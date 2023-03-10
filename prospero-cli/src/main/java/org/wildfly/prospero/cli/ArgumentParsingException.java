@@ -17,7 +17,14 @@
 
 package org.wildfly.prospero.cli;
 
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.List;
+import java.util.Objects;
+
 public class ArgumentParsingException extends Exception {
+
+    private List<String> details = Collections.emptyList();
 
     public ArgumentParsingException(String msg, Exception e) {
         super(msg, e);
@@ -27,7 +34,13 @@ public class ArgumentParsingException extends Exception {
         super(msg);
     }
 
-    public ArgumentParsingException(String msg, String... args) {
-        super(String.format(msg, args));
+    public ArgumentParsingException(String msg, String... details) {
+        super(msg);
+        Objects.requireNonNull(details);
+        this.details = Arrays.asList(details);
+    }
+
+    public List<String> getDetails() {
+        return details;
     }
 }
