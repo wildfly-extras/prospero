@@ -128,8 +128,9 @@ public interface CliMessages {
     @Message("Unable to perform self-update - unable to determine installed feature packs.")
     ArgumentParsingException unableToParseSelfUpdateData(@Cause Exception e);
 
-    @Message("No channel or channel manifest were specified.")
-    IllegalArgumentException channelsMandatoryWhenCustomFpl();
+    @Message("The chosen FPL is not a known configuration - did you mean one of [%s]\n" +
+             "If you want to install a custom FPL, make sure a valid channels configuration including repositories and manifest is provided.")
+    IllegalArgumentException channelsMandatoryWhenCustomFpl(String knownCombintaions);
 
     @Message("No changes found")
     String noChangesFound();
