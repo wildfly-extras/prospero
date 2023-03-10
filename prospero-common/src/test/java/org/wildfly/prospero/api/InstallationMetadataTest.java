@@ -30,7 +30,7 @@ import org.wildfly.channel.ChannelManifestCoordinate;
 import org.wildfly.channel.ChannelManifestMapper;
 import org.wildfly.channel.MavenCoordinate;
 import org.wildfly.channel.Repository;
-import org.wildfly.prospero.model.ManifestVersionRecord;
+import org.wildfly.prospero.metadata.ManifestVersionRecord;
 import org.wildfly.prospero.api.exceptions.MetadataException;
 import org.wildfly.prospero.installation.git.GitStorage;
 import org.wildfly.prospero.metadata.ProsperoMetadataUtils;

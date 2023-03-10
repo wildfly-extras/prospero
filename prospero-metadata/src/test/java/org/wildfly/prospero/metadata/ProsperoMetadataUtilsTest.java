@@ -65,7 +65,7 @@ public class ProsperoMetadataUtilsTest {
 
     @Test
     public void createWhenMetadatDirDoesntExist() throws Exception {
-        ProsperoMetadataUtils.generate(server, List.of(A_CHANNEL), A_MANIFEST);
+        ProsperoMetadataUtils.generate(server, List.of(A_CHANNEL), A_MANIFEST, null);
 
         assertTrue(Files.exists(manifestPath));
         assertTrue(Files.exists(channelPath));
@@ -77,7 +77,7 @@ public class ProsperoMetadataUtilsTest {
     @Test
     public void createWhenMetadatDirDoesExist() throws Exception {
         Files.createDirectory(server.resolve(METADATA_DIR));
-        ProsperoMetadataUtils.generate(server, List.of(A_CHANNEL), A_MANIFEST);
+        ProsperoMetadataUtils.generate(server, List.of(A_CHANNEL), A_MANIFEST, null);
 
         assertTrue(Files.exists(manifestPath));
         assertTrue(Files.exists(channelPath));
@@ -91,7 +91,7 @@ public class ProsperoMetadataUtilsTest {
         Files.createDirectory(server.resolve(METADATA_DIR));
         Files.createFile(manifestPath);
 
-        assertThrows(IllegalArgumentException.class, ()->ProsperoMetadataUtils.generate(server, List.of(A_CHANNEL), A_MANIFEST));
+        assertThrows(IllegalArgumentException.class, ()->ProsperoMetadataUtils.generate(server, List.of(A_CHANNEL), A_MANIFEST, null));
 
         assertEquals("", Files.readString(manifestPath));
         assertFalse(Files.exists(channelPath));
@@ -102,7 +102,7 @@ public class ProsperoMetadataUtilsTest {
         Files.createDirectory(server.resolve(METADATA_DIR));
         Files.createFile(channelPath);
 
-        assertThrows(IllegalArgumentException.class, ()->ProsperoMetadataUtils.generate(server, List.of(A_CHANNEL), A_MANIFEST));
+        assertThrows(IllegalArgumentException.class, ()->ProsperoMetadataUtils.generate(server, List.of(A_CHANNEL), A_MANIFEST, null));
 
         assertEquals("", Files.readString(channelPath));
         assertFalse(Files.exists(manifestPath));
@@ -112,7 +112,7 @@ public class ProsperoMetadataUtilsTest {
     public void throwErrorIfMetadataFolderIsFile() throws Exception {
         Files.createFile(server.resolve(METADATA_DIR));
 
-        assertThrows(IllegalArgumentException.class, ()->ProsperoMetadataUtils.generate(server, List.of(A_CHANNEL), A_MANIFEST));
+        assertThrows(IllegalArgumentException.class, ()->ProsperoMetadataUtils.generate(server, List.of(A_CHANNEL), A_MANIFEST, null));
 
         assertFalse(Files.exists(manifestPath));
         assertFalse(Files.exists(channelPath));

@@ -39,7 +39,7 @@ import org.wildfly.prospero.api.exceptions.InvalidUpdateCandidateException;
 import org.wildfly.prospero.galleon.ArtifactCache;
 import org.wildfly.prospero.installation.git.GitStorage;
 import org.wildfly.prospero.metadata.ProsperoMetadataUtils;
-import org.wildfly.prospero.model.ManifestVersionRecord;
+import org.wildfly.prospero.metadata.ManifestVersionRecord;
 import org.wildfly.prospero.updates.MarkerFile;
 import org.wildfly.prospero.utils.filestate.DirState;
 
@@ -325,12 +325,12 @@ public class ApplyCandidateActionTest {
         install(installationPath, FPL_100);
         final ManifestVersionRecord manifestVersionRecord = new ManifestVersionRecord();
         manifestVersionRecord.addManifest(new ManifestVersionRecord.MavenManifest("org.foo", "bar", "1.0.0"));
-        ManifestVersionRecord.write(manifestVersionRecord, installationPath.resolve(METADATA_DIR).resolve(CURRENT_VERSION_FILE));
+        ProsperoMetadataUtils.writeVersionRecord(installationPath.resolve(METADATA_DIR).resolve(CURRENT_VERSION_FILE), manifestVersionRecord);
 
         prepareUpdate(updatePath, installationPath, FPL_101);
         final ManifestVersionRecord manifestVersionRecord2 = new ManifestVersionRecord();
         manifestVersionRecord2.addManifest(new ManifestVersionRecord.MavenManifest("org.foo", "bar", "1.0.1"));
-        ManifestVersionRecord.write(manifestVersionRecord2, updatePath.resolve(METADATA_DIR).resolve(CURRENT_VERSION_FILE));
+        ProsperoMetadataUtils.writeVersionRecord(updatePath.resolve(METADATA_DIR).resolve(CURRENT_VERSION_FILE), manifestVersionRecord2);
 
         new ApplyCandidateAction(installationPath, updatePath).applyUpdate(ApplyCandidateAction.Type.UPDATE);
 

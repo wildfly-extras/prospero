@@ -28,7 +28,7 @@ import org.wildfly.channel.Channel;
 import org.wildfly.channel.ChannelManifest;
 import org.wildfly.channel.ChannelManifestCoordinate;
 import org.wildfly.channel.Repository;
-import org.wildfly.prospero.model.ManifestVersionRecord;
+import org.wildfly.prospero.metadata.ManifestVersionRecord;
 import org.wildfly.prospero.api.ArtifactChange;
 import org.wildfly.prospero.api.ChannelChange;
 import org.wildfly.prospero.api.SavedState;
@@ -325,7 +325,7 @@ public class GitStorageTest {
         // create the manifest version record to provide version info for commit
         final ManifestVersionRecord record = new ManifestVersionRecord();
         record.addManifest(new ManifestVersionRecord.MavenManifest("foo", "bar", "1.0.0"));
-        ManifestVersionRecord.write(record, base.resolve(ProsperoMetadataUtils.CURRENT_VERSION_FILE));
+        ProsperoMetadataUtils.writeVersionRecord(base.resolve(ProsperoMetadataUtils.CURRENT_VERSION_FILE), record);
 
         gitStorage.record();
 
@@ -357,13 +357,13 @@ public class GitStorageTest {
         setArtifact(manifest, "org.test:test:1.2.3");
         ManifestVersionRecord record = new ManifestVersionRecord();
         record.addManifest(new ManifestVersionRecord.MavenManifest("foo", "bar", "1.0.0"));
-        ManifestVersionRecord.write(record, base.resolve(ProsperoMetadataUtils.CURRENT_VERSION_FILE));
+        ProsperoMetadataUtils.writeVersionRecord(base.resolve(ProsperoMetadataUtils.CURRENT_VERSION_FILE), record);
         gitStorage.record();
 
         setArtifact(manifest, "org.test:test:1.2.4");
         record = new ManifestVersionRecord();
         record.addManifest(new ManifestVersionRecord.MavenManifest("foo", "bar", "1.0.1"));
-        ManifestVersionRecord.write(record, base.resolve(ProsperoMetadataUtils.CURRENT_VERSION_FILE));
+        ProsperoMetadataUtils.writeVersionRecord(base.resolve(ProsperoMetadataUtils.CURRENT_VERSION_FILE), record);
         gitStorage.record();
 
         revertPath = gitStorage.revert(gitStorage.getRevisions().get(1));

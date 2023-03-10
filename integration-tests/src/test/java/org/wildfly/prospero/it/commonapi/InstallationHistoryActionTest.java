@@ -22,7 +22,7 @@ import org.jboss.galleon.ProvisioningException;
 import org.junit.Assert;
 import org.wildfly.channel.Channel;
 import org.wildfly.channel.Repository;
-import org.wildfly.prospero.model.ManifestVersionRecord;
+import org.wildfly.prospero.metadata.ManifestVersionRecord;
 import org.wildfly.prospero.api.ArtifactChange;
 import org.wildfly.prospero.actions.InstallationHistoryAction;
 import org.wildfly.prospero.api.InstallationMetadata;

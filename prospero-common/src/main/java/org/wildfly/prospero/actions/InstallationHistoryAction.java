@@ -30,7 +30,7 @@ import org.wildfly.prospero.api.exceptions.MetadataException;
 import org.wildfly.prospero.api.SavedState;
 import org.wildfly.prospero.galleon.GalleonEnvironment;
 import org.wildfly.prospero.metadata.ProsperoMetadataUtils;
-import org.wildfly.prospero.model.ManifestVersionRecord;
+import org.wildfly.prospero.metadata.ManifestVersionRecord;
 import org.wildfly.prospero.model.ProsperoConfig;
 import org.wildfly.prospero.wfchannel.MavenSessionManager;
 import org.jboss.galleon.ProvisioningException;
@@ -117,7 +117,7 @@ public class InstallationHistoryAction {
         try {
             final Optional<ManifestVersionRecord> manifestHistory = revertMetadata.getManifestVersions();
             if (manifestHistory.isPresent()) {
-                ManifestVersionRecord.write(manifestHistory.get(), targetDir.resolve(METADATA_DIR).resolve(CURRENT_VERSION_FILE));
+                ProsperoMetadataUtils.writeVersionRecord(targetDir.resolve(METADATA_DIR).resolve(CURRENT_VERSION_FILE), manifestHistory.get());
             } else {
                 Path versionsFile = targetDir.resolve(METADATA_DIR).resolve(CURRENT_VERSION_FILE);
                 if (Files.exists(versionsFile)) {

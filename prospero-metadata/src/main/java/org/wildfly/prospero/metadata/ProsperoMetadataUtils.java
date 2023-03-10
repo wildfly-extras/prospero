@@ -58,10 +58,11 @@ public class ProsperoMetadataUtils {
      * @param serverDir - base path of the provisioned servers
      * @param channels - list of channels the server should be subscribed to
      * @param manifest - channel manifest containing streams used to provision a server.
+     * @param versionRecord - provisioned versions of manifests. Can be {@code null}
      * @throws IOException - if unable to write the metadata files
      * @throws IllegalArgumentException - if any of metadata files are already present.
      */
-    public static void generate(Path serverDir, List<Channel> channels, ChannelManifest manifest) throws IOException {
+    public static void generate(Path serverDir, List<Channel> channels, ChannelManifest manifest, ManifestVersionRecord versionRecord) throws IOException {
         Objects.requireNonNull(serverDir);
         Objects.requireNonNull(channels);
         Objects.requireNonNull(manifest);
@@ -69,6 +70,7 @@ public class ProsperoMetadataUtils {
         final Path metadataDir = serverDir.resolve(METADATA_DIR);
         final Path manifestPath = metadataDir.resolve(MANIFEST_FILE_NAME);
         final Path configPath = metadataDir.resolve(INSTALLER_CHANNELS_FILE_NAME);
+        final Path versionRecordPath = metadataDir.resolve(CURRENT_VERSION_FILE);
         final Path readmeFile = metadataDir.resolve(README_FILE_NAME);
 
         if (Files.exists(metadataDir) && !Files.isDirectory(metadataDir)) {
@@ -85,6 +87,9 @@ public class ProsperoMetadataUtils {
 
         writeManifest(manifestPath, manifest);
         writeChannelsConfiguration(configPath, channels);
+        if (versionRecord != null) {
+            writeVersionRecord(versionRecordPath, versionRecord);
+        }
 
         // Add README.txt file to .installation directory to warn the files should not be edited.
         if (!Files.exists(readmeFile)) {
@@ -131,6 +136,30 @@ public class ProsperoMetadataUtils {
         }
 
         writeToFile(manifestPath, ChannelManifestMapper.toYaml(manifest));
+    }
+
+    /**
+     * record {@code ManifestVersionRecord} to the file at {@versionsPath}. If the file already exist, it will be overwritten.
+     * If the file doesn't exist, the parent directory needs to be present, otherwise an exception is thrown.
+     *
+     * @param versionsPath - {@code Path} where the data should be saved
+     * @param versionRecord - {@code ManifestVersionRecord} to record
+     * @throws IOException - if unable to write the file
+     * @throws IllegalArgumentException - if the parent folder does not exist.
+     */
+    public static void writeVersionRecord(Path versionsPath, ManifestVersionRecord versionRecord) throws IOException {
+        Objects.requireNonNull(versionRecord);
+        Objects.requireNonNull(versionsPath);
+
+        if (!Files.exists(versionsPath.getParent())) {
+            throw new IllegalArgumentException(String.format("The target path %s does not exist.", versionsPath.getParent()));
+        }
+
+        final String yaml = ManifestVersionRecord.toYaml(versionRecord);
+        if (Files.exists(versionsPath)) {
+            Files.delete(versionsPath);
+        }
+        Files.writeString(versionsPath, yaml);
     }
 
     public static Path manifestPath(Path serverDir) {

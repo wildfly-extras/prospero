@@ -24,7 +24,7 @@ import org.wildfly.channel.Channel;
 import org.wildfly.channel.ChannelManifest;
 import org.apache.commons.io.FileUtils;
 import org.wildfly.prospero.Messages;
-import org.wildfly.prospero.model.ManifestVersionRecord;
+import org.wildfly.prospero.metadata.ManifestVersionRecord;
 import org.wildfly.prospero.api.exceptions.MetadataException;
 import org.wildfly.prospero.installation.git.GitStorage;
 import org.wildfly.prospero.metadata.ProsperoMetadataUtils;
@@ -96,7 +96,12 @@ public class InstallationMetadata implements AutoCloseable {
             throw Messages.MESSAGES.unableToParseConfiguration(base, e.getCause());
         }
 
-        currentVersion = ManifestVersionRecord.read(base.resolve(ProsperoMetadataUtils.METADATA_DIR).resolve(CURRENT_VERSION_FILE));
+        final Path versionsFile = base.resolve(ProsperoMetadataUtils.METADATA_DIR).resolve(CURRENT_VERSION_FILE);
+        try {
+            currentVersion = ManifestVersionRecord.read(versionsFile);
+        } catch (IOException e) {
+            throw Messages.MESSAGES.unableToReadFile(versionsFile, e);
+        }
 
         final GitStorage gitStorage = new GitStorage(base);
         final InstallationMetadata metadata = new InstallationMetadata(base, manifest, prosperoConfig, gitStorage, currentVersion);
@@ -269,7 +274,12 @@ public class InstallationMetadata implements AutoCloseable {
         }
 
         if (manifestVersion.isPresent()) {
-            ManifestVersionRecord.write(manifestVersion.get(), base.resolve(ProsperoMetadataUtils.METADATA_DIR).resolve(CURRENT_VERSION_FILE));
+            final Path versionFile = base.resolve(ProsperoMetadataUtils.METADATA_DIR).resolve(CURRENT_VERSION_FILE);
+            try {
+                ProsperoMetadataUtils.writeVersionRecord(versionFile, manifestVersion.get());
+            } catch (IOException e) {
+                throw Messages.MESSAGES.unableToWriteFile(versionFile, e);
+            }
         }
 
         if (gitRecord) {

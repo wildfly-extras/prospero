@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-package org.wildfly.prospero.model;
+package org.wildfly.prospero.metadata;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonIgnore;
@@ -23,8 +23,6 @@ import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
-import org.wildfly.prospero.Messages;
-import org.wildfly.prospero.api.exceptions.MetadataException;
 
 import java.io.IOException;
 import java.io.StringWriter;
@@ -178,27 +176,11 @@ public class ManifestVersionRecord {
         return sb.toString();
     }
 
-    public static void write(ManifestVersionRecord commitMessage, Path versionsFile) throws MetadataException {
-        try {
-            final String yaml = ManifestVersionRecord.toYaml(commitMessage);
-            if (Files.exists(versionsFile)) {
-                Files.delete(versionsFile);
-            }
-            Files.writeString(versionsFile, yaml);
-        } catch (IOException e) {
-            throw Messages.MESSAGES.unableToWriteFile(versionsFile, e);
-        }
-    }
-
-    public static Optional<ManifestVersionRecord> read(Path versionsFile) throws MetadataException {
-        try {
-            if (Files.exists(versionsFile)) {
-                return Optional.of(ManifestVersionRecord.fromYaml(Files.readString(versionsFile)));
-            } else {
-                return Optional.empty();
-            }
-        } catch (IOException e) {
-            throw Messages.MESSAGES.unableToReadFile(versionsFile, e);
+    public static Optional<ManifestVersionRecord> read(Path versionsFile) throws IOException {
+        if (Files.exists(versionsFile)) {
+            return Optional.of(ManifestVersionRecord.fromYaml(Files.readString(versionsFile)));
+        } else {
+            return Optional.empty();
         }
     }
 
@@ -206,7 +188,7 @@ public class ManifestVersionRecord {
         return new ObjectMapper(new YAMLFactory()).readValue(yaml, ManifestVersionRecord.class);
     }
 
-    private static String toYaml(ManifestVersionRecord manifestVersionRecord) throws IOException {
+    static String toYaml(ManifestVersionRecord manifestVersionRecord) throws IOException {
         final StringWriter stringWriter = new StringWriter();
         new ObjectMapper(new YAMLFactory()).writeValue(stringWriter, manifestVersionRecord);
         return stringWriter.toString();

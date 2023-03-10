@@ -23,7 +23,7 @@ import org.eclipse.jgit.lib.StoredConfig;
 import org.wildfly.channel.Channel;
 import org.wildfly.channel.ChannelManifest;
 import org.wildfly.prospero.Messages;
-import org.wildfly.prospero.model.ManifestVersionRecord;
+import org.wildfly.prospero.metadata.ManifestVersionRecord;
 import org.wildfly.prospero.api.ChannelChange;
 import org.wildfly.prospero.api.exceptions.MetadataException;
 import org.wildfly.prospero.api.SavedState;
@@ -128,7 +128,12 @@ public class GitStorage implements AutoCloseable {
     }
 
     private String readCommitMessage() throws MetadataException {
-        return ManifestVersionRecord.read(base.resolve(CURRENT_VERSION_FILE)).map(ManifestVersionRecord::getSummary).orElse(null);
+        final Path versionsFile = base.resolve(CURRENT_VERSION_FILE);
+        try {
+            return ManifestVersionRecord.read(versionsFile).map(ManifestVersionRecord::getSummary).orElse(null);
+        } catch (IOException e) {
+            throw Messages.MESSAGES.unableToReadFile(versionsFile, e);
+        }
     }
 
     public void recordChange(SavedState.Type operation) throws MetadataException {

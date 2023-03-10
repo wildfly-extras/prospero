@@ -35,7 +35,7 @@ import org.jboss.galleon.Constants;
 import org.jboss.galleon.ProvisioningException;
 import org.junit.Test;
 import org.wildfly.channel.Channel;
-import org.wildfly.prospero.model.ManifestVersionRecord;
+import org.wildfly.prospero.metadata.ManifestVersionRecord;
 import org.wildfly.prospero.actions.UpdateAction;
 import org.wildfly.prospero.api.ArtifactChange;
 import org.wildfly.prospero.api.ProvisioningDefinition;

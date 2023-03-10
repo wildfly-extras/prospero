@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-package org.wildfly.prospero.actions;
+package org.wildfly.prospero.metadata;
 
 import org.jboss.galleon.util.HashUtils;
 import org.junit.Rule;
@@ -29,7 +29,6 @@ import org.wildfly.channel.ChannelManifestCoordinate;
 import org.wildfly.channel.Repository;
 import org.wildfly.channel.maven.VersionResolverFactory;
 import org.wildfly.channel.spi.MavenVersionsResolver;
-import org.wildfly.prospero.model.ManifestVersionRecord;
 
 import java.net.URL;
 import java.nio.file.Path;

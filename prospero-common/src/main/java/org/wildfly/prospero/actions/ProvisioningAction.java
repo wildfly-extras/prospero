@@ -46,7 +46,8 @@ import java.util.stream.Collectors;
 
 import org.wildfly.prospero.licenses.License;
 import org.wildfly.prospero.licenses.LicenseManager;
-import org.wildfly.prospero.model.ManifestVersionRecord;
+import org.wildfly.prospero.metadata.ManifestVersionRecord;
+import org.wildfly.prospero.metadata.ManifestVersionResolver;
 import org.wildfly.prospero.model.ProsperoConfig;
 import org.wildfly.prospero.wfchannel.MavenSessionManager;
 import org.eclipse.aether.repository.RemoteRepository;
@@ -99,7 +100,13 @@ public class ProvisioningAction {
             throw new ArtifactResolutionException(e, repositories, mavenSessionManager.isOffline());
         }
 
-        final ManifestVersionRecord manifestRecord = new ManifestVersionResolver(mavenSessionManager).getCurrentVersions(channels);
+        final ManifestVersionRecord manifestRecord;
+        try {
+            manifestRecord = new ManifestVersionResolver(mavenSessionManager.getProvisioningRepo(), mavenSessionManager.newRepositorySystem())
+                    .getCurrentVersions(channels);
+        } catch (IOException e) {
+            throw new MetadataException(Messages.MESSAGES.unableToDownloadFile(), e);
+        }
 
         writeProsperoMetadata(installDir, galleonEnv.getRepositoryManager(), channels, manifestRecord);
 

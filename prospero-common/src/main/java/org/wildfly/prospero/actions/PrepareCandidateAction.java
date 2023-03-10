@@ -26,6 +26,7 @@ import org.jboss.galleon.xml.ProvisioningXmlParser;
 import org.wildfly.channel.Channel;
 import org.wildfly.channel.ChannelManifest;
 import org.wildfly.channel.UnresolvedMavenArtifactException;
+import org.wildfly.prospero.Messages;
 import org.wildfly.prospero.api.Console;
 import org.wildfly.prospero.api.InstallationMetadata;
 import org.wildfly.prospero.api.SavedState;
@@ -36,7 +37,8 @@ import org.wildfly.prospero.galleon.ChannelMavenArtifactRepositoryManager;
 import org.wildfly.prospero.galleon.GalleonEnvironment;
 import org.wildfly.prospero.galleon.GalleonFeaturePackAnalyzer;
 import org.wildfly.prospero.galleon.GalleonUtils;
-import org.wildfly.prospero.model.ManifestVersionRecord;
+import org.wildfly.prospero.metadata.ManifestVersionRecord;
+import org.wildfly.prospero.metadata.ManifestVersionResolver;
 import org.wildfly.prospero.model.ProsperoConfig;
 import org.wildfly.prospero.updates.MarkerFile;
 import org.wildfly.prospero.wfchannel.MavenSessionManager;
@@ -90,12 +92,13 @@ class PrepareCandidateAction implements AutoCloseable{
         }
 
         try {
-            final ManifestVersionRecord manifestRecord = new ManifestVersionResolver(mavenSessionManager)
-                    .getCurrentVersions(galleonEnv.getChannels());
+            final ManifestVersionRecord manifestRecord =
+                    new ManifestVersionResolver(mavenSessionManager.getProvisioningRepo(), mavenSessionManager.newRepositorySystem())
+                            .getCurrentVersions(galleonEnv.getChannels());
             writeProsperoMetadata(targetDir, galleonEnv.getRepositoryManager(), metadata.getProsperoConfig().getChannels(),
                     manifestRecord);
-        } catch (MetadataException ex) {
-            throw new ProvisioningException(ex);
+        } catch (IOException ex) {
+            throw new ProvisioningException(Messages.MESSAGES.unableToDownloadFile(), ex);
         }
 
         try {
