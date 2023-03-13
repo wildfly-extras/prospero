@@ -90,6 +90,10 @@ public class ArtifactUtils {
         return true;
     }
 
+    public static String printStream(ArtifactCoordinate coord) {
+        return String.format("%s:%s", coord.getGroupId(), coord.getArtifactId());
+    }
+
     public static String printCoordinate(ArtifactCoordinate coord) {
         return printCoordinate(coord.getGroupId(), coord.getArtifactId(), coord.getClassifier(),
                 coord.getExtension(), coord.getVersion());

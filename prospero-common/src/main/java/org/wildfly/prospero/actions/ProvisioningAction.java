@@ -34,6 +34,7 @@ import org.wildfly.prospero.api.RepositoryUtils;
 import org.wildfly.prospero.api.exceptions.ArtifactResolutionException;
 import org.wildfly.prospero.api.exceptions.MetadataException;
 import org.wildfly.prospero.api.exceptions.OperationException;
+import org.wildfly.prospero.api.exceptions.StreamNotFoundException;
 import org.wildfly.prospero.galleon.GalleonFeaturePackAnalyzer;
 import org.wildfly.prospero.galleon.GalleonEnvironment;
 import org.wildfly.prospero.galleon.GalleonUtils;
@@ -142,7 +143,15 @@ public class ProvisioningAction {
         } catch (MavenUniverseException e) {
             if (e.getCause() instanceof org.eclipse.aether.resolution.ArtifactResolutionException) {
                 throw wrapAetherException((org.eclipse.aether.resolution.ArtifactResolutionException) e.getCause());
+            } else if (e.getCause() instanceof UnresolvedMavenArtifactException && e.getMessage().contains("(no stream found)")) {
+                final UnresolvedMavenArtifactException cause = (UnresolvedMavenArtifactException) e.getCause();
+                throw new StreamNotFoundException(Messages.MESSAGES.streamNotFound(),
+                        e,
+                        cause.getUnresolvedArtifacts(),
+                        cause.getAttemptedRepositories(),
+                        mavenSessionManager.isOffline());
             } else {
+                // org.wildfly.channel.UnresolvedMavenArtifactException
                 throw new ArtifactResolutionException(e.getMessage(), e);
             }
         } catch (IOException | ProvisioningException e) {

@@ -306,6 +306,10 @@ public interface CliMessages {
         return bundle.getString("prospero.general.error.resolve.artifacts.header");
     }
 
+    default String streamsNotFound() {
+        return bundle.getString("prospero.general.error.resolve.streams.header");
+    }
+
     default String attemptedRepositories() {
         return bundle.getString("prospero.general.error.resolve.artifacts.repositories");
     }

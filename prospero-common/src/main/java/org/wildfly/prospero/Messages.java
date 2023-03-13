@@ -136,6 +136,9 @@ public interface Messages {
     @Message("Unable to resolve artifact")
     String unableToResolve();
 
+    @Message("Unable to find required stream definitions")
+    String streamNotFound();
+
     @Message("File already exists [%s]")
     IllegalArgumentException fileAlreadyExists(Path path);
 

@@ -24,6 +24,7 @@ import org.wildfly.channel.Repository;
 import org.wildfly.prospero.api.ArtifactUtils;
 import org.wildfly.prospero.api.exceptions.ArtifactResolutionException;
 import org.wildfly.prospero.api.exceptions.ChannelDefinitionException;
+import org.wildfly.prospero.api.exceptions.StreamNotFoundException;
 import org.wildfly.prospero.api.exceptions.UnresolvedChannelMetadataException;
 import org.wildfly.prospero.api.exceptions.NoChannelException;
 import org.wildfly.prospero.api.exceptions.OperationException;
@@ -71,6 +72,9 @@ public class ExecutionExceptionHandler implements CommandLine.IExecutionExceptio
             if (ex instanceof ChannelDefinitionException) {
                 console.error(CliMessages.MESSAGES.errorHeader(ex.getLocalizedMessage()));
                 console.error(((ChannelDefinitionException) ex).getValidationMessages());
+            } else if (ex instanceof StreamNotFoundException) {
+                StreamNotFoundException snfe = (StreamNotFoundException) ex;
+                printResolutionException(snfe);
             } else if (ex instanceof ArtifactResolutionException) {
                 ArtifactResolutionException are = (ArtifactResolutionException) ex;
                 printResolutionException(are);
@@ -98,6 +102,20 @@ public class ExecutionExceptionHandler implements CommandLine.IExecutionExceptio
             console.error("  * " + ArtifactUtils.printCoordinate(missingArtifact));
         }
         printRepositories(ex.getRepositories(), ex.isOffline());
+    }
+
+    private void printResolutionException(StreamNotFoundException ex) {
+        // new line to return from last provisioning progress line
+        console.error("\n");
+        if (!ex.getMissingArtifacts().isEmpty()) {
+            console.error(CliMessages.MESSAGES.errorHeader(CliMessages.MESSAGES.streamsNotFound()));
+            for (ArtifactCoordinate missingArtifact : ex.getMissingArtifacts()) {
+                console.error("  * " + ArtifactUtils.printStream(missingArtifact));
+            }
+        } else {
+            console.error(CliMessages.MESSAGES.errorHeader(ex.getLocalizedMessage()));
+
+        }
     }
 
     private void printResolutionException(ArtifactResolutionException ex) {
