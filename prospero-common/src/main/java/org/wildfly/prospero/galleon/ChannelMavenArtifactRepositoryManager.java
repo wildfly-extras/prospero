@@ -67,7 +67,7 @@ public class ChannelMavenArtifactRepositoryManager implements MavenRepoManager, 
                     result = channelSession.resolveMavenArtifact(artifact.getGroupId(), artifact.getArtifactId(), artifact.getExtension(),
                             artifact.getClassifier(), null);
                 } else {
-                    throw Messages.MESSAGES.unableToResolve(artifact.getCoordsAsString());
+                    throw new MavenUniverseException(Messages.MESSAGES.unableToResolve() + " ["+artifact.getCoordsAsString()+"]");
                 }
             }
 
@@ -101,7 +101,7 @@ public class ChannelMavenArtifactRepositoryManager implements MavenRepoManager, 
 
                         MavenArtifactMapper.resolve(artifact, result);
                     } else {
-                        throw Messages.MESSAGES.unableToResolve(artifact.getCoordsAsString());
+                        throw new MavenUniverseException(Messages.MESSAGES.unableToResolve() + " [" +artifact.getCoordsAsString() + "]");
                     }
                 }
             }
@@ -122,7 +122,8 @@ public class ChannelMavenArtifactRepositoryManager implements MavenRepoManager, 
                         found.get().getVersion()
                 ));
             } else {
-                throw Messages.MESSAGES.unableToResolve(coord.getGroupId()+ ":" + coord.getGroupId()+":"+coord.getExtension());
+                throw new MavenUniverseException(Messages.MESSAGES.unableToResolve() +
+                        " [" +coord.getGroupId()+ ":" + coord.getGroupId()+":"+coord.getExtension() + "]");
             }
         }
 

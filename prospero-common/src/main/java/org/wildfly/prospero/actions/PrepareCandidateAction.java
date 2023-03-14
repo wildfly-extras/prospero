@@ -88,7 +88,8 @@ class PrepareCandidateAction implements AutoCloseable{
                     },
                     mavenSessionManager.getProvisioningRepo().toAbsolutePath());
         } catch (UnresolvedMavenArtifactException e) {
-            throw new ArtifactResolutionException(e, prosperoConfig.listAllRepositories(), mavenSessionManager.isOffline());
+            throw new ArtifactResolutionException(Messages.MESSAGES.unableToResolve(), e, e.getUnresolvedArtifacts(),
+                    e.getAttemptedRepositories(), mavenSessionManager.isOffline());
         }
 
         try {

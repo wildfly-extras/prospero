@@ -84,9 +84,9 @@ public class InstallCommand extends AbstractInstallCommand {
 
         // following is checked by picocli, adding this to avoid IDE warnings
         assert featurePackOrDefinition.definition.isPresent() || featurePackOrDefinition.fpl.isPresent();
-        if (featurePackOrDefinition.definition.isEmpty() && isStandardFpl(featurePackOrDefinition.fpl.get())
+        if (featurePackOrDefinition.definition.isEmpty() && !isStandardFpl(featurePackOrDefinition.fpl.get())
                 && channelCoordinates.isEmpty() && manifestCoordinate.isEmpty()) {
-            throw CliMessages.MESSAGES.channelsMandatoryWhenCustomFpl();
+            throw CliMessages.MESSAGES.channelsMandatoryWhenCustomFpl(String.join(",", KnownFeaturePacks.getNames()));
         }
 
         if (!channelCoordinates.isEmpty() && manifestCoordinate.isPresent()) {
@@ -126,7 +126,7 @@ public class InstallCommand extends AbstractInstallCommand {
     }
 
     private boolean isStandardFpl(String fpl) {
-        return !KnownFeaturePacks.isWellKnownName(fpl);
+        return KnownFeaturePacks.isWellKnownName(fpl);
     }
 
 }

@@ -19,21 +19,29 @@ package org.wildfly.prospero.cli;
 
 import org.jboss.galleon.ProvisioningException;
 import org.wildfly.channel.ArtifactCoordinate;
+import org.wildfly.channel.ChannelMetadataCoordinate;
 import org.wildfly.channel.Repository;
+import org.wildfly.prospero.api.ArtifactUtils;
 import org.wildfly.prospero.api.exceptions.ArtifactResolutionException;
 import org.wildfly.prospero.api.exceptions.ChannelDefinitionException;
+import org.wildfly.prospero.api.exceptions.StreamNotFoundException;
+import org.wildfly.prospero.api.exceptions.UnresolvedChannelMetadataException;
 import org.wildfly.prospero.api.exceptions.NoChannelException;
 import org.wildfly.prospero.api.exceptions.OperationException;
 import org.wildfly.prospero.cli.commands.CliConstants;
+import org.wildfly.prospero.wfchannel.MavenSessionManager;
 import picocli.CommandLine;
 
+import java.net.MalformedURLException;
+import java.net.URL;
 import java.util.Set;
-import java.util.stream.Collectors;
 
 /**
  * Handles exceptions that happen during command executions.
  */
 public class ExecutionExceptionHandler implements CommandLine.IExecutionExceptionHandler {
+
+    private static final Set<String> OFFLINE_REPOSITORIES = Set.of(MavenSessionManager.AETHER_OFFLINE_PROTOCOLS_VALUE.split(","));
     private final CliConsole console;
 
     public ExecutionExceptionHandler(CliConsole console) {
@@ -44,41 +52,43 @@ public class ExecutionExceptionHandler implements CommandLine.IExecutionExceptio
     public int handleExecutionException(Exception ex, CommandLine commandLine, CommandLine.ParseResult parseResult)
             throws Exception {
         if (ex instanceof NoChannelException) {
-            console.error("ERROR: " + ex.getMessage());
+            console.error(CliMessages.MESSAGES.errorHeader(ex.getLocalizedMessage()));
             console.error(CliMessages.MESSAGES.addChannels(CliConstants.CHANNEL_MANIFEST));
             return ReturnCodes.INVALID_ARGUMENTS;
         }
-        if (ex instanceof IllegalArgumentException || ex instanceof ArgumentParsingException) {
+        if (ex instanceof IllegalArgumentException) {
             // used to indicate invalid arguments
-            console.error("ERROR: " + ex.getMessage());
+            console.error(CliMessages.MESSAGES.errorHeader(ex.getLocalizedMessage()));
+            return ReturnCodes.INVALID_ARGUMENTS;
+        } else if (ex instanceof ArgumentParsingException) {
+            ArgumentParsingException ape = (ArgumentParsingException) ex;
+            // used to indicate invalid arguments
+            console.error(CliMessages.MESSAGES.errorHeader(ape.getLocalizedMessage()));
+            for (String detail : ape.getDetails()) {
+                console.error("  " + detail);
+            }
             return ReturnCodes.INVALID_ARGUMENTS;
         } else if (ex instanceof OperationException) {
             if (ex instanceof ChannelDefinitionException) {
-                console.error("ERROR: " + ex.getMessage());
+                console.error(CliMessages.MESSAGES.errorHeader(ex.getLocalizedMessage()));
                 console.error(((ChannelDefinitionException) ex).getValidationMessages());
+            } else if (ex instanceof StreamNotFoundException) {
+                StreamNotFoundException snfe = (StreamNotFoundException) ex;
+                printResolutionException(snfe);
             } else if (ex instanceof ArtifactResolutionException) {
-                // new line to return from last provisioning progress line
-                console.error("\n");
-                ArtifactResolutionException are = (ArtifactResolutionException)ex;
-                if (!are.failedArtifacts().isEmpty()) {
-                    console.error("ERROR: " + "Could not find artifact(s): [" + missingArtifacts(are.failedArtifacts()) + "].");
-                    if (!are.attemptedRepositories().isEmpty()) {
-                        console.error("  Artifacts are not available in [" + repositories(are.attemptedRepositories()) + "]");
-                    }
-                    if (!are.offlineRepositories().isEmpty()) {
-                        console.error("  Following repositories are offline and the artifacts were not downloaded from them previously: [" + repositories(are.offlineRepositories()));
-                    }
-                } else {
-                    console.error("ERROR: " + ex.getMessage());
-                }
+                ArtifactResolutionException are = (ArtifactResolutionException) ex;
+                printResolutionException(are);
+            } else if (ex instanceof UnresolvedChannelMetadataException) {
+                UnresolvedChannelMetadataException mcme = (UnresolvedChannelMetadataException) ex;
+                printMissingMetadataException(mcme);
             } else {
-                console.error("ERROR: " + ex.getMessage());
+                console.error(CliMessages.MESSAGES.errorHeader(ex.getLocalizedMessage()));
             }
             return ReturnCodes.PROCESSING_ERROR;
         } else if (ex instanceof ProvisioningException) {
             // new line to return from last provisioning progress line
             console.error("\n");
-            console.error("ERROR: " + ex.getMessage());
+            console.error(CliMessages.MESSAGES.errorHeader(ex.getLocalizedMessage()));
             return ReturnCodes.PROCESSING_ERROR;
         }
 
@@ -86,18 +96,64 @@ public class ExecutionExceptionHandler implements CommandLine.IExecutionExceptio
         throw ex;
     }
 
-    private String repositories(Set<Repository> coordinates) {
-        return coordinates.stream().map(r->r.getId() + " (" + r.getUrl() + ")").collect(Collectors.joining(", "));
+    private void printMissingMetadataException(UnresolvedChannelMetadataException ex) {
+        console.error(CliMessages.MESSAGES.errorHeader(CliMessages.MESSAGES.unableToResolveChannelMetadata()));
+        for (ChannelMetadataCoordinate missingArtifact : ex.getMissingArtifacts()) {
+            console.error("  * " + ArtifactUtils.printCoordinate(missingArtifact));
+        }
+        printRepositories(ex.getRepositories(), ex.isOffline());
     }
 
-    private String missingArtifacts(Set<ArtifactCoordinate> coordinates) {
-        return coordinates.stream().map(this::shortName).collect(Collectors.joining(", "));
+    private void printResolutionException(StreamNotFoundException ex) {
+        // new line to return from last provisioning progress line
+        console.error("\n");
+        if (!ex.getMissingArtifacts().isEmpty()) {
+            console.error(CliMessages.MESSAGES.errorHeader(CliMessages.MESSAGES.streamsNotFound()));
+            for (ArtifactCoordinate missingArtifact : ex.getMissingArtifacts()) {
+                console.error("  * " + ArtifactUtils.printStream(missingArtifact));
+            }
+        } else {
+            console.error(CliMessages.MESSAGES.errorHeader(ex.getLocalizedMessage()));
+
+        }
     }
 
-    private String shortName(ArtifactCoordinate coord) {
-        StringBuilder sb = new StringBuilder();
-        sb.append(coord.getGroupId()).append(":").append(coord.getArtifactId());
-        sb.append(":").append(coord.getVersion());
-        return sb.toString();
+    private void printResolutionException(ArtifactResolutionException ex) {
+        // new line to return from last provisioning progress line
+        console.error("\n");
+        if (!ex.getMissingArtifacts().isEmpty()) {
+            console.error(CliMessages.MESSAGES.errorHeader(CliMessages.MESSAGES.unableToResolveArtifacts()));
+            for (ArtifactCoordinate missingArtifact : ex.getMissingArtifacts()) {
+                console.error("  * " + ArtifactUtils.printCoordinate(missingArtifact));
+            }
+
+            printRepositories(ex.getRepositories(), ex.isOffline());
+        } else {
+            console.error(CliMessages.MESSAGES.errorHeader(ex.getLocalizedMessage()));
+        }
+    }
+
+    private void printRepositories(Set<Repository> repositories, boolean b) {
+        if (!repositories.isEmpty()) {
+            console.error(" " + CliMessages.MESSAGES.attemptedRepositories());
+            for (Repository repository : repositories) {
+                boolean isOffline = isOffline(b, repository);
+                String repo = String.format("%s::%s", repository.getId(), repository.getUrl());
+                console.error("  *" + repo + (isOffline ? " ["+ CliMessages.MESSAGES.offline() + "]" : ""));
+            }
+        }
+    }
+
+    private static boolean isOffline(boolean offline, Repository repository) {
+        if (!offline) {
+            return false;
+        } else {
+            try {
+                return !OFFLINE_REPOSITORIES.contains(new URL(repository.getUrl()).getProtocol());
+            } catch (MalformedURLException e) {
+                // ignore
+                return true;
+            }
+        }
     }
 }

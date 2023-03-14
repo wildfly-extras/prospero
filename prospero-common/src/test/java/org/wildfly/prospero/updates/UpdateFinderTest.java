@@ -28,6 +28,7 @@ import org.wildfly.channel.ChannelSession;
 import org.wildfly.channel.UnresolvedMavenArtifactException;
 
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 
@@ -90,7 +91,7 @@ public class UpdateFinderTest {
     @Test
     public void testRemoval() throws Exception {
         when(channelSession.findLatestMavenArtifactVersion("org.foo", "bar", "jar", "", null))
-                .thenThrow(new UnresolvedMavenArtifactException());
+                .thenThrow(new UnresolvedMavenArtifactException("Exception", Collections.emptySet(), Collections.emptySet()));
 
         UpdateFinder finder = new UpdateFinder(channelSession);
         final List<Artifact> artifacts = Arrays.asList(

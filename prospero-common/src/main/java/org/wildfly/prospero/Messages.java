@@ -22,14 +22,11 @@ import java.net.URL;
 import java.nio.file.Path;
 
 import org.jboss.galleon.ProvisioningException;
-import org.jboss.galleon.universe.maven.MavenUniverseException;
 import org.jboss.logging.annotations.Cause;
 import org.jboss.logging.annotations.Message;
 import org.jboss.logging.annotations.MessageBundle;
 import org.wildfly.channel.InvalidChannelMetadataException;
-import org.wildfly.channel.UnresolvedMavenArtifactException;
 import org.wildfly.prospero.api.exceptions.ArtifactPromoteException;
-import org.wildfly.prospero.api.exceptions.ArtifactResolutionException;
 import org.wildfly.prospero.api.exceptions.ChannelDefinitionException;
 import org.wildfly.prospero.api.exceptions.InvalidUpdateCandidateException;
 import org.wildfly.prospero.api.exceptions.MetadataException;
@@ -58,9 +55,6 @@ public interface Messages {
 
     @Message("Installation dir '%s' already exists")
     ProvisioningException installationDirAlreadyExists(Path installDir);
-
-    @Message("Artifact [%s:%s] not found")
-    ArtifactResolutionException artifactNotFound(String g, String a, @Cause UnresolvedMavenArtifactException e);
 
     @Message("Given configuration doesn't reference any channel or channel manifest.")
     NoChannelException noChannelReference();
@@ -138,8 +132,11 @@ public interface Messages {
     @Message("Found unexpected artifact [%s]")
     ProvisioningRuntimeException unexpectedArtifact(String gav);
 
-    @Message("Unable to resolve [%s]")
-    MavenUniverseException unableToResolve(String gav);
+    @Message("Unable to resolve artifact")
+    String unableToResolve();
+
+    @Message("Unable to find required stream definitions")
+    String streamNotFound();
 
     @Message("File already exists [%s]")
     IllegalArgumentException fileAlreadyExists(Path path);

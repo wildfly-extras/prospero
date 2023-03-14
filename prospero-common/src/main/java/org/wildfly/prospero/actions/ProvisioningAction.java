@@ -18,9 +18,13 @@
 package org.wildfly.prospero.actions;
 
 import org.apache.commons.lang3.StringUtils;
+import org.eclipse.aether.resolution.ArtifactResult;
 import org.jboss.galleon.config.ProvisioningConfig;
+import org.jboss.galleon.universe.maven.MavenUniverseException;
+import org.wildfly.channel.ArtifactCoordinate;
 import org.wildfly.channel.Channel;
 import org.wildfly.channel.ChannelManifest;
+import org.wildfly.channel.Repository;
 import org.wildfly.channel.UnresolvedMavenArtifactException;
 import org.wildfly.prospero.Messages;
 import org.wildfly.prospero.api.Console;
@@ -30,6 +34,7 @@ import org.wildfly.prospero.api.RepositoryUtils;
 import org.wildfly.prospero.api.exceptions.ArtifactResolutionException;
 import org.wildfly.prospero.api.exceptions.MetadataException;
 import org.wildfly.prospero.api.exceptions.OperationException;
+import org.wildfly.prospero.api.exceptions.StreamNotFoundException;
 import org.wildfly.prospero.galleon.GalleonFeaturePackAnalyzer;
 import org.wildfly.prospero.galleon.GalleonEnvironment;
 import org.wildfly.prospero.galleon.GalleonUtils;
@@ -41,6 +46,7 @@ import java.nio.file.Path;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.Set;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 
@@ -50,7 +56,6 @@ import org.wildfly.prospero.metadata.ManifestVersionRecord;
 import org.wildfly.prospero.metadata.ManifestVersionResolver;
 import org.wildfly.prospero.model.ProsperoConfig;
 import org.wildfly.prospero.wfchannel.MavenSessionManager;
-import org.eclipse.aether.repository.RemoteRepository;
 import org.jboss.galleon.ProvisioningException;
 
 public class ProvisioningAction {
@@ -93,11 +98,8 @@ public class ProvisioningAction {
             GalleonUtils.executeGalleon(options -> galleonEnv.getProvisioningManager().provision(provisioningConfig, options),
                     mavenSessionManager.getProvisioningRepo().toAbsolutePath());
         } catch (UnresolvedMavenArtifactException e) {
-            final List<RemoteRepository> repositories = galleonEnv.getChannels().stream()
-                    .flatMap(c -> c.getRepositories().stream())
-                    .map(r -> RepositoryUtils.toRemoteRepository(r.getId(), r.getUrl()))
-                    .collect(Collectors.toList());
-            throw new ArtifactResolutionException(e, repositories, mavenSessionManager.isOffline());
+            throw new ArtifactResolutionException(Messages.MESSAGES.unableToResolve(), e, e.getUnresolvedArtifacts(),
+                    e.getAttemptedRepositories(), mavenSessionManager.isOffline());
         }
 
         final ManifestVersionRecord manifestRecord;
@@ -145,6 +147,20 @@ public class ProvisioningAction {
         try {
             final List<String> featurePacks = exporter.getFeaturePacks(provisioningConfig);
             return licenseManager.getLicenses(featurePacks);
+        } catch (MavenUniverseException e) {
+            if (e.getCause() instanceof org.eclipse.aether.resolution.ArtifactResolutionException) {
+                throw wrapAetherException((org.eclipse.aether.resolution.ArtifactResolutionException) e.getCause());
+            } else if (e.getCause() instanceof UnresolvedMavenArtifactException && e.getMessage().contains("(no stream found)")) {
+                final UnresolvedMavenArtifactException cause = (UnresolvedMavenArtifactException) e.getCause();
+                throw new StreamNotFoundException(Messages.MESSAGES.streamNotFound(),
+                        e,
+                        cause.getUnresolvedArtifacts(),
+                        cause.getAttemptedRepositories(),
+                        mavenSessionManager.isOffline());
+            } else {
+                // org.wildfly.channel.UnresolvedMavenArtifactException
+                throw new ArtifactResolutionException(e.getMessage(), e);
+            }
         } catch (IOException | ProvisioningException e) {
             throw new RuntimeException(e);
         }
@@ -186,5 +202,22 @@ public class ProvisioningAction {
     private static boolean isEmptyDirectory(Path directory) {
         String[] list = directory.toFile().list();
         return list == null || list.length == 0;
+    }
+
+    private ArtifactResolutionException wrapAetherException(org.eclipse.aether.resolution.ArtifactResolutionException e) throws ArtifactResolutionException {
+        final List<ArtifactResult> results = e.getResults();
+        final Set<ArtifactCoordinate> missingArtifacts = results.stream()
+                .filter(r -> !r.isResolved())
+                .map(r -> r.getArtifact())
+                .map(a -> new ArtifactCoordinate(a.getGroupId(), a.getArtifactId(), a.getExtension(), a.getClassifier(), a.getVersion()))
+                .collect(Collectors.toSet());
+
+        final Set<Repository> repositories = results.stream()
+                .filter(r -> !r.isResolved())
+                .flatMap(r -> r.getRequest().getRepositories().stream())
+                .map(RepositoryUtils::toChannelRepository)
+                .collect(Collectors.toSet());
+
+        return new ArtifactResolutionException(Messages.MESSAGES.unableToResolve(), e, missingArtifacts, repositories, mavenSessionManager.isOffline());
     }
 }

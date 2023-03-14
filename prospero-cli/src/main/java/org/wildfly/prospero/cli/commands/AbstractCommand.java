@@ -27,6 +27,7 @@ import java.util.concurrent.Callable;
 import org.jboss.logging.Logger;
 import org.wildfly.prospero.api.InstallationMetadata;
 import org.wildfly.prospero.cli.ActionFactory;
+import org.wildfly.prospero.cli.ArgumentParsingException;
 import org.wildfly.prospero.cli.CliConsole;
 import org.wildfly.prospero.cli.CliMessages;
 import org.wildfly.prospero.metadata.ProsperoMetadataUtils;
@@ -52,13 +53,13 @@ public abstract class AbstractCommand implements Callable<Integer> {
         this.actionFactory = actionFactory;
     }
 
-    protected static Path determineInstallationDirectory(Optional<Path> directoryOption) {
+    protected static Path determineInstallationDirectory(Optional<Path> directoryOption) throws ArgumentParsingException {
         Path installationDirectory = directoryOption.orElse(currentDir()).toAbsolutePath();
         verifyDirectoryContainsInstallation(installationDirectory);
         return installationDirectory;
     }
 
-    static void verifyDirectoryContainsInstallation(Path path) {
+    static void verifyDirectoryContainsInstallation(Path path) throws ArgumentParsingException {
         File dotGalleonDir = path.resolve(InstallationMetadata.GALLEON_INSTALLATION_DIR).toFile();
         File channelsFile = path.resolve(ProsperoMetadataUtils.METADATA_DIR)
                 .resolve(ProsperoMetadataUtils.INSTALLER_CHANNELS_FILE_NAME).toFile();

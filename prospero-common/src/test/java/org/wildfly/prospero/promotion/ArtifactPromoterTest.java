@@ -257,7 +257,6 @@ public class ArtifactPromoterTest {
     }
 
     private ChannelManifest getManifest(ChannelCoordinate channelGa) throws IOException {
-        // TODO: that's wrong
         final MavenVersionsResolver resolver = new VersionResolverFactory(system, session).create(Arrays.asList(new Repository(targetRepository.getId(), targetRepository.getUrl())));
 
         final Set<String> allVersions = resolver.getAllVersions(channelGa.getGroupId(), channelGa.getArtifactId(),
@@ -265,7 +264,7 @@ public class ArtifactPromoterTest {
         final Optional<String> latestVersion = allVersions.stream().sorted(VersionMatcher.COMPARATOR.reversed()).findFirst();
 
         if (latestVersion.isEmpty()) {
-            throw new UnresolvedMavenArtifactException();
+            throw new UnresolvedMavenArtifactException("No latestVersion", Collections.emptySet(), Collections.emptySet());
         }
 
         final File file = resolver.resolveArtifact(channelGa.getGroupId(), channelGa.getArtifactId(),

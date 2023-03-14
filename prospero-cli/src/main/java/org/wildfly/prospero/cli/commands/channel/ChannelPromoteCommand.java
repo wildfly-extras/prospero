@@ -25,6 +25,7 @@ import org.wildfly.prospero.actions.MetadataAction;
 import org.wildfly.prospero.api.ArtifactUtils;
 import org.wildfly.prospero.api.exceptions.MetadataException;
 import org.wildfly.prospero.cli.ActionFactory;
+import org.wildfly.prospero.cli.ArgumentParsingException;
 import org.wildfly.prospero.cli.CliConsole;
 import org.wildfly.prospero.cli.CliMessages;
 import org.wildfly.prospero.cli.ReturnCodes;
@@ -156,7 +157,7 @@ public class ChannelPromoteCommand extends AbstractCommand {
             } else {
                 return Optional.empty();
             }
-        } catch (IllegalArgumentException e) {
+        } catch (ArgumentParsingException e) {
             // we're not using installation - expect URL and channel name to be present
             return Optional.empty();
         }

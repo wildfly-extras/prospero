@@ -17,68 +17,48 @@
 
 package org.wildfly.prospero.api.exceptions;
 
-import org.eclipse.aether.repository.RemoteRepository;
 import org.wildfly.channel.ArtifactCoordinate;
 import org.wildfly.channel.Repository;
 import org.wildfly.channel.UnresolvedMavenArtifactException;
-import org.wildfly.prospero.api.RepositoryUtils;
-import org.wildfly.prospero.wfchannel.MavenSessionManager;
 
-import java.util.Collection;
+import java.util.Collections;
 import java.util.Set;
-import java.util.stream.Collectors;
 
 public class ArtifactResolutionException extends OperationException {
 
-    private static final Set<String> OFFLINE_REPOSITORIES = Set.of(MavenSessionManager.AETHER_OFFLINE_PROTOCOLS_VALUE.split(","));
-
-    private Collection<RemoteRepository> repositories;
+    private Set<Repository> repositories = Collections.emptySet();
     private boolean offline;
+    private Set<ArtifactCoordinate> missingArtifacts = Collections.emptySet();
 
-    public ArtifactResolutionException(String msg, UnresolvedMavenArtifactException e) {
-        super(msg, e);
+    public ArtifactResolutionException(String msg, Throwable cause) {
+        super(msg, cause);
     }
 
-    public ArtifactResolutionException(String msg) {
-        super(msg);
+    public ArtifactResolutionException(String msg, Throwable cause, Set<ArtifactCoordinate> missingArtifacts,
+                                       Set<Repository> repositories, boolean offline) {
+        super(msg, cause);
+        this.repositories = repositories;
+        this.offline = offline;
+        this.missingArtifacts = missingArtifacts;
     }
 
-    public ArtifactResolutionException(UnresolvedMavenArtifactException e) {
-        super(e);
-    }
-
-    public ArtifactResolutionException(UnresolvedMavenArtifactException e, Collection<RemoteRepository> repositories, boolean offline) {
+    public ArtifactResolutionException(UnresolvedMavenArtifactException e,
+                                       Set<Repository> repositories, boolean offline) {
         super(e.getLocalizedMessage(), e);
         this.repositories = repositories;
         this.offline = offline;
+        this.missingArtifacts = Set.copyOf(((UnresolvedMavenArtifactException)getCause()).getUnresolvedArtifacts());
     }
 
-    public Set<Repository> attemptedRepositories() {
-        return repositories.stream()
-                // TODO: handle multiple values
-                .filter(r->!offline || isOfflineRepo(r))
-                .map(RepositoryUtils::toChannelRepository)
-                .collect(Collectors.toSet());
+    public Set<ArtifactCoordinate> getMissingArtifacts() {
+        return missingArtifacts;
     }
 
-    public Set<Repository> offlineRepositories() {
-        return repositories.stream()
-                // TODO: handle multiple values
-                .filter(r->offline && !isOfflineRepo(r))
-                .map(RepositoryUtils::toChannelRepository)
-                .collect(Collectors.toSet());
+    public Set<Repository> getRepositories() {
+        return repositories;
     }
 
-    private boolean isOfflineRepo(RemoteRepository r) {
-        for (String offlineProtocol : OFFLINE_REPOSITORIES) {
-            if (r.getUrl().startsWith(offlineProtocol)) {
-                return true;
-            }
-        }
-        return false;
-    }
-
-    public Set<ArtifactCoordinate> failedArtifacts() {
-        return Set.copyOf(((UnresolvedMavenArtifactException)getCause()).getUnresolvedArtifacts());
+    public boolean isOffline() {
+        return offline;
     }
 }

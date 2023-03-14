@@ -22,6 +22,7 @@ import org.junit.Test;
 import org.wildfly.channel.UnresolvedMavenArtifactException;
 
 import java.nio.file.Paths;
+import java.util.Collections;
 
 import static org.junit.Assert.*;
 
@@ -53,7 +54,7 @@ public class GalleonUtilsTest {
     @Test
     public void extractFailedArtifactResolutionOnCopy() throws Exception {
         final ProvisioningException test = new ProvisioningException(
-                new UnresolvedMavenArtifactException("test"));
+                new UnresolvedMavenArtifactException("test", Collections.emptySet(), Collections.emptySet()));
         try {
             GalleonUtils.executeGalleon(o -> {
                 throw test;

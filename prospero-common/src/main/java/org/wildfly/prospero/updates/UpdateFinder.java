@@ -21,7 +21,6 @@ import org.eclipse.aether.artifact.Artifact;
 import org.eclipse.aether.artifact.DefaultArtifact;
 import org.wildfly.channel.ChannelSession;
 import org.wildfly.channel.UnresolvedMavenArtifactException;
-import org.wildfly.prospero.Messages;
 import org.wildfly.prospero.api.ArtifactChange;
 import org.wildfly.prospero.api.exceptions.ArtifactResolutionException;
 
@@ -81,9 +80,6 @@ public class UpdateFinder implements AutoCloseable {
     }
 
     private Optional<ArtifactChange> findUpdates(Artifact artifact) throws ArtifactResolutionException {
-        if (artifact == null) {
-            throw Messages.MESSAGES.artifactNotFound(artifact.getGroupId(), artifact.getArtifactId(), null);
-        }
 
         final String latestVersion;
         try {

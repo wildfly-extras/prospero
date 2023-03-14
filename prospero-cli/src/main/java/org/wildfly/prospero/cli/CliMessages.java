@@ -17,262 +17,361 @@
 
 package org.wildfly.prospero.cli;
 
-import org.jboss.logging.Messages;
-import org.jboss.logging.annotations.Cause;
-import org.jboss.logging.annotations.Message;
-import org.jboss.logging.annotations.MessageBundle;
+import org.jboss.galleon.Constants;
 import org.wildfly.prospero.actions.ApplyCandidateAction;
 import org.wildfly.prospero.cli.commands.CliConstants;
+import org.wildfly.prospero.metadata.ProsperoMetadataUtils;
 
+import java.io.File;
 import java.nio.file.Path;
+import java.util.Locale;
+import java.util.ResourceBundle;
 
-@MessageBundle(projectCode = "PRSP-CLI")
 public interface CliMessages {
 
-    public CliMessages MESSAGES = Messages.getBundle(CliMessages.class);
+    public CliMessages MESSAGES = new CliMessages() {
+    };
+
+    ResourceBundle bundle = ResourceBundle.getBundle("UsageMessages", Locale.getDefault());
 
     //
     // CliConsole strings
     //
+    default String resolvingFeaturePack() {
+        return bundle.getString("prospero.install.progress.feature-pack.started");
+    }
 
-    @Message("Resolving feature-pack")
-    String resolvingFeaturePack();
+    default String installingPackages() {
+        return bundle.getString("prospero.install.progress.packages");
+    }
 
-    @Message("Installing packages")
-    String installingPackages();
+    default String generatingConfiguration() {
+        return bundle.getString("prospero.install.progress.config");
+    }
 
-    @Message("Generating configuration")
-    String generatingConfiguration();
+    default String installingJBossModules() {
+        return bundle.getString("prospero.install.progress.modules");
+    }
 
-    @Message("Installing JBoss modules")
-    String installingJBossModules();
+    default String downloadingArtifacts() {
+        return bundle.getString("prospero.install.progress.download");
+    }
 
-    @Message("Downloading artifacts")
-    String downloadingArtifacts();
+    default String installingJBossExamples() {
+        return bundle.getString("prospero.install.progress.examples");
+    }
 
-    @Message("Installing JBoss examples")
-    String installingJBossExamples();
+    default String featurePacksResolved() {
+        return bundle.getString("prospero.install.progress.feature-pack.done");
+    }
 
-    @Message("Feature-packs resolved.")
-    String featurePacksResolved();
+    default String packagesInstalled() {
+        return bundle.getString("prospero.install.progress.packages.done");
+    }
 
-    @Message("Packages installed.")
-    String packagesInstalled();
+    default String configurationsGenerated() {
+        return bundle.getString("prospero.install.progress.config.done");
+    }
 
-    @Message("Configurations generated.")
-    String configurationsGenerated();
+    default String jbossModulesInstalled() {
+        return bundle.getString("prospero.install.progress.modules.done");
+    }
 
-    @Message("JBoss modules installed.")
-    String jbossModulesInstalled();
+    default String jbossExamplesInstalled() {
+        return bundle.getString("prospero.install.progress.examples.done");
+    }
 
-    @Message("JBoss examples installed.")
-    String jbossExamplesInstalled();
+    default String artifactsDownloaded() {
+        return bundle.getString("prospero.install.progress.download.done");
+    }
 
-    @Message("Downloaded artifacts.")
-    String artifactsDownloaded();
+    default String applyingChanges() {
+        return bundle.getString("prospero.install.progress.applying_changes");
+    }
 
-    @Message("APPLYING CHANGES")
-    String applyingChanges();
+    default String noUpdatesFound() {
+        return bundle.getString("prospero.updates.no_updates");
+    }
 
-    @Message("No updates found.")
-    String noUpdatesFound();
+    default String updatesFound() {
+        return bundle.getString("prospero.updates.header");
+    }
 
-    @Message("Updates found: ")
-    String updatesFound();
+    default String continueWithUpdate() {
+        return bundle.getString("prospero.updates.prompt")  + " ";
+    }
 
-    @Message("Continue with update [y/N]: ")
-    String continueWithUpdate();
+    default String continueWithBuildUpdate() {
+        return bundle.getString("prospero.updates.build.prompt")  + " ";
+    }
 
-    @Message("Continue with building update [y/N]: ")
-    String continueWithBuildUpdate();
+    default String updateCancelled() {
+        return bundle.getString("prospero.updates.cancelled");
+    }
 
-    @Message("Update cancelled")
-    String updateCancelled();
+    default String buildUpdateCancelled() {
+        return bundle.getString("prospero.updates.build.cancelled");
+    }
 
-    @Message("Build update cancelled")
-    String buildUpdateCancelled();
+    default String applyingUpdates() {
+        return bundle.getString("prospero.updates.apply.header");
+    }
 
-    @Message("Applying updates")
-    String applyingUpdates();
+    default String buildingUpdates() {
+        return bundle.getString("prospero.updates.build.header");
+    }
 
-    @Message("Building updates")
-    String buildingUpdates();
+    default String chooseYN() {
+        return bundle.getString("prospero.general.prompt.reminder") + " ";
+    }
 
-    @Message("Choose [y/N]: ")
-    String chooseYN();
+    default String updateComplete() {
+        return bundle.getString("prospero.updates.complete");
+    }
 
-    @Message("Update complete!")
-    String updateComplete();
-
-    @Message("Build update complete!")
-    String buildUpdateComplete();
+    default String buildUpdateComplete() {
+        return bundle.getString("prospero.updates.build.complete");
+    }
 
     // this would be used to determine user answer to [y/n] questions
-    @Message("y")
-    String yesShortcut();
+    default String yesShortcut() {
+        return bundle.getString("prospero.general.prompt.yes");
+    }
 
     // this would be used to determine user answer to [y/n] questions
-    @Message("n")
-    String noShortcut();
+    default String noShortcut() {
+        return bundle.getString("prospero.general.prompt.no");
+    }
 
-    //
-    // Other strings
-    //
+    default String noChangesFound() {
+        return bundle.getString("prospero.history.no_updates");
+    }
 
-    @Message("Unable to perform self-update - folder `%s` contains unexpected feature packs.")
-    ArgumentParsingException unexpectedPackageInSelfUpdate(String path);
+    default String errorWhenProcessingCommand() {
+        return bundle.getString("prospero.general.processing_error") + " ";
+    }
 
-    @Message("Unable to locate the installation folder to perform self-update.")
-    ArgumentParsingException unableToLocateProsperoInstallation();
+    default String possibleDowngrade() {
+        return bundle.getString("prospero.updates.downgrade.warning");
+    }
 
-    @Message("Unable to perform self-update - unable to determine installed feature packs.")
-    ArgumentParsingException unableToParseSelfUpdateData(@Cause Exception e);
+    default String channelAdded(String urlOrGav) {
+        return String.format(bundle.getString("prospero.channels.added"), urlOrGav);
+    }
 
-    @Message("No channel or channel manifest were specified.")
-    IllegalArgumentException channelsMandatoryWhenCustomFpl();
-
-    @Message("No changes found")
-    String noChangesFound();
-
-    @Message("Error when processing command: ")
-    String errorWhenProcessingCommand();
-
-    @Message("%n[*] The update list contain one or more artifacts with lower versions then currently installed. Proceed with caution.%n%n")
-    String possibleDowngrade();
-
-    @Message("Channel '%s' added.")
-    String channelAdded(String urlOrGav);
-
-    @Message("Channel '%s' removed.")
-    String channelRemoved(String urlOrGav);
+    default String channelRemoved(String urlOrGav) {
+        return String.format(bundle.getString("prospero.channels.removed"), urlOrGav);
+    }
 
     /**
      * @see #invalidInstallationDir(Path)
      */
-    @Message("Path `%s` does not contain a server installation provisioned by the %s.")
-    IllegalArgumentException invalidInstallationDir(Path path, String distName);
-
-    default IllegalArgumentException invalidInstallationDir(Path path) {
-        return invalidInstallationDir(path, DistributionInfo.DIST_NAME);
+    default String invalidInstallationDir(Path path, String distName) {
+        return String.format(bundle.getString("prospero.update.invalid.path"), path, distName);
     }
 
-    /**
-     * @see #invalidInstallationDirMaybeUseDirOption(Path)
-     */
-    @Message("Path `%s` does not contain a server installation provisioned by the %s."
-            + " Maybe you forgot to specify path to the installation (" + CliConstants.DIR + ")?")
-    IllegalArgumentException invalidInstallationDirMaybeUseDirOption(Path path, String distName);
-
-    default IllegalArgumentException invalidInstallationDirMaybeUseDirOption(Path path) {
-        return invalidInstallationDirMaybeUseDirOption(path, DistributionInfo.DIST_NAME);
+    default ArgumentParsingException invalidInstallationDir(Path path) {
+        return new ArgumentParsingException(invalidInstallationDir(path, DistributionInfo.DIST_NAME), requiredMetadata());
     }
 
-    @Message("Add required channels using [%s] argument.")
-    String addChannels(String channel);
+    default String requiredMetadata() {
+        return String.format(bundle.getString("prospero.update.invalid.path.details"), Constants.PROVISIONED_STATE_DIR,
+                ProsperoMetadataUtils.METADATA_DIR + File.separator + ProsperoMetadataUtils.INSTALLER_CHANNELS_FILE_NAME);
+    }
 
-    @Message("Operation completed in %.2f seconds.")
-    String operationCompleted(float time);
+    default String forgottenDirArgQuestion() {
+        return String.format(bundle.getString("prospero.general.argument.dir.validation.detail"), CliConstants.DIR);
+    }
 
-    @Message("Only one of %s and %s can be set.")
-    IllegalArgumentException exclusiveOptions(String option1, String option2);
+    default String addChannels(String channel) {
+        return String.format(bundle.getString("prospero.general.argument.channel.validation.nochannel.detail"), channel);
+    }
 
-    @Message("Custom repository `%s` already exist.")
-    String customizationRepoExist(String repositoryId);
+    default String operationCompleted(float time) {
+        return String.format(bundle.getString("prospero.general.operation.completed.time"), time);
+    }
 
-    @Message("Channel `%s` needs to have a groupId:artifactId format")
-    String illegalChannel(String name);
+    default String customizationRepoExist(String repositoryId) {
+        return String.format(bundle.getString("prospero.channels.custom.validation.exists"), repositoryId);
+    }
 
-    @Message("Unable to create a repository at `%s`.")
-    String unableToCreateLocalRepository(Path repositoryPath);
+    default String illegalChannel(String name) {
+        return String.format(bundle.getString("prospero.channels.custom.validation.format"), name);
+    }
 
-    @Message("Repository path `%s` is a file not a directory.")
-    ArgumentParsingException repositoryIsNotDirectory(Path repo);
+    default String unableToCreateLocalRepository(Path repositoryPath) {
+        return String.format(bundle.getString("prospero.channels.custom.validation.local_repo_create"), repositoryPath);
+    }
 
-    @Message("Channel coordinate must be provided in `groupId:artifactId` format")
-    String wrongChannelCoordinateFormat();
+    default String wrongChannelCoordinateFormat() {
+        return bundle.getString("prospero.channels.promote.validation.format");
+    }
 
-    @Message("Unable to determine custom channel and repository.%nUse `%s` and `%s` to provide correct values.")
-    String noCustomizationConfigFound(String channelParam, String repoParam);
+    default String noCustomizationConfigFound(String channelParam, String repoParam) {
+        return String.format(bundle.getString("prospero.channels.promote.validation.no_channel_or_repo"), channelParam, repoParam);
+    }
 
-    @Message("Continue with promoting artifacts: [y/N]: ")
-    String continuePromote();
+    default String continuePromote() {
+        return bundle.getString("prospero.channels.promote.prompt") + " ";
+    }
 
-    @Message("Promoting artifacts.")
-    String continuePromoteAccepted();
+    default String continuePromoteAccepted() {
+        return bundle.getString("prospero.channels.promote.prompt.confirm");
+    }
 
-    @Message("Operation cancelled.")
-    String continuePromoteRejected();
+    default String continuePromoteRejected() {
+        return bundle.getString("prospero.channels.promote.prompt.cancelled");
+    }
 
-    @Message("Custom channel already exists.")
-    String customizationChannelAlreadyExists();
+    default String customizationChannelAlreadyExists() {
+        return bundle.getString("prospero.channels.custom.validation.channel.exists");
+    }
 
-    @Message("Registering custom channel `%s`")
-    String registeringCustomChannel(String name);
-
-    @Message("Repository definition [%s] is invalid. The definition format should be [id::url]")
-    ArgumentParsingException invalidRepositoryDefinition(String repoKey);
+    default String registeringCustomChannel(String name) {
+        return String.format(bundle.getString("prospero.channels.custom.confirmation.channel"), name);
+    }
 
     // start - changes diff
-    @Message("manifest")
-    String manifest();
 
-    @Message("repositories")
-    String repositories();
+    default String manifest() {
+        return bundle.getString("prospero.changes.diff.manifest");
+    }
 
-    @Message("Updated")
-    String changeUpdated();
+    default String repositories() {
+        return bundle.getString("prospero.changes.diff.repositories");
+    }
 
-    @Message("Added")
-    String changeAdded();
+    default String changeUpdated() {
+        return bundle.getString("prospero.changes.diff.updated");
+    }
 
-    @Message("Removed")
-    String changeRemoved();
+    default String changeAdded() {
+        return bundle.getString("prospero.changes.diff.added");
+    }
 
-    @Message("Updates")
-    String diffUpdates();
+    default String changeRemoved() {
+        return bundle.getString("prospero.changes.diff.removed");
+    }
 
-    @Message("Configuration changes")
-    String diffConfigChanges();
+    default String diffUpdates() {
+        return bundle.getString("prospero.changes.diff.updates");
+    }
 
-    @Message("artifact")
-    String artifactChangeType();
+    default String diffConfigChanges() {
+        return bundle.getString("prospero.changes.diff.conf_changes");
+    }
 
-    @Message("channel")
-    String channelChangeType();
+    default String artifactChangeType() {
+        return bundle.getString("prospero.changes.diff.artifact");
+    }
 
-    @Message("Conflicting changes detected in the update:")
-    String conflictingChangesDetected();
+    default String channelChangeType() {
+        return bundle.getString("prospero.changes.diff.channel");
+    }
+    // end diff printer
 
-    @Message("Server at [%s] is not a valid update candidate.")
-    IllegalArgumentException invalidUpdateCandidate(Path updateDir);
+    default String conflictingChangesDetected() {
+        return bundle.getString("prospero.changes.conflict.header");
+    }
 
-    @Message("Unable to apply update.%n  Installation at [%s] has been updated since the update candidate [%s] was created.")
-    IllegalArgumentException updateCandidateStateNotMatched(Path targetDir, Path updateDir);
+    default String acceptAgreements() {
+        return bundle.getString("prospero.install.agreement.prompt");
+    }
 
-    @Message("Unable to apply update.%n  The candidate at [%s] was not prepared for %s operation.")
-    IllegalArgumentException updateCandidateWrongType(Path updateDir, ApplyCandidateAction.Type operation);
+    default String installationCancelled() {
+        return bundle.getString("prospero.install.agreement.prompt.cancelled");
+    }
 
-    @Message("Unable to apply update.%n  Installation at [%s] doesn't have a candidate marker file.")
-    IllegalArgumentException notCandidate(Path updateDir);
+    default String listAgreementsHeader() {
+        return bundle.getString("prospero.install.agreement.header");
+    }
 
+    default String noAgreementsNeeded() {
+        return bundle.getString("prospero.install.agreement.no_agreement");
+    }
 
-    @Message("The target path needs to point to an empty, writable folder.")
-    IllegalArgumentException nonEmptyTargetFolder();
+    default String agreementSkipped(String optionName) {
+        return String.format(bundle.getString("prospero.install.agreement.skipped"), optionName);
+    }
 
-    // end - changes diff
+    default String errorHeader(String msg) {
+        return String.format(bundle.getString("prospero.general.error.header"), msg);
+    }
 
-    @Message("Accept the agreement(s) [y/N]")
-    String acceptAgreements();
+    default String unableToResolveChannelMetadata() {
+        return bundle.getString("prospero.general.error.resolve.metadata.header");
+    }
 
-    @Message("Installation cancelled")
-    String installationCancelled();
+    default String unableToResolveArtifacts() {
+        return bundle.getString("prospero.general.error.resolve.artifacts.header");
+    }
 
-    @Message("To install the requested server, following Agreements need to be accepted:")
-    String listAgreementsHeader();
+    default String streamsNotFound() {
+        return bundle.getString("prospero.general.error.resolve.streams.header");
+    }
 
-    @Message("The requested software does not require any Agreements.")
-    String noAgreementsNeeded();
+    default String attemptedRepositories() {
+        return bundle.getString("prospero.general.error.resolve.artifacts.repositories");
+    }
 
-    @Message("The Agreement(s) has been accepted via %s")
-    String agreementSkipped(String optionName);
+    default String offline() {
+        return bundle.getString("prospero.general.error.resolve.offline");
+    }
+
+    //
+    // Exceptions
+    //
+    default ArgumentParsingException unexpectedPackageInSelfUpdate(String path) {
+        return new ArgumentParsingException(String.format(bundle.getString("prospero.update.self.validation.feature_pack"), path));
+    }
+
+    default ArgumentParsingException unableToLocateProsperoInstallation() {
+        return new ArgumentParsingException(bundle.getString("prospero.update.self.validation.dir.not_found"));
+    }
+
+    default ArgumentParsingException unableToParseSelfUpdateData(Exception e) {
+        return new ArgumentParsingException(bundle.getString("prospero.update.self.validation.unknown.installation"), e);
+    }
+
+    default ArgumentParsingException channelsMandatoryWhenCustomFpl(String knownCombintaions) {
+        return new ArgumentParsingException(String.format(bundle.getString("prospero.install.validation.unknown_fpl"), knownCombintaions),
+                bundle.getString("prospero.install.validation.unknown_fpl.details"));
+    }
+
+    default ArgumentParsingException invalidInstallationDirMaybeUseDirOption(Path path) {
+        return new ArgumentParsingException(invalidInstallationDir(path, DistributionInfo.DIST_NAME), forgottenDirArgQuestion(), requiredMetadata());
+    }
+
+    default IllegalArgumentException exclusiveOptions(String option1, String option2) {
+        return new IllegalArgumentException(
+                String.format(bundle.getString("prospero.general.validation.conflicting_options"), option1, option2));
+    }
+
+    default ArgumentParsingException repositoryIsNotDirectory(Path repo) {
+        return new ArgumentParsingException(String.format(bundle.getString("prospero.general.validation.local_repo.not_directory"), repo));
+    }
+
+    default ArgumentParsingException invalidRepositoryDefinition(String repoKey) {
+        return new ArgumentParsingException(String.format(bundle.getString("prospero.general.validation.repo_format"), repoKey));
+    }
+
+    default IllegalArgumentException invalidUpdateCandidate(Path updateDir) {
+        return new IllegalArgumentException(String.format(bundle.getString("prospero.updates.apply.validation.candidate.wrong_candidate"), updateDir));
+    }
+
+    default IllegalArgumentException updateCandidateStateNotMatched(Path targetDir, Path updateDir) {
+        return new IllegalArgumentException(String.format(bundle.getString("prospero.updates.apply.validation.candidate.outdated"), updateDir));
+    }
+
+    default IllegalArgumentException updateCandidateWrongType(Path updateDir, ApplyCandidateAction.Type operation) {
+        return new IllegalArgumentException(String.format(bundle.getString("prospero.updates.apply.validation.candidate.wrong_type"), updateDir));
+    }
+
+    default IllegalArgumentException notCandidate(Path updateDir) {
+        return new IllegalArgumentException(String.format(bundle.getString("prospero.updates.apply.validation.candidate.not_candidate"), updateDir));
+    }
+
+    default IllegalArgumentException nonEmptyTargetFolder() {
+        return new IllegalArgumentException(bundle.getString("prospero.updates.build.validation.dir.not_empty"));
+    }
 }

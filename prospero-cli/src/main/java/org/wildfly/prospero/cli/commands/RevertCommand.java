@@ -40,8 +40,9 @@ import org.wildfly.prospero.cli.CliConsole;
 import org.wildfly.prospero.cli.CliMessages;
 import org.wildfly.prospero.cli.FileConflictPrinter;
 import org.wildfly.prospero.cli.RepositoryDefinition;
-import org.wildfly.prospero.cli.ReturnCodes;
 import picocli.CommandLine;
+
+import static org.wildfly.prospero.cli.ReturnCodes.SUCCESS;
 
 @CommandLine.Command(
         name = CliConstants.Commands.REVERT,
@@ -55,11 +56,11 @@ public class RevertCommand extends AbstractParentCommand {
         FileConflictPrinter.print(conflicts, console);
 
         if (!yes && !console.confirm(CliMessages.MESSAGES.continueWithUpdate(), "", CliMessages.MESSAGES.updateCancelled())) {
-            return ReturnCodes.SUCCESS;
+            return SUCCESS;
         }
 
         applyCandidateAction.applyUpdate(ApplyCandidateAction.Type.REVERT);
-        return ReturnCodes.SUCCESS;
+        return SUCCESS;
     }
 
     private static void validateRevertCandidate(Path installationDirectory, Path updateDirectory, ApplyCandidateAction applyCandidateAction) throws InvalidUpdateCandidateException, MetadataException {
@@ -88,6 +89,7 @@ public class RevertCommand extends AbstractParentCommand {
 
         @Override
         public Integer call() throws Exception {
+            final long startTime = System.currentTimeMillis();
             final Path installationDirectory = determineInstallationDirectory(directory);
             final MavenOptions mavenOptions = parseMavenOptions();
 
@@ -102,7 +104,11 @@ public class RevertCommand extends AbstractParentCommand {
 
                 validateRevertCandidate(installationDirectory, tempDirectory, applyCandidateAction);
 
-                return applyCandidate(console, applyCandidateAction, yes);
+                applyCandidate(console, applyCandidateAction, yes);
+
+                final float totalTime = (System.currentTimeMillis() - startTime) / 1000f;
+                console.println(CliMessages.MESSAGES.operationCompleted(totalTime));
+                return SUCCESS;
             } catch (IOException e) {
                 throw Messages.MESSAGES.unableToCreateTemporaryDirectory(e);
             } finally {
@@ -131,12 +137,16 @@ public class RevertCommand extends AbstractParentCommand {
 
         @Override
         public Integer call() throws Exception {
+            final long startTime = System.currentTimeMillis();
             final Path installationDirectory = determineInstallationDirectory(directory);
             final ApplyCandidateAction applyCandidateAction = actionFactory.applyUpdate(installationDirectory, updateDirectory.toAbsolutePath());
 
             validateRevertCandidate(installationDirectory, updateDirectory, applyCandidateAction);
 
-            return applyCandidate(console, applyCandidateAction, yes);
+            applyCandidate(console, applyCandidateAction, yes);
+            final float totalTime = (System.currentTimeMillis() - startTime) / 1000f;
+            console.println(CliMessages.MESSAGES.operationCompleted(totalTime));
+            return SUCCESS;
         }
     }
 
@@ -155,6 +165,7 @@ public class RevertCommand extends AbstractParentCommand {
 
         @Override
         public Integer call() throws Exception {
+            final long startTime = System.currentTimeMillis();
             verifyTargetDirectoryIsEmpty(updateDirectory);
 
             final Path installationDirectory = determineInstallationDirectory(directory);
@@ -164,7 +175,9 @@ public class RevertCommand extends AbstractParentCommand {
 
             InstallationHistoryAction historyAction = actionFactory.history(installationDirectory, console);
             historyAction.prepareRevert(new SavedState(revision), mavenOptions, overrideRepositories, updateDirectory.toAbsolutePath());
-            return ReturnCodes.SUCCESS;
+            final float totalTime = (System.currentTimeMillis() - startTime) / 1000f;
+            console.println(CliMessages.MESSAGES.operationCompleted(totalTime));
+            return SUCCESS;
         }
     }
 

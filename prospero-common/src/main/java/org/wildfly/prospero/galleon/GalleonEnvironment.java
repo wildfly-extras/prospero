@@ -25,25 +25,34 @@ import org.jboss.galleon.layout.ProvisioningLayoutFactory;
 import org.jboss.logging.Logger;
 import org.wildfly.channel.Channel;
 import org.wildfly.channel.ChannelManifest;
+import org.wildfly.channel.ChannelMetadataCoordinate;
 import org.wildfly.channel.ChannelSession;
 import org.wildfly.channel.InvalidChannelMetadataException;
+import org.wildfly.channel.UnresolvedMavenArtifactException;
 import org.wildfly.channel.maven.VersionResolverFactory;
 import org.wildfly.channel.spi.MavenVersionsResolver;
 import org.wildfly.prospero.Messages;
 import org.wildfly.prospero.api.Console;
 import org.wildfly.prospero.api.exceptions.ChannelDefinitionException;
 import org.wildfly.prospero.api.exceptions.MetadataException;
+import org.wildfly.prospero.api.exceptions.UnresolvedChannelMetadataException;
 import org.wildfly.prospero.api.exceptions.OperationException;
 import org.wildfly.prospero.wfchannel.MavenSessionManager;
 
+import java.io.FileNotFoundException;
 import java.io.IOException;
+import java.net.MalformedURLException;
+import java.net.URL;
 import java.nio.file.Path;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.Set;
 import java.util.function.Consumer;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 public class GalleonEnvironment {
@@ -58,7 +67,7 @@ public class GalleonEnvironment {
 
     private static final Logger logger = Logger.getLogger(GalleonEnvironment.class);
 
-    private GalleonEnvironment(Builder builder) throws ProvisioningException, MetadataException, ChannelDefinitionException {
+    private GalleonEnvironment(Builder builder) throws ProvisioningException, MetadataException, ChannelDefinitionException, UnresolvedChannelMetadataException {
         Optional<Console> console = Optional.ofNullable(builder.console);
         Optional<ChannelManifest> restoreManifest = Optional.ofNullable(builder.manifest);
         channels = builder.channels;
@@ -79,11 +88,8 @@ public class GalleonEnvironment {
             logger.debug("Unable to read artifact cache, falling back to Maven resolver.", e);
             factory = new VersionResolverFactory(system, session);
         }
-        try {
-            channelSession = new ChannelSession(channels, factory);
-        } catch (InvalidChannelMetadataException e) {
-            throw Messages.MESSAGES.invalidManifest(e);
-        }
+        channelSession = initChannelSession(session, factory);
+
         if (restoreManifest.isEmpty()) {
             repositoryManager = new ChannelMavenArtifactRepositoryManager(channelSession);
         } else {
@@ -104,6 +110,32 @@ public class GalleonEnvironment {
             session.setTransferListener(callback);
             layoutFactory.setProgressCallback(TRACK_JB_ARTIFACTS_RESOLVE, callback);
         }
+    }
+
+    private ChannelSession initChannelSession(DefaultRepositorySystemSession session, MavenVersionsResolver.Factory factory) throws UnresolvedChannelMetadataException, ChannelDefinitionException {
+        final ChannelSession channelSession;
+        try {
+            channelSession = new ChannelSession(channels, factory);
+        } catch (UnresolvedMavenArtifactException e) {
+            final Set<ChannelMetadataCoordinate> missingArtifacts = e.getUnresolvedArtifacts().stream()
+                    .map(a -> new ChannelMetadataCoordinate(a.getGroupId(), a.getArtifactId(), a.getVersion(), a.getClassifier(), a.getExtension()))
+                    .collect(Collectors.toSet());
+
+            throw new UnresolvedChannelMetadataException(Messages.MESSAGES.unableToResolve(), e, missingArtifacts,
+                    e.getAttemptedRepositories(), session.isOffline());
+        } catch (InvalidChannelMetadataException e) {
+            if (e.getCause() instanceof FileNotFoundException) {
+                final String url = e.getValidationMessages().get(0);
+                try {
+                    final ChannelMetadataCoordinate coord = new ChannelMetadataCoordinate(new URL(url));
+                    throw new UnresolvedChannelMetadataException(Messages.MESSAGES.unableToResolve(), e, Set.of(coord), Collections.emptySet(), session.isOffline());
+                } catch (MalformedURLException ex) {
+                    throw Messages.MESSAGES.invalidManifest(e);
+                }
+            }
+            throw Messages.MESSAGES.invalidManifest(e);
+        }
+        return channelSession;
     }
 
     public ProvisioningManager getProvisioningManager() {
