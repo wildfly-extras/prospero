@@ -45,6 +45,7 @@
         <artifact name="${org.apache.maven.resolver:maven-resolver-api}"/>
         <artifact name="${org.apache.maven.resolver:maven-resolver-connector-basic}"/>
         <artifact name="${org.apache.maven.resolver:maven-resolver-impl}"/>
+        <artifact name="${org.apache.maven.resolver:maven-resolver-named-locks}"/>
         <artifact name="${org.apache.maven:maven-resolver-provider}"/>
         <artifact name="${org.apache.maven.resolver:maven-resolver-spi}"/>
         <artifact name="${org.apache.maven.resolver:maven-resolver-transport-file}"/>
