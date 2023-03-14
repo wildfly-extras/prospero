@@ -46,7 +46,8 @@ import java.util.Optional;
 @CommandLine.Command(
         name = CliConstants.Commands.CUSTOMIZATION_INITIALIZE_CHANNEL,
         aliases = {CliConstants.Commands.CUSTOMIZATION_INIT_CHANNEL},
-        sortOptions = false
+        sortOptions = false,
+        hidden = true
 )
 public class ChannelInitializeCommand extends AbstractCommand {
     public static final String CUSTOMIZATION_REPO_ID = "customization-repository";

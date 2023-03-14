@@ -43,7 +43,8 @@ import static org.wildfly.prospero.cli.commands.channel.ChannelInitializeCommand
 
 @CommandLine.Command(
         name = CliConstants.Commands.CUSTOMIZATION_PROMOTE,
-        sortOptions = false
+        sortOptions = false,
+        hidden = true
 )
 public class ChannelPromoteCommand extends AbstractCommand {
     @CommandLine.Option(
