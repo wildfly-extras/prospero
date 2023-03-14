@@ -15,11 +15,12 @@
  * limitations under the License.
  */
 
-package org.wildfly.prospero.actions;
+package org.wildfly.prospero.metadata;
 
-import org.apache.commons.io.IOUtils;
+import org.apache.maven.repository.internal.MavenRepositorySystemUtils;
 import org.eclipse.aether.DefaultRepositorySystemSession;
 import org.eclipse.aether.RepositorySystem;
+import org.eclipse.aether.repository.LocalRepository;
 import org.jboss.galleon.util.HashUtils;
 import org.wildfly.channel.Channel;
 import org.wildfly.channel.ChannelManifestCoordinate;
@@ -27,12 +28,13 @@ import org.wildfly.channel.Repository;
 import org.wildfly.channel.maven.VersionResolverFactory;
 import org.wildfly.channel.spi.MavenVersionsResolver;
 import org.wildfly.channel.version.VersionMatcher;
-import org.wildfly.prospero.Messages;
-import org.wildfly.prospero.api.exceptions.MetadataException;
-import org.wildfly.prospero.model.ManifestVersionRecord;
-import org.wildfly.prospero.wfchannel.MavenSessionManager;
 
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
+import java.net.URL;
+import java.nio.file.Path;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
@@ -45,23 +47,37 @@ import java.util.stream.Collectors;
  * for URL-based manifests it's the URL and a hash of the manifest content;
  * for open manifests it's list of repositories + strategy.
  */
-class ManifestVersionResolver {
+public class ManifestVersionResolver {
 
     private final VersionResolverFactory resolverFactory;
 
-    ManifestVersionResolver(MavenSessionManager msm) {
-        final MavenSessionManager mavenSessionManager = new MavenSessionManager(msm);
-        mavenSessionManager.setOffline(true);
-        final RepositorySystem system = mavenSessionManager.newRepositorySystem();
-        final DefaultRepositorySystemSession session = mavenSessionManager.newRepositorySystemSession(system);
-        resolverFactory = new VersionResolverFactory(system, session);
+    /**
+     * creates the resolver using an offline repository session
+     *
+     * @param localMavenCache - path to the local cache used to resolve metadata during provisioning
+     * @param system
+     */
+    public ManifestVersionResolver(Path localMavenCache, RepositorySystem system) {
+        Objects.requireNonNull(localMavenCache);
+        Objects.requireNonNull(system);
+
+        final DefaultRepositorySystemSession session = newRepositorySystemSession(system, localMavenCache);
+        this.resolverFactory = new VersionResolverFactory(system, session);
     }
 
+    // used in tests only
     ManifestVersionResolver(VersionResolverFactory resolverFactory) {
         this.resolverFactory = resolverFactory;
     }
 
-    ManifestVersionRecord getCurrentVersions(List<Channel> channels) throws MetadataException {
+    /**
+     * Resolves the latest versions of manifests used in channels
+     *
+     * @param channels - list of provisioned channels
+     * @return {@code ManifestVersionRecord} of latest available versions of manifests
+     * @throws IOException - if unable to resolve any of the manifests
+     */
+    public ManifestVersionRecord getCurrentVersions(List<Channel> channels) throws IOException {
         Objects.requireNonNull(channels);
 
         final ManifestVersionRecord manifestVersionRecord = new ManifestVersionRecord();
@@ -71,13 +87,9 @@ class ManifestVersionResolver {
                 final List<String> repos = channel.getRepositories().stream().map(Repository::getId).collect(Collectors.toList());
                 manifestVersionRecord.addManifest(new ManifestVersionRecord.NoManifest(repos, channel.getNoStreamStrategy().toString()));
             } else if (manifestCoordinate.getUrl() != null) {
-                try {
-                    final String content = IOUtils.toString(manifestCoordinate.getUrl());
-                    final String hashCode = HashUtils.hash(content);
-                    manifestVersionRecord.addManifest(new ManifestVersionRecord.UrlManifest(manifestCoordinate.getUrl().toExternalForm(), hashCode));
-                } catch (IOException e) {
-                    throw Messages.MESSAGES.unableToDownloadFile(manifestCoordinate.getUrl(), e);
-                }
+                final String content = read(manifestCoordinate.getUrl());
+                final String hashCode = HashUtils.hash(content);
+                manifestVersionRecord.addManifest(new ManifestVersionRecord.UrlManifest(manifestCoordinate.getUrl().toExternalForm(), hashCode));
             } else if (manifestCoordinate.getVersion() != null) {
                 manifestVersionRecord.addManifest(new ManifestVersionRecord.MavenManifest(manifestCoordinate.getGroupId(), manifestCoordinate.getArtifactId(), manifestCoordinate.getVersion()));
             } else {
@@ -88,5 +100,21 @@ class ManifestVersionResolver {
             }
         }
         return manifestVersionRecord;
+    }
+
+    private String read(URL url) throws IOException {
+        final InputStream inputStream = url.openStream();
+        final OutputStream outputStream = new ByteArrayOutputStream();
+        inputStream.transferTo(outputStream);
+        return outputStream.toString();
+    }
+
+    private static DefaultRepositorySystemSession newRepositorySystemSession(RepositorySystem system,
+                                                                             Path localMavenCache) {
+        DefaultRepositorySystemSession session = MavenRepositorySystemUtils.newSession();
+        LocalRepository localRepo = new LocalRepository(localMavenCache.toFile());
+        session.setLocalRepositoryManager(system.newLocalRepositoryManager(session, localRepo));
+        session.setOffline(true);
+        return session;
     }
 }

@@ -18,7 +18,7 @@
 package org.wildfly.prospero.updates;
 
 import org.wildfly.prospero.actions.ApplyCandidateAction;
-import org.wildfly.prospero.api.InstallationMetadata;
+import org.wildfly.prospero.metadata.ProsperoMetadataUtils;
 
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
@@ -28,7 +28,7 @@ import java.util.Objects;
 import java.util.Properties;
 
 public class MarkerFile {
-    public static final Path UPDATE_MARKER_FILE = Path.of(InstallationMetadata.METADATA_DIR, ".candidate.txt");
+    public static final Path UPDATE_MARKER_FILE = Path.of(ProsperoMetadataUtils.METADATA_DIR, ".candidate.txt");
     private static final String STATE_PROPERTY = "state";
     private static final String OPERATION_PROPERTY = "operation";
     private final String state;

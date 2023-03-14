@@ -21,10 +21,7 @@ import org.wildfly.channel.ChannelManifest;
 import org.wildfly.channel.ChannelManifestMapper;
 
 import java.io.File;
-import java.io.FileWriter;
 import java.io.IOException;
-import java.io.PrintWriter;
-import java.nio.file.Path;
 
 public class ManifestYamlSupport {
 
@@ -32,10 +29,4 @@ public class ManifestYamlSupport {
         return ChannelManifestMapper.from(manifestFile.toURI().toURL());
     }
 
-    public static void write(ChannelManifest manifest, Path channelFile) throws IOException {
-        String yaml = ChannelManifestMapper.toYaml(manifest);
-        try (PrintWriter pw = new PrintWriter(new FileWriter(channelFile.toFile()))) {
-            pw.println(yaml);
-        }
-    }
 }

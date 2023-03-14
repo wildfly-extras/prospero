@@ -31,18 +31,17 @@ import org.junit.Test;
 import org.wildfly.channel.Channel;
 import org.wildfly.channel.ChannelManifest;
 import org.wildfly.channel.ChannelManifestCoordinate;
+import org.wildfly.channel.ChannelMapper;
 import org.wildfly.channel.Repository;
 import org.wildfly.channel.Stream;
-import org.wildfly.prospero.model.ManifestVersionRecord;
+import org.wildfly.prospero.metadata.ManifestVersionRecord;
 import org.wildfly.prospero.actions.UpdateAction;
-import org.wildfly.prospero.api.InstallationMetadata;
 import org.wildfly.prospero.api.MavenOptions;
 import org.wildfly.prospero.api.ProvisioningDefinition;
 import org.wildfly.prospero.api.RepositoryUtils;
 import org.wildfly.prospero.it.AcceptingConsole;
 import org.wildfly.prospero.metadata.ProsperoMetadataUtils;
 import org.wildfly.prospero.model.ManifestYamlSupport;
-import org.wildfly.prospero.model.ProsperoConfig;
 import org.wildfly.prospero.test.MetadataTestUtils;
 import org.wildfly.prospero.wfchannel.MavenSessionManager;
 
@@ -50,6 +49,7 @@ import java.io.File;
 import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.URL;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardOpenOption;
@@ -113,8 +113,8 @@ public class UpdateTest extends WfCoreTestBase {
 
     @Test
     public void updateWildflyCoreIgnoreChangesInProsperoConfig() throws Exception {
-        final Path channelsFile = outputPath.resolve(InstallationMetadata.METADATA_DIR)
-                .resolve(InstallationMetadata.INSTALLER_CHANNELS_FILE_NAME);
+        final Path channelsFile = outputPath.resolve(ProsperoMetadataUtils.METADATA_DIR)
+                .resolve(ProsperoMetadataUtils.INSTALLER_CHANNELS_FILE_NAME);
 
         // deploy manifest file
         File manifestFile = new File(MetadataTestUtils.class.getClassLoader().getResource(CHANNEL_BASE_CORE_19).toURI());
@@ -217,18 +217,19 @@ public class UpdateTest extends WfCoreTestBase {
         }).collect(Collectors.toList());
 
         final File file = temp.newFile("test-channel.yaml");
-        ManifestYamlSupport.write(new ChannelManifest(manifest.getSchemaVersion(), manifest.getName(), null, streams),
-                file.toPath());
+        ChannelManifest manifest1 = new ChannelManifest(manifest.getSchemaVersion(), manifest.getName(), null, streams);
+        Path manifestPath1 = file.toPath();
+        ProsperoMetadataUtils.writeManifest(manifestPath1, manifest1);
         return file;
     }
 
     private File buildConfigWithMockRepo() throws IOException {
         final List<Repository> repositories = new ArrayList<>(defaultRemoteRepositories());
-        final File channelsFile = temp.newFile(InstallationMetadata.INSTALLER_CHANNELS_FILE_NAME);
+        final File channelsFile = temp.newFile(ProsperoMetadataUtils.INSTALLER_CHANNELS_FILE_NAME);
         repositories.add(new Repository("test-repo", mockRepo.toURI().toURL().toString()));
         Channel channel = new Channel("test", "", null, repositories,
                 new ChannelManifestCoordinate("test", "channel"), null, null);
-        new ProsperoConfig(List.of(channel)).writeConfig(channelsFile.toPath().getParent());
+        Files.writeString(channelsFile.toPath(), ChannelMapper.toYaml(List.of(channel)), StandardCharsets.UTF_8);
         return channelsFile;
     }
 

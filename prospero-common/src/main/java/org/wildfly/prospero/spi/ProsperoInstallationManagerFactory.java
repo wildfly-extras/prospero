@@ -24,6 +24,7 @@ import org.wildfly.installationmanager.spi.InstallationManager;
 import org.wildfly.installationmanager.spi.InstallationManagerFactory;
 import org.wildfly.prospero.Messages;
 import org.wildfly.prospero.api.InstallationMetadata;
+import org.wildfly.prospero.metadata.ProsperoMetadataUtils;
 
 import java.io.File;
 import java.nio.file.Path;
@@ -42,8 +43,8 @@ public class ProsperoInstallationManagerFactory implements InstallationManagerFa
 
     private void verifyInstallationDirectory(Path path) {
         File dotGalleonDir = path.resolve(InstallationMetadata.GALLEON_INSTALLATION_DIR).toFile();
-        File channelsFile = path.resolve(InstallationMetadata.METADATA_DIR)
-                .resolve(InstallationMetadata.INSTALLER_CHANNELS_FILE_NAME).toFile();
+        File channelsFile = path.resolve(ProsperoMetadataUtils.METADATA_DIR)
+                .resolve(ProsperoMetadataUtils.INSTALLER_CHANNELS_FILE_NAME).toFile();
         if (!dotGalleonDir.isDirectory() || !channelsFile.isFile()) {
             throw Messages.MESSAGES.invalidInstallationDir(path);
         }

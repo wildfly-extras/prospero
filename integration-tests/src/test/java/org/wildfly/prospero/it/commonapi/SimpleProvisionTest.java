@@ -35,10 +35,9 @@ import org.jboss.galleon.Constants;
 import org.jboss.galleon.ProvisioningException;
 import org.junit.Test;
 import org.wildfly.channel.Channel;
-import org.wildfly.prospero.model.ManifestVersionRecord;
+import org.wildfly.prospero.metadata.ManifestVersionRecord;
 import org.wildfly.prospero.actions.UpdateAction;
 import org.wildfly.prospero.api.ArtifactChange;
-import org.wildfly.prospero.api.InstallationMetadata;
 import org.wildfly.prospero.api.ProvisioningDefinition;
 import org.wildfly.prospero.api.exceptions.OperationException;
 import org.wildfly.prospero.galleon.ArtifactCache;
@@ -100,7 +99,7 @@ public class SimpleProvisionTest extends WfCoreTestBase {
         installation.provision(provisioningDefinition.toProvisioningConfig(),
                 provisioningDefinition.resolveChannels(CHANNELS_RESOLVER_FACTORY));
 
-        final ProsperoConfig persistedConfig = ProsperoConfig.readConfig(outputPath.resolve(InstallationMetadata.METADATA_DIR));
+        final ProsperoConfig persistedConfig = ProsperoConfig.readConfig(outputPath.resolve(ProsperoMetadataUtils.METADATA_DIR));
         assertThat(persistedConfig.getChannels())
                 .map(Channel::getName)
                 .noneMatch(StringUtils::isEmpty)

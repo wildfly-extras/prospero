@@ -45,6 +45,9 @@ public class ProsperoMetadataUtils {
     public static final String INSTALLER_CHANNELS_FILE_NAME = "installer-channels.yaml";
     public static final String MAVEN_OPTS_FILE = "maven_opts.yaml";
     public static final String CURRENT_VERSION_FILE = "manifest_version.yaml";
+    public static final String README_FILE_NAME = "README.txt";
+
+    private static final String WARNING_MESSAGE = "WARNING: The files in .installation directory should be only edited by the provisioning tool.";
 
     /**
      * Generate installer metadata inside {@code serverDir}. The generated metadata files allow the server to be
@@ -55,10 +58,11 @@ public class ProsperoMetadataUtils {
      * @param serverDir - base path of the provisioned servers
      * @param channels - list of channels the server should be subscribed to
      * @param manifest - channel manifest containing streams used to provision a server.
+     * @param versionRecord - provisioned versions of manifests. Can be {@code null}
      * @throws IOException - if unable to write the metadata files
      * @throws IllegalArgumentException - if any of metadata files are already present.
      */
-    public static void generate(Path serverDir, List<Channel> channels, ChannelManifest manifest) throws IOException {
+    public static void generate(Path serverDir, List<Channel> channels, ChannelManifest manifest, ManifestVersionRecord versionRecord) throws IOException {
         Objects.requireNonNull(serverDir);
         Objects.requireNonNull(channels);
         Objects.requireNonNull(manifest);
@@ -66,6 +70,8 @@ public class ProsperoMetadataUtils {
         final Path metadataDir = serverDir.resolve(METADATA_DIR);
         final Path manifestPath = metadataDir.resolve(MANIFEST_FILE_NAME);
         final Path configPath = metadataDir.resolve(INSTALLER_CHANNELS_FILE_NAME);
+        final Path versionRecordPath = metadataDir.resolve(CURRENT_VERSION_FILE);
+        final Path readmeFile = metadataDir.resolve(README_FILE_NAME);
 
         if (Files.exists(metadataDir) && !Files.isDirectory(metadataDir)) {
             throw new IllegalArgumentException(String.format("The target path %s is not a directory.", metadataDir));
@@ -79,7 +85,95 @@ public class ProsperoMetadataUtils {
             Files.createDirectory(metadataDir);
         }
 
-        Files.writeString(manifestPath, ChannelManifestMapper.toYaml(manifest), StandardCharsets.UTF_8);
-        Files.writeString(configPath, ChannelMapper.toYaml(channels), StandardCharsets.UTF_8);
+        writeManifest(manifestPath, manifest);
+        writeChannelsConfiguration(configPath, channels);
+        if (versionRecord != null) {
+            writeVersionRecord(versionRecordPath, versionRecord);
+        }
+
+        // Add README.txt file to .installation directory to warn the files should not be edited.
+        if (!Files.exists(readmeFile)) {
+            writeToFile(readmeFile, WARNING_MESSAGE);
+        }
+    }
+
+    /**
+     * record {@code channels} to the file at {@channelPath}. If the file already exist, it will be overwritten.
+     * If the file doesn't exist, the parent directory needs to be present, otherwise an exception is thrown.
+     *
+     * @param channelPath - {@code Path} where the data should be saved
+     * @param channels - {@code Channel}s to record
+     * @throws IOException - if unable to write the file
+     * @throws IllegalArgumentException - if the parent folder does not exist.
+     */
+    public static void writeChannelsConfiguration(Path channelPath, List<Channel> channels) throws IOException {
+        Objects.requireNonNull(channelPath);
+        Objects.requireNonNull(channels);
+
+        if (!Files.exists(channelPath.getParent())) {
+            throw new IllegalArgumentException(String.format("The target path %s does not exist.", channelPath.getParent()));
+        }
+
+
+        writeToFile(channelPath, ChannelMapper.toYaml(channels));
+    }
+
+    /**
+     * record {@code ChannelManifest} to the file at {@manifestPath}. If the file already exist, it will be overwritten.
+     * If the file doesn't exist, the parent directory needs to be present, otherwise an exception is thrown.
+     *
+     * @param manifestPath - {@code Path} where the data should be saved
+     * @param manifest - {@code ChannelManifest} to record
+     * @throws IOException - if unable to write the file
+     * @throws IllegalArgumentException - if the parent folder does not exist.
+     */
+    public static void writeManifest(Path manifestPath, ChannelManifest manifest) throws IOException {
+        Objects.requireNonNull(manifestPath);
+        Objects.requireNonNull(manifest);
+
+        if (!Files.exists(manifestPath.getParent())) {
+            throw new IllegalArgumentException(String.format("The target path %s does not exist.", manifestPath.getParent()));
+        }
+
+        writeToFile(manifestPath, ChannelManifestMapper.toYaml(manifest));
+    }
+
+    /**
+     * record {@code ManifestVersionRecord} to the file at {@versionsPath}. If the file already exist, it will be overwritten.
+     * If the file doesn't exist, the parent directory needs to be present, otherwise an exception is thrown.
+     *
+     * @param versionsPath - {@code Path} where the data should be saved
+     * @param versionRecord - {@code ManifestVersionRecord} to record
+     * @throws IOException - if unable to write the file
+     * @throws IllegalArgumentException - if the parent folder does not exist.
+     */
+    public static void writeVersionRecord(Path versionsPath, ManifestVersionRecord versionRecord) throws IOException {
+        Objects.requireNonNull(versionRecord);
+        Objects.requireNonNull(versionsPath);
+
+        if (!Files.exists(versionsPath.getParent())) {
+            throw new IllegalArgumentException(String.format("The target path %s does not exist.", versionsPath.getParent()));
+        }
+
+        final String yaml = ManifestVersionRecord.toYaml(versionRecord);
+        if (Files.exists(versionsPath)) {
+            Files.delete(versionsPath);
+        }
+        Files.writeString(versionsPath, yaml);
+    }
+
+    public static Path manifestPath(Path serverDir) {
+        return serverDir.resolve(METADATA_DIR).resolve(MANIFEST_FILE_NAME);
+    }
+
+    public static Path configurationPath(Path serverDir) {
+        return serverDir.resolve(METADATA_DIR).resolve(INSTALLER_CHANNELS_FILE_NAME);
+    }
+
+    protected static void writeToFile(Path path, String text) throws IOException {
+        if (!text.endsWith("\n")) {
+            text += "\n";
+        }
+        Files.writeString(path, text, StandardCharsets.UTF_8);
     }
 }

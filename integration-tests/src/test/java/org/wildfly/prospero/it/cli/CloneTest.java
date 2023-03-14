@@ -34,6 +34,7 @@ import org.wildfly.prospero.cli.ReturnCodes;
 import org.wildfly.prospero.cli.commands.CliConstants;
 import org.wildfly.prospero.it.ExecutionUtils;
 import org.wildfly.prospero.it.commonapi.WfCoreTestBase;
+import org.wildfly.prospero.metadata.ProsperoMetadataUtils;
 import org.wildfly.prospero.model.ManifestYamlSupport;
 import org.wildfly.prospero.model.ProsperoConfig;
 import org.wildfly.prospero.test.MetadataTestUtils;
@@ -48,8 +49,6 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
-import static org.wildfly.prospero.api.InstallationMetadata.MANIFEST_FILE_NAME;
-import static org.wildfly.prospero.api.InstallationMetadata.METADATA_DIR;
 
 public class CloneTest extends WfCoreTestBase {
 
@@ -98,7 +97,7 @@ public class CloneTest extends WfCoreTestBase {
                 .withTimeLimit(10, TimeUnit.MINUTES)
                 .execute()
                 .assertReturnCode(ReturnCodes.SUCCESS);
-        return ManifestYamlSupport.parse(installDir.resolve(METADATA_DIR).resolve(MANIFEST_FILE_NAME).toFile());
+        return ManifestYamlSupport.parse(installDir.resolve(ProsperoMetadataUtils.METADATA_DIR).resolve(ProsperoMetadataUtils.MANIFEST_FILE_NAME).toFile());
     }
 
     private void checkMetaData(InstallationMetadata metadata, Stream stream, ChannelManifest installedManifest) throws Exception {
@@ -158,7 +157,12 @@ public class CloneTest extends WfCoreTestBase {
     public void testRestoreOverrideRepositories() throws Exception {
         ChannelManifest installedManifest = install(targetDir, MetadataTestUtils.prepareChannel(CHANNEL_BASE_CORE_19));
         final Stream stream = new Stream("org.wildfly.core", "wildfly-cli", UPGRADE_VERSION);
-        updateManifestStream(targetDir, stream);
+        ChannelManifest manifest = ManifestYamlSupport.parse(ProsperoMetadataUtils.manifestPath(targetDir).toFile());
+        manifest.findStreamFor(stream.getGroupId(), stream.getArtifactId()).ifPresent(s -> {
+            manifest.getStreams().remove(s);
+            manifest.getStreams().add(stream);
+        });
+        ProsperoMetadataUtils.writeManifest(ProsperoMetadataUtils.manifestPath(targetDir), manifest);
         new InstallationExportAction(targetDir).export(exportPath);
         ExecutionUtils.prosperoExecution(CliConstants.Commands.CLONE, CliConstants.Commands.RESTORE,
             CliConstants.DIR, importDir.toString(),
@@ -170,15 +174,6 @@ public class CloneTest extends WfCoreTestBase {
           .execute()
           .assertReturnCode(ReturnCodes.SUCCESS);
         checkMetaData(InstallationMetadata.loadInstallation(importDir), stream, installedManifest);
-    }
-
-    private void updateManifestStream(Path installDir, Stream stream) throws Exception {
-        ChannelManifest manifest = ManifestYamlSupport.parse(installDir.resolve(METADATA_DIR).resolve(MANIFEST_FILE_NAME).toFile());
-        manifest.findStreamFor(stream.getGroupId(), stream.getArtifactId()).ifPresent(s -> {
-            manifest.getStreams().remove(s);
-            manifest.getStreams().add(stream);
-        });
-        ManifestYamlSupport.write(manifest, installDir.resolve(METADATA_DIR).resolve(MANIFEST_FILE_NAME));
     }
 
 }

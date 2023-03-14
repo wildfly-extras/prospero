@@ -54,14 +54,15 @@ import org.wildfly.channel.Stream;
 import org.wildfly.prospero.api.InstallationMetadata;
 import org.wildfly.prospero.api.SavedState;
 import org.wildfly.prospero.api.exceptions.MetadataException;
+import org.wildfly.prospero.metadata.ProsperoMetadataUtils;
 import org.wildfly.prospero.model.ProsperoConfig;
 
 public final class MetadataTestUtils {
 
     public static final Path MANIFEST_FILE_PATH =
-            Paths.get(InstallationMetadata.METADATA_DIR, InstallationMetadata.MANIFEST_FILE_NAME);
+            Paths.get(ProsperoMetadataUtils.METADATA_DIR, ProsperoMetadataUtils.MANIFEST_FILE_NAME);
     public static final Path INSTALLER_CHANNELS_FILE_PATH =
-            Paths.get(InstallationMetadata.METADATA_DIR, InstallationMetadata.INSTALLER_CHANNELS_FILE_NAME);
+            Paths.get(ProsperoMetadataUtils.METADATA_DIR, ProsperoMetadataUtils.INSTALLER_CHANNELS_FILE_NAME);
 
     private MetadataTestUtils() {
     }

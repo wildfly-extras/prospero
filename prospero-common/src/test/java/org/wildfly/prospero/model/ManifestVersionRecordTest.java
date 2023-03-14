@@ -20,6 +20,8 @@ package org.wildfly.prospero.model;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
+import org.wildfly.prospero.metadata.ManifestVersionRecord;
+import org.wildfly.prospero.metadata.ProsperoMetadataUtils;
 
 import java.nio.file.Path;
 import java.util.List;
@@ -44,7 +46,7 @@ public class ManifestVersionRecordTest {
         manifestVersionRecord.addManifest(versionManifest);
 
         final Path installDir = temp.newFolder().toPath();
-        ManifestVersionRecord.write(manifestVersionRecord, installDir.resolve(CURRENT_VERSION_FILE));
+        ProsperoMetadataUtils.writeVersionRecord(installDir.resolve(CURRENT_VERSION_FILE), manifestVersionRecord);
 
         final Optional<ManifestVersionRecord> read = ManifestVersionRecord.read(installDir.resolve(CURRENT_VERSION_FILE));
         assertEquals(manifestVersionRecord.getSummary(), read.get().getSummary());
