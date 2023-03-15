@@ -86,7 +86,8 @@ public class MavenArtifactMapper {
         Objects.requireNonNull(resolvedArtifact.getFile());
         Objects.requireNonNull(resolvedArtifact.getVersion());
 
-        artifact.setPath(resolvedArtifact.getFile().toPath());
+        // set the version BEFORE file - depended on by galleon-plugin to correctly report artifact resolution
         artifact.setVersion(resolvedArtifact.getVersion());
+        artifact.setPath(resolvedArtifact.getFile().toPath());
     }
 }
