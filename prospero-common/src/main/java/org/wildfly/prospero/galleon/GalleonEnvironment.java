@@ -60,6 +60,8 @@ public class GalleonEnvironment {
     public static final String TRACK_JBMODULES = "JBMODULES";
     public static final String TRACK_JBEXAMPLES = "JBEXTRACONFIGS";
     public static final String TRACK_JB_ARTIFACTS_RESOLVE = "JB_ARTIFACTS_RESOLVE";
+
+    public static final String TRACK_RESOLVING_VERSIONS = "RESOLVING_VERSIONS";
     private final ProvisioningManager provisioningManager;
     private final ChannelMavenArtifactRepositoryManager repositoryManager;
     private final ChannelSession channelSession;

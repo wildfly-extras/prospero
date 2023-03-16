@@ -26,8 +26,10 @@ import org.wildfly.prospero.api.Console;
 import org.wildfly.prospero.api.ProvisioningProgressEvent;
 
 import java.io.File;
+import java.util.HashSet;
 
 import static org.wildfly.prospero.galleon.GalleonEnvironment.TRACK_JB_ARTIFACTS_RESOLVE;
+import static org.wildfly.prospero.galleon.GalleonEnvironment.TRACK_RESOLVING_VERSIONS;
 
 /**
  * Adapter combining Galleon ProgressCallback and Maven TransferListener to track number of already downloaded artifacts.
@@ -38,10 +40,11 @@ import static org.wildfly.prospero.galleon.GalleonEnvironment.TRACK_JB_ARTIFACTS
  * TODO: the total includes artifacts cached locally - find a way to exclude those or update when they are resolved.
  */
 class DownloadsCallbackAdapter extends AbstractTransferListener implements ProgressCallback<MavenArtifact> {
-
     private final Console console;
+    private HashSet<String> resolvedVersionKeys = new HashSet<>();
     private long totalVolume;
     private long processed;
+    private long versionUpdates;
     private boolean currentPhase = false;
 
     public DownloadsCallbackAdapter(Console console) {
@@ -53,6 +56,7 @@ class DownloadsCallbackAdapter extends AbstractTransferListener implements Progr
         this.totalVolume = tracker.getTotalVolume();
         this.processed = 0;
         this.currentPhase = true;
+        this.resolvedVersionKeys = new HashSet<>();
         final ProvisioningProgressEvent progress = new ProvisioningProgressEvent(TRACK_JB_ARTIFACTS_RESOLVE, ProvisioningProgressEvent.EventType.STARTING,
                 tracker.getProcessedVolume(), tracker.getTotalVolume());
         this.console.progressUpdate(progress);
@@ -71,6 +75,7 @@ class DownloadsCallbackAdapter extends AbstractTransferListener implements Progr
         this.totalVolume = 0;
         this.processed = 0;
         this.currentPhase = false;
+        this.resolvedVersionKeys = new HashSet<>();
     }
 
     @Override
@@ -80,9 +85,22 @@ class DownloadsCallbackAdapter extends AbstractTransferListener implements Progr
         }
 
         String item = event.getResource().getResourceName();
-        item = item.substring(item.lastIndexOf(File.separator) + 1);
-        final ProvisioningProgressEvent progress = new ProvisioningProgressEvent(TRACK_JB_ARTIFACTS_RESOLVE, ProvisioningProgressEvent.EventType.UPDATE,
-                ++processed, totalVolume, item, false);
-        this.console.progressUpdate(progress);
+        final int fileNameIndex = item.lastIndexOf(File.separator);
+        item = item.substring(fileNameIndex + 1);
+        if ("maven-metadata.xml".equals(item)) {
+            // get first part of maven-metadata.xml name
+            // for each unique one - increment by one
+            final String key = event.getResource().getResourceName().substring(0, fileNameIndex);
+            if (!resolvedVersionKeys.contains(key)) {
+                resolvedVersionKeys.add(key);
+                final ProvisioningProgressEvent progress = new ProvisioningProgressEvent(TRACK_RESOLVING_VERSIONS, ProvisioningProgressEvent.EventType.UPDATE,
+                        ++versionUpdates, totalVolume, null, false);
+                this.console.progressUpdate(progress);
+            }
+        } else {
+            final ProvisioningProgressEvent progress = new ProvisioningProgressEvent(TRACK_JB_ARTIFACTS_RESOLVE, ProvisioningProgressEvent.EventType.UPDATE,
+                    ++processed, totalVolume, item, false);
+            this.console.progressUpdate(progress);
+        }
     }
 }

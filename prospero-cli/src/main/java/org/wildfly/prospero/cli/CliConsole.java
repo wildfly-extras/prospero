@@ -35,6 +35,7 @@ import static org.jboss.galleon.layout.ProvisioningLayoutFactory.TRACK_PACKAGES;
 import static org.wildfly.prospero.galleon.GalleonEnvironment.TRACK_JBEXAMPLES;
 import static org.wildfly.prospero.galleon.GalleonEnvironment.TRACK_JBMODULES;
 import static org.wildfly.prospero.galleon.GalleonEnvironment.TRACK_JB_ARTIFACTS_RESOLVE;
+import static org.wildfly.prospero.galleon.GalleonEnvironment.TRACK_RESOLVING_VERSIONS;
 
 public class CliConsole implements Console {
 
@@ -100,6 +101,7 @@ public class CliConsole implements Console {
         loggers.put(TRACK_JBMODULES, new ProgressLogger(CliMessages.MESSAGES.installingJBossModules(), CliMessages.MESSAGES.jbossModulesInstalled()));
         loggers.put(TRACK_JBEXAMPLES, new ProgressLogger(CliMessages.MESSAGES.installingJBossExamples(), CliMessages.MESSAGES.jbossExamplesInstalled()));
         loggers.put(TRACK_JB_ARTIFACTS_RESOLVE, new ProgressLogger(CliMessages.MESSAGES.downloadingArtifacts(), CliMessages.MESSAGES.artifactsDownloaded()));
+        loggers.put(TRACK_RESOLVING_VERSIONS, new ProgressLogger(CliMessages.MESSAGES.resolvingVersions(), CliMessages.MESSAGES.versionsResolved()));
     }
 
     private Cli cli = new Cli(getStdOut());
