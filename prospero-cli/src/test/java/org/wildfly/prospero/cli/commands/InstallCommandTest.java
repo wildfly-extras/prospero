@@ -140,7 +140,7 @@ public class InstallCommandTest extends AbstractMavenCommandTest {
                 CliConstants.FPL, "org.wildfly:wildfly-ee-galleon-pack",
                 CliConstants.CHANNELS, channelsFile.getAbsolutePath());
         assertEquals(ReturnCodes.SUCCESS, exitCode);
-        Mockito.verify(provisionAction).provision(configCaptor.capture(), channelCaptor.capture());
+        Mockito.verify(provisionAction).provision(configCaptor.capture(), channelCaptor.capture(), any());
         assertThat(configCaptor.getValue().getFeaturePackDeps())
                 .map(fp->fp.getLocation().getProducerName())
                 .containsExactly("org.wildfly:wildfly-ee-galleon-pack::zip");
@@ -153,7 +153,7 @@ public class InstallCommandTest extends AbstractMavenCommandTest {
         commandLine.getErr();
 
         assertEquals(ReturnCodes.SUCCESS, exitCode);
-        Mockito.verify(provisionAction).provision(configCaptor.capture(), channelCaptor.capture());
+        Mockito.verify(provisionAction).provision(configCaptor.capture(), channelCaptor.capture(), any());
         assertThat(configCaptor.getValue().getFeaturePackDeps())
                 .map(fp->fp.getLocation().getProducerName())
                 .containsExactly("org.wildfly.core:wildfly-core-galleon-pack::zip");
@@ -169,7 +169,7 @@ public class InstallCommandTest extends AbstractMavenCommandTest {
                 CliConstants.CHANNELS, channelsFile.getAbsolutePath());
 
         assertEquals(ReturnCodes.SUCCESS, exitCode);
-        Mockito.verify(provisionAction).provision(configCaptor.capture(), channelCaptor.capture());
+        Mockito.verify(provisionAction).provision(configCaptor.capture(), channelCaptor.capture(), any());
         assertThat(configCaptor.getValue().getFeaturePackDeps())
                 .map(fp->fp.getLocation().getProducerName())
                 .containsExactly("org.wildfly.core:wildfly-core-galleon-pack::zip");
@@ -196,7 +196,7 @@ public class InstallCommandTest extends AbstractMavenCommandTest {
                 CliConstants.DEFINITION, provisionDefinitionFile.getAbsolutePath());
 
         assertEquals(ReturnCodes.SUCCESS, exitCode);
-        Mockito.verify(provisionAction).provision(configCaptor.capture(), channelCaptor.capture());
+        Mockito.verify(provisionAction).provision(configCaptor.capture(), channelCaptor.capture(), any());
         assertThat(configCaptor.getValue().getFeaturePackDeps())
                 .map(fp->fp.getLocation().getProducerName())
                 .containsExactly("org.wildfly.core:wildfly-core-galleon-pack::zip");
@@ -257,10 +257,28 @@ public class InstallCommandTest extends AbstractMavenCommandTest {
                 CliConstants.FPL, "g:a");
 
         assertEquals(ReturnCodes.SUCCESS, exitCode);
-        Mockito.verify(provisionAction).provision(configCaptor.capture(), channelCaptor.capture());
+        Mockito.verify(provisionAction).provision(configCaptor.capture(), channelCaptor.capture(), any());
         assertThat(channelCaptor.getValue().get(0).getRepositories()
                 .stream().map(Repository::getUrl).collect(Collectors.toList()))
                 .containsOnly("file:/test");
+    }
+
+    @Test
+    public void passShadowRepositories() throws Exception {
+        Path channelsFile = temporaryFolder.newFile().toPath();
+        MetadataTestUtils.prepareChannel(channelsFile, List.of(new URL("file:some-manifest.yaml")));
+
+        int exitCode = commandLine.execute(CliConstants.Commands.INSTALL, CliConstants.DIR, "test",
+                CliConstants.CHANNELS, channelsFile.toString(),
+                CliConstants.SHADE_REPOSITORIES, "file:/test",
+                CliConstants.FPL, "g:a");
+
+        assertEquals(ReturnCodes.SUCCESS, exitCode);
+        final ArgumentCaptor<List<Repository>> listArgumentCaptor = ArgumentCaptor.forClass(List.class);
+        Mockito.verify(provisionAction).provision(configCaptor.capture(), channelCaptor.capture(), listArgumentCaptor.capture());
+        assertThat(listArgumentCaptor.getValue())
+                .map(Repository::getUrl)
+                .contains("file:/test");
     }
 
     @Override

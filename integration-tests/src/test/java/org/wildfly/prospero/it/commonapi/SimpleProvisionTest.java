@@ -35,6 +35,8 @@ import org.jboss.galleon.Constants;
 import org.jboss.galleon.ProvisioningException;
 import org.junit.Test;
 import org.wildfly.channel.Channel;
+import org.wildfly.channel.Repository;
+import org.wildfly.prospero.api.InstallationMetadata;
 import org.wildfly.prospero.metadata.ManifestVersionRecord;
 import org.wildfly.prospero.actions.UpdateAction;
 import org.wildfly.prospero.api.ArtifactChange;
@@ -185,6 +187,36 @@ public class SimpleProvisionTest extends WfCoreTestBase {
         assertEquals(BASE_VERSION, wildflyCliArtifact.get().getVersion());
         assertEquals(1, updates.size());
         assertEquals("org.wildfly.core:wildfly-cli", updates.stream().findFirst().get());
+    }
+
+    @Test
+    public void installWithShadowRepositories() throws Exception {
+        // verify that using override repositories changes the source during provisioning, but is not recorded
+        final Path channelsFile = MetadataTestUtils.prepareChannel(CHANNEL_BASE_CORE_19);
+
+        final ProvisioningDefinition provisioningDefinition = defaultWfCoreDefinition()
+                .setChannelCoordinates(List.of(channelsFile.toString()))
+                .build();
+        final List<Channel> channels = provisioningDefinition.resolveChannels(CHANNELS_RESOLVER_FACTORY).stream()
+                .map((c)-> {
+                    Channel.Builder builder = new Channel.Builder()
+                            .setName(c.getName())
+                            .setManifestUrl(c.getManifestCoordinate().getUrl());
+                    for (Repository r : c.getRepositories()) {
+                        builder.addRepository(r.getId(), "https://idontexist.com");
+                    }
+                    return builder.build();
+                })
+                .collect(Collectors.toList());
+
+        installation.provision(provisioningDefinition.toProvisioningConfig(),
+                channels, defaultRemoteRepositories().stream()
+                        .map(r->new Repository(r.getId(), r.getUrl())).collect(Collectors.toList()));
+
+        assertThat(InstallationMetadata.loadInstallation(outputPath).getProsperoConfig().getChannels())
+                .flatMap(Channel::getRepositories)
+                .map(Repository::getUrl)
+                .contains("https://idontexist.com");
     }
 
     private Path hashesPath() {

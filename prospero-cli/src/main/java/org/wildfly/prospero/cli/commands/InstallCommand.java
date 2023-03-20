@@ -18,11 +18,13 @@
 package org.wildfly.prospero.cli.commands;
 
 import java.nio.file.Path;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
 import org.jboss.galleon.config.ProvisioningConfig;
 import org.wildfly.channel.Channel;
+import org.wildfly.channel.Repository;
 import org.wildfly.prospero.actions.ProvisioningAction;
 import org.wildfly.prospero.api.KnownFeaturePacks;
 import org.wildfly.prospero.api.MavenOptions;
@@ -31,6 +33,7 @@ import org.wildfly.prospero.cli.ActionFactory;
 import org.wildfly.prospero.cli.CliConsole;
 import org.wildfly.prospero.cli.CliMessages;
 import org.wildfly.prospero.cli.LicensePrinter;
+import org.wildfly.prospero.cli.RepositoryDefinition;
 import org.wildfly.prospero.cli.ReturnCodes;
 import org.wildfly.prospero.cli.commands.options.FeaturePackCandidates;
 import org.wildfly.prospero.licenses.License;
@@ -54,6 +57,14 @@ public class InstallCommand extends AbstractInstallCommand {
             order = 8
     )
     boolean acceptAgreements;
+
+    @CommandLine.Option(
+            names = CliConstants.SHADE_REPOSITORIES,
+            split = ",",
+            hidden = true
+    )
+    List<String> shadowRepositories = new ArrayList<>();
+
 
     static class FeaturePackOrDefinition {
         @CommandLine.Option(
@@ -129,7 +140,8 @@ public class InstallCommand extends AbstractInstallCommand {
             }
         }
 
-        provisioningAction.provision(provisioningConfig, channels);
+        final List<Repository> shadowRepositories = RepositoryDefinition.from(this.shadowRepositories);
+        provisioningAction.provision(provisioningConfig, channels, shadowRepositories);
 
         final float totalTime = (System.currentTimeMillis() - startTime) / 1000f;
         console.println(CliMessages.MESSAGES.operationCompleted(totalTime));
