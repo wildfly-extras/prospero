@@ -22,6 +22,7 @@ import org.eclipse.aether.transfer.TransferEvent;
 import org.jboss.galleon.progresstracking.ProgressCallback;
 import org.jboss.galleon.progresstracking.ProgressTracker;
 import org.jboss.galleon.universe.maven.MavenArtifact;
+import org.wildfly.prospero.ProsperoLogger;
 import org.wildfly.prospero.api.Console;
 import org.wildfly.prospero.api.ProvisioningProgressEvent;
 
@@ -40,6 +41,7 @@ import static org.wildfly.prospero.galleon.GalleonEnvironment.TRACK_RESOLVING_VE
  * TODO: the total includes artifacts cached locally - find a way to exclude those or update when they are resolved.
  */
 class DownloadsCallbackAdapter extends AbstractTransferListener implements ProgressCallback<MavenArtifact> {
+
     private final Console console;
     private HashSet<String> resolvedVersionKeys = new HashSet<>();
     private long totalVolume;
@@ -60,6 +62,7 @@ class DownloadsCallbackAdapter extends AbstractTransferListener implements Progr
         final ProvisioningProgressEvent progress = new ProvisioningProgressEvent(TRACK_JB_ARTIFACTS_RESOLVE, ProvisioningProgressEvent.EventType.STARTING,
                 tracker.getProcessedVolume(), tracker.getTotalVolume());
         this.console.progressUpdate(progress);
+        ProsperoLogger.ROOT_LOGGER.startedPhase("download artifacts", "" + processed);
     }
 
     @Override
@@ -72,6 +75,7 @@ class DownloadsCallbackAdapter extends AbstractTransferListener implements Progr
         final ProvisioningProgressEvent progress = new ProvisioningProgressEvent(TRACK_JB_ARTIFACTS_RESOLVE, ProvisioningProgressEvent.EventType.COMPLETED,
                 tracker.getProcessedVolume(), tracker.getTotalVolume());
         this.console.progressUpdate(progress);
+        ProsperoLogger.ROOT_LOGGER.completedPhase("download artifacts", "" + processed);
         this.totalVolume = 0;
         this.processed = 0;
         this.currentPhase = false;
@@ -85,6 +89,10 @@ class DownloadsCallbackAdapter extends AbstractTransferListener implements Progr
         }
 
         String item = event.getResource().getResourceName();
+        if (ProsperoLogger.ROOT_LOGGER.isDebugEnabled()) {
+            ProsperoLogger.ROOT_LOGGER.debug("Downloaded artifact: " + item);
+        }
+
         final int fileNameIndex = item.lastIndexOf(File.separator);
         item = item.substring(fileNameIndex + 1);
         if ("maven-metadata.xml".equals(item)) {

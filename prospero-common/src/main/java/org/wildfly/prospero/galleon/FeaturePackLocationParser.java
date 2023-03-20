@@ -20,7 +20,7 @@ package org.wildfly.prospero.galleon;
 import org.jboss.galleon.universe.FeaturePackLocation;
 import org.jboss.galleon.universe.UniverseSpec;
 import org.jboss.galleon.universe.maven.MavenArtifact;
-import org.wildfly.prospero.Messages;
+import org.wildfly.prospero.ProsperoLogger;
 
 public class FeaturePackLocationParser {
 
@@ -34,7 +34,7 @@ public class FeaturePackLocationParser {
 
         final String[] parts = fplText.split(":");
         if (parts.length == 1) {
-            throw new IllegalArgumentException(Messages.MESSAGES.invalidFpl(fplText));
+            throw new IllegalArgumentException(ProsperoLogger.ROOT_LOGGER.invalidFpl(fplText));
         }
 
         MavenArtifact artifact = new MavenArtifact();

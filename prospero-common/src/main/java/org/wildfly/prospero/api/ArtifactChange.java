@@ -87,4 +87,8 @@ public class ArtifactChange extends Diff {
     public boolean isUpdated() {
         return getOldValue().isPresent() && getNewValue().isPresent();
     }
+
+    public String prettyPrint() {
+        return String.format("[%s] %s %s ==> %s", getStatus(), getName().orElse(""), getOldValue().orElse("[]"), getNewValue().orElse("[]"));
+    }
 }

@@ -22,7 +22,7 @@ import org.eclipse.jgit.lib.ObjectId;
 import org.eclipse.jgit.lib.StoredConfig;
 import org.wildfly.channel.Channel;
 import org.wildfly.channel.ChannelManifest;
-import org.wildfly.prospero.Messages;
+import org.wildfly.prospero.ProsperoLogger;
 import org.wildfly.prospero.metadata.ManifestVersionRecord;
 import org.wildfly.prospero.api.ChannelChange;
 import org.wildfly.prospero.api.exceptions.MetadataException;
@@ -69,7 +69,7 @@ public class GitStorage implements AutoCloseable {
         try {
             git = initGit();
         } catch (GitAPIException | IOException e) {
-            throw Messages.MESSAGES.unableToCreateHistoryStorage(base, e);
+            throw ProsperoLogger.ROOT_LOGGER.unableToCreateHistoryStorage(base, e);
         }
     }
 
@@ -97,7 +97,7 @@ public class GitStorage implements AutoCloseable {
 
             return history;
         } catch (GitAPIException e) {
-            throw Messages.MESSAGES.unableToAccessHistoryStorage(base, e);
+            throw ProsperoLogger.ROOT_LOGGER.unableToAccessHistoryStorage(base, e);
         }
     }
 
@@ -121,7 +121,7 @@ public class GitStorage implements AutoCloseable {
                 recordChange(SavedState.Type.UPDATE);
             }
         } catch (IOException | GitAPIException e) {
-            throw Messages.MESSAGES.unableToAccessHistoryStorage(base, e);
+            throw ProsperoLogger.ROOT_LOGGER.unableToAccessHistoryStorage(base, e);
         }
 
 
@@ -132,7 +132,7 @@ public class GitStorage implements AutoCloseable {
         try {
             return ManifestVersionRecord.read(versionsFile).map(ManifestVersionRecord::getSummary).orElse(null);
         } catch (IOException e) {
-            throw Messages.MESSAGES.unableToReadFile(versionsFile, e);
+            throw ProsperoLogger.ROOT_LOGGER.unableToReadFile(versionsFile, e);
         }
     }
 
@@ -157,7 +157,7 @@ public class GitStorage implements AutoCloseable {
                     .call();
 
         } catch (IOException | GitAPIException e) {
-            throw Messages.MESSAGES.unableToAccessHistoryStorage(base, e);
+            throw ProsperoLogger.ROOT_LOGGER.unableToAccessHistoryStorage(base, e);
         }
     }
 
@@ -183,7 +183,7 @@ public class GitStorage implements AutoCloseable {
                     .setMessage(SavedState.Type.CONFIG_CHANGE.name())
                     .call();
         } catch (GitAPIException e) {
-            throw Messages.MESSAGES.unableToAccessHistoryStorage(base, e);
+            throw ProsperoLogger.ROOT_LOGGER.unableToAccessHistoryStorage(base, e);
         }
     }
 
@@ -202,7 +202,7 @@ public class GitStorage implements AutoCloseable {
                 return hist.getParent();
             }
         } catch (GitAPIException | IOException e) {
-            throw Messages.MESSAGES.unableToAccessHistoryStorage(base, e);
+            throw ProsperoLogger.ROOT_LOGGER.unableToAccessHistoryStorage(base, e);
         }
     }
 
@@ -213,7 +213,7 @@ public class GitStorage implements AutoCloseable {
                     .setMode(ResetCommand.ResetType.HARD)
                     .call();
         } catch (GitAPIException e) {
-            throw Messages.MESSAGES.unableToAccessHistoryStorage(base, e);
+            throw ProsperoLogger.ROOT_LOGGER.unableToAccessHistoryStorage(base, e);
         }
     }
 
@@ -301,7 +301,7 @@ public class GitStorage implements AutoCloseable {
         } catch (GitAPIException e) {
             throw new RuntimeException(e);
         } catch (IOException e) {
-            throw Messages.MESSAGES.unableToParseConfiguration(change, e);
+            throw ProsperoLogger.ROOT_LOGGER.unableToParseConfiguration(change, e);
         } finally {
             try {
                 if (change != null) {

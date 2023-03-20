@@ -30,13 +30,16 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 import org.eclipse.aether.artifact.Artifact;
 import org.jboss.galleon.Constants;
 import org.jboss.galleon.Errors;
 
 import org.jboss.galleon.ProvisioningManager;
+import org.wildfly.prospero.ProsperoLogger;
 import org.wildfly.prospero.api.ArtifactChange;
 import org.wildfly.prospero.api.FileConflict;
 import org.wildfly.prospero.api.InstallationMetadata;
@@ -64,8 +67,6 @@ import org.jboss.galleon.layout.SystemPaths;
 import org.jboss.galleon.util.HashUtils;
 import org.jboss.galleon.util.IoUtils;
 import org.jboss.galleon.util.PathsUtils;
-import org.jboss.logging.Logger;
-import org.wildfly.prospero.Messages;
 import org.wildfly.prospero.galleon.ArtifactCache;
 import org.wildfly.prospero.galleon.GalleonEnvironment;
 import org.wildfly.prospero.installation.git.GitStorage;
@@ -78,7 +79,6 @@ import org.wildfly.prospero.wfchannel.MavenSessionManager;
  * Merges a "candidate" server into base server. The "candidate" can be an update or revert.
  */
 public class ApplyCandidateAction {
-    private static final Logger LOGGER = Logger.getLogger(ApplyCandidateAction.class);
     public static final Path STANDALONE_STARTUP_MARKER = Path.of("standalone", "tmp", "startup-marker");
     public static final Path DOMAIN_STARTUP_MARKER = Path.of("domain", "tmp", "startup-marker");
     private final Path updateDir;
@@ -121,8 +121,8 @@ public class ApplyCandidateAction {
         } catch (IOException ex) {
             throw new ProvisioningException(ex);
         }
-        if (LOGGER.isDebugEnabled()) {
-            LOGGER.debug("System paths " + this.systemPaths.getPaths());
+        if (ProsperoLogger.ROOT_LOGGER.isDebugEnabled()) {
+            ProsperoLogger.ROOT_LOGGER.debug("System paths " + this.systemPaths.getPaths());
         }
         // offline is enough - we just need to read the configuration
         final MavenOptions mavenOptions = MavenOptions.builder()
@@ -147,19 +147,41 @@ public class ApplyCandidateAction {
      * @throws InvalidUpdateCandidateException - if the folder at {@code updateDir} is not a valid update
      * @throws MetadataException - if unable to read or write the installation of update metadata
      */
-    public List<FileConflict> applyUpdate(Type operation) throws ProvisioningException, InvalidUpdateCandidateException, MetadataException {
+    public List<FileConflict> applyUpdate(Type operation) throws ProvisioningException, OperationException {
         if (ValidationResult.OK != verifyCandidate(operation)) {
-            throw Messages.MESSAGES.invalidUpdateCandidate(updateDir, installationDir);
+            final InvalidUpdateCandidateException ex = ProsperoLogger.ROOT_LOGGER.invalidUpdateCandidate(updateDir, installationDir);
+            ProsperoLogger.ROOT_LOGGER.warn("", ex);
+            throw ex;
         }
 
         if (targetServerIsRunning()) {
-            throw new ProvisioningException("The server appears to be running.");
+            final ProvisioningException ex = ProsperoLogger.ROOT_LOGGER.serverRunningError(STANDALONE_STARTUP_MARKER, DOMAIN_STARTUP_MARKER);
+            ProsperoLogger.ROOT_LOGGER.warn("", ex);
+            throw ex;
         }
 
         FsDiff diffs = findChanges();
         try {
+            ProsperoLogger.ROOT_LOGGER.applyingCandidate(operation.text.toLowerCase(Locale.ROOT), updateDir);
+            ProsperoLogger.ROOT_LOGGER.candidateChanges(
+                    findUpdates().getArtifactUpdates().stream().map(ArtifactChange::prettyPrint).collect(Collectors.joining("; "))
+                    );
+
             final List<FileConflict> conflicts = doApplyUpdate(diffs);
+
+            if (conflicts.isEmpty()) {
+                ProsperoLogger.ROOT_LOGGER.noCandidateConflicts();
+            } else {
+                ProsperoLogger.ROOT_LOGGER.candidateConflicts(
+                        conflicts.stream().map(FileConflict::prettyPrint).collect(Collectors.joining("; "))
+                        );
+                for (FileConflict conflict : conflicts) {
+                    ProsperoLogger.ROOT_LOGGER.info(conflict.prettyPrint());
+                }
+            }
+
             updateMetadata(operation);
+            ProsperoLogger.ROOT_LOGGER.candidateApplied(operation.text, installationDir);
             return conflicts;
         } catch (IOException ex) {
             throw new ProvisioningException(ex);
@@ -180,8 +202,8 @@ public class ApplyCandidateAction {
     public ValidationResult verifyCandidate(Type operation) throws InvalidUpdateCandidateException, MetadataException {
         final Path updateMarkerPath = updateDir.resolve(MarkerFile.UPDATE_MARKER_FILE);
         if (!Files.exists(updateMarkerPath)) {
-            if (LOGGER.isDebugEnabled()) {
-                LOGGER.debugf("The candidate [%s] doesn't have a marker file", updateDir);
+            if (ProsperoLogger.ROOT_LOGGER.isDebugEnabled()) {
+                ProsperoLogger.ROOT_LOGGER.debugf("The candidate [%s] doesn't have a marker file", updateDir);
             }
             return ValidationResult.NOT_CANDIDATE;
         }
@@ -190,23 +212,23 @@ public class ApplyCandidateAction {
 
             final String hash = marker.getState();
             if (!InstallationMetadata.loadInstallation(installationDir).getRevisions().get(0).getName().equals(hash)) {
-                if (LOGGER.isDebugEnabled()) {
-                    LOGGER.debugf("The installation state has changed from the candidate [%s].", updateDir);
+                if (ProsperoLogger.ROOT_LOGGER.isDebugEnabled()) {
+                    ProsperoLogger.ROOT_LOGGER.debugf("The installation state has changed from the candidate [%s].", updateDir);
                 }
                 return ValidationResult.STALE;
             }
 
             if (marker.getOperation() != operation) {
-                if (LOGGER.isDebugEnabled()) {
-                    LOGGER.debugf("The candidate server has been prepared for different operation [%s].", marker.getOperation().getText());
+                if (ProsperoLogger.ROOT_LOGGER.isDebugEnabled()) {
+                    ProsperoLogger.ROOT_LOGGER.debugf("The candidate server has been prepared for different operation [%s].", marker.getOperation().getText());
                 }
                 return ValidationResult.WRONG_TYPE;
             }
         } catch (IOException e) {
-            if (LOGGER.isDebugEnabled()) {
-                LOGGER.debugf("Unable to read marker file [%s].", updateDir);
+            if (ProsperoLogger.ROOT_LOGGER.isDebugEnabled()) {
+                ProsperoLogger.ROOT_LOGGER.debugf("Unable to read marker file [%s].", updateDir);
             }
-            throw Messages.MESSAGES.unableToReadFile(updateMarkerPath, e);
+            throw ProsperoLogger.ROOT_LOGGER.unableToReadFile(updateMarkerPath, e);
         }
         return ValidationResult.OK;
     }
@@ -318,7 +340,7 @@ public class ApplyCandidateAction {
                 git.close();
             } catch (Exception e) {
                 // log and ignore
-                Messages.MESSAGES.unableToCloseStore(e);
+                ProsperoLogger.ROOT_LOGGER.unableToCloseStore(e);
             }
         }
     }
@@ -341,21 +363,21 @@ public class ApplyCandidateAction {
         if (fsDiff.hasRemovedEntries()) {
             for (FsEntry removed : fsDiff.getRemovedEntries()) {
                 final Path target = updateDir.resolve(removed.getRelativePath());
-                if (LOGGER.isDebugEnabled()) {
-                    LOGGER.debug(formatMessage(REMOVED, removed.getRelativePath(), null));
+                if (ProsperoLogger.ROOT_LOGGER.isDebugEnabled()) {
+                    ProsperoLogger.ROOT_LOGGER.debug(formatMessage(REMOVED, removed.getRelativePath(), null));
                 }
                 if (Files.exists(target)) {
                     if (systemPaths.isSystemPath(Paths.get(removed.getRelativePath()))) {
                         conflictList.add(FileConflict.userRemoved(removed.getRelativePath()).updateModified().overwritten());
-                        if (LOGGER.isDebugEnabled()) {
-                            LOGGER.debug(formatMessage(FORCED, removed.getRelativePath(), HAS_CHANGED_IN_THE_UPDATED_VERSION));
+                        if (ProsperoLogger.ROOT_LOGGER.isDebugEnabled()) {
+                            ProsperoLogger.ROOT_LOGGER.debug(formatMessage(FORCED, removed.getRelativePath(), HAS_CHANGED_IN_THE_UPDATED_VERSION));
                         }
                         Files.createDirectories(installationDir.resolve(removed.getRelativePath()).getParent());
                         IoUtils.copy(target, installationDir.resolve(removed.getRelativePath()));
                     }
                 } else {
-                    if (LOGGER.isDebugEnabled()) {
-                        LOGGER.debug(formatMessage(REMOVED, removed.getRelativePath(),
+                    if (ProsperoLogger.ROOT_LOGGER.isDebugEnabled()) {
+                        ProsperoLogger.ROOT_LOGGER.debug(formatMessage(REMOVED, removed.getRelativePath(),
                                 HAS_BEEN_REMOVED_FROM_THE_UPDATED_VERSION));
                     }
                 }
@@ -384,8 +406,8 @@ public class ApplyCandidateAction {
     private void addFsEntry(Path updateDir, FsEntry added, SystemPaths systemPaths, List<FileConflict> conflictList)
             throws ProvisioningException {
         final Path target = updateDir.resolve(added.getRelativePath());
-        if (LOGGER.isDebugEnabled()) {
-            LOGGER.debug(formatMessage(ADDED, added.getRelativePath(), null));
+        if (ProsperoLogger.ROOT_LOGGER.isDebugEnabled()) {
+            ProsperoLogger.ROOT_LOGGER.debug(formatMessage(ADDED, added.getRelativePath(), null));
         }
         if (Files.exists(target)) {
             if (added.isDir()) {
@@ -402,19 +424,19 @@ public class ApplyCandidateAction {
             }
 
             if (Arrays.equals(added.getHash(), targetHash)) {
-                if (LOGGER.isDebugEnabled()) {
-                    LOGGER.debug(formatMessage(ADDED, added.getRelativePath(), "Added file matches the update."));
+                if (ProsperoLogger.ROOT_LOGGER.isDebugEnabled()) {
+                    ProsperoLogger.ROOT_LOGGER.debug(formatMessage(ADDED, added.getRelativePath(), "Added file matches the update."));
                 }
             } else {
                 if (systemPaths.isSystemPath(Paths.get(added.getRelativePath()))) {
-                    if (LOGGER.isDebugEnabled()) {
-                        LOGGER.debug(formatMessage(FORCED, added.getRelativePath(), CONFLICTS_WITH_THE_UPDATED_VERSION));
+                    if (ProsperoLogger.ROOT_LOGGER.isDebugEnabled()) {
+                        ProsperoLogger.ROOT_LOGGER.debug(formatMessage(FORCED, added.getRelativePath(), CONFLICTS_WITH_THE_UPDATED_VERSION));
                     }
                     conflictList.add(FileConflict.userAdded(added.getRelativePath()).updateAdded().overwritten());
                     glold(installationDir.resolve(added.getRelativePath()), target);
                 } else {
-                    if (LOGGER.isDebugEnabled()) {
-                        LOGGER.debug(formatMessage(CONFLICT, added.getRelativePath(), CONFLICTS_WITH_THE_UPDATED_VERSION));
+                    if (ProsperoLogger.ROOT_LOGGER.isDebugEnabled()) {
+                        ProsperoLogger.ROOT_LOGGER.debug(formatMessage(CONFLICT, added.getRelativePath(), CONFLICTS_WITH_THE_UPDATED_VERSION));
                     }
                     conflictList.add(FileConflict.userAdded(added.getRelativePath()).updateAdded().userPreserved());
                     glnew(target, installationDir.resolve(added.getRelativePath()));
@@ -430,8 +452,8 @@ public class ApplyCandidateAction {
                 FsEntry installation = modified[1];
                 FsEntry original = modified[0];
                 final Path file = updateDir.resolve(modified[1].getRelativePath());
-                if (LOGGER.isDebugEnabled()) {
-                    LOGGER.debug(formatMessage(MODIFIED, installation.getRelativePath(), null));
+                if (ProsperoLogger.ROOT_LOGGER.isDebugEnabled()) {
+                    ProsperoLogger.ROOT_LOGGER.debug(formatMessage(MODIFIED, installation.getRelativePath(), null));
                 }
                 if (Files.exists(file)) {
                     byte[] updateHash;
@@ -443,20 +465,20 @@ public class ApplyCandidateAction {
                     Path installationFile = installationDir.resolve(modified[1].getRelativePath());
                     // Case where the modified file is equal to the hash of the update. Do nothing
                     if (Arrays.equals(installation.getHash(), updateHash)) {
-                        if (LOGGER.isDebugEnabled()) {
-                            LOGGER.debug(formatMessage(MODIFIED, installation.getRelativePath(), "Modified file matches the update"));
+                        if (ProsperoLogger.ROOT_LOGGER.isDebugEnabled()) {
+                            ProsperoLogger.ROOT_LOGGER.debug(formatMessage(MODIFIED, installation.getRelativePath(), "Modified file matches the update"));
                         }
                     } else {
                         if (!Arrays.equals(original.getHash(), updateHash)) {
                             if (systemPaths.isSystemPath(Paths.get(installation.getRelativePath()))) {
-                                if (LOGGER.isDebugEnabled()) {
-                                    LOGGER.debug(formatMessage(FORCED, installation.getRelativePath(), HAS_CHANGED_IN_THE_UPDATED_VERSION));
+                                if (ProsperoLogger.ROOT_LOGGER.isDebugEnabled()) {
+                                    ProsperoLogger.ROOT_LOGGER.debug(formatMessage(FORCED, installation.getRelativePath(), HAS_CHANGED_IN_THE_UPDATED_VERSION));
                                 }
                                 conflictList.add(FileConflict.userModified(installation.getRelativePath()).updateModified().overwritten());
                                 glold(installation.getPath(), file);
                             } else {
-                                if (LOGGER.isDebugEnabled()) {
-                                    LOGGER.debug(formatMessage(CONFLICT, installation.getRelativePath(), HAS_CHANGED_IN_THE_UPDATED_VERSION));
+                                if (ProsperoLogger.ROOT_LOGGER.isDebugEnabled()) {
+                                    ProsperoLogger.ROOT_LOGGER.debug(formatMessage(CONFLICT, installation.getRelativePath(), HAS_CHANGED_IN_THE_UPDATED_VERSION));
                                 }
                                 conflictList.add(FileConflict.userModified(installation.getRelativePath()).updateModified().userPreserved());
                                 glnew(file, installationFile);
@@ -465,8 +487,8 @@ public class ApplyCandidateAction {
                     }
                 } else {
                     // The file doesn't exist in the update, we keep the file in the installation
-                    if (LOGGER.isDebugEnabled()) {
-                        LOGGER.debug(formatMessage(MODIFIED, installation.getRelativePath(), HAS_BEEN_REMOVED_FROM_THE_UPDATED_VERSION));
+                    if (ProsperoLogger.ROOT_LOGGER.isDebugEnabled()) {
+                        ProsperoLogger.ROOT_LOGGER.debug(formatMessage(MODIFIED, installation.getRelativePath(), HAS_BEEN_REMOVED_FROM_THE_UPDATED_VERSION));
                     }
                     conflictList.add(FileConflict.userModified(installation.getRelativePath()).updateRemoved().userPreserved());
                 }
@@ -511,8 +533,8 @@ public class ApplyCandidateAction {
                     byte[] updateHash = HashUtils.hashPath(file);
                     // The file could be new or updated in the installation
                     if (!Files.exists(installationFile) || !Arrays.equals(updateHash, HashUtils.hashPath(installationFile))) {
-                        if (LOGGER.isDebugEnabled()) {
-                            LOGGER.debug("Copying updated file " + relative + " to the installation");
+                        if (ProsperoLogger.ROOT_LOGGER.isDebugEnabled()) {
+                            ProsperoLogger.ROOT_LOGGER.debug("Copying updated file " + relative + " to the installation");
                         }
                         IoUtils.copy(file, installationFile);
                     }
@@ -561,8 +583,8 @@ public class ApplyCandidateAction {
                     if (!Files.exists(updateFile) &&
                             !updateFile.toString().endsWith(Constants.DOT_GLNEW) &&
                             !updateFile.toString().endsWith(Constants.DOT_GLOLD)) {
-                        if (LOGGER.isDebugEnabled()) {
-                            LOGGER.debug("Deleting the file " + relative + " that doesn't exist in the update");
+                        if (ProsperoLogger.ROOT_LOGGER.isDebugEnabled()) {
+                            ProsperoLogger.ROOT_LOGGER.debug("Deleting the file " + relative + " that doesn't exist in the update");
                         }
                         IoUtils.recursiveDelete(file);
                     }
@@ -581,8 +603,8 @@ public class ApplyCandidateAction {
                     Path target = updateDir.resolve(relative);
                     String pathKey = getFsDiffKey(relative, true);
                     if (fsDiff.getAddedEntry(pathKey) != null && !Files.exists(target)) {
-                        if (LOGGER.isDebugEnabled()) {
-                            LOGGER.debug("The directory " + relative + " that doesn't exist in the update is a User changes, skipping it");
+                        if (ProsperoLogger.ROOT_LOGGER.isDebugEnabled()) {
+                            ProsperoLogger.ROOT_LOGGER.debug("The directory " + relative + " that doesn't exist in the update is a User changes, skipping it");
                         }
                         return FileVisitResult.SKIP_SUBTREE;
                     }
@@ -599,8 +621,8 @@ public class ApplyCandidateAction {
                     String pathKey = getFsDiffKey(relative, true);
                     if (fsDiff.getAddedEntry(pathKey) == null) {
                         if (!Files.exists(target) && dir.toFile().list().length == 0) {
-                            if (LOGGER.isDebugEnabled()) {
-                                LOGGER.debug("Deleting the directory " + relative + " that doesn't exist in the update");
+                            if (ProsperoLogger.ROOT_LOGGER.isDebugEnabled()) {
+                                ProsperoLogger.ROOT_LOGGER.debug("Deleting the directory " + relative + " that doesn't exist in the update");
                             }
                             IoUtils.recursiveDelete(dir);
                             return FileVisitResult.SKIP_SUBTREE;

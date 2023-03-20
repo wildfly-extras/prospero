@@ -26,7 +26,6 @@ import java.util.Objects;
 import org.apache.commons.io.FileUtils;
 import org.eclipse.aether.repository.LocalRepository;
 import org.jboss.logging.Logger;
-import org.wildfly.prospero.Messages;
 import org.apache.maven.repository.internal.MavenRepositorySystemUtils;
 import org.eclipse.aether.AbstractRepositoryListener;
 import org.eclipse.aether.DefaultRepositorySystemSession;
@@ -41,6 +40,7 @@ import org.eclipse.aether.spi.connector.transport.TransporterFactory;
 import org.eclipse.aether.transport.file.FileTransporterFactory;
 import org.eclipse.aether.transport.http.HttpTransporterFactory;
 import org.jboss.galleon.ProvisioningException;
+import org.wildfly.prospero.ProsperoLogger;
 import org.wildfly.prospero.api.MavenOptions;
 
 public class MavenSessionManager {
@@ -64,7 +64,7 @@ public class MavenSessionManager {
                 this.provisioningRepo = Files.createTempDirectory("provisioning-repo");
                 Runtime.getRuntime().addShutdownHook(new Thread(() -> FileUtils.deleteQuietly(this.provisioningRepo.toFile())));
             } catch (IOException e) {
-                throw Messages.MESSAGES.unableToCreateCache(e);
+                throw ProsperoLogger.ROOT_LOGGER.unableToCreateCache(e);
             }
         } else if (!mavenOptions.overridesLocalCache()) {
             this.provisioningRepo = MavenSessionManager.LOCAL_MAVEN_REPO;
@@ -96,7 +96,7 @@ public class MavenSessionManager {
         locator.setErrorHandler(new DefaultServiceLocator.ErrorHandler() {
             @Override
             public void serviceCreationFailed(Class<?> type, Class<?> impl, Throwable exception) {
-                throw Messages.MESSAGES.failedToInitMaven(exception);
+                throw ProsperoLogger.ROOT_LOGGER.failedToInitMaven(exception);
             }
         });
         return locator.getService(RepositorySystem.class);

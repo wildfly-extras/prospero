@@ -17,10 +17,11 @@
 
 package org.wildfly.prospero.cli.commands;
 
-import org.wildfly.prospero.Messages;
+import org.wildfly.prospero.ProsperoLogger;
 import org.wildfly.prospero.api.MavenOptions;
 import org.wildfly.prospero.cli.ActionFactory;
 import org.wildfly.prospero.cli.CliConsole;
+import org.wildfly.prospero.cli.CliMessages;
 import org.wildfly.prospero.cli.RepositoryDefinition;
 import org.wildfly.prospero.cli.ReturnCodes;
 import org.wildfly.prospero.cli.commands.options.LocalRepoOptions;
@@ -70,12 +71,12 @@ public class CloneCommand extends AbstractCommand {
         @Override
         public Integer call() throws Exception {
             if (Files.exists(outPath)) {
-                throw Messages.MESSAGES.outFileExists(outPath);
+                throw ProsperoLogger.ROOT_LOGGER.outFileExists(outPath);
             }
             actionFactory
               .exportAction(determineInstallationDirectory(directory))
               .export(outPath);
-            console.println(Messages.MESSAGES.installationExported(outPath));
+            console.println(ProsperoLogger.ROOT_LOGGER.installationExported(outPath));
             return ReturnCodes.SUCCESS;
         }
     }
@@ -107,7 +108,7 @@ public class CloneCommand extends AbstractCommand {
         @Override
         public Integer call() throws Exception {
             if (Files.notExists(inPath)) {
-                console.println(Messages.MESSAGES.restoreFileNotExisted(inPath));
+                console.println(CliMessages.MESSAGES.restoreFileNotExisted(inPath));
                 return ReturnCodes.INVALID_ARGUMENTS;
             }
 
@@ -117,7 +118,7 @@ public class CloneCommand extends AbstractCommand {
             actionFactory
               .restoreAction(installationDirectory, mavenOptions.build(), console)
               .restore(inPath, RepositoryDefinition.from(remoteRepositories));
-            console.println(Messages.MESSAGES.installationMetaRestored(inPath, installationDirectory));
+            console.println(CliMessages.MESSAGES.installationMetaRestored(inPath, installationDirectory));
             return ReturnCodes.SUCCESS;
         }
     }

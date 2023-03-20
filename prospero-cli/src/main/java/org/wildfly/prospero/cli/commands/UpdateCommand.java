@@ -29,7 +29,7 @@ import org.apache.commons.io.FileUtils;
 import org.jboss.galleon.ProvisioningException;
 import org.jboss.logging.Logger;
 import org.wildfly.channel.Repository;
-import org.wildfly.prospero.Messages;
+import org.wildfly.prospero.ProsperoLogger;
 import org.wildfly.prospero.actions.ApplyCandidateAction;
 import org.wildfly.prospero.actions.UpdateAction;
 import org.wildfly.prospero.api.FileConflict;
@@ -122,7 +122,7 @@ public class UpdateCommand extends AbstractParentCommand {
                     return false;
                 }
             } catch (IOException e) {
-                throw Messages.MESSAGES.unableToCreateTemporaryDirectory(e);
+                throw ProsperoLogger.ROOT_LOGGER.unableToCreateTemporaryDirectory(e);
             } finally {
                 if (targetDir != null) {
                     FileUtils.deleteQuietly(targetDir.toFile());

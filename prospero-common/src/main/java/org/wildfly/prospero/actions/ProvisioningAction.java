@@ -26,7 +26,7 @@ import org.wildfly.channel.Channel;
 import org.wildfly.channel.ChannelManifest;
 import org.wildfly.channel.Repository;
 import org.wildfly.channel.UnresolvedMavenArtifactException;
-import org.wildfly.prospero.Messages;
+import org.wildfly.prospero.ProsperoLogger;
 import org.wildfly.prospero.api.Console;
 import org.wildfly.prospero.api.InstallationMetadata;
 import org.wildfly.prospero.api.MavenOptions;
@@ -87,7 +87,13 @@ public class ProvisioningAction {
      */
     public void provision(ProvisioningConfig provisioningConfig, List<Channel> channels)
             throws ProvisioningException, OperationException, MalformedURLException {
+        ProsperoLogger.ROOT_LOGGER.startingProvision(installDir);
         channels = enforceChannelNames(channels);
+
+        if (ProsperoLogger.ROOT_LOGGER.isDebugEnabled()) {
+            ProsperoLogger.ROOT_LOGGER.debug("Provisioning definition: " + provisioningConfig.toString());
+            ProsperoLogger.ROOT_LOGGER.debug("Using channels: " + channels.stream().map(Channel::toString).collect(Collectors.joining(",")));
+        }
 
         final GalleonEnvironment galleonEnv = GalleonEnvironment
                 .builder(installDir, channels, mavenSessionManager)
@@ -95,37 +101,55 @@ public class ProvisioningAction {
                 .build();
 
         try {
+            if (ProsperoLogger.ROOT_LOGGER.isDebugEnabled()) {
+                ProsperoLogger.ROOT_LOGGER.debug("Starting Galleon provisioning");
+            }
+
             GalleonUtils.executeGalleon(options -> galleonEnv.getProvisioningManager().provision(provisioningConfig, options),
                     mavenSessionManager.getProvisioningRepo().toAbsolutePath());
         } catch (UnresolvedMavenArtifactException e) {
-            throw new ArtifactResolutionException(Messages.MESSAGES.unableToResolve(), e, e.getUnresolvedArtifacts(),
+            throw new ArtifactResolutionException(ProsperoLogger.ROOT_LOGGER.unableToResolve(), e, e.getUnresolvedArtifacts(),
                     e.getAttemptedRepositories(), mavenSessionManager.isOffline());
         }
 
         final ManifestVersionRecord manifestRecord;
         try {
+            if (ProsperoLogger.ROOT_LOGGER.isDebugEnabled()) {
+                ProsperoLogger.ROOT_LOGGER.debug("Resolving installed manifest versions");
+            }
+
             manifestRecord = new ManifestVersionResolver(mavenSessionManager.getProvisioningRepo(), mavenSessionManager.newRepositorySystem())
                     .getCurrentVersions(channels);
         } catch (IOException e) {
-            throw new MetadataException(Messages.MESSAGES.unableToDownloadFile(), e);
+            throw ProsperoLogger.ROOT_LOGGER.unableToDownloadFile(e);
         }
 
+        if (ProsperoLogger.ROOT_LOGGER.isDebugEnabled()) {
+            ProsperoLogger.ROOT_LOGGER.debug("Recording installed metadata");
+        }
         writeProsperoMetadata(installDir, galleonEnv.getRepositoryManager(), channels, manifestRecord);
 
         try {
             final GalleonFeaturePackAnalyzer galleonFeaturePackAnalyzer = new GalleonFeaturePackAnalyzer(galleonEnv.getChannels(), mavenSessionManager);
 
+            if (ProsperoLogger.ROOT_LOGGER.isDebugEnabled()) {
+                ProsperoLogger.ROOT_LOGGER.debug("Recording accepted licenses");
+            }
             try {
                 // all agreements are implicitly accepted at this point
                 licenseManager.recordAgreements(getPendingLicenses(provisioningConfig, galleonFeaturePackAnalyzer), installDir);
             } catch (IOException e) {
-                throw Messages.MESSAGES.unableToWriteFile(installDir.resolve(LicenseManager.LICENSES_FOLDER), e);
+                throw ProsperoLogger.ROOT_LOGGER.unableToWriteFile(installDir.resolve(LicenseManager.LICENSES_FOLDER), e);
             }
 
+            if (ProsperoLogger.ROOT_LOGGER.isDebugEnabled()) {
+                ProsperoLogger.ROOT_LOGGER.debug("Updating galleon cache");
+            }
             galleonFeaturePackAnalyzer.cacheGalleonArtifacts(installDir, provisioningConfig);
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
+        ProsperoLogger.ROOT_LOGGER.provisioningComplete(installDir);
     }
 
     /**
@@ -152,7 +176,7 @@ public class ProvisioningAction {
                 throw wrapAetherException((org.eclipse.aether.resolution.ArtifactResolutionException) e.getCause());
             } else if (e.getCause() instanceof UnresolvedMavenArtifactException && e.getMessage().contains("(no stream found)")) {
                 final UnresolvedMavenArtifactException cause = (UnresolvedMavenArtifactException) e.getCause();
-                throw new StreamNotFoundException(Messages.MESSAGES.streamNotFound(),
+                throw new StreamNotFoundException(ProsperoLogger.ROOT_LOGGER.streamNotFound(),
                         e,
                         cause.getUnresolvedArtifacts(),
                         cause.getAttemptedRepositories(),
@@ -192,10 +216,10 @@ public class ProvisioningAction {
     private static void verifyInstallDir(Path directory) {
         if (directory.toFile().isFile()) {
             // file exists and is a regular file
-            throw Messages.MESSAGES.dirMustBeDirectory(directory);
+            throw ProsperoLogger.ROOT_LOGGER.dirMustBeDirectory(directory);
         }
         if (!isEmptyDirectory(directory)) {
-            throw Messages.MESSAGES.cannotInstallIntoNonEmptyDirectory(directory);
+            throw ProsperoLogger.ROOT_LOGGER.cannotInstallIntoNonEmptyDirectory(directory);
         }
     }
 
@@ -218,6 +242,6 @@ public class ProvisioningAction {
                 .map(RepositoryUtils::toChannelRepository)
                 .collect(Collectors.toSet());
 
-        return new ArtifactResolutionException(Messages.MESSAGES.unableToResolve(), e, missingArtifacts, repositories, mavenSessionManager.isOffline());
+        return new ArtifactResolutionException(ProsperoLogger.ROOT_LOGGER.unableToResolve(), e, missingArtifacts, repositories, mavenSessionManager.isOffline());
     }
 }

@@ -28,23 +28,23 @@ public class FileChangePrinterTest {
     public void testFileAddedByUser() {
         // can't be modified or removed by update, otherwise user could not add it
         final FileConflict c = FileConflict.userAdded("foo.txt").updateAdded().userPreserved();
-        assertEquals("!C foo.txt", FileConflictPrinter.toString(c));
+        assertEquals("!C foo.txt", c.prettyPrint());
 
         final FileConflict c1 = FileConflict.userAdded("foo.txt").updateDidntChange().userPreserved();
-        assertEquals(" + foo.txt", FileConflictPrinter.toString(c1));
+        assertEquals(" + foo.txt", c1.prettyPrint());
     }
 
     @Test
     public void testFileModifiedByUser() {
         // can't be added by update, otherwise user wouldn't be able to modify it
         final FileConflict c = FileConflict.userModified("foo.txt").updateModified().userPreserved();
-        assertEquals("!C foo.txt", FileConflictPrinter.toString(c));
+        assertEquals("!C foo.txt", c.prettyPrint());
 
         final FileConflict c1 = FileConflict.userModified("foo.txt").updateRemoved().userPreserved();
-        assertEquals("!M foo.txt", FileConflictPrinter.toString(c1));
+        assertEquals("!M foo.txt", c1.prettyPrint());
 
         final FileConflict c2 = FileConflict.userModified("foo.txt").updateDidntChange().userPreserved();
-        assertEquals(" M foo.txt", FileConflictPrinter.toString(c2));
+        assertEquals(" M foo.txt", c2.prettyPrint());
     }
 
     @Test
@@ -52,19 +52,19 @@ public class FileChangePrinterTest {
         // can't be added by update, otherwise user wouldn't have anything to remove
         // can't be removed by update, because there's no change there
         final FileConflict c1 = FileConflict.userRemoved("foo.txt").updateModified().userPreserved();
-        assertEquals(" - foo.txt", FileConflictPrinter.toString(c1));
+        assertEquals(" - foo.txt", c1.prettyPrint());
 
         final FileConflict c2 = FileConflict.userRemoved("foo.txt").updateDidntChange().userPreserved();
-        assertEquals(" - foo.txt", FileConflictPrinter.toString(c2));
+        assertEquals(" - foo.txt", c2.prettyPrint());
     }
 
     @Test
     public void testOverwritten() {
         final FileConflict c1 = FileConflict.userRemoved("foo.txt").updateModified().overwritten();
-        assertEquals("!F foo.txt", FileConflictPrinter.toString(c1));
+        assertEquals("!F foo.txt", c1.prettyPrint());
 
         final FileConflict c2 = FileConflict.userModified("foo.txt").updateModified().overwritten();
-        assertEquals("!F foo.txt", FileConflictPrinter.toString(c2));
+        assertEquals("!F foo.txt", c2.prettyPrint());
     }
 
 }

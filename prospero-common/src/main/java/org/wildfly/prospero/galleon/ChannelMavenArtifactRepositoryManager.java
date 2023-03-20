@@ -27,7 +27,7 @@ import org.jboss.galleon.universe.maven.repo.MavenRepoManager;
 import org.wildfly.channel.ChannelSession;
 import org.wildfly.channel.Stream;
 import org.wildfly.channel.UnresolvedMavenArtifactException;
-import org.wildfly.prospero.Messages;
+import org.wildfly.prospero.ProsperoLogger;
 
 import java.nio.file.Path;
 import java.util.ArrayList;
@@ -67,7 +67,7 @@ public class ChannelMavenArtifactRepositoryManager implements MavenRepoManager, 
                     result = channelSession.resolveMavenArtifact(artifact.getGroupId(), artifact.getArtifactId(), artifact.getExtension(),
                             artifact.getClassifier(), null);
                 } else {
-                    throw new MavenUniverseException(Messages.MESSAGES.unableToResolve() + " ["+artifact.getCoordsAsString()+"]");
+                    throw new MavenUniverseException(ProsperoLogger.ROOT_LOGGER.unableToResolve() + " ["+artifact.getCoordsAsString()+"]");
                 }
             }
 
@@ -101,7 +101,7 @@ public class ChannelMavenArtifactRepositoryManager implements MavenRepoManager, 
 
                         MavenArtifactMapper.resolve(artifact, result);
                     } else {
-                        throw new MavenUniverseException(Messages.MESSAGES.unableToResolve() + " [" +artifact.getCoordsAsString() + "]");
+                        throw new MavenUniverseException(ProsperoLogger.ROOT_LOGGER.unableToResolve() + " [" +artifact.getCoordsAsString() + "]");
                     }
                 }
             }
@@ -122,7 +122,7 @@ public class ChannelMavenArtifactRepositoryManager implements MavenRepoManager, 
                         found.get().getVersion()
                 ));
             } else {
-                throw new MavenUniverseException(Messages.MESSAGES.unableToResolve() +
+                throw new MavenUniverseException(ProsperoLogger.ROOT_LOGGER.unableToResolve() +
                         " [" +coord.getGroupId()+ ":" + coord.getGroupId()+":"+coord.getExtension() + "]");
             }
         }

@@ -44,7 +44,7 @@ import org.wildfly.channel.InvalidChannelMetadataException;
 import org.wildfly.channel.Repository;
 import org.wildfly.channel.maven.ChannelCoordinate;
 import org.wildfly.channel.maven.VersionResolverFactory;
-import org.wildfly.prospero.Messages;
+import org.wildfly.prospero.ProsperoLogger;
 import org.wildfly.prospero.api.exceptions.ChannelDefinitionException;
 import org.wildfly.prospero.api.exceptions.MetadataException;
 import org.wildfly.prospero.api.exceptions.NoChannelException;
@@ -102,17 +102,17 @@ public class ProvisioningDefinition {
                 } else if (!featurePackInfo.getChannels().isEmpty()) { // if no manifest given, use channels from known FP
                     this.channels = featurePackInfo.getChannels();
                 } else {
-                    throw Messages.MESSAGES.fplDefinitionDoesntContainChannel(builder.fpl.get());
+                    throw ProsperoLogger.ROOT_LOGGER.fplDefinitionDoesntContainChannel(builder.fpl.get());
                 }
             }
         } else {
             this.fpl = builder.fpl.orElse(null);
             this.definition = builder.definitionFile.orElse(null);
             if (this.channelCoordinates.isEmpty() && builder.manifest.isEmpty()) {
-                throw Messages.MESSAGES.predefinedFplOrChannelRequired(String.join(", ", KnownFeaturePacks.getNames()));
+                throw ProsperoLogger.ROOT_LOGGER.predefinedFplOrChannelRequired(String.join(", ", KnownFeaturePacks.getNames()));
             } else if (builder.manifest.isPresent()) { // if manifest given, use it to create a channel
                 if (overrideRepositories.isEmpty()) {
-                    throw Messages.MESSAGES.repositoriesMustBeSetWithManifest();
+                    throw ProsperoLogger.ROOT_LOGGER.repositoriesMustBeSetWithManifest();
                 }
                 this.channels = List.of(composeChannelFromManifest(builder.manifest.get(), overrideRepositories));
             }
@@ -148,10 +148,10 @@ public class ProvisioningDefinition {
             try {
                 return GalleonUtils.loadProvisioningConfig(definition);
             } catch (XMLStreamException e) {
-                throw Messages.MESSAGES.unableToParseConfigurationUri(definition, e);
+                throw ProsperoLogger.ROOT_LOGGER.unableToParseConfigurationUri(definition, e);
             }
         } else {
-            throw Messages.MESSAGES.fplNorGalleonConfigWereSet();
+            throw ProsperoLogger.ROOT_LOGGER.fplNorGalleonConfigWereSet();
         }
     }
 
@@ -184,7 +184,7 @@ public class ProvisioningDefinition {
             validateResolvedChannels(channels);
             return channels;
         } catch (InvalidChannelMetadataException e) {
-            throw Messages.MESSAGES.invalidChannel(e);
+            throw ProsperoLogger.ROOT_LOGGER.invalidChannel(e);
         } catch (MalformedURLException e) {
             // I believe the MalformedURLException is declared mistakenly by VersionResolverFactory#resolveChannels().
             throw new IllegalArgumentException(e);
@@ -211,12 +211,12 @@ public class ProvisioningDefinition {
 
     private static void validateResolvedChannels(List<Channel> channels) throws NoChannelException {
         if (channels.isEmpty()) {
-            throw Messages.MESSAGES.noChannelReference();
+            throw ProsperoLogger.ROOT_LOGGER.noChannelReference();
         }
 
         Optional<Channel> invalidChannel = channels.stream().filter(c -> c.getManifestCoordinate() == null).findFirst();
         if (invalidChannel.isPresent()) {
-            throw Messages.MESSAGES.noChannelManifestReference(invalidChannel.get().getName());
+            throw ProsperoLogger.ROOT_LOGGER.noChannelManifestReference(invalidChannel.get().getName());
         }
     }
 

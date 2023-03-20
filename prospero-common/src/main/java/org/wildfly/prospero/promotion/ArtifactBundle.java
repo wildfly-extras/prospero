@@ -21,7 +21,7 @@ import org.apache.commons.codec.digest.DigestUtils;
 import org.apache.commons.io.FileUtils;
 import org.eclipse.aether.artifact.Artifact;
 import org.wildfly.channel.ArtifactCoordinate;
-import org.wildfly.prospero.Messages;
+import org.wildfly.prospero.ProsperoLogger;
 
 import java.io.File;
 import java.io.FileInputStream;
@@ -84,7 +84,7 @@ public class ArtifactBundle implements AutoCloseable {
         Objects.requireNonNull(archive);
 
         if (artifacts.isEmpty()) {
-            throw Messages.MESSAGES.noArtifactsToPackage();
+            throw ProsperoLogger.ROOT_LOGGER.noArtifactsToPackage();
         }
 
         try (ZipOutputStream zos = new ZipOutputStream(new FileOutputStream(archive))) {

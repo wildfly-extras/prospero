@@ -26,7 +26,7 @@ import java.util.Optional;
 import org.apache.commons.io.FileUtils;
 import org.jboss.galleon.ProvisioningException;
 import org.wildfly.channel.Repository;
-import org.wildfly.prospero.Messages;
+import org.wildfly.prospero.ProsperoLogger;
 import org.wildfly.prospero.actions.ApplyCandidateAction;
 import org.wildfly.prospero.actions.InstallationHistoryAction;
 import org.wildfly.prospero.api.FileConflict;
@@ -110,7 +110,7 @@ public class RevertCommand extends AbstractParentCommand {
                 console.println(CliMessages.MESSAGES.operationCompleted(totalTime));
                 return SUCCESS;
             } catch (IOException e) {
-                throw Messages.MESSAGES.unableToCreateTemporaryDirectory(e);
+                throw ProsperoLogger.ROOT_LOGGER.unableToCreateTemporaryDirectory(e);
             } finally {
                 if (tempDirectory != null) {
                     FileUtils.deleteQuietly(tempDirectory.toFile());

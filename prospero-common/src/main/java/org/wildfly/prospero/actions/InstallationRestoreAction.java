@@ -21,7 +21,7 @@ import org.wildfly.channel.Channel;
 import org.wildfly.channel.ChannelManifest;
 import org.wildfly.channel.Repository;
 import org.wildfly.channel.UnresolvedMavenArtifactException;
-import org.wildfly.prospero.Messages;
+import org.wildfly.prospero.ProsperoLogger;
 import org.wildfly.prospero.api.Console;
 import org.wildfly.prospero.api.MavenOptions;
 import org.wildfly.prospero.api.TemporaryRepositoriesHandler;
@@ -57,7 +57,7 @@ public class InstallationRestoreAction {
     public void restore(Path metadataBundleZip, List<Repository> remoteRepositories)
             throws ProvisioningException, IOException, OperationException {
         if (installDir.toFile().exists()) {
-            throw Messages.MESSAGES.installationDirAlreadyExists(installDir);
+            throw ProsperoLogger.ROOT_LOGGER.installationDirAlreadyExists(installDir);
         }
 
         try (final InstallationMetadata metadataBundle = InstallationMetadata.fromMetadataBundle(metadataBundleZip)) {
@@ -77,7 +77,7 @@ public class InstallationRestoreAction {
                 GalleonUtils.executeGalleon(options -> galleonEnv.getProvisioningManager().provision(metadataBundle.getGalleonProvisioningConfig(), options),
                         mavenSessionManager.getProvisioningRepo().toAbsolutePath());
             } catch (UnresolvedMavenArtifactException e) {
-                throw new ArtifactResolutionException(Messages.MESSAGES.unableToResolve(), e, e.getUnresolvedArtifacts(),
+                throw new ArtifactResolutionException(ProsperoLogger.ROOT_LOGGER.unableToResolve(), e, e.getUnresolvedArtifacts(),
                         e.getAttemptedRepositories(), mavenSessionManager.isOffline());
             }
 

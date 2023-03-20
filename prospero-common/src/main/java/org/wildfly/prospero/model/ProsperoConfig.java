@@ -20,7 +20,7 @@ package org.wildfly.prospero.model;
 import org.eclipse.aether.repository.RemoteRepository;
 import org.wildfly.channel.Channel;
 import org.wildfly.channel.ChannelMapper;
-import org.wildfly.prospero.Messages;
+import org.wildfly.prospero.ProsperoLogger;
 import org.wildfly.prospero.api.MavenOptions;
 import org.wildfly.prospero.api.exceptions.MetadataException;
 import org.wildfly.prospero.metadata.ProsperoMetadataUtils;
@@ -58,7 +58,7 @@ public class ProsperoConfig {
         try {
             yamlContent = Files.readString(path.resolve(ProsperoMetadataUtils.INSTALLER_CHANNELS_FILE_NAME)).trim();
         } catch (IOException e) {
-            throw Messages.MESSAGES.unableToReadFile(path, e);
+            throw ProsperoLogger.ROOT_LOGGER.unableToReadFile(path, e);
         }
 
         if (Files.exists(path.resolve(ProsperoMetadataUtils.MAVEN_OPTS_FILE))) {

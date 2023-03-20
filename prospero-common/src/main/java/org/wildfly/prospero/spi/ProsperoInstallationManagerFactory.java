@@ -22,7 +22,7 @@ package org.wildfly.prospero.spi;
 import org.wildfly.installationmanager.MavenOptions;
 import org.wildfly.installationmanager.spi.InstallationManager;
 import org.wildfly.installationmanager.spi.InstallationManagerFactory;
-import org.wildfly.prospero.Messages;
+import org.wildfly.prospero.ProsperoLogger;
 import org.wildfly.prospero.api.InstallationMetadata;
 import org.wildfly.prospero.metadata.ProsperoMetadataUtils;
 
@@ -46,7 +46,7 @@ public class ProsperoInstallationManagerFactory implements InstallationManagerFa
         File channelsFile = path.resolve(ProsperoMetadataUtils.METADATA_DIR)
                 .resolve(ProsperoMetadataUtils.INSTALLER_CHANNELS_FILE_NAME).toFile();
         if (!dotGalleonDir.isDirectory() || !channelsFile.isFile()) {
-            throw Messages.MESSAGES.invalidInstallationDir(path);
+            throw ProsperoLogger.ROOT_LOGGER.invalidInstallationDir(path);
         }
     }
 }

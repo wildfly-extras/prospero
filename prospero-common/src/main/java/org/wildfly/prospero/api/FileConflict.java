@@ -17,7 +17,13 @@
 
 package org.wildfly.prospero.api;
 
+import org.jboss.galleon.diff.FsDiff;
+
 import java.util.Objects;
+
+import static org.wildfly.prospero.api.FileConflict.Change.MODIFIED;
+import static org.wildfly.prospero.api.FileConflict.Change.REMOVED;
+import static org.wildfly.prospero.api.FileConflict.Resolution.UPDATE;
 
 public class FileConflict {
 
@@ -141,6 +147,34 @@ public class FileConflict {
 
     public String getRelativePath() {
         return relativePath;
+    }
+
+    public String prettyPrint() {
+        String status;
+        if (getResolution() == UPDATE) {
+            status = "!" + FsDiff.FORCED;
+        } else {
+            if (getUserChange() == getUpdateChange()) {
+                status = "!" + FsDiff.CONFLICT;
+            } else if (getUserChange() == MODIFIED && getUpdateChange() == REMOVED) {
+                status = "!" + FsDiff.MODIFIED;
+            } else {
+                switch (getUserChange()) {
+                    case MODIFIED:
+                        status = " " + FsDiff.MODIFIED;
+                        break;
+                    case ADDED:
+                        status = " " + FsDiff.ADDED;
+                        break;
+                    case REMOVED:
+                        status = " " + FsDiff.REMOVED;
+                        break;
+                    default:
+                        throw new IllegalArgumentException("Unexpected Change " + this.toString());
+                }
+            }
+        }
+        return status + " " + getRelativePath();
     }
 
     @Override

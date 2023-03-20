@@ -63,10 +63,14 @@ public class GalleonUtils {
     private static final String OPTION_RESET_EMBEDDED_SYSTEM_PROPERTIES = "jboss-reset-embedded-system-properties";
     public static void executeGalleon(GalleonExecution execution, Path localRepository) throws ProvisioningException, UnresolvedMavenArtifactException {
         final String modulePathProperty = System.getProperty(MODULE_PATH_PROPERTY);
+        final String logConfigProperty = System.getProperty("logging.configuration");
         try {
             System.setProperty(MAVEN_REPO_LOCAL, localRepository.toString());
             if (modulePathProperty != null) {
                 System.clearProperty(MODULE_PATH_PROPERTY);
+            }
+            if (logConfigProperty != null) {
+                System.clearProperty("logging.configuration");
             }
             final Map<String, String> options = new HashMap<>();
             options.put(GalleonUtils.JBOSS_FORK_EMBEDDED_PROPERTY, GalleonUtils.JBOSS_FORK_EMBEDDED_VALUE);
@@ -85,6 +89,9 @@ public class GalleonUtils {
             System.clearProperty(MAVEN_REPO_LOCAL);
             if (modulePathProperty != null) {
                 System.setProperty(MODULE_PATH_PROPERTY, modulePathProperty);
+            }
+            if (logConfigProperty != null) {
+                System.setProperty("logging.configuration", logConfigProperty);
             }
         }
     }

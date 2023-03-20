@@ -26,7 +26,7 @@ import java.util.List;
 import org.apache.commons.io.FileUtils;
 import org.wildfly.channel.Channel;
 import org.wildfly.channel.Repository;
-import org.wildfly.prospero.Messages;
+import org.wildfly.prospero.ProsperoLogger;
 import org.wildfly.prospero.api.Console;
 import org.wildfly.prospero.api.FileConflict;
 import org.wildfly.prospero.api.MavenOptions;
@@ -71,9 +71,13 @@ public class UpdateAction implements AutoCloseable {
      * @throws ProvisioningException
      */
     public List<FileConflict> performUpdate() throws OperationException, ProvisioningException {
+        ProsperoLogger.ROOT_LOGGER.performUpdateStarted(installDir);
         Path targetDir = null;
         try {
             targetDir = Files.createTempDirectory("update-candidate");
+            if (ProsperoLogger.ROOT_LOGGER.isDebugEnabled()) {
+                ProsperoLogger.ROOT_LOGGER.temporaryCandidateFolder(targetDir);
+            }
             if (buildUpdate(targetDir)) {
                 final ApplyCandidateAction applyCandidateAction = new ApplyCandidateAction(installDir, targetDir);
                 return applyCandidateAction.applyUpdate(ApplyCandidateAction.Type.UPDATE);
@@ -81,7 +85,7 @@ public class UpdateAction implements AutoCloseable {
                 return Collections.emptyList();
             }
         } catch (IOException e) {
-            throw Messages.MESSAGES.unableToCreateTemporaryDirectory(e);
+            throw ProsperoLogger.ROOT_LOGGER.unableToCreateTemporaryDirectory(e);
         } finally {
             if (targetDir != null) {
                 FileUtils.deleteQuietly(targetDir.toFile());
@@ -100,10 +104,14 @@ public class UpdateAction implements AutoCloseable {
      */
     public boolean buildUpdate(Path targetDir) throws ProvisioningException, OperationException {
         if (findUpdates().isEmpty()) {
+            ProsperoLogger.ROOT_LOGGER.noUpdatesFound(installDir);
             return false;
         }
+        ProsperoLogger.ROOT_LOGGER.updateCandidateStarted(installDir);
         try(final PrepareCandidateAction prepareCandidateAction = new PrepareCandidateAction(installDir, mavenSessionManager, console, prosperoConfig)) {
-            return prepareCandidateAction.buildCandidate(targetDir, getGalleonEnv(targetDir), UPDATE);
+            final boolean result = prepareCandidateAction.buildCandidate(targetDir, getGalleonEnv(targetDir), UPDATE);
+            ProsperoLogger.ROOT_LOGGER.updateCandidateCompleted(targetDir);
+            return result;
         }
     }
 
@@ -115,9 +123,12 @@ public class UpdateAction implements AutoCloseable {
      * @throws ProvisioningException
      */
     public UpdateSet findUpdates() throws OperationException, ProvisioningException {
+        ProsperoLogger.ROOT_LOGGER.checkingUpdates();
         final GalleonEnvironment galleonEnv = getGalleonEnv(installDir);
         try (final UpdateFinder updateFinder = new UpdateFinder(galleonEnv.getChannelSession())) {
-            return updateFinder.findUpdates(metadata.getArtifacts());
+            final UpdateSet updates = updateFinder.findUpdates(metadata.getArtifacts());
+            ProsperoLogger.ROOT_LOGGER.updatesFound(updates.getArtifactUpdates().size());
+            return updates;
         }
     }
 

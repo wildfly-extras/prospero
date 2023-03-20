@@ -26,7 +26,7 @@ import org.jboss.galleon.ProvisioningException;
 import org.wildfly.channel.ArtifactCoordinate;
 import org.wildfly.channel.ChannelManifestCoordinate;
 import org.wildfly.channel.maven.ChannelCoordinate;
-import org.wildfly.prospero.Messages;
+import org.wildfly.prospero.ProsperoLogger;
 import org.wildfly.prospero.api.Console;
 import org.wildfly.prospero.api.MavenOptions;
 import org.wildfly.prospero.api.exceptions.ArtifactPromoteException;
@@ -53,11 +53,11 @@ public class PromoteArtifactBundleAction {
         Objects.requireNonNull(coordinate);
 
         if (coordinate.getMaven() == null) {
-            throw Messages.MESSAGES.nonMavenChannelRef();
+            throw ProsperoLogger.ROOT_LOGGER.nonMavenChannelRef();
         }
 
         try (final ArtifactBundle extracted = ArtifactBundle.extract(archive)) {
-            console.println(Messages.MESSAGES.promotingArtifacts(targetRepository));
+            console.println(ProsperoLogger.ROOT_LOGGER.promotingArtifacts(targetRepository));
             for (ArtifactCoordinate artifact : extracted.getArtifactList()) {
                 console.println("  * " + String.format("%s:%s:%s", artifact.getGroupId(), artifact.getArtifactId(), artifact.getVersion()));
             }
@@ -73,10 +73,10 @@ public class PromoteArtifactBundleAction {
                 promoter.promote(extracted.getArtifactList(),
                         new ChannelCoordinate(coordinate.getMaven().getGroupId(), coordinate.getMaven().getArtifactId()), sourceRepo);
             } catch (IOException | ArtifactResolutionException | DeploymentException e) {
-                throw Messages.MESSAGES.unableToPromote(targetRepository, e);
+                throw ProsperoLogger.ROOT_LOGGER.unableToPromote(targetRepository, e);
             }
         } catch (IOException e) {
-            throw Messages.MESSAGES.unableToParseCustomizationBundle(archive, e);
+            throw ProsperoLogger.ROOT_LOGGER.unableToParseCustomizationBundle(archive, e);
         }
     }
 }

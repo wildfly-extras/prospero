@@ -17,7 +17,7 @@
 
 package org.wildfly.prospero.actions;
 
-import org.wildfly.prospero.Messages;
+import org.wildfly.prospero.ProsperoLogger;
 import org.wildfly.prospero.api.InstallationMetadata;
 import org.wildfly.prospero.api.exceptions.MetadataException;
 
@@ -42,7 +42,7 @@ public class InstallationExportAction {
 
     public void export(Path exportPath) throws IOException, MetadataException {
         if (!installationDir.toFile().exists()) {
-            throw Messages.MESSAGES.installationDirDoesNotExist(installationDir);
+            throw ProsperoLogger.ROOT_LOGGER.installationDirDoesNotExist(installationDir);
         }
 
         try (final InstallationMetadata metadataBundle = InstallationMetadata.loadInstallation(installationDir)) {

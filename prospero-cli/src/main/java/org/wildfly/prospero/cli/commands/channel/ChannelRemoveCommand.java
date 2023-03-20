@@ -50,7 +50,7 @@ public class ChannelRemoveCommand extends AbstractCommand {
             final Optional<Channel> channel = metadataAction.getChannels().stream().filter(c->c.getName().equals(channelName)).findFirst();
 
             if (channel.isEmpty()) {
-                console.println("The requested channel doesn't exist");
+                console.println(CliMessages.MESSAGES.channelNotFound());
                 return ReturnCodes.INVALID_ARGUMENTS;
             }
 
