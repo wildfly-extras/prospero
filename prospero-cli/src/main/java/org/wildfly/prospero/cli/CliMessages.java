@@ -306,6 +306,14 @@ public interface CliMessages {
         return String.format(bundle.getString("prospero.general.error.header"), msg);
     }
 
+    default String errorSSL() {
+        return String.format(bundle.getString("prospero.general.error.ssl"));
+    }
+
+    default String errorUnknownHost() {
+        return String.format(bundle.getString("prospero.general.error.host"));
+    }
+
     default String unableToResolveChannelMetadata() {
         return bundle.getString("prospero.general.error.resolve.metadata.header");
     }
