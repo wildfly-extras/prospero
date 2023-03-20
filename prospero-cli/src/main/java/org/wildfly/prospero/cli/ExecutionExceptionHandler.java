@@ -32,8 +32,10 @@ import org.wildfly.prospero.cli.commands.CliConstants;
 import org.wildfly.prospero.wfchannel.MavenSessionManager;
 import picocli.CommandLine;
 
+import javax.net.ssl.SSLHandshakeException;
 import java.net.MalformedURLException;
 import java.net.URL;
+import java.net.UnknownHostException;
 import java.util.Set;
 
 /**
@@ -70,7 +72,15 @@ public class ExecutionExceptionHandler implements CommandLine.IExecutionExceptio
             return ReturnCodes.INVALID_ARGUMENTS;
         } else if (ex instanceof OperationException) {
             if (ex instanceof ChannelDefinitionException) {
-                console.error(CliMessages.MESSAGES.errorHeader(ex.getLocalizedMessage()));
+                if (ex.getCause() != null) {
+                    if (ex.getCause().getCause() instanceof SSLHandshakeException) {
+                        console.error(CliMessages.MESSAGES.errorSSL());
+                    } else if (ex.getCause().getCause() instanceof UnknownHostException) {
+                        console.error(CliMessages.MESSAGES.errorUnknownHost());
+                    } else {
+                    console.error(CliMessages.MESSAGES.errorHeader(ex.getLocalizedMessage()));
+                    }
+                }
                 console.error(((ChannelDefinitionException) ex).getValidationMessages());
             } else if (ex instanceof StreamNotFoundException) {
                 StreamNotFoundException snfe = (StreamNotFoundException) ex;
