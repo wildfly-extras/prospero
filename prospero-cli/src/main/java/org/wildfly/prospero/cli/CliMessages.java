@@ -57,6 +57,10 @@ public interface CliMessages {
         return bundle.getString("prospero.install.progress.download");
     }
 
+    default String resolvingVersions() {
+        return bundle.getString("prospero.install.progress.versions");
+    }
+
     default String installingJBossExamples() {
         return bundle.getString("prospero.install.progress.examples");
     }
@@ -83,6 +87,10 @@ public interface CliMessages {
 
     default String artifactsDownloaded() {
         return bundle.getString("prospero.install.progress.download.done");
+    }
+
+    default String versionsResolved() {
+        return bundle.getString("prospero.install.progress.versions.done");
     }
 
     default String applyingChanges() {
