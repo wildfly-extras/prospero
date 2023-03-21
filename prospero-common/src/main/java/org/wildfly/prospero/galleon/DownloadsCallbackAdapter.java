@@ -61,7 +61,9 @@ class DownloadsCallbackAdapter extends AbstractTransferListener implements Progr
         this.resolvedVersionKeys = new HashSet<>();
         final ProvisioningProgressEvent progress = new ProvisioningProgressEvent(TRACK_JB_ARTIFACTS_RESOLVE, ProvisioningProgressEvent.EventType.STARTING,
                 tracker.getProcessedVolume(), tracker.getTotalVolume());
-        this.console.progressUpdate(progress);
+        if (console != null) {
+            this.console.progressUpdate(progress);
+        }
         ProsperoLogger.ROOT_LOGGER.startedPhase("download artifacts", "" + processed);
     }
 
@@ -74,7 +76,9 @@ class DownloadsCallbackAdapter extends AbstractTransferListener implements Progr
     public void complete(ProgressTracker<MavenArtifact> tracker) {
         final ProvisioningProgressEvent progress = new ProvisioningProgressEvent(TRACK_JB_ARTIFACTS_RESOLVE, ProvisioningProgressEvent.EventType.COMPLETED,
                 tracker.getProcessedVolume(), tracker.getTotalVolume());
-        this.console.progressUpdate(progress);
+        if (console != null) {
+            this.console.progressUpdate(progress);
+        }
         ProsperoLogger.ROOT_LOGGER.completedPhase("download artifacts", "" + processed);
         this.totalVolume = 0;
         this.processed = 0;
@@ -95,20 +99,22 @@ class DownloadsCallbackAdapter extends AbstractTransferListener implements Progr
 
         final int fileNameIndex = item.lastIndexOf(File.separator);
         item = item.substring(fileNameIndex + 1);
-        if ("maven-metadata.xml".equals(item)) {
-            // get first part of maven-metadata.xml name
-            // for each unique one - increment by one
-            final String key = event.getResource().getResourceName().substring(0, fileNameIndex);
-            if (!resolvedVersionKeys.contains(key)) {
-                resolvedVersionKeys.add(key);
-                final ProvisioningProgressEvent progress = new ProvisioningProgressEvent(TRACK_RESOLVING_VERSIONS, ProvisioningProgressEvent.EventType.UPDATE,
-                        ++versionUpdates, totalVolume, null, false);
+        if (console != null) {
+            if ("maven-metadata.xml".equals(item)) {
+                // get first part of maven-metadata.xml name
+                // for each unique one - increment by one
+                final String key = event.getResource().getResourceName().substring(0, fileNameIndex);
+                if (!resolvedVersionKeys.contains(key)) {
+                    resolvedVersionKeys.add(key);
+                    final ProvisioningProgressEvent progress = new ProvisioningProgressEvent(TRACK_RESOLVING_VERSIONS, ProvisioningProgressEvent.EventType.UPDATE,
+                            ++versionUpdates, totalVolume, null, false);
+                    this.console.progressUpdate(progress);
+                }
+            } else {
+                final ProvisioningProgressEvent progress = new ProvisioningProgressEvent(TRACK_JB_ARTIFACTS_RESOLVE, ProvisioningProgressEvent.EventType.UPDATE,
+                        ++processed, totalVolume, item, false);
                 this.console.progressUpdate(progress);
             }
-        } else {
-            final ProvisioningProgressEvent progress = new ProvisioningProgressEvent(TRACK_JB_ARTIFACTS_RESOLVE, ProvisioningProgressEvent.EventType.UPDATE,
-                    ++processed, totalVolume, item, false);
-            this.console.progressUpdate(progress);
         }
     }
 }

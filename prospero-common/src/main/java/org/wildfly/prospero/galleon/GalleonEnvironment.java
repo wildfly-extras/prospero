@@ -97,18 +97,16 @@ public class GalleonEnvironment {
         provisioningManager = GalleonUtils.getProvisioningManager(builder.installDir, repositoryManager, builder.fpTracker);
 
         final ProvisioningLayoutFactory layoutFactory = provisioningManager.getLayoutFactory();
-        if (console.isPresent()) {
-            Stream.of(ProvisioningLayoutFactory.TRACK_LAYOUT_BUILD,
-                      ProvisioningLayoutFactory.TRACK_PACKAGES,
-                      ProvisioningLayoutFactory.TRACK_CONFIGS,
-                      TRACK_JBMODULES,
-                      TRACK_JBEXAMPLES)
-                    .forEach(t->layoutFactory.setProgressCallback(t, new GalleonCallbackAdapter(console.get(), t)));
+        Stream.of(ProvisioningLayoutFactory.TRACK_LAYOUT_BUILD,
+                  ProvisioningLayoutFactory.TRACK_PACKAGES,
+                  ProvisioningLayoutFactory.TRACK_CONFIGS,
+                  TRACK_JBMODULES,
+                  TRACK_JBEXAMPLES)
+                .forEach(t->layoutFactory.setProgressCallback(t, new GalleonCallbackAdapter(console.orElse(null), t)));
 
-            final DownloadsCallbackAdapter callback = new DownloadsCallbackAdapter(console.get());
-            session.setTransferListener(callback);
-            layoutFactory.setProgressCallback(TRACK_JB_ARTIFACTS_RESOLVE, callback);
-        }
+        final DownloadsCallbackAdapter callback = new DownloadsCallbackAdapter(console.orElse(null));
+        session.setTransferListener(callback);
+        layoutFactory.setProgressCallback(TRACK_JB_ARTIFACTS_RESOLVE, callback);
     }
 
     private ChannelSession initChannelSession(DefaultRepositorySystemSession session, MavenVersionsResolver.Factory factory) throws UnresolvedChannelMetadataException, ChannelDefinitionException {

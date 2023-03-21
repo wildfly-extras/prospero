@@ -73,7 +73,10 @@ public class GalleonCallbackAdapter implements ProgressCallback<Object> {
                 tracker.getProcessedVolume(), tracker.getTotalVolume());
         String total = (tracker.getTotalVolume()>0)?(""+tracker.getTotalVolume()):"";
         ProsperoLogger.ROOT_LOGGER.startedPhase(name(id), total);
-        this.console.progressUpdate(progress);
+
+        if (console != null) {
+            this.console.progressUpdate(progress);
+        }
     }
 
     @Override
@@ -86,11 +89,18 @@ public class GalleonCallbackAdapter implements ProgressCallback<Object> {
                 tracker.getProcessedVolume(), tracker.getTotalVolume());
         String processed = (tracker.getProcessedVolume()>0)?(""+tracker.getProcessedVolume()):"";
         ProsperoLogger.ROOT_LOGGER.completedPhase(name(id), processed);
-        this.console.progressUpdate(progress);
+
+        if (console != null) {
+            this.console.progressUpdate(progress);
+        }
     }
 
     @Override
     public void processing(ProgressTracker<Object> tracker) {
+        if (console == null) {
+            return;
+        }
+
         String item = null;
         boolean slowPhase = false;
 
