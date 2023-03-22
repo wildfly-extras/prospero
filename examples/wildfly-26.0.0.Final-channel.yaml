@@ -5,5 +5,7 @@ repositories:
     url: "https://repo1.maven.org/maven2/"
   - id: "jboss-public"
     url: "https://repository.jboss.org/nexus/content/groups/public/"
+  - id: "mrrc"
+    url: "https://maven.repository.redhat.com/ga/"
 manifest:
   url: "https://raw.githubusercontent.com/liweinan/prospero/wildfly26/examples/wildfly-26.0.0.Final-manifest.yaml"
