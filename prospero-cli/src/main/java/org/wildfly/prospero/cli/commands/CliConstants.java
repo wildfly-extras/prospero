@@ -54,7 +54,7 @@ public final class CliConstants {
         public static final String PREPARE = "prepare";
         public static final String PERFORM = "perform";
         public static final String APPLY = "apply";
-        public static final String PRINT_LICENSES = "print-licences";
+        public static final String PRINT_LICENSES = "print-licenses";
     }
 
     // Parameter and option labels:
