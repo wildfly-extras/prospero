@@ -175,25 +175,29 @@ public class ProsperoInstallationManager implements InstallationManager {
     }
 
     @Override
-    public String generateApplyUpdateCommand(Path candidatePath) throws OperationNotAvailableException {
+    public String generateApplyUpdateCommand(Path scriptHome, Path candidatePath) throws OperationNotAvailableException {
         final Optional<CliProvider> cliProviderLoader = ServiceLoader.load(CliProvider.class).findFirst();
         if (cliProviderLoader.isEmpty()) {
             throw new OperationNotAvailableException("Installation manager does not support CLI operations.");
         }
 
         final CliProvider cliProvider = cliProviderLoader.get();
-        return cliProvider.getScriptName() + " " + cliProvider.getApplyUpdateCommand(installationDir, candidatePath);
+        return escape(scriptHome.resolve(cliProvider.getScriptName())) + " " + cliProvider.getApplyUpdateCommand(installationDir, candidatePath);
     }
 
     @Override
-    public String generateApplyRevertCommand(Path candidatePath) throws OperationNotAvailableException {
+    public String generateApplyRevertCommand(Path scriptHome, Path candidatePath) throws OperationNotAvailableException {
         final Optional<CliProvider> cliProviderLoader = ServiceLoader.load(CliProvider.class).findFirst();
         if (cliProviderLoader.isEmpty()) {
             throw new OperationNotAvailableException("Installation manager does not support CLI operations.");
         }
 
         final CliProvider cliProvider = cliProviderLoader.get();
-        return cliProvider.getScriptName() + " " + cliProvider.getApplyRevertCommand(installationDir, candidatePath);
+        return escape(scriptHome.resolve(cliProvider.getScriptName())) + " " + cliProvider.getApplyRevertCommand(installationDir, candidatePath);
+    }
+
+    private String escape(Path absolutePath) {
+        return "\"" + absolutePath.toString() + "\"";
     }
 
     private static Channel mapChannel(org.wildfly.channel.Channel channel) {
