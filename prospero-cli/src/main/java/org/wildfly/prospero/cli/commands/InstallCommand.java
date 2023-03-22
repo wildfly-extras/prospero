@@ -22,7 +22,6 @@ import java.util.List;
 import java.util.Optional;
 
 import org.jboss.galleon.config.ProvisioningConfig;
-import org.jboss.logging.Logger;
 import org.wildfly.channel.Channel;
 import org.wildfly.prospero.actions.ProvisioningAction;
 import org.wildfly.prospero.api.KnownFeaturePacks;
@@ -42,8 +41,6 @@ import picocli.CommandLine;
         sortOptions = false
 )
 public class InstallCommand extends AbstractInstallCommand {
-
-    private static final Logger logger = Logger.getLogger("org.wildfly.prospero");
 
     @CommandLine.Option(
             names = CliConstants.DIR,
