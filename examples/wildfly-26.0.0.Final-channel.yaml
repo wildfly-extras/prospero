@@ -8,4 +8,4 @@ repositories:
   - id: "mrrc"
     url: "https://maven.repository.redhat.com/ga/"
 manifest:
-  url: "https://raw.githubusercontent.com/liweinan/prospero/wildfly26/examples/wildfly-26.0.0.Final-manifest.yaml"
+  url: "file:examples/wildfly-26.0.0.Final-manifest.yaml"
