@@ -20,7 +20,7 @@ package org.wildfly.prospero.galleon;
 import org.jboss.logging.Logger;
 import org.wildfly.channel.Channel;
 import org.wildfly.channel.ChannelManifestCoordinate;
-import org.wildfly.prospero.Messages;
+import org.wildfly.prospero.ProsperoLogger;
 import org.wildfly.prospero.api.exceptions.MetadataException;
 
 import java.net.MalformedURLException;
@@ -53,7 +53,7 @@ public class ChannelManifestSubstitutor {
                 try {
                     substitutedURL = new URL(substituted);
                 } catch (MalformedURLException e) {
-                    throw Messages.MESSAGES.invalidPropertySubstitutionValue(substituted, url);
+                    throw ProsperoLogger.ROOT_LOGGER.invalidPropertySubstitutionValue(substituted, url);
                 }
                 logger.debug("Channel's manifest URL " + url + " is substituted by " + substituted);
                 ChannelManifestCoordinate substitutedChannelManifestCoordinate = new ChannelManifestCoordinate(substitutedURL);

@@ -23,7 +23,7 @@ import java.util.List;
 import java.util.Optional;
 
 import org.wildfly.channel.Channel;
-import org.wildfly.prospero.Messages;
+import org.wildfly.prospero.ProsperoLogger;
 import org.wildfly.prospero.api.InstallationMetadata;
 import org.wildfly.prospero.api.exceptions.MetadataException;
 import org.wildfly.prospero.model.ProsperoConfig;
@@ -43,53 +43,52 @@ public class MetadataAction implements AutoCloseable {
     }
 
     public void addChannel(Channel channel) throws MetadataException {
+        ProsperoLogger.ROOT_LOGGER.addingChannel(channel.toString());
         final ProsperoConfig prosperoConfig = installationMetadata.getProsperoConfig();
         final List<Channel> channels = prosperoConfig.getChannels();
 
         if (channels.stream().filter(c->c.getName().equals(channel.getName())).findAny().isPresent()) {
-            throw Messages.MESSAGES.channelExists(channel.getName());
+            ProsperoLogger.ROOT_LOGGER.existingChannel(channel.getName());
+            throw ProsperoLogger.ROOT_LOGGER.channelExists(channel.getName());
         }
 
         channels.add(channel);
         installationMetadata.updateProsperoConfig(prosperoConfig);
+        ProsperoLogger.ROOT_LOGGER.channelAdded(channel.getName());
     }
 
     public void removeChannel(String channelName) throws MetadataException {
+        ProsperoLogger.ROOT_LOGGER.removingChannel(channelName);
         final ProsperoConfig prosperoConfig = installationMetadata.getProsperoConfig();
         final List<Channel> channels = prosperoConfig.getChannels();
         final Optional<Channel> removedChannel = channels.stream().filter(c -> c.getName().equals(channelName)).findAny();
         if (removedChannel.isEmpty()) {
-            throw Messages.MESSAGES.channelNotFound(channelName);
+            final MetadataException ex = ProsperoLogger.ROOT_LOGGER.channelNotFound(channelName);
+            ProsperoLogger.ROOT_LOGGER.warnf(ex, "");
+            throw ex;
         }
         channels.remove(removedChannel.get());
         installationMetadata.updateProsperoConfig(prosperoConfig);
+        ProsperoLogger.ROOT_LOGGER.channelRemoved(channelName);
     }
 
     public void changeChannel(String channelName, Channel newChannel) throws MetadataException {
+        ProsperoLogger.ROOT_LOGGER.updatingChannel(newChannel.toString(), channelName);
         final ProsperoConfig prosperoConfig = installationMetadata.getProsperoConfig();
         final List<Channel> channels = prosperoConfig.getChannels();
         final Optional<Channel> modifiedChannel = channels.stream().filter(c -> c.getName().equals(channelName)).findAny();
         if (modifiedChannel.isEmpty()) {
-            throw Messages.MESSAGES.channelNotFound(channelName);
+            ProsperoLogger.ROOT_LOGGER.channelNotFound(channelName);
+            throw ProsperoLogger.ROOT_LOGGER.channelNotFound(channelName);
         }
         channels.set(channels.indexOf(modifiedChannel.get()), newChannel);
         installationMetadata.updateProsperoConfig(prosperoConfig);
+        ProsperoLogger.ROOT_LOGGER.channelUpdated(channelName);
     }
 
     public List<Channel> getChannels() throws MetadataException {
+        ProsperoLogger.ROOT_LOGGER.listChannels();
         return new ArrayList<>(installationMetadata.getProsperoConfig().getChannels());
-    }
-
-    public Channel getChannel(int index) throws MetadataException {
-        if (index < 0) {
-            return null;
-        }
-        final ProsperoConfig prosperoConfig = installationMetadata.getProsperoConfig();
-        final List<Channel> channels = prosperoConfig.getChannels();
-        if (channels.size() <= index) {
-            return null;
-        }
-        return channels.get(index);
     }
 
     @Override

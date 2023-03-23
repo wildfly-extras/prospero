@@ -50,7 +50,6 @@
                             <target>
                                 <move file="${project.build.outputDirectory}/${prospero.script.path}/prospero.sh" tofile="${project.build.outputDirectory}/${prospero.script.path}/${prospero.dist.name}.sh" />
                                 <move file="${project.build.outputDirectory}/${prospero.script.path}/prospero.bat" tofile="${project.build.outputDirectory}/${prospero.script.path}/${prospero.dist.name}.bat" />
-                                <move file="${project.build.outputDirectory}/${prospero.script.path}/prospero-logging.properties" tofile="${project.build.outputDirectory}/${prospero.script.path}/${prospero.dist.name}-logging.properties" />
                             </target>
                         </configuration>
                         <goals>

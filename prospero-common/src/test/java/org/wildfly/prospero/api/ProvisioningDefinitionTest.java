@@ -28,7 +28,7 @@ import org.wildfly.channel.ChannelManifestCoordinate;
 import org.wildfly.channel.MavenCoordinate;
 import org.wildfly.channel.Repository;
 import org.wildfly.channel.maven.VersionResolverFactory;
-import org.wildfly.prospero.Messages;
+import org.wildfly.prospero.ProsperoLogger;
 import org.wildfly.prospero.api.exceptions.ChannelDefinitionException;
 import org.wildfly.prospero.api.exceptions.NoChannelException;
 import org.wildfly.prospero.galleon.GalleonUtils;
@@ -136,7 +136,7 @@ public class ProvisioningDefinitionTest {
             builder.build();
             fail("Expected to fail because no repositories were given.");
         } catch (IllegalArgumentException e) {
-            assertThat(e.getMessage()).contains(Messages.MESSAGES.repositoriesMustBeSetWithManifest().getMessage());
+            assertThat(e.getMessage()).contains(ProsperoLogger.ROOT_LOGGER.repositoriesMustBeSetWithManifest().getMessage());
         }
     }
 

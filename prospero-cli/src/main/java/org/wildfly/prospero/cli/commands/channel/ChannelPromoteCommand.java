@@ -20,7 +20,7 @@ package org.wildfly.prospero.cli.commands.channel;
 import org.wildfly.channel.Channel;
 import org.wildfly.channel.ChannelManifestCoordinate;
 import org.wildfly.channel.MavenCoordinate;
-import org.wildfly.prospero.Messages;
+import org.wildfly.prospero.ProsperoLogger;
 import org.wildfly.prospero.actions.MetadataAction;
 import org.wildfly.prospero.api.ArtifactUtils;
 import org.wildfly.prospero.api.exceptions.MetadataException;
@@ -89,7 +89,7 @@ public class ChannelPromoteCommand extends AbstractCommand {
                         try {
                             return new URL(r.getUrl());
                         } catch (MalformedURLException e) {
-                            throw Messages.MESSAGES.invalidUrl(r.getUrl(), e);
+                            throw ProsperoLogger.ROOT_LOGGER.invalidUrl(r.getUrl(), e);
                         }
                     })
                     .findFirst());

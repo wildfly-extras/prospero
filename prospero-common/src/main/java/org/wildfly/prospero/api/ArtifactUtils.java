@@ -22,9 +22,9 @@ import org.apache.maven.artifact.versioning.ComparableVersion;
 import org.eclipse.aether.artifact.Artifact;
 import org.wildfly.channel.ArtifactCoordinate;
 import org.wildfly.channel.ChannelManifestCoordinate;
-import org.wildfly.prospero.Messages;
 import org.wildfly.channel.ChannelMetadataCoordinate;
 import org.wildfly.channel.maven.ChannelCoordinate;
+import org.wildfly.prospero.ProsperoLogger;
 
 import java.lang.reflect.InvocationTargetException;
 import java.net.MalformedURLException;
@@ -64,7 +64,7 @@ public class ArtifactUtils {
                     return clazz.getDeclaredConstructor(URL.class)
                             .newInstance(Paths.get(urlGavOrPath).toAbsolutePath().toUri().toURL());
                 } catch (MalformedURLException e2) {
-                    throw Messages.MESSAGES.invalidUrl(urlGavOrPath, e2);
+                    throw ProsperoLogger.ROOT_LOGGER.invalidUrl(urlGavOrPath, e2);
                 }
             }
         } catch (NoSuchMethodException | InstantiationException | IllegalAccessException | InvocationTargetException e) {

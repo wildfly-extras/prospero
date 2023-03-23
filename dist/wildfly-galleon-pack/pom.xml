@@ -10,6 +10,10 @@
   <packaging>pom</packaging>
   <name>prospero-wildfly-galleon-pack</name>
 
+  <properties>
+    <prospero.script.path>packages/org.jboss.prospero/content/bin/</prospero.script.path>
+  </properties>
+
   <dependencies>
     <dependency>
       <groupId>${prospero.base.feature-pack.groupId}</groupId>
@@ -417,6 +421,24 @@
                 </resource>
               </resources>
             </configuration>
+          </execution>
+        </executions>
+      </plugin>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-antrun-plugin</artifactId>
+        <executions>
+          <execution>
+            <id>generate-sources</id>
+            <phase>compile</phase>
+            <configuration>
+              <target>
+                <move file="${project.build.directory}/resources/${prospero.script.path}/prospero-logging.properties" tofile="${project.build.directory}/resources/${prospero.script.path}/${prospero.dist.name}-logging.properties" />
+              </target>
+            </configuration>
+            <goals>
+              <goal>run</goal>
+            </goals>
           </execution>
         </executions>
       </plugin>

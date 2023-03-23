@@ -39,7 +39,7 @@ import org.wildfly.channel.Stream;
 import org.wildfly.channel.maven.ChannelCoordinate;
 import org.wildfly.channel.maven.VersionResolverFactory;
 import org.wildfly.channel.spi.MavenVersionsResolver;
-import org.wildfly.prospero.Messages;
+import org.wildfly.prospero.ProsperoLogger;
 
 import java.io.File;
 import java.io.IOException;
@@ -67,7 +67,7 @@ public class ArtifactPromoter {
         this.targetRepository = targetRepository;
 
         if (!targetRepository.getProtocol().equals("file")) {
-            throw Messages.MESSAGES.unsupportedPromotionTarget();
+            throw ProsperoLogger.ROOT_LOGGER.unsupportedPromotionTarget();
         }
     }
 
@@ -180,7 +180,7 @@ public class ArtifactPromoter {
     private String incrementVersion(String baseVersion) {
         final Pattern versionSuffixFormat = Pattern.compile(".*-rev\\d{8}");
         if (!versionSuffixFormat.matcher(baseVersion).matches()) {
-            throw Messages.MESSAGES.wrongVersionFormat(baseVersion);
+            throw ProsperoLogger.ROOT_LOGGER.wrongVersionFormat(baseVersion);
         }
 
         final String suffix = "-rev";
@@ -191,7 +191,7 @@ public class ArtifactPromoter {
         int currentVersion = Integer.parseInt(suffixVersion);
 
         if (currentVersion == 99_999_999) {
-            throw Messages.MESSAGES.versionLimitExceeded(baseVersion);
+            throw ProsperoLogger.ROOT_LOGGER.versionLimitExceeded(baseVersion);
         }
 
         return String.format("%s%08d", coreVersion, (currentVersion + 1));

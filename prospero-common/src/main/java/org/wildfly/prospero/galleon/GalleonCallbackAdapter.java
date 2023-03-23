@@ -22,6 +22,7 @@ import org.jboss.galleon.progresstracking.ProgressTracker;
 import org.jboss.galleon.state.ProvisionedConfig;
 import org.jboss.galleon.universe.FeaturePackLocation;
 import org.jboss.galleon.universe.maven.MavenArtifact;
+import org.wildfly.prospero.ProsperoLogger;
 import org.wildfly.prospero.api.Console;
 import org.wildfly.prospero.api.ProvisioningProgressEvent;
 
@@ -30,6 +31,9 @@ import java.util.List;
 
 import static org.jboss.galleon.layout.ProvisioningLayoutFactory.TRACK_CONFIGS;
 import static org.jboss.galleon.layout.ProvisioningLayoutFactory.TRACK_LAYOUT_BUILD;
+import static org.jboss.galleon.layout.ProvisioningLayoutFactory.TRACK_PACKAGES;
+import static org.wildfly.prospero.galleon.GalleonEnvironment.TRACK_JBEXAMPLES;
+import static org.wildfly.prospero.galleon.GalleonEnvironment.TRACK_JBMODULES;
 
 /**
  * Translates Galleon {@link ProgressCallback} into {@link Console#progressUpdate(ProvisioningProgressEvent)}.
@@ -67,7 +71,12 @@ public class GalleonCallbackAdapter implements ProgressCallback<Object> {
     public void starting(ProgressTracker tracker) {
         final ProvisioningProgressEvent progress = new ProvisioningProgressEvent(id, ProvisioningProgressEvent.EventType.STARTING,
                 tracker.getProcessedVolume(), tracker.getTotalVolume());
-        this.console.progressUpdate(progress);
+        String total = (tracker.getTotalVolume()>0)?(""+tracker.getTotalVolume()):"";
+        ProsperoLogger.ROOT_LOGGER.startedPhase(name(id), total);
+
+        if (console != null) {
+            this.console.progressUpdate(progress);
+        }
     }
 
     @Override
@@ -78,11 +87,20 @@ public class GalleonCallbackAdapter implements ProgressCallback<Object> {
     public void complete(ProgressTracker tracker) {
         final ProvisioningProgressEvent progress = new ProvisioningProgressEvent(id, ProvisioningProgressEvent.EventType.COMPLETED,
                 tracker.getProcessedVolume(), tracker.getTotalVolume());
-        this.console.progressUpdate(progress);
+        String processed = (tracker.getProcessedVolume()>0)?(""+tracker.getProcessedVolume()):"";
+        ProsperoLogger.ROOT_LOGGER.completedPhase(name(id), processed);
+
+        if (console != null) {
+            this.console.progressUpdate(progress);
+        }
     }
 
     @Override
     public void processing(ProgressTracker<Object> tracker) {
+        if (console == null) {
+            return;
+        }
+
         String item = null;
         boolean slowPhase = false;
 
@@ -97,7 +115,7 @@ public class GalleonCallbackAdapter implements ProgressCallback<Object> {
                     slowPhase = true;
                 }
                 break;
-            case GalleonEnvironment.TRACK_JBEXAMPLES:
+            case TRACK_JBEXAMPLES:
                 List<Object> items = (List<Object>) tracker.getItem();
                 if(items.get(1) instanceof ProvisionedConfig) {
                     item = "Generating " + ((ProvisionedConfig) items.get(1)).getName();
@@ -115,5 +133,22 @@ public class GalleonCallbackAdapter implements ProgressCallback<Object> {
         final ProvisioningProgressEvent progress = new ProvisioningProgressEvent(id, ProvisioningProgressEvent.EventType.UPDATE,
                 tracker.getProcessedVolume(), tracker.getTotalVolume(), item, slowPhase);
         this.console.progressUpdate(progress);
+    }
+
+    private String name(String id) {
+        switch (id) {
+            case TRACK_LAYOUT_BUILD:
+                return "build layout";
+            case TRACK_PACKAGES:
+                return "install packages";
+            case TRACK_JBMODULES:
+                return "install modules";
+            case TRACK_CONFIGS:
+                return "generate configuration";
+            case TRACK_JBEXAMPLES:
+                return "generate examples";
+            default:
+                return id;
+        }
     }
 }

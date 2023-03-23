@@ -19,7 +19,7 @@ package org.wildfly.prospero.actions;
 
 import org.apache.commons.io.FileUtils;
 import org.wildfly.channel.Repository;
-import org.wildfly.prospero.Messages;
+import org.wildfly.prospero.ProsperoLogger;
 import org.wildfly.prospero.api.Console;
 import org.wildfly.prospero.api.InstallationChanges;
 import org.wildfly.prospero.api.MavenOptions;
@@ -57,12 +57,14 @@ public class InstallationHistoryAction {
     }
 
     public InstallationChanges compare(SavedState savedState) throws MetadataException {
+        ProsperoLogger.ROOT_LOGGER.historyDetails(savedState.getName(), installation);
         final InstallationMetadata installationMetadata = InstallationMetadata.loadInstallation(installation);
         verifyStateExists(savedState, installationMetadata);
         return installationMetadata.getChangesSince(savedState);
     }
 
     public List<SavedState> getRevisions() throws MetadataException {
+        ProsperoLogger.ROOT_LOGGER.listHistory(installation);
         final InstallationMetadata installationMetadata = InstallationMetadata.loadInstallation(installation);
         return installationMetadata.getRevisions();
     }
@@ -70,11 +72,16 @@ public class InstallationHistoryAction {
     public void rollback(SavedState savedState, MavenOptions mavenOptions, List<Repository> overrideRepositories) throws OperationException, ProvisioningException {
         Path tempDirectory = null;
         try {
+            ProsperoLogger.ROOT_LOGGER.revertStarted(installation, savedState.getName());
             tempDirectory = Files.createTempDirectory("revert-candidate");
+            if (ProsperoLogger.ROOT_LOGGER.isDebugEnabled()) {
+                ProsperoLogger.ROOT_LOGGER.temporaryCandidateFolder(tempDirectory);
+            }
             prepareRevert(savedState, mavenOptions, overrideRepositories, tempDirectory);
             new ApplyCandidateAction(installation, tempDirectory).applyUpdate(ApplyCandidateAction.Type.REVERT);
+            ProsperoLogger.ROOT_LOGGER.revertCompleted(installation, savedState.getName());
         } catch (IOException e) {
-            throw Messages.MESSAGES.unableToCreateTemporaryDirectory(e);
+            throw ProsperoLogger.ROOT_LOGGER.unableToCreateTemporaryDirectory(e);
         } finally {
             if (tempDirectory != null) {
                 FileUtils.deleteQuietly(tempDirectory.toFile());
@@ -84,8 +91,8 @@ public class InstallationHistoryAction {
 
     public void prepareRevert(SavedState savedState, MavenOptions mavenOptions, List<Repository> overrideRepositories, Path targetDir)
             throws OperationException, ProvisioningException {
-
         try (final InstallationMetadata metadata = InstallationMetadata.loadInstallation(installation)) {
+            ProsperoLogger.ROOT_LOGGER.revertCandidateStarted(installation);
 
             verifyStateExists(savedState, metadata);
 
@@ -107,6 +114,7 @@ public class InstallationHistoryAction {
 
                 revertCurrentVersions(targetDir, revertMetadata);
 
+                ProsperoLogger.ROOT_LOGGER.revertCandidateCompleted(targetDir);
             } finally {
                 System.clearProperty(MAVEN_REPO_LOCAL);
             }
@@ -125,22 +133,13 @@ public class InstallationHistoryAction {
                 }
             }
         } catch (IOException e) {
-            throw Messages.MESSAGES.unableToWriteFile(targetDir.resolve(ProsperoMetadataUtils.METADATA_DIR).resolve(ProsperoMetadataUtils.CURRENT_VERSION_FILE), e);
+            throw ProsperoLogger.ROOT_LOGGER.unableToWriteFile(targetDir.resolve(ProsperoMetadataUtils.METADATA_DIR).resolve(ProsperoMetadataUtils.CURRENT_VERSION_FILE), e);
         }
-    }
-
-    public void applyRevert(Path updateDirectory) throws OperationException, ProvisioningException {
-        final ApplyCandidateAction applyAction = new ApplyCandidateAction(installation, updateDirectory);
-        if (ApplyCandidateAction.ValidationResult.OK != applyAction.verifyCandidate(ApplyCandidateAction.Type.REVERT)) {
-            throw Messages.MESSAGES.invalidRollbackCandidate(updateDirectory, installation);
-        }
-
-        applyAction.applyUpdate(ApplyCandidateAction.Type.REVERT);
     }
 
     private static void verifyStateExists(SavedState savedState, InstallationMetadata metadata) throws MetadataException {
         if (!metadata.getRevisions().stream().filter(s->s.getName().equals(savedState.getName())).findFirst().isPresent()) {
-            throw Messages.MESSAGES.savedStateNotFound(savedState.getName());
+            throw ProsperoLogger.ROOT_LOGGER.savedStateNotFound(savedState.getName());
         }
     }
 }

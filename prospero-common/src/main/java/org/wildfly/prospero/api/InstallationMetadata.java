@@ -23,7 +23,7 @@ import org.jboss.galleon.config.ProvisioningConfig;
 import org.wildfly.channel.Channel;
 import org.wildfly.channel.ChannelManifest;
 import org.apache.commons.io.FileUtils;
-import org.wildfly.prospero.Messages;
+import org.wildfly.prospero.ProsperoLogger;
 import org.wildfly.prospero.metadata.ManifestVersionRecord;
 import org.wildfly.prospero.api.exceptions.MetadataException;
 import org.wildfly.prospero.installation.git.GitStorage;
@@ -87,20 +87,20 @@ public class InstallationMetadata implements AutoCloseable {
         try {
             manifest = ManifestYamlSupport.parse(manifestFile.toFile());
         } catch (IOException e) {
-            throw Messages.MESSAGES.unableToParseConfiguration(manifestFile, e);
+            throw ProsperoLogger.ROOT_LOGGER.unableToParseConfiguration(manifestFile, e);
         }
         try {
             prosperoConfig = ProsperoConfig.readConfig(base.resolve(ProsperoMetadataUtils.METADATA_DIR));
         } catch (MetadataException e) {
             // re-wrap the exception to change the description
-            throw Messages.MESSAGES.unableToParseConfiguration(base, e.getCause());
+            throw ProsperoLogger.ROOT_LOGGER.unableToParseConfiguration(base, e.getCause());
         }
 
         final Path versionsFile = base.resolve(ProsperoMetadataUtils.METADATA_DIR).resolve(CURRENT_VERSION_FILE);
         try {
             currentVersion = ManifestVersionRecord.read(versionsFile);
         } catch (IOException e) {
-            throw Messages.MESSAGES.unableToReadFile(versionsFile, e);
+            throw ProsperoLogger.ROOT_LOGGER.unableToReadFile(versionsFile, e);
         }
 
         final GitStorage gitStorage = new GitStorage(base);
@@ -110,7 +110,7 @@ public class InstallationMetadata implements AutoCloseable {
                 gitStorage.record();
             }
         } catch (IOException e) {
-            throw Messages.MESSAGES.unableToCreateHistoryStorage(base.resolve(ProsperoMetadataUtils.METADATA_DIR), e);
+            throw ProsperoLogger.ROOT_LOGGER.unableToCreateHistoryStorage(base.resolve(ProsperoMetadataUtils.METADATA_DIR), e);
         }
         return metadata;
     }
@@ -172,7 +172,7 @@ public class InstallationMetadata implements AutoCloseable {
             }
 
             if (manifestFile == null || channelsFile == null || provisioningFile == null) {
-                throw Messages.MESSAGES.incompleteMetadataBundle(archiveLocation);
+                throw ProsperoLogger.ROOT_LOGGER.incompleteMetadataBundle(archiveLocation);
             }
         }
 
@@ -193,13 +193,13 @@ public class InstallationMetadata implements AutoCloseable {
 
         final List<Channel> channels = prosperoConfig.getChannels();
         if (channels != null && channels.stream().filter(c-> StringUtils.isEmpty(c.getName())).findAny().isPresent()) {
-            throw Messages.MESSAGES.emptyChannelName();
+            throw ProsperoLogger.ROOT_LOGGER.emptyChannelName();
         }
 
         try {
             this.galleonProvisioningConfig = ProvisioningXmlParser.parse(provisioningFile);
         } catch (ProvisioningException e) {
-            throw Messages.MESSAGES.unableToParseConfiguration(provisioningFile, e);
+            throw ProsperoLogger.ROOT_LOGGER.unableToParseConfiguration(provisioningFile, e);
         }
 
         this.manifestVersion = currentVersions;
@@ -258,7 +258,7 @@ public class InstallationMetadata implements AutoCloseable {
         try {
             ProsperoMetadataUtils.writeManifest(this.manifestFile, this.manifest);
         } catch (IOException e) {
-            throw Messages.MESSAGES.unableToSaveConfiguration(manifestFile, e);
+            throw ProsperoLogger.ROOT_LOGGER.unableToSaveConfiguration(manifestFile, e);
         }
         // Add README.txt file to .installation directory to warn the files should not be edited.
         if (!Files.exists(readmeFile)) {
@@ -278,7 +278,7 @@ public class InstallationMetadata implements AutoCloseable {
             try {
                 ProsperoMetadataUtils.writeVersionRecord(versionFile, manifestVersion.get());
             } catch (IOException e) {
-                throw Messages.MESSAGES.unableToWriteFile(versionFile, e);
+                throw ProsperoLogger.ROOT_LOGGER.unableToWriteFile(versionFile, e);
             }
         }
 
@@ -291,7 +291,7 @@ public class InstallationMetadata implements AutoCloseable {
         try {
             ProsperoMetadataUtils.writeChannelsConfiguration(channelsFile, getProsperoConfig().getChannels());
         } catch (IOException e) {
-            throw Messages.MESSAGES.unableToSaveConfiguration(channelsFile, e);
+            throw ProsperoLogger.ROOT_LOGGER.unableToSaveConfiguration(channelsFile, e);
         }
     }
 
@@ -364,7 +364,7 @@ public class InstallationMetadata implements AutoCloseable {
                 gitStorage.close();
             } catch (Exception e) {
                 // log and ignore
-                Messages.MESSAGES.unableToCloseStore(e);
+                ProsperoLogger.ROOT_LOGGER.unableToCloseStore(e);
             }
         }
     }

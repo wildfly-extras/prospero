@@ -26,7 +26,7 @@ import org.jboss.galleon.xml.ProvisioningXmlParser;
 import org.wildfly.channel.Channel;
 import org.wildfly.channel.ChannelManifest;
 import org.wildfly.channel.UnresolvedMavenArtifactException;
-import org.wildfly.prospero.Messages;
+import org.wildfly.prospero.ProsperoLogger;
 import org.wildfly.prospero.api.Console;
 import org.wildfly.prospero.api.InstallationMetadata;
 import org.wildfly.prospero.api.SavedState;
@@ -88,7 +88,7 @@ class PrepareCandidateAction implements AutoCloseable{
                     },
                     mavenSessionManager.getProvisioningRepo().toAbsolutePath());
         } catch (UnresolvedMavenArtifactException e) {
-            throw new ArtifactResolutionException(Messages.MESSAGES.unableToResolve(), e, e.getUnresolvedArtifacts(),
+            throw new ArtifactResolutionException(ProsperoLogger.ROOT_LOGGER.unableToResolve(), e, e.getUnresolvedArtifacts(),
                     e.getAttemptedRepositories(), mavenSessionManager.isOffline());
         }
 
@@ -99,7 +99,7 @@ class PrepareCandidateAction implements AutoCloseable{
             writeProsperoMetadata(targetDir, galleonEnv.getRepositoryManager(), metadata.getProsperoConfig().getChannels(),
                     manifestRecord);
         } catch (IOException ex) {
-            throw new ProvisioningException(Messages.MESSAGES.unableToDownloadFile(), ex);
+            throw ProsperoLogger.ROOT_LOGGER.unableToDownloadFile(ex);
         }
 
         try {

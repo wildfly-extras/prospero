@@ -171,6 +171,10 @@ public interface CliMessages {
         return String.format(bundle.getString("prospero.channels.removed"), urlOrGav);
     }
 
+    default String channelNotFound() {
+        return bundle.getString("prospero.channels.error.notfound");
+    }
+
     /**
      * @see #invalidInstallationDir(Path)
      */
@@ -334,6 +338,14 @@ public interface CliMessages {
         return bundle.getString("prospero.general.error.resolve.offline");
     }
 
+    default String restoreFileNotExisted(Path path) {
+        return String.format(bundle.getString("prospero.clone.error.missing_file"), path);
+    }
+
+    default String installationMetaRestored(Path restorePath, Path installPath) {
+        return String.format(bundle.getString("prospero.clone.success"), restorePath, installPath);
+    }
+
     //
     // Exceptions
     //
@@ -380,7 +392,7 @@ public interface CliMessages {
     }
 
     default IllegalArgumentException updateCandidateWrongType(Path updateDir, ApplyCandidateAction.Type operation) {
-        return new IllegalArgumentException(String.format(bundle.getString("prospero.updates.apply.validation.candidate.wrong_type"), updateDir));
+        return new IllegalArgumentException(String.format(bundle.getString("prospero.updates.apply.validation.candidate.wrong_type"), updateDir, operation));
     }
 
     default IllegalArgumentException notCandidate(Path updateDir) {

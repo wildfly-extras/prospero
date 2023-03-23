@@ -19,7 +19,7 @@ package org.wildfly.prospero.galleon;
 
 import org.wildfly.channel.ArtifactCoordinate;
 import org.wildfly.channel.MavenArtifact;
-import org.wildfly.prospero.Messages;
+import org.wildfly.prospero.ProsperoLogger;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -71,7 +71,7 @@ public class MavenArtifactMapper {
         for (org.wildfly.channel.MavenArtifact channelArtifact : channelArtifacts) {
             String key = coordString(channelArtifact.getGroupId(), channelArtifact.getArtifactId(), channelArtifact.getExtension(), channelArtifact.getClassifier());
             if (!artifactMap.containsKey(key)) {
-                throw Messages.MESSAGES.unexpectedArtifact(key);
+                throw ProsperoLogger.ROOT_LOGGER.unexpectedArtifact(key);
             }
             for (org.jboss.galleon.universe.maven.MavenArtifact a : artifactMap.get(key)) {
                 resolve(a, channelArtifact);

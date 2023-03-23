@@ -22,7 +22,6 @@ import org.eclipse.aether.RepositorySystem;
 import org.jboss.galleon.ProvisioningException;
 import org.jboss.galleon.ProvisioningManager;
 import org.jboss.galleon.layout.ProvisioningLayoutFactory;
-import org.jboss.logging.Logger;
 import org.wildfly.channel.Channel;
 import org.wildfly.channel.ChannelManifest;
 import org.wildfly.channel.ChannelMetadataCoordinate;
@@ -31,7 +30,7 @@ import org.wildfly.channel.InvalidChannelMetadataException;
 import org.wildfly.channel.UnresolvedMavenArtifactException;
 import org.wildfly.channel.maven.VersionResolverFactory;
 import org.wildfly.channel.spi.MavenVersionsResolver;
-import org.wildfly.prospero.Messages;
+import org.wildfly.prospero.ProsperoLogger;
 import org.wildfly.prospero.api.Console;
 import org.wildfly.prospero.api.exceptions.ChannelDefinitionException;
 import org.wildfly.prospero.api.exceptions.MetadataException;
@@ -67,8 +66,6 @@ public class GalleonEnvironment {
     private final ChannelSession channelSession;
     private final List<Channel> channels;
 
-    private static final Logger logger = Logger.getLogger(GalleonEnvironment.class);
-
     private GalleonEnvironment(Builder builder) throws ProvisioningException, MetadataException, ChannelDefinitionException, UnresolvedChannelMetadataException {
         Optional<Console> console = Optional.ofNullable(builder.console);
         Optional<ChannelManifest> restoreManifest = Optional.ofNullable(builder.manifest);
@@ -87,7 +84,7 @@ public class GalleonEnvironment {
         try {
             factory = new CachedVersionResolverFactory(new VersionResolverFactory(system, session), sourceServerPath, system, session);
         } catch (IOException e) {
-            logger.debug("Unable to read artifact cache, falling back to Maven resolver.", e);
+            ProsperoLogger.ROOT_LOGGER.debug("Unable to read artifact cache, falling back to Maven resolver.", e);
             factory = new VersionResolverFactory(system, session);
         }
         channelSession = initChannelSession(session, factory);
@@ -100,18 +97,16 @@ public class GalleonEnvironment {
         provisioningManager = GalleonUtils.getProvisioningManager(builder.installDir, repositoryManager, builder.fpTracker);
 
         final ProvisioningLayoutFactory layoutFactory = provisioningManager.getLayoutFactory();
-        if (console.isPresent()) {
-            Stream.of(ProvisioningLayoutFactory.TRACK_LAYOUT_BUILD,
-                      ProvisioningLayoutFactory.TRACK_PACKAGES,
-                      ProvisioningLayoutFactory.TRACK_CONFIGS,
-                      TRACK_JBMODULES,
-                      TRACK_JBEXAMPLES)
-                    .forEach(t->layoutFactory.setProgressCallback(t, new GalleonCallbackAdapter(console.get(), t)));
+        Stream.of(ProvisioningLayoutFactory.TRACK_LAYOUT_BUILD,
+                  ProvisioningLayoutFactory.TRACK_PACKAGES,
+                  ProvisioningLayoutFactory.TRACK_CONFIGS,
+                  TRACK_JBMODULES,
+                  TRACK_JBEXAMPLES)
+                .forEach(t->layoutFactory.setProgressCallback(t, new GalleonCallbackAdapter(console.orElse(null), t)));
 
-            final DownloadsCallbackAdapter callback = new DownloadsCallbackAdapter(console.get());
-            session.setTransferListener(callback);
-            layoutFactory.setProgressCallback(TRACK_JB_ARTIFACTS_RESOLVE, callback);
-        }
+        final DownloadsCallbackAdapter callback = new DownloadsCallbackAdapter(console.orElse(null));
+        session.setTransferListener(callback);
+        layoutFactory.setProgressCallback(TRACK_JB_ARTIFACTS_RESOLVE, callback);
     }
 
     private ChannelSession initChannelSession(DefaultRepositorySystemSession session, MavenVersionsResolver.Factory factory) throws UnresolvedChannelMetadataException, ChannelDefinitionException {
@@ -123,19 +118,19 @@ public class GalleonEnvironment {
                     .map(a -> new ChannelMetadataCoordinate(a.getGroupId(), a.getArtifactId(), a.getVersion(), a.getClassifier(), a.getExtension()))
                     .collect(Collectors.toSet());
 
-            throw new UnresolvedChannelMetadataException(Messages.MESSAGES.unableToResolve(), e, missingArtifacts,
+            throw new UnresolvedChannelMetadataException(ProsperoLogger.ROOT_LOGGER.unableToResolve(), e, missingArtifacts,
                     e.getAttemptedRepositories(), session.isOffline());
         } catch (InvalidChannelMetadataException e) {
             if (e.getCause() instanceof FileNotFoundException) {
                 final String url = e.getValidationMessages().get(0);
                 try {
                     final ChannelMetadataCoordinate coord = new ChannelMetadataCoordinate(new URL(url));
-                    throw new UnresolvedChannelMetadataException(Messages.MESSAGES.unableToResolve(), e, Set.of(coord), Collections.emptySet(), session.isOffline());
+                    throw new UnresolvedChannelMetadataException(ProsperoLogger.ROOT_LOGGER.unableToResolve(), e, Set.of(coord), Collections.emptySet(), session.isOffline());
                 } catch (MalformedURLException ex) {
-                    throw Messages.MESSAGES.invalidManifest(e);
+                    throw ProsperoLogger.ROOT_LOGGER.invalidManifest(e);
                 }
             }
-            throw Messages.MESSAGES.invalidManifest(e);
+            throw ProsperoLogger.ROOT_LOGGER.invalidManifest(e);
         }
         return channelSession;
     }

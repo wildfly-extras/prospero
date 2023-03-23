@@ -1,6 +1,7 @@
 package org.wildfly.prospero.spi;
 
 import org.jboss.galleon.ProvisioningException;
+import org.jboss.logging.Logger;
 import org.wildfly.channel.ChannelManifestCoordinate;
 import org.wildfly.channel.MavenCoordinate;
 import org.wildfly.installationmanager.ArtifactChange;
@@ -12,12 +13,13 @@ import org.wildfly.installationmanager.MavenOptions;
 import org.wildfly.installationmanager.OperationNotAvailableException;
 import org.wildfly.installationmanager.Repository;
 import org.wildfly.installationmanager.spi.InstallationManager;
-import org.wildfly.prospero.Messages;
+import org.wildfly.prospero.ProsperoLogger;
 import org.wildfly.prospero.actions.InstallationExportAction;
 import org.wildfly.prospero.actions.InstallationHistoryAction;
 import org.wildfly.prospero.actions.MetadataAction;
 import org.wildfly.prospero.actions.UpdateAction;
 import org.wildfly.prospero.api.MavenOptions.Builder;
+import org.wildfly.prospero.galleon.GalleonCallbackAdapter;
 import org.wildfly.prospero.spi.internal.CliProvider;
 import org.wildfly.prospero.api.SavedState;
 import org.wildfly.prospero.api.exceptions.MetadataException;
@@ -39,6 +41,8 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 
 public class ProsperoInstallationManager implements InstallationManager {
+
+    private static final Logger logger = Logger.getLogger(GalleonCallbackAdapter.class);
 
     private final ActionFactory actionFactory;
     private Path installationDir;
@@ -62,6 +66,7 @@ public class ProsperoInstallationManager implements InstallationManager {
 
     @Override
     public List<HistoryResult> history() throws Exception {
+        logger.info("Listing installation history");
         final InstallationHistoryAction historyAction = actionFactory.getHistoryAction();
         final List<SavedState> revisions = historyAction.getRevisions();
         final List<HistoryResult> results = new ArrayList<>();
@@ -144,7 +149,7 @@ public class ProsperoInstallationManager implements InstallationManager {
     @Override
     public void changeChannel(Channel newChannel) throws OperationException {
         if (newChannel.getName() == null || newChannel.getName().isEmpty()) {
-            throw Messages.MESSAGES.emptyChannelName();
+            throw ProsperoLogger.ROOT_LOGGER.emptyChannelName();
         }
         try (final MetadataAction metadataAction = actionFactory.getMetadataAction()) {
             metadataAction.changeChannel(newChannel.getName(), mapChannel(newChannel));
@@ -165,7 +170,7 @@ public class ProsperoInstallationManager implements InstallationManager {
             String timestamp = LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyyMMddHHmmss"));
             snapshotPath = targetPath.resolve("im-snapshot-" + timestamp + ".zip").toAbsolutePath();
         } else {
-            throw Messages.MESSAGES.fileAlreadyExists(targetPath);
+            throw ProsperoLogger.ROOT_LOGGER.fileAlreadyExists(targetPath);
         }
 
         final InstallationExportAction installationExportAction = actionFactory.getInstallationExportAction();

@@ -44,7 +44,7 @@ import org.wildfly.channel.Channel;
 import org.wildfly.channel.ChannelManifestCoordinate;
 import org.wildfly.channel.InvalidChannelMetadataException;
 import org.wildfly.channel.Repository;
-import org.wildfly.prospero.Messages;
+import org.wildfly.prospero.ProsperoLogger;
 import org.wildfly.prospero.actions.ProvisioningAction;
 import org.wildfly.prospero.api.KnownFeaturePacks;
 import org.wildfly.prospero.api.MavenOptions;
@@ -126,7 +126,7 @@ public class InstallCommandTest extends AbstractMavenCommandTest {
         int exitCode = commandLine.execute(CliConstants.Commands.INSTALL, CliConstants.DIR, "test", CliConstants.FPL, KNOWN_FPL,
                 CliConstants.CHANNELS, channelsFile.getAbsolutePath());
         assertEquals(ReturnCodes.PROCESSING_ERROR, exitCode);
-        assertTrue("output: " + getErrorOutput(), getErrorOutput().contains(Messages.MESSAGES
+        assertTrue("output: " + getErrorOutput(), getErrorOutput().contains(ProsperoLogger.ROOT_LOGGER
                 .invalidChannel(new InvalidChannelMetadataException(null, Collections.emptyList())).getMessage()));
     }
 
