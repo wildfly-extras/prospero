@@ -1,5 +1,4 @@
 #!/bin/bash
-
 if [ -n "${DEBUG}" ];
 then
   JAVA_OPTS='-agentlib:jdwp=transport=dt_socket,server=y,suspend=y,address=*:8787'
