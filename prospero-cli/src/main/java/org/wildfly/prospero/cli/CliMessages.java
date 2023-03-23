@@ -398,4 +398,9 @@ public interface CliMessages {
     default IllegalArgumentException nonEmptyTargetFolder() {
         return new IllegalArgumentException(bundle.getString("prospero.updates.build.validation.dir.not_empty"));
     }
+
+    default ArgumentParsingException unknownInstallationProfile(String profileName, String candidates) {
+        return new ArgumentParsingException(String.format(bundle.getString("prospero.install.validation.unknown_profile"), profileName),
+                String.format(bundle.getString("prospero.install.validation.unknown_profile.details"), candidates));
+    }
 }

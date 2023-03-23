@@ -61,7 +61,7 @@ public class ProvisioningDefinitionTest {
 
     @Test
     public void setChannelWithFileUrl() throws Exception {
-        final ProvisioningDefinition.Builder builder = new ProvisioningDefinition.Builder().setFpl(EAP_FPL);
+        final ProvisioningDefinition.Builder builder = new ProvisioningDefinition.Builder().setProfile(EAP_FPL);
 
         builder.setManifest("file:/tmp/foo.bar");
         final ProvisioningDefinition definition = builder.build();
@@ -77,7 +77,7 @@ public class ProvisioningDefinitionTest {
 
     @Test
     public void setChannelWithHttpUrl() throws Exception {
-        final ProvisioningDefinition.Builder builder = new ProvisioningDefinition.Builder().setFpl(EAP_FPL);
+        final ProvisioningDefinition.Builder builder = new ProvisioningDefinition.Builder().setProfile(EAP_FPL);
 
         builder.setManifest("http://localhost/foo.bar");
         final ProvisioningDefinition definition = builder.build();
@@ -93,7 +93,7 @@ public class ProvisioningDefinitionTest {
 
     @Test
     public void setChannelWithLocalFilePath() throws Exception {
-        final ProvisioningDefinition.Builder builder = new ProvisioningDefinition.Builder().setFpl(EAP_FPL);
+        final ProvisioningDefinition.Builder builder = new ProvisioningDefinition.Builder().setProfile(EAP_FPL);
 
         builder.setManifest("tmp/foo.bar");
         final ProvisioningDefinition definition = builder.build();
@@ -110,7 +110,7 @@ public class ProvisioningDefinitionTest {
     @Test
     public void addAdditionalRemoteRepos() throws Exception {
         final ProvisioningDefinition.Builder builder = new ProvisioningDefinition.Builder()
-                .setFpl(EAP_FPL)
+                .setProfile(EAP_FPL)
                 .setOverrideRepositories(Arrays.asList(
                         new Repository("temp-repo-0", "http://test.repo1"),
                         new Repository("temp-repo-1", "http://test.repo2")));
@@ -161,8 +161,8 @@ public class ProvisioningDefinitionTest {
     }
 
     @Test
-    public void knownFplWithoutChannel() throws Exception {
-        final ProvisioningDefinition.Builder builder = new ProvisioningDefinition.Builder().setFpl("no-channel");
+    public void knownProfileWithoutChannel() throws Exception {
+        final ProvisioningDefinition.Builder builder = new ProvisioningDefinition.Builder().setProfile("no-channel");
 
         try {
             ProvisioningDefinition definition = builder.build();
@@ -174,8 +174,8 @@ public class ProvisioningDefinitionTest {
     }
 
     @Test
-    public void knownFplWithMultipleChannels() throws Exception {
-        final ProvisioningDefinition.Builder builder = new ProvisioningDefinition.Builder().setFpl("multi-channel");
+    public void knownProfileWithMultipleChannels() throws Exception {
+        final ProvisioningDefinition.Builder builder = new ProvisioningDefinition.Builder().setProfile("multi-channel");
 
         final ProvisioningDefinition def = builder.build();
         assertThat(def.resolveChannels(VERSION_RESOLVER_FACTORY).stream().map(c -> c.getManifestCoordinate().getMaven()))
@@ -185,9 +185,9 @@ public class ProvisioningDefinitionTest {
     }
 
     @Test
-    public void knownFplWithBothManifestAndRepositories() throws Exception {
+    public void knownProfileWithBothManifestAndRepositories() throws Exception {
         final ProvisioningDefinition.Builder builder = new ProvisioningDefinition.Builder()
-                .setFpl("multi-channel")
+                .setProfile("multi-channel")
                 .setManifest("file:/tmp/foo.bar")
                 .setOverrideRepositories(Arrays.asList(
                         new Repository("temp-repo-0", "http://test.repo1"),
@@ -208,7 +208,7 @@ public class ProvisioningDefinitionTest {
     }
 
     @Test
-    public void knownFplWithConfig() throws Exception {
+    public void knownProfileWithConfig() throws Exception {
         final File file = temp.newFile();
 
         MetadataTestUtils.writeChannels(file.toPath(), List.of(new Channel("test", null, null,
@@ -216,7 +216,7 @@ public class ProvisioningDefinitionTest {
                 new ChannelManifestCoordinate("new.test", "gav"),
                 null, null)));
 
-        ProvisioningDefinition def = new ProvisioningDefinition.Builder().setFpl("multi-channel")
+        ProvisioningDefinition def = new ProvisioningDefinition.Builder().setProfile("multi-channel")
                 .setChannelCoordinates(file.toPath().toString()).build();
 
         VersionResolverFactory versionResolverFactory = new VersionResolverFactory(null, null);
@@ -236,11 +236,20 @@ public class ProvisioningDefinitionTest {
     public void resolveInvalidChannelThrowsException() throws Exception {
         final File channel = temp.newFile();
         Files.writeString(channel.toPath(), "schemaVersion: 2.0.0");
-        final ProvisioningDefinition def = new ProvisioningDefinition.Builder().setFpl("multi-channel")
+        final ProvisioningDefinition def = new ProvisioningDefinition.Builder().setProfile("multi-channel")
                 .setChannelCoordinates(channel.toURI().toString())
                 .build();
 
         assertThrows(ChannelDefinitionException.class, ()-> def.resolveChannels(null));
+    }
+
+    @Test
+    public void unknownProfileNameThrowsException() throws Exception {
+        final ProvisioningDefinition.Builder builder = new ProvisioningDefinition.Builder().setProfile("idontexist");
+
+        assertThrows(IllegalArgumentException.class, ()-> {
+            builder.build();
+        });
     }
 
     private void verifyFeaturePackLocation(ProvisioningDefinition definition) throws ProvisioningException, XMLStreamException {

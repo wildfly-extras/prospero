@@ -91,8 +91,12 @@ public class ProvisioningDefinition {
         this.overrideRepositories.addAll(builder.overrideRepositories);
         this.channelCoordinates.addAll(builder.channelCoordinates);
 
-        if (builder.fpl.isPresent() && KnownFeaturePacks.isWellKnownName(builder.fpl.get())) { // if known FP name
-            KnownFeaturePack featurePackInfo = KnownFeaturePacks.getByName(builder.fpl.get());
+        if (builder.profile.isPresent()) {
+
+            if (!KnownFeaturePacks.isWellKnownName(builder.profile.get())) { // if known FP name
+                throw ProsperoLogger.ROOT_LOGGER.unknownInstallationProfile(builder.profile.get(), String.join(",", KnownFeaturePacks.getNames()));
+            }
+            KnownFeaturePack featurePackInfo = KnownFeaturePacks.getByName(builder.profile.get());
             this.fpl = null;
             this.definition = featurePackInfo.getGalleonConfiguration();
             if (this.channelCoordinates.isEmpty()) { // no channels provided by user
@@ -102,7 +106,7 @@ public class ProvisioningDefinition {
                 } else if (!featurePackInfo.getChannels().isEmpty()) { // if no manifest given, use channels from known FP
                     this.channels = featurePackInfo.getChannels();
                 } else {
-                    throw ProsperoLogger.ROOT_LOGGER.fplDefinitionDoesntContainChannel(builder.fpl.get());
+                    throw ProsperoLogger.ROOT_LOGGER.fplDefinitionDoesntContainChannel(builder.profile.get());
                 }
             }
         } else {
@@ -238,6 +242,7 @@ public class ProvisioningDefinition {
         private List<Repository> overrideRepositories = Collections.emptyList();
         private Optional<ChannelManifestCoordinate> manifest = Optional.empty();
         private List<ChannelCoordinate> channelCoordinates = Collections.emptyList();
+        private Optional<String> profile = Optional.empty();
 
         public ProvisioningDefinition build() throws MetadataException, NoChannelException {
             return new ProvisioningDefinition(this);
@@ -275,6 +280,11 @@ public class ProvisioningDefinition {
 
         public Builder setDefinitionFile(URI provisionDefinition) {
             this.definitionFile = Optional.ofNullable(provisionDefinition);
+            return this;
+        }
+
+        public Builder setProfile(String profile) {
+            this.profile = Optional.ofNullable(profile);
             return this;
         }
     }
