@@ -67,6 +67,7 @@ public class CliMain {
 
     public static CommandLine createCommandLine(CliConsole console, ActionFactory actionFactory) {
         CommandLine commandLine = new CommandLine(new MainCommand(console));
+        commandLine.setCommandName(DistributionInfo.DIST_NAME);
 
         commandLine.addSubcommand(new InstallCommand(console, actionFactory));
         final UpdateCommand updateCommand = new UpdateCommand(console, actionFactory);
