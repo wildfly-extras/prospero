@@ -106,8 +106,8 @@ public class InstallCommandTest extends AbstractMavenCommandTest {
         int exitCode = commandLine.execute(CliConstants.Commands.INSTALL, CliConstants.DIR, "test");
         assertEquals(ReturnCodes.INVALID_ARGUMENTS, exitCode);
         assertTrue(getErrorOutput().contains(String.format(
-                "Missing required argument (specify one of these): (%s=%s | %s=%s)",
-                CliConstants.FPL, CliConstants.FEATURE_PACK_REFERENCE, CliConstants.DEFINITION, CliConstants.PATH)));
+                "Missing required argument (specify one of these): (%s=%s | %s=%s | %s=%s)",
+                CliConstants.PROFILE, CliConstants.PROFILE_REFERENCE, CliConstants.FPL, CliConstants.FEATURE_PACK_REFERENCE, CliConstants.DEFINITION, CliConstants.PATH)));
     }
 
     @Test
@@ -123,7 +123,7 @@ public class InstallCommandTest extends AbstractMavenCommandTest {
     public void errorIfChannelsIsNotValid() throws Exception {
         final File channelsFile = temporaryFolder.newFile();
         Files.writeString(channelsFile.toPath(), "schemaVersion: 2.0.0\n");
-        int exitCode = commandLine.execute(CliConstants.Commands.INSTALL, CliConstants.DIR, "test", CliConstants.FPL, KNOWN_FPL,
+        int exitCode = commandLine.execute(CliConstants.Commands.INSTALL, CliConstants.DIR, "test", CliConstants.PROFILE, KNOWN_FPL,
                 CliConstants.CHANNELS, channelsFile.getAbsolutePath());
         assertEquals(ReturnCodes.PROCESSING_ERROR, exitCode);
         assertTrue("output: " + getErrorOutput(), getErrorOutput().contains(ProsperoLogger.ROOT_LOGGER
@@ -148,7 +148,7 @@ public class InstallCommandTest extends AbstractMavenCommandTest {
 
     @Test
     public void callProvisionOnInstallKnownCommand() throws Exception {
-        int exitCode = commandLine.execute(CliConstants.Commands.INSTALL, CliConstants.DIR, "test", CliConstants.FPL, KNOWN_FPL);
+        int exitCode = commandLine.execute(CliConstants.Commands.INSTALL, CliConstants.DIR, "test", CliConstants.PROFILE, KNOWN_FPL);
         commandLine.getOut();
         commandLine.getErr();
 
@@ -165,7 +165,7 @@ public class InstallCommandTest extends AbstractMavenCommandTest {
         Channel channel = createChannel("dev", "wildfly-channel", "http://test.test", "org.wildfly");
         MetadataTestUtils.writeChannels(channelsFile.toPath(), List.of(channel));
 
-        int exitCode = commandLine.execute(CliConstants.Commands.INSTALL, CliConstants.DIR, "test", CliConstants.FPL, KNOWN_FPL,
+        int exitCode = commandLine.execute(CliConstants.Commands.INSTALL, CliConstants.DIR, "test", CliConstants.PROFILE, KNOWN_FPL,
                 CliConstants.CHANNELS, channelsFile.getAbsolutePath());
 
         assertEquals(ReturnCodes.SUCCESS, exitCode);
@@ -272,7 +272,7 @@ public class InstallCommandTest extends AbstractMavenCommandTest {
     @Override
     protected String[] getDefaultArguments() {
         return new String[]{CliConstants.Commands.INSTALL, CliConstants.DIR, "test",
-                CliConstants.FPL, KNOWN_FPL};
+                CliConstants.PROFILE, KNOWN_FPL};
     }
 
     private static Channel createChannel(String test, String test1, String url, String groupId) {

@@ -307,6 +307,9 @@ public interface ProsperoLogger extends BasicLogger {
     @Message(id = 247, value = "Invalid channel definition")
     ChannelDefinitionException invalidChannel(@Cause InvalidChannelMetadataException e);
 
-    @Message(id = 248, value = "Provided FPL has invalid format `%s`.")
+    @Message(id = 248, value = "Provided feature pack location has invalid format `%s`. Expected <groupId:artifactId>")
     String invalidFpl(String fplText);
+
+    @Message(id = 249, value = "Unrecognized profile %s, did you mean one of [%s]")
+    IllegalArgumentException unknownInstallationProfile(String profileName, String options);
 }

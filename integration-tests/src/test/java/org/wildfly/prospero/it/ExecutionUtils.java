@@ -52,7 +52,7 @@ public class ExecutionUtils {
         String[] execArray = mergeArrays(new String[] {script.toString()}, execution.args);
         Process process = new ProcessBuilder(execArray)
                 .redirectErrorStream(true)
-                .redirectOutput(new File("test-out.log"))
+                .redirectOutput(new File("target/test-out.log"))
                 .start();
 
         if (!process.waitFor(execution.timeLimit, execution.timeUnit)) {

@@ -59,6 +59,8 @@ public final class CliConstants {
 
     // Parameter and option labels:
 
+    public static final String PROFILE = "--profile";
+    public static final String PROFILE_REFERENCE = "<installation-profile>";
     public static final String CHANNEL_REFERENCE = "<channel-reference>";
     public static final String CHANNEL_MANIFEST_REFERENCE = "<manifest-reference>";
     public static final String FEATURE_PACK_REFERENCE = "<feature-pack-reference>";

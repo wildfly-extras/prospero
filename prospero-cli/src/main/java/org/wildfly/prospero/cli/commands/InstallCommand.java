@@ -57,11 +57,19 @@ public class InstallCommand extends AbstractInstallCommand {
 
     static class FeaturePackOrDefinition {
         @CommandLine.Option(
-                names = CliConstants.FPL,
-                paramLabel = CliConstants.FEATURE_PACK_REFERENCE,
+                names = CliConstants.PROFILE,
+                paramLabel = CliConstants.PROFILE_REFERENCE,
                 completionCandidates = FeaturePackCandidates.class,
                 required = true,
                 order = 1
+        )
+        Optional<String> profile;
+
+        @CommandLine.Option(
+                names = CliConstants.FPL,
+                paramLabel = CliConstants.FEATURE_PACK_REFERENCE,
+                required = true,
+                order = 2
         )
         Optional<String> fpl;
 
@@ -69,7 +77,7 @@ public class InstallCommand extends AbstractInstallCommand {
                 names = CliConstants.DEFINITION,
                 paramLabel = CliConstants.PATH,
                 required = true,
-                order = 2
+                order = 3
         )
         Optional<Path> definition;
     }
@@ -83,10 +91,14 @@ public class InstallCommand extends AbstractInstallCommand {
         final long startTime = System.currentTimeMillis();
 
         // following is checked by picocli, adding this to avoid IDE warnings
-        assert featurePackOrDefinition.definition.isPresent() || featurePackOrDefinition.fpl.isPresent();
-        if (featurePackOrDefinition.definition.isEmpty() && !isStandardFpl(featurePackOrDefinition.fpl.get())
-                && channelCoordinates.isEmpty() && manifestCoordinate.isEmpty()) {
+        assert featurePackOrDefinition.definition.isPresent() || featurePackOrDefinition.fpl.isPresent() || featurePackOrDefinition.profile.isPresent();
+
+        if (featurePackOrDefinition.profile.isEmpty() && channelCoordinates.isEmpty() && manifestCoordinate.isEmpty()) {
             throw CliMessages.MESSAGES.channelsMandatoryWhenCustomFpl(String.join(",", KnownFeaturePacks.getNames()));
+        }
+
+        if (featurePackOrDefinition.profile.isPresent() && !isStandardFpl(featurePackOrDefinition.profile.get())) {
+            throw CliMessages.MESSAGES.unknownInstallationProfile(featurePackOrDefinition.profile.get(), String.join(",", KnownFeaturePacks.getNames()));
         }
 
         if (!channelCoordinates.isEmpty() && manifestCoordinate.isPresent()) {

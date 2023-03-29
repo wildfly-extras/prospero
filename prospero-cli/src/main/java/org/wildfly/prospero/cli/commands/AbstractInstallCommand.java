@@ -103,6 +103,7 @@ public abstract class AbstractInstallCommand extends AbstractCommand {
     protected ProvisioningDefinition buildDefinition() throws MetadataException, NoChannelException, ArgumentParsingException {
         final ProvisioningDefinition provisioningDefinition = ProvisioningDefinition.builder()
                 .setFpl(featurePackOrDefinition.fpl.orElse(null))
+                .setProfile(featurePackOrDefinition.profile.orElse(null))
                 .setManifest(manifestCoordinate.orElse(null))
                 .setChannelCoordinates(channelCoordinates)
                 .setOverrideRepositories(RepositoryDefinition.from(remoteRepositories))
