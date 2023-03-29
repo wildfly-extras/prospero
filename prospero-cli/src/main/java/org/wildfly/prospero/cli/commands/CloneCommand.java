@@ -46,7 +46,7 @@ public class CloneCommand extends AbstractCommand {
     public void addSubCommands(CommandLine rootCmd) {
         CommandLine cloneCmd = rootCmd.getSubcommands().get(CliConstants.Commands.CLONE);
         cloneCmd.addSubcommand(new CloneExportCommand(console, actionFactory))
-          .addSubcommand(new CloneRestoreCommand(console, actionFactory));
+          .addSubcommand(new CloneRecreateCommand(console, actionFactory));
     }
 
     @Override
@@ -81,8 +81,8 @@ public class CloneCommand extends AbstractCommand {
         }
     }
 
-    @CommandLine.Command(name = CliConstants.Commands.RESTORE)
-    private static class CloneRestoreCommand extends AbstractCommand {
+    @CommandLine.Command(name = CliConstants.Commands.RECREATE)
+    private static class CloneRecreateCommand extends AbstractCommand {
 
         @CommandLine.Option(names = CliConstants.DIR, order = 1)
         Optional<Path> directory;
@@ -101,7 +101,7 @@ public class CloneCommand extends AbstractCommand {
         @CommandLine.Option(names = CliConstants.OFFLINE, order = 5)
         Optional<Boolean> offline = Optional.empty();
 
-        CloneRestoreCommand(CliConsole console, ActionFactory actionFactory) {
+        CloneRecreateCommand(CliConsole console, ActionFactory actionFactory) {
             super(console, actionFactory);
         }
 

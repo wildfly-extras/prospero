@@ -143,13 +143,14 @@ public class ApplyUpdateCommandTest extends AbstractConsoleTest {
         final Path updatePath = mockInstallation("update");
         final Path targetPath = mockInstallation("target");
         Files.deleteIfExists(updatePath.resolve(MarkerFile.UPDATE_MARKER_FILE));
+        when(applyCandidateAction.verifyCandidate(ApplyCandidateAction.Type.UPDATE)).thenReturn(ApplyCandidateAction.ValidationResult.NOT_CANDIDATE);
 
         int exitCode = commandLine.execute(CliConstants.Commands.UPDATE, CliConstants.Commands.APPLY,
                 CliConstants.UPDATE_DIR, updatePath.toString(),
                 CliConstants.DIR, targetPath.toString());
 
         Assert.assertEquals(getErrorOutput(), ReturnCodes.INVALID_ARGUMENTS, exitCode);
-        assertTrue(getErrorOutput().contains(CliMessages.MESSAGES.invalidUpdateCandidate(updatePath)
+        assertTrue(getErrorOutput().contains(CliMessages.MESSAGES.notCandidate(updatePath)
                 .getMessage()));
         verify(applyCandidateAction, never()).applyUpdate(ApplyCandidateAction.Type.UPDATE);
     }

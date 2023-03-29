@@ -144,7 +144,7 @@ public class CloneTest extends WfCoreTestBase {
     public void testRestore() throws Exception {
         ChannelManifest installedManifest = install(targetDir, MetadataTestUtils.prepareChannel(CHANNEL_BASE_CORE_19));
         new InstallationExportAction(targetDir).export(exportPath);
-        ExecutionUtils.prosperoExecution(CliConstants.Commands.CLONE, CliConstants.Commands.RESTORE,
+        ExecutionUtils.prosperoExecution(CliConstants.Commands.CLONE, CliConstants.Commands.RECREATE,
             CliConstants.DIR, importDir.toString(),
             CliConstants.ARG_PATH, exportPath.toString()
           )
@@ -164,7 +164,7 @@ public class CloneTest extends WfCoreTestBase {
         });
         ProsperoMetadataUtils.writeManifest(ProsperoMetadataUtils.manifestPath(targetDir), manifest);
         new InstallationExportAction(targetDir).export(exportPath);
-        ExecutionUtils.prosperoExecution(CliConstants.Commands.CLONE, CliConstants.Commands.RESTORE,
+        ExecutionUtils.prosperoExecution(CliConstants.Commands.CLONE, CliConstants.Commands.RECREATE,
             CliConstants.DIR, importDir.toString(),
             CliConstants.ARG_PATH, exportPath.toString(),
             CliConstants.NO_LOCAL_MAVEN_CACHE,

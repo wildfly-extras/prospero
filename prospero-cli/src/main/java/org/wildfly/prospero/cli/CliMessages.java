@@ -383,10 +383,6 @@ public interface CliMessages {
         return new ArgumentParsingException(String.format(bundle.getString("prospero.general.validation.repo_format"), repoKey));
     }
 
-    default IllegalArgumentException invalidUpdateCandidate(Path updateDir) {
-        return new IllegalArgumentException(String.format(bundle.getString("prospero.updates.apply.validation.candidate.wrong_candidate"), updateDir));
-    }
-
     default IllegalArgumentException updateCandidateStateNotMatched(Path targetDir, Path updateDir) {
         return new IllegalArgumentException(String.format(bundle.getString("prospero.updates.apply.validation.candidate.outdated"), updateDir));
     }

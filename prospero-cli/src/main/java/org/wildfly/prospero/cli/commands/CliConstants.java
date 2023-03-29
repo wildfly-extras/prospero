@@ -49,12 +49,12 @@ public final class CliConstants {
         public static final String CUSTOMIZATION_PROMOTE = "promote";
 
         public static final String CLONE = "clone";
-        public static final String RESTORE = "restore";
+        public static final String RECREATE = "recreate";
         public static final String EXPORT = "export";
         public static final String PREPARE = "prepare";
         public static final String PERFORM = "perform";
         public static final String APPLY = "apply";
-        public static final String PRINT_LICENSES = "print-licences";
+        public static final String PRINT_LICENSES = "print-licenses";
     }
 
     // Parameter and option labels:
@@ -92,5 +92,5 @@ public final class CliConstants {
     public static final String CUSTOMIZATION_ARCHIVE = "--archive";
     public static final String ARG_PATH = "--path";
 
-    public static final String ACCEPT_AGREEMENTS = "--accept-agreements";
+    public static final String ACCEPT_AGREEMENTS = "--accept-license-agreements";
 }

@@ -43,7 +43,6 @@ import org.wildfly.prospero.cli.FileConflictPrinter;
 import org.wildfly.prospero.cli.RepositoryDefinition;
 import org.wildfly.prospero.cli.ReturnCodes;
 import org.wildfly.prospero.galleon.GalleonUtils;
-import org.wildfly.prospero.updates.MarkerFile;
 import org.wildfly.prospero.updates.UpdateSet;
 import picocli.CommandLine;
 
@@ -194,10 +193,6 @@ public class UpdateCommand extends AbstractParentCommand {
             final Path installationDir = determineInstallationDirectory(directory);
 
             verifyDirectoryContainsInstallation(updateDir);
-
-            if (!Files.exists(updateDir.resolve(MarkerFile.UPDATE_MARKER_FILE))) {
-                throw CliMessages.MESSAGES.invalidUpdateCandidate(updateDir);
-            }
 
             final ApplyCandidateAction applyCandidateAction = actionFactory.applyUpdate(installationDir.toAbsolutePath(), updateDir.toAbsolutePath());
 

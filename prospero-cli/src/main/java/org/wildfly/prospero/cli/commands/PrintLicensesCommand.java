@@ -47,7 +47,7 @@ public class PrintLicensesCommand extends AbstractInstallCommand {
     @Override
     public Integer call() throws Exception {
 
-        final Path tempDirectory = Files.createTempDirectory("eap-installer");
+        final Path tempDirectory = Files.createTempDirectory("tmp-installer");
         try {
             final ProvisioningDefinition provisioningDefinition = buildDefinition();
             final MavenOptions mavenOptions = getMavenOptions();
