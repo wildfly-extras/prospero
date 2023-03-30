@@ -31,6 +31,7 @@ import org.wildfly.prospero.api.Console;
 import org.wildfly.prospero.api.InstallationMetadata;
 import org.wildfly.prospero.api.MavenOptions;
 import org.wildfly.prospero.api.RepositoryUtils;
+import org.wildfly.prospero.api.TemporaryRepositoriesHandler;
 import org.wildfly.prospero.api.exceptions.ArtifactResolutionException;
 import org.wildfly.prospero.api.exceptions.MetadataException;
 import org.wildfly.prospero.api.exceptions.OperationException;
@@ -43,6 +44,8 @@ import org.wildfly.prospero.galleon.ChannelMavenArtifactRepositoryManager;
 import java.io.IOException;
 import java.net.MalformedURLException;
 import java.nio.file.Path;
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
@@ -86,6 +89,22 @@ public class ProvisioningAction {
      * @param channels list of channels to resolve installed artifacts
      */
     public void provision(ProvisioningConfig provisioningConfig, List<Channel> channels)
+            throws MalformedURLException, ProvisioningException, OperationException {
+        provision(provisioningConfig, channels, Collections.emptyList());
+    }
+
+    /**
+     * Provision installation according to given ProvisioningDefinition.
+     * The {@code overrideRepositories} replace any repositories defined in {@code channels} for duration of this operation.
+     * They are not persisted in the provisioned configuration.
+     *
+     * <b>NOTE:</b> All required licenses are assumed to be accepted by calling this method.
+     *
+     * @param provisioningConfig prospero provisioning definition
+     * @param channels list of channels to resolve installed artifacts
+     * @param overwriteRepositories list of repositories to resolve installed artifacts from. They do not alter persisted channel definitions.
+     */
+    public void provision(ProvisioningConfig provisioningConfig, List<Channel> channels, List<Repository> overwriteRepositories)
             throws ProvisioningException, OperationException, MalformedURLException {
         ProsperoLogger.ROOT_LOGGER.startingProvision(installDir);
         channels = enforceChannelNames(channels);
@@ -94,6 +113,9 @@ public class ProvisioningAction {
             ProsperoLogger.ROOT_LOGGER.debug("Provisioning definition: " + provisioningConfig.toString());
             ProsperoLogger.ROOT_LOGGER.debug("Using channels: " + channels.stream().map(Channel::toString).collect(Collectors.joining(",")));
         }
+        final List<Channel> recordedChannels = new ArrayList<>(channels);
+
+        channels = TemporaryRepositoriesHandler.overrideRepositories(channels, overwriteRepositories);
 
         final GalleonEnvironment galleonEnv = GalleonEnvironment
                 .builder(installDir, channels, mavenSessionManager)
@@ -127,7 +149,7 @@ public class ProvisioningAction {
         if (ProsperoLogger.ROOT_LOGGER.isDebugEnabled()) {
             ProsperoLogger.ROOT_LOGGER.debug("Recording installed metadata");
         }
-        writeProsperoMetadata(installDir, galleonEnv.getRepositoryManager(), channels, manifestRecord);
+        writeProsperoMetadata(installDir, galleonEnv.getRepositoryManager(), recordedChannels, manifestRecord);
 
         try {
             final GalleonFeaturePackAnalyzer galleonFeaturePackAnalyzer = new GalleonFeaturePackAnalyzer(galleonEnv.getChannels(), mavenSessionManager);
