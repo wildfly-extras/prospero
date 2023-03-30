@@ -29,6 +29,7 @@ import org.wildfly.prospero.actions.ProvisioningAction;
 import org.wildfly.prospero.api.KnownFeaturePacks;
 import org.wildfly.prospero.api.MavenOptions;
 import org.wildfly.prospero.api.ProvisioningDefinition;
+import org.wildfly.prospero.api.TemporaryRepositoriesHandler;
 import org.wildfly.prospero.cli.ActionFactory;
 import org.wildfly.prospero.cli.CliConsole;
 import org.wildfly.prospero.cli.CliMessages;
@@ -122,11 +123,13 @@ public class InstallCommand extends AbstractInstallCommand {
         final MavenOptions mavenOptions = getMavenOptions();
         final ProvisioningConfig provisioningConfig = provisioningDefinition.toProvisioningConfig();
         final List<Channel> channels = resolveChannels(provisioningDefinition, mavenOptions);
+        final List<Repository> shadowRepositories = RepositoryDefinition.from(this.shadowRepositories);
 
         final ProvisioningAction provisioningAction = actionFactory.install(directory.toAbsolutePath(), mavenOptions,
                 console);
 
-        final List<License> pendingLicenses = provisioningAction.getPendingLicenses(provisioningConfig, channels);
+        final List<License> pendingLicenses = provisioningAction.getPendingLicenses(provisioningConfig,
+                TemporaryRepositoriesHandler.overrideRepositories(channels, shadowRepositories));
         if (!pendingLicenses.isEmpty()) {
             new LicensePrinter().print(pendingLicenses);
             System.out.println();
@@ -140,7 +143,6 @@ public class InstallCommand extends AbstractInstallCommand {
             }
         }
 
-        final List<Repository> shadowRepositories = RepositoryDefinition.from(this.shadowRepositories);
         provisioningAction.provision(provisioningConfig, channels, shadowRepositories);
 
         final float totalTime = (System.currentTimeMillis() - startTime) / 1000f;
