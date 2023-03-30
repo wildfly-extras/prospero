@@ -295,6 +295,17 @@ public class ApplyCandidateAction {
         return new UpdateSet(changes);
     }
 
+    /**
+     * returns the revision of the candidate server
+     * @return {@code SavedState}
+     * @throws MetadataException - if unable to read the candidate server metadata
+     */
+    public SavedState getCandidateRevision() throws MetadataException {
+        try (final InstallationMetadata metadata = InstallationMetadata.loadInstallation(updateDir)) {
+            return metadata.getRevisions().get(0);
+        }
+    }
+
     private boolean targetServerIsRunning() {
         return Files.exists(installationDir.resolve(STANDALONE_STARTUP_MARKER)) || Files.exists(installationDir.resolve(DOMAIN_STARTUP_MARKER));
     }

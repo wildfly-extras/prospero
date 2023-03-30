@@ -170,6 +170,22 @@ public class CliConsole implements Console {
         }
     }
 
+    public void changesFound(List<ArtifactChange> artifactUpdates) {
+        if (artifactUpdates.isEmpty()) {
+            getStdOut().println(CliMessages.MESSAGES.noChangesFound());
+        } else {
+            getStdOut().println(CliMessages.MESSAGES.changesFound());
+            for (ArtifactChange artifactUpdate : artifactUpdates) {
+                final Optional<String> newVersion = artifactUpdate.getNewVersion();
+                final Optional<String> oldVersion = artifactUpdate.getOldVersion();
+                final String artifactName = artifactUpdate.getArtifactName();
+
+                getStdOut().printf("  %-50s    %-20s ==>  %-20s%n", artifactName, oldVersion.orElse("[]"),
+                        newVersion.orElse("[]"));
+            }
+        }
+    }
+
     public boolean confirmUpdates() {
         return confirm(CliMessages.MESSAGES.continueWithUpdate(),
                 CliMessages.MESSAGES.applyingUpdates(),
