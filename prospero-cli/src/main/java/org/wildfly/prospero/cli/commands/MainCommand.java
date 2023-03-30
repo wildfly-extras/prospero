@@ -28,7 +28,7 @@ import org.wildfly.prospero.cli.CliConsole;
 import org.wildfly.prospero.cli.ReturnCodes;
 import picocli.CommandLine;
 
-@CommandLine.Command(name = CliConstants.Commands.MAIN_COMMAND, resourceBundle = "UsageMessages",
+@CommandLine.Command(name = "${prospero.dist.name}", resourceBundle = "UsageMessages",
         versionProvider = MainCommand.VersionProvider.class)
 public class MainCommand implements Callable<Integer> {
 
