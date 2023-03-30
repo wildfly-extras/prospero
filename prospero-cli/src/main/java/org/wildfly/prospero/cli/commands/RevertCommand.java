@@ -125,8 +125,8 @@ public class RevertCommand extends AbstractParentCommand {
         @CommandLine.Option(names = CliConstants.DIR)
         Optional<Path> directory;
 
-        @CommandLine.Option(names = CliConstants.UPDATE_DIR, required = true)
-        Path updateDirectory;
+        @CommandLine.Option(names = CliConstants.CANDIDATE_DIR, required = true)
+        Path candidateDirectory;
 
         @CommandLine.Option(names = {CliConstants.Y, CliConstants.YES})
         boolean yes;
@@ -139,9 +139,9 @@ public class RevertCommand extends AbstractParentCommand {
         public Integer call() throws Exception {
             final long startTime = System.currentTimeMillis();
             final Path installationDirectory = determineInstallationDirectory(directory);
-            final ApplyCandidateAction applyCandidateAction = actionFactory.applyUpdate(installationDirectory, updateDirectory.toAbsolutePath());
+            final ApplyCandidateAction applyCandidateAction = actionFactory.applyUpdate(installationDirectory, candidateDirectory.toAbsolutePath());
 
-            validateRevertCandidate(installationDirectory, updateDirectory, applyCandidateAction);
+            validateRevertCandidate(installationDirectory, candidateDirectory, applyCandidateAction);
 
             applyCandidate(console, applyCandidateAction, yes);
             final float totalTime = (System.currentTimeMillis() - startTime) / 1000f;
@@ -156,8 +156,8 @@ public class RevertCommand extends AbstractParentCommand {
         @CommandLine.Option(names = CliConstants.REVISION, required = true)
         String revision;
 
-        @CommandLine.Option(names = CliConstants.UPDATE_DIR, required = true)
-        Path updateDirectory;
+        @CommandLine.Option(names = CliConstants.CANDIDATE_DIR, required = true)
+        Path candidateDirectory;
 
         public PrepareCommand(CliConsole console, ActionFactory actionFactory) {
             super(console, actionFactory);
@@ -166,7 +166,7 @@ public class RevertCommand extends AbstractParentCommand {
         @Override
         public Integer call() throws Exception {
             final long startTime = System.currentTimeMillis();
-            verifyTargetDirectoryIsEmpty(updateDirectory);
+            verifyTargetDirectoryIsEmpty(candidateDirectory);
 
             final Path installationDirectory = determineInstallationDirectory(directory);
             final MavenOptions mavenOptions = parseMavenOptions();
@@ -174,7 +174,7 @@ public class RevertCommand extends AbstractParentCommand {
             final List<Repository> overrideRepositories = RepositoryDefinition.from(temporaryRepositories);
 
             InstallationHistoryAction historyAction = actionFactory.history(installationDirectory, console);
-            historyAction.prepareRevert(new SavedState(revision), mavenOptions, overrideRepositories, updateDirectory.toAbsolutePath());
+            historyAction.prepareRevert(new SavedState(revision), mavenOptions, overrideRepositories, candidateDirectory.toAbsolutePath());
             final float totalTime = (System.currentTimeMillis() - startTime) / 1000f;
             console.println(CliMessages.MESSAGES.operationCompleted(totalTime));
             return SUCCESS;

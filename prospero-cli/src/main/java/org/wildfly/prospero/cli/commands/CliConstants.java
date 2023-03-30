@@ -84,7 +84,7 @@ public final class CliConstants {
     public static final String OFFLINE = "--offline";
     public static final String REVISION = "--revision";
     public static final String SELF = "--self";
-    public static final String UPDATE_DIR = "--update-dir";
+    public static final String CANDIDATE_DIR = "--candidate-dir";
     public static final String V = "-v";
     public static final String VERSION = "--version";
     public static final String Y = "-y";

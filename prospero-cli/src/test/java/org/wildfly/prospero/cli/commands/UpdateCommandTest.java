@@ -242,7 +242,7 @@ public class UpdateCommandTest extends AbstractMavenCommandTest {
         when(updateAction.findUpdates()).thenReturn(new UpdateSet(List.of(change("1.0.0", "1.0.1"))));
         final Path updatePath = tempFolder.newFolder().toPath();
 
-        int exitCode = commandLine.execute(CliConstants.Commands.UPDATE, CliConstants.Commands.PREPARE, CliConstants.UPDATE_DIR, updatePath.toString(),
+        int exitCode = commandLine.execute(CliConstants.Commands.UPDATE, CliConstants.Commands.PREPARE, CliConstants.CANDIDATE_DIR, updatePath.toString(),
                 CliConstants.DIR, installationDir.toAbsolutePath().toString());
 
         assertEquals(ReturnCodes.SUCCESS, exitCode);
@@ -257,7 +257,7 @@ public class UpdateCommandTest extends AbstractMavenCommandTest {
         when(updateAction.findUpdates()).thenReturn(new UpdateSet(Collections.emptyList()));
         final Path updatePath = tempFolder.newFolder().toPath();
 
-        int exitCode = commandLine.execute(CliConstants.Commands.UPDATE, CliConstants.Commands.PREPARE, CliConstants.UPDATE_DIR, updatePath.toString(),
+        int exitCode = commandLine.execute(CliConstants.Commands.UPDATE, CliConstants.Commands.PREPARE, CliConstants.CANDIDATE_DIR, updatePath.toString(),
                 CliConstants.DIR, installationDir.toAbsolutePath().toString());
 
         assertEquals(ReturnCodes.SUCCESS, exitCode);
@@ -270,7 +270,7 @@ public class UpdateCommandTest extends AbstractMavenCommandTest {
     public void testBuildUpdateTargetHasToBeEmptyDirectory() throws Exception {
         final Path updatePath = tempFolder.newFolder().toPath();
         Files.writeString(updatePath.resolve("test.txt"), "test");
-        int exitCode = commandLine.execute(CliConstants.Commands.UPDATE, CliConstants.Commands.PREPARE, CliConstants.UPDATE_DIR, updatePath.toString(),
+        int exitCode = commandLine.execute(CliConstants.Commands.UPDATE, CliConstants.Commands.PREPARE, CliConstants.CANDIDATE_DIR, updatePath.toString(),
                 CliConstants.DIR, installationDir.toAbsolutePath().toString());
 
         assertEquals(ReturnCodes.INVALID_ARGUMENTS, exitCode);
@@ -281,7 +281,7 @@ public class UpdateCommandTest extends AbstractMavenCommandTest {
     @Test
     public void testBuildUpdateTargetHasToBeADirectory() throws Exception {
         final Path aFile = tempFolder.newFile().toPath();
-        int exitCode = commandLine.execute(CliConstants.Commands.UPDATE, CliConstants.Commands.PREPARE, CliConstants.UPDATE_DIR, aFile.toString(),
+        int exitCode = commandLine.execute(CliConstants.Commands.UPDATE, CliConstants.Commands.PREPARE, CliConstants.CANDIDATE_DIR, aFile.toString(),
                 CliConstants.DIR, installationDir.toAbsolutePath().toString());
 
         assertEquals(ReturnCodes.INVALID_ARGUMENTS, exitCode);
