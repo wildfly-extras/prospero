@@ -105,8 +105,16 @@ public interface CliMessages {
         return bundle.getString("prospero.updates.header");
     }
 
+    default String changesFound() {
+        return bundle.getString("prospero.revert.changes.header");
+    }
+
     default String continueWithUpdate() {
         return bundle.getString("prospero.updates.prompt")  + " ";
+    }
+
+    default String continueWithRevert() {
+        return bundle.getString("prospero.revert.prompt")  + " ";
     }
 
     default String continueWithBuildUpdate() {
@@ -115,6 +123,10 @@ public interface CliMessages {
 
     default String updateCancelled() {
         return bundle.getString("prospero.updates.cancelled");
+    }
+
+    default String revertCancelled() {
+        return bundle.getString("prospero.revert.cancelled");
     }
 
     default String buildUpdateCancelled() {
@@ -135,6 +147,10 @@ public interface CliMessages {
 
     default String updateComplete() {
         return bundle.getString("prospero.updates.complete");
+    }
+
+    default String revertComplete(String revision) {
+        return String.format(bundle.getString("prospero.revert.complete"), revision);
     }
 
     default String buildUpdateComplete() {
@@ -390,7 +406,7 @@ public interface CliMessages {
     }
 
     default IllegalArgumentException updateCandidateStateNotMatched(Path targetDir, Path updateDir) {
-        return new IllegalArgumentException(String.format(bundle.getString("prospero.updates.apply.validation.candidate.outdated"), updateDir));
+        return new IllegalArgumentException(String.format(bundle.getString("prospero.updates.apply.validation.candidate.outdated"), targetDir, updateDir));
     }
 
     default IllegalArgumentException updateCandidateWrongType(Path updateDir, ApplyCandidateAction.Type operation) {

@@ -29,6 +29,7 @@ import org.mockito.junit.MockitoJUnitRunner;
 import org.wildfly.prospero.actions.ApplyCandidateAction;
 import org.wildfly.prospero.api.Console;
 import org.wildfly.prospero.actions.InstallationHistoryAction;
+import org.wildfly.prospero.api.SavedState;
 import org.wildfly.prospero.api.exceptions.OperationException;
 import org.wildfly.prospero.cli.AbstractConsoleTest;
 import org.wildfly.prospero.cli.ActionFactory;
@@ -87,6 +88,7 @@ public class RevertApplyCommandTest extends AbstractConsoleTest {
         MetadataTestUtils.createGalleonProvisionedState(updateDir);
 
         when(applyCandidateAction.findUpdates()).thenReturn(new UpdateSet(Collections.emptyList()));
+        when(applyCandidateAction.getCandidateRevision()).thenReturn(new SavedState("abcd1234"));
     }
     @Test
     public void invalidInstallationDir() {

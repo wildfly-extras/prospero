@@ -96,6 +96,7 @@ public class RevertPerformCommandTest extends AbstractMavenCommandTest {
         MetadataTestUtils.createGalleonProvisionedState(installationDir);
 
         when(applyCandidateAction.findUpdates()).thenReturn(new UpdateSet(Collections.emptyList()));
+        when(applyCandidateAction.getCandidateRevision()).thenReturn(new SavedState("abcd1234"));
     }
     @Test
     public void invalidInstallationDir() {

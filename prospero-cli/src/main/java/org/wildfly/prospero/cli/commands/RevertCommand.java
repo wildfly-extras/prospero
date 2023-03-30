@@ -51,15 +51,17 @@ import static org.wildfly.prospero.cli.ReturnCodes.SUCCESS;
 public class RevertCommand extends AbstractParentCommand {
 
     private static int applyCandidate(CliConsole console, ApplyCandidateAction applyCandidateAction, boolean yes) throws OperationException, ProvisioningException {
-        console.updatesFound(applyCandidateAction.findUpdates().getArtifactUpdates());
+        console.changesFound(applyCandidateAction.findUpdates().getArtifactUpdates());
         final List<FileConflict> conflicts = applyCandidateAction.getConflicts();
         FileConflictPrinter.print(conflicts, console);
 
-        if (!yes && !console.confirm(CliMessages.MESSAGES.continueWithUpdate(), "", CliMessages.MESSAGES.updateCancelled())) {
+        if (!yes && !console.confirm(CliMessages.MESSAGES.continueWithRevert(), "", CliMessages.MESSAGES.revertCancelled())) {
             return SUCCESS;
         }
 
         applyCandidateAction.applyUpdate(ApplyCandidateAction.Type.REVERT);
+
+        console.println(CliMessages.MESSAGES.revertComplete(applyCandidateAction.getCandidateRevision().getName()));
         return SUCCESS;
     }
 
