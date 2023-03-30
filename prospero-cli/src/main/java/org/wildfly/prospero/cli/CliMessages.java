@@ -334,6 +334,12 @@ public interface CliMessages {
         return bundle.getString("prospero.general.error.resolve.artifacts.repositories");
     }
 
+    default String missing() {
+        return bundle.getString("prospero.general.error.resolve.missing");
+    }
+    default String checksumFailed() {
+        return bundle.getString("prospero.general.error.resolve.checksum_failed");
+    }
     default String offline() {
         return bundle.getString("prospero.general.error.resolve.offline");
     }

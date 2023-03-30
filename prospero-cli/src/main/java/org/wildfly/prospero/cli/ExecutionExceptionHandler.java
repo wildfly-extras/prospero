@@ -36,6 +36,7 @@ import javax.net.ssl.SSLHandshakeException;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.net.UnknownHostException;
+import java.util.List;
 import java.util.Set;
 
 /**
@@ -133,8 +134,9 @@ public class ExecutionExceptionHandler implements CommandLine.IExecutionExceptio
         console.error("\n");
         if (!ex.getMissingArtifacts().isEmpty()) {
             console.error(CliMessages.MESSAGES.errorHeader(CliMessages.MESSAGES.unableToResolveArtifacts()));
-            for (ArtifactCoordinate missingArtifact : ex.getMissingArtifacts()) {
-                console.error("  * " + ArtifactUtils.printCoordinate(missingArtifact));
+            final List<ArtifactResolutionAnalyzer.Result> results = new ArtifactResolutionAnalyzer().analyze(ex);
+            for (ArtifactResolutionAnalyzer.Result result : results) {
+                console.error(String.format("  * %s [%s]", result.getCoords(), result.getStatus()));
             }
 
             printRepositories(ex.getRepositories(), ex.isOffline());
