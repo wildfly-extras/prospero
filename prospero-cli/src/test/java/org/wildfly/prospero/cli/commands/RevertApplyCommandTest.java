@@ -91,7 +91,7 @@ public class RevertApplyCommandTest extends AbstractConsoleTest {
     @Test
     public void invalidInstallationDir() {
         int exitCode = commandLine.execute(CliConstants.Commands.REVERT, CliConstants.Commands.APPLY,
-                CliConstants.UPDATE_DIR, "update_test");
+                CliConstants.CANDIDATE_DIR, "update_test");
 
         Assert.assertEquals(ReturnCodes.INVALID_ARGUMENTS, exitCode);
         assertTrue(getErrorOutput().contains(CliMessages.MESSAGES.invalidInstallationDir(RevertCommand.currentDir())
@@ -99,20 +99,20 @@ public class RevertApplyCommandTest extends AbstractConsoleTest {
     }
 
     @Test
-    public void requireUpdateDirArgument() {
+    public void requireCandidateDirArgument() {
         int exitCode = commandLine.execute(CliConstants.Commands.REVERT, CliConstants.Commands.APPLY,
                 CliConstants.DIR, installationDir.toString());
 
         assertEquals(ReturnCodes.INVALID_ARGUMENTS, exitCode);
         assertTrue(getErrorOutput().contains(String.format(
-                "Missing required option: '%s=<updateDirectory>'", CliConstants.UPDATE_DIR)));
+                "Missing required option: '%s=<candidateDirectory>'", CliConstants.CANDIDATE_DIR)));
     }
 
     @Test
     public void callApplyOperation() throws Exception {
         int exitCode = commandLine.execute(CliConstants.Commands.REVERT, CliConstants.Commands.APPLY,
                 CliConstants.DIR, installationDir.toString(),
-                CliConstants.UPDATE_DIR, updateDir.toString());
+                CliConstants.CANDIDATE_DIR, updateDir.toString());
 
         assertEquals(ReturnCodes.SUCCESS, exitCode);
         verify(applyCandidateAction).applyUpdate(ApplyCandidateAction.Type.REVERT);

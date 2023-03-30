@@ -67,7 +67,7 @@ public class ApplyUpdateTest extends CliTestBase  {
         // generate update-candidate
         ExecutionUtils.prosperoExecution(CliConstants.Commands.UPDATE, CliConstants.Commands.PREPARE,
                         CliConstants.REPOSITORIES, temporaryRepo.toString(),
-                        CliConstants.UPDATE_DIR, updatePath.toAbsolutePath().toString(),
+                        CliConstants.CANDIDATE_DIR, updatePath.toAbsolutePath().toString(),
                         CliConstants.Y,
                         CliConstants.DIR, targetDir.getAbsolutePath())
                 .execute()
@@ -79,7 +79,7 @@ public class ApplyUpdateTest extends CliTestBase  {
 
         // apply update-candidate
         ExecutionUtils.prosperoExecution(CliConstants.Commands.UPDATE, CliConstants.Commands.APPLY,
-                        CliConstants.UPDATE_DIR, updatePath.toAbsolutePath().toString(),
+                        CliConstants.CANDIDATE_DIR, updatePath.toAbsolutePath().toString(),
                         CliConstants.Y,
                         CliConstants.DIR, targetDir.getAbsolutePath())
                 .execute()

@@ -41,7 +41,7 @@ public class CliProviderImpl implements CliProvider {
     public String getApplyUpdateCommand(Path installationPath, Path candidatePath) {
         return CliConstants.Commands.UPDATE + " " + CliConstants.Commands.APPLY + " "
                 + CliConstants.DIR + " " + escape(installationPath.toAbsolutePath()) + " "
-                + CliConstants.UPDATE_DIR + " " + escape(candidatePath.toAbsolutePath()) + " "
+                + CliConstants.CANDIDATE_DIR + " " + escape(candidatePath.toAbsolutePath()) + " "
                 + CliConstants.YES;
     }
 
@@ -49,7 +49,7 @@ public class CliProviderImpl implements CliProvider {
     public String getApplyRevertCommand(Path installationPath, Path candidatePath) {
         return CliConstants.Commands.REVERT + " " + CliConstants.Commands.APPLY + " "
                 + CliConstants.DIR + " " + escape(installationPath.toAbsolutePath()) + " "
-                + CliConstants.UPDATE_DIR + " " + escape(candidatePath.toAbsolutePath()) + " "
+                + CliConstants.CANDIDATE_DIR + " " + escape(candidatePath.toAbsolutePath()) + " "
                 + CliConstants.YES;
     }
 

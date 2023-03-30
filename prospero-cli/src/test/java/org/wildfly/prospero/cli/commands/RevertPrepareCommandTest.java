@@ -84,7 +84,7 @@ public class RevertPrepareCommandTest extends AbstractMavenCommandTest {
     @Test
     public void invalidInstallationDir() {
         int exitCode = commandLine.execute(CliConstants.Commands.REVERT, CliConstants.Commands.PREPARE,
-                CliConstants.REVISION, "abcd", CliConstants.UPDATE_DIR, "update_test");
+                CliConstants.REVISION, "abcd", CliConstants.CANDIDATE_DIR, "update_test");
 
         Assert.assertEquals(ReturnCodes.INVALID_ARGUMENTS, exitCode);
         assertTrue(getErrorOutput().contains(CliMessages.MESSAGES.invalidInstallationDir(RevertCommand.currentDir())
@@ -95,7 +95,7 @@ public class RevertPrepareCommandTest extends AbstractMavenCommandTest {
     public void requireRevisionArgument() {
         int exitCode = commandLine.execute(CliConstants.Commands.REVERT, CliConstants.Commands.PREPARE,
                 CliConstants.DIR, installationDir.toString(),
-                CliConstants.UPDATE_DIR, "update_test");
+                CliConstants.CANDIDATE_DIR, "update_test");
 
         assertEquals(ReturnCodes.INVALID_ARGUMENTS, exitCode);
         assertTrue(getErrorOutput().contains(String.format(
@@ -110,14 +110,14 @@ public class RevertPrepareCommandTest extends AbstractMavenCommandTest {
 
         assertEquals(ReturnCodes.INVALID_ARGUMENTS, exitCode);
         assertTrue(getErrorOutput().contains(String.format(
-                "Missing required option: '%s=<updateDirectory>'", CliConstants.UPDATE_DIR)));
+                "Missing required option: '%s=<candidateDirectory>'", CliConstants.CANDIDATE_DIR)));
     }
 
     @Test
     public void callPrepareOperation() throws Exception {
         int exitCode = commandLine.execute(CliConstants.Commands.REVERT, CliConstants.Commands.PREPARE,
                 CliConstants.DIR, installationDir.toString(),
-                CliConstants.UPDATE_DIR, "update_test",
+                CliConstants.CANDIDATE_DIR, "update_test",
                 CliConstants.REVISION, "abcd");
 
         assertEquals(ReturnCodes.SUCCESS, exitCode);
@@ -128,7 +128,7 @@ public class RevertPrepareCommandTest extends AbstractMavenCommandTest {
     public void useOfflineMavenSessionManagerIfOfflineSet() throws Exception {
         int exitCode = commandLine.execute(CliConstants.Commands.REVERT, CliConstants.Commands.PREPARE,
                 CliConstants.DIR, installationDir.toString(),
-                CliConstants.UPDATE_DIR, "update_test",
+                CliConstants.CANDIDATE_DIR, "update_test",
                 CliConstants.REVISION, "abcd",
                 CliConstants.OFFLINE, CliConstants.LOCAL_CACHE, "local-repo");
 
@@ -141,7 +141,7 @@ public class RevertPrepareCommandTest extends AbstractMavenCommandTest {
     public void passRemoteRepositories() throws Exception {
         int exitCode = commandLine.execute(CliConstants.Commands.REVERT, CliConstants.Commands.PREPARE,
                 CliConstants.DIR, installationDir.toString(),
-                CliConstants.UPDATE_DIR, "update_test",
+                CliConstants.CANDIDATE_DIR, "update_test",
                 CliConstants.REVISION, "abcd",
                 CliConstants.REPOSITORIES, "http://temp.repo.te",
                 CliConstants.LOCAL_CACHE, "local-repo");
@@ -163,6 +163,6 @@ public class RevertPrepareCommandTest extends AbstractMavenCommandTest {
     @Override
     protected String[] getDefaultArguments() {
         return new String[]{CliConstants.Commands.REVERT, CliConstants.Commands.PREPARE, CliConstants.DIR, installationDir.toString(),
-                CliConstants.REVISION, "abcd", CliConstants.UPDATE_DIR, "update_test"};
+                CliConstants.REVISION, "abcd", CliConstants.CANDIDATE_DIR, "update_test"};
     }
 }

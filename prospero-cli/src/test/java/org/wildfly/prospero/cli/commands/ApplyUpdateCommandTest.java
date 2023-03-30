@@ -81,7 +81,7 @@ public class ApplyUpdateCommandTest extends AbstractConsoleTest {
         int exitCode = commandLine.execute(CliConstants.Commands.UPDATE, CliConstants.Commands.APPLY);
         Assert.assertEquals(ReturnCodes.INVALID_ARGUMENTS, exitCode);
         assertTrue(getErrorOutput().contains(String.format("Missing required option: '%s",
-                CliConstants.UPDATE_DIR)));
+                CliConstants.CANDIDATE_DIR)));
     }
 
     @Test
@@ -89,7 +89,7 @@ public class ApplyUpdateCommandTest extends AbstractConsoleTest {
         final Path updatePath = mockInstallation("update");
         final Path targetPath = mockInstallation("target");
         int exitCode = commandLine.execute(CliConstants.Commands.UPDATE, CliConstants.Commands.APPLY,
-                CliConstants.UPDATE_DIR, updatePath.toString(),
+                CliConstants.CANDIDATE_DIR, updatePath.toString(),
                 CliConstants.DIR, targetPath.toString());
 
         Assert.assertEquals(getErrorOutput(), ReturnCodes.SUCCESS, exitCode);
@@ -102,7 +102,7 @@ public class ApplyUpdateCommandTest extends AbstractConsoleTest {
         final Path targetPath = temp.newFolder("target").toPath();
 
         int exitCode = commandLine.execute(CliConstants.Commands.UPDATE, CliConstants.Commands.APPLY,
-                CliConstants.UPDATE_DIR, updatePath.toString(),
+                CliConstants.CANDIDATE_DIR, updatePath.toString(),
                 CliConstants.DIR, targetPath.toString());
 
         Assert.assertEquals(ReturnCodes.INVALID_ARGUMENTS, exitCode);
@@ -116,7 +116,7 @@ public class ApplyUpdateCommandTest extends AbstractConsoleTest {
         final Path targetPath = mockInstallation("target");
 
         int exitCode = commandLine.execute(CliConstants.Commands.UPDATE, CliConstants.Commands.APPLY,
-                CliConstants.UPDATE_DIR, updatePath.toString(),
+                CliConstants.CANDIDATE_DIR, updatePath.toString(),
                 CliConstants.DIR, targetPath.toString());
 
         Assert.assertEquals(ReturnCodes.INVALID_ARGUMENTS, exitCode);
@@ -129,7 +129,7 @@ public class ApplyUpdateCommandTest extends AbstractConsoleTest {
         final Path updatePath = mockInstallation("update");
         final Path targetPath = temp.newFolder().toPath();
         int exitCode = commandLine.execute(CliConstants.Commands.UPDATE, CliConstants.Commands.APPLY,
-                CliConstants.UPDATE_DIR, updatePath.toString(),
+                CliConstants.CANDIDATE_DIR, updatePath.toString(),
                 CliConstants.DIR, targetPath.toString());
 
         Assert.assertEquals(getErrorOutput(), ReturnCodes.INVALID_ARGUMENTS, exitCode);
@@ -146,7 +146,7 @@ public class ApplyUpdateCommandTest extends AbstractConsoleTest {
         when(applyCandidateAction.verifyCandidate(ApplyCandidateAction.Type.UPDATE)).thenReturn(ApplyCandidateAction.ValidationResult.NOT_CANDIDATE);
 
         int exitCode = commandLine.execute(CliConstants.Commands.UPDATE, CliConstants.Commands.APPLY,
-                CliConstants.UPDATE_DIR, updatePath.toString(),
+                CliConstants.CANDIDATE_DIR, updatePath.toString(),
                 CliConstants.DIR, targetPath.toString());
 
         Assert.assertEquals(getErrorOutput(), ReturnCodes.INVALID_ARGUMENTS, exitCode);
@@ -163,7 +163,7 @@ public class ApplyUpdateCommandTest extends AbstractConsoleTest {
         when(applyCandidateAction.verifyCandidate(ApplyCandidateAction.Type.UPDATE)).thenReturn(ApplyCandidateAction.ValidationResult.NOT_CANDIDATE);
 
         int exitCode = commandLine.execute(CliConstants.Commands.UPDATE, CliConstants.Commands.APPLY,
-                CliConstants.UPDATE_DIR, updatePath.toString(),
+                CliConstants.CANDIDATE_DIR, updatePath.toString(),
                 CliConstants.DIR, targetPath.toString());
 
         Assert.assertEquals(getErrorOutput(), ReturnCodes.INVALID_ARGUMENTS, exitCode);
@@ -178,7 +178,7 @@ public class ApplyUpdateCommandTest extends AbstractConsoleTest {
         final Path targetPath = mockInstallation("target");
         when(applyCandidateAction.getConflicts()).thenReturn(List.of(mock(FileConflict.class)));
         int exitCode = commandLine.execute(CliConstants.Commands.UPDATE, CliConstants.Commands.APPLY,
-                CliConstants.UPDATE_DIR, updatePath.toString(),
+                CliConstants.CANDIDATE_DIR, updatePath.toString(),
                 CliConstants.DIR, targetPath.toString());
 
         Assert.assertEquals(getErrorOutput(), ReturnCodes.SUCCESS, exitCode);

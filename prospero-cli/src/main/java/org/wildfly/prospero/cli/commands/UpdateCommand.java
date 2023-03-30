@@ -136,8 +136,8 @@ public class UpdateCommand extends AbstractParentCommand {
     @CommandLine.Command(name = CliConstants.Commands.PREPARE, sortOptions = false)
     public static class PrepareCommand extends AbstractMavenCommand {
 
-        @CommandLine.Option(names = CliConstants.UPDATE_DIR, required = true)
-        Path updateDirectory;
+        @CommandLine.Option(names = CliConstants.CANDIDATE_DIR, required = true)
+        Path candidateDirectory;
 
         @CommandLine.Option(names = {CliConstants.Y, CliConstants.YES})
         boolean yes;
@@ -154,13 +154,13 @@ public class UpdateCommand extends AbstractParentCommand {
             final MavenOptions mavenOptions = parseMavenOptions();
             final List<Repository> repositories = RepositoryDefinition.from(temporaryRepositories);
 
-            log.tracef("Generate update in %s", updateDirectory);
+            log.tracef("Generate update in %s", candidateDirectory);
 
-            verifyTargetDirectoryIsEmpty(updateDirectory);
+            verifyTargetDirectoryIsEmpty(candidateDirectory);
 
             try (UpdateAction updateAction = actionFactory.update(installationDir,
                     mavenOptions, console, repositories)) {
-                buildUpdate(updateAction, updateDirectory, yes, console, ()->console.confirmBuildUpdates());
+                buildUpdate(updateAction, candidateDirectory, yes, console, ()->console.confirmBuildUpdates());
             }
 
             final float totalTime = (System.currentTimeMillis() - startTime) / 1000f;
@@ -176,8 +176,8 @@ public class UpdateCommand extends AbstractParentCommand {
         @CommandLine.Option(names = CliConstants.DIR)
         Optional<Path> directory;
 
-        @CommandLine.Option(names = CliConstants.UPDATE_DIR, required = true)
-        Path updateDir;
+        @CommandLine.Option(names = CliConstants.CANDIDATE_DIR, required = true)
+        Path candidateDir;
 
         @CommandLine.Option(names = {CliConstants.Y, CliConstants.YES})
         boolean yes;
@@ -192,17 +192,17 @@ public class UpdateCommand extends AbstractParentCommand {
 
             final Path installationDir = determineInstallationDirectory(directory);
 
-            verifyDirectoryContainsInstallation(updateDir);
+            verifyDirectoryContainsInstallation(candidateDir);
 
-            final ApplyCandidateAction applyCandidateAction = actionFactory.applyUpdate(installationDir.toAbsolutePath(), updateDir.toAbsolutePath());
+            final ApplyCandidateAction applyCandidateAction = actionFactory.applyUpdate(installationDir.toAbsolutePath(), candidateDir.toAbsolutePath());
 
             final ApplyCandidateAction.ValidationResult result = applyCandidateAction.verifyCandidate(ApplyCandidateAction.Type.UPDATE);
             if (ApplyCandidateAction.ValidationResult.STALE == result) {
-                throw CliMessages.MESSAGES.updateCandidateStateNotMatched(installationDir, updateDir.toAbsolutePath());
+                throw CliMessages.MESSAGES.updateCandidateStateNotMatched(installationDir, candidateDir.toAbsolutePath());
             } else if (ApplyCandidateAction.ValidationResult.WRONG_TYPE == result) {
                 throw CliMessages.MESSAGES.updateCandidateWrongType(installationDir, ApplyCandidateAction.Type.UPDATE);
             } else if (ApplyCandidateAction.ValidationResult.NOT_CANDIDATE == result) {
-                throw CliMessages.MESSAGES.notCandidate(updateDir.toAbsolutePath());
+                throw CliMessages.MESSAGES.notCandidate(candidateDir.toAbsolutePath());
             }
 
             console.updatesFound(applyCandidateAction.findUpdates().getArtifactUpdates());
