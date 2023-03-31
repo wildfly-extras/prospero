@@ -82,16 +82,16 @@ public abstract class AbstractCommand implements Callable<Integer> {
         if (Files.exists(path)) {
             if (!Files.isDirectory(path)) {
                 log.debug("Target is not a directory");
-                throw CliMessages.MESSAGES.nonEmptyTargetFolder();
+                throw CliMessages.MESSAGES.nonEmptyTargetFolder(path);
             }
             if (path.toFile().list().length != 0) {
                 log.debug("Target folder is not empty");
-                throw CliMessages.MESSAGES.nonEmptyTargetFolder();
+                throw CliMessages.MESSAGES.nonEmptyTargetFolder(path);
             }
         }
         if (!isWritable(path)) {
             log.debug("Target is not writable");
-            throw CliMessages.MESSAGES.nonEmptyTargetFolder();
+            throw CliMessages.MESSAGES.nonEmptyTargetFolder(path);
         }
     }
 

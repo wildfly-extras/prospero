@@ -423,8 +423,9 @@ public interface CliMessages {
         return new IllegalArgumentException(format(bundle.getString("prospero.updates.apply.validation.candidate.not_candidate"), updateDir));
     }
 
-    default IllegalArgumentException nonEmptyTargetFolder() {
-        return new IllegalArgumentException(bundle.getString("prospero.updates.build.validation.dir.not_empty"));
+    default IllegalArgumentException nonEmptyTargetFolder(Path installationDir) {
+        return new IllegalArgumentException(
+                format(bundle.getString("prospero.updates.build.validation.dir.not_empty"), installationDir));
     }
 
     default ArgumentParsingException unknownInstallationProfile(String profileName, String candidates) {
@@ -509,10 +510,18 @@ public interface CliMessages {
     }
 
     default String exportInstallationDetailsHeader(Path installationDir, Path outPath) {
-        return String.format(bundle.getString("prospero.export.start.header"), installationDir.toAbsolutePath(), outPath.toAbsolutePath());
+        return format(bundle.getString("prospero.export.start.header"), installationDir.toAbsolutePath(), outPath.toAbsolutePath());
     }
 
     default String exportInstallationDetailsDone() {
         return bundle.getString("prospero.export.done");
+    }
+
+    default ArgumentParsingException missingRequiresResource(String resource) {
+        return new ArgumentParsingException(format(bundle.getString("prospero.general.error.missing_file"), resource));
+    }
+
+    default String parsingError(String path) {
+        return format(bundle.getString("prospero.general.error.galleon.parse"), path);
     }
 }
