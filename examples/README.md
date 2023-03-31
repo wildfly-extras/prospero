@@ -1,8 +1,8 @@
 # Usage Examples
 
 This file shows how to use the Prospero CLI tool to create an installation of the Wildfly application server. These instructions
-are provided for development and demonstrational purposes only. In practice, no channels are expected to be published for
-Wildfly (upstream project), and the Prospero tool would only be used to provision the JBoss EAP (donwstream product).
+are provided for development and demonstration purposes only. In practice, no channels are expected to be published for
+Wildfly (upstream project), and the Prospero tool would only be used to provision the JBoss EAP (downstream product).
 
 Prospero needs two required inputs, to be able to provision an installation:
 
@@ -52,7 +52,7 @@ mvn clean package
 ## Installation of a Pre-Defined Product Version
 
 ```shell
-./prospero install --fpl wildfly \
+./prospero install --profile wildfly \
   --manifest examples/wildfly-27.0.0.Alpha2-manifest.yaml \
   --dir installation-dir
 ```
