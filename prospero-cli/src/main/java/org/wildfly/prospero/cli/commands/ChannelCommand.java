@@ -22,12 +22,12 @@ import java.util.List;
 import java.util.Optional;
 
 import org.wildfly.channel.Channel;
-import org.wildfly.channel.MavenCoordinate;
-import org.wildfly.channel.Repository;
 import org.wildfly.prospero.actions.MetadataAction;
 import org.wildfly.prospero.cli.ActionFactory;
 import org.wildfly.prospero.cli.CliConsole;
+import org.wildfly.prospero.cli.CliMessages;
 import org.wildfly.prospero.cli.ReturnCodes;
+import org.wildfly.prospero.cli.printers.ChannelPrinter;
 import picocli.CommandLine;
 
 @CommandLine.Command(name = CliConstants.Commands.CHANNEL)
@@ -59,33 +59,22 @@ public class ChannelCommand extends AbstractCommand {
         @Override
         public Integer call() throws Exception {
             Path installationDirectory = determineInstallationDirectory(directory);
+
+            console.println(CliMessages.MESSAGES.listChannels(installationDirectory));
+
             List<Channel> channels;
             try (MetadataAction metadataAction = actionFactory.metadataActions(installationDirectory)) {
                 channels = metadataAction.getChannels();
             }
 
+            final ChannelPrinter channelPrinter = new ChannelPrinter(console);
             console.println("-------");
-            for (Channel channel: channels) {
-                console.println("#" + channel.getName());
-                final String manifest = channel.getManifestCoordinate().getMaven() == null
-                        ?channel.getManifestCoordinate().getUrl().toExternalForm():toGav(channel.getManifestCoordinate().getMaven());
-                console.println("  " + "manifest: " + manifest);
-                console.println("  " + "repositories:");
-                for (Repository repository : channel.getRepositories()) {
-                    console.println("  " + "  " + "id: " + repository.getId());
-                    console.println("  " + "  " + "url: " + repository.getUrl());
-                }
+            for (Channel channel : channels) {
+                channelPrinter.print(channel);
                 console.println("-------");
             }
 
             return ReturnCodes.SUCCESS;
-        }
-        private static String toGav(MavenCoordinate coord) {
-            final String ga = coord.getGroupId() + ":" + coord.getArtifactId();
-            if (coord.getVersion() != null && !coord.getVersion().isEmpty()) {
-                return ga + ":" + coord.getVersion();
-            }
-            return ga;
         }
     }
 

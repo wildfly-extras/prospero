@@ -17,7 +17,10 @@
 
 package org.wildfly.prospero.cli.commands;
 
+import org.jboss.galleon.config.FeaturePackConfig;
+import org.wildfly.channel.Channel;
 import org.wildfly.prospero.ProsperoLogger;
+import org.wildfly.prospero.api.InstallationMetadata;
 import org.wildfly.prospero.api.MavenOptions;
 import org.wildfly.prospero.cli.ActionFactory;
 import org.wildfly.prospero.cli.CliConsole;
@@ -25,6 +28,7 @@ import org.wildfly.prospero.cli.CliMessages;
 import org.wildfly.prospero.cli.RepositoryDefinition;
 import org.wildfly.prospero.cli.ReturnCodes;
 import org.wildfly.prospero.cli.commands.options.LocalRepoOptions;
+import org.wildfly.prospero.cli.printers.ChannelPrinter;
 import picocli.CommandLine;
 
 import java.nio.file.Files;
@@ -73,10 +77,13 @@ public class CloneCommand extends AbstractCommand {
             if (Files.exists(outPath)) {
                 throw ProsperoLogger.ROOT_LOGGER.outFileExists(outPath);
             }
+            final Path installationDir = determineInstallationDirectory(directory);
+            console.println(CliMessages.MESSAGES.exportInstallationDetailsHeader(installationDir, outPath));
             actionFactory
-              .exportAction(determineInstallationDirectory(directory))
+              .exportAction(installationDir)
               .export(outPath);
-            console.println(ProsperoLogger.ROOT_LOGGER.installationExported(outPath));
+
+            console.println(CliMessages.MESSAGES.exportInstallationDetailsDone());
             return ReturnCodes.SUCCESS;
         }
     }
@@ -107,6 +114,7 @@ public class CloneCommand extends AbstractCommand {
 
         @Override
         public Integer call() throws Exception {
+            final long startTime = System.currentTimeMillis();
             if (Files.notExists(inPath)) {
                 console.println(CliMessages.MESSAGES.restoreFileNotExisted(inPath));
                 return ReturnCodes.INVALID_ARGUMENTS;
@@ -115,10 +123,30 @@ public class CloneCommand extends AbstractCommand {
             final MavenOptions.Builder mavenOptions = localRepoOptions.toOptions();
             offline.map(mavenOptions::setOffline);
             Path installationDirectory = directory.orElse(currentDir()).toAbsolutePath();
+
+            console.println(CliMessages.MESSAGES.recreatingServer(installationDirectory, inPath));
+
+            try (final InstallationMetadata metadataBundle = InstallationMetadata.fromMetadataBundle(inPath.toAbsolutePath())) {
+                console.println(CliMessages.MESSAGES.provisioningConfigHeader());
+                for (FeaturePackConfig featurePackDep : metadataBundle.getGalleonProvisioningConfig().getFeaturePackDeps()) {
+                    console.println(" * " + featurePackDep.getLocation().toString());
+                }
+                console.println(CliMessages.MESSAGES.subscribedChannelsHeader());
+                final ChannelPrinter channelPrinter = new ChannelPrinter(console);
+                for (Channel channel : metadataBundle.getProsperoConfig().getChannels()) {
+                    channelPrinter.print(channel);
+                }
+            }
+            console.println("");
+
             actionFactory
               .restoreAction(installationDirectory, mavenOptions.build(), console)
               .restore(inPath, RepositoryDefinition.from(remoteRepositories));
-            console.println(CliMessages.MESSAGES.installationMetaRestored(inPath, installationDirectory));
+
+            console.println("");
+            console.println(CliMessages.MESSAGES.installationMetaRestored());
+            final float totalTime = (System.currentTimeMillis() - startTime) / 1000f;
+            console.println(CliMessages.MESSAGES.operationCompleted(totalTime));
             return ReturnCodes.SUCCESS;
         }
     }

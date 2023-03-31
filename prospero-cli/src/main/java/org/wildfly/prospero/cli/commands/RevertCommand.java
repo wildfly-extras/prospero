@@ -55,12 +55,14 @@ public class RevertCommand extends AbstractParentCommand {
         final List<FileConflict> conflicts = applyCandidateAction.getConflicts();
         FileConflictPrinter.print(conflicts, console);
 
-        if (!yes && !console.confirm(CliMessages.MESSAGES.continueWithRevert(), "", CliMessages.MESSAGES.revertCancelled())) {
+        if (!yes && !console.confirm(CliMessages.MESSAGES.continueWithRevert(),
+                CliMessages.MESSAGES.applyingChanges(), CliMessages.MESSAGES.revertCancelled())) {
             return SUCCESS;
         }
 
         applyCandidateAction.applyUpdate(ApplyCandidateAction.Type.REVERT);
 
+        console.println("");
         console.println(CliMessages.MESSAGES.revertComplete(applyCandidateAction.getCandidateRevision().getName()));
         return SUCCESS;
     }
@@ -100,8 +102,15 @@ public class RevertCommand extends AbstractParentCommand {
             InstallationHistoryAction historyAction = actionFactory.history(installationDirectory, console);
             Path tempDirectory = null;
             try {
+                console.println(CliMessages.MESSAGES.revertStart(installationDirectory, revision));
+                console.println("");
+
                 tempDirectory = Files.createTempDirectory("revert-candidate");
                 historyAction.prepareRevert(new SavedState(revision), mavenOptions, overrideRepositories, tempDirectory);
+
+                console.println("");
+                console.println(CliMessages.MESSAGES.comparingChanges());
+
                 final ApplyCandidateAction applyCandidateAction = actionFactory.applyUpdate(installationDirectory, tempDirectory);
 
                 validateRevertCandidate(installationDirectory, tempDirectory, applyCandidateAction);
@@ -145,6 +154,9 @@ public class RevertCommand extends AbstractParentCommand {
 
             validateRevertCandidate(installationDirectory, candidateDirectory, applyCandidateAction);
 
+            console.println(CliMessages.MESSAGES.revertStart(installationDirectory, applyCandidateAction.getCandidateRevision().getName()));
+            console.println("");
+
             applyCandidate(console, applyCandidateAction, yes);
             final float totalTime = (System.currentTimeMillis() - startTime) / 1000f;
             console.println(CliMessages.MESSAGES.operationCompleted(totalTime));
@@ -175,8 +187,13 @@ public class RevertCommand extends AbstractParentCommand {
 
             final List<Repository> overrideRepositories = RepositoryDefinition.from(temporaryRepositories);
 
+            console.println(CliMessages.MESSAGES.buildRevertCandidateHeader(installationDirectory));
+
             InstallationHistoryAction historyAction = actionFactory.history(installationDirectory, console);
             historyAction.prepareRevert(new SavedState(revision), mavenOptions, overrideRepositories, candidateDirectory.toAbsolutePath());
+
+            console.println("");
+            console.println(CliMessages.MESSAGES.revertCandidateGenerated(candidateDirectory));
             final float totalTime = (System.currentTimeMillis() - startTime) / 1000f;
             console.println(CliMessages.MESSAGES.operationCompleted(totalTime));
             return SUCCESS;

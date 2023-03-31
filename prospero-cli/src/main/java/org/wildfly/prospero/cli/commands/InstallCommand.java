@@ -37,6 +37,7 @@ import org.wildfly.prospero.cli.LicensePrinter;
 import org.wildfly.prospero.cli.RepositoryDefinition;
 import org.wildfly.prospero.cli.ReturnCodes;
 import org.wildfly.prospero.cli.commands.options.FeaturePackCandidates;
+import org.wildfly.prospero.cli.printers.ChannelPrinter;
 import org.wildfly.prospero.licenses.License;
 import picocli.CommandLine;
 
@@ -128,8 +129,25 @@ public class InstallCommand extends AbstractInstallCommand {
         final ProvisioningAction provisioningAction = actionFactory.install(directory.toAbsolutePath(), mavenOptions,
                 console);
 
+        if (featurePackOrDefinition.fpl.isPresent()) {
+            console.println(CliMessages.MESSAGES.installingFpl(featurePackOrDefinition.fpl.get()));
+        } else if (featurePackOrDefinition.profile.isPresent()) {
+            console.println(CliMessages.MESSAGES.installingProfile(featurePackOrDefinition.profile.get()));
+        } else if (featurePackOrDefinition.definition.isPresent()) {
+            console.println(CliMessages.MESSAGES.installingDefinition(featurePackOrDefinition.definition.get()));
+        }
+
+        final List<Channel> effectiveChannels = TemporaryRepositoriesHandler.overrideRepositories(channels, shadowRepositories);
+        console.println(CliMessages.MESSAGES.usingChannels());
+        final ChannelPrinter channelPrinter = new ChannelPrinter(console);
+        for (Channel channel : effectiveChannels) {
+            channelPrinter.print(channel);
+        }
+
+        console.println("");
+
         final List<License> pendingLicenses = provisioningAction.getPendingLicenses(provisioningConfig,
-                TemporaryRepositoriesHandler.overrideRepositories(channels, shadowRepositories));
+                effectiveChannels);
         if (!pendingLicenses.isEmpty()) {
             new LicensePrinter().print(pendingLicenses);
             System.out.println();
@@ -144,6 +162,9 @@ public class InstallCommand extends AbstractInstallCommand {
         }
 
         provisioningAction.provision(provisioningConfig, channels, shadowRepositories);
+
+        console.println("");
+        console.println(CliMessages.MESSAGES.installComplete(directory));
 
         final float totalTime = (System.currentTimeMillis() - startTime) / 1000f;
         console.println(CliMessages.MESSAGES.operationCompleted(totalTime));
