@@ -17,6 +17,7 @@
 
 package org.wildfly.prospero.api;
 
+import com.fasterxml.jackson.databind.JsonMappingException;
 import org.apache.commons.lang3.StringUtils;
 import org.jboss.galleon.Constants;
 import org.jboss.galleon.config.ProvisioningConfig;
@@ -89,16 +90,13 @@ public class InstallationMetadata implements AutoCloseable {
         } catch (IOException e) {
             throw ProsperoLogger.ROOT_LOGGER.unableToParseConfiguration(manifestFile, e);
         }
-        try {
-            prosperoConfig = ProsperoConfig.readConfig(base.resolve(ProsperoMetadataUtils.METADATA_DIR));
-        } catch (MetadataException e) {
-            // re-wrap the exception to change the description
-            throw ProsperoLogger.ROOT_LOGGER.unableToParseConfiguration(base, e.getCause());
-        }
+        prosperoConfig = ProsperoConfig.readConfig(base.resolve(ProsperoMetadataUtils.METADATA_DIR));
 
         final Path versionsFile = base.resolve(ProsperoMetadataUtils.METADATA_DIR).resolve(CURRENT_VERSION_FILE);
         try {
             currentVersion = ManifestVersionRecord.read(versionsFile);
+        } catch (JsonMappingException e) {
+            throw ProsperoLogger.ROOT_LOGGER.unableToParseConfiguration(versionsFile, e);
         } catch (IOException e) {
             throw ProsperoLogger.ROOT_LOGGER.unableToReadFile(versionsFile, e);
         }
@@ -107,6 +105,7 @@ public class InstallationMetadata implements AutoCloseable {
         final InstallationMetadata metadata = new InstallationMetadata(base, manifest, prosperoConfig, gitStorage, currentVersion);
         try {
             if (!gitStorage.isStarted()) {
+                ProsperoLogger.ROOT_LOGGER.debugf("Initializing history storage in %s", base);
                 gitStorage.record();
             }
         } catch (IOException e) {

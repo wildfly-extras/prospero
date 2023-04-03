@@ -18,6 +18,7 @@
 package org.wildfly.prospero.it.cli;
 
 import org.wildfly.channel.Stream;
+import org.wildfly.prospero.api.exceptions.MetadataException;
 import org.wildfly.prospero.cli.ReturnCodes;
 import org.wildfly.prospero.cli.commands.CliConstants;
 import org.wildfly.prospero.it.ExecutionUtils;
@@ -42,7 +43,7 @@ public abstract class CliTestBase extends WfCoreTestBase {
                 .assertReturnCode(ReturnCodes.SUCCESS);
     }
 
-    protected static Optional<Stream> getInstalledArtifact(String artifactId, Path serverPath) throws IOException {
+    protected static Optional<Stream> getInstalledArtifact(String artifactId, Path serverPath) throws IOException, MetadataException {
         return ManifestYamlSupport.parse(serverPath.resolve(MetadataTestUtils.MANIFEST_FILE_PATH).toFile())
                 .getStreams().stream()
                 .filter(s -> s.getArtifactId().equals(artifactId))

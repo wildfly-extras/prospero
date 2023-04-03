@@ -17,7 +17,9 @@
 
 package org.wildfly.prospero.updates;
 
+import org.wildfly.prospero.ProsperoLogger;
 import org.wildfly.prospero.actions.ApplyCandidateAction;
+import org.wildfly.prospero.api.exceptions.MetadataException;
 import org.wildfly.prospero.metadata.ProsperoMetadataUtils;
 
 import java.io.FileInputStream;
@@ -47,13 +49,24 @@ public class MarkerFile {
         return operation;
     }
 
-    public static MarkerFile read(Path serverPath) throws IOException {
+    public static MarkerFile read(Path serverPath) throws IOException, MetadataException {
         final Properties properties = new Properties();
         try (final FileInputStream fis = new FileInputStream(serverPath.resolve(UPDATE_MARKER_FILE).toFile())) {
             properties.load(fis);
         }
-        final ApplyCandidateAction.Type type = ApplyCandidateAction.Type.from(properties.getProperty(OPERATION_PROPERTY));
-        return new MarkerFile(properties.getProperty(STATE_PROPERTY), type);
+        final String operationValue = getProperty(properties, OPERATION_PROPERTY, serverPath);
+        final String stateValue = getProperty(properties, STATE_PROPERTY, serverPath);
+
+        final ApplyCandidateAction.Type type = ApplyCandidateAction.Type.from(operationValue);
+        return new MarkerFile(stateValue, type);
+    }
+
+    private static String getProperty(Properties properties, String operationProperty, Path serverPath) throws MetadataException {
+        final String operationValue = properties.getProperty(operationProperty);
+        if (operationValue == null) {
+            throw ProsperoLogger.ROOT_LOGGER.invalidCandidateMarker(serverPath.resolve(UPDATE_MARKER_FILE), operationProperty);
+        }
+        return operationValue;
     }
 
     public void write(Path targetPath) throws IOException {

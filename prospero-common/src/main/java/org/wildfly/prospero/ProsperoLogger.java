@@ -162,8 +162,8 @@ public interface ProsperoLogger extends BasicLogger {
 
 
     // 200+ - errors
-    @Message(id = 200, value = "Aborting update - the running server marker is present (%s or %s)")
-    ProvisioningException serverRunningError(Path standalone, Path domain);
+    @Message(id = 200, value = "Aborting update - the server appears to be running.")
+    ProvisioningException serverRunningError();
 
     @Message(id = 201, value = "Given path '%s' is a regular file. An empty directory or a non-existing path must be given.")
     IllegalArgumentException dirMustBeDirectory(Path path);
@@ -312,4 +312,10 @@ public interface ProsperoLogger extends BasicLogger {
 
     @Message(id = 249, value = "Unrecognized profile %s, did you mean one of [%s]")
     IllegalArgumentException unknownInstallationProfile(String profileName, String options);
+
+    @Message(id = 250, value = "Invalid candidate marker file [%s]. Missing required field [%s].")
+    MetadataException invalidCandidateMarker(Path resolve, String operationProperty);
+
+    @Message(id = 251, value = "Unexpected operation type [%s] in the candidate marker file.")
+    IllegalArgumentException invalidMarkerFileOperation(String operation);
 }

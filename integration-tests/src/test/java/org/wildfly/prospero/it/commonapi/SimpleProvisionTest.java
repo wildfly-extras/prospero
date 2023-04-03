@@ -37,6 +37,7 @@ import org.junit.Test;
 import org.wildfly.channel.Channel;
 import org.wildfly.channel.Repository;
 import org.wildfly.prospero.api.InstallationMetadata;
+import org.wildfly.prospero.api.exceptions.MetadataException;
 import org.wildfly.prospero.metadata.ManifestVersionRecord;
 import org.wildfly.prospero.actions.UpdateAction;
 import org.wildfly.prospero.api.ArtifactChange;
@@ -243,7 +244,7 @@ public class SimpleProvisionTest extends WfCoreTestBase {
         return new UpdateAction(outputPath, mavenOptions, new AcceptingConsole(), Collections.emptyList());
     }
 
-    private Optional<Artifact> readArtifactFromManifest(String groupId, String artifactId) throws IOException {
+    private Optional<Artifact> readArtifactFromManifest(String groupId, String artifactId) throws IOException, MetadataException {
         final File manifestFile = manifestPath.toFile();
         return ManifestYamlSupport.parse(manifestFile).getStreams().stream()
                 .filter((a) -> a.getGroupId().equals(groupId) && a.getArtifactId().equals(artifactId))

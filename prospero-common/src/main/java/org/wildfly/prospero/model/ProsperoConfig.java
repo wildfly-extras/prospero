@@ -20,6 +20,7 @@ package org.wildfly.prospero.model;
 import org.eclipse.aether.repository.RemoteRepository;
 import org.wildfly.channel.Channel;
 import org.wildfly.channel.ChannelMapper;
+import org.wildfly.channel.InvalidChannelMetadataException;
 import org.wildfly.prospero.ProsperoLogger;
 import org.wildfly.prospero.api.MavenOptions;
 import org.wildfly.prospero.api.exceptions.MetadataException;
@@ -72,7 +73,11 @@ public class ProsperoConfig {
         if (yamlContent.isEmpty()) {
             return new ProsperoConfig(Collections.emptyList(), opts);
         } else {
-            return new ProsperoConfig(ChannelMapper.fromString(yamlContent), opts);
+            try {
+                return new ProsperoConfig(ChannelMapper.fromString(yamlContent), opts);
+            } catch (InvalidChannelMetadataException e) {
+                throw ProsperoLogger.ROOT_LOGGER.unableToParseConfiguration(path.resolve(ProsperoMetadataUtils.INSTALLER_CHANNELS_FILE_NAME), e.getCause());
+            }
         }
     }
 
