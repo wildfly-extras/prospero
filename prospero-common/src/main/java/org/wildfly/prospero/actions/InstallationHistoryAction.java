@@ -96,11 +96,10 @@ public class InstallationHistoryAction {
 
             verifyStateExists(savedState, metadata);
 
-            final ProsperoConfig prosperoConfig = new ProsperoConfig(
-                    TemporaryRepositoriesHandler.overrideRepositories(metadata.getProsperoConfig().getChannels(), overrideRepositories));
-
             MavenSessionManager mavenSessionManager = new MavenSessionManager(mavenOptions);
             try (final InstallationMetadata revertMetadata = metadata.getSavedState(savedState)) {
+                final ProsperoConfig prosperoConfig = new ProsperoConfig(
+                        TemporaryRepositoriesHandler.overrideRepositories(revertMetadata.getProsperoConfig().getChannels(), overrideRepositories));
                 final GalleonEnvironment galleonEnv = GalleonEnvironment
                         .builder(targetDir, prosperoConfig.getChannels(), mavenSessionManager)
                         .setConsole(console)
@@ -108,7 +107,8 @@ public class InstallationHistoryAction {
                         .build();
 
                 System.setProperty(MAVEN_REPO_LOCAL, mavenSessionManager.getProvisioningRepo().toAbsolutePath().toString());
-                try(final PrepareCandidateAction prepareCandidateAction = new PrepareCandidateAction(installation, mavenSessionManager, console, prosperoConfig)) {
+                try(final PrepareCandidateAction prepareCandidateAction = new PrepareCandidateAction(installation,
+                        mavenSessionManager, console, revertMetadata.getProsperoConfig())) {
                     prepareCandidateAction.buildCandidate(targetDir, galleonEnv, REVERT);
                 }
 
