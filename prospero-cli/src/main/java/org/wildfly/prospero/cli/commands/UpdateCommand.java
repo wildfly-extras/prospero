@@ -92,6 +92,8 @@ public class UpdateCommand extends AbstractParentCommand {
 
             log.tracef("Perform full update");
 
+            console.println(CliMessages.MESSAGES.updateHeader(installationDir));
+
             try (UpdateAction updateAction = actionFactory.update(installationDir, mavenOptions, console, repositories)) {
                 performUpdate(updateAction, yes, console, installationDir);
             }
@@ -107,6 +109,9 @@ public class UpdateCommand extends AbstractParentCommand {
             try {
                 targetDir = Files.createTempDirectory("update-candidate");
                 if (buildUpdate(updateAction, targetDir, yes, console, () -> console.confirmUpdates())) {
+                    console.println("");
+                    console.buildUpdatesComplete();
+
                     ApplyCandidateAction applyCandidateAction = actionFactory.applyUpdate(installDir, targetDir);
                     final List<FileConflict> conflicts = applyCandidateAction.getConflicts();
                     if (!conflicts.isEmpty()) {
@@ -116,6 +121,7 @@ public class UpdateCommand extends AbstractParentCommand {
                         }
                     }
 
+                    console.println(CliMessages.MESSAGES.applyingUpdates());
                     applyCandidateAction.applyUpdate(ApplyCandidateAction.Type.UPDATE);
                 } else {
                     return false;
@@ -156,11 +162,18 @@ public class UpdateCommand extends AbstractParentCommand {
 
             log.tracef("Generate update in %s", candidateDirectory);
 
+            console.println(CliMessages.MESSAGES.buildUpdateCandidateHeader(installationDir));
+
+
             verifyTargetDirectoryIsEmpty(candidateDirectory);
 
             try (UpdateAction updateAction = actionFactory.update(installationDir,
                     mavenOptions, console, repositories)) {
-                buildUpdate(updateAction, candidateDirectory, yes, console, ()->console.confirmBuildUpdates());
+                if (buildUpdate(updateAction, candidateDirectory, yes, console, ()->console.confirmBuildUpdates())) {
+                    console.println("");
+                    console.buildUpdatesComplete();
+                    console.println(CliMessages.MESSAGES.updateCandidateGenerated(candidateDirectory));
+                }
             }
 
             final float totalTime = (System.currentTimeMillis() - startTime) / 1000f;
@@ -194,6 +207,8 @@ public class UpdateCommand extends AbstractParentCommand {
 
             verifyDirectoryContainsInstallation(candidateDir);
 
+            console.println(CliMessages.MESSAGES.updateHeader(installationDir));
+
             final ApplyCandidateAction applyCandidateAction = actionFactory.applyUpdate(installationDir.toAbsolutePath(), candidateDir.toAbsolutePath());
 
             final ApplyCandidateAction.ValidationResult result = applyCandidateAction.verifyCandidate(ApplyCandidateAction.Type.UPDATE);
@@ -210,11 +225,13 @@ public class UpdateCommand extends AbstractParentCommand {
             FileConflictPrinter.print(conflicts, console);
 
             // there always should be updates, so confirm update
-            if (!yes && !console.confirm(CliMessages.MESSAGES.continueWithUpdate(), "", CliMessages.MESSAGES.updateCancelled())) {
+            if (!yes && !console.confirm(CliMessages.MESSAGES.continueWithUpdate(), CliMessages.MESSAGES.applyingUpdates(), CliMessages.MESSAGES.updateCancelled())) {
                 return ReturnCodes.SUCCESS;
             }
 
             applyCandidateAction.applyUpdate(ApplyCandidateAction.Type.UPDATE);
+
+            console.updatesComplete();
 
             final float totalTime = (System.currentTimeMillis() - startTime) / 1000f;
             console.println(CliMessages.MESSAGES.operationCompleted(totalTime));
@@ -231,14 +248,20 @@ public class UpdateCommand extends AbstractParentCommand {
         }
         @Override
         public Integer call() throws Exception {
+            final long startTime = System.currentTimeMillis();
             final Path installationDir = determineInstallationDirectory(directory);
 
             final MavenOptions mavenOptions = parseMavenOptions();
             final List<Repository> repositories = RepositoryDefinition.from(temporaryRepositories);
 
+            console.println(CliMessages.MESSAGES.checkUpdatesHeader(installationDir));
             try (UpdateAction updateAction = actionFactory.update(installationDir, mavenOptions, console, repositories)) {
                 final UpdateSet updateSet = updateAction.findUpdates();
                 console.updatesFound(updateSet.getArtifactUpdates());
+
+                final float totalTime = (System.currentTimeMillis() - startTime) / 1000f;
+                console.println("");
+                console.println(CliMessages.MESSAGES.operationCompleted(totalTime));
                 return ReturnCodes.SUCCESS;
             }
         }
@@ -267,8 +290,6 @@ public class UpdateCommand extends AbstractParentCommand {
         }
 
         updateAction.buildUpdate(updateDirectory.toAbsolutePath());
-
-        console.buildUpdatesComplete();
 
         return true;
     }

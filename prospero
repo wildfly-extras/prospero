@@ -1,9 +1,9 @@
 #!/bin/bash
 if [ -n "${DEBUG}" ];
 then
-  JAVA_OPTS='-agentlib:jdwp=transport=dt_socket,server=y,suspend=y,address=*:8787'
+  JAVA_OPTS="$JAVA_OPTS -agentlib:jdwp=transport=dt_socket,server=y,suspend=y,address=*:8787"
 else
-  JAVA_OPTS=''
+  JAVA_OPTS="$JAVA_OPTS"
 fi
 
 if [ -z "${PROSPERO_HOME}" ];

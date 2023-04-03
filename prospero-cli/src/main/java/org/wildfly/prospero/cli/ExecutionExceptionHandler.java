@@ -33,6 +33,7 @@ import org.wildfly.prospero.wfchannel.MavenSessionManager;
 import picocli.CommandLine;
 
 import javax.net.ssl.SSLHandshakeException;
+import javax.xml.stream.XMLStreamException;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.net.UnknownHostException;
@@ -97,14 +98,29 @@ public class ExecutionExceptionHandler implements CommandLine.IExecutionExceptio
             }
             return ReturnCodes.PROCESSING_ERROR;
         } else if (ex instanceof ProvisioningException) {
-            // new line to return from last provisioning progress line
-            console.error("\n");
-            console.error(CliMessages.MESSAGES.errorHeader(ex.getLocalizedMessage()));
+            handleProvisioningException((ProvisioningException)ex);
             return ReturnCodes.PROCESSING_ERROR;
         }
 
         // re-throw other exceptions
         throw ex;
+    }
+
+    private void handleProvisioningException(ProvisioningException ex) {
+        // new line to return from last provisioning progress line
+        console.error("\n");
+        final String message = ex.getMessage();
+
+        // the error coming from Galleon is not translated, so try to figure out what went wrong and show translated message
+        if (message.startsWith("Failed to parse")) {
+            String path = message.substring("Failed to parse".length()+1).trim();
+            console.error(CliMessages.MESSAGES.parsingError(path));
+            if (ex.getCause() instanceof XMLStreamException) {
+                console.error(ex.getCause().getLocalizedMessage());
+            }
+        } else {
+            console.error(CliMessages.MESSAGES.errorHeader(ex.getLocalizedMessage()));
+        }
     }
 
     private void printMissingMetadataException(UnresolvedChannelMetadataException ex) {

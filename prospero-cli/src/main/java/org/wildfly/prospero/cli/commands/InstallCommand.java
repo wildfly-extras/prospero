@@ -17,6 +17,9 @@
 
 package org.wildfly.prospero.cli.commands;
 
+import java.io.IOException;
+import java.io.InputStream;
+import java.net.URL;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
@@ -24,19 +27,24 @@ import java.util.Optional;
 
 import org.jboss.galleon.config.ProvisioningConfig;
 import org.wildfly.channel.Channel;
+import org.wildfly.channel.ChannelManifestCoordinate;
 import org.wildfly.channel.Repository;
+import org.wildfly.channel.maven.ChannelCoordinate;
 import org.wildfly.prospero.actions.ProvisioningAction;
+import org.wildfly.prospero.api.ArtifactUtils;
 import org.wildfly.prospero.api.KnownFeaturePacks;
 import org.wildfly.prospero.api.MavenOptions;
 import org.wildfly.prospero.api.ProvisioningDefinition;
 import org.wildfly.prospero.api.TemporaryRepositoriesHandler;
 import org.wildfly.prospero.cli.ActionFactory;
+import org.wildfly.prospero.cli.ArgumentParsingException;
 import org.wildfly.prospero.cli.CliConsole;
 import org.wildfly.prospero.cli.CliMessages;
 import org.wildfly.prospero.cli.LicensePrinter;
 import org.wildfly.prospero.cli.RepositoryDefinition;
 import org.wildfly.prospero.cli.ReturnCodes;
 import org.wildfly.prospero.cli.commands.options.FeaturePackCandidates;
+import org.wildfly.prospero.cli.printers.ChannelPrinter;
 import org.wildfly.prospero.licenses.License;
 import picocli.CommandLine;
 
@@ -117,6 +125,23 @@ public class InstallCommand extends AbstractInstallCommand {
             throw CliMessages.MESSAGES.exclusiveOptions(CliConstants.CHANNELS, CliConstants.CHANNEL_MANIFEST);
         }
 
+        if (manifestCoordinate.isPresent()) {
+            final ChannelManifestCoordinate manifest = ArtifactUtils.manifestCoordFromString(manifestCoordinate.get());
+            checkFileExists(manifest.getUrl(), manifestCoordinate.get());
+        }
+
+        if (!channelCoordinates.isEmpty()) {
+            for (String coordStr : channelCoordinates) {
+                final ChannelCoordinate coord = ArtifactUtils.channelCoordFromString(coordStr);
+                checkFileExists(coord.getUrl(), coordStr);
+            }
+        }
+
+        if (featurePackOrDefinition.definition.isPresent()) {
+            final Path definition = featurePackOrDefinition.definition.get().toAbsolutePath();
+            checkFileExists(definition.toUri().toURL(), definition.toString());
+        }
+
         verifyTargetDirectoryIsEmpty(directory);
 
         final ProvisioningDefinition provisioningDefinition = buildDefinition();
@@ -128,8 +153,25 @@ public class InstallCommand extends AbstractInstallCommand {
         final ProvisioningAction provisioningAction = actionFactory.install(directory.toAbsolutePath(), mavenOptions,
                 console);
 
+        if (featurePackOrDefinition.fpl.isPresent()) {
+            console.println(CliMessages.MESSAGES.installingFpl(featurePackOrDefinition.fpl.get()));
+        } else if (featurePackOrDefinition.profile.isPresent()) {
+            console.println(CliMessages.MESSAGES.installingProfile(featurePackOrDefinition.profile.get()));
+        } else if (featurePackOrDefinition.definition.isPresent()) {
+            console.println(CliMessages.MESSAGES.installingDefinition(featurePackOrDefinition.definition.get()));
+        }
+
+        final List<Channel> effectiveChannels = TemporaryRepositoriesHandler.overrideRepositories(channels, shadowRepositories);
+        console.println(CliMessages.MESSAGES.usingChannels());
+        final ChannelPrinter channelPrinter = new ChannelPrinter(console);
+        for (Channel channel : effectiveChannels) {
+            channelPrinter.print(channel);
+        }
+
+        console.println("");
+
         final List<License> pendingLicenses = provisioningAction.getPendingLicenses(provisioningConfig,
-                TemporaryRepositoriesHandler.overrideRepositories(channels, shadowRepositories));
+                effectiveChannels);
         if (!pendingLicenses.isEmpty()) {
             new LicensePrinter().print(pendingLicenses);
             System.out.println();
@@ -145,10 +187,23 @@ public class InstallCommand extends AbstractInstallCommand {
 
         provisioningAction.provision(provisioningConfig, channels, shadowRepositories);
 
+        console.println("");
+        console.println(CliMessages.MESSAGES.installComplete(directory));
+
         final float totalTime = (System.currentTimeMillis() - startTime) / 1000f;
         console.println(CliMessages.MESSAGES.operationCompleted(totalTime));
 
         return ReturnCodes.SUCCESS;
+    }
+
+    private void checkFileExists(URL resourceUrl, String argValue) throws ArgumentParsingException {
+        if (resourceUrl != null) {
+            try (InputStream is = resourceUrl.openStream()) {
+                // OK ignore, just need to check it exists
+            } catch (IOException e) {
+                throw CliMessages.MESSAGES.missingRequiresResource(argValue);
+            }
+        }
     }
 
     private boolean isStandardFpl(String fpl) {

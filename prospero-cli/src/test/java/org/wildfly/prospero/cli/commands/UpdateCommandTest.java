@@ -275,7 +275,7 @@ public class UpdateCommandTest extends AbstractMavenCommandTest {
 
         assertEquals(ReturnCodes.INVALID_ARGUMENTS, exitCode);
         assertTrue(getErrorOutput().contains(
-                CliMessages.MESSAGES.nonEmptyTargetFolder().getMessage()));
+                CliMessages.MESSAGES.nonEmptyTargetFolder(updatePath).getMessage()));
     }
 
     @Test
@@ -286,7 +286,7 @@ public class UpdateCommandTest extends AbstractMavenCommandTest {
 
         assertEquals(ReturnCodes.INVALID_ARGUMENTS, exitCode);
         assertTrue(getErrorOutput().contains(
-                CliMessages.MESSAGES.nonEmptyTargetFolder().getMessage()));
+                CliMessages.MESSAGES.nonEmptyTargetFolder(aFile).getMessage()));
     }
 
     @Test

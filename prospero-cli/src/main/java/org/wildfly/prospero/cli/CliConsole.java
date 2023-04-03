@@ -118,7 +118,7 @@ public class CliConsole implements Console {
 
             final String item;
             if (update.isSlowPhase()) {
-                item = " " + CliMessages.MESSAGES.applyingChanges() + "...";
+                item = " " + CliMessages.MESSAGES.installProgressWait() + "...";
             } else {
                  item = update.getCurrentItem();
             }
@@ -188,7 +188,7 @@ public class CliConsole implements Console {
 
     public boolean confirmUpdates() {
         return confirm(CliMessages.MESSAGES.continueWithUpdate(),
-                CliMessages.MESSAGES.applyingUpdates(),
+                CliMessages.MESSAGES.buildingUpdates(),
                 CliMessages.MESSAGES.updateCancelled());
     }
 

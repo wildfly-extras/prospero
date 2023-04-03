@@ -46,6 +46,9 @@ public class ChannelRemoveCommand extends AbstractCommand {
     @Override
     public Integer call() throws Exception {
         Path installationDirectory = determineInstallationDirectory(directory);
+
+        console.println(CliMessages.MESSAGES.unsubscribeChannel(installationDirectory, channelName));
+
         try (final MetadataAction metadataAction = actionFactory.metadataActions(installationDirectory)) {
             final Optional<Channel> channel = metadataAction.getChannels().stream().filter(c->c.getName().equals(channelName)).findFirst();
 
