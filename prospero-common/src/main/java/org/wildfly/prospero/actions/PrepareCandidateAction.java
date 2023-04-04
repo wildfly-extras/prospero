@@ -96,7 +96,7 @@ class PrepareCandidateAction implements AutoCloseable{
             final ManifestVersionRecord manifestRecord =
                     new ManifestVersionResolver(mavenSessionManager.getProvisioningRepo(), mavenSessionManager.newRepositorySystem())
                             .getCurrentVersions(galleonEnv.getChannels());
-            writeProsperoMetadata(targetDir, galleonEnv.getRepositoryManager(), metadata.getProsperoConfig().getChannels(),
+            writeProsperoMetadata(targetDir, galleonEnv.getRepositoryManager(), prosperoConfig.getChannels(),
                     manifestRecord);
         } catch (IOException ex) {
             throw ProsperoLogger.ROOT_LOGGER.unableToDownloadFile(ex);

@@ -267,6 +267,58 @@ public class InstallationHistoryActionTest extends WfCoreTestBase {
     }
 
     @Test
+    public void rollbackChangesUsesRestoredChannels() throws Exception {
+        // install server
+        final Path manifestPath = temp.newFile().toPath();
+        channelsFile = temp.newFile().toPath();
+        MetadataTestUtils.copyManifest("manifests/wfcore-base.yaml", manifestPath);
+        MetadataTestUtils.prepareChannel(channelsFile, List.of(manifestPath.toUri().toURL()));
+
+        final Path modulesPaths = outputPath.resolve(Paths.get("modules", "system", "layers", "base"));
+        final Path wildflyCliModulePath = modulesPaths.resolve(Paths.get("org", "jboss", "as", "cli", "main"));
+
+        final ProvisioningDefinition provisioningDefinition = defaultWfCoreDefinition()
+                .setChannelCoordinates(channelsFile.toString())
+                .build();
+        installation.provision(provisioningDefinition.toProvisioningConfig(),
+                provisioningDefinition.resolveChannels(CHANNELS_RESOLVER_FACTORY));
+
+        MetadataTestUtils.upgradeStreamInManifest(manifestPath, resolvedUpgradeArtifact);
+        updateAction().performUpdate();
+        Optional<Artifact> wildflyCliArtifact = readArtifactFromManifest("org.wildfly.core", "wildfly-cli");
+        assertEquals(UPGRADE_VERSION, wildflyCliArtifact.get().getVersion());
+        assertTrue("Updated jar should be present in module", wildflyCliModulePath.resolve(UPGRADE_JAR).toFile().exists());
+
+        // create a "broken" channel that would prevent revert if the latest avilable configuration is used
+        final InstallationMetadata metadata = InstallationMetadata.loadInstallation(outputPath);
+        final ProsperoConfig prosperoConfig = metadata.getProsperoConfig();
+        prosperoConfig.getChannels().add(new Channel.Builder()
+                .setName("idontexist")
+                .setManifestCoordinate("idont", "exit", "1.0.0")
+                .addRepository("test", "http://test.te")
+                .build());
+        metadata.updateProsperoConfig(prosperoConfig);
+
+        final InstallationHistoryAction historyAction = new InstallationHistoryAction(outputPath, new AcceptingConsole());
+        final List<SavedState> revisions = historyAction.getRevisions();
+        final SavedState savedState = revisions.get(2);
+
+        // perform the rollback using temporary repository only. Offline mode disables other repositories
+        final URL temporaryRepo = mockTemporaryRepo(false);
+        final MavenOptions offlineOptions = MavenOptions.OFFLINE;
+        historyAction.rollback(savedState, offlineOptions, List.of(new Repository("temp-repo", temporaryRepo.toExternalForm())));
+
+        wildflyCliArtifact = readArtifactFromManifest("org.wildfly.core", "wildfly-cli");
+        assertEquals(BASE_VERSION, wildflyCliArtifact.get().getVersion());
+        assertTrue("Reverted jar should be present in module", wildflyCliModulePath.resolve(BASE_JAR).toFile().exists());
+        assertThat(ProsperoConfig.readConfig(outputPath.resolve(ProsperoMetadataUtils.METADATA_DIR)).getChannels())
+                .withFailMessage("Temporary repository should not be listed")
+                .flatMap(Channel::getRepositories)
+                .map(Repository::getUrl)
+                .doesNotContain(temporaryRepo.toExternalForm());
+    }
+
+    @Test
     public void displayChanges() throws Exception {
         channelsFile = MetadataTestUtils.prepareChannel(CHANNEL_BASE_CORE_19);
 
