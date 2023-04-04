@@ -106,7 +106,7 @@ public class ApplyCandidateAction {
                 case "REVERT":
                     return ApplyCandidateAction.Type.REVERT;
                 default:
-                    throw new IllegalArgumentException("Unexpected operation in the marker file: " + text);
+                    throw ProsperoLogger.ROOT_LOGGER.invalidMarkerFileOperation(text);
             }
         }
     }
@@ -155,7 +155,7 @@ public class ApplyCandidateAction {
         }
 
         if (targetServerIsRunning()) {
-            final ProvisioningException ex = ProsperoLogger.ROOT_LOGGER.serverRunningError(STANDALONE_STARTUP_MARKER, DOMAIN_STARTUP_MARKER);
+            final ProvisioningException ex = ProsperoLogger.ROOT_LOGGER.serverRunningError();
             ProsperoLogger.ROOT_LOGGER.warn("", ex);
             throw ex;
         }

@@ -19,14 +19,21 @@ package org.wildfly.prospero.model;
 
 import org.wildfly.channel.ChannelManifest;
 import org.wildfly.channel.ChannelManifestMapper;
+import org.wildfly.channel.InvalidChannelMetadataException;
+import org.wildfly.prospero.ProsperoLogger;
+import org.wildfly.prospero.api.exceptions.MetadataException;
 
 import java.io.File;
 import java.io.IOException;
 
 public class ManifestYamlSupport {
 
-    public static ChannelManifest parse(File manifestFile) throws IOException {
-        return ChannelManifestMapper.from(manifestFile.toURI().toURL());
+    public static ChannelManifest parse(File manifestFile) throws IOException, MetadataException {
+        try {
+            return ChannelManifestMapper.from(manifestFile.toURI().toURL());
+        } catch (InvalidChannelMetadataException e) {
+            throw ProsperoLogger.ROOT_LOGGER.unableToParseConfiguration(manifestFile.toPath(), e.getCause());
+        }
     }
 
 }

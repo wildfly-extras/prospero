@@ -34,6 +34,7 @@ import org.wildfly.channel.ChannelManifestCoordinate;
 import org.wildfly.channel.ChannelMapper;
 import org.wildfly.channel.Repository;
 import org.wildfly.channel.Stream;
+import org.wildfly.prospero.api.exceptions.MetadataException;
 import org.wildfly.prospero.metadata.ManifestVersionRecord;
 import org.wildfly.prospero.actions.UpdateAction;
 import org.wildfly.prospero.api.MavenOptions;
@@ -207,7 +208,7 @@ public class UpdateTest extends WfCoreTestBase {
         assertEquals(UPGRADE_VERSION, wildflyCliArtifact.get().getVersion());
     }
 
-    private File upgradeTestArtifactIn(File manifestFile) throws IOException {
+    private File upgradeTestArtifactIn(File manifestFile) throws IOException, MetadataException {
         final ChannelManifest manifest = ManifestYamlSupport.parse(manifestFile);
         final List<Stream> streams = manifest.getStreams().stream().map(s -> {
             if (s.getGroupId().equals("org.wildfly.core") && s.getArtifactId().equals("wildfly-cli")) {
@@ -245,7 +246,7 @@ public class UpdateTest extends WfCoreTestBase {
         system.deploy(session, request);
     }
 
-    private Optional<Artifact> readArtifactFromManifest(String groupId, String artifactId) throws IOException {
+    private Optional<Artifact> readArtifactFromManifest(String groupId, String artifactId) throws IOException, MetadataException {
         final File manifestFile = manifestPath.toFile();
         return ManifestYamlSupport.parse(manifestFile).getStreams().stream()
                 .filter((a) -> a.getGroupId().equals(groupId) && a.getArtifactId().equals(artifactId))

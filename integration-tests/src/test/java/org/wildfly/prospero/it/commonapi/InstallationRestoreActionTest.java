@@ -24,6 +24,7 @@ import org.wildfly.prospero.actions.InstallationExportAction;
 import org.wildfly.prospero.actions.InstallationRestoreAction;
 import org.wildfly.prospero.actions.ProvisioningAction;
 import org.wildfly.prospero.api.ProvisioningDefinition;
+import org.wildfly.prospero.api.exceptions.MetadataException;
 import org.wildfly.prospero.it.AcceptingConsole;
 import org.wildfly.prospero.metadata.ProsperoMetadataUtils;
 import org.wildfly.prospero.model.ManifestYamlSupport;
@@ -78,7 +79,7 @@ public class InstallationRestoreActionTest extends WfCoreTestBase {
         assertEquals(BASE_VERSION, wildflyCliArtifact.get().getVersion());
     }
 
-    private Optional<Artifact> readArtifactFromManifest(String groupId, String artifactId) throws IOException {
+    private Optional<Artifact> readArtifactFromManifest(String groupId, String artifactId) throws IOException, MetadataException {
         final File manifestFile = restoredServerDir.resolve(MetadataTestUtils.MANIFEST_FILE_PATH).toFile();
         return ManifestYamlSupport.parse(manifestFile).getStreams()
                 .stream().filter((a) -> a.getGroupId().equals(groupId) && a.getArtifactId().equals(artifactId))

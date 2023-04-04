@@ -22,6 +22,7 @@ import org.jboss.galleon.ProvisioningException;
 import org.junit.Assert;
 import org.wildfly.channel.Channel;
 import org.wildfly.channel.Repository;
+import org.wildfly.prospero.api.exceptions.MetadataException;
 import org.wildfly.prospero.metadata.ManifestVersionRecord;
 import org.wildfly.prospero.api.ArtifactChange;
 import org.wildfly.prospero.actions.InstallationHistoryAction;
@@ -306,7 +307,7 @@ public class InstallationHistoryActionTest extends WfCoreTestBase {
         return new UpdateAction(outputPath, mavenOptions, new AcceptingConsole(), Collections.emptyList());
     }
 
-    private Optional<Artifact> readArtifactFromManifest(String groupId, String artifactId) throws IOException {
+    private Optional<Artifact> readArtifactFromManifest(String groupId, String artifactId) throws IOException, MetadataException {
         final File manifestFile = outputPath.resolve(MetadataTestUtils.MANIFEST_FILE_PATH).toFile();
         return ManifestYamlSupport.parse(manifestFile).getStreams()
                 .stream().filter((a) -> a.getGroupId().equals(groupId) && a.getArtifactId().equals(artifactId))

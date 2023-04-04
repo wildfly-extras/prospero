@@ -17,6 +17,8 @@
 
 package org.wildfly.prospero.cli;
 
+import com.fasterxml.jackson.databind.JsonMappingException;
+import com.fasterxml.jackson.dataformat.yaml.snakeyaml.error.MarkedYAMLException;
 import org.jboss.galleon.ProvisioningException;
 import org.wildfly.channel.ArtifactCoordinate;
 import org.wildfly.channel.ChannelMetadataCoordinate;
@@ -24,6 +26,7 @@ import org.wildfly.channel.Repository;
 import org.wildfly.prospero.api.ArtifactUtils;
 import org.wildfly.prospero.api.exceptions.ArtifactResolutionException;
 import org.wildfly.prospero.api.exceptions.ChannelDefinitionException;
+import org.wildfly.prospero.api.exceptions.MetadataException;
 import org.wildfly.prospero.api.exceptions.StreamNotFoundException;
 import org.wildfly.prospero.api.exceptions.UnresolvedChannelMetadataException;
 import org.wildfly.prospero.api.exceptions.NoChannelException;
@@ -93,6 +96,12 @@ public class ExecutionExceptionHandler implements CommandLine.IExecutionExceptio
             } else if (ex instanceof UnresolvedChannelMetadataException) {
                 UnresolvedChannelMetadataException mcme = (UnresolvedChannelMetadataException) ex;
                 printMissingMetadataException(mcme);
+            } else if (ex instanceof MetadataException) {
+                console.error(ex.getLocalizedMessage());
+                if (ex.getCause() != null && (ex.getCause() instanceof MarkedYAMLException || ex.getCause() instanceof JsonMappingException)) {
+                    console.error(ex.getCause().getLocalizedMessage());
+                }
+                return ReturnCodes.PROCESSING_ERROR;
             } else {
                 console.error(CliMessages.MESSAGES.errorHeader(ex.getLocalizedMessage()));
             }
