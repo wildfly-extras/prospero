@@ -23,6 +23,7 @@ import org.wildfly.prospero.ProsperoLogger;
 import org.wildfly.prospero.api.InstallationMetadata;
 import org.wildfly.prospero.api.MavenOptions;
 import org.wildfly.prospero.cli.ActionFactory;
+import org.wildfly.prospero.cli.ArgumentParsingException;
 import org.wildfly.prospero.cli.CliConsole;
 import org.wildfly.prospero.cli.CliMessages;
 import org.wildfly.prospero.cli.RepositoryDefinition;
@@ -77,6 +78,7 @@ public class CloneCommand extends AbstractCommand {
             if (Files.exists(outPath)) {
                 throw ProsperoLogger.ROOT_LOGGER.outFileExists(outPath);
             }
+            verifyTargetDirectoryIsEmpty(outPath);
             final Path installationDir = determineInstallationDirectory(directory);
             console.println(CliMessages.MESSAGES.exportInstallationDetailsHeader(installationDir, outPath));
             actionFactory
@@ -115,9 +117,8 @@ public class CloneCommand extends AbstractCommand {
         @Override
         public Integer call() throws Exception {
             final long startTime = System.currentTimeMillis();
-            if (Files.notExists(inPath)) {
-                console.println(CliMessages.MESSAGES.restoreFileNotExisted(inPath));
-                return ReturnCodes.INVALID_ARGUMENTS;
+            if (Files.notExists(inPath.toAbsolutePath())) {
+                throw new ArgumentParsingException(CliMessages.MESSAGES.restoreFileNotExisted(inPath.toAbsolutePath()));
             }
 
             final MavenOptions.Builder mavenOptions = localRepoOptions.toOptions();

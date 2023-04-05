@@ -140,6 +140,10 @@ public class InstallationMetadata implements AutoCloseable {
      */
     public static InstallationMetadata fromMetadataBundle(Path archiveLocation) throws IOException, MetadataException {
 
+        if (!Files.exists(archiveLocation) || !Files.isRegularFile(archiveLocation) || !Files.isReadable(archiveLocation)) {
+            throw ProsperoLogger.ROOT_LOGGER.invalidMetadataBundle(archiveLocation);
+        }
+
         final Path tempDirectory = Files.createTempDirectory("installer-import");
         tempDirectory.toFile().deleteOnExit();
         try (ZipInputStream zis = new ZipInputStream(new FileInputStream(archiveLocation.toFile()))) {

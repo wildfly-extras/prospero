@@ -39,12 +39,14 @@ import org.wildfly.prospero.model.ProsperoConfig;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.nio.file.StandardOpenOption;
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
@@ -230,6 +232,27 @@ public class InstallationMetadataTest {
 
         assertTrue("Manifest version record should be present", loadedRecord.isPresent());
         assertEquals(record.getSummary(), loadedRecord.get().getSummary());
+    }
+
+    @Test
+    public void loadMetadataFromMissingArchive() throws Exception {
+        assertThatThrownBy(()->InstallationMetadata.fromMetadataBundle(Paths.get("idontexist")))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("PRSP000252");
+    }
+
+    @Test
+    public void loadMetadataFromDirectory() throws Exception {
+        assertThatThrownBy(()->InstallationMetadata.fromMetadataBundle(temp.newFolder().toPath()))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("PRSP000252");
+    }
+
+    @Test
+    public void loadMetadataFromEmptyArchive() throws Exception {
+        assertThatThrownBy(()->InstallationMetadata.fromMetadataBundle(temp.newFile().toPath()))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("PRSP000220");
     }
 
     private static Channel createChannel(ChannelManifestCoordinate manifestCoordinate) {
