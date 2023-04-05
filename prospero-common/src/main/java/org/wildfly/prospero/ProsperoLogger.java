@@ -318,4 +318,7 @@ public interface ProsperoLogger extends BasicLogger {
 
     @Message(id = 251, value = "Unexpected operation type [%s] in the candidate marker file.")
     IllegalArgumentException invalidMarkerFileOperation(String operation);
+
+    @Message(id = 252, value = "Invalid metadata bundle [%s]. Expected a ZIP archive containing installation configuration.")
+    IllegalArgumentException invalidMetadataBundle(Path path);
 }
