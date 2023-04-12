@@ -40,7 +40,7 @@
         <version.org.codehaus.plexus-utils>3.3.1</version.org.codehaus.plexus-utils>
         <version.commons.io>2.11.0</version.commons.io>
         <version.org.jboss.staxmapper>1.3.0.Final</version.org.jboss.staxmapper>
-        <version.org.jboss.galleon>5.0.8.Final</version.org.jboss.galleon>
+        <version.org.jboss.galleon>5.1.0.Final</version.org.jboss.galleon>
         <version.org.eclipse.jgit>6.2.0.202206071550-r</version.org.eclipse.jgit>
         <version.com.fasterxml.jackson.databind>2.14.2</version.com.fasterxml.jackson.databind>
         <version.com.fasterxml.jackson>2.14.2</version.com.fasterxml.jackson>
@@ -51,7 +51,7 @@
         <version.org.jboss.logging.jboss-logging-processor>2.2.1.Final</version.org.jboss.logging.jboss-logging-processor>
         <version.org.jboss.modules>2.0.2.Final</version.org.jboss.modules>
         <version.org.jboss.xnio>3.8.7.Final</version.org.jboss.xnio>
-        <version.org.wildfly.galleon-plugins>6.3.2.Final</version.org.wildfly.galleon-plugins>
+        <version.org.wildfly.galleon-plugins>6.4.0.Final</version.org.wildfly.galleon-plugins>
         <version.org.wildfly.installation-manager>1.0.0.Final</version.org.wildfly.installation-manager>
         <version.org.mockito>3.12.4</version.org.mockito>
         <version.org.slf4j>2.0.6</version.org.slf4j>
