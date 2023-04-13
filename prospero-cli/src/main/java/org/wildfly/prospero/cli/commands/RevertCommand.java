@@ -161,9 +161,12 @@ public class RevertCommand extends AbstractParentCommand {
             console.println("");
 
             applyCandidate(console, applyCandidateAction, yes);
+            if(remove) {
+                applyCandidateAction.removeCandidate(candidateDirectory.toFile());
+            }
             final float totalTime = (System.currentTimeMillis() - startTime) / 1000f;
             console.println(CliMessages.MESSAGES.operationCompleted(totalTime));
-            applyCandidateAction.removeUpdateCandidate(remove);
+
             return SUCCESS;
         }
     }
