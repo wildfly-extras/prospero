@@ -96,4 +96,7 @@ public final class CliConstants {
     public static final String ARG_PATH = "--path";
 
     public static final String ACCEPT_AGREEMENTS = "--accept-license-agreements";
+    public static final String REMOVE = "--rm";
+    public static final String SKIP_CONFLICTS = "--y";
+
 }

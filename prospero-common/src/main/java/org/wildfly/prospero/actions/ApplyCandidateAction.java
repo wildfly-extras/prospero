@@ -250,6 +250,22 @@ public class ApplyCandidateAction {
         }
     }
 
+    public void removeUpdateCandidate(boolean remove){
+        if (remove){
+            removeCandidate(updateDir.toFile());
+        }
+    }
+
+     boolean removeCandidate(File updateDir) {
+        File[] allContents = updateDir.listFiles();
+        if (allContents != null) {
+            for (File file : allContents) {
+                removeCandidate(file);
+            }
+        }
+        return updateDir.delete();
+    }
+
     /**
      * list artifacts changed between base and candidate servers.
      *
@@ -654,6 +670,8 @@ public class ApplyCandidateAction {
         }
         return pathKey;
     }
+
+
 
     private static void glnew(final Path updateFile, Path installationFile) throws ProvisioningException {
         try {
