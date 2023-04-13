@@ -192,6 +192,12 @@ public class UpdateCommand extends AbstractParentCommand {
         @CommandLine.Option(names = CliConstants.CANDIDATE_DIR, required = true)
         Path candidateDir;
 
+        @CommandLine.Option(names = CliConstants.REMOVE)
+        boolean remove;
+
+        @CommandLine.Option(names = CliConstants.SKIP_CONFLICTS)
+        boolean skipConflicts;
+
         @CommandLine.Option(names = {CliConstants.Y, CliConstants.YES})
         boolean yes;
 
@@ -221,8 +227,10 @@ public class UpdateCommand extends AbstractParentCommand {
             }
 
             console.updatesFound(applyCandidateAction.findUpdates().getArtifactUpdates());
-            final List<FileConflict> conflicts = applyCandidateAction.getConflicts();
-            FileConflictPrinter.print(conflicts, console);
+            if(!skipConflicts) {
+                final List<FileConflict> conflicts = applyCandidateAction.getConflicts();
+                FileConflictPrinter.print(conflicts, console);
+            }
 
             // there always should be updates, so confirm update
             if (!yes && !console.confirm(CliMessages.MESSAGES.continueWithUpdate(), CliMessages.MESSAGES.applyingUpdates(), CliMessages.MESSAGES.updateCancelled())) {
@@ -235,6 +243,7 @@ public class UpdateCommand extends AbstractParentCommand {
 
             final float totalTime = (System.currentTimeMillis() - startTime) / 1000f;
             console.println(CliMessages.MESSAGES.operationCompleted(totalTime));
+            applyCandidateAction.removeUpdateCandidate(remove);
 
             return ReturnCodes.SUCCESS;
         }

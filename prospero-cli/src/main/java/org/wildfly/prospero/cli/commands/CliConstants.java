@@ -106,4 +106,6 @@ public final class CliConstants {
 
     public static final String LAYERS = "--layers";
     public static final String TARGET_CONFIG = "--target-config";
+    public static final String REMOVE = "--rm";
+    public static final String SKIP_CONFLICTS = "--y";
 }
