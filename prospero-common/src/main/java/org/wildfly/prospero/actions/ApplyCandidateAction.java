@@ -244,13 +244,7 @@ public class ApplyCandidateAction {
         }
     }
 
-    public void removeUpdateCandidate(boolean remove){
-        if (remove){
-            removeCandidate(updateDir.toFile());
-        }
-    }
-
-     boolean removeCandidate(File updateDir) {
+    public boolean removeCandidate(File updateDir) {
         File[] allContents = updateDir.listFiles();
         if (allContents != null) {
             for (File file : allContents) {
