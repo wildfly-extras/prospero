@@ -27,6 +27,8 @@ import java.io.File;
 import java.util.Arrays;
 import java.util.List;
 
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatExceptionOfType;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
@@ -141,6 +143,33 @@ public class MavenArtifactMapperTest {
         assertEquals("test1", mappedArtifacts.get(1).getArtifactId());
         assertEquals(file1.toPath(), mappedArtifacts.get(1).getPath());
         assertEquals("1.2.5", mappedArtifacts.get(1).getVersion());
+    }
+
+    @Test
+    public void testGetExistingArtifacts() throws Exception {
+        final List<org.jboss.galleon.universe.maven.MavenArtifact> galleonArtifacts = Arrays.asList(
+                galleonArtifact("foo.bar", "test1", "jar").setVersion("1.2.3"),
+                galleonArtifact("foo.bar", "test1", "jar").setVersion("1.2.4"),
+                galleonArtifact("foo.bar", "test2", "jar").setVersion("1.0.0"));
+
+        final MavenArtifactMapper mavenArtifactMapper = new MavenArtifactMapper(galleonArtifacts);
+
+        assertThat(mavenArtifactMapper.get(new ArtifactCoordinate("foo.bar", "test1", "jar", "", "")))
+                .map(a->a.getGroupId() + ":" + a.getArtifactId() + ":" + a.getVersion())
+                .contains("foo.bar:test1:1.2.3", "foo.bar:test1:1.2.4");
+    }
+
+    @Test
+    public void testArtifactNotFoundInMapper() throws Exception {
+        final List<org.jboss.galleon.universe.maven.MavenArtifact> galleonArtifacts = Arrays.asList(
+                galleonArtifact("foo.bar", "test1", "jar").setVersion("1.2.3"),
+                galleonArtifact("foo.bar", "test1", "jar").setVersion("1.2.4"),
+                galleonArtifact("foo.bar", "test2", "jar").setVersion("1.0.0"));
+
+        final MavenArtifactMapper mavenArtifactMapper = new MavenArtifactMapper(galleonArtifacts);
+
+        assertThatExceptionOfType(IllegalArgumentException.class)
+                .isThrownBy(()->mavenArtifactMapper.get(new ArtifactCoordinate("foo.bar", "idontexist", "jar", "", "")));
     }
 
     private org.jboss.galleon.universe.maven.MavenArtifact galleonArtifact(String groupId, String artifactId, String extension) {

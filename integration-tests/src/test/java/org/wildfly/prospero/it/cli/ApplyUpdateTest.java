@@ -56,7 +56,7 @@ public class ApplyUpdateTest extends CliTestBase  {
         final Path provisionConfig = temp.newFile().toPath();
         final Path updatePath = tempDir.newFolder("update-candidate").toPath();
         MetadataTestUtils.copyManifest("manifests/wfcore-base.yaml", manifestPath);
-        MetadataTestUtils.prepareChannel(provisionConfig, List.of(manifestPath.toUri().toURL()));
+        MetadataTestUtils.prepareChannel(provisionConfig, List.of(manifestPath.toUri().toURL()), defaultRemoteRepositories());
 
         install(provisionConfig, targetDir.toPath());
 

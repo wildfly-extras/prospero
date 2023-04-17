@@ -74,7 +74,7 @@ public class SimpleProvisionTest extends WfCoreTestBase {
         assertEquals(BASE_VERSION, wildflyCliArtifact.get().getVersion());
         // verify the galleon pack has been added
         assertThat(Files.readAllLines(hashesPath()))
-                .contains("wildfly-core-galleon-pack-" + BASE_VERSION + ".zip");
+                .contains("wildfly-core-galleon-pack-" + BASE_VERSION + "-channel.zip");
 
         // verify the URL of the manifest was recorded
         final Path manifestVersionsFile = outputPath.resolve(ProsperoMetadataUtils.METADATA_DIR).resolve(ProsperoMetadataUtils.CURRENT_VERSION_FILE);

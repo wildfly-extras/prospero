@@ -20,6 +20,7 @@ package org.wildfly.prospero.it.commonapi;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.IOUtils;
 import org.eclipse.aether.deployment.DeployRequest;
+import org.eclipse.aether.deployment.DeploymentException;
 import org.eclipse.aether.installation.InstallResult;
 import org.eclipse.aether.repository.RemoteRepository;
 import org.junit.AfterClass;
@@ -48,8 +49,11 @@ import org.junit.BeforeClass;
 
 import java.io.File;
 import java.io.FileInputStream;
+import java.io.IOException;
 import java.net.URL;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.FileSystem;
+import java.nio.file.FileSystems;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Arrays;
@@ -64,12 +68,13 @@ import java.util.zip.ZipInputStream;
 public class WfCoreTestBase {
 
     public static final String BASE_VERSION = "20.0.0.Beta5";
+    public static final String CHANNEL_REQUIRING_VERSION = "20.0.0.Beta5-channel";
     public static final String UPGRADE_VERSION = "20.0.0.Beta5-test";
     public static final String UNDERTOW_VESION = "2.3.0.Final";
     public static final String XNIO_VERSION = "3.8.8.Final";
     public static final String BASE_JAR = "wildfly-cli-" + BASE_VERSION + ".jar";
     public static final String UPGRADE_JAR = "wildfly-cli-" + UPGRADE_VERSION + ".jar";
-    public static final String CHANNEL_BASE_CORE_19 = "manifests/wfcore-base.yaml";
+    public static final String CHANNEL_BASE_CORE_19 = "manifests/wfcore-base-require-channels.yaml";
     public static final String CHANNEL_FP_UPDATES = "manifests/wfcore-upgrade-fp.yaml";
     public static final String CHANNEL_COMPONENT_UPDATES = "manifests/wfcore-upgrade-component.yaml";
     public static final Repository REPOSITORY_MAVEN_CENTRAL = new Repository("maven-central", "https://repo1.maven.org/maven2/");
@@ -91,15 +96,23 @@ public class WfCoreTestBase {
     @Rule
     public TemporaryFolder temp = new TemporaryFolder();
 
+    protected static Path testRepo;
+
     @BeforeClass
     public static void deployUpgrade() throws Exception {
         localCachePath = Files.createTempDirectory("local-cache").toAbsolutePath();
+        testRepo = Files.createTempDirectory("test-fp-repo");
         final MavenSessionManager msm = new MavenSessionManager(MavenOptions.builder()
                 .setLocalCachePath(localCachePath)
                 .setOffline(false)
                 .build());
         final RepositorySystem system = msm.newRepositorySystem();
         final DefaultRepositorySystemSession session = msm.newRepositorySystemSession(system, false);
+
+        /* mock a wildfly-core feature pack that requires a channel resolve
+         * the mocked artifact lives in {@code testRepo}
+         */
+        deployFeaturePackRequiringChannels(system, session);
 
         resolvedUpgradeArtifact = installIfMissing(system, session, "org.wildfly.core", "wildfly-cli", null, "jar");
         resolvedUpgradeClientArtifact = installIfMissing(system, session, "org.wildfly.core", "wildfly-cli", "client", "jar");
@@ -109,6 +122,7 @@ public class WfCoreTestBase {
     @AfterClass
     public static void removeCache() throws Exception {
         FileUtils.deleteQuietly(localCachePath.toFile());
+        FileUtils.deleteQuietly(testRepo.toFile());
     }
 
     @Before
@@ -174,7 +188,10 @@ public class WfCoreTestBase {
         return Arrays.asList(
                 REPOSITORY_MAVEN_CENTRAL,
                 REPOSITORY_NEXUS,
-                REPOSITORY_MRRC_GA
+                REPOSITORY_MRRC_GA,
+                new Repository("test-fp-repo", testRepo.toFile().toURI().toString()),
+                // remove when galleon-plugin 6.4.1.Final is available
+                new Repository("galleon-plugin-repo", "file:/Users/spyrkob/workspaces/set/prospero/prospero/local-repo")
         );
     }
 
@@ -203,7 +220,7 @@ public class WfCoreTestBase {
 
         // resolve wildfly-core galleon pack zip
         ArtifactRequest request = new ArtifactRequest(
-                new DefaultArtifact("org.wildfly.core", "wildfly-core-galleon-pack", "zip", BASE_VERSION),
+                new DefaultArtifact("org.wildfly.core", "wildfly-core-galleon-pack", "zip", CHANNEL_REQUIRING_VERSION),
                 remoteRepositories, null);
         final ArtifactResult galleonPackArtifact = system.resolveArtifact(session, request);
 
@@ -220,9 +237,9 @@ public class WfCoreTestBase {
         }
 
         // additional artifacts not included in galleon-pack
-        artifacts.put("galleon-pack", "org.wildfly.core:wildfly-core-galleon-pack:"+ BASE_VERSION + "::zip");
-        artifacts.put("galleon-plugins", "org.wildfly.galleon-plugins:wildfly-galleon-plugins:6.3.0.Final::jar");
-        artifacts.put("wildfly-config-gen", "org.wildfly.galleon-plugins:wildfly-config-gen:6.3.0.Final::jar");
+        artifacts.put("galleon-pack", "org.wildfly.core:wildfly-core-galleon-pack:"+ CHANNEL_REQUIRING_VERSION + "::zip");
+        artifacts.put("galleon-plugins", "org.wildfly.galleon-plugins:wildfly-galleon-plugins:6.4.1.Final::jar");
+        artifacts.put("wildfly-config-gen", "org.wildfly.galleon-plugins:wildfly-config-gen:6.4.1.Final::jar");
 
         // resolve all dependencies
         final List<ArtifactRequest> requests = artifacts.values().stream()
@@ -265,5 +282,23 @@ public class WfCoreTestBase {
             throw new IllegalArgumentException("Wrong format " + gavString);
         }
         return new DefaultArtifact(gav[0], gav[1], gav[3], gav[4], gav[2]);
+    }
+
+    private static void deployFeaturePackRequiringChannels(RepositorySystem system, DefaultRepositorySystemSession session) throws ArtifactResolutionException, IOException, DeploymentException {
+        final File zip = resolveExistingCliArtifact(system, session, "org.wildfly.core", "wildfly-core-galleon-pack", null, "zip");
+
+        final Path copied = testRepo.resolve(zip.getName());
+        Files.copy(zip.toPath(), copied);
+
+        try (FileSystem fs = FileSystems.newFileSystem(copied, WfCoreTestBase.class.getClassLoader())) {
+            final Path channelProperties = fs.getPath("/resources/wildfly/wildfly-channel.properties");
+            Files.writeString(channelProperties, "resolution=REQUIRED");
+        }
+
+        final DeployRequest deployRequest = new DeployRequest();
+        deployRequest.addArtifact(new DefaultArtifact("org.wildfly.core", "wildfly-core-galleon-pack", null, "zip", CHANNEL_REQUIRING_VERSION, null, copied.toFile()));
+        deployRequest.setRepository(new RemoteRepository.Builder("test-fp-repo", "default", testRepo.toFile().toURI().toString()).build());
+        system.deploy(session, deployRequest);
+        Files.delete(copied);
     }
 }
