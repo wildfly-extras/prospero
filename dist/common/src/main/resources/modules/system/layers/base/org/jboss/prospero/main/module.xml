@@ -22,38 +22,42 @@
   ~ 02110-1301 USA, or see the FSF site: http://www.fsf.org.
   -->
 <module name="org.jboss.prospero" xmlns="urn:jboss:module:1.6">
-  <main-class name="org.wildfly.prospero.cli.CliMain"/>
-    <resources>
-        <artifact name="${org.wildfly.channel:channel-core}"/>
-        <artifact name="${org.wildfly.channel:maven-resolver}"/>
-        <artifact name="${org.codehaus.plexus:plexus-interpolation}"/>
-        <artifact name="${org.codehaus.plexus:plexus-utils}"/>
-        <artifact name="${org.wildfly.prospero:prospero-common}"/>
-        <artifact name="${org.wildfly.prospero:prospero-metadata}"/>
-        <artifact name="${org.wildfly.prospero:prospero-cli}"/>
-        <artifact name="${org.jboss.galleon:galleon-core}"/>
-        <artifact name="${org.jboss.galleon:galleon-maven-universe}"/>
-        <artifact name="${info.picocli:picocli}"/>
-        <artifact name="${com.fasterxml.jackson.dataformat:jackson-dataformat-yaml}"/>
-        <artifact name="${com.networknt:json-schema-validator}"/>
-        <artifact name="${org.apache.commons:commons-text}"/>
-        <artifact name="${org.apache.maven:maven-artifact}"/>
-        <artifact name="${org.apache.maven:maven-builder-support}"/>
-        <artifact name="${org.apache.maven:maven-model}"/>
-        <artifact name="${org.apache.maven:maven-model-builder}"/>
-        <artifact name="${org.apache.maven:maven-repository-metadata}"/>
-        <artifact name="${org.apache.maven.resolver:maven-resolver-api}"/>
-        <artifact name="${org.apache.maven.resolver:maven-resolver-connector-basic}"/>
-        <artifact name="${org.apache.maven.resolver:maven-resolver-impl}"/>
-        <artifact name="${org.apache.maven.resolver:maven-resolver-named-locks}"/>
-        <artifact name="${org.apache.maven:maven-resolver-provider}"/>
-        <artifact name="${org.apache.maven.resolver:maven-resolver-spi}"/>
-        <artifact name="${org.apache.maven.resolver:maven-resolver-transport-file}"/>
-        <artifact name="${org.apache.maven.resolver:maven-resolver-transport-http}"/>
-        <artifact name="${org.apache.maven.resolver:maven-resolver-util}"/>
-    </resources>
+  <properties>
+    <property name="jboss.api" value="private"/>
+  </properties>
 
-    <dependencies>
-      <module name="org.jboss.prospero-dep" export="true" services="import"/>
-    </dependencies>
+  <main-class name="org.wildfly.prospero.cli.CliMain"/>
+  <resources>
+    <artifact name="${org.wildfly.channel:channel-core}"/>
+    <artifact name="${org.wildfly.channel:maven-resolver}"/>
+    <artifact name="${org.codehaus.plexus:plexus-interpolation}"/>
+    <artifact name="${org.codehaus.plexus:plexus-utils}"/>
+    <artifact name="${org.wildfly.prospero:prospero-common}"/>
+    <artifact name="${org.wildfly.prospero:prospero-metadata}"/>
+    <artifact name="${org.wildfly.prospero:prospero-cli}"/>
+    <artifact name="${org.jboss.galleon:galleon-core}"/>
+    <artifact name="${org.jboss.galleon:galleon-maven-universe}"/>
+    <artifact name="${info.picocli:picocli}"/>
+    <artifact name="${com.fasterxml.jackson.dataformat:jackson-dataformat-yaml}"/>
+    <artifact name="${com.networknt:json-schema-validator}"/>
+    <artifact name="${org.apache.commons:commons-text}"/>
+    <artifact name="${org.apache.maven:maven-artifact}"/>
+    <artifact name="${org.apache.maven:maven-builder-support}"/>
+    <artifact name="${org.apache.maven:maven-model}"/>
+    <artifact name="${org.apache.maven:maven-model-builder}"/>
+    <artifact name="${org.apache.maven:maven-repository-metadata}"/>
+    <artifact name="${org.apache.maven.resolver:maven-resolver-api}"/>
+    <artifact name="${org.apache.maven.resolver:maven-resolver-connector-basic}"/>
+    <artifact name="${org.apache.maven.resolver:maven-resolver-impl}"/>
+    <artifact name="${org.apache.maven.resolver:maven-resolver-named-locks}"/>
+    <artifact name="${org.apache.maven:maven-resolver-provider}"/>
+    <artifact name="${org.apache.maven.resolver:maven-resolver-spi}"/>
+    <artifact name="${org.apache.maven.resolver:maven-resolver-transport-file}"/>
+    <artifact name="${org.apache.maven.resolver:maven-resolver-transport-http}"/>
+    <artifact name="${org.apache.maven.resolver:maven-resolver-util}"/>
+  </resources>
+
+  <dependencies>
+    <module name="org.jboss.prospero-dep" export="true" services="import"/>
+  </dependencies>
 </module>
