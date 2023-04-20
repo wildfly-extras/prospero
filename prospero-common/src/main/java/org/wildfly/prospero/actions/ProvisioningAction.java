@@ -39,7 +39,6 @@ import org.wildfly.prospero.api.exceptions.StreamNotFoundException;
 import org.wildfly.prospero.galleon.GalleonFeaturePackAnalyzer;
 import org.wildfly.prospero.galleon.GalleonEnvironment;
 import org.wildfly.prospero.galleon.GalleonUtils;
-import org.wildfly.prospero.galleon.ChannelMavenArtifactRepositoryManager;
 
 import java.io.IOException;
 import java.net.MalformedURLException;
@@ -145,12 +144,12 @@ public class ProvisioningAction {
             } catch (IOException e) {
                 throw ProsperoLogger.ROOT_LOGGER.unableToDownloadFile(e);
             }
-
             if (ProsperoLogger.ROOT_LOGGER.isDebugEnabled()) {
                 ProsperoLogger.ROOT_LOGGER.debug("Recording installed metadata");
             }
-            writeProsperoMetadata(installDir, galleonEnv.getRepositoryManager(), recordedChannels, manifestRecord);
+            writeProsperoMetadata(installDir, galleonEnv.getChannelSession().getRecordedChannel(), recordedChannels, manifestRecord);
         }
+
 
         try {
             final GalleonFeaturePackAnalyzer galleonFeaturePackAnalyzer = new GalleonFeaturePackAnalyzer(channels, mavenSessionManager);
@@ -214,10 +213,8 @@ public class ProvisioningAction {
         }
     }
 
-    private void writeProsperoMetadata(Path home, ChannelMavenArtifactRepositoryManager maven, List<Channel> channels,
+    private void writeProsperoMetadata(Path home, ChannelManifest manifest, List<Channel> channels,
                                        ManifestVersionRecord manifestVersions) throws MetadataException {
-        final ChannelManifest manifest = maven.resolvedChannel();
-
         try (final InstallationMetadata installationMetadata = InstallationMetadata.newInstallation(home, manifest,
                 new ProsperoConfig(channels, mvnOptions), Optional.of(manifestVersions))) {
             installationMetadata.recordProvision(true, true);

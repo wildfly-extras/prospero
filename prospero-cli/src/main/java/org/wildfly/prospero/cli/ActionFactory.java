@@ -23,6 +23,7 @@ import java.util.List;
 import org.jboss.galleon.ProvisioningException;
 import org.wildfly.channel.Repository;
 import org.wildfly.prospero.actions.ApplyCandidateAction;
+import org.wildfly.prospero.actions.GenerateAction;
 import org.wildfly.prospero.api.Console;
 import org.wildfly.prospero.actions.InstallationExportAction;
 import org.wildfly.prospero.actions.InstallationHistoryAction;
@@ -73,5 +74,9 @@ public class ActionFactory {
 
     public InstallationRestoreAction restoreAction(Path targetPath, MavenOptions mavenOptions, Console console) throws ProvisioningException {
         return new InstallationRestoreAction(targetPath, mavenOptions, console);
+    }
+
+    public GenerateAction generateAction(MavenOptions mvnOptions, Console console) throws ProvisioningException {
+        return new GenerateAction(mvnOptions, console);
     }
 }

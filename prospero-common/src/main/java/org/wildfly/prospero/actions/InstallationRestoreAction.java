@@ -31,7 +31,6 @@ import org.wildfly.prospero.galleon.GalleonEnvironment;
 import org.wildfly.prospero.api.InstallationMetadata;
 import org.wildfly.prospero.api.exceptions.MetadataException;
 import org.wildfly.prospero.galleon.GalleonUtils;
-import org.wildfly.prospero.galleon.ChannelMavenArtifactRepositoryManager;
 import org.wildfly.prospero.model.ProsperoConfig;
 import org.wildfly.prospero.wfchannel.MavenSessionManager;
 import org.jboss.galleon.ProvisioningException;
@@ -76,7 +75,7 @@ public class InstallationRestoreAction {
                 GalleonUtils.executeGalleon(options -> galleonEnv.getProvisioningManager().provision(metadataBundle.getGalleonProvisioningConfig(), options),
                         mavenSessionManager.getProvisioningRepo().toAbsolutePath());
 
-                writeProsperoMetadata(galleonEnv.getRepositoryManager(), originalChannels);
+                writeProsperoMetadata(galleonEnv.getChannelSession().getRecordedChannel(), originalChannels);
             } catch (UnresolvedMavenArtifactException e) {
                 throw new ArtifactResolutionException(ProsperoLogger.ROOT_LOGGER.unableToResolve(), e, e.getUnresolvedArtifacts(),
                         e.getAttemptedRepositories(), mavenSessionManager.isOffline());
@@ -84,9 +83,7 @@ public class InstallationRestoreAction {
         }
     }
 
-    private void writeProsperoMetadata(ChannelMavenArtifactRepositoryManager maven, List<Channel> channels) throws MetadataException {
-        final ChannelManifest manifest = maven.resolvedChannel();
-
+    private void writeProsperoMetadata(ChannelManifest manifest, List<Channel> channels) throws MetadataException {
         try (final InstallationMetadata installationMetadata = InstallationMetadata.newInstallation(installDir, manifest,
                 new ProsperoConfig(channels), Optional.empty())) {
             installationMetadata.recordProvision(true, true);

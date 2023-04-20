@@ -22,6 +22,7 @@ import org.eclipse.aether.RepositorySystem;
 import org.jboss.galleon.ProvisioningException;
 import org.jboss.galleon.ProvisioningManager;
 import org.jboss.galleon.layout.ProvisioningLayoutFactory;
+import org.jboss.galleon.universe.maven.repo.MavenRepoManager;
 import org.wildfly.channel.Channel;
 import org.wildfly.channel.ChannelManifest;
 import org.wildfly.channel.ChannelMetadataCoordinate;
@@ -62,7 +63,7 @@ public class GalleonEnvironment implements AutoCloseable {
 
     public static final String TRACK_RESOLVING_VERSIONS = "RESOLVING_VERSIONS";
     private final ProvisioningManager provisioningManager;
-    private final ChannelMavenArtifactRepositoryManager repositoryManager;
+    private final MavenRepoManager repositoryManager;
     private final ChannelSession channelSession;
     private final List<Channel> channels;
 
@@ -89,10 +90,14 @@ public class GalleonEnvironment implements AutoCloseable {
         }
         channelSession = initChannelSession(session, factory);
 
-        if (restoreManifest.isEmpty()) {
-            repositoryManager = new ChannelMavenArtifactRepositoryManager(channelSession);
+        if (builder.artifactDirectResolve) {
+            repositoryManager = new MavenArtifactDirectResolverRepositoryManager(channelSession);
         } else {
-            repositoryManager = new ChannelMavenArtifactRepositoryManager(channelSession, restoreManifest.get());
+            if (restoreManifest.isEmpty()) {
+                repositoryManager = new ChannelMavenArtifactRepositoryManager(channelSession);
+            } else {
+                repositoryManager = new ChannelMavenArtifactRepositoryManager(channelSession, restoreManifest.get());
+            }
         }
         provisioningManager = GalleonUtils.getProvisioningManager(builder.installDir, repositoryManager, builder.fpTracker);
 
@@ -139,10 +144,6 @@ public class GalleonEnvironment implements AutoCloseable {
         return provisioningManager;
     }
 
-    public ChannelMavenArtifactRepositoryManager getRepositoryManager() {
-        return repositoryManager;
-    }
-
     public ChannelSession getChannelSession() {
         return channelSession;
     }
@@ -173,6 +174,7 @@ public class GalleonEnvironment implements AutoCloseable {
         private ChannelManifest manifest;
         private Consumer<String> fpTracker;
         private Path sourceServerPath;
+        private boolean artifactDirectResolve;
 
         private Builder(Path installDir, List<Channel> channels, MavenSessionManager mavenSessionManager) {
             this.installDir = installDir;
@@ -201,6 +203,17 @@ public class GalleonEnvironment implements AutoCloseable {
 
         public Builder setSourceServerPath(Path sourceServerPath) {
             this.sourceServerPath = sourceServerPath;
+            return this;
+        }
+
+        /**
+         * Resolving the artifacts directly without checking the channel manifest or not.
+         *
+         * @param artifactDirectResolve true if resolving directly, false otherwise.
+         * @return this for fluent api
+         */
+        public Builder setArtifactDirectResolve(boolean artifactDirectResolve) {
+            this.artifactDirectResolve = artifactDirectResolve;
             return this;
         }
 
