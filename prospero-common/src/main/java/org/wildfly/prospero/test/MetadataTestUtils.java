@@ -115,10 +115,28 @@ public final class MetadataTestUtils {
         prepareChannel(channelFile, channelUrls);
     }
 
+    public static void prepareChannel(Path channelFile, List<Repository> repositories, String... manifests) throws IOException {
+        List<URL> channelUrls = Arrays.stream(manifests)
+                .map(d->MetadataTestUtils.class.getClassLoader().getResource(d))
+                .collect(Collectors.toList());
+        prepareChannel(channelFile, channelUrls, repositories);
+    }
+
     public static void prepareChannel(Path channelFile, List<URL> manifestUrls) throws IOException {
         List<Channel> channels = new ArrayList<>();
         List<Repository> repositories = defaultRemoteRepositories().stream()
                 .map(r->new Repository(r.getId(), r.getUrl())).collect(Collectors.toList());
+        for (int i=0; i<manifestUrls.size(); i++) {
+            channels.add(new Channel("test-channel-" + i, "", null, repositories,
+                    new ChannelManifestCoordinate(manifestUrls.get(i)),
+                    null, Channel.NoStreamStrategy.NONE));
+        }
+
+        writeChannels(channelFile, channels);
+    }
+
+    public static void prepareChannel(Path channelFile, List<URL> manifestUrls, List<Repository> repositories) throws IOException {
+        List<Channel> channels = new ArrayList<>();
         for (int i=0; i<manifestUrls.size(); i++) {
             channels.add(new Channel("test-channel-" + i, "", null, repositories,
                     new ChannelManifestCoordinate(manifestUrls.get(i)),

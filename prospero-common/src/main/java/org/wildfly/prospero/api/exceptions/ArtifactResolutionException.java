@@ -19,7 +19,6 @@ package org.wildfly.prospero.api.exceptions;
 
 import org.wildfly.channel.ArtifactCoordinate;
 import org.wildfly.channel.Repository;
-import org.wildfly.channel.UnresolvedMavenArtifactException;
 
 import java.util.Collections;
 import java.util.Set;
@@ -40,14 +39,6 @@ public class ArtifactResolutionException extends OperationException {
         this.repositories = repositories;
         this.offline = offline;
         this.missingArtifacts = missingArtifacts;
-    }
-
-    public ArtifactResolutionException(UnresolvedMavenArtifactException e,
-                                       Set<Repository> repositories, boolean offline) {
-        super(e.getLocalizedMessage(), e);
-        this.repositories = repositories;
-        this.offline = offline;
-        this.missingArtifacts = Set.copyOf(((UnresolvedMavenArtifactException)getCause()).getUnresolvedArtifacts());
     }
 
     public Set<ArtifactCoordinate> getMissingArtifacts() {

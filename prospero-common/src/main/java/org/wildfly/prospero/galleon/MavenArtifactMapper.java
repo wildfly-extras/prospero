@@ -80,6 +80,21 @@ public class MavenArtifactMapper {
         return galleonArtifacts;
     }
 
+    /**
+     * gets a list of artifact matching required {@code ArtifactCoordinate}
+     *
+     * @param coord
+     * @return
+     * @throws IllegalArgumentException if the artifact coordinates cannot be found
+     */
+    public List<org.jboss.galleon.universe.maven.MavenArtifact> get(ArtifactCoordinate coord) {
+        String key = coordString(coord.getGroupId(), coord.getArtifactId(), coord.getExtension(), coord.getClassifier());
+        if (!artifactMap.containsKey(key)) {
+            throw new IllegalArgumentException("Artifact " + key + " not found.");
+        }
+        return artifactMap.get(key);
+    }
+
     public static void resolve(org.jboss.galleon.universe.maven.MavenArtifact artifact, MavenArtifact resolvedArtifact) {
         Objects.requireNonNull(artifact);
         Objects.requireNonNull(resolvedArtifact);

@@ -79,7 +79,9 @@ public class CloneTest extends WfCoreTestBase {
 
     @Test
     public void testExport() throws Exception {
-        ChannelManifest installedManifest = install(targetDir, MetadataTestUtils.prepareChannel(CHANNEL_BASE_CORE_19));
+        final Path channelsFile = temp.newFile("channels.yaml").toPath().toAbsolutePath();
+        MetadataTestUtils.prepareChannel(channelsFile, defaultRemoteRepositories(), CHANNEL_BASE_CORE_19);
+        ChannelManifest installedManifest = install(targetDir, channelsFile);
         ExecutionUtils.prosperoExecution(CliConstants.Commands.CLONE, CliConstants.Commands.EXPORT,
             CliConstants.DIR, targetDir.toString(),
             CliConstants.ARG_PATH, exportPath.toString()
@@ -130,7 +132,7 @@ public class CloneTest extends WfCoreTestBase {
             Channel channel = prosperoConfig.getChannels().get(0);
             assertEquals("test-channel-0", channel.getName());
             assertThat(channel.getRepositories())
-              .map(Repository::getId).containsExactly("maven-central", "nexus", "maven-redhat-ga");
+              .map(Repository::getId).containsExactly("maven-central", "nexus", "maven-redhat-ga", "test-fp-repo", "galleon-plugin-repo");
 
             // check provisionedConfig
             assertTrue(provisionedConfig.hasFeaturePackDeps());
@@ -142,7 +144,9 @@ public class CloneTest extends WfCoreTestBase {
 
     @Test
     public void testRestore() throws Exception {
-        ChannelManifest installedManifest = install(targetDir, MetadataTestUtils.prepareChannel(CHANNEL_BASE_CORE_19));
+        final Path channelsFile = temp.newFile("channels.yaml").toPath().toAbsolutePath();
+        MetadataTestUtils.prepareChannel(channelsFile, defaultRemoteRepositories(), CHANNEL_BASE_CORE_19);
+        ChannelManifest installedManifest = install(targetDir, channelsFile);
         new InstallationExportAction(targetDir).export(exportPath);
         ExecutionUtils.prosperoExecution(CliConstants.Commands.CLONE, CliConstants.Commands.RECREATE,
             CliConstants.DIR, importDir.toString(),
@@ -155,7 +159,9 @@ public class CloneTest extends WfCoreTestBase {
 
     @Test
     public void testRestoreOverrideRepositories() throws Exception {
-        ChannelManifest installedManifest = install(targetDir, MetadataTestUtils.prepareChannel(CHANNEL_BASE_CORE_19));
+        final Path channelsFile = temp.newFile("channels.yaml").toPath().toAbsolutePath();
+        MetadataTestUtils.prepareChannel(channelsFile, defaultRemoteRepositories(), CHANNEL_BASE_CORE_19);
+        ChannelManifest installedManifest = install(targetDir, channelsFile);
         final Stream stream = new Stream("org.wildfly.core", "wildfly-cli", UPGRADE_VERSION);
         ChannelManifest manifest = ManifestYamlSupport.parse(ProsperoMetadataUtils.manifestPath(targetDir).toFile());
         manifest.findStreamFor(stream.getGroupId(), stream.getArtifactId()).ifPresent(s -> {
