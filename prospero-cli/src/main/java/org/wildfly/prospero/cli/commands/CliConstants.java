@@ -58,6 +58,7 @@ public final class CliConstants {
         public static final String PERFORM = "perform";
         public static final String APPLY = "apply";
         public static final String PRINT_LICENSES = "print-licenses";
+        public static final String GENERATE = "generate";
     }
 
     // Parameter and option labels:
@@ -101,7 +102,7 @@ public final class CliConstants {
     public static final String ARG_PATH = "--path";
 
     public static final String ACCEPT_AGREEMENTS = "--accept-license-agreements";
-
     public static final String LAYERS = "--layers";
     public static final String TARGET_CONFIG = "--target-config";
+    public static final String PRODUCT = "--product";
 }

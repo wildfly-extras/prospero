@@ -597,4 +597,30 @@ public interface CliMessages {
     default String diffFeaturesChanges() {
         return bundle.getString("prospero.changes.diff.features_changes");
     }
+
+    default String productAndVersionNotNull() {
+        return bundle.getString("prospero.update.generate.product.version.required");
+    }
+    default String unknownProduct(String product) {
+        return format(bundle.getString("prospero.update.generate.unknown.product"), product);
+    }
+    default String writeManifest(Path manifestPath) {
+        return format(bundle.getString("prospero.update.generate.write.manifest"), manifestPath);
+    }
+    default String writeChannelsConfiguration(Path channelsPath) {
+        return format(bundle.getString("prospero.update.generate.write.channels"), channelsPath);
+    }
+
+    default String conflictsWhenGenerating(String diff) {
+        return format(bundle.getString("prospero.update.generate.conflict.prompt"), diff);
+    }
+    default String continueGenerating() {
+        return bundle.getString("prospero.update.generate.conflict.prompt.continue");
+    }
+    default String quitGenerating() {
+        return bundle.getString("prospero.update.generate.conflict.prompt.cancel");
+    }
+    default String metadataExistsAlready(Path path, String distName) {
+        return format(bundle.getString("prospero.update.generate.meta.exists"), path, distName);
+    }
 }

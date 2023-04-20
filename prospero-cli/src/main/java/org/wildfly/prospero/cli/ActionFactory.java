@@ -24,6 +24,7 @@ import org.jboss.galleon.ProvisioningException;
 import org.wildfly.channel.Repository;
 import org.wildfly.prospero.actions.ApplyCandidateAction;
 import org.wildfly.prospero.actions.FeaturesAddAction;
+import org.wildfly.prospero.actions.GenerateAction;
 import org.wildfly.prospero.api.Console;
 import org.wildfly.prospero.actions.InstallationExportAction;
 import org.wildfly.prospero.actions.InstallationHistoryAction;
@@ -79,5 +80,9 @@ public class ActionFactory {
     public FeaturesAddAction featuresAddAction(Path installationDir, MavenOptions mavenOptions, List<Repository> repositories, Console console)
             throws ProvisioningException, MetadataException {
         return new FeaturesAddAction(mavenOptions, installationDir, repositories, console);
+    }
+
+    public GenerateAction generateAction(MavenOptions mvnOptions, Console console) throws ProvisioningException {
+        return new GenerateAction(mvnOptions, console);
     }
 }
