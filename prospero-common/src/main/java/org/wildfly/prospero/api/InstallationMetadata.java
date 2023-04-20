@@ -41,7 +41,6 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
-import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
@@ -266,7 +265,7 @@ public class InstallationMetadata implements AutoCloseable {
         // Add README.txt file to .installation directory to warn the files should not be edited.
         if (!Files.exists(readmeFile)) {
             try {
-                FileUtils.writeStringToFile(new File(readmeFile.toString()), WARNING_MESSAGE , StandardCharsets.UTF_8);
+                ProsperoMetadataUtils.writeWarningReadme(readmeFile);
             } catch (IOException e) {
                 throw new MetadataException("Unable to create README.txt in installation", e);
             }
