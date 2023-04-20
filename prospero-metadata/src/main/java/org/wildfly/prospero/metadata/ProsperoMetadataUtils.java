@@ -93,7 +93,7 @@ public class ProsperoMetadataUtils {
 
         // Add README.txt file to .installation directory to warn the files should not be edited.
         if (!Files.exists(readmeFile)) {
-            writeToFile(readmeFile, WARNING_MESSAGE);
+            writeWarningReadme(readmeFile);
         }
     }
 
@@ -160,6 +160,16 @@ public class ProsperoMetadataUtils {
             Files.delete(versionsPath);
         }
         Files.writeString(versionsPath, yaml);
+    }
+
+    public static void writeWarningReadme(Path readmeFile) throws IOException {
+        Objects.requireNonNull(readmeFile);
+
+        if (!Files.exists(readmeFile.getParent())) {
+            throw new IllegalArgumentException(String.format("The target path %s does not exist.", readmeFile.getParent()));
+        }
+
+        writeToFile(readmeFile, WARNING_MESSAGE);
     }
 
     public static Path manifestPath(Path serverDir) {
