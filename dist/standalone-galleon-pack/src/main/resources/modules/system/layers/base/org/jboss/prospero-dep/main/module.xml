@@ -22,23 +22,26 @@
   ~ 02110-1301 USA, or see the FSF site: http://www.fsf.org.
   -->
 <module name="org.jboss.prospero-dep" xmlns="urn:jboss:module:1.6">
-    <resources>
-        <artifact name="${commons-io:commons-io}"/>
-        <artifact name="${commons-codec:commons-codec}"/>
-        <artifact name="${org.apache.commons:commons-lang3}"/>
-        <artifact name="${org.wildfly.installation-manager:installation-manager-api}"/>
-        <artifact name="${org.apache.httpcomponents:httpclient}"/>
-        <artifact name="${org.apache.httpcomponents:httpcore}"/>
-        <artifact name="${com.fasterxml.jackson.core:jackson-core}"/>
-        <artifact name="${com.fasterxml.jackson.core:jackson-annotations}"/>
-        <artifact name="${com.fasterxml.jackson.core:jackson-databind}"/>
-        <artifact name="${org.yaml:snakeyaml}"/>
-        <artifact name="${org.jboss:staxmapper}"/>
-        <artifact name="${org.slf4j:slf4j-api}"/>
-        <artifact name="${org.eclipse.jgit:org.eclipse.jgit}"/>
-        <artifact name="${org.jboss.logmanager:jboss-logmanager}"/>
-        <artifact name="${org.jboss.logging:jboss-logging}"/>
-        <artifact name="${org.slf4j:jcl-over-slf4j}"></artifact>
-        <artifact name="${org.jboss.slf4j:slf4j-jboss-logmanager}"/>
-    </resources>
+  <properties>
+    <property name="jboss.api" value="private"/>
+  </properties>
+  <resources>
+    <artifact name="${commons-io:commons-io}"/>
+    <artifact name="${commons-codec:commons-codec}"/>
+    <artifact name="${org.apache.commons:commons-lang3}"/>
+    <artifact name="${org.wildfly.installation-manager:installation-manager-api}"/>
+    <artifact name="${org.apache.httpcomponents:httpclient}"/>
+    <artifact name="${org.apache.httpcomponents:httpcore}"/>
+    <artifact name="${com.fasterxml.jackson.core:jackson-core}"/>
+    <artifact name="${com.fasterxml.jackson.core:jackson-annotations}"/>
+    <artifact name="${com.fasterxml.jackson.core:jackson-databind}"/>
+    <artifact name="${org.yaml:snakeyaml}"/>
+    <artifact name="${org.jboss:staxmapper}"/>
+    <artifact name="${org.slf4j:slf4j-api}"/>
+    <artifact name="${org.eclipse.jgit:org.eclipse.jgit}"/>
+    <artifact name="${org.jboss.logmanager:jboss-logmanager}"/>
+    <artifact name="${org.jboss.logging:jboss-logging}"/>
+    <artifact name="${org.slf4j:jcl-over-slf4j}"></artifact>
+    <artifact name="${org.jboss.slf4j:slf4j-jboss-logmanager}"/>
+  </resources>
 </module>

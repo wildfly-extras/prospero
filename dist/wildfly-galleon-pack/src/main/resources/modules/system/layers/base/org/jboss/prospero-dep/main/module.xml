@@ -22,6 +22,9 @@
   ~ 02110-1301 USA, or see the FSF site: http://www.fsf.org.
   -->
 <module name="org.jboss.prospero-dep" xmlns="urn:jboss:module:1.6">
+    <properties>
+      <property name="jboss.api" value="private"/>
+    </properties>
     <dependencies>
       <module name="org.apache.commons.io" export="true"/>
       <module name="org.apache.commons.codec" export="true"/>
