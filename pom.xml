@@ -68,7 +68,7 @@
         <version.org.yaml.snakeyaml>2.0</version.org.yaml.snakeyaml>
         <version.junit>4.13.2</version.junit>
         <version.maven-shade-plugin>2.3</version.maven-shade-plugin>
-        <version.org.wildfly.channel>1.0.0.Beta6</version.org.wildfly.channel>
+        <version.org.wildfly.channel>1.0.0.Final</version.org.wildfly.channel>
         <version.maven-compiler-plugin>3.10.1</version.maven-compiler-plugin>
         <version.org.wildfly.galleon-pack>${prospero.base.feature-pack.version}</version.org.wildfly.galleon-pack>
         <version.info.picocli>4.6.3</version.info.picocli>
