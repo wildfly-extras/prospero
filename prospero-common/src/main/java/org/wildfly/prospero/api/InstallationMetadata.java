@@ -100,17 +100,16 @@ public class InstallationMetadata implements AutoCloseable {
             throw ProsperoLogger.ROOT_LOGGER.unableToReadFile(versionsFile, e);
         }
 
-        final GitStorage gitStorage = new GitStorage(base);
-        final InstallationMetadata metadata = new InstallationMetadata(base, manifest, prosperoConfig, gitStorage, currentVersion);
-        try {
+        try (final GitStorage gitStorage = new GitStorage(base)) {
+            final InstallationMetadata metadata = new InstallationMetadata(base, manifest, prosperoConfig, gitStorage, currentVersion);
             if (!gitStorage.isStarted()) {
                 ProsperoLogger.ROOT_LOGGER.debugf("Initializing history storage in %s", base);
                 gitStorage.record();
             }
+            return metadata;
         } catch (IOException e) {
             throw ProsperoLogger.ROOT_LOGGER.unableToCreateHistoryStorage(base.resolve(ProsperoMetadataUtils.METADATA_DIR), e);
         }
-        return metadata;
     }
 
     /**

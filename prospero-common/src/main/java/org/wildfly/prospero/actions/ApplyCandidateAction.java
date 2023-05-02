@@ -343,16 +343,8 @@ public class ApplyCandidateAction {
         Path installationManifest = installationMetadataDir.resolve(ProsperoMetadataUtils.MANIFEST_FILE_NAME);
         IoUtils.copy(updateManifest, installationManifest);
 
-        GitStorage git = new GitStorage(installationDir);
-        try {
+        try (GitStorage git = new GitStorage(installationDir)) {
             git.recordChange(operation==Type.UPDATE? SavedState.Type.UPDATE:SavedState.Type.ROLLBACK);
-        } finally {
-            try {
-                git.close();
-            } catch (Exception e) {
-                // log and ignore
-                ProsperoLogger.ROOT_LOGGER.unableToCloseStore(e);
-            }
         }
     }
 

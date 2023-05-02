@@ -345,7 +345,7 @@ public class GitStorage implements AutoCloseable {
     }
 
     @Override
-    public void close() throws Exception {
+    public void close() {
         if (git != null) {
             git.close();
         }
