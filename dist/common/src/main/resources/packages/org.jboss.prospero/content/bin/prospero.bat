@@ -74,22 +74,22 @@ rem $Id$
 )
 
 pushd "%DIRNAME%.."
-set "RESOLVED_JBOSS_HOME=%CD%"
+set "RESOLVED_PROSPERO_HOME=%CD%"
 popd
 
-if "x%JBOSS_HOME%" == "x" (
-  set "JBOSS_HOME=%RESOLVED_JBOSS_HOME%"
+if "x%PROSPERO_HOME%" == "x" (
+  set "PROSPERO_HOME=%RESOLVED_PROSPERO_HOME%"
 )
 
-pushd "%JBOSS_HOME%"
-set "SANITIZED_JBOSS_HOME=%CD%"
+pushd "%PROSPERO_HOME%"
+set "SANITIZED_PROSPERO_HOME=%CD%"
 popd
 
-if /i "%RESOLVED_JBOSS_HOME%" NEQ "%SANITIZED_JBOSS_HOME%" (
+if /i "%RESOLVED_PROSPERO_HOME%" NEQ "%SANITIZED_PROSPERO_HOME%" (
    echo.
-   echo   WARNING:  JBOSS_HOME may be pointing to a different installation - unpredictable results may occur.
+   echo   WARNING:  PROSPERO_HOME may be pointing to a different installation - unpredictable results may occur.
    echo.
-   echo       JBOSS_HOME: "%JBOSS_HOME%"
+   echo       PROSPERO_HOME: "%PROSPERO_HOME%"
    echo.
 )
 
@@ -106,7 +106,7 @@ if "%DEBUG_MODE%" == "true" (
 rem Set default log location
 echo "%JAVA_OPTS%" | findstr /I "org.wildfly.prospero.log.file" > nul
 if errorlevel == 1 (
-    set "JAVA_OPTS=%JAVA_OPTS% -Dorg.wildfly.prospero.log.file=%JBOSS_HOME%\logs\installation.log"
+    set "JAVA_OPTS=%JAVA_OPTS% -Dorg.wildfly.prospero.log.file=%PROSPERO_HOME%\logs\installation.log"
 )
 
 rem Setup JBoss specific properties
@@ -173,10 +173,10 @@ if not "%PRESERVE_JAVA_OPTS%" == "true" (
 setlocal DisableDelayedExpansion
 
 rem Find jboss-modules.jar, or we can't continue
-if exist "%JBOSS_HOME%\jboss-modules.jar" (
-    set "RUNJAR=%JBOSS_HOME%\jboss-modules.jar"
+if exist "%PROSPERO_HOME%\jboss-modules.jar" (
+    set "RUNJAR=%PROSPERO_HOME%\jboss-modules.jar"
 ) else (
-  echo Could not locate "%JBOSS_HOME%\jboss-modules.jar".
+  echo Could not locate "%PROSPERO_HOME%\jboss-modules.jar".
   echo Please check that you are in the bin directory when running this script.
   goto END
 )
@@ -190,7 +190,7 @@ setlocal DisableDelayedExpansion
 
 rem Set default module root paths
 if "x%JBOSS_MODULEPATH%" == "x" (
-  set  "JBOSS_MODULEPATH=%JBOSS_HOME%\modules"
+  set  "JBOSS_MODULEPATH=%PROSPERO_HOME%\modules"
 )
 
 setlocal EnableDelayedExpansion
@@ -222,14 +222,14 @@ setlocal EnableDelayedExpansion
 rem Add -client to the JVM options, if supported (32 bit VM), and not overridden
 echo "!MODULE_OPTS!" | findstr /I \-javaagent: > nul
 if not errorlevel == 1 (
-    set AGENT_PARAM=-javaagent:"!JBOSS_HOME!\jboss-modules.jar"
+    set AGENT_PARAM=-javaagent:"!PROSPERO_HOME!\jboss-modules.jar"
     set "JAVA_OPTS=!AGENT_PARAM! !JAVA_OPTS!"
 )
 setlocal DisableDelayedExpansion
 
 :RESTART
   "%JAVA%" %JAVA_OPTS% ^
-      -jar "%JBOSS_HOME%\jboss-modules.jar" ^
+      -jar "%PROSPERO_HOME%\jboss-modules.jar" ^
       %MODULE_OPTS% ^
       -mp "%JBOSS_MODULEPATH%" ^
       org.jboss.prospero ^
