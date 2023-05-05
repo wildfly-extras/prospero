@@ -457,6 +457,7 @@
               <generate-channel-manifest>true</generate-channel-manifest>
               <configFile>target/wildfly-user-feature-pack-build.xml</configFile>
               <add-feature-packs-as-required-manifests>false</add-feature-packs-as-required-manifests>
+              <wildfly-channel-resolution-mode>${prospero.channel.resolution.mode}</wildfly-channel-resolution-mode>
             </configuration>
           </execution>
         </executions>
