@@ -20,30 +20,30 @@ esac
 
 # For Cygwin, ensure paths are in UNIX format before anything is touched
 if $cygwin ; then
-    [ -n "$JBOSS_HOME" ] &&
-        JBOSS_HOME=`cygpath --unix "$JBOSS_HOME"`
+    [ -n "$PROSPERO_HOME" ] &&
+        PROSPERO_HOME=`cygpath --unix "$PROSPERO_HOME"`
     [ -n "$JAVA_HOME" ] &&
         JAVA_HOME=`cygpath --unix "$JAVA_HOME"`
     [ -n "$JAVAC_JAR" ] &&
         JAVAC_JAR=`cygpath --unix "$JAVAC_JAR"`
 fi
 
-# Setup JBOSS_HOME
-RESOLVED_JBOSS_HOME=`cd "$DIRNAME/.."; pwd`
-if [ "x$JBOSS_HOME" = "x" ]; then
+# Setup PROSPERO_HOME
+RESOLVED_PROSPERO_HOME=`cd "$DIRNAME/.."; pwd`
+if [ "x$PROSPERO_HOME" = "x" ]; then
     # get the full path (without any relative bits)
-    JBOSS_HOME=$RESOLVED_JBOSS_HOME
+    PROSPERO_HOME=$RESOLVED_PROSPERO_HOME
 else
- SANITIZED_JBOSS_HOME=`cd "$JBOSS_HOME"; pwd`
- if [ "$RESOLVED_JBOSS_HOME" != "$SANITIZED_JBOSS_HOME" ]; then
-   echo "WARNING JBOSS_HOME may be pointing to a different installation - unpredictable results may occur."
+ SANITIZED_PROSPERO_HOME=`cd "$PROSPERO_HOME"; pwd`
+ if [ "$RESOLVED_PROSPERO_HOME" != "$SANITIZED_PROSPERO_HOME" ]; then
+   echo "WARNING PROSPERO_HOME may be pointing to a different installation - unpredictable results may occur."
    echo ""
  fi
 fi
-export JBOSS_HOME
+export PROSPERO_HOME
 
 if [ "x$JBOSS_MODULEPATH" = "x" ]; then
-    JBOSS_MODULEPATH="$JBOSS_HOME/modules"
+    JBOSS_MODULEPATH="$PROSPERO_HOME/modules"
 fi
 
 # Setup the JVM
@@ -61,7 +61,7 @@ JAVA_OPTS="$JAVA_OPTS $DEFAULT_MODULAR_JVM_OPTIONS"
 
 # For Cygwin, switch paths to Windows format before running java
 if $cygwin; then
-    JBOSS_HOME=`cygpath --path --windows "$JBOSS_HOME"`
+    PROSPERO_HOME=`cygpath --path --windows "$PROSPERO_HOME"`
     JAVA_HOME=`cygpath --path --windows "$JAVA_HOME"`
     JBOSS_MODULEPATH=`cygpath --path --windows "$JBOSS_MODULEPATH"`
 fi
@@ -80,7 +80,7 @@ JAVA_OPTS="$JAVA_OPTS -Dcom.ibm.jsse2.overrideDefaultTLS=true"
 # Set default log location
 LOG_FILE_CONF=`echo $JAVA_OPTS | grep "org.wildfly.prospero.log.file"`
 if [ "x$LOG_FILE_CONF" = "x" ]; then
-  JAVA_OPTS="$JAVA_OPTS -Dorg.wildfly.prospero.log.file=${JBOSS_HOME}/logs/installation.log"
+  JAVA_OPTS="$JAVA_OPTS -Dorg.wildfly.prospero.log.file=${PROSPERO_HOME}/logs/installation.log"
 fi
 
 # Sample JPDA settings for remote socket debugging
@@ -91,7 +91,7 @@ JBOSS_MODULEPATH=$(eval echo \"${JBOSS_MODULEPATH}\")
 
 LOG_CONF=`echo $JAVA_OPTS | grep "logging.configuration"`
 if [ "x$LOG_CONF" = "x" ]; then
-    exec "$JAVA" $JAVA_OPTS -Dlogging.configuration=file:"$JBOSS_HOME"/bin/${prospero.dist.name}-logging.properties -jar "$JBOSS_HOME"/jboss-modules.jar -mp "${JBOSS_MODULEPATH}" org.jboss.prospero "$@"
+    exec "$JAVA" $JAVA_OPTS -Dlogging.configuration=file:"$PROSPERO_HOME"/bin/${prospero.dist.name}-logging.properties -jar "$PROSPERO_HOME"/jboss-modules.jar -mp "${JBOSS_MODULEPATH}" org.jboss.prospero "$@"
 else
-    exec "$JAVA" $JAVA_OPTS -jar "$JBOSS_HOME"/jboss-modules.jar -mp "${JBOSS_MODULEPATH}" org.jboss.prospero "$@"
+    exec "$JAVA" $JAVA_OPTS -jar "$PROSPERO_HOME"/jboss-modules.jar -mp "${JBOSS_MODULEPATH}" org.jboss.prospero "$@"
 fi
