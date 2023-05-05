@@ -679,6 +679,7 @@
                         <configuration>
                           <resources-dir>${basedir}/target/resources</resources-dir>
                           <generate-channel-manifest>true</generate-channel-manifest>
+                          <wildfly-channel-resolution-mode>${prospero.channel.resolution.mode}</wildfly-channel-resolution-mode>
                         </configuration>
                     </execution>
                 </executions>

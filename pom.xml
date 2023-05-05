@@ -32,6 +32,7 @@
         <prospero.test.base.repositories>https://repo1.maven.org/maven2/,https://repository.jboss.org/nexus/content/groups/public/</prospero.test.base.repositories>
         <prospero.repo.id>central</prospero.repo.id>
         <prospero.repo.url>https://repo1.maven.org/maven2/</prospero.repo.url>
+        <prospero.channel.resolution.mode>NOT_REQUIRED</prospero.channel.resolution.mode>
 
         <version.io.undertow>2.3.5.Final</version.io.undertow>
         <version.commons-codec>1.15</version.commons-codec>

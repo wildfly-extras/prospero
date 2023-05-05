@@ -100,6 +100,12 @@ public class ChannelMavenArtifactRepositoryManager implements MavenRepoManager, 
     private boolean fpRequireChannel(MavenArtifact artifact) throws Exception {
         boolean requireChannel = false;
         if (artifact.getVersion() != null && artifact.getExtension() != null && artifact.getExtension().equalsIgnoreCase("zip")) {
+            if (artifact.getVersion().equals(artifact.getExtension())) {
+                // the requested FPL was in form groupId:artifactId::zip - galleon converts the version wrong
+                // TODO: fix in Galleon and change to check if version is null
+                return true;
+            }
+
             org.wildfly.channel.MavenArtifact mavenArtifact = channelSession.
                     resolveDirectMavenArtifact(artifact.getGroupId(),
                             artifact.getArtifactId(),
