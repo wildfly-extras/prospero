@@ -117,42 +117,43 @@ public class ProvisioningAction {
 
         channels = TemporaryRepositoriesHandler.overrideRepositories(channels, overwriteRepositories);
 
-        final GalleonEnvironment galleonEnv = GalleonEnvironment
+        try (final GalleonEnvironment galleonEnv = GalleonEnvironment
                 .builder(installDir, channels, mavenSessionManager)
                 .setConsole(console)
-                .build();
+                .build()) {
 
-        try {
-            if (ProsperoLogger.ROOT_LOGGER.isDebugEnabled()) {
-                ProsperoLogger.ROOT_LOGGER.debug("Starting Galleon provisioning");
+            try {
+                if (ProsperoLogger.ROOT_LOGGER.isDebugEnabled()) {
+                    ProsperoLogger.ROOT_LOGGER.debug("Starting Galleon provisioning");
+                }
+
+                GalleonUtils.executeGalleon(options -> galleonEnv.getProvisioningManager().provision(provisioningConfig, options),
+                        mavenSessionManager.getProvisioningRepo().toAbsolutePath());
+            } catch (UnresolvedMavenArtifactException e) {
+                throw new ArtifactResolutionException(ProsperoLogger.ROOT_LOGGER.unableToResolve(), e, e.getUnresolvedArtifacts(),
+                        e.getAttemptedRepositories(), mavenSessionManager.isOffline());
             }
 
-            GalleonUtils.executeGalleon(options -> galleonEnv.getProvisioningManager().provision(provisioningConfig, options),
-                    mavenSessionManager.getProvisioningRepo().toAbsolutePath());
-        } catch (UnresolvedMavenArtifactException e) {
-            throw new ArtifactResolutionException(ProsperoLogger.ROOT_LOGGER.unableToResolve(), e, e.getUnresolvedArtifacts(),
-                    e.getAttemptedRepositories(), mavenSessionManager.isOffline());
-        }
+            final ManifestVersionRecord manifestRecord;
+            try {
+                if (ProsperoLogger.ROOT_LOGGER.isDebugEnabled()) {
+                    ProsperoLogger.ROOT_LOGGER.debug("Resolving installed manifest versions");
+                }
 
-        final ManifestVersionRecord manifestRecord;
-        try {
-            if (ProsperoLogger.ROOT_LOGGER.isDebugEnabled()) {
-                ProsperoLogger.ROOT_LOGGER.debug("Resolving installed manifest versions");
+                manifestRecord = new ManifestVersionResolver(mavenSessionManager.getProvisioningRepo(), mavenSessionManager.newRepositorySystem())
+                        .getCurrentVersions(channels);
+            } catch (IOException e) {
+                throw ProsperoLogger.ROOT_LOGGER.unableToDownloadFile(e);
             }
 
-            manifestRecord = new ManifestVersionResolver(mavenSessionManager.getProvisioningRepo(), mavenSessionManager.newRepositorySystem())
-                    .getCurrentVersions(channels);
-        } catch (IOException e) {
-            throw ProsperoLogger.ROOT_LOGGER.unableToDownloadFile(e);
+            if (ProsperoLogger.ROOT_LOGGER.isDebugEnabled()) {
+                ProsperoLogger.ROOT_LOGGER.debug("Recording installed metadata");
+            }
+            writeProsperoMetadata(installDir, galleonEnv.getRepositoryManager(), recordedChannels, manifestRecord);
         }
-
-        if (ProsperoLogger.ROOT_LOGGER.isDebugEnabled()) {
-            ProsperoLogger.ROOT_LOGGER.debug("Recording installed metadata");
-        }
-        writeProsperoMetadata(installDir, galleonEnv.getRepositoryManager(), recordedChannels, manifestRecord);
 
         try {
-            final GalleonFeaturePackAnalyzer galleonFeaturePackAnalyzer = new GalleonFeaturePackAnalyzer(galleonEnv.getChannels(), mavenSessionManager);
+            final GalleonFeaturePackAnalyzer galleonFeaturePackAnalyzer = new GalleonFeaturePackAnalyzer(channels, mavenSessionManager);
 
             if (ProsperoLogger.ROOT_LOGGER.isDebugEnabled()) {
                 ProsperoLogger.ROOT_LOGGER.debug("Recording accepted licenses");
@@ -171,6 +172,7 @@ public class ProvisioningAction {
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
+
         ProsperoLogger.ROOT_LOGGER.provisioningComplete(installDir);
     }
 

@@ -108,8 +108,10 @@ public class UpdateAction implements AutoCloseable {
             return false;
         }
         ProsperoLogger.ROOT_LOGGER.updateCandidateStarted(installDir);
-        try(final PrepareCandidateAction prepareCandidateAction = new PrepareCandidateAction(installDir, mavenSessionManager, console, prosperoConfig)) {
-            final boolean result = prepareCandidateAction.buildCandidate(targetDir, getGalleonEnv(targetDir), UPDATE);
+        try (final PrepareCandidateAction prepareCandidateAction = new PrepareCandidateAction(installDir, mavenSessionManager, console, prosperoConfig);
+             final GalleonEnvironment galleonEnv = getGalleonEnv(targetDir)) {
+
+            final boolean result = prepareCandidateAction.buildCandidate(targetDir, galleonEnv, UPDATE);
             ProsperoLogger.ROOT_LOGGER.updateCandidateCompleted(targetDir);
             return result;
         }
@@ -124,8 +126,9 @@ public class UpdateAction implements AutoCloseable {
      */
     public UpdateSet findUpdates() throws OperationException, ProvisioningException {
         ProsperoLogger.ROOT_LOGGER.checkingUpdates();
-        final GalleonEnvironment galleonEnv = getGalleonEnv(installDir);
-        try (final UpdateFinder updateFinder = new UpdateFinder(galleonEnv.getChannelSession())) {
+        try (final GalleonEnvironment galleonEnv = getGalleonEnv(installDir);
+             final UpdateFinder updateFinder = new UpdateFinder(galleonEnv.getChannelSession())) {
+
             final UpdateSet updates = updateFinder.findUpdates(metadata.getArtifacts());
             ProsperoLogger.ROOT_LOGGER.updatesFound(updates.getArtifactUpdates().size());
             return updates;

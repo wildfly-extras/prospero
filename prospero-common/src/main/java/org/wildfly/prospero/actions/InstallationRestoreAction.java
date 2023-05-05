@@ -67,21 +67,20 @@ public class InstallationRestoreAction {
                 prosperoConfig.getChannels().clear();
                 prosperoConfig.getChannels().addAll(TemporaryRepositoriesHandler.overrideRepositories(originalChannels, remoteRepositories));
             }
-            final GalleonEnvironment galleonEnv = GalleonEnvironment
+            try (final GalleonEnvironment galleonEnv = GalleonEnvironment
                     .builder(installDir, prosperoConfig.getChannels(), mavenSessionManager)
                     .setConsole(console)
                     .setRestoreManifest(metadataBundle.getManifest())
-                    .build();
+                    .build()) {
 
-            try {
                 GalleonUtils.executeGalleon(options -> galleonEnv.getProvisioningManager().provision(metadataBundle.getGalleonProvisioningConfig(), options),
                         mavenSessionManager.getProvisioningRepo().toAbsolutePath());
+
+                writeProsperoMetadata(galleonEnv.getRepositoryManager(), originalChannels);
             } catch (UnresolvedMavenArtifactException e) {
                 throw new ArtifactResolutionException(ProsperoLogger.ROOT_LOGGER.unableToResolve(), e, e.getUnresolvedArtifacts(),
                         e.getAttemptedRepositories(), mavenSessionManager.isOffline());
             }
-
-            writeProsperoMetadata(galleonEnv.getRepositoryManager(), originalChannels);
         }
     }
 
