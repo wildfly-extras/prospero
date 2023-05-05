@@ -84,7 +84,6 @@ public class ApplyCandidateAction {
     private final Path updateDir;
     private final Path installationDir;
     private final SystemPaths systemPaths;
-    private final ProvisioningManager provisioningManager;
 
     public enum Type {
         UPDATE("UPDATE"), REVERT("REVERT");
@@ -124,14 +123,6 @@ public class ApplyCandidateAction {
         if (ProsperoLogger.ROOT_LOGGER.isDebugEnabled()) {
             ProsperoLogger.ROOT_LOGGER.debug("System paths " + this.systemPaths.getPaths());
         }
-        // offline is enough - we just need to read the configuration
-        final MavenOptions mavenOptions = MavenOptions.builder()
-                .setOffline(true)
-                .setNoLocalCache(true)
-                .build();
-        provisioningManager = GalleonEnvironment.builder(installationDir, Collections.emptyList(),
-                new MavenSessionManager(mavenOptions))
-                .build().getProvisioningManager();
     }
 
     /**
@@ -239,10 +230,9 @@ public class ApplyCandidateAction {
      *
      * @return list of {@code FileConflict} or empty list if no conflicts found.
      * @throws ProvisioningException
-     * @throws InvalidUpdateCandidateException
-     * @throws MetadataException
+     * @throws OperationException
      */
-    public List<FileConflict> getConflicts() throws ProvisioningException, InvalidUpdateCandidateException, MetadataException {
+    public List<FileConflict> getConflicts() throws ProvisioningException, OperationException {
         try {
             return compareServers(findChanges());
         } catch (IOException ex) {
@@ -310,8 +300,19 @@ public class ApplyCandidateAction {
         return Files.exists(installationDir.resolve(STANDALONE_STARTUP_MARKER)) || Files.exists(installationDir.resolve(DOMAIN_STARTUP_MARKER));
     }
 
-    private FsDiff findChanges() throws ProvisioningException {
-        return provisioningManager.getFsDiff();
+    private FsDiff findChanges() throws ProvisioningException, OperationException {
+        // offline is enough - we just need to read the configuration
+        final MavenOptions mavenOptions = MavenOptions.builder()
+                .setOffline(true)
+                .setNoLocalCache(true)
+                .build();
+        try (final GalleonEnvironment galleonEnv = GalleonEnvironment.builder(installationDir, Collections.emptyList(),
+                        new MavenSessionManager(mavenOptions))
+                .build()) {
+            ProvisioningManager provisioningManager = galleonEnv.getProvisioningManager();
+            return provisioningManager.getFsDiff();
+        }
+
     }
 
     private void updateMetadata(Type operation) throws ProvisioningException, MetadataException {

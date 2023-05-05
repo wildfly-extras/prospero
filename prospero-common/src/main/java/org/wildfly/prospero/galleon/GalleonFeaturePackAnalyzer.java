@@ -65,14 +65,19 @@ public class GalleonFeaturePackAnalyzer {
     public void cacheGalleonArtifacts(Path installedDir, ProvisioningConfig provisioningConfig) throws Exception {
         // no data will be actually written out, but we need a path to init the Galleon
         final Path tempInstallationPath = Files.createTempDirectory("temp");
+        final List<String> fps = new ArrayList<>();
+
+        GalleonEnvironment galleonEnv = null;
+        ProvisioningLayoutFactory layoutFactory = null;
+        ProvisioningLayout<FeaturePackLayout> layout = null;
         try {
-            final List<String> fps = new ArrayList<>();
-            final GalleonEnvironment galleonEnv = galleonEnvWithFpMapper(tempInstallationPath, fps);
+            galleonEnv = galleonEnvWithFpMapper(tempInstallationPath, fps);
             final ProvisioningManager pm = galleonEnv.getProvisioningManager();
 
 
-            final ProvisioningLayoutFactory layoutFactory = pm.getLayoutFactory();
-            final ProvisioningLayout<FeaturePackLayout> layout = layoutFactory.newConfigLayout(provisioningConfig);
+            layoutFactory = pm.getLayoutFactory();
+            layout = layoutFactory.newConfigLayout(provisioningConfig);
+
 
             Set<String> pluginGavs = new HashSet<>();
             for (FeaturePackLayout fp : layout.getOrderedFeaturePacks()) {
@@ -106,6 +111,15 @@ public class GalleonFeaturePackAnalyzer {
 
             updateHashes(installedDir);
         } finally {
+            if (layout != null) {
+                layout.close();
+            }
+            if (layoutFactory != null) {
+                layoutFactory.close();
+            }
+            if (galleonEnv != null) {
+                galleonEnv.close();
+            }
             FileUtils.deleteQuietly(tempInstallationPath.toFile());
         }
     }
@@ -135,13 +149,12 @@ public class GalleonFeaturePackAnalyzer {
     public List<String> getFeaturePacks(ProvisioningConfig provisioningConfig) throws IOException, ProvisioningException, OperationException {
         // no data will be actually written out, but we need a path to init the Galleon
         final Path tempInstallationPath = Files.createTempDirectory("temp");
-        try {
-            final List<String> fps = new ArrayList<>();
-            final GalleonEnvironment galleonEnv = galleonEnvWithFpMapper(tempInstallationPath, fps);
+        final List<String> fps = new ArrayList<>();
+        try (final GalleonEnvironment galleonEnv = galleonEnvWithFpMapper(tempInstallationPath, fps)) {
             final ProvisioningManager pm = galleonEnv.getProvisioningManager();
 
             final ProvisioningLayoutFactory layoutFactory = pm.getLayoutFactory();
-            layoutFactory.newConfigLayout(provisioningConfig);
+            layoutFactory.newConfigLayout(provisioningConfig).close();
             return fps;
         } finally {
             FileUtils.deleteQuietly(tempInstallationPath.toFile());

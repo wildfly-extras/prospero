@@ -54,7 +54,7 @@ import java.util.function.Consumer;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-public class GalleonEnvironment {
+public class GalleonEnvironment implements AutoCloseable {
 
     public static final String TRACK_JBMODULES = "JBMODULES";
     public static final String TRACK_JBEXAMPLES = "JBEXTRACONFIGS";
@@ -149,6 +149,11 @@ public class GalleonEnvironment {
 
     public List<Channel> getChannels() {
         return channels;
+    }
+
+    @Override
+    public void close() {
+        provisioningManager.close();
     }
 
     public static Builder builder(Path installDir, List<Channel> channels, MavenSessionManager mavenSessionManager) {
