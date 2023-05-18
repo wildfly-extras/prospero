@@ -22,6 +22,7 @@ package org.wildfly.prospero.it.installationmanager;
 import org.junit.Test;
 import org.wildfly.installationmanager.MavenOptions;
 import org.wildfly.installationmanager.spi.InstallationManager;
+import org.wildfly.installationmanager.spi.OsShell;
 import org.wildfly.prospero.api.InstallationMetadata;
 import org.wildfly.prospero.api.ProvisioningDefinition;
 import org.wildfly.prospero.cli.DistributionInfo;
@@ -95,5 +96,43 @@ public class CreateSnapshotTest extends WfCoreTestBase {
         final ProsperoInstallationManager manager = (ProsperoInstallationManager) new ProsperoInstallationManagerFactory().create(outputPath, new MavenOptions(MavenSessionManager.LOCAL_MAVEN_REPO, false));
         final String command = manager.generateApplyUpdateCommand(outputPath.resolve("bin"), Paths.get("foo"));
         assertEquals(expected.toString(), command);
+    }
+
+    @Test
+    public void generateApplyCommandWithOsShell() throws Exception {
+        final Path channelsFile = MetadataTestUtils.prepareChannel(CHANNEL_BASE_CORE_19);
+        final StringBuffer expected = new StringBuffer("\"")
+                .append(outputPath.resolve("bin").resolve(DistributionInfo.DIST_NAME));
+
+        expected.append(".<SUFFIX>");
+
+        expected.append("\"");
+        expected.append(" ");
+        expected.append(CliConstants.Commands.UPDATE).append(" ").append(CliConstants.Commands.APPLY);
+        expected.append(" ");
+        expected.append(CliConstants.DIR).append(" \"").append(outputPath.toAbsolutePath()).append("\"");
+        expected.append(" ");
+        expected.append(CliConstants.CANDIDATE_DIR).append(" \"").append(Path.of("foo").toAbsolutePath()).append("\"");
+        expected.append(" ");
+        expected.append(CliConstants.YES);
+
+        final ProvisioningDefinition provisioningDefinition = defaultWfCoreDefinition()
+                .setChannelCoordinates(channelsFile.toString())
+                .build();
+
+        installation.provision(provisioningDefinition.toProvisioningConfig(),
+                provisioningDefinition.resolveChannels(CHANNELS_RESOLVER_FACTORY));
+
+
+        final ProsperoInstallationManager manager = (ProsperoInstallationManager) new ProsperoInstallationManagerFactory().create(outputPath, new MavenOptions(MavenSessionManager.LOCAL_MAVEN_REPO, false));
+
+        String command = manager.generateApplyUpdateCommand(outputPath.resolve("bin"), Paths.get("foo"), OsShell.Linux);
+        assertEquals(expected.toString().replace("<SUFFIX>", "sh"), command);
+
+        command = manager.generateApplyUpdateCommand(outputPath.resolve("bin"), Paths.get("foo"), OsShell.WindowsBash);
+        assertEquals(expected.toString().replace("<SUFFIX>", "bat"), command);
+
+        command = manager.generateApplyUpdateCommand(outputPath.resolve("bin"), Paths.get("foo"), OsShell.WindowsPowerShell);
+        assertEquals(expected.toString().replace("<SUFFIX>", "ps1"), command);
     }
 }

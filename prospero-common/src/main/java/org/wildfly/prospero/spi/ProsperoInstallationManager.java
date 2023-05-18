@@ -13,6 +13,7 @@ import org.wildfly.installationmanager.MavenOptions;
 import org.wildfly.installationmanager.OperationNotAvailableException;
 import org.wildfly.installationmanager.Repository;
 import org.wildfly.installationmanager.spi.InstallationManager;
+import org.wildfly.installationmanager.spi.OsShell;
 import org.wildfly.prospero.ProsperoLogger;
 import org.wildfly.prospero.actions.InstallationExportAction;
 import org.wildfly.prospero.actions.InstallationHistoryAction;
@@ -34,6 +35,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
+import java.util.Locale;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.ServiceLoader;
@@ -181,24 +183,36 @@ public class ProsperoInstallationManager implements InstallationManager {
 
     @Override
     public String generateApplyUpdateCommand(Path scriptHome, Path candidatePath) throws OperationNotAvailableException {
-        final Optional<CliProvider> cliProviderLoader = ServiceLoader.load(CliProvider.class).findFirst();
-        if (cliProviderLoader.isEmpty()) {
-            throw new OperationNotAvailableException("Installation manager does not support CLI operations.");
-        }
-
-        final CliProvider cliProvider = cliProviderLoader.get();
-        return escape(scriptHome.resolve(cliProvider.getScriptName())) + " " + cliProvider.getApplyUpdateCommand(installationDir, candidatePath);
+        final boolean isWindows = System.getProperty("os.name").toLowerCase(Locale.ENGLISH).contains("windows");
+        return this.generateApplyUpdateCommand(scriptHome, candidatePath, isWindows?OsShell.WindowsBash:OsShell.Linux);
     }
 
     @Override
     public String generateApplyRevertCommand(Path scriptHome, Path candidatePath) throws OperationNotAvailableException {
+        final boolean isWindows = System.getProperty("os.name").toLowerCase(Locale.ENGLISH).contains("windows");
+        return this.generateApplyRevertCommand(scriptHome, candidatePath, isWindows?OsShell.WindowsBash:OsShell.Linux);
+    }
+
+    @Override
+    public String generateApplyUpdateCommand(Path scriptHome, Path candidatePath, OsShell shell) throws OperationNotAvailableException {
         final Optional<CliProvider> cliProviderLoader = ServiceLoader.load(CliProvider.class).findFirst();
         if (cliProviderLoader.isEmpty()) {
             throw new OperationNotAvailableException("Installation manager does not support CLI operations.");
         }
 
         final CliProvider cliProvider = cliProviderLoader.get();
-        return escape(scriptHome.resolve(cliProvider.getScriptName())) + " " + cliProvider.getApplyRevertCommand(installationDir, candidatePath);
+        return escape(scriptHome.resolve(cliProvider.getScriptName(shell))) + " " + cliProvider.getApplyUpdateCommand(installationDir, candidatePath);
+    }
+
+    @Override
+    public String generateApplyRevertCommand(Path scriptHome, Path candidatePath, OsShell shell) throws OperationNotAvailableException {
+        final Optional<CliProvider> cliProviderLoader = ServiceLoader.load(CliProvider.class).findFirst();
+        if (cliProviderLoader.isEmpty()) {
+            throw new OperationNotAvailableException("Installation manager does not support CLI operations.");
+        }
+
+        final CliProvider cliProvider = cliProviderLoader.get();
+        return escape(scriptHome.resolve(cliProvider.getScriptName(shell))) + " " + cliProvider.getApplyRevertCommand(installationDir, candidatePath);
     }
 
     private String escape(Path absolutePath) {
