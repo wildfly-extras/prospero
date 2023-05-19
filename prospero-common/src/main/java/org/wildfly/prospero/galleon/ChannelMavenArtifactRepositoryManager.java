@@ -216,7 +216,15 @@ public class ChannelMavenArtifactRepositoryManager implements MavenRepoManager, 
             mapperNotRequiringChannels.applyResolution(channelArtifacts);
         } catch (UnresolvedMavenArtifactException e) {
             if (e.getCause() instanceof ArtifactResolutionException) {
-                handleMissingArtifacts(mapperNotRequiringChannels, e);
+                final List<Artifact> resolved = handleMissingArtifacts(mapperNotRequiringChannels, e);
+                // remove resolved from coordinates and try again
+                final Set<String> resolvedKeys = resolved.stream().map(a -> String.format("%s:%s:%s:%s", a.getGroupId(), a.getArtifactId(), a.getClassifier(), a.getExtension())).collect(Collectors.toSet());
+
+                final List<ArtifactCoordinate> unresolvedCoords = coordinates.stream().filter(a -> {
+                    final String key = String.format("%s:%s:%s:%s", a.getGroupId(), a.getArtifactId(), a.getClassifier(), a.getExtension());
+                    return !resolvedKeys.contains(key);
+                }).collect(Collectors.toList());
+                resolveArtifactsWithFallbackVersions(mapperNotRequiringChannels, unresolvedCoords);
             } else if (e.getCause() == null) {
                 handleMissingStreams(mapperNotRequiringChannels, coordinates, e);
             } else {
@@ -252,14 +260,16 @@ public class ChannelMavenArtifactRepositoryManager implements MavenRepoManager, 
         resolveArtifactsWithFallbackVersions(mapperNotRequiringChannels, requests);
     }
 
-    private void handleMissingArtifacts(MavenArtifactMapper mapperNotRequiringChannels, UnresolvedMavenArtifactException e) throws MavenUniverseException {
+    private List<Artifact> handleMissingArtifacts(MavenArtifactMapper mapperNotRequiringChannels, UnresolvedMavenArtifactException e) throws MavenUniverseException {
         List<org.wildfly.channel.MavenArtifact> channelArtifacts;
+        List<Artifact> resolved = new ArrayList<>();
         final List<ArtifactResult> results = ((ArtifactResolutionException) e.getCause()).getResults();
         channelArtifacts = new ArrayList<>();
         for (ArtifactResult result : results) {
             if (!result.isResolved()) {
                 // resolve directly
                 final Artifact a = result.getRequest().getArtifact();
+                resolved.add(a);
                 final List<MavenArtifact> missingArtifacts = mapperNotRequiringChannels.get(
                         new ArtifactCoordinate(a.getGroupId(), a.getArtifactId(),
                                 a.getExtension(), a.getClassifier(), a.getVersion()));
@@ -279,6 +289,7 @@ public class ChannelMavenArtifactRepositoryManager implements MavenRepoManager, 
             }
         }
         mapperNotRequiringChannels.applyResolution(channelArtifacts);
+        return resolved;
     }
 
     private List<ArtifactCoordinate> toResolvableCoordinates(List<ArtifactCoordinate> artifactCoordinates) throws MavenUniverseException {
