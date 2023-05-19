@@ -24,8 +24,8 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.Mock;
 import org.mockito.junit.MockitoJUnitRunner;
+import org.wildfly.channel.ArtifactTransferException;
 import org.wildfly.channel.ChannelSession;
-import org.wildfly.channel.UnresolvedMavenArtifactException;
 
 import java.util.Arrays;
 import java.util.Collections;
@@ -91,7 +91,7 @@ public class UpdateFinderTest {
     @Test
     public void testRemoval() throws Exception {
         when(channelSession.findLatestMavenArtifactVersion("org.foo", "bar", "jar", "", null))
-                .thenThrow(new UnresolvedMavenArtifactException("Exception", Collections.emptySet(), Collections.emptySet()));
+                .thenThrow(new ArtifactTransferException("Exception", Collections.emptySet(), Collections.emptySet()));
 
         UpdateFinder finder = new UpdateFinder(channelSession);
         final List<Artifact> artifacts = Arrays.asList(

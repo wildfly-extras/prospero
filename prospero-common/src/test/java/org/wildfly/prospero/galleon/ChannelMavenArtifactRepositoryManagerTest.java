@@ -24,8 +24,8 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.Mock;
 import org.mockito.junit.MockitoJUnitRunner;
+import org.wildfly.channel.ArtifactTransferException;
 import org.wildfly.channel.ChannelSession;
-import org.wildfly.channel.UnresolvedMavenArtifactException;
 
 import static org.junit.Assert.assertThrows;
 import static org.mockito.Mockito.when;
@@ -46,7 +46,7 @@ public class ChannelMavenArtifactRepositoryManagerTest {
     @Test
     public void testRequireChannelResolutionWhenFeaturePackVersionIsNotSpecified() throws Exception {
         when(session.resolveMavenArtifact("foo", "bar", "zip", "", null))
-                .thenThrow(UnresolvedMavenArtifactException.class);
+                .thenThrow(ArtifactTransferException.class);
 
 
         final MavenArtifact artifact = new MavenArtifact();
