@@ -17,6 +17,8 @@
 
 package org.wildfly.prospero.spi.internal;
 
+import org.wildfly.installationmanager.spi.OsShell;
+
 import java.nio.file.Path;
 
 /**
@@ -25,9 +27,10 @@ import java.nio.file.Path;
 public interface CliProvider {
     /**
      * returns the script name used to run Prospero. The returned script is OS-specific.
+     * @param shell
      * @return
      */
-    String getScriptName();
+    String getScriptName(OsShell shell);
 
     /**
      * generates command used to apply an update candidate in {@code candidatePath} into {@code installationPath}

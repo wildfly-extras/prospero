@@ -17,23 +17,34 @@
 
 package org.wildfly.prospero.cli.spi;
 
+import org.wildfly.installationmanager.spi.OsShell;
 import org.wildfly.prospero.spi.internal.CliProvider;
 import org.wildfly.prospero.cli.DistributionInfo;
 import org.wildfly.prospero.cli.commands.CliConstants;
 
 import java.nio.file.Path;
-import java.util.Locale;
 
 /**
  * implementation of {@link CliProvider}
  */
 public class CliProviderImpl implements CliProvider {
 
-    private boolean isWindows = System.getProperty("os.name").toLowerCase(Locale.ENGLISH).contains("windows");
-
     @Override
-    public String getScriptName() {
-        final String suffix = isWindows ?".bat":".sh";
+    public String getScriptName(OsShell shell) {
+        final String suffix;
+        switch (shell) {
+            case Linux:
+                suffix = ".sh";
+                break;
+            case WindowsBash:
+                suffix = ".bat";
+                break;
+            case WindowsPowerShell:
+                suffix = ".ps1";
+                break;
+            default:
+                throw new IllegalArgumentException(String.format("The requested shell %s is not supported", shell));
+        }
         return DistributionInfo.DIST_NAME + suffix;
     }
 
