@@ -32,6 +32,7 @@ import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
+import org.wildfly.channel.ArtifactTransferException;
 import org.wildfly.channel.ChannelManifest;
 import org.wildfly.channel.ChannelManifestMapper;
 import org.wildfly.channel.Repository;
@@ -264,7 +265,7 @@ public class ArtifactPromoterTest {
         final Optional<String> latestVersion = allVersions.stream().sorted(VersionMatcher.COMPARATOR.reversed()).findFirst();
 
         if (latestVersion.isEmpty()) {
-            throw new UnresolvedMavenArtifactException("No latestVersion", Collections.emptySet(), Collections.emptySet());
+            throw new ArtifactTransferException("No latestVersion", Collections.emptySet(), Collections.emptySet());
         }
 
         final File file = resolver.resolveArtifact(channelGa.getGroupId(), channelGa.getArtifactId(),

@@ -17,13 +17,12 @@
 
 package org.wildfly.prospero.galleon;
 
-import org.eclipse.aether.artifact.Artifact;
-import org.eclipse.aether.resolution.ArtifactResolutionException;
-import org.eclipse.aether.resolution.ArtifactResult;
 import org.jboss.galleon.ProvisioningException;
 import org.jboss.galleon.layout.FeaturePackDescriber;
 import org.jboss.galleon.util.ZipUtils;
+import org.wildfly.channel.ArtifactTransferException;
 import org.wildfly.channel.ChannelManifest;
+import org.wildfly.channel.NoStreamFoundException;
 import org.wildfly.channel.spi.ChannelResolvable;
 import org.wildfly.channel.ArtifactCoordinate;
 import org.eclipse.aether.artifact.DefaultArtifact;
@@ -70,7 +69,9 @@ public class ChannelMavenArtifactRepositoryManager implements MavenRepoManager, 
             try {
                 result = channelSession.resolveMavenArtifact(artifact.getGroupId(), artifact.getArtifactId(), artifact.getExtension(),
                         artifact.getClassifier(), null);
-            } catch (UnresolvedMavenArtifactException e) {
+            } catch (ArtifactTransferException e) {
+                throw new MavenUniverseException(e.getLocalizedMessage(), e);
+            } catch (NoStreamFoundException e) {
                 if (requiresChannel(artifact)) {
                     throw new MavenUniverseException(e.getLocalizedMessage(), e);
                 } else {
@@ -81,7 +82,7 @@ public class ChannelMavenArtifactRepositoryManager implements MavenRepoManager, 
                     }
                     try {
                         result = channelSession.resolveDirectMavenArtifact(artifact.getGroupId(), artifact.getArtifactId(), artifact.getExtension(), artifact.getClassifier(), artifact.getVersion());
-                    } catch (UnresolvedMavenArtifactException ex) {
+                    } catch (ArtifactTransferException ex) {
                         // if the artifact can not be resolved directly either, we abort
                         throw new MavenUniverseException(ex.getLocalizedMessage(), ex);
                     }
@@ -214,14 +215,12 @@ public class ChannelMavenArtifactRepositoryManager implements MavenRepoManager, 
         try {
             channelArtifacts = channelSession.resolveMavenArtifacts(coordinates);
             mapperNotRequiringChannels.applyResolution(channelArtifacts);
+        } catch (ArtifactTransferException e) {
+            throw new MavenUniverseException(e.getLocalizedMessage(), e);
+        } catch (NoStreamFoundException e) {
+            handleMissingStreams(mapperNotRequiringChannels, coordinates, e);
         } catch (UnresolvedMavenArtifactException e) {
-            if (e.getCause() instanceof ArtifactResolutionException) {
-                handleMissingArtifacts(mapperNotRequiringChannels, e);
-            } else if (e.getCause() == null) {
-                handleMissingStreams(mapperNotRequiringChannels, coordinates, e);
-            } else {
-                throw new MavenUniverseException(e.getLocalizedMessage(), e);
-            }
+            throw new MavenUniverseException(e.getLocalizedMessage(), e);
         }
     }
 
@@ -250,35 +249,6 @@ public class ChannelMavenArtifactRepositoryManager implements MavenRepoManager, 
         }
         // try resolving the new list, handle missing artifacts (e.g. wrong versions)
         resolveArtifactsWithFallbackVersions(mapperNotRequiringChannels, requests);
-    }
-
-    private void handleMissingArtifacts(MavenArtifactMapper mapperNotRequiringChannels, UnresolvedMavenArtifactException e) throws MavenUniverseException {
-        List<org.wildfly.channel.MavenArtifact> channelArtifacts;
-        final List<ArtifactResult> results = ((ArtifactResolutionException) e.getCause()).getResults();
-        channelArtifacts = new ArrayList<>();
-        for (ArtifactResult result : results) {
-            if (!result.isResolved()) {
-                // resolve directly
-                final Artifact a = result.getRequest().getArtifact();
-                final List<MavenArtifact> missingArtifacts = mapperNotRequiringChannels.get(
-                        new ArtifactCoordinate(a.getGroupId(), a.getArtifactId(),
-                                a.getExtension(), a.getClassifier(), a.getVersion()));
-
-                for (MavenArtifact missingArtifact : missingArtifacts) {
-                    if (missingArtifact.getVersion() == null) {
-                        throw new MavenUniverseException(e.getLocalizedMessage(), e);
-                    }
-                    final org.wildfly.channel.MavenArtifact mavenArtifact = channelSession.resolveDirectMavenArtifact(missingArtifact.getGroupId(), missingArtifact.getArtifactId(),
-                            missingArtifact.getExtension(), missingArtifact.getClassifier(), missingArtifact.getVersion());
-                    missingArtifact.setPath(mavenArtifact.getFile().toPath());
-                }
-            } else {
-                final Artifact a = result.getArtifact();
-                channelArtifacts.add(new org.wildfly.channel.MavenArtifact(a.getGroupId(), a.getArtifactId(),
-                        a.getExtension(), a.getClassifier(), a.getVersion(), a.getFile()));
-            }
-        }
-        mapperNotRequiringChannels.applyResolution(channelArtifacts);
     }
 
     private List<ArtifactCoordinate> toResolvableCoordinates(List<ArtifactCoordinate> artifactCoordinates) throws MavenUniverseException {

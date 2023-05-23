@@ -19,6 +19,7 @@ package org.wildfly.prospero.galleon;
 
 import org.jboss.galleon.ProvisioningException;
 import org.junit.Test;
+import org.wildfly.channel.ArtifactTransferException;
 import org.wildfly.channel.UnresolvedMavenArtifactException;
 
 import java.nio.file.Paths;
@@ -54,7 +55,7 @@ public class GalleonUtilsTest {
     @Test
     public void extractFailedArtifactResolutionOnCopy() throws Exception {
         final ProvisioningException test = new ProvisioningException(
-                new UnresolvedMavenArtifactException("test", Collections.emptySet(), Collections.emptySet()));
+                new ArtifactTransferException("test", Collections.emptySet(), Collections.emptySet()));
         try {
             GalleonUtils.executeGalleon(o -> {
                 throw test;
