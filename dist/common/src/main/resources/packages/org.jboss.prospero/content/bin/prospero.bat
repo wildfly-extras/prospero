@@ -106,7 +106,7 @@ if "%DEBUG_MODE%" == "true" (
 rem Set default log location
 echo "%JAVA_OPTS%" | findstr /I "org.wildfly.prospero.log.file" > nul
 if errorlevel == 1 (
-    set "JAVA_OPTS=%JAVA_OPTS% -Dorg.wildfly.prospero.log.file=%PROSPERO_HOME%\logs\installation.log"
+    set "JAVA_OPTS=%JAVA_OPTS% -Dorg.wildfly.prospero.log.file="%PROSPERO_HOME%\logs\installation.log""
 )
 
 rem Setup JBoss specific properties
