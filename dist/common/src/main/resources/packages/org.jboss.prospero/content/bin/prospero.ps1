@@ -282,10 +282,14 @@ Function Get-Java-Arguments {
 
     }
 
-    if ($logFileProperties){
+    if ( $JAVA_OPTS -inotmatch "logging.configuration")
+    {
+        if ($logFileProperties)
+        {
 
-        $PROG_ARGS += "-Dlogging.configuration=file:$logFileProperties"
+            $PROG_ARGS += "-Dlogging.configuration=file:$logFileProperties"
 
+        }
     }
 
     # Set default log location
