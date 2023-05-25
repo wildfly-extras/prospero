@@ -127,7 +127,7 @@ public class CloneCommand extends AbstractCommand {
 
             console.println(CliMessages.MESSAGES.recreatingServer(installationDirectory, inPath));
 
-            try (final InstallationMetadata metadataBundle = InstallationMetadata.fromMetadataBundle(inPath.toAbsolutePath())) {
+            try (InstallationMetadata metadataBundle = InstallationMetadata.fromMetadataBundle(inPath.toAbsolutePath())) {
                 console.println(CliMessages.MESSAGES.provisioningConfigHeader());
                 for (FeaturePackConfig featurePackDep : metadataBundle.getGalleonProvisioningConfig().getFeaturePackDeps()) {
                     console.println(" * " + featurePackDep.getLocation().toString());

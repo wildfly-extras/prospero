@@ -68,7 +68,7 @@ public class MavenArtifactMapper {
     }
 
     public Collection<org.jboss.galleon.universe.maven.MavenArtifact> applyResolution(List<MavenArtifact> channelArtifacts) {
-        for (org.wildfly.channel.MavenArtifact channelArtifact : channelArtifacts) {
+        for (MavenArtifact channelArtifact : channelArtifacts) {
             String key = coordString(channelArtifact.getGroupId(), channelArtifact.getArtifactId(), channelArtifact.getExtension(), channelArtifact.getClassifier());
             if (!artifactMap.containsKey(key)) {
                 throw ProsperoLogger.ROOT_LOGGER.unexpectedArtifact(key);

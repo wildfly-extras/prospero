@@ -27,7 +27,6 @@ import org.wildfly.channel.Channel;
 import org.wildfly.channel.ChannelManifest;
 import org.wildfly.channel.UnresolvedMavenArtifactException;
 import org.wildfly.prospero.ProsperoLogger;
-import org.wildfly.prospero.api.Console;
 import org.wildfly.prospero.api.InstallationMetadata;
 import org.wildfly.prospero.api.SavedState;
 import org.wildfly.prospero.api.exceptions.ArtifactResolutionException;
@@ -52,15 +51,13 @@ class PrepareCandidateAction implements AutoCloseable{
 
     private final InstallationMetadata metadata;
     private final Path installDir;
-    private final Console console;
     private final ProsperoConfig prosperoConfig;
     private final MavenSessionManager mavenSessionManager;
 
-    PrepareCandidateAction(Path installDir, MavenSessionManager mavenSessionManager, Console console, ProsperoConfig prosperoConfig)
+    PrepareCandidateAction(Path installDir, MavenSessionManager mavenSessionManager, ProsperoConfig prosperoConfig)
             throws OperationException {
         this.metadata = InstallationMetadata.loadInstallation(installDir);
         this.installDir = installDir;
-        this.console = console;
         this.prosperoConfig = prosperoConfig;
         this.mavenSessionManager = mavenSessionManager;
     }
@@ -119,7 +116,7 @@ class PrepareCandidateAction implements AutoCloseable{
     private void writeProsperoMetadata(Path home, ChannelMavenArtifactRepositoryManager maven, List<Channel> channels, ManifestVersionRecord manifestVersions) throws MetadataException {
         final ChannelManifest manifest = maven.resolvedChannel();
 
-        try (final InstallationMetadata installationMetadata = InstallationMetadata.newInstallation(home, manifest,
+        try (InstallationMetadata installationMetadata = InstallationMetadata.newInstallation(home, manifest,
                 new ProsperoConfig(channels), Optional.of(manifestVersions))) {
             installationMetadata.recordProvision(true, false);
         }

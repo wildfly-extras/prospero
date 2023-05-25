@@ -60,14 +60,14 @@ public class InstallationRestoreAction {
             throw ProsperoLogger.ROOT_LOGGER.installationDirAlreadyExists(installDir);
         }
 
-        try (final InstallationMetadata metadataBundle = InstallationMetadata.fromMetadataBundle(metadataBundleZip)) {
+        try (InstallationMetadata metadataBundle = InstallationMetadata.fromMetadataBundle(metadataBundleZip)) {
             final ProsperoConfig prosperoConfig = metadataBundle.getProsperoConfig();
             List<Channel> originalChannels = new ArrayList<>(prosperoConfig.getChannels());
             if (remoteRepositories != null && !remoteRepositories.isEmpty()) {
                 prosperoConfig.getChannels().clear();
                 prosperoConfig.getChannels().addAll(TemporaryRepositoriesHandler.overrideRepositories(originalChannels, remoteRepositories));
             }
-            try (final GalleonEnvironment galleonEnv = GalleonEnvironment
+            try (GalleonEnvironment galleonEnv = GalleonEnvironment
                     .builder(installDir, prosperoConfig.getChannels(), mavenSessionManager)
                     .setConsole(console)
                     .setRestoreManifest(metadataBundle.getManifest())
@@ -87,7 +87,7 @@ public class InstallationRestoreAction {
     private void writeProsperoMetadata(ChannelMavenArtifactRepositoryManager maven, List<Channel> channels) throws MetadataException {
         final ChannelManifest manifest = maven.resolvedChannel();
 
-        try (final InstallationMetadata installationMetadata = InstallationMetadata.newInstallation(installDir, manifest,
+        try (InstallationMetadata installationMetadata = InstallationMetadata.newInstallation(installDir, manifest,
                 new ProsperoConfig(channels), Optional.empty())) {
             installationMetadata.recordProvision(true, true);
         }

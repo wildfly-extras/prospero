@@ -117,7 +117,7 @@ public class ProvisioningAction {
 
         channels = TemporaryRepositoriesHandler.overrideRepositories(channels, overwriteRepositories);
 
-        try (final GalleonEnvironment galleonEnv = GalleonEnvironment
+        try (GalleonEnvironment galleonEnv = GalleonEnvironment
                 .builder(installDir, channels, mavenSessionManager)
                 .setConsole(console)
                 .build()) {
@@ -218,7 +218,7 @@ public class ProvisioningAction {
                                        ManifestVersionRecord manifestVersions) throws MetadataException {
         final ChannelManifest manifest = maven.resolvedChannel();
 
-        try (final InstallationMetadata installationMetadata = InstallationMetadata.newInstallation(home, manifest,
+        try (InstallationMetadata installationMetadata = InstallationMetadata.newInstallation(home, manifest,
                 new ProsperoConfig(channels, mvnOptions), Optional.of(manifestVersions))) {
             installationMetadata.recordProvision(true, true);
         }

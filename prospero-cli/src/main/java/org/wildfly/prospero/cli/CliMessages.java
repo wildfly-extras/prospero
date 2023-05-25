@@ -31,7 +31,7 @@ import static java.lang.String.format;
 
 public interface CliMessages {
 
-    public CliMessages MESSAGES = new CliMessages() {
+    CliMessages MESSAGES = new CliMessages() {
     };
 
     ResourceBundle bundle = ResourceBundle.getBundle("UsageMessages", Locale.getDefault());

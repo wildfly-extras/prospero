@@ -40,8 +40,6 @@ import org.wildfly.prospero.updates.UpdateSet;
 import org.wildfly.prospero.wfchannel.MavenSessionManager;
 import org.jboss.galleon.ProvisioningException;
 
-import static org.wildfly.prospero.actions.ApplyCandidateAction.Type.UPDATE;
-
 public class UpdateAction implements AutoCloseable {
 
     private final InstallationMetadata metadata;
@@ -108,10 +106,10 @@ public class UpdateAction implements AutoCloseable {
             return false;
         }
         ProsperoLogger.ROOT_LOGGER.updateCandidateStarted(installDir);
-        try (final PrepareCandidateAction prepareCandidateAction = new PrepareCandidateAction(installDir, mavenSessionManager, console, prosperoConfig);
-             final GalleonEnvironment galleonEnv = getGalleonEnv(targetDir)) {
+        try (PrepareCandidateAction prepareCandidateAction = new PrepareCandidateAction(installDir, mavenSessionManager, prosperoConfig);
+             GalleonEnvironment galleonEnv = getGalleonEnv(targetDir)) {
 
-            final boolean result = prepareCandidateAction.buildCandidate(targetDir, galleonEnv, UPDATE);
+            final boolean result = prepareCandidateAction.buildCandidate(targetDir, galleonEnv, ApplyCandidateAction.Type.UPDATE);
             ProsperoLogger.ROOT_LOGGER.updateCandidateCompleted(targetDir);
             return result;
         }
@@ -126,8 +124,8 @@ public class UpdateAction implements AutoCloseable {
      */
     public UpdateSet findUpdates() throws OperationException, ProvisioningException {
         ProsperoLogger.ROOT_LOGGER.checkingUpdates();
-        try (final GalleonEnvironment galleonEnv = getGalleonEnv(installDir);
-             final UpdateFinder updateFinder = new UpdateFinder(galleonEnv.getChannelSession())) {
+        try (GalleonEnvironment galleonEnv = getGalleonEnv(installDir);
+             UpdateFinder updateFinder = new UpdateFinder(galleonEnv.getChannelSession())) {
 
             final UpdateSet updates = updateFinder.findUpdates(metadata.getArtifacts());
             ProsperoLogger.ROOT_LOGGER.updatesFound(updates.getArtifactUpdates().size());

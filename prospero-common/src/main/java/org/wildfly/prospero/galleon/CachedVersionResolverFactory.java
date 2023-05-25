@@ -30,14 +30,12 @@ import java.util.Collection;
 public class CachedVersionResolverFactory implements MavenVersionsResolver.Factory {
 
     private final VersionResolverFactory factory;
-    private final Path installDir;
     private final RepositorySystem system;
     private final DefaultRepositorySystemSession session;
     private final ArtifactCache artifactCache;
 
     public CachedVersionResolverFactory(VersionResolverFactory factory, Path installDir, RepositorySystem system, DefaultRepositorySystemSession session) throws IOException {
         this.factory = factory;
-        this.installDir = installDir;
         this.system = system;
         this.session = session;
         this.artifactCache = ArtifactCache.getInstance(installDir);

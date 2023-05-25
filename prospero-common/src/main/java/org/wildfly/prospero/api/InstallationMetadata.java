@@ -58,7 +58,6 @@ public class InstallationMetadata implements AutoCloseable {
 
     public static final String PROVISIONING_FILE_NAME = "provisioning.xml";
     public static final String GALLEON_INSTALLATION_DIR = ".galleon";
-    private static final String WARNING_MESSAGE = "WARNING: The files in .installation directory should be only edited by the provisioning tool.";
     private final Path manifestFile;
     private final Path channelsFile;
     private final Path readmeFile;

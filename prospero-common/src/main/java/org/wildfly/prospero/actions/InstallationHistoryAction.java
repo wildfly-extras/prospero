@@ -41,10 +41,7 @@ import java.nio.file.Path;
 import java.util.List;
 import java.util.Optional;
 
-import static org.wildfly.prospero.actions.ApplyCandidateAction.Type.REVERT;
 import static org.wildfly.prospero.galleon.GalleonUtils.MAVEN_REPO_LOCAL;
-import static org.wildfly.prospero.metadata.ProsperoMetadataUtils.CURRENT_VERSION_FILE;
-import static org.wildfly.prospero.metadata.ProsperoMetadataUtils.METADATA_DIR;
 
 public class InstallationHistoryAction {
 
@@ -91,25 +88,25 @@ public class InstallationHistoryAction {
 
     public void prepareRevert(SavedState savedState, MavenOptions mavenOptions, List<Repository> overrideRepositories, Path targetDir)
             throws OperationException, ProvisioningException {
-        try (final InstallationMetadata metadata = InstallationMetadata.loadInstallation(installation)) {
+        try (InstallationMetadata metadata = InstallationMetadata.loadInstallation(installation)) {
             ProsperoLogger.ROOT_LOGGER.revertCandidateStarted(installation);
 
             verifyStateExists(savedState, metadata);
 
             MavenSessionManager mavenSessionManager = new MavenSessionManager(mavenOptions);
-            try (final InstallationMetadata revertMetadata = metadata.getSavedState(savedState)) {
+            try (InstallationMetadata revertMetadata = metadata.getSavedState(savedState)) {
                 final ProsperoConfig prosperoConfig = new ProsperoConfig(
                         TemporaryRepositoriesHandler.overrideRepositories(revertMetadata.getProsperoConfig().getChannels(), overrideRepositories));
-                try (final GalleonEnvironment galleonEnv = GalleonEnvironment
+                try (GalleonEnvironment galleonEnv = GalleonEnvironment
                         .builder(targetDir, prosperoConfig.getChannels(), mavenSessionManager)
                         .setConsole(console)
                         .setRestoreManifest(revertMetadata.getManifest())
                         .build();
-                     final PrepareCandidateAction prepareCandidateAction = new PrepareCandidateAction(installation,
-                             mavenSessionManager, console, revertMetadata.getProsperoConfig())) {
+                     PrepareCandidateAction prepareCandidateAction = new PrepareCandidateAction(installation,
+                             mavenSessionManager, revertMetadata.getProsperoConfig())) {
 
                     System.setProperty(MAVEN_REPO_LOCAL, mavenSessionManager.getProvisioningRepo().toAbsolutePath().toString());
-                    prepareCandidateAction.buildCandidate(targetDir, galleonEnv, REVERT);
+                    prepareCandidateAction.buildCandidate(targetDir, galleonEnv, ApplyCandidateAction.Type.REVERT);
                 }
 
                 revertCurrentVersions(targetDir, revertMetadata);
@@ -125,9 +122,11 @@ public class InstallationHistoryAction {
         try {
             final Optional<ManifestVersionRecord> manifestHistory = revertMetadata.getManifestVersions();
             if (manifestHistory.isPresent()) {
-                ProsperoMetadataUtils.writeVersionRecord(targetDir.resolve(METADATA_DIR).resolve(CURRENT_VERSION_FILE), manifestHistory.get());
+                ProsperoMetadataUtils.writeVersionRecord(
+                        targetDir.resolve(ProsperoMetadataUtils.METADATA_DIR).resolve(ProsperoMetadataUtils.CURRENT_VERSION_FILE),
+                        manifestHistory.get());
             } else {
-                Path versionsFile = targetDir.resolve(METADATA_DIR).resolve(CURRENT_VERSION_FILE);
+                Path versionsFile = targetDir.resolve(ProsperoMetadataUtils.METADATA_DIR).resolve(ProsperoMetadataUtils.CURRENT_VERSION_FILE);
                 if (Files.exists(versionsFile)) {
                     Files.delete(versionsFile);
                 }
