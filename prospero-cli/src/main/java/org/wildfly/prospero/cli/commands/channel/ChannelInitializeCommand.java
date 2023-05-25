@@ -84,10 +84,8 @@ public class ChannelInitializeCommand extends AbstractCommand {
             final URL url;
             if (repositoryUrl.isPresent()) {
                 url = repositoryUrl.get();
-                if (repositoryUrl.get().getProtocol().equals("file")) {
-                    if (!createLocalRepository(Paths.get(repositoryUrl.get().toURI()))) {
-                        return ReturnCodes.PROCESSING_ERROR;
-                    }
+                if (repositoryUrl.get().getProtocol().equals("file") && !createLocalRepository(Paths.get(repositoryUrl.get().toURI()))) {
+                    return ReturnCodes.PROCESSING_ERROR;
                 }
             } else {
                 final Path defaultLocalRepoPath = installationDirectory.resolve(ProsperoMetadataUtils.METADATA_DIR)

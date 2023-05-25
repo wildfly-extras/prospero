@@ -110,14 +110,14 @@ public class ProsperoInstallationManager implements InstallationManager {
 
     @Override
     public boolean prepareUpdate(Path targetDir, List<Repository> repositories) throws Exception {
-        try (final UpdateAction prepareUpdateAction = actionFactory.getUpdateAction(map(repositories, ProsperoInstallationManager::mapRepository))) {
+        try (UpdateAction prepareUpdateAction = actionFactory.getUpdateAction(map(repositories, ProsperoInstallationManager::mapRepository))) {
             return prepareUpdateAction.buildUpdate(targetDir);
         }
     }
 
     @Override
     public List<ArtifactChange> findUpdates(List<Repository> repositories) throws Exception {
-        try (final UpdateAction updateAction = actionFactory.getUpdateAction(map(repositories, ProsperoInstallationManager::mapRepository))) {
+        try (UpdateAction updateAction = actionFactory.getUpdateAction(map(repositories, ProsperoInstallationManager::mapRepository))) {
             final UpdateSet updates = updateAction.findUpdates();
             return updates.getArtifactUpdates().stream()
                     .map(ProsperoInstallationManager::mapArtifactChange)
@@ -127,7 +127,7 @@ public class ProsperoInstallationManager implements InstallationManager {
 
     @Override
     public Collection<Channel> listChannels() throws OperationException {
-        try (final MetadataAction metadataAction = actionFactory.getMetadataAction()) {
+        try (MetadataAction metadataAction = actionFactory.getMetadataAction()) {
             return metadataAction.getChannels().stream()
                     .map(ProsperoInstallationManager::mapChannel)
                     .collect(Collectors.toList());
@@ -136,14 +136,14 @@ public class ProsperoInstallationManager implements InstallationManager {
 
     @Override
     public void removeChannel(String channelName) throws OperationException {
-        try (final MetadataAction metadataAction = actionFactory.getMetadataAction()) {
+        try (MetadataAction metadataAction = actionFactory.getMetadataAction()) {
             metadataAction.removeChannel(channelName);
         }
     }
 
     @Override
     public void addChannel(Channel channel) throws OperationException {
-        try (final MetadataAction metadataAction = actionFactory.getMetadataAction()) {
+        try (MetadataAction metadataAction = actionFactory.getMetadataAction()) {
             metadataAction.addChannel(mapChannel(channel));
         }
     }
@@ -153,7 +153,7 @@ public class ProsperoInstallationManager implements InstallationManager {
         if (newChannel.getName() == null || newChannel.getName().isEmpty()) {
             throw ProsperoLogger.ROOT_LOGGER.emptyChannelName();
         }
-        try (final MetadataAction metadataAction = actionFactory.getMetadataAction()) {
+        try (MetadataAction metadataAction = actionFactory.getMetadataAction()) {
             metadataAction.changeChannel(newChannel.getName(), mapChannel(newChannel));
         }
     }

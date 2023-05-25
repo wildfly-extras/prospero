@@ -60,7 +60,6 @@ import static org.jboss.galleon.diff.FsDiff.MODIFIED;
 import static org.jboss.galleon.diff.FsDiff.REMOVED;
 import static org.jboss.galleon.diff.FsDiff.formatMessage;
 import static org.wildfly.prospero.metadata.ProsperoMetadataUtils.CURRENT_VERSION_FILE;
-import static org.wildfly.prospero.metadata.ProsperoMetadataUtils.METADATA_DIR;
 
 import org.jboss.galleon.diff.FsEntry;
 import org.jboss.galleon.layout.SystemPaths;
@@ -252,10 +251,10 @@ public class ApplyCandidateAction {
         final List<Artifact> base;
         final List<Artifact> candidate;
 
-        try (final InstallationMetadata metadata = InstallationMetadata.loadInstallation(installationDir)) {
+        try (InstallationMetadata metadata = InstallationMetadata.loadInstallation(installationDir)) {
             base = metadata.getArtifacts();
         }
-        try (final InstallationMetadata metadata = InstallationMetadata.loadInstallation(updateDir)) {
+        try (InstallationMetadata metadata = InstallationMetadata.loadInstallation(updateDir)) {
             candidate = metadata.getArtifacts();
         }
 
@@ -291,7 +290,7 @@ public class ApplyCandidateAction {
      * @throws MetadataException - if unable to read the candidate server metadata
      */
     public SavedState getCandidateRevision() throws MetadataException {
-        try (final InstallationMetadata metadata = InstallationMetadata.loadInstallation(updateDir)) {
+        try (InstallationMetadata metadata = InstallationMetadata.loadInstallation(updateDir)) {
             return metadata.getRevisions().get(0);
         }
     }
@@ -306,7 +305,7 @@ public class ApplyCandidateAction {
                 .setOffline(true)
                 .setNoLocalCache(true)
                 .build();
-        try (final GalleonEnvironment galleonEnv = GalleonEnvironment.builder(installationDir, Collections.emptyList(),
+        try (GalleonEnvironment galleonEnv = GalleonEnvironment.builder(installationDir, Collections.emptyList(),
                         new MavenSessionManager(mavenOptions))
                 .build()) {
             ProvisioningManager provisioningManager = galleonEnv.getProvisioningManager();
@@ -330,9 +329,9 @@ public class ApplyCandidateAction {
     }
 
     private void copyCurrentVersions() throws IOException {
-        Path sourceVersions = updateDir.resolve(METADATA_DIR).resolve(CURRENT_VERSION_FILE);
+        Path sourceVersions = updateDir.resolve(ProsperoMetadataUtils.METADATA_DIR).resolve(CURRENT_VERSION_FILE);
         if (Files.exists(sourceVersions)) {
-            Files.copy(sourceVersions, installationDir.resolve(METADATA_DIR).resolve(CURRENT_VERSION_FILE), StandardCopyOption.REPLACE_EXISTING);
+            Files.copy(sourceVersions, installationDir.resolve(ProsperoMetadataUtils.METADATA_DIR).resolve(CURRENT_VERSION_FILE), StandardCopyOption.REPLACE_EXISTING);
         }
     }
 
@@ -396,10 +395,8 @@ public class ApplyCandidateAction {
             for (FsEntry added : fsDiff.getAddedEntries()) {
                 Path p = Paths.get(added.getRelativePath());
                 // Ignore .installation owned by prospero
-                if (p.getNameCount() > 0) {
-                    if (p.getName(0).toString().equals(ProsperoMetadataUtils.METADATA_DIR)) {
-                        continue;
-                    }
+                if (p.getNameCount() > 0 && p.getName(0).toString().equals(ProsperoMetadataUtils.METADATA_DIR)) {
+                    continue;
                 }
                 addFsEntry(updateDir, added, systemPaths, conflictList);
             }
@@ -533,7 +530,7 @@ public class ApplyCandidateAction {
                 // Not a file added or modified by the user
                 final String pathKey = getFsDiffKey(relative, false);
                 if (fsDiff.getModifiedEntry(pathKey) == null &&
-                        (fsDiff.getAddedEntry(pathKey) == null && !isParentAdded(fsDiff, relative))) {
+                        fsDiff.getAddedEntry(pathKey) == null && !isParentAdded(fsDiff, relative)) {
                     byte[] updateHash = HashUtils.hashPath(file);
                     // The file could be new or updated in the installation
                     if (!Files.exists(installationFile) || !Arrays.equals(updateHash, HashUtils.hashPath(installationFile))) {

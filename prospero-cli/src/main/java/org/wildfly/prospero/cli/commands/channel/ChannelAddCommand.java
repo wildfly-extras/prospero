@@ -64,7 +64,7 @@ public class ChannelAddCommand extends AbstractCommand {
 
         ChannelManifestCoordinate manifest = ArtifactUtils.manifestCoordFromString(gavUrlOrPath);
         Channel channel = new Channel(channelName, null, null, repositories, manifest, null, null);
-        try (final MetadataAction metadataAction = actionFactory.metadataActions(installationDirectory)) {
+        try (MetadataAction metadataAction = actionFactory.metadataActions(installationDirectory)) {
             metadataAction.addChannel(channel);
         }
         console.println(CliMessages.MESSAGES.channelAdded(channelName));

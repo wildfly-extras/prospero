@@ -51,7 +51,7 @@ public class MarkerFile {
 
     public static MarkerFile read(Path serverPath) throws IOException, MetadataException {
         final Properties properties = new Properties();
-        try (final FileInputStream fis = new FileInputStream(serverPath.resolve(UPDATE_MARKER_FILE).toFile())) {
+        try (FileInputStream fis = new FileInputStream(serverPath.resolve(UPDATE_MARKER_FILE).toFile())) {
             properties.load(fis);
         }
         final String operationValue = getProperty(properties, OPERATION_PROPERTY, serverPath);
@@ -73,7 +73,7 @@ public class MarkerFile {
         final Properties properties = new Properties();
         properties.setProperty(STATE_PROPERTY, state);
         properties.setProperty(OPERATION_PROPERTY, operation.getText());
-        try (final FileOutputStream fos = new FileOutputStream(targetPath.resolve(UPDATE_MARKER_FILE).toFile())) {
+        try (FileOutputStream fos = new FileOutputStream(targetPath.resolve(UPDATE_MARKER_FILE).toFile())) {
             properties.store(fos, null);
         }
     }

@@ -150,7 +150,7 @@ public class GalleonFeaturePackAnalyzer {
         // no data will be actually written out, but we need a path to init the Galleon
         final Path tempInstallationPath = Files.createTempDirectory("temp");
         final List<String> fps = new ArrayList<>();
-        try (final GalleonEnvironment galleonEnv = galleonEnvWithFpMapper(tempInstallationPath, fps)) {
+        try (GalleonEnvironment galleonEnv = galleonEnvWithFpMapper(tempInstallationPath, fps)) {
             final ProvisioningManager pm = galleonEnv.getProvisioningManager();
 
             final ProvisioningLayoutFactory layoutFactory = pm.getLayoutFactory();

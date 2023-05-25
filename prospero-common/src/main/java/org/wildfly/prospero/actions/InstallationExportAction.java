@@ -45,7 +45,7 @@ public class InstallationExportAction {
             throw ProsperoLogger.ROOT_LOGGER.installationDirDoesNotExist(installationDir);
         }
 
-        try (final InstallationMetadata metadataBundle = InstallationMetadata.loadInstallation(installationDir)) {
+        try (InstallationMetadata metadataBundle = InstallationMetadata.loadInstallation(installationDir)) {
 
             metadataBundle.exportMetadataBundle(exportPath);
         }

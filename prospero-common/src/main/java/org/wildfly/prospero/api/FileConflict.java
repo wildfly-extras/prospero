@@ -21,10 +21,6 @@ import org.jboss.galleon.diff.FsDiff;
 
 import java.util.Objects;
 
-import static org.wildfly.prospero.api.FileConflict.Change.MODIFIED;
-import static org.wildfly.prospero.api.FileConflict.Change.REMOVED;
-import static org.wildfly.prospero.api.FileConflict.Resolution.UPDATE;
-
 public class FileConflict {
 
     private Change userChange;
@@ -151,12 +147,12 @@ public class FileConflict {
 
     public String prettyPrint() {
         String status;
-        if (getResolution() == UPDATE) {
+        if (getResolution() == Resolution.UPDATE) {
             status = "!" + FsDiff.FORCED;
         } else {
             if (getUserChange() == getUpdateChange()) {
                 status = "!" + FsDiff.CONFLICT;
-            } else if (getUserChange() == MODIFIED && getUpdateChange() == REMOVED) {
+            } else if (getUserChange() == Change.MODIFIED && getUpdateChange() == Change.REMOVED) {
                 status = "!" + FsDiff.MODIFIED;
             } else {
                 switch (getUserChange()) {

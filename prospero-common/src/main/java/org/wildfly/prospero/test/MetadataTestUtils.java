@@ -165,7 +165,7 @@ public final class MetadataTestUtils {
     public static void copyManifest(String resource, Path targetPath) throws IOException {
         final InputStream resourceStream = MetadataTestUtils.class.getClassLoader().getResourceAsStream(resource);
 
-        try (final FileWriter writer = new FileWriter(targetPath.toFile())) {
+        try (FileWriter writer = new FileWriter(targetPath.toFile())) {
             IOUtils.copy(resourceStream, writer, StandardCharsets.UTF_8);
         }
     }

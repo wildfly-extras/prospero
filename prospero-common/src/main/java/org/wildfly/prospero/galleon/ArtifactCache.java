@@ -180,7 +180,7 @@ public class ArtifactCache {
         final List<String> cacheLines = Files.readAllLines(cacheList);
         Files.delete(cacheList);
 
-        try (final BufferedWriter writer = Files.newBufferedWriter(cacheList, StandardCharsets.UTF_8, StandardOpenOption.CREATE_NEW)) {
+        try (BufferedWriter writer = Files.newBufferedWriter(cacheList, StandardCharsets.UTF_8, StandardOpenOption.CREATE_NEW)) {
             for (String cacheLine : cacheLines) {
                 if (!cacheLine.split(CACHE_LINE_SEPARATOR)[0].equals(cacheKey)) {
                     writer.write(cacheLine + System.lineSeparator());

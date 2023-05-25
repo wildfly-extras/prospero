@@ -56,7 +56,7 @@ public class PromoteArtifactBundleAction {
             throw ProsperoLogger.ROOT_LOGGER.nonMavenChannelRef();
         }
 
-        try (final ArtifactBundle extracted = ArtifactBundle.extract(archive)) {
+        try (ArtifactBundle extracted = ArtifactBundle.extract(archive)) {
             console.println(ProsperoLogger.ROOT_LOGGER.promotingArtifacts(targetRepository));
             for (ArtifactCoordinate artifact : extracted.getArtifactList()) {
                 console.println("  * " + String.format("%s:%s:%s", artifact.getGroupId(), artifact.getArtifactId(), artifact.getVersion()));

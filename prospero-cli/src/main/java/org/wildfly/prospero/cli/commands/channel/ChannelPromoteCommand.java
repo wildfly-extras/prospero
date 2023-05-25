@@ -150,7 +150,7 @@ public class ChannelPromoteCommand extends AbstractCommand {
             final Path installation = determineInstallationDirectory(directory);
             // see if we can read the customization configuration
             final Optional<T> customChannel;
-            try (final MetadataAction metadataAction = actionFactory.metadataActions(installation)) {
+            try (MetadataAction metadataAction = actionFactory.metadataActions(installation)) {
                 customChannel = reader.apply(metadataAction);
             }
             if (customChannel.isPresent()) {
