@@ -103,6 +103,12 @@ if "%DEBUG_MODE%" == "true" (
   )
 )
 
+rem Set default logging configuration
+echo "%JAVA_OPTS%" | findstr /I "logging.configuration" > nul
+if errorlevel == 1 (
+  set "JAVA_OPTS=%JAVA_OPTS% -Dlogging.configuration="file:%PROSPERO_HOME%\bin\${prospero.dist.name}-logging.properties""
+)
+
 rem Set default log location
 echo "%JAVA_OPTS%" | findstr /I "org.wildfly.prospero.log.file" > nul
 if errorlevel == 1 (
