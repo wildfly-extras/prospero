@@ -95,10 +95,10 @@ LOG_FILE_CONF=`echo $JAVA_OPTS | grep "org.wildfly.prospero.log.file"`
 if [ "x$LOG_CONF" = "x" ]; then
     if [ "x$LOG_FILE_CONF" = "x" ]; then
         eval \"$JAVA\" $JAVA_OPTS \"-Dorg.wildfly.prospero.log.file="${PROSPERO_HOME}/logs/installation.log"\" \
-         \"-Dlogging.configuration=file:"$PROSPERO_HOME"/bin/prospero-logging.properties\" \
+         \"-Dlogging.configuration=file:"$PROSPERO_HOME"/bin/${prospero.dist.name}-logging.properties\" \
          -jar \""$PROSPERO_HOME"/jboss-modules.jar\" -mp \""${JBOSS_MODULEPATH}"\" org.jboss.prospero "$ARGS"
     else
-        eval \"$JAVA\" $JAVA_OPTS \"-Dlogging.configuration=file:"$PROSPERO_HOME"/bin/prospero-logging.properties\" \
+        eval \"$JAVA\" $JAVA_OPTS \"-Dlogging.configuration=file:"$PROSPERO_HOME"/bin/${prospero.dist.name}-logging.properties\" \
          -jar \""$PROSPERO_HOME"/jboss-modules.jar\" -mp \""${JBOSS_MODULEPATH}"\" org.jboss.prospero "$ARGS"
     fi
 else
