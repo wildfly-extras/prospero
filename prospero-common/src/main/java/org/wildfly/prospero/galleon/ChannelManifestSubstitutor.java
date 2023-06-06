@@ -38,6 +38,10 @@ public class ChannelManifestSubstitutor {
 
     public Channel substitute(Channel channel) throws MetadataException {
         ChannelManifestCoordinate channelManifestCoordinate = channel.getManifestCoordinate();
+        if (channelManifestCoordinate == null) {
+            return channel;
+        }
+
         if (channelManifestCoordinate.getUrl() == null) {
             return channel;
         } else {

@@ -17,7 +17,6 @@
 
 package org.wildfly.prospero.galleon;
 
-import org.junit.Assert;
 import org.junit.Test;
 import org.wildfly.channel.Channel;
 import org.wildfly.channel.ChannelManifestCoordinate;
@@ -29,6 +28,8 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 
+import static org.junit.Assert.assertEquals;
+
 public class ChannelManifestSubstitutorTest {
     @Test
     public void testChannelManifestSubstituted() throws MalformedURLException, MetadataException {
@@ -39,7 +40,7 @@ public class ChannelManifestSubstitutorTest {
                 ChannelManifestCoordinate.create(url, null), null, null);
         Channel substitutedChannel = substitutor.substitute(channel);
         System.clearProperty("propName");
-        Assert.assertEquals(expected, substitutedChannel.getManifestCoordinate().getUrl().toString());
+        assertEquals(expected, substitutedChannel.getManifestCoordinate().getUrl().toString());
     }
 
     @Test
@@ -49,6 +50,15 @@ public class ChannelManifestSubstitutorTest {
         Channel channel = new Channel("channel1", "", null, List.of(new Repository("test", "http://test.org")),
                 ChannelManifestCoordinate.create(url, null), null, null);
         Channel substitutedChannel = substitutor.substitute(channel);
-        Assert.assertEquals(url, substitutedChannel.getManifestCoordinate().getUrl().toString());
+        assertEquals(url, substitutedChannel.getManifestCoordinate().getUrl().toString());
+    }
+
+    @Test
+    public void testChannelWithoutManifestNotSubstituted() throws Exception {
+        final ChannelManifestSubstitutor substitutor = new ChannelManifestSubstitutor(Collections.emptyMap());
+        Channel channel = new Channel("channel1", "", null, List.of(new Repository("test", "http://test.org")),
+                null, null, null);
+        Channel substitutedChannel = substitutor.substitute(channel);
+        assertEquals(channel, substitutedChannel);
     }
 }
