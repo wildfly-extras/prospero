@@ -24,7 +24,7 @@ rem Get the program name before using shift as the command modify the variable ~
 if "%OS%" == "Windows_NT" (
   set "PROGNAME=%~nx0%"
 ) else (
-  set "PROGNAME=standalone.bat"
+  set "PROGNAME=${prospero.dist.name}.bat"
 )
 
 if "%OS%" == "Windows_NT" (
@@ -112,7 +112,7 @@ if errorlevel == 1 (
 rem Set default log location
 echo "%JAVA_OPTS%" | findstr /I "org.wildfly.prospero.log.file" > nul
 if errorlevel == 1 (
-    set "JAVA_OPTS=%JAVA_OPTS% -Dorg.wildfly.prospero.log.file="%PROSPERO_HOME%\logs\installation.log""
+    set "JAVA_OPTS=%JAVA_OPTS% -Dorg.wildfly.prospero.log.file="%PROSPERO_HOME%\@prospero.log.location.win@""
 )
 
 rem Setup JBoss specific properties

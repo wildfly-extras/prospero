@@ -2,7 +2,7 @@
 
 #                                                                          ##
 
-#    Prospero Startup Script for starting the standalone server            ##
+#    Startup Script for starting the server installation manager           ##
 
 #                                                                          ##
 
@@ -295,7 +295,7 @@ Function Get-Java-Arguments {
     # Set default log location
     if ( $JAVA_OPTS -inotmatch "org.wildfly.prospero.log.file"){
 
-        $PROG_ARGS += "-Dorg.wildfly.prospero.log.file=${PROSPERO_HOME}\logs\installation.log"
+        $PROG_ARGS += "-Dorg.wildfly.prospero.log.file=${PROSPERO_HOME}\@prospero.log.location.win@"
 
     }
 
