@@ -19,6 +19,7 @@ package org.wildfly.prospero.api;
 
 import java.util.Collections;
 import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
 
 public class Diff {
@@ -92,5 +93,18 @@ public class Diff {
                 ", children=" + children +
                 ", status=" + status +
                 '}';
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        Diff diff = (Diff) o;
+        return Objects.equals(name, diff.name) && Objects.equals(oldValue, diff.oldValue) && Objects.equals(newValue, diff.newValue) && Objects.equals(children, diff.children) && status == diff.status;
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(name, oldValue, newValue, children, status);
     }
 }

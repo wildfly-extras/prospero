@@ -277,7 +277,7 @@ public class ApplyCandidateAction {
 
         for (String key : candidateMap.keySet()) {
             if (!baseMap.containsKey(key)) {
-                changes.add(ArtifactChange.added(baseMap.get(key)));
+                changes.add(ArtifactChange.added(candidateMap.get(key)));
             }
         }
 

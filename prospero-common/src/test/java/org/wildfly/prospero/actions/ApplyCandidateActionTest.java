@@ -17,6 +17,7 @@
 
 package org.wildfly.prospero.actions;
 
+import org.eclipse.aether.artifact.DefaultArtifact;
 import org.jboss.galleon.Constants;
 import org.jboss.galleon.ProvisioningException;
 import org.jboss.galleon.ProvisioningManager;
@@ -34,6 +35,8 @@ import org.wildfly.channel.ChannelManifestCoordinate;
 import org.wildfly.channel.ChannelManifestMapper;
 import org.wildfly.channel.ChannelMapper;
 import org.wildfly.channel.Repository;
+import org.wildfly.channel.Stream;
+import org.wildfly.prospero.api.ArtifactChange;
 import org.wildfly.prospero.api.FileConflict;
 import org.wildfly.prospero.api.exceptions.InvalidUpdateCandidateException;
 import org.wildfly.prospero.galleon.ArtifactCache;
@@ -395,6 +398,48 @@ public class ApplyCandidateActionTest {
         assertEquals(ApplyCandidateAction.ValidationResult.OK, validationResult);
     }
 
+    @Test
+    public void findUpdatesModified() throws Exception {
+        createSimpleFeaturePacks();
+
+        install(installationPath, FPL_100);
+        Files.writeString(installationPath.resolve(METADATA_DIR).resolve(ProsperoMetadataUtils.MANIFEST_FILE_NAME), manifest("manifest 01",
+                List.of(new Stream("org.test", "foo", "1.0.0"))));
+        prepareUpdate(updatePath, installationPath, FPL_101);
+        Files.writeString(updatePath.resolve(METADATA_DIR).resolve(ProsperoMetadataUtils.MANIFEST_FILE_NAME), manifest("manifest 01",
+                List.of(new Stream("org.test", "foo", "1.0.1"))));
+
+        assertThat(new ApplyCandidateAction(installationPath, updatePath).findUpdates().getArtifactUpdates())
+                .containsOnly(ArtifactChange.updated(new DefaultArtifact("org.test", "foo", null, "1.0.0"),
+                        new DefaultArtifact("org.test", "foo", null, "1.0.1")));
+    }
+
+    @Test
+    public void findUpdatesAdded() throws Exception {
+        createSimpleFeaturePacks();
+
+        install(installationPath, FPL_100);
+        prepareUpdate(updatePath, installationPath, FPL_101);
+        Files.writeString(updatePath.resolve(METADATA_DIR).resolve(ProsperoMetadataUtils.MANIFEST_FILE_NAME), manifest("manifest 01",
+                List.of(new Stream("org.test", "foo", "1.0.1"))));
+
+        assertThat(new ApplyCandidateAction(installationPath, updatePath).findUpdates().getArtifactUpdates())
+                .containsOnly(ArtifactChange.added(new DefaultArtifact("org.test", "foo", null, "1.0.1")));
+    }
+
+    @Test
+    public void findUpdatesRemoved() throws Exception {
+        createSimpleFeaturePacks();
+
+        install(installationPath, FPL_100);
+        Files.writeString(installationPath.resolve(METADATA_DIR).resolve(ProsperoMetadataUtils.MANIFEST_FILE_NAME), manifest("manifest 01",
+                List.of(new Stream("org.test", "foo", "1.0.0"))));
+        prepareUpdate(updatePath, installationPath, FPL_101);
+
+        assertThat(new ApplyCandidateAction(installationPath, updatePath).findUpdates().getArtifactUpdates())
+                .containsOnly(ArtifactChange.removed(new DefaultArtifact("org.test", "foo", null, "1.0.0")));
+    }
+
     private void createSimpleFeaturePacks() throws ProvisioningException {
         creator.newFeaturePack(FeaturePackLocation.fromString(FPL_100).getFPID())
                 .newPackage("p1", true)
@@ -429,7 +474,11 @@ public class ApplyCandidateActionTest {
     }
 
     private String manifest(String name) throws IOException {
-        String txt = ChannelManifestMapper.toYaml(new ChannelManifest(name, null, null, Collections.emptyList()));
+        return manifest(name, Collections.emptyList());
+    }
+
+    private String manifest(String name, List<Stream> streams) throws IOException {
+        String txt = ChannelManifestMapper.toYaml(new ChannelManifest(name, null, null, streams));
         // workaround for Windows
         return txt.replace("\n", System.lineSeparator());
     }
