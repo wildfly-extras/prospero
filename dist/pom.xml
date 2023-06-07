@@ -13,7 +13,8 @@
     <packaging>pom</packaging>
 
     <properties>
-        <common.resources.directory>${basedir}/../common/src/main/resources</common.resources.directory>
+        <!-- common module renames the start scripts, need to use processed resources -->
+        <common.resources.directory>${basedir}/../common/target/classes</common.resources.directory>
     </properties>
 
     <modules>
