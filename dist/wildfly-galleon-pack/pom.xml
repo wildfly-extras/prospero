@@ -12,6 +12,8 @@
 
   <properties>
     <prospero.script.path>packages/org.jboss.prospero/content/bin/</prospero.script.path>
+    <prospero.log.location>standalone/logs/installation.log</prospero.log.location>
+    <prospero.log.location.win>standalone\logs\installation.log</prospero.log.location.win>
   </properties>
 
   <dependencies>
@@ -369,19 +371,9 @@
             </goals>
             <configuration>
               <outputDirectory>${basedir}/target/resources</outputDirectory>
-              <escapeString>\</escapeString>
               <resources>
                 <resource>
                   <directory>${common.resources.directory}</directory>
-                  <excludes>
-                    <exclude>modules/**/module.xml</exclude>
-                  </excludes>
-                </resource>
-                <resource>
-                  <directory>${common.resources.directory}</directory>
-                  <includes>
-                    <include>modules/**/module.xml</include>
-                  </includes>
                   <filtering>true</filtering>
                 </resource>
               </resources>
