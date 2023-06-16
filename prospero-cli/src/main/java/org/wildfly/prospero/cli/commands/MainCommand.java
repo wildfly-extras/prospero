@@ -20,7 +20,7 @@ package org.wildfly.prospero.cli.commands;
 import java.io.IOException;
 import java.net.URL;
 import java.util.Enumeration;
-import java.util.PropertyResourceBundle;
+import java.util.ResourceBundle;
 import java.util.concurrent.Callable;
 import java.util.jar.Manifest;
 
@@ -52,8 +52,7 @@ public class MainCommand implements Callable<Integer> {
     @Override
     public Integer call() throws IOException {
         // print welcome message - this is not printed when -h option is set
-        PropertyResourceBundle usageBundle = new PropertyResourceBundle(
-                getClass().getResourceAsStream("/UsageMessages.properties"));
+        ResourceBundle usageBundle = ResourceBundle.getBundle("UsageMessages");
 
         console.println(CommandLine.Help.Ansi.AUTO.string(usageBundle.getString("prospero.welcomeMessage")));
 
