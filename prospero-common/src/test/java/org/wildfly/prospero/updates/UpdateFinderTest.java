@@ -26,6 +26,7 @@ import org.mockito.Mock;
 import org.mockito.junit.MockitoJUnitRunner;
 import org.wildfly.channel.ArtifactTransferException;
 import org.wildfly.channel.ChannelSession;
+import org.wildfly.channel.VersionResult;
 
 import java.util.Arrays;
 import java.util.Collections;
@@ -45,7 +46,8 @@ public class UpdateFinderTest {
 
     @Test
     public void testDowngradeIsPossible() throws Exception {
-        when(channelSession.findLatestMavenArtifactVersion("org.foo", "bar", "jar", "", null)).thenReturn("1.0.0");
+        when(channelSession.findLatestMavenArtifactVersion("org.foo", "bar", "jar", "", null))
+                .thenReturn(new VersionResult("1.0.0", null));
 
         UpdateFinder finder = new UpdateFinder(channelSession);
         final List<Artifact> artifacts = Arrays.asList(
@@ -61,7 +63,8 @@ public class UpdateFinderTest {
 
     @Test
     public void testExcludeSameVersion() throws Exception {
-        when(channelSession.findLatestMavenArtifactVersion("org.foo", "bar", "jar", "", null)).thenReturn("1.0.0");
+        when(channelSession.findLatestMavenArtifactVersion("org.foo", "bar", "jar", "", null))
+                .thenReturn(new VersionResult("1.0.0", null));
 
         UpdateFinder finder = new UpdateFinder(channelSession);
         final List<Artifact> artifacts = Arrays.asList(
@@ -74,7 +77,8 @@ public class UpdateFinderTest {
 
     @Test
     public void testIncludeUpgradeVersion() throws Exception {
-        when(channelSession.findLatestMavenArtifactVersion("org.foo", "bar", "jar", "", null)).thenReturn("1.0.1");
+        when(channelSession.findLatestMavenArtifactVersion("org.foo", "bar", "jar", "", null))
+                .thenReturn(new VersionResult("1.0.1", null));
 
         UpdateFinder finder = new UpdateFinder(channelSession);
         final List<Artifact> artifacts = Arrays.asList(
