@@ -28,6 +28,7 @@ import java.nio.file.Path;
 import java.util.List;
 import java.util.Locale;
 import java.util.ResourceBundle;
+import java.util.Set;
 
 import static java.lang.String.format;
 
@@ -527,6 +528,10 @@ public interface CliMessages {
         return format(bundle.getString("prospero.general.error.galleon.parse"), path);
     }
 
+    default String featurePackNotFound(String featurePackName) {
+        return format(bundle.getString("prospero.general.error.feature_pack.not_found"), featurePackName);
+    }
+
     default String unknownCommand(String commandString) {
         return format(bundle.getString("prospero.general.error.unknown_command"), commandString);
     }
@@ -540,5 +545,51 @@ public interface CliMessages {
             return format(bundle.getString("prospero.general.error.unknown_command.suggestion_multiple"),
                     StringUtils.join(suggestions, connector));
         }
+    }
+
+    default ArgumentParsingException featurePackNameNotMavenCoordinate() {
+        return new ArgumentParsingException(format(bundle.getString("prospero.features.add.validation.fpl_name")));
+    }
+
+    default String layerNotSupported(String fpl, String layerName, Set<String> supportedLayers) {
+        return format(bundle.getString("prospero.features.add.validation.layer.not_supported"),
+                fpl, layerName, StringUtils.join(supportedLayers, ", "));
+    }
+
+    default String layerNotSupported(String fpl) {
+        return format(bundle.getString("prospero.features.add.validation.layer.no_layers"), fpl);
+    }
+
+    default String modelNotSupported(String fpl, String model, Set<String> supportedModels) {
+        return format(bundle.getString("prospero.features.add.validation.model.not_supported"),
+                fpl, model, StringUtils.join(supportedModels, ", "));
+    }
+
+    default String featuresAddHeader(String fpl, Path dir) {
+        return format(bundle.getString("prospero.features.add.header"), fpl, dir);
+    }
+
+    default String featuresAddPrompt() {
+        return bundle.getString("prospero.features.add.prompt");
+    }
+
+    default String featuresAddPromptAccepted() {
+        return bundle.getString("prospero.features.add.prompt.yes");
+    }
+
+    default String featuresAddPromptCancelled() {
+        return bundle.getString("prospero.features.add.prompt.no");
+    }
+
+    default String featurePackTitle() {
+        return bundle.getString("prospero.history.feature_pack.title");
+    }
+
+    default String configurationModel() {
+        return bundle.getString("prospero.history.configuration_model.title");
+    }
+
+    default String diffFeaturesChanges() {
+        return bundle.getString("prospero.changes.diff.features_changes");
     }
 }

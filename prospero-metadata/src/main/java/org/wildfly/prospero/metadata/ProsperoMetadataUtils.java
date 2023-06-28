@@ -17,6 +17,8 @@
 
 package org.wildfly.prospero.metadata;
 
+import org.codehaus.plexus.util.FileUtils;
+import org.jboss.galleon.Constants;
 import org.wildfly.channel.Channel;
 import org.wildfly.channel.ChannelManifest;
 import org.wildfly.channel.ChannelManifestMapper;
@@ -26,6 +28,7 @@ import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.StandardCopyOption;
 import java.util.List;
 import java.util.Objects;
 
@@ -46,6 +49,7 @@ public class ProsperoMetadataUtils {
     public static final String MAVEN_OPTS_FILE = "maven_opts.yaml";
     public static final String CURRENT_VERSION_FILE = "manifest_version.yaml";
     public static final String README_FILE_NAME = "README.txt";
+    public static final String PROVISIONING_RECORD_XML = ".provisioning_record.xml";
 
     private static final String WARNING_MESSAGE = "WARNING: The files in .installation directory should be only edited by the provisioning tool.";
 
@@ -90,6 +94,8 @@ public class ProsperoMetadataUtils {
         if (versionRecord != null) {
             writeVersionRecord(versionRecordPath, versionRecord);
         }
+
+        recordProvisioningDefinition(serverDir, serverDir);
 
         // Add README.txt file to .installation directory to warn the files should not be edited.
         if (!Files.exists(readmeFile)) {
@@ -178,6 +184,33 @@ public class ProsperoMetadataUtils {
 
     public static Path configurationPath(Path serverDir) {
         return serverDir.resolve(METADATA_DIR).resolve(INSTALLER_CHANNELS_FILE_NAME);
+    }
+
+    /**
+     * creates a copy of Galleon provisioning configuration from {@code Constants.PROVISIONED_STATE_DIR/Constants.PROVISIONING_XML}
+     * in the {@code METADATA_DIR}.
+     *
+     * If the source file doesn't exist no copy is created.
+     * If the provisioning configuration is the same as saved copy, the file is not overwritten.
+     *
+     * @param sourceServer - root folder of the server the provisioning configuration will be stored
+     * @param targetServer - root folder of the server to copy the provisioning configuration to
+     * @throws IOException - if the file cannot be copied.
+     */
+    public static void recordProvisioningDefinition(Path sourceServer, Path targetServer) throws IOException {
+        final Path provisioningFile = sourceServer.resolve(Constants.PROVISIONED_STATE_DIR).resolve(Constants.PROVISIONING_XML);
+        final Path provisioningRecordFile = targetServer.resolve(METADATA_DIR).resolve(PROVISIONING_RECORD_XML);
+
+        if (!Files.exists(provisioningFile)) {
+            return;
+        }
+
+        if (!Files.exists(provisioningRecordFile)) {
+            Files.copy(provisioningFile, provisioningRecordFile);
+        } else if (!FileUtils.contentEquals(provisioningFile.toFile(), provisioningRecordFile.toFile())) {
+            Files.copy(provisioningFile, provisioningRecordFile, StandardCopyOption.REPLACE_EXISTING);
+        }
+
     }
 
     protected static void writeToFile(Path path, String text) throws IOException {

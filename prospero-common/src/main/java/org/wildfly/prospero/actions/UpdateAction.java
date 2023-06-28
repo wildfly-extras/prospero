@@ -24,6 +24,9 @@ import java.util.Collections;
 import java.util.List;
 
 import org.apache.commons.io.FileUtils;
+import org.jboss.galleon.config.ProvisioningConfig;
+import org.jboss.galleon.util.PathsUtils;
+import org.jboss.galleon.xml.ProvisioningXmlParser;
 import org.wildfly.channel.Channel;
 import org.wildfly.channel.Repository;
 import org.wildfly.prospero.ProsperoLogger;
@@ -109,7 +112,10 @@ public class UpdateAction implements AutoCloseable {
         try (PrepareCandidateAction prepareCandidateAction = new PrepareCandidateAction(installDir, mavenSessionManager, prosperoConfig);
              GalleonEnvironment galleonEnv = getGalleonEnv(targetDir)) {
 
-            final boolean result = prepareCandidateAction.buildCandidate(targetDir, galleonEnv, ApplyCandidateAction.Type.UPDATE);
+            final ProvisioningConfig provisioningConfig = ProvisioningXmlParser.parse(PathsUtils.getProvisioningXml(installDir));
+
+            final boolean result = prepareCandidateAction.buildCandidate(targetDir, galleonEnv,
+                    ApplyCandidateAction.Type.UPDATE, provisioningConfig);
             ProsperoLogger.ROOT_LOGGER.updateCandidateCompleted(targetDir);
             return result;
         }

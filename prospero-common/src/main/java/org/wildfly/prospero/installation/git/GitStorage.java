@@ -23,6 +23,7 @@ import org.eclipse.jgit.lib.StoredConfig;
 import org.wildfly.channel.Channel;
 import org.wildfly.channel.ChannelManifest;
 import org.wildfly.prospero.ProsperoLogger;
+import org.wildfly.prospero.api.FeatureChange;
 import org.wildfly.prospero.metadata.ManifestVersionRecord;
 import org.wildfly.prospero.api.ChannelChange;
 import org.wildfly.prospero.api.exceptions.MetadataException;
@@ -115,6 +116,7 @@ public class GitStorage implements AutoCloseable {
                 git.add().addFilepattern(ProsperoMetadataUtils.MANIFEST_FILE_NAME).call();
                 git.add().addFilepattern(ProsperoMetadataUtils.INSTALLER_CHANNELS_FILE_NAME).call();
                 git.add().addFilepattern(CURRENT_VERSION_FILE).call();
+                git.add().addFilepattern(ProsperoMetadataUtils.PROVISIONING_RECORD_XML).call();
                 // adjust the date so that when taking over a non-prosper installation date matches creation
                 git.commit()
                         .setAuthor(author)
@@ -148,6 +150,7 @@ public class GitStorage implements AutoCloseable {
 
             git.add().addFilepattern(ProsperoMetadataUtils.MANIFEST_FILE_NAME).call();
             git.add().addFilepattern(CURRENT_VERSION_FILE).call();
+            git.add().addFilepattern(ProsperoMetadataUtils.PROVISIONING_RECORD_XML).call();
 
             final PersonIdent author = getCommitter();
             final SavedState.Type commitType = operation;
@@ -290,6 +293,10 @@ public class GitStorage implements AutoCloseable {
         return getChanges(savedState, ProsperoMetadataUtils.INSTALLER_CHANNELS_FILE_NAME, parser);
     }
 
+    public List<FeatureChange> getFeatureChanges(SavedState latestState) throws MetadataException {
+        return getChanges(latestState, ProsperoMetadataUtils.PROVISIONING_RECORD_XML, new FeatureChangeParser());
+    }
+
     private <T> List<T> getChanges(SavedState savedState, String manifestFileName, Parser<T> parser) throws MetadataException {
         Path change = null;
         Path base = null;
@@ -374,7 +381,8 @@ public class GitStorage implements AutoCloseable {
         }
     }
 
-    private interface Parser<T> {
+    interface Parser<T> {
         List<T> parse(Path changedPath, Path basePath) throws IOException, MetadataException;
     }
+
 }

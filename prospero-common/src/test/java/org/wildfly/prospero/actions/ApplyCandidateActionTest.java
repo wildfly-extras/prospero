@@ -38,6 +38,7 @@ import org.wildfly.channel.Repository;
 import org.wildfly.channel.Stream;
 import org.wildfly.prospero.api.ArtifactChange;
 import org.wildfly.prospero.api.FileConflict;
+import org.wildfly.prospero.api.SavedState;
 import org.wildfly.prospero.api.exceptions.InvalidUpdateCandidateException;
 import org.wildfly.prospero.galleon.ArtifactCache;
 import org.wildfly.prospero.installation.git.GitStorage;
@@ -228,6 +229,7 @@ public class ApplyCandidateActionTest {
                 .addFile(METADATA_DIR + "/" + ProsperoMetadataUtils.INSTALLER_CHANNELS_FILE_NAME,
                         channel("channels " + FPL_100).trim())
                 .addFile(ArtifactCache.CACHE_FOLDER.toString().replace(File.separatorChar, '/') + "/" + "artifacts.txt" , FPL_101+"::abcd::foo/bar")
+                .skip(METADATA_DIR + "/" + ProsperoMetadataUtils.PROVISIONING_RECORD_XML)
                 .build();
 
         // build test packages
@@ -443,6 +445,26 @@ public class ApplyCandidateActionTest {
                 .containsOnly(ArtifactChange.removed(new DefaultArtifact("org.test", "foo", null, "1.0.0")));
     }
 
+    @Test
+    public void featureAddIsRecordedAsAddingFeature() throws Exception {
+        createSimpleFeaturePacks();
+
+        String newFpl = createNewFeaturePack();
+
+        install(installationPath, FPL_100);
+
+        prepareFeatureAddCandidate(updatePath, installationPath, newFpl);
+
+        new ApplyCandidateAction(installationPath, updatePath).applyUpdate(ApplyCandidateAction.Type.FEATURE_ADD);
+
+        assertEquals(SavedState.Type.FEATURE_ADD, new GitStorage(installationPath).getRevisions().get(0).getType());
+
+        assertThat(Files.readString(installationPath.resolve(Constants.PROVISIONED_STATE_DIR).resolve(Constants.PROVISIONING_XML)))
+                .contains(newFpl);
+        assertThat(Files.readString(installationPath.resolve(METADATA_DIR).resolve(ProsperoMetadataUtils.PROVISIONING_RECORD_XML)))
+                .contains(newFpl);
+    }
+
     private void createSimpleFeaturePacks() throws ProvisioningException {
         creator.newFeaturePack(FeaturePackLocation.fromString(FPL_100).getFPID())
                 .newPackage("p1", true)
@@ -453,6 +475,16 @@ public class ApplyCandidateActionTest {
                 .writeContent("prod1/p1.txt", "p1 1.0.1")
                 .getFeaturePack();
         creator.install();
+    }
+
+    private String createNewFeaturePack() throws ProvisioningException {
+        final String fpl = "org.test:pack-two:1.0.0:zip";
+        creator.newFeaturePack(FeaturePackLocation.fromString(fpl).getFPID())
+                .newPackage("p2", true)
+                .writeContent("prod2/p1.txt", "p2 1.0.0")
+                .getFeaturePack();
+        creator.install();
+        return fpl;
     }
 
     private void writeContent(String path, String content) throws IOException {
@@ -493,6 +525,16 @@ public class ApplyCandidateActionTest {
                 null, null));
         // workaround for Windows
         return txt.replace("\n", System.lineSeparator());
+    }
+
+    private void prepareFeatureAddCandidate(Path updatePath, Path basePath, String fpl) throws Exception {
+        install(updatePath, fpl);
+
+        // create update marker file
+        try (final GitStorage gitStorage = new GitStorage(basePath)) {
+            final String revHash = gitStorage.getRevisions().get(0).getName();
+            new MarkerFile(revHash, ApplyCandidateAction.Type.FEATURE_ADD).write(updatePath);
+        }
     }
 
     private void prepareUpdate(Path updatePath, Path basePath, String fpl) throws Exception {

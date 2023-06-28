@@ -21,8 +21,6 @@ import org.jboss.galleon.Constants;
 import org.jboss.galleon.ProvisioningException;
 import org.jboss.galleon.ProvisioningManager;
 import org.jboss.galleon.config.ProvisioningConfig;
-import org.jboss.galleon.util.PathsUtils;
-import org.jboss.galleon.xml.ProvisioningXmlParser;
 import org.wildfly.channel.Channel;
 import org.wildfly.channel.ChannelManifest;
 import org.wildfly.channel.UnresolvedMavenArtifactException;
@@ -50,20 +48,19 @@ import java.util.Optional;
 class PrepareCandidateAction implements AutoCloseable{
 
     private final InstallationMetadata metadata;
-    private final Path installDir;
     private final ProsperoConfig prosperoConfig;
     private final MavenSessionManager mavenSessionManager;
 
     PrepareCandidateAction(Path installDir, MavenSessionManager mavenSessionManager, ProsperoConfig prosperoConfig)
             throws OperationException {
         this.metadata = InstallationMetadata.loadInstallation(installDir);
-        this.installDir = installDir;
         this.prosperoConfig = prosperoConfig;
         this.mavenSessionManager = mavenSessionManager;
     }
 
-    boolean buildCandidate(Path targetDir, GalleonEnvironment galleonEnv, ApplyCandidateAction.Type operation) throws ProvisioningException, OperationException {
-        doBuildUpdate(targetDir, galleonEnv);
+    boolean buildCandidate(Path targetDir, GalleonEnvironment galleonEnv, ApplyCandidateAction.Type operation,
+                           ProvisioningConfig config) throws ProvisioningException, OperationException {
+        doBuildUpdate(targetDir, galleonEnv, config);
 
         try {
             final SavedState savedState = metadata.getRevisions().get(0);
@@ -75,9 +72,9 @@ class PrepareCandidateAction implements AutoCloseable{
         return true;
     }
 
-    private void doBuildUpdate(Path targetDir, GalleonEnvironment galleonEnv) throws ProvisioningException, OperationException {
+    private void doBuildUpdate(Path targetDir, GalleonEnvironment galleonEnv, ProvisioningConfig provisioningConfig)
+            throws ProvisioningException, OperationException {
         final ProvisioningManager provMgr = galleonEnv.getProvisioningManager();
-        final ProvisioningConfig provisioningConfig = ProvisioningXmlParser.parse(PathsUtils.getProvisioningXml(installDir));
         try {
             GalleonUtils.executeGalleon((options) -> {
                         options.put(Constants.EXPORT_SYSTEM_PATHS, "true");

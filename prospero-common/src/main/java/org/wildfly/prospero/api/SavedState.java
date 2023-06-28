@@ -24,7 +24,7 @@ import java.util.Objects;
 public class SavedState {
 
     public enum Type {
-        UPDATE, INSTALL, ROLLBACK, CONFIG_CHANGE, UNKNOWN;
+        UPDATE, INSTALL, ROLLBACK, CONFIG_CHANGE, FEATURE_ADD, UNKNOWN;
         public static Type fromText(String text) {
             for (Type value : Type.values()) {
                 if (value.name().equals(text)) {

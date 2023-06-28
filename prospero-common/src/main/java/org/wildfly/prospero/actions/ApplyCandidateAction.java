@@ -86,7 +86,7 @@ public class ApplyCandidateAction {
     private final SystemPaths systemPaths;
 
     public enum Type {
-        UPDATE("UPDATE"), REVERT("REVERT");
+        UPDATE("UPDATE"), REVERT("REVERT"), FEATURE_ADD("FEATURE_ADD");
 
         private final String text;
 
@@ -104,6 +104,8 @@ public class ApplyCandidateAction {
                     return ApplyCandidateAction.Type.UPDATE;
                 case "REVERT":
                     return ApplyCandidateAction.Type.REVERT;
+                case "FEATURE_ADD":
+                    return ApplyCandidateAction.Type.FEATURE_ADD;
                 default:
                     throw ProsperoLogger.ROOT_LOGGER.invalidMarkerFileOperation(text);
             }
@@ -326,6 +328,7 @@ public class ApplyCandidateAction {
             Path updateGalleonPath = PathsUtils.getProvisionedStateDir(updateDir);
             IoUtils.recursiveDelete(installationGalleonPath);
             IoUtils.copy(updateGalleonPath, installationGalleonPath, true);
+            ProsperoMetadataUtils.recordProvisioningDefinition(installationDir, installationDir);
         } catch (IOException ex) {
             throw new ProvisioningException(ex);
         }
@@ -347,7 +350,17 @@ public class ApplyCandidateAction {
         IoUtils.copy(updateManifest, installationManifest);
 
         try (GitStorage git = new GitStorage(installationDir)) {
-            git.recordChange(operation==Type.UPDATE? SavedState.Type.UPDATE:SavedState.Type.ROLLBACK);
+            switch (operation) {
+                case UPDATE:
+                    git.recordChange(SavedState.Type.UPDATE);
+                    break;
+                case REVERT:
+                    git.recordChange(SavedState.Type.ROLLBACK);
+                    break;
+                case FEATURE_ADD:
+                    git.recordChange(SavedState.Type.FEATURE_ADD);
+                    break;
+            }
         }
     }
 

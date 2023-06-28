@@ -33,6 +33,7 @@ import org.eclipse.aether.artifact.Artifact;
 import org.eclipse.aether.artifact.DefaultArtifact;
 import org.jboss.galleon.Constants;
 import org.jboss.galleon.ProvisioningException;
+import org.jboss.galleon.util.PathsUtils;
 import org.junit.Test;
 import org.wildfly.channel.Channel;
 import org.wildfly.channel.Repository;
@@ -84,6 +85,10 @@ public class SimpleProvisionTest extends WfCoreTestBase {
         assertThat(record.get().getUrlManifests())
                 .map(ManifestVersionRecord.UrlManifest::getUrl)
                 .containsExactly(MetadataTestUtils.class.getClassLoader().getResource(CHANNEL_BASE_CORE_19).toExternalForm());
+
+        // verify the provisioning.xml was recorded in the .installation folder
+        assertThat(outputPath.resolve(ProsperoMetadataUtils.METADATA_DIR).resolve(ProsperoMetadataUtils.PROVISIONING_RECORD_XML))
+                .hasSameTextualContentAs(PathsUtils.getProvisioningXml(outputPath));
     }
 
     @Test
