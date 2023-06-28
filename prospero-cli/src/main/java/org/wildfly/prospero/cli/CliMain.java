@@ -22,6 +22,7 @@ import org.wildfly.prospero.cli.commands.ChannelCommand;
 import org.wildfly.prospero.cli.commands.CliConstants;
 import org.wildfly.prospero.cli.commands.CloneCommand;
 import org.wildfly.prospero.cli.commands.CompletionCommand;
+import org.wildfly.prospero.cli.commands.FeaturesCommand;
 import org.wildfly.prospero.cli.commands.HistoryCommand;
 import org.wildfly.prospero.cli.commands.InstallCommand;
 import org.wildfly.prospero.cli.commands.MainCommand;
@@ -90,6 +91,10 @@ public class CliMain {
         CloneCommand cloneCommand = new CloneCommand(console, actionFactory);
         commandLine.addSubcommand(cloneCommand);
         cloneCommand.addSubCommands(commandLine);
+
+        final FeaturesCommand featuresCommand = new FeaturesCommand(console, actionFactory);
+        commandLine.addSubcommand(featuresCommand);
+        featuresCommand.addSubCommands(commandLine);
 
         commandLine.setUsageHelpAutoWidth(true);
         commandLine.setExecutionExceptionHandler(new ExecutionExceptionHandler(console));

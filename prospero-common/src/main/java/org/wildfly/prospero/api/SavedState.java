@@ -23,7 +23,7 @@ import java.util.Objects;
 
 public class SavedState {
 
-    public enum Type { UPDATE, INSTALL, ROLLBACK, CONFIG_CHANGE;}
+    public enum Type { UPDATE, INSTALL, ROLLBACK, CONFIG_CHANGE, FEATURE_ADD;}
 
     private String hash;
     private Instant timestamp;
