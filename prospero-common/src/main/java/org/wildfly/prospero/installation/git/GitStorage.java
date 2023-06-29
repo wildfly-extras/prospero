@@ -111,6 +111,7 @@ public class GitStorage implements AutoCloseable {
                 git.add().addFilepattern(ProsperoMetadataUtils.MANIFEST_FILE_NAME).call();
                 git.add().addFilepattern(ProsperoMetadataUtils.INSTALLER_CHANNELS_FILE_NAME).call();
                 git.add().addFilepattern(CURRENT_VERSION_FILE).call();
+                git.add().addFilepattern(ProsperoMetadataUtils.PROVISIONING_RECORD_XML).call();
                 // adjust the date so that when taking over a non-prosper installation date matches creation
                 git.commit()
                         .setAuthor(author)
@@ -144,6 +145,7 @@ public class GitStorage implements AutoCloseable {
 
             git.add().addFilepattern(ProsperoMetadataUtils.MANIFEST_FILE_NAME).call();
             git.add().addFilepattern(CURRENT_VERSION_FILE).call();
+            git.add().addFilepattern(ProsperoMetadataUtils.PROVISIONING_RECORD_XML).call();
 
             final PersonIdent author = getCommitter();
             final SavedState.Type commitType = operation;

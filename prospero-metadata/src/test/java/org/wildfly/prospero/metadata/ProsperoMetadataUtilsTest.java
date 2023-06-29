@@ -17,6 +17,8 @@
 
 package org.wildfly.prospero.metadata;
 
+import org.assertj.core.api.Assertions;
+import org.jboss.galleon.Constants;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
@@ -40,6 +42,7 @@ import static org.junit.Assert.assertTrue;
 import static org.wildfly.prospero.metadata.ProsperoMetadataUtils.MANIFEST_FILE_NAME;
 import static org.wildfly.prospero.metadata.ProsperoMetadataUtils.METADATA_DIR;
 import static org.wildfly.prospero.metadata.ProsperoMetadataUtils.INSTALLER_CHANNELS_FILE_NAME;
+import static org.wildfly.prospero.metadata.ProsperoMetadataUtils.PROVISIONING_RECORD_XML;
 import static org.wildfly.prospero.metadata.ProsperoMetadataUtils.README_FILE_NAME;
 
 public class ProsperoMetadataUtilsTest {
@@ -116,6 +119,17 @@ public class ProsperoMetadataUtilsTest {
 
         assertFalse(Files.exists(manifestPath));
         assertFalse(Files.exists(channelPath));
+    }
+
+    @Test
+    public void recordProvisioningConfigurationIfExists() throws Exception {
+        Files.createDirectory(server.resolve(Constants.PROVISIONED_STATE_DIR));
+        Files.writeString(server.resolve(Constants.PROVISIONED_STATE_DIR).resolve(Constants.PROVISIONING_XML), "<provisioning></provisioning>");
+
+        ProsperoMetadataUtils.generate(server, List.of(A_CHANNEL), A_MANIFEST, null);
+
+        Assertions.assertThat(server.resolve(METADATA_DIR).resolve(PROVISIONING_RECORD_XML))
+                .hasContent("<provisioning></provisioning>");
     }
 
     private void assertMetadataWritten() throws MalformedURLException {

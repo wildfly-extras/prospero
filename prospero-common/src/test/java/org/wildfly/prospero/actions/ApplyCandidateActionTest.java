@@ -228,6 +228,7 @@ public class ApplyCandidateActionTest {
                 .addFile(METADATA_DIR + "/" + ProsperoMetadataUtils.INSTALLER_CHANNELS_FILE_NAME,
                         channel("channels " + FPL_100).trim())
                 .addFile(ArtifactCache.CACHE_FOLDER.toString().replace(File.separatorChar, '/') + "/" + "artifacts.txt" , FPL_101+"::abcd::foo/bar")
+                .skip(METADATA_DIR + "/" + ProsperoMetadataUtils.PROVISIONING_RECORD_XML)
                 .build();
 
         // build test packages
@@ -454,6 +455,11 @@ public class ApplyCandidateActionTest {
         new ApplyCandidateAction(installationPath, updatePath).applyUpdate(ApplyCandidateAction.Type.FEATURE_ADD);
 
         assertEquals(SavedState.Type.FEATURE_ADD, new GitStorage(installationPath).getRevisions().get(0).getType());
+
+        assertThat(Files.readString(installationPath.resolve(Constants.PROVISIONED_STATE_DIR).resolve(Constants.PROVISIONING_XML)))
+                .contains(newFpl);
+        assertThat(Files.readString(installationPath.resolve(METADATA_DIR).resolve(ProsperoMetadataUtils.PROVISIONING_RECORD_XML)))
+                .contains(newFpl);
     }
 
     private void createSimpleFeaturePacks() throws ProvisioningException {

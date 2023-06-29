@@ -319,6 +319,7 @@ public class ApplyCandidateAction {
     private void updateMetadata(Type operation) throws ProvisioningException, MetadataException {
         try {
             copyCurrentVersions();
+            ProsperoMetadataUtils.recordProvisioningDefinition(updateDir, installationDir);
             writeProsperoMetadata(operation);
             updateInstallationCache();
             Path installationGalleonPath = PathsUtils.getProvisionedStateDir(installationDir);
