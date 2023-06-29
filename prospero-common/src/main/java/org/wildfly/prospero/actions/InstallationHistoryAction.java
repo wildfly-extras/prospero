@@ -110,7 +110,11 @@ public class InstallationHistoryAction {
 
                     System.setProperty(MAVEN_REPO_LOCAL, mavenSessionManager.getProvisioningRepo().toAbsolutePath().toString());
 
-                    final ProvisioningConfig provisioningConfig = ProvisioningXmlParser.parse(PathsUtils.getProvisioningXml(installation));
+                    ProvisioningConfig provisioningConfig = revertMetadata.getRecordedProvisioningConfig();
+                    if (provisioningConfig == null) {
+                        ProsperoLogger.ROOT_LOGGER.fallbackToGalleonProvisioningDefinition();
+                        provisioningConfig = ProvisioningXmlParser.parse(PathsUtils.getProvisioningXml(installation));
+                    }
 
                     prepareCandidateAction.buildCandidate(targetDir, galleonEnv,
                             ApplyCandidateAction.Type.REVERT, provisioningConfig);

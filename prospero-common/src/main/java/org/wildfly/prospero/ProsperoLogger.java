@@ -321,4 +321,8 @@ public interface ProsperoLogger extends BasicLogger {
 
     @Message(id = 252, value = "Invalid metadata bundle [%s]. Expected a ZIP archive containing installation configuration.")
     IllegalArgumentException invalidMetadataBundle(Path path);
+
+    @LogMessage(level = Logger.Level.INFO)
+    @Message(id = 253, value = "Unable to retrieve stored provisioning configuration. Falling back to current configuration")
+    void fallbackToGalleonProvisioningDefinition();
 }
