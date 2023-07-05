@@ -42,8 +42,8 @@ public class FeaturesCommand extends AbstractParentCommand {
         @CommandLine.Option(names = "--layers", split = ",")
         private Set<String> layers;
 
-        @CommandLine.Option(names = "--module")
-        private String module;
+        @CommandLine.Option(names = "--model")
+        private String model;
 
         @CommandLine.Option(names = "--config")
         private String config;
@@ -58,8 +58,7 @@ public class FeaturesCommand extends AbstractParentCommand {
 
             final MavenSessionManager msm = new MavenSessionManager();
             final FeaturesAddAction featuresAddAction = new FeaturesAddAction(msm, directory.get(), console);
-            featuresAddAction.addFeaturePack(fpl, layers==null? Collections.emptySet():layers
-                    , module, config);
+            featuresAddAction.addFeaturePack(fpl, layers==null? Collections.emptySet():layers, model, config);
 
             return ReturnCodes.SUCCESS;
         }

@@ -166,7 +166,8 @@ public class FeaturesAddAction {
         return fpBuilder;
     }
 
-    private static ConfigModel.Builder buildLayerConfig(Set<String> layers, String selectedConfig, String selectedModel, ProvisioningConfig existingConfig, ProvisioningConfig.Builder builder)
+    private static ConfigModel.Builder buildLayerConfig(Set<String> layers, String selectedConfig, String selectedModel,
+                                                        ProvisioningConfig existingConfig, ProvisioningConfig.Builder builder)
             throws ProvisioningDescriptionException {
         final ConfigModel.Builder configBuilder;
         final ConfigId id = new ConfigId(selectedModel, selectedConfig);
