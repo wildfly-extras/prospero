@@ -20,6 +20,7 @@ package org.wildfly.prospero.actions;
 import org.apache.commons.io.FileUtils;
 import org.eclipse.aether.DefaultRepositorySystemSession;
 import org.eclipse.aether.RepositorySystem;
+import org.jboss.galleon.ProvisioningDescriptionException;
 import org.jboss.galleon.ProvisioningException;
 import org.jboss.galleon.ProvisioningManager;
 import org.jboss.galleon.config.ConfigId;
@@ -96,74 +97,16 @@ public class FeaturesAddAction {
                 throw new ProvisioningException("No layers found in the configuration.");
             }
 
-            if (model == null || model.isEmpty()) {
-                if (allLayers.size() > 1) {
-                    throw new ProvisioningException("Multiple models available, please choose one.");
-                }
-                selectedModel = allLayers.keySet().iterator().next();
-            } else {
-                if (!allLayers.containsKey(model)) {
-                    throw new ProvisioningException("The model " + model + " is not available.");
-                }
-                selectedModel = model;
-            }
+            selectedModel = getSelectedModel(model, allLayers);
 
-
-            selectedConfig = configName == null ? selectedModel + ".xml" : configName;
-
-            final Map<String, Set<String>> modelLayers = allLayers.get(selectedModel);
-            for (String layer : layers) {
-                if (!modelLayers.containsKey(layer)) {
-                    throw new ProvisioningException("Unknown layer: " + layer);
-                }
-                // TODO: verify the layer is not already included - check in current configuration
-            }
+            verifyLayerAvailable(layers, selectedModel, allLayers);
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
 
-        final ProvisioningConfig newConfig;
-        try (GalleonEnvironment galleonEnv = getGalleonEnv(installDir);
-            ProvisioningManager pm = galleonEnv.getProvisioningManager()) {
-            final ProvisioningConfig existingConfig = pm.getProvisioningConfig();
-            final ProvisioningConfig.Builder builder = ProvisioningConfig.builder(existingConfig);
+        selectedConfig = configName == null ? selectedModel + ".xml" : configName;
 
-            ConfigModel.Builder configBuilder;
-            ConfigId id = new ConfigId(selectedModel, selectedConfig);
-            if (existingConfig.hasDefinedConfig(id)) {
-                ConfigModel cmodel = existingConfig.getDefinedConfig(id);
-                configBuilder = ConfigModel.builder(cmodel);
-                for (String layer: layers) {
-                    if (cmodel.getExcludedLayers().contains(layer)){
-                        configBuilder.removeExcludedLayer(layer);
-                    }
-                    if (!cmodel.getIncludedLayers().contains(layer)) {
-                        configBuilder.includeLayer(layer);
-                    }
-                }
-                builder.removeConfig(id);
-            } else {
-                configBuilder = ConfigModel.builder(selectedModel, selectedConfig);
-                for (String layer: layers) {
-                    configBuilder.includeLayer(layer);
-                }
-            }
-            FeaturePackConfig.Builder fpBuilder;
-            if (existingConfig.hasFeaturePackDep(fpl.getProducer())) {
-                FeaturePackConfig fp = existingConfig.getFeaturePackDep(fpl.getProducer());
-                fpBuilder = FeaturePackConfig.builder(fp);
-                builder.removeFeaturePackDep(fp.getLocation());
-            } else {
-                fpBuilder = FeaturePackConfig.builder(fpl)
-                        .setInheritConfigs(false)
-                        .setInheritPackages(false);
-            }
-
-            newConfig = builder
-                    .addConfig(configBuilder.build())
-                    .addFeaturePackDep(fpBuilder.build())
-                    .build();
-        }
+        final ProvisioningConfig newConfig = buildProvisioningConfig(layers, fpl, selectedConfig, selectedModel);
 
         Path candidate = null;
         try {
@@ -187,6 +130,94 @@ public class FeaturesAddAction {
             }
             throw new RuntimeException(e);
         }
+    }
+
+    private ProvisioningConfig buildProvisioningConfig(Set<String> layers, FeaturePackLocation fpl, String selectedConfig, String selectedModel)
+            throws ProvisioningException, OperationException {
+        try (GalleonEnvironment galleonEnv = getGalleonEnv(installDir);
+            ProvisioningManager pm = galleonEnv.getProvisioningManager()) {
+
+            final ProvisioningConfig existingConfig = pm.getProvisioningConfig();
+            final ProvisioningConfig.Builder builder = ProvisioningConfig.builder(existingConfig);
+
+            final ConfigModel.Builder configBuilder = buildLayerConfig(layers, selectedConfig, selectedModel, existingConfig, builder);
+
+            final FeaturePackConfig.Builder fpBuilder = buildFeaturePackConfig(fpl, existingConfig, builder);
+
+            return builder
+                    .addConfig(configBuilder.build())
+                    .addFeaturePackDep(fpBuilder.build())
+                    .build();
+        }
+    }
+
+    private static FeaturePackConfig.Builder buildFeaturePackConfig(FeaturePackLocation fpl, ProvisioningConfig existingConfig, ProvisioningConfig.Builder builder)
+            throws ProvisioningException {
+        final FeaturePackConfig.Builder fpBuilder;
+        if (existingConfig.hasFeaturePackDep(fpl.getProducer())) {
+            FeaturePackConfig fp = existingConfig.getFeaturePackDep(fpl.getProducer());
+            fpBuilder = FeaturePackConfig.builder(fp);
+            builder.removeFeaturePackDep(fp.getLocation());
+        } else {
+            fpBuilder = FeaturePackConfig.builder(fpl)
+                    .setInheritConfigs(false)
+                    .setInheritPackages(false);
+        }
+        return fpBuilder;
+    }
+
+    private static ConfigModel.Builder buildLayerConfig(Set<String> layers, String selectedConfig, String selectedModel, ProvisioningConfig existingConfig, ProvisioningConfig.Builder builder)
+            throws ProvisioningDescriptionException {
+        final ConfigModel.Builder configBuilder;
+        final ConfigId id = new ConfigId(selectedModel, selectedConfig);
+        if (existingConfig.hasDefinedConfig(id)) {
+            ConfigModel cmodel = existingConfig.getDefinedConfig(id);
+            configBuilder = ConfigModel.builder(cmodel);
+            includeLayers(layers, configBuilder, cmodel);
+            builder.removeConfig(id);
+        } else {
+            configBuilder = ConfigModel.builder(selectedModel, selectedConfig);
+            for (String layer: layers) {
+                configBuilder.includeLayer(layer);
+            }
+        }
+        return configBuilder;
+    }
+
+    private static void includeLayers(Set<String> layers, ConfigModel.Builder configBuilder, ConfigModel cmodel) throws ProvisioningDescriptionException {
+        for (String layer: layers) {
+            if (cmodel.getExcludedLayers().contains(layer)){
+                configBuilder.removeExcludedLayer(layer);
+            }
+            if (!cmodel.getIncludedLayers().contains(layer)) {
+                configBuilder.includeLayer(layer);
+            }
+        }
+    }
+
+    private static void verifyLayerAvailable(Set<String> layers, String selectedModel, Map<String, Map<String, Set<String>>> allLayers) throws ProvisioningException {
+        final Map<String, Set<String>> modelLayers = allLayers.get(selectedModel);
+        for (String layer : layers) {
+            if (!modelLayers.containsKey(layer)) {
+                throw new ProvisioningException("Unknown layer: " + layer);
+            }
+        }
+    }
+
+    private static String getSelectedModel(String model, Map<String, Map<String, Set<String>>> allLayers) throws ProvisioningException {
+        final String selectedModel;
+        if (model == null || model.isEmpty()) {
+            if (allLayers.size() > 1) {
+                throw new ProvisioningException("Multiple models available, please choose one.");
+            }
+            selectedModel = allLayers.keySet().iterator().next();
+        } else {
+            if (!allLayers.containsKey(model)) {
+                throw new ProvisioningException("The model " + model + " is not available.");
+            }
+            selectedModel = model;
+        }
+        return selectedModel;
     }
 
     private ProvisioningConfig getExistingConfiguration(Path installDir) throws ProvisioningException,

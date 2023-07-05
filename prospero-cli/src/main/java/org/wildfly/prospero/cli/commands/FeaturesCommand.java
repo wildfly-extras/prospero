@@ -58,7 +58,8 @@ public class FeaturesCommand extends AbstractParentCommand {
 
             final MavenSessionManager msm = new MavenSessionManager();
             final FeaturesAddAction featuresAddAction = new FeaturesAddAction(msm, directory.get(), console);
-            featuresAddAction.addFeaturePack(fpl, layers==null? Collections.emptySet():layers, module, config);
+            featuresAddAction.addFeaturePack(fpl, layers==null? Collections.emptySet():layers
+                    , module, config);
 
             return ReturnCodes.SUCCESS;
         }
