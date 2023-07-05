@@ -34,15 +34,19 @@ import org.jboss.galleon.spec.ConfigLayerDependency;
 import org.jboss.galleon.spec.ConfigLayerSpec;
 import org.jboss.galleon.universe.FeaturePackLocation;
 import org.jboss.galleon.universe.maven.repo.MavenRepoManager;
+import org.wildfly.channel.Channel;
 import org.wildfly.channel.ChannelMetadataCoordinate;
 import org.wildfly.channel.ChannelSession;
 import org.wildfly.channel.InvalidChannelMetadataException;
+import org.wildfly.channel.Repository;
 import org.wildfly.channel.UnresolvedMavenArtifactException;
 import org.wildfly.channel.maven.VersionResolverFactory;
 import org.wildfly.channel.spi.MavenVersionsResolver;
 import org.wildfly.prospero.ProsperoLogger;
 import org.wildfly.prospero.api.Console;
 import org.wildfly.prospero.api.InstallationMetadata;
+import org.wildfly.prospero.api.MavenOptions;
+import org.wildfly.prospero.api.TemporaryRepositoriesHandler;
 import org.wildfly.prospero.api.exceptions.ChannelDefinitionException;
 import org.wildfly.prospero.api.exceptions.MetadataException;
 import org.wildfly.prospero.api.exceptions.OperationException;
@@ -63,6 +67,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.TreeSet;
@@ -76,12 +81,14 @@ public class FeaturesAddAction {
     private final ProsperoConfig prosperoConfig;
     private final Console console;
 
-    public FeaturesAddAction(MavenSessionManager mavenSessionManager, Path installDir, Console console) throws MetadataException {
-        this.mavenSessionManager = mavenSessionManager;
+    public FeaturesAddAction(MavenOptions mavenOptions, Path installDir, List<Repository> repositories, Console console) throws MetadataException, ProvisioningException {
         this.installDir = installDir;
         this.console = console;
         this.metadata = InstallationMetadata.loadInstallation(installDir);
         this.prosperoConfig = metadata.getProsperoConfig();
+
+        final MavenOptions mergedOptions = addTemporaryRepositories(repositories).getMavenOptions().merge(mavenOptions);
+        this.mavenSessionManager = new MavenSessionManager(mergedOptions);
     }
 
     public void addFeaturePack(String fplGA, Set<String> layers, String model, String configName) throws ProvisioningException, OperationException {
@@ -313,5 +320,13 @@ public class FeaturesAddAction {
             throw ProsperoLogger.ROOT_LOGGER.invalidManifest(e);
         }
         return channelSession;
+    }
+
+    private ProsperoConfig addTemporaryRepositories(List<Repository> repositories) {
+        final ProsperoConfig prosperoConfig = metadata.getProsperoConfig();
+
+        final List<Channel> channels = TemporaryRepositoriesHandler.overrideRepositories(prosperoConfig.getChannels(), repositories);
+
+        return new ProsperoConfig(channels, prosperoConfig.getMavenOptions());
     }
 }

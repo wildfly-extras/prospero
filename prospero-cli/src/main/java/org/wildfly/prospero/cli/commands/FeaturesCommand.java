@@ -17,13 +17,17 @@
 
 package org.wildfly.prospero.cli.commands;
 
+import org.wildfly.channel.Repository;
 import org.wildfly.prospero.actions.FeaturesAddAction;
+import org.wildfly.prospero.api.MavenOptions;
 import org.wildfly.prospero.cli.ActionFactory;
 import org.wildfly.prospero.cli.CliConsole;
+import org.wildfly.prospero.cli.CliMessages;
+import org.wildfly.prospero.cli.RepositoryDefinition;
 import org.wildfly.prospero.cli.ReturnCodes;
-import org.wildfly.prospero.wfchannel.MavenSessionManager;
 import picocli.CommandLine;
 
+import java.nio.file.Path;
 import java.util.Collections;
 import java.util.List;
 import java.util.Set;
@@ -54,11 +58,20 @@ public class FeaturesCommand extends AbstractParentCommand {
 
         @Override
         public Integer call() throws Exception {
+            final long startTime = System.currentTimeMillis();
             // TODO: add all the validation, etc
 
-            final MavenSessionManager msm = new MavenSessionManager();
-            final FeaturesAddAction featuresAddAction = new FeaturesAddAction(msm, directory.get(), console);
+            final Path installationDir = determineInstallationDirectory(directory);
+
+            final MavenOptions mavenOptions = parseMavenOptions();
+
+            final List<Repository> repositories = RepositoryDefinition.from(temporaryRepositories);
+
+            final FeaturesAddAction featuresAddAction = new FeaturesAddAction(mavenOptions, installationDir, repositories, console);
             featuresAddAction.addFeaturePack(fpl, layers==null? Collections.emptySet():layers, model, config);
+
+            final float totalTime = (System.currentTimeMillis() - startTime) / 1000f;
+            console.println(CliMessages.MESSAGES.operationCompleted(totalTime));
 
             return ReturnCodes.SUCCESS;
         }
