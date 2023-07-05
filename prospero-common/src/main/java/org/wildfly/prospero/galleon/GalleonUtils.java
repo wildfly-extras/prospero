@@ -20,6 +20,7 @@ package org.wildfly.prospero.galleon;
 import org.jboss.galleon.ProvisioningException;
 import org.jboss.galleon.ProvisioningManager;
 import org.jboss.galleon.config.ProvisioningConfig;
+import org.jboss.galleon.layout.ProvisioningLayoutFactory;
 import org.jboss.galleon.state.ProvisionedFeaturePack;
 import org.jboss.galleon.universe.FeaturePackLocation;
 import org.jboss.galleon.universe.UniverseResolver;
@@ -136,6 +137,18 @@ public class GalleonUtils {
                 .addArtifactResolver(maven)
                 .setInstallationHome(installDir).build();
         }
+    }
+
+    public static ProvisioningLayoutFactory getProvisioningLayoutFactory(MavenRepoManager maven) throws ProvisioningException {
+        final UniverseResolver.Builder builder = UniverseResolver.builder()
+                .addArtifactResolver(maven);
+        UniverseResolver universeResolver = new UniverseResolver(builder) {
+            @Override
+            public Path resolve(FeaturePackLocation fpl) throws ProvisioningException {
+                return super.resolve(fpl);
+            }
+        };
+        return ProvisioningLayoutFactory.getInstance(universeResolver);
     }
 
     public static List<String> getInstalledPacks(Path dir) throws ProvisioningException {
