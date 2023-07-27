@@ -22,10 +22,6 @@ package org.wildfly.prospero.cli.commands;
  */
 public final class CliConstants {
 
-    protected static final String LAYERS = "--layers";
-    protected static final String MODEL = "--model";
-    protected static final String CONFIG = "--config";
-
     private CliConstants() {
     }
 
@@ -34,12 +30,12 @@ public final class CliConstants {
      */
     public static final class Commands {
 
-        protected static final String FEATURES = "features";
 
         private Commands() {
         }
 
         public static final String MAIN_COMMAND = "prospero";
+        public static final String FEATURES = "features";
         public static final String INSTALL = "install";
         public static final String UPDATE = "update";
         public static final String HISTORY = "history";
@@ -102,4 +98,8 @@ public final class CliConstants {
     public static final String ARG_PATH = "--path";
 
     public static final String ACCEPT_AGREEMENTS = "--accept-license-agreements";
+
+    public static final String LAYERS = "--layers";
+    public static final String MODEL = "--model";
+    public static final String CONFIG = "--config";
 }
