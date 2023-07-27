@@ -22,6 +22,10 @@ package org.wildfly.prospero.cli.commands;
  */
 public final class CliConstants {
 
+    protected static final String LAYERS = "--layers";
+    protected static final String MODEL = "--model";
+    protected static final String CONFIG = "--config";
+
     private CliConstants() {
     }
 
@@ -29,6 +33,8 @@ public final class CliConstants {
      * Command names
      */
     public static final class Commands {
+
+        protected static final String FEATURES = "features";
 
         private Commands() {
         }

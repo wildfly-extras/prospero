@@ -34,10 +34,12 @@ import org.jboss.galleon.spec.ConfigLayerDependency;
 import org.jboss.galleon.spec.ConfigLayerSpec;
 import org.jboss.galleon.universe.FeaturePackLocation;
 import org.jboss.galleon.universe.maven.repo.MavenRepoManager;
+import org.wildfly.channel.ArtifactTransferException;
 import org.wildfly.channel.Channel;
 import org.wildfly.channel.ChannelMetadataCoordinate;
 import org.wildfly.channel.ChannelSession;
 import org.wildfly.channel.InvalidChannelMetadataException;
+import org.wildfly.channel.NoStreamFoundException;
 import org.wildfly.channel.Repository;
 import org.wildfly.channel.UnresolvedMavenArtifactException;
 import org.wildfly.channel.maven.VersionResolverFactory;
@@ -47,6 +49,7 @@ import org.wildfly.prospero.api.Console;
 import org.wildfly.prospero.api.InstallationMetadata;
 import org.wildfly.prospero.api.MavenOptions;
 import org.wildfly.prospero.api.TemporaryRepositoriesHandler;
+import org.wildfly.prospero.api.exceptions.ArtifactResolutionException;
 import org.wildfly.prospero.api.exceptions.ChannelDefinitionException;
 import org.wildfly.prospero.api.exceptions.MetadataException;
 import org.wildfly.prospero.api.exceptions.OperationException;
@@ -263,7 +266,7 @@ public class FeaturesAddAction {
 
         var channelSession = initChannelSession(session, factory);
 
-        MavenRepoManager repositoryManager = new ChannelMavenArtifactRepositoryManager(channelSession);
+        final MavenRepoManager repositoryManager = new ChannelMavenArtifactRepositoryManager(channelSession);
         final ProvisioningLayoutFactory layoutFactory = GalleonUtils.getProvisioningLayoutFactory(repositoryManager);
 
         final ProvisioningLayout<FeaturePackLayout> layout = layoutFactory.newConfigLayout(config);
@@ -328,5 +331,26 @@ public class FeaturesAddAction {
         final List<Channel> channels = TemporaryRepositoriesHandler.overrideRepositories(prosperoConfig.getChannels(), repositories);
 
         return new ProsperoConfig(channels, prosperoConfig.getMavenOptions());
+    }
+
+    public boolean isFeaturePackAvailable(String featurePackName) throws OperationException {
+        final RepositorySystem system = mavenSessionManager.newRepositorySystem();
+        final DefaultRepositorySystemSession session = mavenSessionManager.newRepositorySystemSession(system);
+
+        var factory = new VersionResolverFactory(system, session);
+
+        var channelSession = initChannelSession(session, factory);
+
+        try {
+            channelSession.resolveMavenArtifact(featurePackName.split(":")[0], featurePackName.split(":")[1],
+                    "zip", null, null);
+        } catch (NoStreamFoundException e) {
+            return false;
+        } catch (ArtifactTransferException e) {
+            throw new ArtifactResolutionException("Unable to resolve feature pack " + featurePackName, e,
+                    e.getUnresolvedArtifacts(), e.getAttemptedRepositories(), false);
+        }
+
+        return true;
     }
 }

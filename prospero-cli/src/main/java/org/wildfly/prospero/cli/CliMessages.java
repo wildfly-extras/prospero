@@ -524,4 +524,8 @@ public interface CliMessages {
     default String parsingError(String path) {
         return format(bundle.getString("prospero.general.error.galleon.parse"), path);
     }
+
+    default String featurePackNotFound(String featurePackName) {
+        return format(bundle.getString("prospero.general.error.feature_pack.not_found"), featurePackName);
+    }
 }

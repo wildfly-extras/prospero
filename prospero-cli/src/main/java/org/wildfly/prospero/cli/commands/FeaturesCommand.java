@@ -32,24 +32,25 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Set;
 
-@CommandLine.Command(name = "features")
+@CommandLine.Command(name = CliConstants.Commands.FEATURES)
 public class FeaturesCommand extends AbstractParentCommand {
 
-    @CommandLine.Command(name = "add", sortOptions = false)
+    @CommandLine.Command(name = CliConstants.Commands.ADD, sortOptions = false)
     public static class AddCommand extends AbstractMavenCommand {
 
         @CommandLine.Option(
                 names = CliConstants.FPL,
+                paramLabel = CliConstants.FEATURE_PACK_REFERENCE,
                 required = true)
         private String fpl;
 
-        @CommandLine.Option(names = "--layers", split = ",")
+        @CommandLine.Option(names = CliConstants.LAYERS, split = ",")
         private Set<String> layers;
 
-        @CommandLine.Option(names = "--model")
+        @CommandLine.Option(names = CliConstants.MODEL)
         private String model;
 
-        @CommandLine.Option(names = "--config")
+        @CommandLine.Option(names = CliConstants.CONFIG)
         private String config;
 
         public AddCommand(CliConsole console, ActionFactory actionFactory) {
@@ -67,7 +68,13 @@ public class FeaturesCommand extends AbstractParentCommand {
 
             final List<Repository> repositories = RepositoryDefinition.from(temporaryRepositories);
 
-            final FeaturesAddAction featuresAddAction = new FeaturesAddAction(mavenOptions, installationDir, repositories, console);
+            final FeaturesAddAction featuresAddAction = actionFactory.featuresAddAction(installationDir, mavenOptions, repositories, console);
+
+            if (!featuresAddAction.isFeaturePackAvailable(fpl)) {
+                console.error(CliMessages.MESSAGES.featurePackNotFound(fpl));
+                return ReturnCodes.INVALID_ARGUMENTS;
+            }
+
             featuresAddAction.addFeaturePack(fpl, layers==null? Collections.emptySet():layers, model, config);
 
             final float totalTime = (System.currentTimeMillis() - startTime) / 1000f;
