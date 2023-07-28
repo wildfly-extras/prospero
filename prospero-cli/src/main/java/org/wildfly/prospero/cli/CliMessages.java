@@ -17,6 +17,7 @@
 
 package org.wildfly.prospero.cli;
 
+import org.apache.commons.lang3.StringUtils;
 import org.jboss.galleon.Constants;
 import org.wildfly.prospero.actions.ApplyCandidateAction;
 import org.wildfly.prospero.cli.commands.CliConstants;
@@ -26,6 +27,7 @@ import java.io.File;
 import java.nio.file.Path;
 import java.util.Locale;
 import java.util.ResourceBundle;
+import java.util.Set;
 
 import static java.lang.String.format;
 
@@ -527,5 +529,39 @@ public interface CliMessages {
 
     default String featurePackNotFound(String featurePackName) {
         return format(bundle.getString("prospero.general.error.feature_pack.not_found"), featurePackName);
+    }
+
+    default ArgumentParsingException featurePackNameNotMavenCoordinate() {
+        return new ArgumentParsingException(format(bundle.getString("prospero.features.add.validation.fpl_name")));
+    }
+
+    default String layerNotSupported(String fpl, String layerName, Set<String> supportedLayers) {
+        return format(bundle.getString("prospero.features.add.validation.layer.not_supported"),
+                fpl, layerName, StringUtils.join(supportedLayers, ", "));
+    }
+
+    default String layerNotSupported(String fpl) {
+        return format(bundle.getString("prospero.features.add.validation.layer.no_layers"), fpl);
+    }
+
+    default String modelNotSupported(String fpl, String model, Set<String> supportedModels) {
+        return format(bundle.getString("prospero.features.add.validation.model.not_supported"),
+                fpl, model, StringUtils.join(supportedModels, ", "));
+    }
+
+    default String featuresAddHeader(String fpl, Path dir) {
+        return format(bundle.getString("prospero.features.add.header"), fpl, dir);
+    }
+
+    default String featuresAddPrompt() {
+        return bundle.getString("prospero.features.add.prompt");
+    }
+
+    default String featuresAddPromptAccepted() {
+        return bundle.getString("prospero.features.add.prompt.yes");
+    }
+
+    default String featuresAddPromptCancelled() {
+        return bundle.getString("prospero.features.add.prompt.no");
     }
 }

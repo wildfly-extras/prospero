@@ -53,6 +53,9 @@ public class FeaturesCommand extends AbstractParentCommand {
         @CommandLine.Option(names = CliConstants.CONFIG)
         private String config;
 
+        @CommandLine.Option(names = {CliConstants.Y, CliConstants.YES})
+        boolean skipConfirmation;
+
         public AddCommand(CliConsole console, ActionFactory actionFactory) {
             super(console, actionFactory);
         }
@@ -60,13 +63,18 @@ public class FeaturesCommand extends AbstractParentCommand {
         @Override
         public Integer call() throws Exception {
             final long startTime = System.currentTimeMillis();
-            // TODO: add all the validation, etc
+
+            if (fpl.split(":").length != 2) {
+                throw CliMessages.MESSAGES.featurePackNameNotMavenCoordinate();
+            }
 
             final Path installationDir = determineInstallationDirectory(directory);
 
             final MavenOptions mavenOptions = parseMavenOptions();
 
             final List<Repository> repositories = RepositoryDefinition.from(temporaryRepositories);
+
+            console.println(CliMessages.MESSAGES.featuresAddHeader(fpl, installationDir));
 
             final FeaturesAddAction featuresAddAction = actionFactory.featuresAddAction(installationDir, mavenOptions, repositories, console);
 
@@ -75,7 +83,27 @@ public class FeaturesCommand extends AbstractParentCommand {
                 return ReturnCodes.INVALID_ARGUMENTS;
             }
 
-            featuresAddAction.addFeaturePack(fpl, layers==null? Collections.emptySet():layers, model, config);
+            if (!skipConfirmation) {
+                console.confirm(CliMessages.MESSAGES.featuresAddPrompt(),
+                        CliMessages.MESSAGES.featuresAddPromptAccepted(),
+                        CliMessages.MESSAGES.featuresAddPromptCancelled());
+            } else {
+                console.println(CliMessages.MESSAGES.featuresAddPromptAccepted());
+            }
+
+            try {
+                featuresAddAction.addFeaturePack(fpl, layers == null ? Collections.emptySet() : layers, model, config);
+            } catch (FeaturesAddAction.LayerNotFoundException e) {
+                if (!e.getSupportedLayers().isEmpty()) {
+                    console.error(CliMessages.MESSAGES.layerNotSupported(fpl, e.getLayer(), e.getSupportedLayers()));
+                } else {
+                    console.error(CliMessages.MESSAGES.layerNotSupported(fpl));
+                }
+                return ReturnCodes.INVALID_ARGUMENTS;
+            } catch (FeaturesAddAction.ModelNotDefinedException e) {
+                console.error(CliMessages.MESSAGES.modelNotSupported(fpl, e.getModel(), e.getSupportedModels()));
+                return ReturnCodes.INVALID_ARGUMENTS;
+            }
 
             final float totalTime = (System.currentTimeMillis() - startTime) / 1000f;
             console.println(CliMessages.MESSAGES.operationCompleted(totalTime));

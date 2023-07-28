@@ -43,6 +43,7 @@ import java.util.Set;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.Assert.assertEquals;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static org.wildfly.common.Assert.assertTrue;
@@ -184,10 +185,68 @@ public class FeaturesCommandTest extends AbstractMavenCommandTest {
                 .contains("test:idontexist:zip:1.0.0 [missing]");
     }
 
-    // TODO: validate the layers exists
-    // TODO: validate the model exists
-    // TODO: validate the config exists
-    // TODO: validate the installation doesn't already have the feature pack with the same config
+    @Test
+    public void fplWithOnePartFails() throws Exception {
+        int exitCode = commandLine.execute(CliConstants.Commands.FEATURES, CliConstants.Commands.ADD,
+                CliConstants.DIR, installationDir.toString(),
+                CliConstants.FPL, "test");
+        assertEquals(ReturnCodes.INVALID_ARGUMENTS, exitCode);
+        assertThat(getErrorOutput())
+                .contains(CliMessages.MESSAGES.featurePackNameNotMavenCoordinate().getMessage());
+    }
+
+    @Test
+    public void fplWithTreePartsFails() throws Exception {
+        int exitCode = commandLine.execute(CliConstants.Commands.FEATURES, CliConstants.Commands.ADD,
+                CliConstants.DIR, installationDir.toString(),
+                CliConstants.FPL, "org.test:test:1.2.3");
+        assertEquals(ReturnCodes.INVALID_ARGUMENTS, exitCode);
+        assertThat(getErrorOutput())
+                .contains(CliMessages.MESSAGES.featurePackNameNotMavenCoordinate().getMessage());
+    }
+
+    @Test
+    public void nonExistingLayersShowsError() throws Exception {
+        doThrow(new FeaturesAddAction.LayerNotFoundException("foo", "idontexist", Set.of("layer1", "layer2")))
+                .when(featuresAddAction).addFeaturePack("org.test:test", Set.of("idontexist"), null, null);
+        int exitCode = commandLine.execute(CliConstants.Commands.FEATURES, CliConstants.Commands.ADD,
+                CliConstants.DIR, installationDir.toString(),
+                CliConstants.LAYERS, "idontexist",
+                CliConstants.FPL, "org.test:test");
+        assertEquals(ReturnCodes.INVALID_ARGUMENTS, exitCode);
+        assertThat(getErrorOutput())
+                .contains("The feature pack `org.test:test` does not provide requested layer `idontexist`.")
+                .contains("Supported layers are [layer1, layer2]");
+    }
+
+    @Test
+    public void nonExistingLayersShowsErrorNoAvailableLayers() throws Exception {
+        doThrow(new FeaturesAddAction.LayerNotFoundException("foo", "idontexist", Collections.emptySet()))
+                .when(featuresAddAction).addFeaturePack("org.test:test", Set.of("idontexist"), null, null);
+        int exitCode = commandLine.execute(CliConstants.Commands.FEATURES, CliConstants.Commands.ADD,
+                CliConstants.DIR, installationDir.toString(),
+                CliConstants.LAYERS, "idontexist",
+                CliConstants.FPL, "org.test:test");
+        assertEquals(ReturnCodes.INVALID_ARGUMENTS, exitCode);
+        assertThat(getErrorOutput())
+                .contains("The feature pack `org.test:test` does not provide any layers.")
+                .contains("Try removing the --layers parameter");
+    }
+
+
+    @Test
+    public void nonExistingModelShowsError() throws Exception {
+        doThrow(new FeaturesAddAction.ModelNotDefinedException("test", "idontexist", Set.of("model1", "model2")))
+                .when(featuresAddAction).addFeaturePack("org.test:test", Collections.emptySet(), "idontexist", null);
+        int exitCode = commandLine.execute(CliConstants.Commands.FEATURES, CliConstants.Commands.ADD,
+                CliConstants.DIR, installationDir.toString(),
+                CliConstants.MODEL, "idontexist",
+                CliConstants.FPL, "org.test:test");
+        assertEquals(ReturnCodes.INVALID_ARGUMENTS, exitCode);
+        assertThat(getErrorOutput())
+                .contains("The feature pack `org.test:test` does not provide requested model `idontexist`.")
+                .contains("Supported models are [model1, model2]");
+    }
 
     @Override
     protected ActionFactory createActionFactory() {
