@@ -325,4 +325,13 @@ public interface ProsperoLogger extends BasicLogger {
     @LogMessage(level = Logger.Level.INFO)
     @Message(id = 253, value = "Unable to retrieve stored provisioning configuration. Falling back to current configuration")
     void fallbackToGalleonProvisioningDefinition();
+
+    @Message(id = 254, value = "Multiple models available in the selected feature pack, please select one.")
+    String noDefaultModel();
+
+    @Message(id = 255, value = "Chosen feature pack does not support model %s. Please choose one of supported models.")
+    String modelNotFoundInFeaturePack(String model);
+
+    @Message(id = 256, value = "The feature pack doesn't define requested layer: %s")
+    String layerNotFoundInFeaturePack(String layerName);
 }

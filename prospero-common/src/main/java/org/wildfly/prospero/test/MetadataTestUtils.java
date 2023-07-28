@@ -71,6 +71,37 @@ public final class MetadataTestUtils {
         return new ChannelManifest("manifest", null, null, streams);
     }
 
+    public static void createManifest(String name, List<Stream> streams, Path metadataDir) throws IOException {
+        String txt = ChannelManifestMapper.toYaml(new ChannelManifest(name, null, null, streams));
+        // workaround for Windows
+        txt = txt.replace("\n", System.lineSeparator());
+
+        Files.writeString(metadataDir.resolve(ProsperoMetadataUtils.MANIFEST_FILE_NAME), txt);
+    }
+
+    public static void createChannel(String name, String mavenCoordinate, List<String> repositories, Path metadataDir) throws IOException {
+        final ChannelManifestCoordinate coordinate;
+        final String[] splitCoord = mavenCoordinate.split(":");
+        if (splitCoord.length == 2) {
+            coordinate = new ChannelManifestCoordinate(splitCoord[0], splitCoord[1]);
+        } else if (splitCoord.length == 3) {
+            coordinate = new ChannelManifestCoordinate(splitCoord[0], splitCoord[1],
+                    splitCoord[2]);
+        } else {
+            throw new IllegalArgumentException("Invalid maven coordinate of manifest " + mavenCoordinate);
+        }
+        final Channel.Builder builder = new Channel.Builder()
+                .setName(name)
+                .setManifestCoordinate(coordinate);
+
+        for (int i = 0; i < repositories.size(); i++) {
+            builder.addRepository("test-" + i, repositories.get(i));
+        }
+
+        MetadataTestUtils.writeChannels(metadataDir.resolve(ProsperoMetadataUtils.INSTALLER_CHANNELS_FILE_NAME),
+                List.of(builder.build()));
+    }
+
     public static InstallationMetadata createInstallationMetadata(Path installation) throws MetadataException {
         return createInstallationMetadata(installation, createManifest(null),
                 List.of(new Channel("test-channel", "", null,

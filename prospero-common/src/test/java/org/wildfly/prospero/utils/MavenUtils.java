@@ -30,6 +30,7 @@ import org.wildfly.channel.ChannelManifestMapper;
 import org.wildfly.prospero.api.MavenOptions;
 import org.wildfly.prospero.wfchannel.MavenSessionManager;
 
+import java.io.File;
 import java.io.IOException;
 import java.net.URL;
 import java.nio.file.Files;
@@ -80,5 +81,15 @@ public class MavenUtils {
                 FileUtils.deleteQuietly(tempFile.toFile());
             }
         }
+    }
+
+    public void deployFile(String groupId, String artifactId, String version, String classifier, String extension, File file, URL repository)
+            throws IOException, DeploymentException {
+
+        final DeployRequest deployRequest = new DeployRequest();
+        deployRequest.setRepository(new RemoteRepository.Builder("test", "default", repository.toExternalForm()).build());
+        deployRequest.addArtifact(new DefaultArtifact(groupId, artifactId, classifier, extension,
+                version, null, file));
+        repositorySystem.deploy(systemSession, deployRequest);
     }
 }
