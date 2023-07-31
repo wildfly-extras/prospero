@@ -23,11 +23,17 @@ import org.eclipse.jgit.api.Git;
 import org.eclipse.jgit.api.errors.GitAPIException;
 import org.eclipse.jgit.revwalk.RevCommit;
 import org.eclipse.jgit.treewalk.TreeWalk;
+import org.jboss.galleon.config.ConfigModel;
+import org.jboss.galleon.config.ProvisioningConfig;
+import org.jboss.galleon.universe.FeaturePackLocation;
+import org.jboss.galleon.xml.ProvisioningXmlWriter;
 import org.junit.After;
 import org.wildfly.channel.Channel;
 import org.wildfly.channel.ChannelManifest;
 import org.wildfly.channel.ChannelManifestCoordinate;
 import org.wildfly.channel.Repository;
+import org.wildfly.prospero.api.Diff;
+import org.wildfly.prospero.api.FeatureChange;
 import org.wildfly.prospero.metadata.ManifestVersionRecord;
 import org.wildfly.prospero.api.ArtifactChange;
 import org.wildfly.prospero.api.ChannelChange;
@@ -58,9 +64,16 @@ import java.util.function.Function;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
+import static org.wildfly.prospero.api.FeatureChange.Type.CONFIG;
+import static org.wildfly.prospero.api.FeatureChange.Type.FEATURE;
+import static org.wildfly.prospero.api.FeatureChange.Type.LAYERS;
 
 public class GitStorageTest {
 
+    protected static final Channel A_CHANNEL = new Channel("channel-1", "old", null,
+            List.of(new Repository("test", "http://test.te")),
+            new ChannelManifestCoordinate("foo", "bar"),
+            null, null);
     @Rule
     public TemporaryFolder folder = new TemporaryFolder();
     private Path base;
@@ -382,6 +395,197 @@ public class GitStorageTest {
                 .filter(s->s.getArtifactId().equals("test") && s.getVersion().equals("1.2.4")).findFirst().isPresent());
         assertEquals("1.0.1", ManifestVersionRecord.read(base.resolve(ProsperoMetadataUtils.CURRENT_VERSION_FILE))
                 .get().getMavenManifests().get(0).getVersion());
+    }
+
+    @Test
+    public void includeAddedFeaturesInHistory() throws Exception {
+        final GitStorage gitStorage = new GitStorage(base.getParent());
+        ProsperoMetadataUtils.writeManifest(base.resolve(ProsperoMetadataUtils.MANIFEST_FILE_NAME), manifest);
+
+        generateProsperoConfig(List.of(A_CHANNEL));
+        // write provisioning.xml
+        ProvisioningConfig config = ProvisioningConfig.builder()
+                .addFeaturePackDep(FeaturePackLocation.fromString("org.test:feature-one:zip"))
+                .addFeaturePackDep(FeaturePackLocation.fromString("org.test:feature-two:zip"))
+                .build();
+        ProvisioningXmlWriter.getInstance().write(config, base.resolve(ProsperoMetadataUtils.PROVISIONING_RECORD_XML));
+        gitStorage.record();
+
+        config = ProvisioningConfig.builder()
+                .addFeaturePackDep(FeaturePackLocation.fromString("org.test:feature-one:zip"))
+                .addFeaturePackDep(FeaturePackLocation.fromString("org.test:feature-three:zip"))
+                .build();
+        ProvisioningXmlWriter.getInstance().write(config, base.resolve(ProsperoMetadataUtils.PROVISIONING_RECORD_XML));
+        gitStorage.record();
+
+        final SavedState latestState = gitStorage.getRevisions().get(0);
+        final List<FeatureChange> featureChanges = gitStorage.getFeatureChanges(latestState);
+        assertThat(featureChanges)
+                .containsOnly(
+                        new FeatureChange(FEATURE, "org.test:feature-two:zip", Diff.Status.REMOVED),
+                        new FeatureChange(FEATURE, "org.test:feature-three:zip", Diff.Status.ADDED));
+    }
+
+    @Test
+    public void includeChangedLayersInHistory() throws Exception {
+        final GitStorage gitStorage = new GitStorage(base.getParent());
+        ProsperoMetadataUtils.writeManifest(base.resolve(ProsperoMetadataUtils.MANIFEST_FILE_NAME), manifest);
+
+        generateProsperoConfig(List.of(A_CHANNEL));
+        // write provisioning.xml
+        ProvisioningConfig config = ProvisioningConfig.builder()
+                .addFeaturePackDep(FeaturePackLocation.fromString("org.test:feature-one:zip"))
+                .addConfig(ConfigModel.builder("model-one", "name-one")
+                        .includeLayer("layer-one")
+                        .includeLayer("layer-two")
+                        .build())
+                .build();
+        ProvisioningXmlWriter.getInstance().write(config, base.resolve(ProsperoMetadataUtils.PROVISIONING_RECORD_XML));
+        gitStorage.record();
+
+        config = ProvisioningConfig.builder()
+                .addFeaturePackDep(FeaturePackLocation.fromString("org.test:feature-one:zip"))
+                .addConfig(ConfigModel.builder("model-one", "name-one")
+                        .includeLayer("layer-one")
+                        .includeLayer("layer-three")
+                        .build())
+                .build();
+        ProvisioningXmlWriter.getInstance().write(config, base.resolve(ProsperoMetadataUtils.PROVISIONING_RECORD_XML));
+        gitStorage.record();
+
+        final SavedState latestState = gitStorage.getRevisions().get(0);
+        final List<FeatureChange> featureChanges = gitStorage.getFeatureChanges(latestState);
+
+        assertThat(featureChanges)
+                .containsOnly(
+                        new FeatureChange(CONFIG, "model-one:name-one", Diff.Status.MODIFIED,
+                                new FeatureChange(LAYERS, "layer-one, layer-two", "layer-one, layer-three"))
+                );
+    }
+
+    @Test
+    public void dontIncludeConfigChangesIfNotModified() throws Exception {
+        final GitStorage gitStorage = new GitStorage(base.getParent());
+        ProsperoMetadataUtils.writeManifest(base.resolve(ProsperoMetadataUtils.MANIFEST_FILE_NAME), manifest);
+
+        generateProsperoConfig(List.of(A_CHANNEL));
+        // write provisioning.xml
+        ProvisioningConfig config = ProvisioningConfig.builder()
+                .addFeaturePackDep(FeaturePackLocation.fromString("org.test:feature-one:zip"))
+                .addConfig(ConfigModel.builder("model-one", "name-one")
+                        .includeLayer("layer-one")
+                        .includeLayer("layer-two")
+                        .build())
+                .build();
+        ProvisioningXmlWriter.getInstance().write(config, base.resolve(ProsperoMetadataUtils.PROVISIONING_RECORD_XML));
+        gitStorage.record();
+
+        config = ProvisioningConfig.builder()
+                .addFeaturePackDep(FeaturePackLocation.fromString("org.test:feature-one:zip"))
+                .addConfig(ConfigModel.builder("model-one", "name-one")
+                        .includeLayer("layer-one")
+                        .includeLayer("layer-two")
+                        .build())
+                .build();
+        ProvisioningXmlWriter.getInstance().write(config, base.resolve(ProsperoMetadataUtils.PROVISIONING_RECORD_XML));
+        gitStorage.record();
+
+        final SavedState latestState = gitStorage.getRevisions().get(0);
+        final List<FeatureChange> featureChanges = gitStorage.getFeatureChanges(latestState);
+
+        assertThat(featureChanges)
+                .isEmpty();
+    }
+
+    @Test
+    public void includeAddedConfigChange() throws Exception {
+        final GitStorage gitStorage = new GitStorage(base.getParent());
+        ProsperoMetadataUtils.writeManifest(base.resolve(ProsperoMetadataUtils.MANIFEST_FILE_NAME), manifest);
+
+        generateProsperoConfig(List.of(A_CHANNEL));
+        // write provisioning.xml
+        ProvisioningConfig config = ProvisioningConfig.builder()
+                .addFeaturePackDep(FeaturePackLocation.fromString("org.test:feature-one:zip"))
+                .build();
+        ProvisioningXmlWriter.getInstance().write(config, base.resolve(ProsperoMetadataUtils.PROVISIONING_RECORD_XML));
+        gitStorage.record();
+
+        config = ProvisioningConfig.builder()
+                .addFeaturePackDep(FeaturePackLocation.fromString("org.test:feature-one:zip"))
+                .addConfig(ConfigModel.builder("model-one", "name-one")
+                        .includeLayer("layer-one")
+                        .build())
+                .build();
+        ProvisioningXmlWriter.getInstance().write(config, base.resolve(ProsperoMetadataUtils.PROVISIONING_RECORD_XML));
+        gitStorage.record();
+
+        final SavedState latestState = gitStorage.getRevisions().get(0);
+        final List<FeatureChange> featureChanges = gitStorage.getFeatureChanges(latestState);
+
+        assertThat(featureChanges)
+                .containsOnly(
+                        new FeatureChange(CONFIG, "model-one:name-one", Diff.Status.ADDED,
+                                new FeatureChange(LAYERS, null, "layer-one"))
+                );
+    }
+
+    @Test
+    public void includeRemovedConfigChange() throws Exception {
+        final GitStorage gitStorage = new GitStorage(base.getParent());
+        ProsperoMetadataUtils.writeManifest(base.resolve(ProsperoMetadataUtils.MANIFEST_FILE_NAME), manifest);
+
+        generateProsperoConfig(List.of(A_CHANNEL));
+        // write provisioning.xml
+        ProvisioningConfig config = ProvisioningConfig.builder()
+                .addFeaturePackDep(FeaturePackLocation.fromString("org.test:feature-one:zip"))
+                .addConfig(ConfigModel.builder("model-one", "name-one")
+                        .includeLayer("layer-one")
+                        .build())
+                .build();
+        ProvisioningXmlWriter.getInstance().write(config, base.resolve(ProsperoMetadataUtils.PROVISIONING_RECORD_XML));
+        gitStorage.record();
+
+        config = ProvisioningConfig.builder()
+                .addFeaturePackDep(FeaturePackLocation.fromString("org.test:feature-one:zip"))
+                .build();
+        ProvisioningXmlWriter.getInstance().write(config, base.resolve(ProsperoMetadataUtils.PROVISIONING_RECORD_XML));
+        gitStorage.record();
+
+        final SavedState latestState = gitStorage.getRevisions().get(0);
+        final List<FeatureChange> featureChanges = gitStorage.getFeatureChanges(latestState);
+
+        assertThat(featureChanges)
+                .containsOnly(
+                        new FeatureChange(CONFIG, "model-one:name-one", Diff.Status.REMOVED,
+                                new FeatureChange(LAYERS, "layer-one", null))
+                );
+    }
+
+    @Test
+    public void includeAllProvisioningChangesInInstallStage() throws Exception {
+        final GitStorage gitStorage = new GitStorage(base.getParent());
+        ProsperoMetadataUtils.writeManifest(base.resolve(ProsperoMetadataUtils.MANIFEST_FILE_NAME), manifest);
+
+        generateProsperoConfig(List.of(A_CHANNEL));
+        // write provisioning.xml
+        ProvisioningConfig config = ProvisioningConfig.builder()
+                .addFeaturePackDep(FeaturePackLocation.fromString("org.test:feature-one:zip"))
+                .addConfig(ConfigModel.builder("model-one", "name-one")
+                        .includeLayer("layer-one")
+                        .build())
+                .build();
+        ProvisioningXmlWriter.getInstance().write(config, base.resolve(ProsperoMetadataUtils.PROVISIONING_RECORD_XML));
+        gitStorage.record();
+
+        final SavedState latestState = gitStorage.getRevisions().get(0);
+        final List<FeatureChange> featureChanges = gitStorage.getFeatureChanges(latestState);
+
+        assertThat(featureChanges)
+                .containsOnly(
+                        new FeatureChange(FEATURE, "org.test:feature-one:zip", Diff.Status.ADDED),
+                        new FeatureChange(CONFIG, "model-one:name-one", Diff.Status.ADDED,
+                                new FeatureChange(LAYERS, null, "layer-one"))
+                );
     }
 
     private HashSet<String> getPathsInCommit() throws IOException, GitAPIException {

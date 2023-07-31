@@ -74,6 +74,13 @@ public class HistoryCommand extends AbstractCommand {
                     console.println(CliMessages.MESSAGES.diffConfigChanges()+ ":");
                     changes.getChannelChanges().forEach(diffPrinter::print);
                 }
+                if (!changes.getFeatureChanges().isEmpty()) {
+                    if (!changes.getArtifactChanges().isEmpty()) {
+                        console.println("");
+                    }
+                    console.println("Installed features changes" + ":");
+                    changes.getFeatureChanges().forEach(diffPrinter::print);
+                }
             }
         }
 

@@ -20,6 +20,7 @@ package org.wildfly.prospero.cli;
 import org.wildfly.prospero.api.ArtifactChange;
 import org.wildfly.prospero.api.ChannelChange;
 import org.wildfly.prospero.api.Diff;
+import org.wildfly.prospero.api.FeatureChange;
 
 public class DiffPrinter {
 
@@ -38,21 +39,27 @@ public class DiffPrinter {
 
 
         if (diff.getChildren().isEmpty()) {
-            String nameText = diff.getName().map(s -> s + ":\t\t").orElse("");
-            if (nested) {
-                System.out.printf("%s%s ==> %s%n", nameText, diff.getOldValue().orElse("[]"), diff.getNewValue().orElse("[]"));
+            if (diff.hasValues()) {
+                String nameText = diff.getName().map(s -> s + ":\t\t").orElse("");
+                print(diff, nested, "%s%s ==> %s%n", nameText, diff.getOldValue().orElse("[]"), diff.getNewValue().orElse("[]"));
             } else {
-                System.out.printf("[%s] %s%s ==> %s%n", getStatus(diff), nameText, diff.getOldValue().orElse("[]"), diff.getNewValue().orElse("[]"));
+                String nameText = diff.getName().map(s -> s + "\t\t").orElse("");
+                print(diff, nested, "%s%n", nameText);
             }
         } else {
             String nameText = diff.getName().orElse("");
-            if (nested) {
-                System.out.printf("%s: %n", nameText);
-            } else {
-                System.out.printf("[%s] %s:%n", getStatus(diff), nameText);
-            }
+            print(diff, nested, "%s: %n", nameText);
             diff.getChildren().forEach(c -> print(c, tab + "  ", true));
         }
+    }
+
+    private static void print(Diff diff, boolean nested, String text, String... args) {
+        if (!nested) {
+            text = String.format("[%s] ", getStatus(diff)) + String.format(text, (String[]) args);
+        } else {
+            text = String.format(text, (String[]) args);
+        }
+        System.out.print(text);
     }
 
     private static String getStatus(Diff diff) {
@@ -77,6 +84,18 @@ public class DiffPrinter {
             diffType = CliMessages.MESSAGES.artifactChangeType();
         } else if (diff instanceof ChannelChange) {
             diffType = CliMessages.MESSAGES.channelChangeType();
+        } else if (diff instanceof FeatureChange) {
+            final FeatureChange.Type subType = ((FeatureChange) diff).getType();
+            switch (subType) {
+                case FEATURE:
+                    diffType = CliMessages.MESSAGES.featurePackTitle();
+                    break;
+                case CONFIG:
+                    diffType = CliMessages.MESSAGES.configurationModel();
+                    break;
+                default:
+                    diffType = subType.name();
+            }
         } else {
             diffType = null;
         }

@@ -52,6 +52,10 @@ public class Diff {
         return children.stream().filter(c->c.getName().orElse("").equals(name)).findFirst();
     }
 
+    public boolean hasValues() {
+        return !newValue.isEmpty() || !oldValue.isEmpty();
+    }
+
     public enum Status {ADDED, REMOVED, MODIFIED}
 
     private final Status status;

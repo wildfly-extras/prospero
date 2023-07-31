@@ -23,6 +23,7 @@ import org.eclipse.jgit.lib.StoredConfig;
 import org.wildfly.channel.Channel;
 import org.wildfly.channel.ChannelManifest;
 import org.wildfly.prospero.ProsperoLogger;
+import org.wildfly.prospero.api.FeatureChange;
 import org.wildfly.prospero.metadata.ManifestVersionRecord;
 import org.wildfly.prospero.api.ChannelChange;
 import org.wildfly.prospero.api.exceptions.MetadataException;
@@ -288,6 +289,10 @@ public class GitStorage implements AutoCloseable {
         return getChanges(savedState, ProsperoMetadataUtils.INSTALLER_CHANNELS_FILE_NAME, parser);
     }
 
+    public List<FeatureChange> getFeatureChanges(SavedState latestState) throws MetadataException {
+        return getChanges(latestState, ".provisioning_record.xml", new FeatureChangeParser());
+    }
+
     private <T> List<T> getChanges(SavedState savedState, String manifestFileName, Parser<T> parser) throws MetadataException {
         Path change = null;
         Path base = null;
@@ -372,7 +377,8 @@ public class GitStorage implements AutoCloseable {
         }
     }
 
-    private interface Parser<T> {
+    interface Parser<T> {
         List<T> parse(Path changedPath, Path basePath) throws IOException, MetadataException;
     }
+
 }

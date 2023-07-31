@@ -90,6 +90,7 @@ public class FeaturesAddTest {
         ExecutionUtils.prosperoExecution(CliConstants.Commands.FEATURES, CliConstants.Commands.ADD,
                         CliConstants.FPL, DATASOURCE_GALLEON_FPL,
                         CliConstants.LAYERS, "datasources-web-server,mysql-datasource",
+                        CliConstants.YES,
                         CliConstants.DIR, targetDir.getAbsolutePath())
                 .withTimeLimit(10, TimeUnit.MINUTES)
                 .execute()

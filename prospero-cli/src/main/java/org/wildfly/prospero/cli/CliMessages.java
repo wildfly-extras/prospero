@@ -564,4 +564,12 @@ public interface CliMessages {
     default String featuresAddPromptCancelled() {
         return bundle.getString("prospero.features.add.prompt.no");
     }
+
+    default String featurePackTitle() {
+        return bundle.getString("prospero.history.feature_pack.title");
+    }
+
+    default String configurationModel() {
+        return bundle.getString("prospero.history.configuration_model.title");
+    }
 }

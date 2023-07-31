@@ -17,16 +17,27 @@
 
 package org.wildfly.prospero.api;
 
+import java.util.Collections;
 import java.util.List;
 
 public class InstallationChanges {
 
     private final List<ArtifactChange> artifactChanges;
     private final List<ChannelChange> channelChanges;
+    private List<FeatureChange> featureChanges;
 
+    @Deprecated
     public InstallationChanges(List<ArtifactChange> artifactChanges, List<ChannelChange> channelChanges) {
         this.artifactChanges = artifactChanges;
         this.channelChanges = channelChanges;
+        this.featureChanges = Collections.emptyList();
+    }
+
+    public InstallationChanges(List<ArtifactChange> artifactChanges, List<ChannelChange> channelChanges,
+                               List<FeatureChange> featureChanges) {
+        this.artifactChanges = artifactChanges;
+        this.channelChanges = channelChanges;
+        this.featureChanges = featureChanges;
     }
 
     public List<ArtifactChange> getArtifactChanges() {
@@ -35,6 +46,10 @@ public class InstallationChanges {
 
     public List<ChannelChange> getChannelChanges() {
         return channelChanges;
+    }
+
+    public List<FeatureChange> getFeatureChanges() {
+        return featureChanges;
     }
 
     public boolean isEmpty() {
