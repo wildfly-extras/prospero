@@ -512,6 +512,26 @@ public class FeaturesAddActionTest {
                 .hasMessageContaining("The feature pack coordinate has to consist of <groupId>:<artifactId>");
     }
 
+    @Test
+    public void existingFeaturePackCannotBeInstalled() throws Exception {
+        // install base feature pack
+        final FeaturePackCreator creator = FeaturePackCreator.getInstance().addArtifactResolver(repo);
+        creator.newFeaturePack(FeaturePackLocation.fromString("org.test:base-pack:1.0.0:zip").getFPID())
+                .getCreator()
+                .newFeaturePack(FeaturePackLocation.fromString("org.test:added-pack:1.0.0:zip").getFPID())
+                .addConfigLayer(ConfigLayerSpec.builder()
+                        .setModel("model1")
+                        .setName("layer1")
+                        .build());
+        deployFeaturePacks(creator);
+        // install
+        installFeaturePack(installDir, "org.test:base-pack:1.0.0:zip");
+
+        assertThatThrownBy(()->getFeaturesAddAction().addFeaturePack(
+                "org.test:base-pack", Collections.emptySet(), null, null))
+                .isInstanceOf(FeaturesAddAction.FeaturePackAlreadyInstalledException.class);
+    }
+
     private FeaturesAddAction getFeaturesAddAction() throws MetadataException, ProvisioningException {
         final FeaturesAddAction featuresAddAction = new FeaturesAddAction(MavenOptions.OFFLINE_NO_CACHE, installDir,
                 List.of(new Repository("test", repositoryUrl.toExternalForm())), null,

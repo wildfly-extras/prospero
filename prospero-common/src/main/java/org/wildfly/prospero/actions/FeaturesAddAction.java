@@ -180,9 +180,15 @@ public class FeaturesAddAction {
 
             final FeaturePackConfig.Builder fpBuilder = buildFeaturePackConfig(fpl, existingConfig, builder);
 
-            return builder
+            final ProvisioningConfig newConfig = builder
                     .addFeaturePackDep(fpBuilder.build())
                     .build();
+
+            if (newConfig.equals(existingConfig)) {
+                throw ProsperoLogger.ROOT_LOGGER.featurePackAlreadyInstalled(fpl);
+            }
+
+            return newConfig;
         }
     }
 
@@ -365,6 +371,13 @@ public class FeaturesAddAction {
 
         public Set<String> getSupportedModels() {
             return new TreeSet<>(supportedModels);
+        }
+    }
+
+    public static class FeaturePackAlreadyInstalledException extends OperationException {
+
+        public FeaturePackAlreadyInstalledException(String msg) {
+            super(msg);
         }
     }
 

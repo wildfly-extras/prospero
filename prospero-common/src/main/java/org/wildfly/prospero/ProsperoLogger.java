@@ -18,6 +18,7 @@
 package org.wildfly.prospero;
 
 import org.jboss.galleon.ProvisioningException;
+import org.jboss.galleon.universe.FeaturePackLocation;
 import org.jboss.logging.BasicLogger;
 import org.jboss.logging.Logger;
 import org.jboss.logging.annotations.Cause;
@@ -25,6 +26,7 @@ import org.jboss.logging.annotations.LogMessage;
 import org.jboss.logging.annotations.Message;
 import org.jboss.logging.annotations.MessageLogger;
 import org.wildfly.channel.InvalidChannelMetadataException;
+import org.wildfly.prospero.actions.FeaturesAddAction;
 import org.wildfly.prospero.api.exceptions.ArtifactPromoteException;
 import org.wildfly.prospero.api.exceptions.ChannelDefinitionException;
 import org.wildfly.prospero.api.exceptions.InvalidUpdateCandidateException;
@@ -334,4 +336,7 @@ public interface ProsperoLogger extends BasicLogger {
 
     @Message(id = 256, value = "The feature pack doesn't define requested layer: %s")
     String layerNotFoundInFeaturePack(String layerName);
+
+    @Message(id = 257, value = "Feature pack %s is already provisioned")
+    FeaturesAddAction.FeaturePackAlreadyInstalledException featurePackAlreadyInstalled(FeaturePackLocation fpl);
 }
