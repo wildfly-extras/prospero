@@ -44,6 +44,9 @@ import static org.wildfly.prospero.api.FeatureChange.Type.FEATURE;
 import static org.wildfly.prospero.api.FeatureChange.Type.LAYERS;
 import static org.wildfly.prospero.api.FeatureChange.Type.CONFIG;
 
+/**
+ * Generates a {@code Diff} of recorded provisioning state changes.
+ */
 class FeatureChangeParser implements GitStorage.Parser<FeatureChange> {
     @Override
     public List<FeatureChange> parse(Path changed, Path base) throws IOException, MetadataException {

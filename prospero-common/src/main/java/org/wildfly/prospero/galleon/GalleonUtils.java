@@ -139,16 +139,18 @@ public class GalleonUtils {
         }
     }
 
+    /**
+     * {@link ProvisioningLayoutFactory} using {@code maven} to resolve artifacts.
+     *
+     * @param maven
+     * @return
+     * @throws ProvisioningException
+     */
     public static ProvisioningLayoutFactory getProvisioningLayoutFactory(MavenRepoManager maven) throws ProvisioningException {
-        final UniverseResolver.Builder builder = UniverseResolver.builder()
-                .addArtifactResolver(maven);
-        UniverseResolver universeResolver = new UniverseResolver(builder) {
-            @Override
-            public Path resolve(FeaturePackLocation fpl) throws ProvisioningException {
-                return super.resolve(fpl);
-            }
-        };
-        return ProvisioningLayoutFactory.getInstance(universeResolver);
+        final UniverseResolver resolver = UniverseResolver.builder()
+                .addArtifactResolver(maven).build();
+
+        return ProvisioningLayoutFactory.getInstance(resolver);
     }
 
     public static List<String> getInstalledPacks(Path dir) throws ProvisioningException {

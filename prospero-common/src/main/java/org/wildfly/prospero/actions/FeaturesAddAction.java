@@ -18,6 +18,7 @@
 package org.wildfly.prospero.actions;
 
 import org.apache.commons.io.FileUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.jboss.galleon.ProvisioningDescriptionException;
 import org.jboss.galleon.ProvisioningException;
 import org.jboss.galleon.ProvisioningManager;
@@ -41,6 +42,7 @@ import org.wildfly.prospero.api.InstallationMetadata;
 import org.wildfly.prospero.api.MavenOptions;
 import org.wildfly.prospero.api.TemporaryRepositoriesHandler;
 import org.wildfly.prospero.api.exceptions.ArtifactResolutionException;
+import org.wildfly.prospero.api.exceptions.InvalidUpdateCandidateException;
 import org.wildfly.prospero.api.exceptions.MetadataException;
 import org.wildfly.prospero.api.exceptions.OperationException;
 import org.wildfly.prospero.galleon.FeaturePackLocationParser;
@@ -60,6 +62,9 @@ import java.util.Map;
 import java.util.Set;
 import java.util.TreeSet;
 
+/**
+ * Installs a feature pack onto an existing server.
+ */
 public class FeaturesAddAction {
 
     private final MavenSessionManager mavenSessionManager;
@@ -88,6 +93,22 @@ public class FeaturesAddAction {
         this.candidateActionsFactory = candidateActionsFactory;
     }
 
+    /**
+     * performs feature pack installation. The added feature pack can be customized by specifying layers and configuration model name.
+     * In order to install a feature pack, a server is re-provisioned and changes are applied to existing server.
+     *
+     * @param featurePackCoord - maven {@code groupId:artifactId} coordinates of the feature pack to install
+     * @param layers - set of layer names to be provisioned
+     * @param model - used to select layer model, if the feature pack provides multiple models
+     * @param configName - name of the configuration file to generate if supported
+     *
+     * @throws ProvisioningException - if unable to provision the server
+     * @throws ModelNotDefinedException - if requested model is not provided by the feature pack
+     * @throws LayerNotFoundException - if one of the requested layers is not provided by the feature pack
+     * @throws FeaturePackAlreadyInstalledException - if the requested feature pack configuration wouldn't change the server state
+     * @throws InvalidUpdateCandidateException - if the folder at {@code updateDir} is not a valid update
+     * @throws MetadataException - if unable to read or write the installation of update metadata
+     */
     public void addFeaturePack(String featurePackCoord, Set<String> layers, String model, String configName)
             throws ProvisioningException, OperationException {
         if (featurePackCoord == null || featurePackCoord.isEmpty()) {
@@ -99,16 +120,28 @@ public class FeaturesAddAction {
 
         FeaturePackLocation fpl = FeaturePackLocationParser.resolveFpl(featurePackCoord);
 
+        if (ProsperoLogger.ROOT_LOGGER.isTraceEnabled()) {
+            ProsperoLogger.ROOT_LOGGER.trace("Adding feature pack " + fpl);
+        }
+
         final String selectedConfig;
         final String selectedModel;
 
         final Map<String, Set<String>> allLayers = getAllLayers(fpl);
+
+        if (ProsperoLogger.ROOT_LOGGER.isTraceEnabled()) {
+            ProsperoLogger.ROOT_LOGGER.trace("Found layers");
+            for (String key : allLayers.keySet()) {
+                ProsperoLogger.ROOT_LOGGER.trace(key + ": " + StringUtils.join(allLayers.get(key)));
+            }
+        }
 
         if (allLayers.isEmpty()) {
             selectedModel = null;
         } else {
             selectedModel = getSelectedModel(model, allLayers);
         }
+
 
         verifyLayerAvailable(layers, selectedModel, allLayers);
 
@@ -122,11 +155,18 @@ public class FeaturesAddAction {
             selectedConfig = configName;
         }
 
+        if (ProsperoLogger.ROOT_LOGGER.isDebugEnabled()) {
+            ProsperoLogger.ROOT_LOGGER.addingFeaturePack(fpl, selectedConfig, selectedModel, StringUtils.join(layers));
+        }
+
         final ProvisioningConfig newConfig = buildProvisioningConfig(layers, fpl, selectedConfig, selectedModel);
 
         final Path candidate;
         try {
             candidate = Files.createTempDirectory("prospero-candidate").toAbsolutePath();
+            if (ProsperoLogger.ROOT_LOGGER.isDebugEnabled()) {
+                ProsperoLogger.ROOT_LOGGER.temporaryCandidateFolder(candidate);
+            }
             Runtime.getRuntime().addShutdownHook(new Thread(() -> FileUtils.deleteQuietly(candidate.toFile())));
         } catch (IOException e) {
             throw ProsperoLogger.ROOT_LOGGER.unableToCreateTemporaryDirectory(e);
@@ -134,18 +174,29 @@ public class FeaturesAddAction {
 
         try (PrepareCandidateAction prepareCandidateAction = candidateActionsFactory.newPrepareCandidateActionInstance(mavenSessionManager, prosperoConfig);
              GalleonEnvironment galleonEnv = getGalleonEnv(candidate)) {
+            ProsperoLogger.ROOT_LOGGER.updateCandidateStarted(installDir);
             prepareCandidateAction.buildCandidate(candidate, galleonEnv, ApplyCandidateAction.Type.FEATURE_ADD, newConfig);
+            ProsperoLogger.ROOT_LOGGER.updateCandidateCompleted(installDir);
         }
 
         final ApplyCandidateAction applyCandidateAction = candidateActionsFactory.newApplyCandidateActionInstance(candidate);
         applyCandidateAction.applyUpdate(ApplyCandidateAction.Type.FEATURE_ADD);
     }
 
+    /**
+     * check if a feature pack with {@code featurePackCoord} can be resolved in available channels.
+     *
+     * @param featurePackCoord - maven {@code groupId:artifactId} coordinates of the feature pack to install
+     * @return true if the feature pack is available, false otherwise
+     * @throws OperationException - if unable to read the metadata
+     * @throws ProvisioningException - if unable to read the metadata
+     */
     public boolean isFeaturePackAvailable(String featurePackCoord) throws OperationException, ProvisioningException {
         if (featurePackCoord == null || featurePackCoord.isEmpty()) {
             throw new IllegalArgumentException("The feature pack coordinate cannot be null");
         }
-        if (featurePackCoord.split(":").length != 2) {
+        final String[] splitCoordinates = featurePackCoord.split(":");
+        if (splitCoordinates.length != 2) {
             throw new IllegalArgumentException("The feature pack coordinate has to consist of <groupId>:<artifactId>");
         }
         final ChannelSession channelSession = GalleonEnvironment
@@ -153,7 +204,10 @@ public class FeaturesAddAction {
                 .getChannelSession();
 
         try {
-            channelSession.resolveMavenArtifact(featurePackCoord.split(":")[0], featurePackCoord.split(":")[1],
+            if (ProsperoLogger.ROOT_LOGGER.isTraceEnabled()) {
+                ProsperoLogger.ROOT_LOGGER.trace("Resolving a feature pack: " + featurePackCoord);
+            }
+            channelSession.resolveMavenArtifact(splitCoordinates[0], splitCoordinates[1],
                     "zip", null, null);
         } catch (NoStreamFoundException e) {
             return false;
@@ -213,11 +267,17 @@ public class FeaturesAddAction {
         final ConfigModel.Builder configBuilder;
         final ConfigId id = new ConfigId(selectedModel, selectedConfig);
         if (existingConfig.hasDefinedConfig(id)) {
+            if (ProsperoLogger.ROOT_LOGGER.isTraceEnabled()) {
+                ProsperoLogger.ROOT_LOGGER.trace("Replacing existing ConfigModel " + id);
+            }
             ConfigModel cmodel = existingConfig.getDefinedConfig(id);
             configBuilder = ConfigModel.builder(cmodel);
             includeLayers(layers, configBuilder, cmodel);
             builder.removeConfig(id);
         } else {
+            if (ProsperoLogger.ROOT_LOGGER.isTraceEnabled()) {
+                ProsperoLogger.ROOT_LOGGER.trace("Adding new ConfigModel " + id);
+            }
             configBuilder = ConfigModel.builder(selectedModel, selectedConfig);
             for (String layer: layers) {
                 configBuilder.includeLayer(layer);
@@ -229,9 +289,15 @@ public class FeaturesAddAction {
     private static void includeLayers(Set<String> layers, ConfigModel.Builder configBuilder, ConfigModel cmodel) throws ProvisioningDescriptionException {
         for (String layer: layers) {
             if (cmodel.getExcludedLayers().contains(layer)){
+                if (ProsperoLogger.ROOT_LOGGER.isTraceEnabled()) {
+                    ProsperoLogger.ROOT_LOGGER.trace("Un-excluding layer" + layer);
+                }
                 configBuilder.removeExcludedLayer(layer);
             }
             if (!cmodel.getIncludedLayers().contains(layer)) {
+                if (ProsperoLogger.ROOT_LOGGER.isTraceEnabled()) {
+                    ProsperoLogger.ROOT_LOGGER.trace("Adding layer " + layer);
+                }
                 configBuilder.includeLayer(layer);
             }
         }

@@ -63,22 +63,25 @@ public class HistoryCommand extends AbstractCommand {
                 console.println(CliMessages.MESSAGES.noChangesFound());
             } else {
                 final DiffPrinter diffPrinter = new DiffPrinter("  ");
+                boolean needsLineBreak = false;
                 if (!changes.getArtifactChanges().isEmpty()) {
                     console.println(CliMessages.MESSAGES.diffUpdates()+ ":");
                     changes.getArtifactChanges().forEach(diffPrinter::print);
+                    needsLineBreak = true;
                 }
                 if (!changes.getChannelChanges().isEmpty()) {
-                    if (!changes.getArtifactChanges().isEmpty()) {
+                    if (needsLineBreak) {
                         console.println("");
                     }
                     console.println(CliMessages.MESSAGES.diffConfigChanges()+ ":");
                     changes.getChannelChanges().forEach(diffPrinter::print);
+                    needsLineBreak = true;
                 }
                 if (!changes.getFeatureChanges().isEmpty()) {
-                    if (!changes.getArtifactChanges().isEmpty()) {
+                    if (needsLineBreak) {
                         console.println("");
                     }
-                    console.println("Installed features changes" + ":");
+                    console.println(CliMessages.MESSAGES.diffFeaturesChanges() + ":");
                     changes.getFeatureChanges().forEach(diffPrinter::print);
                 }
             }

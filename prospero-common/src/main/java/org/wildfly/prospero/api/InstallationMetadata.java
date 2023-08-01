@@ -394,7 +394,12 @@ public class InstallationMetadata implements AutoCloseable {
         }
     }
 
-    public ProvisioningConfig getRecordedProvisioningConfig() throws ProvisioningException {
+    /**
+     * galleon configuration used to provision current state of the server.
+     *
+     * @return
+     */
+    public ProvisioningConfig getRecordedProvisioningConfig() {
         return provisioningConfig;
     }
 }

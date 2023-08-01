@@ -319,13 +319,13 @@ public class ApplyCandidateAction {
     private void updateMetadata(Type operation) throws ProvisioningException, MetadataException {
         try {
             copyCurrentVersions();
-            ProsperoMetadataUtils.recordProvisioningDefinition(updateDir, installationDir);
             writeProsperoMetadata(operation);
             updateInstallationCache();
             Path installationGalleonPath = PathsUtils.getProvisionedStateDir(installationDir);
             Path updateGalleonPath = PathsUtils.getProvisionedStateDir(updateDir);
             IoUtils.recursiveDelete(installationGalleonPath);
             IoUtils.copy(updateGalleonPath, installationGalleonPath, true);
+            ProsperoMetadataUtils.recordProvisioningDefinition(installationDir, installationDir);
         } catch (IOException ex) {
             throw new ProvisioningException(ex);
         }

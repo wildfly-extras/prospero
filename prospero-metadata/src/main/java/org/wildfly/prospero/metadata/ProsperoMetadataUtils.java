@@ -186,6 +186,17 @@ public class ProsperoMetadataUtils {
         return serverDir.resolve(METADATA_DIR).resolve(INSTALLER_CHANNELS_FILE_NAME);
     }
 
+    /**
+     * creates a copy of Galleon provisioning configuration from {@code Constants.PROVISIONED_STATE_DIR/Constants.PROVISIONING_XML}
+     * in the {@code METADATA_DIR}.
+     *
+     * If the source file doesn't exist no copy is created.
+     * If the provisioning configuration is the same as saved copy, the file is not overwritten.
+     *
+     * @param sourceServer - root folder of the server the provisioning configuration will be stored
+     * @param targetServer - root folder of the server to copy the provisioning configuration to
+     * @throws IOException - if the file cannot be copied.
+     */
     public static void recordProvisioningDefinition(Path sourceServer, Path targetServer) throws IOException {
         final Path provisioningFile = sourceServer.resolve(Constants.PROVISIONED_STATE_DIR).resolve(Constants.PROVISIONING_XML);
         final Path provisioningRecordFile = targetServer.resolve(METADATA_DIR).resolve(PROVISIONING_RECORD_XML);

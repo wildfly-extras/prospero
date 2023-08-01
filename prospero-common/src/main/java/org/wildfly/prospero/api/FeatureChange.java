@@ -19,10 +19,16 @@ package org.wildfly.prospero.api;
 
 import java.util.Locale;
 
+/**
+ * Represents changes to feature packs used to provison the server.
+ */
 public class FeatureChange extends Diff {
 
     private final Type type;
 
+    /**
+     * Type of feature change record
+     */
     public enum Type { FEATURE, LAYERS, CONFIG }
 
     public FeatureChange(Type type, String oldValue, String newValue) {

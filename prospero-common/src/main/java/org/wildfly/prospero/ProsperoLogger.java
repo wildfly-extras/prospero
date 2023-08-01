@@ -339,4 +339,8 @@ public interface ProsperoLogger extends BasicLogger {
 
     @Message(id = 257, value = "Feature pack %s is already provisioned")
     FeaturesAddAction.FeaturePackAlreadyInstalledException featurePackAlreadyInstalled(FeaturePackLocation fpl);
+
+    @LogMessage(level = Logger.Level.DEBUG)
+    @Message(id = 258, value = "Adding a feature pack [%s] with configId [%s:%s] and layers [%s]")
+    void addingFeaturePack(FeaturePackLocation fpl, String selectedConfig, String selectedModel, String layers);
 }

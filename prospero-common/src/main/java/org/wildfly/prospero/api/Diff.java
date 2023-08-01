@@ -52,6 +52,11 @@ public class Diff {
         return children.stream().filter(c->c.getName().orElse("").equals(name)).findFirst();
     }
 
+    /**
+     * checks if the record holds any non-null values.
+     *
+     * @return true if either {@code newValue} or {@code oldValue} has a non-null value.
+     */
     public boolean hasValues() {
         return !newValue.isEmpty() || !oldValue.isEmpty();
     }

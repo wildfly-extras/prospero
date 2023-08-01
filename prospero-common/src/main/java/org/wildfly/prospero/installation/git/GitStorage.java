@@ -290,7 +290,7 @@ public class GitStorage implements AutoCloseable {
     }
 
     public List<FeatureChange> getFeatureChanges(SavedState latestState) throws MetadataException {
-        return getChanges(latestState, ".provisioning_record.xml", new FeatureChangeParser());
+        return getChanges(latestState, ProsperoMetadataUtils.PROVISIONING_RECORD_XML, new FeatureChangeParser());
     }
 
     private <T> List<T> getChanges(SavedState savedState, String manifestFileName, Parser<T> parser) throws MetadataException {

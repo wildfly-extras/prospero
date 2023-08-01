@@ -572,4 +572,8 @@ public interface CliMessages {
     default String configurationModel() {
         return bundle.getString("prospero.history.configuration_model.title");
     }
+
+    default String diffFeaturesChanges() {
+        return bundle.getString("prospero.changes.diff.features_changes");
+    }
 }
