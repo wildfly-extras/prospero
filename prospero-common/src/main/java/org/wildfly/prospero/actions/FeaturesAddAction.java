@@ -85,9 +85,9 @@ public class FeaturesAddAction {
         this.installDir = installDir;
         this.console = console;
         this.metadata = InstallationMetadata.loadInstallation(installDir);
-        this.prosperoConfig = metadata.getProsperoConfig();
+        this.prosperoConfig = addTemporaryRepositories(repositories);
 
-        final MavenOptions mergedOptions = addTemporaryRepositories(repositories).getMavenOptions().merge(mavenOptions);
+        final MavenOptions mergedOptions = prosperoConfig.getMavenOptions().merge(mavenOptions);
         this.mavenSessionManager = new MavenSessionManager(mergedOptions);
 
         this.candidateActionsFactory = candidateActionsFactory;
