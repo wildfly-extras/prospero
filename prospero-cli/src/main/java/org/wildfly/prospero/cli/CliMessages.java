@@ -17,6 +17,7 @@
 
 package org.wildfly.prospero.cli;
 
+import org.apache.commons.lang3.StringUtils;
 import org.jboss.galleon.Constants;
 import org.wildfly.prospero.actions.ApplyCandidateAction;
 import org.wildfly.prospero.cli.commands.CliConstants;
@@ -24,6 +25,7 @@ import org.wildfly.prospero.metadata.ProsperoMetadataUtils;
 
 import java.io.File;
 import java.nio.file.Path;
+import java.util.List;
 import java.util.Locale;
 import java.util.ResourceBundle;
 
@@ -523,5 +525,20 @@ public interface CliMessages {
 
     default String parsingError(String path) {
         return format(bundle.getString("prospero.general.error.galleon.parse"), path);
+    }
+
+    default String unknownCommand(String commandString) {
+        return format(bundle.getString("prospero.general.error.unknown_command"), commandString);
+    }
+
+    default String commandSuggestions(List<String> suggestions) {
+        if (suggestions.size() == 1) {
+            return format(bundle.getString("prospero.general.error.unknown_command.suggestion_single"),
+                    suggestions.iterator().next());
+        } else {
+            String connector = format(" %s ", bundle.getString("prospero.general.error.unknown_command.or"));
+            return format(bundle.getString("prospero.general.error.unknown_command.suggestion_multiple"),
+                    StringUtils.join(suggestions, connector));
+        }
     }
 }

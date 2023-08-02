@@ -67,6 +67,8 @@ public class CliMain {
 
     public static CommandLine createCommandLine(CliConsole console, ActionFactory actionFactory) {
         CommandLine commandLine = new CommandLine(new MainCommand(console));
+        // override main command name - this cannot be done via annotation as the value needs to be loaded at runtime
+        commandLine.setCommandName(DistributionInfo.DIST_NAME);
 
         commandLine.addSubcommand(new InstallCommand(console, actionFactory));
         final UpdateCommand updateCommand = new UpdateCommand(console, actionFactory);
@@ -93,6 +95,9 @@ public class CliMain {
 
         commandLine.setUsageHelpAutoWidth(true);
         commandLine.setExecutionExceptionHandler(new ExecutionExceptionHandler(console));
+
+        final CommandLine.IParameterExceptionHandler rootParameterExceptionHandler = commandLine.getParameterExceptionHandler();
+        commandLine.setParameterExceptionHandler(new UnknownCommandParameterExceptionHandler(rootParameterExceptionHandler, System.err));
 
         return commandLine;
     }
