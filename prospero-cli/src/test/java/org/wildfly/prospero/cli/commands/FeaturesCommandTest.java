@@ -207,7 +207,7 @@ public class FeaturesCommandTest extends AbstractMavenCommandTest {
 
     @Test
     public void nonExistingLayersShowsError() throws Exception {
-        doThrow(new FeaturesAddAction.LayerNotFoundException("foo", "idontexist", Set.of("layer1", "layer2")))
+        doThrow(new FeaturesAddAction.LayerNotFoundException("foo", Set.of("idontexist"), Set.of("layer1", "layer2")))
                 .when(featuresAddAction).addFeaturePack("org.test:test", Set.of("idontexist"), null, null);
         int exitCode = commandLine.execute(CliConstants.Commands.FEATURES, CliConstants.Commands.ADD,
                 CliConstants.DIR, installationDir.toString(),
@@ -215,13 +215,13 @@ public class FeaturesCommandTest extends AbstractMavenCommandTest {
                 CliConstants.FPL, "org.test:test");
         assertEquals(ReturnCodes.INVALID_ARGUMENTS, exitCode);
         assertThat(getErrorOutput())
-                .contains("The feature pack `org.test:test` does not provide requested layer `idontexist`.")
+                .contains("The feature pack `org.test:test` does not provide requested layers [idontexist].")
                 .contains("Supported layers are [layer1, layer2]");
     }
 
     @Test
     public void nonExistingLayersShowsErrorNoAvailableLayers() throws Exception {
-        doThrow(new FeaturesAddAction.LayerNotFoundException("foo", "idontexist", Collections.emptySet()))
+        doThrow(new FeaturesAddAction.LayerNotFoundException("foo", Set.of("idontexist"), Collections.emptySet()))
                 .when(featuresAddAction).addFeaturePack("org.test:test", Set.of("idontexist"), null, null);
         int exitCode = commandLine.execute(CliConstants.Commands.FEATURES, CliConstants.Commands.ADD,
                 CliConstants.DIR, installationDir.toString(),

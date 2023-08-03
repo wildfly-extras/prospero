@@ -59,8 +59,10 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 import java.util.TreeSet;
+import java.util.stream.Collectors;
 
 /**
  * Installs a feature pack onto an existing server.
@@ -72,7 +74,7 @@ public class FeaturesAddAction {
     private final InstallationMetadata metadata;
     private final ProsperoConfig prosperoConfig;
     private final Console console;
-    private CandidateActionsFactory candidateActionsFactory;
+    private final CandidateActionsFactory candidateActionsFactory;
 
     public FeaturesAddAction(MavenOptions mavenOptions, Path installDir, List<Repository> repositories, Console console) throws MetadataException, ProvisioningException {
         this(mavenOptions, installDir, repositories, console, new DefaultCandidateActionsFactory(installDir));
@@ -111,6 +113,7 @@ public class FeaturesAddAction {
      */
     public void addFeaturePack(String featurePackCoord, Set<String> layers, String model, String configName)
             throws ProvisioningException, OperationException {
+        Objects.requireNonNull(layers);
         if (featurePackCoord == null || featurePackCoord.isEmpty()) {
             throw new IllegalArgumentException("The feature pack coordinate cannot be null");
         }
@@ -136,12 +139,7 @@ public class FeaturesAddAction {
             }
         }
 
-        if (allLayers.isEmpty()) {
-            selectedModel = null;
-        } else {
-            selectedModel = getSelectedModel(model, allLayers);
-        }
-
+        selectedModel = getSelectedModel(model, allLayers);
 
         verifyLayerAvailable(layers, selectedModel, allLayers);
 
@@ -305,21 +303,28 @@ public class FeaturesAddAction {
 
     private static void verifyLayerAvailable(Set<String> layers, String selectedModel, Map<String, Set<String>> allLayers) throws LayerNotFoundException {
         if (allLayers.isEmpty() && !layers.isEmpty()) {
-            final String aLayer = layers.iterator().next();
-            throw new LayerNotFoundException(ProsperoLogger.ROOT_LOGGER.layerNotFoundInFeaturePack(aLayer), aLayer,
+            final String missingLayers = StringUtils.join(layers, ", ");
+            throw new LayerNotFoundException(ProsperoLogger.ROOT_LOGGER.layerNotFoundInFeaturePack(missingLayers), layers,
                     Collections.emptySet());
         }
-        final Set<String> modelLayers = allLayers.get(selectedModel);
-        for (String layer : layers) {
-            if (!modelLayers.contains(layer)) {
-                // limit the model layers to only one found in the feature pack
-                throw new LayerNotFoundException(ProsperoLogger.ROOT_LOGGER.layerNotFoundInFeaturePack(layer), layer, modelLayers);
+        if (selectedModel != null) {
+            final Set<String> modelLayers = allLayers.get(selectedModel);
+            for (String layer : layers) {
+                final Set<String> missingLayers = layers.stream().filter(l->!modelLayers.contains(layer)).collect(Collectors.toSet());
+                if (!missingLayers.isEmpty()) {
+                    final String missingLayersTxt = StringUtils.join(missingLayers, ", ");
+                    throw new LayerNotFoundException(ProsperoLogger.ROOT_LOGGER.layerNotFoundInFeaturePack(missingLayersTxt), missingLayers, modelLayers);
+                }
             }
         }
     }
 
     private static String getSelectedModel(String model, Map<String, Set<String>> allLayers)
             throws ModelNotDefinedException {
+        if (allLayers.isEmpty()) {
+            return null;
+        }
+
         final String selectedModel;
         if (model == null || model.isEmpty()) {
             if (allLayers.size() > 1) {
@@ -394,17 +399,17 @@ public class FeaturesAddAction {
      */
     public static class LayerNotFoundException extends OperationException {
 
-        private final String layer;
+        private final Set<String> layers;
         private final Set<String> supportedLayers;
 
-        public LayerNotFoundException(String msg, String layer, Set<String> supportedLayers) {
+        public LayerNotFoundException(String msg, Set<String> layers, Set<String> supportedLayers) {
             super(msg);
-            this.layer = layer;
+            this.layers = layers;
             this.supportedLayers = supportedLayers;
         }
 
-        public String getLayer() {
-            return layer;
+        public Set<String> getLayers() {
+            return layers;
         }
 
         public Set<String> getSupportedLayers() {

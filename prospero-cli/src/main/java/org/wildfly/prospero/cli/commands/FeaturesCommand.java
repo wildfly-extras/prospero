@@ -95,7 +95,7 @@ public class FeaturesCommand extends AbstractParentCommand {
                 featuresAddAction.addFeaturePack(fpl, layers == null ? Collections.emptySet() : layers, model, config);
             } catch (FeaturesAddAction.LayerNotFoundException e) {
                 if (!e.getSupportedLayers().isEmpty()) {
-                    console.error(CliMessages.MESSAGES.layerNotSupported(fpl, e.getLayer(), e.getSupportedLayers()));
+                    console.error(CliMessages.MESSAGES.layerNotSupported(fpl, e.getLayers(), e.getSupportedLayers()));
                 } else {
                     console.error(CliMessages.MESSAGES.layerNotSupported(fpl));
                 }

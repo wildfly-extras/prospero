@@ -57,7 +57,8 @@ public class FeaturesAddTest {
 
     @Test
     public void addFeaturePack() throws Exception {
-        Path channelsFile = MetadataTestUtils.prepareChannel("manifests/wildfly-27.0.1.Final-channel.yaml");
+        final Path channelsFile = MetadataTestUtils.prepareChannel("manifests/wildfly-27.0.1.Final-channel.yaml");
+        final Path modulePath = Path.of("modules", "com", "mysql", "jdbc");
 
         System.out.println("Installing wildfly");
         ExecutionUtils.prosperoExecution(CliConstants.Commands.INSTALL,
@@ -67,6 +68,9 @@ public class FeaturesAddTest {
                 .withTimeLimit(10, TimeUnit.MINUTES)
                 .execute()
                 .assertReturnCode(ReturnCodes.SUCCESS);
+
+        assertThat(targetDir.toPath().resolve(modulePath))
+                .doesNotExist();
 
         final ChannelManifest manifest = new ChannelManifest(null, null, null, List.of(
                 new Stream("org.wildfly", "wildfly-datasources-galleon-pack", DATASOURCES_FP_VERSION),
@@ -97,7 +101,6 @@ public class FeaturesAddTest {
                 .assertReturnCode(ReturnCodes.SUCCESS);
 
         // verify the datasources feature pack was installed successfully
-        final Path modulePath = Path.of("modules", "com", "mysql", "jdbc");
         assertThat(targetDir.toPath().resolve(modulePath))
                 .exists()
                 .isDirectory();

@@ -335,7 +335,7 @@ public interface ProsperoLogger extends BasicLogger {
     @Message(id = 255, value = "Chosen feature pack does not support model %s. Please choose one of supported models.")
     String modelNotFoundInFeaturePack(String model);
 
-    @Message(id = 256, value = "The feature pack doesn't define requested layer: %s")
+    @Message(id = 256, value = "The feature pack doesn't define requested layers: [%s]")
     String layerNotFoundInFeaturePack(String layerName);
 
     @Message(id = 257, value = "Feature pack %s is already provisioned")

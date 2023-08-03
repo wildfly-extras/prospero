@@ -49,7 +49,7 @@ public class ProsperoMetadataUtils {
     public static final String MAVEN_OPTS_FILE = "maven_opts.yaml";
     public static final String CURRENT_VERSION_FILE = "manifest_version.yaml";
     public static final String README_FILE_NAME = "README.txt";
-    public static final String PROVISIONING_RECORD_XML = ".provisioning_record.xml";
+    public static final String PROVISIONING_RECORD_XML = "provisioning_record.xml";
 
     private static final String WARNING_MESSAGE = "WARNING: The files in .installation directory should be only edited by the provisioning tool.";
 

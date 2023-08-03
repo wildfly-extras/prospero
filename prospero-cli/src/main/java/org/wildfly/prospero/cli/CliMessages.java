@@ -551,9 +551,9 @@ public interface CliMessages {
         return new ArgumentParsingException(format(bundle.getString("prospero.features.add.validation.fpl_name")));
     }
 
-    default String layerNotSupported(String fpl, String layerName, Set<String> supportedLayers) {
+    default String layerNotSupported(String fpl, Set<String> layerName, Set<String> supportedLayers) {
         return format(bundle.getString("prospero.features.add.validation.layer.not_supported"),
-                fpl, layerName, StringUtils.join(supportedLayers, ", "));
+                fpl, StringUtils.join(layerName, ", "), StringUtils.join(supportedLayers, ", "));
     }
 
     default String layerNotSupported(String fpl) {

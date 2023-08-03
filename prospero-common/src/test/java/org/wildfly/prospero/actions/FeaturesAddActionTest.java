@@ -199,7 +199,7 @@ public class FeaturesAddActionTest {
 
         assertThatThrownBy(()-> getFeaturesAddAction().addFeaturePack("org.test:added-pack", Set.of("idontexist"), null, null))
                 .isInstanceOf(FeaturesAddAction.LayerNotFoundException.class)
-                .hasFieldOrPropertyWithValue("layer", "idontexist")
+                .hasFieldOrPropertyWithValue("layers", Set.of("idontexist"))
                 .hasFieldOrPropertyWithValue("supportedLayers", Set.of("layer1"));
 
         verifyNoInteractions(prepareCandidateAction);
@@ -244,7 +244,7 @@ public class FeaturesAddActionTest {
 
         assertThatThrownBy(()-> getFeaturesAddAction().addFeaturePack("org.test:added-pack", Set.of("idontexist"), null, null))
                 .isInstanceOf(FeaturesAddAction.LayerNotFoundException.class)
-                .hasFieldOrPropertyWithValue("layer", "idontexist");
+                .hasFieldOrPropertyWithValue("layers", Set.of("idontexist"));
 
         verifyNoInteractions(prepareCandidateAction);
         verifyNoInteractions(applyCandidateAction);
@@ -485,6 +485,28 @@ public class FeaturesAddActionTest {
         assertThat(config.getDefinedConfigs())
                 .contains(ConfigModel.builder("model2", "model2.xml")
                         .build());
+    }
+
+    @Test
+    public void featurePacksWithoutLayersCanBeInstalled() throws Exception {
+        // install base feature pack
+        final FeaturePackCreator creator = FeaturePackCreator.getInstance().addArtifactResolver(repo);
+        creator.newFeaturePack(FeaturePackLocation.fromString("org.test:base-pack:1.0.0:zip").getFPID())
+                .getCreator()
+                .newFeaturePack(FeaturePackLocation.fromString("org.test:added-pack:1.0.0:zip").getFPID());
+        deployFeaturePacks(creator);
+        // install
+        installFeaturePack(installDir, "org.test:base-pack:1.0.0:zip");
+
+        getFeaturesAddAction().addFeaturePack(
+                "org.test:added-pack", Collections.emptySet(), null, null);
+        final ArgumentCaptor<ProvisioningConfig> provisioningConfigArgumentCaptor = ArgumentCaptor.forClass(ProvisioningConfig.class);
+        verify(prepareCandidateAction).buildCandidate(any(), any(), eq(ApplyCandidateAction.Type.FEATURE_ADD),
+                provisioningConfigArgumentCaptor.capture());
+
+        final ProvisioningConfig config = provisioningConfigArgumentCaptor.getValue();
+        assertThat(config.getDefinedConfigs())
+                .isEmpty();
     }
 
     @Test
