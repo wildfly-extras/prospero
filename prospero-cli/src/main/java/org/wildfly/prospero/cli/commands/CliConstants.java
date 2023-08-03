@@ -35,7 +35,8 @@ public final class CliConstants {
         }
 
         public static final String MAIN_COMMAND = "prospero";
-        public static final String FEATURES = "features";
+        public static final String FEATURE_PACKS = "feature-pack";
+        public static final String FEATURE_PACKS_ALIAS = "fp";
         public static final String INSTALL = "install";
         public static final String UPDATE = "update";
         public static final String HISTORY = "history";

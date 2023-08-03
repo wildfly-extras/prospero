@@ -91,7 +91,7 @@ public class FeaturesAddTest {
 
         // install the datasource FP
         System.out.println("Installing datasources feature pack");
-        ExecutionUtils.prosperoExecution(CliConstants.Commands.FEATURES, CliConstants.Commands.ADD,
+        ExecutionUtils.prosperoExecution(CliConstants.Commands.FEATURE_PACKS, CliConstants.Commands.ADD,
                         CliConstants.FPL, DATASOURCE_GALLEON_FPL,
                         CliConstants.LAYERS, "datasources-web-server,mysql-datasource",
                         CliConstants.YES,
