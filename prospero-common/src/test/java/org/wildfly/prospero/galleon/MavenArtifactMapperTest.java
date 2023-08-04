@@ -172,6 +172,16 @@ public class MavenArtifactMapperTest {
                 .isThrownBy(()->mavenArtifactMapper.get(new ArtifactCoordinate("foo.bar", "idontexist", "jar", "", "")));
     }
 
+    @Test
+    public void testArtifactWithoutVersionIsMappedWithEmptyString() throws Exception {
+        final List<org.jboss.galleon.universe.maven.MavenArtifact> galleonArtifacts = Arrays.asList(
+                galleonArtifact("foo.bar", "test1", "jar").setVersion(null));
+
+        final MavenArtifactMapper mavenArtifactMapper = new MavenArtifactMapper(galleonArtifacts);
+        assertThat(mavenArtifactMapper.toChannelArtifacts())
+                .contains(new ArtifactCoordinate("foo.bar", "test1", "jar", "", ""));
+    }
+
     private org.jboss.galleon.universe.maven.MavenArtifact galleonArtifact(String groupId, String artifactId, String extension) {
         final org.jboss.galleon.universe.maven.MavenArtifact galleonArtifact = new org.jboss.galleon.universe.maven.MavenArtifact();
         galleonArtifact.setGroupId(groupId);

@@ -56,7 +56,7 @@ public class MavenArtifactMapper {
 
     public List<ArtifactCoordinate> toChannelArtifacts() {
         return galleonArtifacts.stream()
-                .map(a -> new ArtifactCoordinate(a.getGroupId(), a.getArtifactId(), a.getExtension(), a.getClassifier(), a.getVersion()))
+                .map(a -> new ArtifactCoordinate(a.getGroupId(), a.getArtifactId(), a.getExtension(), a.getClassifier(), a.getVersion()==null?"":a.getVersion()))
                 .collect(Collectors.toList());
     }
 
