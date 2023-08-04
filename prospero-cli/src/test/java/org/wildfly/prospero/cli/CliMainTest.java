@@ -54,7 +54,7 @@ public class CliMainTest extends AbstractConsoleTest {
     public void errorOnUnknownOperation() {
         int exitCode = commandLine.execute("foo");
         assertEquals(ReturnCodes.INVALID_ARGUMENTS, exitCode);
-        assertTrue(getErrorOutput().contains("Unmatched argument at index 0: 'foo'"));
+        assertTrue(getErrorOutput().contains("Unknown command `" + DistributionInfo.DIST_NAME + " foo`"));
     }
 
 }
