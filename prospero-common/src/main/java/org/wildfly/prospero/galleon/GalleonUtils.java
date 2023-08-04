@@ -17,6 +17,7 @@
 
 package org.wildfly.prospero.galleon;
 
+import org.apache.commons.io.FileUtils;
 import org.jboss.galleon.ProvisioningException;
 import org.jboss.galleon.ProvisioningManager;
 import org.jboss.galleon.config.ProvisioningConfig;
@@ -30,10 +31,15 @@ import org.jboss.galleon.xml.ProvisioningXmlParser;
 import org.jboss.galleon.xml.XmlParsers;
 import org.jboss.logging.Logger;
 import org.wildfly.channel.UnresolvedMavenArtifactException;
+import org.wildfly.prospero.ProsperoLogger;
 
+import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.net.URI;
+import java.net.URISyntaxException;
+import java.net.URL;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Collection;
 import java.util.HashMap;
@@ -47,6 +53,7 @@ import javax.xml.stream.XMLStreamException;
 public class GalleonUtils {
 
     public static final String MAVEN_REPO_LOCAL = "maven.repo.local";
+    protected static final String JBOSS_MODULES_SETTINGS_XML_URL = "jboss.modules.settings.xml.url";
     public static final String JBOSS_FORK_EMBEDDED_PROPERTY = "jboss-fork-embedded";
     public static final String JBOSS_FORK_EMBEDDED_VALUE = "true";
     public static final String JBOSS_BULK_RESOLVE_PROPERTY = "jboss-bulk-resolve-artifacts";
@@ -66,16 +73,10 @@ public class GalleonUtils {
     private static final Logger logger = Logger.getLogger(GalleonUtils.class.getName());
 
     public static void executeGalleon(GalleonExecution execution, Path localRepository) throws ProvisioningException, UnresolvedMavenArtifactException {
-        final String modulePathProperty = System.getProperty(MODULE_PATH_PROPERTY);
-        final String logConfigProperty = System.getProperty("logging.configuration");
+        final Map<String, String> substitutedProperties = new HashMap<>();
         try {
-            System.setProperty(MAVEN_REPO_LOCAL, localRepository.toString());
-            if (modulePathProperty != null) {
-                System.clearProperty(MODULE_PATH_PROPERTY);
-            }
-            if (logConfigProperty != null) {
-                System.clearProperty("logging.configuration");
-            }
+            substitutedProperties.putAll(substituteProvisioningProperties(localRepository));
+
             final Map<String, String> options = new HashMap<>();
             options.put(GalleonUtils.JBOSS_FORK_EMBEDDED_PROPERTY, GalleonUtils.JBOSS_FORK_EMBEDDED_VALUE);
             options.put(GalleonUtils.JBOSS_BULK_RESOLVE_PROPERTY, GalleonUtils.JBOSS_BULK_RESOLVE_VALUE);
@@ -105,14 +106,49 @@ public class GalleonUtils {
         } catch (ProvisioningException e) {
             throw extractMavenException(e).orElseThrow(()->e);
         } finally {
-            System.clearProperty(MAVEN_REPO_LOCAL);
-            if (modulePathProperty != null) {
-                System.setProperty(MODULE_PATH_PROPERTY, modulePathProperty);
+            try {
+                final Path tempSettingsXml = Path.of(new URL(System.getProperty(JBOSS_MODULES_SETTINGS_XML_URL)).toURI());
+                FileUtils.deleteQuietly(tempSettingsXml.toFile());
+            } catch (IOException | URISyntaxException e) {
+                throw new RuntimeException("Unable to delete a temporary settings.xml file " + System.getProperty(JBOSS_MODULES_SETTINGS_XML_URL), e);
             }
-            if (logConfigProperty != null) {
-                System.setProperty("logging.configuration", logConfigProperty);
+
+            for (Map.Entry<String, String> property : substitutedProperties.entrySet()) {
+                if (property.getValue() == null) {
+                    System.clearProperty(property.getKey());
+                } else {
+                    System.setProperty(property.getKey(), property.getValue());
+                }
             }
         }
+    }
+
+    private static Map<String, String> substituteProvisioningProperties(Path localRepository) throws ProvisioningException {
+        Map<String, String> substitutedProperties = new HashMap<>();
+        substitutedProperties.put(MAVEN_REPO_LOCAL, System.getProperty(MAVEN_REPO_LOCAL));
+        System.setProperty(MAVEN_REPO_LOCAL, localRepository.toString());
+
+        if (System.getProperty(MODULE_PATH_PROPERTY) != null) {
+            substitutedProperties.put(MODULE_PATH_PROPERTY, System.getProperty(MODULE_PATH_PROPERTY));
+            System.clearProperty(MODULE_PATH_PROPERTY);
+        }
+        if (System.getProperty("logging.configuration") != null) {
+            substitutedProperties.put("logging.configuration", System.getProperty("logging.configuration"));
+            System.clearProperty("logging.configuration");
+        }
+        // Set up empty settings.xml for jboss-modules to use. Avoids errors when the default settins.xml is corrupted.
+        // We don't need the settings.xml when starting embedded server, as we set the local repository manually and
+        // we download all dependencies before starting server.
+        try {
+            substitutedProperties.put(JBOSS_MODULES_SETTINGS_XML_URL, System.getProperty(JBOSS_MODULES_SETTINGS_XML_URL));
+            final Path tempSettingsXml = Files.createTempFile("prospero-maven-settings", "xml");
+            Files.writeString(tempSettingsXml, "<settings/>");
+            System.setProperty(JBOSS_MODULES_SETTINGS_XML_URL, tempSettingsXml.toUri().toURL().toExternalForm());
+        } catch (IOException e) {
+            throw ProsperoLogger.ROOT_LOGGER.unableToCreateTemporaryDirectory(e);
+        }
+
+        return substitutedProperties;
     }
 
     private static Optional<UnresolvedMavenArtifactException> extractMavenException(Throwable e) {
