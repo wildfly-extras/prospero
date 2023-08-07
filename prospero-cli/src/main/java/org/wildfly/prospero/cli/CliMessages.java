@@ -576,4 +576,21 @@ public interface CliMessages {
     default String diffFeaturesChanges() {
         return bundle.getString("prospero.changes.diff.features_changes");
     }
+
+    default String featuresListHeader(Path dir) {
+        return format(bundle.getString("prospero.features.list.header"), dir);
+    }
+
+    default String featuresIncludedLayers() {
+        return bundle.getString("prospero.features.list.included_layers");
+    }
+
+    default String featuresModel() {
+        return bundle.getString("prospero.features.list.model");
+    }
+
+    default String featuresLayer() {
+        return bundle.getString("prospero.features.list.layer");
+    }
+
 }

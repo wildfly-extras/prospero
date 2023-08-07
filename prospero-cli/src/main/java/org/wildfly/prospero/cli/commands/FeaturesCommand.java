@@ -17,6 +17,8 @@
 
 package org.wildfly.prospero.cli.commands;
 
+import org.apache.commons.lang3.tuple.Pair;
+import org.jboss.galleon.config.FeaturePackConfig;
 import org.wildfly.channel.Repository;
 import org.wildfly.prospero.actions.FeaturesAddAction;
 import org.wildfly.prospero.api.MavenOptions;
@@ -30,6 +32,7 @@ import picocli.CommandLine;
 import java.nio.file.Path;
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 @CommandLine.Command(name = CliConstants.Commands.FEATURES)
@@ -112,8 +115,54 @@ public class FeaturesCommand extends AbstractParentCommand {
         }
     }
 
+    @CommandLine.Command(name = CliConstants.Commands.LIST, sortOptions = false)
+    public static class ListCommand extends AbstractMavenCommand {
+
+        public ListCommand(CliConsole console, ActionFactory actionFactory) {
+            super(console, actionFactory);
+        }
+
+        @Override
+        public Integer call() throws Exception {
+            final Path installationDir = determineInstallationDirectory(directory);
+            final MavenOptions mavenOptions = parseMavenOptions();
+
+            FeaturesAddAction actions = actionFactory.featuresAddAction(installationDir, mavenOptions, Collections.emptyList(), console);
+            Map<FeaturePackConfig, List<Pair<String, String>>> featurePackMap = actions.getInstalledFeaturePacks();
+
+
+            if (!featurePackMap.isEmpty()) {
+                console.println(CliMessages.MESSAGES.featuresListHeader(installationDir.toAbsolutePath()));
+                console.println("");
+            }
+
+            for (Map.Entry<FeaturePackConfig, List<Pair<String, String>>> entry: featurePackMap.entrySet()) {
+                FeaturePackConfig featurePackConfig = entry.getKey();
+                List<Pair<String, String>> layers = entry.getValue();
+                String featurePackGA = featurePackConfig.getLocation().getProducerName();
+                if (featurePackGA.endsWith("::zip")) {
+                    featurePackGA = featurePackGA.substring(0, featurePackGA.length() - 5);
+                }
+                console.println("  " + featurePackGA);
+
+                if (!layers.isEmpty()) {
+                    console.println("    " + CliMessages.MESSAGES.featuresIncludedLayers());
+                    for (Pair<String, String> layer: layers) {
+                        console.println(String.format("      %s=%s, %s=%s",
+                                CliMessages.MESSAGES.featuresModel(), CliMessages.MESSAGES.featuresLayer(),
+                                layer.getLeft(), layer.getRight()));
+                    }
+                }
+            }
+
+            return ReturnCodes.SUCCESS;
+        }
+    }
+
 
     public FeaturesCommand(CliConsole console, ActionFactory actionFactory) {
-        super(console, actionFactory, "features", List.of(new AddCommand(console, actionFactory)));
+        super(console, actionFactory, "features", List.of(
+                new AddCommand(console, actionFactory),
+                new ListCommand(console, actionFactory)));
     }
 }

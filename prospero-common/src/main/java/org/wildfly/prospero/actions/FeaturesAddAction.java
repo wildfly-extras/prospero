@@ -19,6 +19,7 @@ package org.wildfly.prospero.actions;
 
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.tuple.Pair;
 import org.jboss.galleon.ProvisioningDescriptionException;
 import org.jboss.galleon.ProvisioningException;
 import org.jboss.galleon.ProvisioningManager;
@@ -54,6 +55,8 @@ import org.wildfly.prospero.wfchannel.MavenSessionManager;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -72,7 +75,7 @@ public class FeaturesAddAction {
     private final InstallationMetadata metadata;
     private final ProsperoConfig prosperoConfig;
     private final Console console;
-    private CandidateActionsFactory candidateActionsFactory;
+    private final CandidateActionsFactory candidateActionsFactory;
 
     public FeaturesAddAction(MavenOptions mavenOptions, Path installDir, List<Repository> repositories, Console console) throws MetadataException, ProvisioningException {
         this(mavenOptions, installDir, repositories, console, new DefaultCandidateActionsFactory(installDir));
@@ -181,6 +184,44 @@ public class FeaturesAddAction {
 
         final ApplyCandidateAction applyCandidateAction = candidateActionsFactory.newApplyCandidateActionInstance(candidate);
         applyCandidateAction.applyUpdate(ApplyCandidateAction.Type.FEATURE_ADD);
+    }
+
+    /**
+     * Prints info about installed feature packs.
+     *
+     * @return map where keys are FeaturePackConfig instances and values are lists of included model-layer pairs.
+     */
+    public Map<FeaturePackConfig, List<Pair<String, String>>> getInstalledFeaturePacks() throws ProvisioningException, OperationException {
+        GalleonEnvironment galleonEnv = getGalleonEnv(installDir);
+        ProvisioningManager pm = galleonEnv.getProvisioningManager();
+        ProvisioningConfig provisioningConfig = pm.getProvisioningConfig();
+        Collection<FeaturePackConfig> featurePackDeps = provisioningConfig.getFeaturePackDeps();
+        Collection<ConfigModel> definedConfigs = provisioningConfig.getDefinedConfigs();
+        final ProvisioningLayoutFactory layoutFactory = GalleonUtils.getProvisioningLayoutFactory(galleonEnv.getRepositoryManager());
+        final ProvisioningLayout<FeaturePackLayout> layout = layoutFactory.newConfigLayout(provisioningConfig);
+
+        HashMap<FeaturePackConfig, List<Pair<String, String>>> resultMap = new HashMap<>();
+
+        try {
+            for (FeaturePackConfig fpc : featurePackDeps) {
+                FeaturePackLayout featurePackLayout = layout.getFeaturePack(fpc.getLocation().getProducer());
+                Set<ConfigId> layoutLayers = featurePackLayout.loadLayers();
+                ArrayList<Pair<String,String>> layers = new ArrayList<>();
+                resultMap.put(fpc, layers);
+                for (ConfigModel definedConfig: definedConfigs) {
+                    for (String layer: definedConfig.getIncludedLayers()) {
+                        if (layoutLayers.stream().anyMatch(l -> layer.equals(l.getName()))) {
+                            layers.add(Pair.of(definedConfig.getModel(), layer));
+                        }
+                    }
+                }
+
+            }
+        } catch (IOException e) {
+            throw new OperationException(e);
+        }
+
+        return resultMap;
     }
 
     /**
