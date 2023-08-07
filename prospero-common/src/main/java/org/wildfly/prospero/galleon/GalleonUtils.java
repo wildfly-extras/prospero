@@ -28,6 +28,7 @@ import org.jboss.galleon.util.PathsUtils;
 import org.jboss.galleon.xml.ProvisionedStateXmlParser;
 import org.jboss.galleon.xml.ProvisioningXmlParser;
 import org.jboss.galleon.xml.XmlParsers;
+import org.jboss.logging.Logger;
 import org.wildfly.channel.UnresolvedMavenArtifactException;
 
 import java.io.InputStream;
@@ -61,6 +62,9 @@ public class GalleonUtils {
     private static final String CLASSPATH_SCHEME = "classpath";
     private static final String FILE_SCHEME = "file";
     private static final String OPTION_RESET_EMBEDDED_SYSTEM_PROPERTIES = "jboss-reset-embedded-system-properties";
+
+    private static final Logger logger = Logger.getLogger(GalleonUtils.class.getName());
+
     public static void executeGalleon(GalleonExecution execution, Path localRepository) throws ProvisioningException, UnresolvedMavenArtifactException {
         final String modulePathProperty = System.getProperty(MODULE_PATH_PROPERTY);
         final String logConfigProperty = System.getProperty("logging.configuration");
@@ -79,8 +83,23 @@ public class GalleonUtils {
             options.put(GalleonUtils.STORE_INPUT_PROVISIONING_CONFIG_PROPERTY, GalleonUtils.STORE_INPUT_PROVISIONING_CONFIG_VALUE);
             options.put(GalleonUtils.STORE_PROVISIONED_ARTIFACTS, GalleonUtils.STORE_PROVISIONED_ARTIFACTS_VALUE);
             String resetSysProp = System.getProperty(OPTION_RESET_EMBEDDED_SYSTEM_PROPERTIES, "");
-            if (resetSysProp != "-") {
+            if (!resetSysProp.equals("-")) {
                 options.put(GalleonUtils.OPTION_RESET_EMBEDDED_SYSTEM_PROPERTIES, resetSysProp);
+            }
+            if (logger.isTraceEnabled()) {
+                logger.trace("Executing galleon");
+                logger.trace("System properties:");
+                for (Object key : System.getProperties().keySet()) {
+                    logger.trace("  " + key + ": " + System.getProperties().get(key));
+                }
+                logger.trace("System envs:");
+                for (String key : System.getenv().keySet()) {
+                    logger.trace("  " + key + ": " + System.getenv().get(key));
+                }
+                logger.trace("Galleon options:");
+                for (Object key : options.keySet()) {
+                    logger.trace("  " + key + ": " + options.get(key));
+                }
             }
             execution.execute(options);
         } catch (ProvisioningException e) {
@@ -129,10 +148,12 @@ public class GalleonUtils {
             };
 
             return ProvisioningManager.builder()
+                    .setMessageWriter(new LoggingMessageWriter(logger))
                     .setUniverseResolver(universeResolver)
                     .setInstallationHome(installDir).build();
         } else {
             return ProvisioningManager.builder()
+                    .setMessageWriter(new LoggingMessageWriter(logger))
                 .addArtifactResolver(maven)
                 .setInstallationHome(installDir).build();
         }
@@ -163,4 +184,5 @@ public class GalleonUtils {
                     uri.getScheme()));
         }
     }
+
 }
