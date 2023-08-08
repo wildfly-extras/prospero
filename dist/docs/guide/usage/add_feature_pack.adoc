@@ -1,0 +1,75 @@
+### Installing additional Galleon Feature Packs
+
+Galleon feature packs can be used to extend capabilities offered by base server and provide features like, for example, https://github.com/wildfly-extras/wildfly-datasources-galleon-pack[datasource support] or https://github.com/wildfly-extras/wildfly-myfaces-feature-pack[alternative JSF implemetnation].
+
+Prospero allows users to install such feature pack on top of existing server using `feature-pack add` operation.
+
+#### Feature pack channels
+
+As with all the components used to provision the server, Prospero relies on channels to supply the feature pack and any artifacts it may require. In some cases the base server channel may offer the additional feature packs, in others, an additional channel will have to be registered with the server. See <<Subscribing to a channel>> for information how to subscribe to a channel.
+
+Sometimes feature packs may require additional artifacts whose lifecycle is separate from the feature pack itself. For example, Datasources feature pack lets users specify which version of database driver should be installed irrespective of the feature pack version. In such cases users have to create and subscribe to a new channel providing those artifacts.
+
+For example, a channel supplying Datasources feature pack could use https://repo1.maven.org/maven2[Maven Central] repository and a following manifest:
+```
+schemaVersion: 1.0.0
+streams:
+  - groupId: org.wildfly
+    artifactId: wildfly-datasources-galleon-pack
+    version: 4.0.1.Final
+  - groupId: com.mysql
+    artifactId: mysql-connector-j
+    version: 8.1.0
+```
+
+#### Installing feature pack
+
+The feature packs are identified by GroupId:ArtifactId part of their Maven coordinates. This is known as their Feature Pack Location (fpl).
+
+For example, assuming the server is subscribed to a datasources channel, following command will install the datasources feature pack:
+
+```
+$ prospero feature-pack add \
+  --fpl org.wildfly:wildfly-datasources-galleon-pack \
+  --dir wildfly
+```
+
+NOTE: This specific command does not in fact install any database drivers or datasources. See further examples bellow to see how to specify drivers and datasources to install or refer to https://github.com/wildfly-extras/wildfly-datasources-galleon-pack[wildfly-datasources documentation].
+
+#### Customizing installed feature packs
+
+The Galleon feature packs may provide different capabilities using https://docs.wildfly.org/galleon/#_layers[layers]. Users may select a set of layers to install using `--layers` parameter.
+
+NOTE: Using `--layers` parameter overwrites the default configuration defined by some feature packs.
+
+If the feature pack changes server configuration files, the user may also choose which server configuration should be affected using `--model` and `--config`
+parameters. If those parameters are not provided, the layer configuration will use default values. Most Wildfly feature packs provide only a single model (standalone) and the default configuration file of standalone.xml.
+
+NOTE: If the affected configuration file has been modified by the user, that file will not be modified. Instead, a new configuration file with suffix `.glnew` will be created with the changes.
+
+For example to install mysql support and configure the datasource in Wildfly `standalone-full.xml` configuration file, a following command can be used:
+
+```
+$ prospero feature-pack add \
+  --fpl org.wildfly:wildfly-datasources-galleon-pack \
+  --layers=mysql-datasource \
+  --config=standalone-full.xml \
+  --dir wildfly
+```
+
+#### Offline installation
+
+Similarly to other operations, `feature-pack add` can be executed in an offline mode. To do so, users should provide local repositories with all required artifacts (both for base server and the new feature) using `--repositories` parameter.
+
+#### Installation history
+
+Installing a feature pack is recorded in the server history as *feature_add* event. Displaying the *feature_add* revision shows details of installed feature pack:
+
+```
+./prospero history --dir installation-dir  --revision f7488855
+Updates:
+  [Added artifact] org.wildfly:wildfly-datasources-galleon-pack:		[] ==> 4.0.1.Final
+
+Installed features changes:
+  [Added Feature Pack] org.wildfly:wildfly-datasources-galleon-pack::zip@maven
+```
