@@ -225,12 +225,21 @@ public class FeaturesAddAction {
             final ProvisioningConfig existingConfig = pm.getProvisioningConfig();
             final ProvisioningConfig.Builder builder = ProvisioningConfig.builder(existingConfig);
 
+            final FeaturePackConfig.Builder fpBuilder = buildFeaturePackConfig(fpl, existingConfig, builder);
+
             if (selectedConfig != null) {
-                final ConfigModel.Builder configBuilder = buildLayerConfig(layers, selectedConfig, selectedModel, existingConfig, builder);
-                builder.addConfig(configBuilder.build());
+                if (!layers.isEmpty()) {
+                    final ConfigModel.Builder configBuilder = buildLayerConfig(layers, selectedConfig, selectedModel, existingConfig, builder);
+                    builder.addConfig(configBuilder.build());
+                } else {
+                    fpBuilder.setInheritConfigs(false);
+                    fpBuilder.includeDefaultConfig(selectedModel, selectedConfig);
+                }
             }
 
-            final FeaturePackConfig.Builder fpBuilder = buildFeaturePackConfig(fpl, existingConfig, builder);
+            if (!layers.isEmpty()) {
+                fpBuilder.setInheritPackages(false);
+            }
 
             final ProvisioningConfig newConfig = builder
                     .addFeaturePackDep(fpBuilder.build())
@@ -244,7 +253,9 @@ public class FeaturesAddAction {
         }
     }
 
-    private static FeaturePackConfig.Builder buildFeaturePackConfig(FeaturePackLocation fpl, ProvisioningConfig existingConfig, ProvisioningConfig.Builder builder)
+    private static FeaturePackConfig.Builder buildFeaturePackConfig(FeaturePackLocation fpl,
+                                                                    ProvisioningConfig existingConfig,
+                                                                    ProvisioningConfig.Builder builder)
             throws ProvisioningException {
         final FeaturePackConfig.Builder fpBuilder;
         if (existingConfig.hasFeaturePackDep(fpl.getProducer())) {
@@ -252,9 +263,7 @@ public class FeaturesAddAction {
             fpBuilder = FeaturePackConfig.builder(fp);
             builder.removeFeaturePackDep(fp.getLocation());
         } else {
-            fpBuilder = FeaturePackConfig.builder(fpl)
-                    .setInheritConfigs(false)
-                    .setInheritPackages(false);
+            fpBuilder = FeaturePackConfig.builder(fpl);
         }
         return fpBuilder;
     }
