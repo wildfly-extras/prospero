@@ -228,6 +228,8 @@ public class FeaturesAddActionTest {
 
         final ProvisioningConfig config = provisioningConfigArgumentCaptor.getValue();
         assertThat(config.getDefinedConfigs()).isEmpty();
+        assertIncludeDefaultConfigs(getFeaturePackConfig(config, "org.test:added-pack::zip@maven"));
+        assertIncludeDefaultPackages(getFeaturePackConfig(config, "org.test:added-pack::zip@maven"));
     }
 
     @Test
@@ -279,6 +281,8 @@ public class FeaturesAddActionTest {
                 .contains(ConfigModel.builder("model", "model.xml")
                         .includeLayer("layer1")
                         .build());
+        assertExcludeDefaultConfigs(getFeaturePackConfig(config, "org.test:added-pack::zip@maven"));
+        assertExcludeDefaultPackages(getFeaturePackConfig(config, "org.test:added-pack::zip@maven"));
     }
 
     @Test
@@ -309,6 +313,8 @@ public class FeaturesAddActionTest {
                 .contains(ConfigModel.builder("model", "test.xml")
                         .includeLayer("layer1")
                         .build());
+        assertExcludeDefaultConfigs(getFeaturePackConfig(config, "org.test:added-pack::zip@maven"));
+        assertExcludeDefaultPackages(getFeaturePackConfig(config, "org.test:added-pack::zip@maven"));
     }
 
     @Test
@@ -355,6 +361,8 @@ public class FeaturesAddActionTest {
                 .contains(
                         FeaturePackLocation.fromString("org.test:base-pack:zip"),
                         FeaturePackLocation.fromString("org.test:added-pack:zip"));
+        assertExcludeDefaultConfigs(getFeaturePackConfig(config, "org.test:added-pack:zip"));
+        assertExcludeDefaultPackages(getFeaturePackConfig(config, "org.test:added-pack:zip"));
     }
 
     @Test
@@ -408,6 +416,8 @@ public class FeaturesAddActionTest {
                 .contains(
                         FeaturePackLocation.fromString("org.test:base-pack:zip"),
                         FeaturePackLocation.fromString("org.test:added-pack::zip@maven"));
+        assertExcludeDefaultConfigs(getFeaturePackConfig(config, "org.test:added-pack::zip@maven"));
+        assertExcludeDefaultPackages(getFeaturePackConfig(config, "org.test:added-pack::zip@maven"));
     }
 
     @Test
@@ -487,6 +497,8 @@ public class FeaturesAddActionTest {
                 .contains(ConfigModel.builder("model2", "model2.xml")
                         .includeLayer("layer1")
                         .build());
+        assertExcludeDefaultConfigs(getFeaturePackConfig(config, "org.test:added-pack::zip@maven"));
+        assertExcludeDefaultPackages(getFeaturePackConfig(config, "org.test:added-pack::zip@maven"));
     }
 
     @Test
@@ -509,6 +521,8 @@ public class FeaturesAddActionTest {
         final ProvisioningConfig config = provisioningConfigArgumentCaptor.getValue();
         assertThat(config.getDefinedConfigs())
                 .isEmpty();
+        assertIncludeDefaultConfigs(getFeaturePackConfig(config, "org.test:added-pack::zip@maven"));
+        assertIncludeDefaultPackages(getFeaturePackConfig(config, "org.test:added-pack::zip@maven"));
     }
 
     @Test
@@ -579,9 +593,8 @@ public class FeaturesAddActionTest {
         final ProvisioningConfig config = provisioningConfigArgumentCaptor.getValue();
         assertThat(config.getDefinedConfigs())
                 .isEmpty();
-        final FeaturePackConfig addedPackageConfig = config.getFeaturePackDeps().stream().filter(f -> f.getLocation().toString().equals("org.test:added-pack::zip@maven")).findFirst().get();
-        assertNull("The inherit packages should not be set if layers are empty", addedPackageConfig.getInheritPackages());
-        assertNull("The inherit configs should not be set if layers are empty", addedPackageConfig.getInheritConfigs());
+        assertIncludeDefaultConfigs(getFeaturePackConfig(config, "org.test:added-pack::zip@maven"));
+        assertIncludeDefaultPackages(getFeaturePackConfig(config, "org.test:added-pack::zip@maven"));
     }
 
     @Test
@@ -627,11 +640,83 @@ public class FeaturesAddActionTest {
         final ProvisioningConfig config = provisioningConfigArgumentCaptor.getValue();
         assertThat(config.getDefinedConfigs())
                 .isEmpty();
-        final FeaturePackConfig addedPackageConfig = config.getFeaturePackDeps().stream().filter(f -> f.getLocation().toString().equals("org.test:added-pack::zip@maven")).findFirst().get();
-        assertNull("The inherit packages should not be set if layers are empty", addedPackageConfig.getInheritPackages());
-        assertFalse("The inherit configs should be set if configuration is overriden", addedPackageConfig.getInheritConfigs());
+        final FeaturePackConfig addedPackageConfig = getFeaturePackConfig(config, "org.test:added-pack::zip@maven");
+        assertIncludeDefaultPackages(addedPackageConfig);
+        assertExcludeDefaultConfigs(addedPackageConfig);
         assertThat(addedPackageConfig.getIncludedConfigs())
                 .contains(new ConfigId("model1", "config2"));
+    }
+
+    @Test
+    public void installSelectedConfigsIfLayersAreSpecified() throws Exception {
+        // install base feature pack
+        final FeaturePackCreator creator = FeaturePackCreator.getInstance().addArtifactResolver(repo);
+        creator.newFeaturePack(FeaturePackLocation.fromString("org.test:base-pack:1.0.0:zip").getFPID())
+                .getCreator()
+                .newFeaturePack(FeaturePackLocation.fromString("org.test:added-pack:1.0.0:zip").getFPID())
+                .newPackage("p1", false)
+                .writeContent("p1.txt", "foobar")
+                .getFeaturePack()
+                .newPackage("p2", false)
+                .writeContent("p2.txt", "foobar")
+                .getFeaturePack()
+                .newPackage("p3", true)
+                .writeContent("p3.txt", "foobar")
+                .getFeaturePack()
+
+                .addConfig(ConfigModel.builder()
+                        .setName("config2")
+                        .includeLayer("layer1")
+                        .addPackageDep("p1")
+                        .build(), true)
+                .addConfig(ConfigModel.builder()
+                        .setName("config1")
+                        .addPackageDep("p2")
+                        .build(), true)
+                .addConfigLayer(ConfigLayerSpec.builder()
+                        .setModel("model1")
+                        .setName("layer1")
+                        .build());
+        deployFeaturePacks(creator);
+        // install
+        installFeaturePack(installDir, "org.test:base-pack:1.0.0:zip");
+
+        getFeaturesAddAction().addFeaturePack(
+                "org.test:added-pack", Set.of("layer1"), null, null);
+        final ArgumentCaptor<ProvisioningConfig> provisioningConfigArgumentCaptor = ArgumentCaptor.forClass(ProvisioningConfig.class);
+        verify(prepareCandidateAction).buildCandidate(any(), any(), eq(ApplyCandidateAction.Type.FEATURE_ADD),
+                provisioningConfigArgumentCaptor.capture());
+
+        final ProvisioningConfig config = provisioningConfigArgumentCaptor.getValue();
+        assertThat(config.getDefinedConfigs())
+                .contains(ConfigModel.builder("model1", "model1.xml")
+                        .includeLayer("layer1")
+                        .build());
+        final FeaturePackConfig addedPackageConfig = getFeaturePackConfig(config, "org.test:added-pack::zip@maven");
+        assertExcludeDefaultPackages(addedPackageConfig);
+        assertExcludeDefaultConfigs(addedPackageConfig);
+        assertThat(addedPackageConfig.getIncludedConfigs())
+                .isEmpty();
+    }
+
+    private static FeaturePackConfig getFeaturePackConfig(ProvisioningConfig config, String fpl) {
+        return config.getFeaturePackDeps().stream().filter(f -> f.getLocation().toString().equals(fpl)).findFirst().get();
+    }
+
+    private static void assertIncludeDefaultPackages(FeaturePackConfig cfg) {
+        assertNull("The inherit configs should be included", cfg.getInheritPackages());
+    }
+
+    private static void assertIncludeDefaultConfigs(FeaturePackConfig cfg) {
+        assertNull("The inherit configs should be included", cfg.getInheritConfigs());
+    }
+
+    private static void assertExcludeDefaultPackages(FeaturePackConfig cfg) {
+        assertFalse("The inherit configs should be included", cfg.getInheritPackages());
+    }
+
+    private static void assertExcludeDefaultConfigs(FeaturePackConfig cfg) {
+        assertFalse("The inherit configs should be included", cfg.getInheritConfigs());
     }
 
     private FeaturesAddAction getFeaturesAddAction() throws MetadataException, ProvisioningException {

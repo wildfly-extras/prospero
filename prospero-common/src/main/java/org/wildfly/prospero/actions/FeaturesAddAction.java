@@ -228,11 +228,11 @@ public class FeaturesAddAction {
             final FeaturePackConfig.Builder fpBuilder = buildFeaturePackConfig(fpl, existingConfig, builder);
 
             if (selectedConfig != null) {
+                fpBuilder.setInheritConfigs(false);
                 if (!layers.isEmpty()) {
                     final ConfigModel.Builder configBuilder = buildLayerConfig(layers, selectedConfig, selectedModel, existingConfig, builder);
                     builder.addConfig(configBuilder.build());
                 } else {
-                    fpBuilder.setInheritConfigs(false);
                     fpBuilder.includeDefaultConfig(selectedModel, selectedConfig);
                 }
             }
