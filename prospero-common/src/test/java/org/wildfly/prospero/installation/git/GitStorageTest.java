@@ -589,6 +589,67 @@ public class GitStorageTest {
                 );
     }
 
+    @Test
+    public void findLatestVersionOfProvisioningRecord_OnRevert() throws Exception {
+        final GitStorage gitStorage = new GitStorage(base.getParent());
+        setArtifact(manifest, "org.test:test:1.2.3");
+        gitStorage.record();
+
+        Files.writeString(base.resolve(ProsperoMetadataUtils.PROVISIONING_RECORD_XML), "first");
+        gitStorage.record();
+
+        Files.writeString(base.resolve(ProsperoMetadataUtils.PROVISIONING_RECORD_XML), "second");
+        gitStorage.record();
+
+        final SavedState savedState = gitStorage.getRevisions().get(2);
+
+        final Path reverted = gitStorage.revert(savedState);
+
+        assertThat(reverted.resolve(ProsperoMetadataUtils.METADATA_DIR).resolve(ProsperoMetadataUtils.PROVISIONING_RECORD_XML))
+                .exists()
+                .hasContent("first");
+    }
+
+    @Test
+    public void useRecordedVersionOfProvisioningRecord_OnRevert() throws Exception {
+        final GitStorage gitStorage = new GitStorage(base.getParent());
+        setArtifact(manifest, "org.test:test:1.2.3");
+        gitStorage.record();
+
+        Files.writeString(base.resolve(ProsperoMetadataUtils.PROVISIONING_RECORD_XML), "first");
+        gitStorage.record();
+
+        Files.writeString(base.resolve(ProsperoMetadataUtils.PROVISIONING_RECORD_XML), "second");
+        gitStorage.record();
+
+        Files.writeString(base.resolve(ProsperoMetadataUtils.PROVISIONING_RECORD_XML), "third");
+        gitStorage.record();
+
+        final SavedState savedState = gitStorage.getRevisions().get(1);
+
+        final Path reverted = gitStorage.revert(savedState);
+
+        assertThat(reverted.resolve(ProsperoMetadataUtils.METADATA_DIR).resolve(ProsperoMetadataUtils.PROVISIONING_RECORD_XML))
+                .exists()
+                .hasContent("second");
+    }
+
+    @Test
+    public void storeOnlySelectedFiles() throws Exception {
+        final GitStorage gitStorage = new GitStorage(base.getParent());
+        setArtifact(manifest, "org.test:test:1.2.3");
+        gitStorage.record();
+
+        Files.writeString(base.resolve(ProsperoMetadataUtils.PROVISIONING_RECORD_XML), "first");
+        setArtifact(manifest, "org.test:test:1.2.4");
+        gitStorage.recordChange(SavedState.Type.UPDATE, ProsperoMetadataUtils.PROVISIONING_RECORD_XML);
+
+        final SavedState savedState = gitStorage.getRevisions().get(0);
+
+        assertThat(gitStorage.getArtifactChanges(savedState))
+                .isEmpty();
+    }
+
     private HashSet<String> getPathsInCommit() throws IOException, GitAPIException {
         final Git git = Git.open(base.resolve(".git").toFile());
         HashSet<String> paths = new HashSet<>();

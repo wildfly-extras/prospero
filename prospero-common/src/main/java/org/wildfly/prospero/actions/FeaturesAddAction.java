@@ -170,6 +170,11 @@ public class FeaturesAddAction {
             throw ProsperoLogger.ROOT_LOGGER.unableToCreateTemporaryDirectory(e);
         }
 
+        // make sure the previous provisioning_config is persisted
+        try (InstallationMetadata metadata = InstallationMetadata.loadInstallation(installDir)) {
+            metadata.updateProvisioningConfiguration();
+        }
+
         try (PrepareCandidateAction prepareCandidateAction = candidateActionsFactory.newPrepareCandidateActionInstance(mavenSessionManager, prosperoConfig);
              GalleonEnvironment galleonEnv = getGalleonEnv(candidate)) {
             ProsperoLogger.ROOT_LOGGER.updateCandidateStarted(installDir);

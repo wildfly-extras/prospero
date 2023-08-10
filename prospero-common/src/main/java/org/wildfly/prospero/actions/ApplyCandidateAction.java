@@ -359,7 +359,7 @@ public class ApplyCandidateAction {
                     git.recordChange(SavedState.Type.ROLLBACK);
                     break;
                 case FEATURE_ADD:
-                    git.recordChange(SavedState.Type.FEATURE_ADD);
+                    git.recordChange(SavedState.Type.FEATURE_PACK);
                     break;
             }
         }

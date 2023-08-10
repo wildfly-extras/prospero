@@ -52,6 +52,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
@@ -92,6 +93,10 @@ public class GitStorage implements AutoCloseable {
 
                 }
                 final SavedState.Type recordType = SavedState.Type.fromText(type.toUpperCase(Locale.ROOT));
+                if (recordType == SavedState.Type.INTERNAL_UPDATE) {
+                    // hide internal records
+                    continue;
+                }
                 if (recordType == SavedState.Type.UNKNOWN) {
                     msg = shortMessage;
                 }
@@ -143,14 +148,18 @@ public class GitStorage implements AutoCloseable {
     }
 
     public void recordChange(SavedState.Type operation) throws MetadataException {
+        recordChange(operation, ProsperoMetadataUtils.MANIFEST_FILE_NAME, CURRENT_VERSION_FILE, ProsperoMetadataUtils.PROVISIONING_RECORD_XML);
+    }
+
+    public void recordChange(SavedState.Type operation, String... files) throws MetadataException {
         try {
             if (isRepositoryEmpty(git)) {
                 throw new IllegalStateException("This operation cannot be performed on empty repository");
             }
 
-            git.add().addFilepattern(ProsperoMetadataUtils.MANIFEST_FILE_NAME).call();
-            git.add().addFilepattern(CURRENT_VERSION_FILE).call();
-            git.add().addFilepattern(ProsperoMetadataUtils.PROVISIONING_RECORD_XML).call();
+            for (String file : files) {
+                git.add().addFilepattern(file).call();
+            }
 
             final PersonIdent author = getCommitter();
             final SavedState.Type commitType = operation;
@@ -206,6 +215,26 @@ public class GitStorage implements AutoCloseable {
                         .setMode(ResetCommand.ResetType.HARD)
                         .setRef(savedState.getName())
                         .call();
+
+                if (!Files.exists(hist.resolve(ProsperoMetadataUtils.PROVISIONING_RECORD_XML))) {
+                    // find the latest persisted version of provisioning.xml
+                    final Iterable<RevCommit> provRecordHistory = this.git.log()
+                            .addPath(ProsperoMetadataUtils.PROVISIONING_RECORD_XML)
+                            .call();
+
+                    final Iterator<RevCommit> iterator = provRecordHistory.iterator();
+                    RevCommit revCommit = null;
+                    while (iterator.hasNext()) {
+                        revCommit = iterator.next();
+                    }
+
+                    temp.checkout()
+                            .addPath(ProsperoMetadataUtils.PROVISIONING_RECORD_XML)
+                            .setAllPaths(false)
+                            .setStartPoint(revCommit)
+                            .call();
+                }
+
                 return hist.getParent();
             }
         } catch (GitAPIException | IOException e) {

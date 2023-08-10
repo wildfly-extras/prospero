@@ -55,6 +55,7 @@ import java.util.zip.ZipOutputStream;
 
 import static org.wildfly.prospero.metadata.ProsperoMetadataUtils.CURRENT_VERSION_FILE;
 import static org.wildfly.prospero.metadata.ProsperoMetadataUtils.METADATA_DIR;
+import static org.wildfly.prospero.metadata.ProsperoMetadataUtils.PROVISIONING_RECORD_XML;
 
 public class InstallationMetadata implements AutoCloseable {
 
@@ -306,6 +307,23 @@ public class InstallationMetadata implements AutoCloseable {
 
         if (gitRecord) {
             gitStorage.record();
+        }
+    }
+
+    /**
+     * check if the provisioning definition is present. If not add it to the history
+     */
+    public void updateProvisioningConfiguration() throws MetadataException {
+        try {
+            if (!Files.exists(base.resolve(METADATA_DIR).resolve(PROVISIONING_RECORD_XML))) {
+                ProsperoMetadataUtils.recordProvisioningDefinition(base);
+
+                gitStorage.recordChange(SavedState.Type.INTERNAL_UPDATE, PROVISIONING_RECORD_XML);
+            }
+
+            // persist in history
+        } catch (IOException e) {
+            throw ProsperoLogger.ROOT_LOGGER.unableToSaveConfiguration(channelsFile, e);
         }
     }
 

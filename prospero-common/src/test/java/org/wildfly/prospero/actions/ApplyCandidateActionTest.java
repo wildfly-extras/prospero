@@ -457,7 +457,7 @@ public class ApplyCandidateActionTest {
 
         new ApplyCandidateAction(installationPath, updatePath).applyUpdate(ApplyCandidateAction.Type.FEATURE_ADD);
 
-        assertEquals(SavedState.Type.FEATURE_ADD, new GitStorage(installationPath).getRevisions().get(0).getType());
+        assertEquals(SavedState.Type.FEATURE_PACK, new GitStorage(installationPath).getRevisions().get(0).getType());
 
         assertThat(Files.readString(installationPath.resolve(Constants.PROVISIONED_STATE_DIR).resolve(Constants.PROVISIONING_XML)))
                 .contains(newFpl);
