@@ -25,3 +25,17 @@ The demo below provisions and updates Wildfly 27.0.0.Alpha2.
    ```
       ./prospero update perform --dir=wfly-27
    ```
+
+## Building distribution
+The full distribution of Prospero includes a Wildfly feature pack, a standalone zip and documentation. Building those projects is excluded by default and enabled only if a maven `dist` profile is enabled.
+```
+   cd <PROSPERO_HOME>
+   mvn clean install -Pdist
+```
+
+## Running integration tests
+Slower tests (e.g. including provisioning a full server), are located in integration-tests directory and are enabled by `-DallTests` property.
+```
+   cd <PROSPERO_HOME>
+   mvn clean install -DallTests
+```
