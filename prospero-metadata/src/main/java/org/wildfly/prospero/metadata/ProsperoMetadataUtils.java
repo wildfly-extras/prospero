@@ -95,7 +95,7 @@ public class ProsperoMetadataUtils {
             writeVersionRecord(versionRecordPath, versionRecord);
         }
 
-        recordProvisioningDefinition(serverDir, serverDir);
+        recordProvisioningDefinition(serverDir);
 
         // Add README.txt file to .installation directory to warn the files should not be edited.
         if (!Files.exists(readmeFile)) {
@@ -193,13 +193,12 @@ public class ProsperoMetadataUtils {
      * If the source file doesn't exist no copy is created.
      * If the provisioning configuration is the same as saved copy, the file is not overwritten.
      *
-     * @param sourceServer - root folder of the server the provisioning configuration will be stored
-     * @param targetServer - root folder of the server to copy the provisioning configuration to
+     * @param sourceServer - root folder of the server
      * @throws IOException - if the file cannot be copied.
      */
-    public static void recordProvisioningDefinition(Path sourceServer, Path targetServer) throws IOException {
+    public static void recordProvisioningDefinition(Path sourceServer) throws IOException {
         final Path provisioningFile = sourceServer.resolve(Constants.PROVISIONED_STATE_DIR).resolve(Constants.PROVISIONING_XML);
-        final Path provisioningRecordFile = targetServer.resolve(METADATA_DIR).resolve(PROVISIONING_RECORD_XML);
+        final Path provisioningRecordFile = sourceServer.resolve(METADATA_DIR).resolve(PROVISIONING_RECORD_XML);
 
         if (!Files.exists(provisioningFile)) {
             return;

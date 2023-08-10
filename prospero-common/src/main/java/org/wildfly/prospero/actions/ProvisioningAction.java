@@ -152,7 +152,7 @@ public class ProvisioningAction {
             }
 
             try {
-                ProsperoMetadataUtils.recordProvisioningDefinition(installDir, installDir);
+                ProsperoMetadataUtils.recordProvisioningDefinition(installDir);
             } catch (IOException e) {
                 throw ProsperoLogger.ROOT_LOGGER.unableToSaveConfiguration(
                         installDir.resolve(ProsperoMetadataUtils.METADATA_DIR).resolve(ProsperoMetadataUtils.PROVISIONING_RECORD_XML), e);

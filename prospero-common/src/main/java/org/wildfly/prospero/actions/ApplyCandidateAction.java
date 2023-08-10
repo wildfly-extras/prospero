@@ -327,7 +327,7 @@ public class ApplyCandidateAction {
             IoUtils.recursiveDelete(installationGalleonPath);
             IoUtils.copy(updateGalleonPath, installationGalleonPath, true);
             // after the galleon data is copied, persist a copy of provisioning.xml and record it
-            ProsperoMetadataUtils.recordProvisioningDefinition(installationDir, installationDir);
+            ProsperoMetadataUtils.recordProvisioningDefinition(installationDir);
             writeProsperoMetadata(operation);
             updateInstallationCache();
         } catch (IOException ex) {
