@@ -81,7 +81,7 @@ public class GitStorage implements AutoCloseable {
                 final String shortMessage = revCommit.getShortMessage().trim();
                 final int endOfTypeIndex = shortMessage.indexOf(' ');
                 final String type;
-                final String msg;
+                String msg;
                 if (endOfTypeIndex < 0) {
                     type = shortMessage;
                     msg = "";
@@ -90,9 +90,13 @@ public class GitStorage implements AutoCloseable {
                     msg = shortMessage.substring(endOfTypeIndex + 1).trim();
 
                 }
+                final SavedState.Type recordType = SavedState.Type.fromText(type.toUpperCase(Locale.ROOT));
+                if (recordType == SavedState.Type.UNKNOWN) {
+                    msg = shortMessage;
+                }
                 history.add(new SavedState(revCommit.getName().substring(0,8),
                         Instant.ofEpochSecond(revCommit.getCommitTime()),
-                        SavedState.Type.valueOf(type.toUpperCase(Locale.ROOT)), msg));
+                        recordType, msg));
             }
 
             return history;
