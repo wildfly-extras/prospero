@@ -22,10 +22,19 @@ import org.junit.Test;
 import org.wildfly.channel.ArtifactTransferException;
 import org.wildfly.channel.UnresolvedMavenArtifactException;
 
+import java.net.MalformedURLException;
+import java.net.URISyntaxException;
+import java.net.URL;
+import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Collections;
+import java.util.concurrent.atomic.AtomicReference;
 
-import static org.junit.Assert.*;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.fail;
+import static org.wildfly.prospero.galleon.GalleonUtils.JBOSS_MODULES_SETTINGS_XML_URL;
 
 public class GalleonUtilsTest {
 
@@ -63,6 +72,31 @@ public class GalleonUtilsTest {
             fail("Should throw an exception");
         } catch (UnresolvedMavenArtifactException e) {
             assertEquals("test", e.getMessage());
+        }
+    }
+
+    @Test
+    public void deleteTemporarySettingsXmlAfterExecution() throws Exception {
+        AtomicReference<String> settingsUrl = new AtomicReference<>();
+        GalleonUtils.executeGalleon((options) -> {
+            settingsUrl.set(System.getProperty(JBOSS_MODULES_SETTINGS_XML_URL));
+                    assertThat(urlToPath(System.getProperty(JBOSS_MODULES_SETTINGS_XML_URL)))
+                            .exists()
+                            .hasContent("<settings/>");
+                },
+                Paths.get("test"));
+
+        assertThat(urlToPath(settingsUrl.get()))
+                .doesNotExist();
+        assertThat(System.getProperties())
+                .doesNotContainKey(JBOSS_MODULES_SETTINGS_XML_URL);
+    }
+
+    private static Path urlToPath(String url) {
+        try {
+            return Path.of(new URL(url).toURI());
+        } catch (URISyntaxException | MalformedURLException e) {
+            throw new RuntimeException(e);
         }
     }
 }
