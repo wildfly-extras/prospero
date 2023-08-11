@@ -59,6 +59,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
+@SuppressWarnings("OptionalGetWithoutIsPresent")
 public class GitStorageTest {
 
     @Rule
@@ -372,14 +373,14 @@ public class GitStorageTest {
         final Path revertedMetadata = revertPath.resolve(ProsperoMetadataUtils.METADATA_DIR);
         assertTrue(ManifestYamlSupport.parse(revertedMetadata.resolve(ProsperoMetadataUtils.MANIFEST_FILE_NAME).toFile())
                 .getStreams().stream()
-                    .filter(s->s.getArtifactId().equals("test") && s.getVersion().equals("1.2.3")).findFirst().isPresent());
+                    .anyMatch(s->s.getArtifactId().equals("test") && s.getVersion().equals("1.2.3")));
         assertEquals("1.0.0", ManifestVersionRecord.read(revertedMetadata.resolve(ProsperoMetadataUtils.CURRENT_VERSION_FILE))
                 .get().getMavenManifests().get(0).getVersion());
 
         // verify the base folder has not been changed
         assertTrue(ManifestYamlSupport.parse(base.resolve(ProsperoMetadataUtils.MANIFEST_FILE_NAME).toFile())
                 .getStreams().stream()
-                .filter(s->s.getArtifactId().equals("test") && s.getVersion().equals("1.2.4")).findFirst().isPresent());
+                .anyMatch(s->s.getArtifactId().equals("test") && s.getVersion().equals("1.2.4")));
         assertEquals("1.0.1", ManifestVersionRecord.read(base.resolve(ProsperoMetadataUtils.CURRENT_VERSION_FILE))
                 .get().getMavenManifests().get(0).getVersion());
     }

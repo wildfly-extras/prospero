@@ -65,6 +65,7 @@ import java.util.stream.Collectors;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
 
+@SuppressWarnings("OptionalGetWithoutIsPresent")
 public class WfCoreTestBase {
 
     public static final String BASE_VERSION = "20.0.0.Beta5";

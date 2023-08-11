@@ -83,11 +83,8 @@ public class ArtifactUtils {
                 return false;
             }
         }
-        if (parts.length != 2 && parts.length != 3) { // GA or GAV
-            return false;
-        }
-
-        return true;
+        // GA or GAV
+        return parts.length == 2 || parts.length == 3;
     }
 
     public static String printStream(ArtifactCoordinate coord) {

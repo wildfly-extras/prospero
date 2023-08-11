@@ -165,7 +165,7 @@ public class ChannelPromoteCommand extends AbstractCommand {
     }
 
     private boolean isValidManifestCoordinate() {
-        return name.get() != null && !name.get().isEmpty() && ArtifactUtils.isValidCoordinate(name.get());
+        return !name.get().isEmpty() && ArtifactUtils.isValidCoordinate(name.get());
     }
 
     interface ThrowableFunction<T,R> {

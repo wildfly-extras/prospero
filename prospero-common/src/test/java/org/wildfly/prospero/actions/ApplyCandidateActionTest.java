@@ -62,6 +62,7 @@ import static org.junit.Assert.assertTrue;
 import static org.wildfly.prospero.metadata.ProsperoMetadataUtils.CURRENT_VERSION_FILE;
 import static org.wildfly.prospero.metadata.ProsperoMetadataUtils.METADATA_DIR;
 
+@SuppressWarnings({"OptionalGetWithoutIsPresent", "ResultOfMethodCallIgnored"})
 public class ApplyCandidateActionTest {
 
     private static final String FPL_100 = "org.test:pack-one:1.0.0:zip";
@@ -244,7 +245,9 @@ public class ApplyCandidateActionTest {
         assertTrue(Files.readString(installationPath.resolve(Constants.PROVISIONED_STATE_DIR).resolve(Constants.PROVISIONED_STATE_XML))
                 .contains(FPL_101));
         // verify update was recorded
-        assertEquals(2, new GitStorage(installationPath).getRevisions().size());
+        try(GitStorage gitStorage = new GitStorage(installationPath)) {
+            assertEquals(2, gitStorage.getRevisions().size());
+        }
     }
 
     @Test

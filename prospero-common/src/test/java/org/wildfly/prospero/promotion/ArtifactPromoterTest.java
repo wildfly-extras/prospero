@@ -262,7 +262,7 @@ public class ArtifactPromoterTest {
 
         final Set<String> allVersions = resolver.getAllVersions(channelGa.getGroupId(), channelGa.getArtifactId(),
                 ChannelManifest.EXTENSION, ChannelManifest.CLASSIFIER);
-        final Optional<String> latestVersion = allVersions.stream().sorted(VersionMatcher.COMPARATOR.reversed()).findFirst();
+        final Optional<String> latestVersion = allVersions.stream().max(VersionMatcher.COMPARATOR);
 
         if (latestVersion.isEmpty()) {
             throw new ArtifactTransferException("No latestVersion", Collections.emptySet(), Collections.emptySet());

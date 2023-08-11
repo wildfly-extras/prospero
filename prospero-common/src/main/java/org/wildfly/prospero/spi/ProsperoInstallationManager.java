@@ -86,7 +86,7 @@ public class ProsperoInstallationManager implements InstallationManager {
         final org.wildfly.prospero.api.InstallationChanges changes = historyAction.compare(new SavedState(revision));
 
         if (changes.isEmpty()) {
-            return new InstallationChanges(Collections.EMPTY_LIST, Collections.EMPTY_LIST);
+            return new InstallationChanges(Collections.emptyList(), Collections.emptyList());
         } else {
             final List<ArtifactChange> artifacts = changes.getArtifactChanges().stream()
                     .map(ProsperoInstallationManager::mapArtifactChange)

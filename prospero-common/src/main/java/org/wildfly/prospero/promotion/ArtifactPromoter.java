@@ -121,7 +121,7 @@ public class ArtifactPromoter {
         log.debugf("Deploying %s artifacts from custom bundle to %s", results.size(), targetRepository.getUrl());
         final DeployRequest deployRequest = new DeployRequest();
         deployRequest.setRepository(targetRepository);
-        results.stream().forEach(result -> deployRequest.setArtifacts(Arrays.asList(result.getArtifact())));
+        results.forEach(result -> deployRequest.setArtifacts(Arrays.asList(result.getArtifact())));
         system.deploy(session, deployRequest);
     }
 
@@ -142,13 +142,14 @@ public class ArtifactPromoter {
 
         if (version.isPresent()) {
             log.debugf("Found existing customization channel with version %s", version.get());
-            ChannelCoordinate fullCoordinate = new ChannelCoordinate(coordinate.getGroupId(), coordinate.getArtifactId(), version.get());
 
-            final MavenVersionsResolver resolver = new VersionResolverFactory(system, session).create(Arrays.asList(new Repository(targetRepository.getId(), targetRepository.getUrl())));
+            try(VersionResolverFactory versionResolverFactory = new VersionResolverFactory(system, session)) {
+                final MavenVersionsResolver resolver = versionResolverFactory.create(Arrays.asList(new Repository(targetRepository.getId(), targetRepository.getUrl())));
 
-            final File file = resolver.resolveArtifact(coordinate.getGroupId(), coordinate.getArtifactId(),
-                    ChannelManifest.EXTENSION, ChannelManifest.CLASSIFIER, version.get());
-            return ChannelManifestMapper.fromString(Files.readString(file.toPath()));
+                final File file = resolver.resolveArtifact(coordinate.getGroupId(), coordinate.getArtifactId(),
+                        ChannelManifest.EXTENSION, ChannelManifest.CLASSIFIER, version.get());
+                return ChannelManifestMapper.fromString(Files.readString(file.toPath()));
+            }
         } else {
             log.debugf("No existing customization channel found, creating new channel");
             return new ChannelManifest("custom-channel", "custom-channel", "Customization channel", new ArrayList<>());

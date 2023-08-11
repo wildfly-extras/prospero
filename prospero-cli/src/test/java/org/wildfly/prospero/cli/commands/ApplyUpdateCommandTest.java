@@ -187,7 +187,7 @@ public class ApplyUpdateCommandTest extends AbstractConsoleTest {
 
     private Path mockInstallation(String target) throws IOException, MetadataException, XMLStreamException {
         final Path targetPath = temp.newFolder(target).toPath();
-        MetadataTestUtils.createInstallationMetadata(targetPath);
+        MetadataTestUtils.createInstallationMetadata(targetPath).close();
         MetadataTestUtils.createGalleonProvisionedState(targetPath, UpdateCommand.PROSPERO_FP_GA);
 
         new MarkerFile("abcd1234", ApplyCandidateAction.Type.UPDATE).write(targetPath);

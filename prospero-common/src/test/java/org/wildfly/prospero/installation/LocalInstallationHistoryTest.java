@@ -44,6 +44,7 @@ import org.wildfly.prospero.test.MetadataTestUtils;
 
 import static org.junit.Assert.assertEquals;
 
+@SuppressWarnings("OptionalGetWithoutIsPresent")
 public class LocalInstallationHistoryTest {
 
     @Rule

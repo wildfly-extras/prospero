@@ -58,6 +58,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
+@SuppressWarnings("OptionalGetWithoutIsPresent")
 public class InstallationHistoryActionTest extends WfCoreTestBase {
 
     private Path channelsFile;

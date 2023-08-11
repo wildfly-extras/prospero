@@ -17,6 +17,7 @@
 
 package org.wildfly.prospero.cli.commands;
 
+import org.apache.commons.io.FileUtils;
 import org.jboss.galleon.config.ProvisioningConfig;
 import org.wildfly.channel.Channel;
 import org.wildfly.prospero.actions.ProvisioningAction;
@@ -69,7 +70,7 @@ public class PrintLicensesCommand extends AbstractInstallCommand {
             }
             return ReturnCodes.SUCCESS;
         } finally {
-            tempDirectory.toFile().delete();
+            FileUtils.deleteQuietly(tempDirectory.toFile());
         }
     }
 }

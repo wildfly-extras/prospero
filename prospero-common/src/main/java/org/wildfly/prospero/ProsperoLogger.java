@@ -217,7 +217,8 @@ public interface ProsperoLogger extends BasicLogger {
     MetadataException unableToSaveConfiguration(Path path, @Cause Exception e);
 
     @Message(id = 218, value = "Unable to close the update store.")
-    MetadataException unableToCloseStore(@Cause Exception e);
+    @LogMessage(level = Logger.Level.WARN)
+    void unableToCloseStore(@Cause Exception e);
 
     @Message(id = 219, value = "Unable to create history store at [%s]")
     MetadataException unableToCreateHistoryStorage(Path path, @Cause Exception e);

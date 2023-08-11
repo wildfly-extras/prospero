@@ -48,6 +48,7 @@ import java.util.stream.Collectors;
 
 import static org.junit.Assert.assertEquals;
 
+@SuppressWarnings("OptionalGetWithoutIsPresent")
 public class InstallationRestoreActionTest extends WfCoreTestBase {
     private Path restoredServerDir;
 

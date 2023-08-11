@@ -97,7 +97,7 @@ public class InstallCommandTest extends AbstractMavenCommandTest {
     public void errorIfTargetPathIsNotPresent() {
         int exitCode = commandLine.execute(CliConstants.Commands.INSTALL);
         Assert.assertEquals(ReturnCodes.INVALID_ARGUMENTS, exitCode);
-        assertTrue(getErrorOutput().contains(String.format("Missing required option: '--dir=<directory>'",
+        assertTrue(getErrorOutput().contains(String.format("Missing required option: '%s=<directory>'",
                 CliConstants.DIR)));
     }
 
@@ -219,19 +219,6 @@ public class InstallCommandTest extends AbstractMavenCommandTest {
         assertEquals(ReturnCodes.INVALID_ARGUMENTS, exitCode);
     }
 
-//    @Test
-//    public void passChannelReposToProvisionDef() throws Exception {
-//        int exitCode = commandLine.execute(CliConstants.Commands.INSTALL, CliConstants.DIR, "test",
-//                CliConstants.FPL, KNOWN_FPL, CliConstants.REMOTE_REPOSITORIES, "http://test.repo1,http://test.repo2");
-//
-//        assertEquals(ReturnCodes.SUCCESS, exitCode);
-//        Mockito.verify(provisionAction).provision(serverDefiniton.capture());
-//        assertThat(serverDefiniton.getValue().getRepositories().stream().map(RemoteRepository::getUrl)).contains(
-//                "http://test.repo1",
-//                "http://test.repo2"
-//        );
-//    }
-
     @Test
     public void provisionConfigAndChannelSet() throws IOException {
         final File channelsFile = temporaryFolder.newFile();
@@ -263,6 +250,7 @@ public class InstallCommandTest extends AbstractMavenCommandTest {
                 .containsOnly("file:/test");
     }
 
+    @SuppressWarnings("unchecked")
     @Test
     public void passShadowRepositories() throws Exception {
         Path channelsFile = temporaryFolder.newFile().toPath();

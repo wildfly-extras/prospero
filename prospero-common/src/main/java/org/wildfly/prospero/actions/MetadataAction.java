@@ -47,7 +47,7 @@ public class MetadataAction implements AutoCloseable {
         final ProsperoConfig prosperoConfig = installationMetadata.getProsperoConfig();
         final List<Channel> channels = prosperoConfig.getChannels();
 
-        if (channels.stream().filter(c->c.getName().equals(channel.getName())).findAny().isPresent()) {
+        if (channels.stream().anyMatch(c->c.getName().equals(channel.getName()))) {
             ProsperoLogger.ROOT_LOGGER.existingChannel(channel.getName());
             throw ProsperoLogger.ROOT_LOGGER.channelExists(channel.getName());
         }
@@ -78,7 +78,6 @@ public class MetadataAction implements AutoCloseable {
         final List<Channel> channels = prosperoConfig.getChannels();
         final Optional<Channel> modifiedChannel = channels.stream().filter(c -> c.getName().equals(channelName)).findAny();
         if (modifiedChannel.isEmpty()) {
-            ProsperoLogger.ROOT_LOGGER.channelNotFound(channelName);
             throw ProsperoLogger.ROOT_LOGGER.channelNotFound(channelName);
         }
         channels.set(channels.indexOf(modifiedChannel.get()), newChannel);

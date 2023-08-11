@@ -67,16 +67,9 @@ public class ArtifactBundle implements AutoCloseable {
     }
 
     public static ArtifactBundle extract(Path archivePath) throws IOException {
-        Path extracted = null;
-        try {
-            // TODO: validate content??
+        // TODO: validate content??
 
-            return new ArtifactBundle(unzipArchive(archivePath.toFile()));
-        } finally {
-            if (extracted != null) {
-                FileUtils.deleteQuietly(extracted.toFile());
-            }
-        }
+        return new ArtifactBundle(unzipArchive(archivePath.toFile()));
     }
 
     public static Path createCustomizationArchive(List<? extends Artifact> artifacts, File archive) throws IOException {

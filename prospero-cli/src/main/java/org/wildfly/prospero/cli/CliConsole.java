@@ -236,7 +236,7 @@ public class CliConsole implements Console {
     }
 
     public void error(String message, String... args) {
-        getErrOut().println(String.format(message, args));
+        getErrOut().println(String.format(message, (Object[]) args));
     }
 
     @Override

@@ -103,10 +103,11 @@ public class ManifestVersionResolver {
     }
 
     private String read(URL url) throws IOException {
-        final InputStream inputStream = url.openStream();
-        final OutputStream outputStream = new ByteArrayOutputStream();
-        inputStream.transferTo(outputStream);
-        return outputStream.toString();
+        try(InputStream inputStream = url.openStream();
+            OutputStream outputStream = new ByteArrayOutputStream()) {
+            inputStream.transferTo(outputStream);
+            return outputStream.toString();
+        }
     }
 
     private static DefaultRepositorySystemSession newRepositorySystemSession(RepositorySystem system,

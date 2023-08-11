@@ -201,11 +201,13 @@ public class ApplyCandidateAction {
             final MarkerFile marker = MarkerFile.read(updateDir);
 
             final String hash = marker.getState();
-            if (!InstallationMetadata.loadInstallation(installationDir).getRevisions().get(0).getName().equals(hash)) {
-                if (ProsperoLogger.ROOT_LOGGER.isDebugEnabled()) {
-                    ProsperoLogger.ROOT_LOGGER.debugf("The installation state has changed from the candidate [%s].", updateDir);
+            try(InstallationMetadata metadata = InstallationMetadata.loadInstallation(installationDir)) {
+                if (!metadata.getRevisions().get(0).getName().equals(hash)) {
+                    if (ProsperoLogger.ROOT_LOGGER.isDebugEnabled()) {
+                        ProsperoLogger.ROOT_LOGGER.debugf("The installation state has changed from the candidate [%s].", updateDir);
+                    }
+                    return ValidationResult.STALE;
                 }
-                return ValidationResult.STALE;
             }
 
             if (marker.getOperation() != operation) {
