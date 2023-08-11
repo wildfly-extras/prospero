@@ -168,7 +168,7 @@ public class ChannelInitializeCommandTest extends AbstractConsoleTest {
 
         final Path base = tempFolder.newFolder().toPath();
         try {
-            base.toFile().setWritable(false);
+            assertTrue("Unable to mark the file as un-writable, failing test", base.toFile().setWritable(false));
             final Path repositoryPath = base.resolve("test-dir").resolve("repository");
             final String customRepoUrl = repositoryPath.toUri().toURL().toString();
 

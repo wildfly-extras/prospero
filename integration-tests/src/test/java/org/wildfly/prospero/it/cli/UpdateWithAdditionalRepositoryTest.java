@@ -40,6 +40,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.Assert.assertEquals;
 import static org.wildfly.prospero.test.MetadataTestUtils.upgradeStreamInManifest;
 
+@SuppressWarnings("OptionalGetWithoutIsPresent")
 public class UpdateWithAdditionalRepositoryTest extends CliTestBase {
 
     private File targetDir;

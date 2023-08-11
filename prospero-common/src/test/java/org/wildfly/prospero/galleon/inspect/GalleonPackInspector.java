@@ -192,7 +192,7 @@ class GalleonPackInspector extends XmlSupport {
             String line = reader.readLine();
             while(line != null) {
                 line = line.trim();
-                if(line.charAt(0) != '#' && !line.isEmpty()) {
+                if(!line.isEmpty() && line.charAt(0) != '#') {
                     final int i = line.indexOf('=');
                     if(i < 0) {
                         throw new ProvisioningException("Failed to parse property " + line + " from " + propsFile);

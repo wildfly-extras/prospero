@@ -47,7 +47,7 @@ public class LicenseManager {
     private static final String LICENSE_DEFINITION_EXTENSION = ".yaml";
     private static final String DEFAULT_LICENSE_DEFINITION = LICENSE_DEFINITION_NAME + LICENSE_DEFINITION_EXTENSION;
     protected static final String LICENSE_AGREEMENT_FILENAME= "license_accepted.properties";
-    private final HashMap<String, List<License>> nameMap = new HashMap();
+    private final HashMap<String, List<License>> nameMap = new HashMap<>();
 
     public LicenseManager() {
         this(getLicensesFile());

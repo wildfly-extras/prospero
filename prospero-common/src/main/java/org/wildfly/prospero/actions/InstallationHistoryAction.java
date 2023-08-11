@@ -62,8 +62,9 @@ public class InstallationHistoryAction {
 
     public List<SavedState> getRevisions() throws MetadataException {
         ProsperoLogger.ROOT_LOGGER.listHistory(installation);
-        final InstallationMetadata installationMetadata = InstallationMetadata.loadInstallation(installation);
-        return installationMetadata.getRevisions();
+        try(InstallationMetadata installationMetadata = InstallationMetadata.loadInstallation(installation)) {
+            return installationMetadata.getRevisions();
+        }
     }
 
     public void rollback(SavedState savedState, MavenOptions mavenOptions, List<Repository> overrideRepositories) throws OperationException, ProvisioningException {
@@ -137,7 +138,7 @@ public class InstallationHistoryAction {
     }
 
     private static void verifyStateExists(SavedState savedState, InstallationMetadata metadata) throws MetadataException {
-        if (!metadata.getRevisions().stream().filter(s->s.getName().equals(savedState.getName())).findFirst().isPresent()) {
+        if (metadata.getRevisions().stream().noneMatch(s->s.getName().equals(savedState.getName()))) {
             throw ProsperoLogger.ROOT_LOGGER.savedStateNotFound(savedState.getName());
         }
     }

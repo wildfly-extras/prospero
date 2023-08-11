@@ -98,7 +98,7 @@ public class GalleonUtils {
                     logger.trace("  " + key + ": " + System.getenv().get(key));
                 }
                 logger.trace("Galleon options:");
-                for (Object key : options.keySet()) {
+                for (String key : options.keySet()) {
                     logger.trace("  " + key + ": " + options.get(key));
                 }
             }

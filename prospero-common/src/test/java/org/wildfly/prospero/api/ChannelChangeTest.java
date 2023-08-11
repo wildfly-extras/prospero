@@ -28,6 +28,7 @@ import java.util.Optional;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
+@SuppressWarnings("OptionalGetWithoutIsPresent")
 public class ChannelChangeTest {
 
     private final Channel channel1 = new Channel("channel-1", null, null,

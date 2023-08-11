@@ -30,6 +30,7 @@ import java.util.Optional;
 import static org.junit.Assert.assertEquals;
 import static org.wildfly.prospero.metadata.ProsperoMetadataUtils.CURRENT_VERSION_FILE;
 
+@SuppressWarnings("OptionalGetWithoutIsPresent")
 public class ManifestVersionRecordTest {
 
     @Rule

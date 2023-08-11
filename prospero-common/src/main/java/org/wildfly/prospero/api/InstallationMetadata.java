@@ -81,7 +81,7 @@ public class InstallationMetadata implements AutoCloseable {
 
         ChannelManifest manifest;
         ProsperoConfig prosperoConfig;
-        Optional<ManifestVersionRecord> currentVersion = Optional.empty();
+        Optional<ManifestVersionRecord> currentVersion;
 
         try {
             manifest = ManifestYamlSupport.parse(manifestFile.toFile());
@@ -193,7 +193,7 @@ public class InstallationMetadata implements AutoCloseable {
         this.prosperoConfig = new ProsperoConfig(new ArrayList<>(prosperoConfig.getChannels()), prosperoConfig.getMavenOptions());
 
         final List<Channel> channels = prosperoConfig.getChannels();
-        if (channels != null && channels.stream().filter(c-> StringUtils.isEmpty(c.getName())).findAny().isPresent()) {
+        if (channels != null && channels.stream().anyMatch(c-> StringUtils.isEmpty(c.getName()))) {
             throw ProsperoLogger.ROOT_LOGGER.emptyChannelName();
         }
 

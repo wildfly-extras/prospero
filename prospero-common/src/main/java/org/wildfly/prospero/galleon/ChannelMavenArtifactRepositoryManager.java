@@ -157,11 +157,7 @@ public class ChannelMavenArtifactRepositoryManager implements MavenRepoManager, 
     private boolean requiresChannel(MavenArtifact artifact) {
         boolean requireChannel = Boolean.parseBoolean(artifact.getMetadata().get(REQUIRE_CHANNEL_FOR_ALL_ARTIFACT));
         try {
-            if (!requireChannel && ! fpRequireChannel(artifact)) {
-                return false;
-            } else {
-                return true;
-            }
+            return requireChannel || fpRequireChannel(artifact);
         } catch (Exception e) {
             throw new RuntimeException(e);
         }

@@ -21,7 +21,6 @@ import org.jboss.galleon.progresstracking.ProgressCallback;
 import org.jboss.galleon.progresstracking.ProgressTracker;
 import org.jboss.galleon.state.ProvisionedConfig;
 import org.jboss.galleon.universe.FeaturePackLocation;
-import org.jboss.galleon.universe.maven.MavenArtifact;
 import org.wildfly.prospero.ProsperoLogger;
 import org.wildfly.prospero.api.Console;
 import org.wildfly.prospero.api.ProvisioningProgressEvent;
@@ -127,7 +126,7 @@ public class GalleonCallbackAdapter implements ProgressCallback<Object> {
                 }
                 break;
             case GalleonEnvironment.TRACK_JB_ARTIFACTS_RESOLVE:
-                item = tracker.getItem() != null?((MavenArtifact)tracker.getItem()).toString():"";
+                item = tracker.getItem() != null?tracker.getItem().toString():"";
                 break;
         }
         final ProvisioningProgressEvent progress = new ProvisioningProgressEvent(id, ProvisioningProgressEvent.EventType.UPDATE,

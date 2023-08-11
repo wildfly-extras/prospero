@@ -55,6 +55,7 @@ import static org.jboss.galleon.Constants.HASHES;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
+@SuppressWarnings("OptionalGetWithoutIsPresent")
 public class SimpleProvisionTest extends WfCoreTestBase {
 
     @Test

@@ -91,19 +91,10 @@ public class UpdateFinder implements AutoCloseable {
         }
         final Artifact latest = new DefaultArtifact(artifact.getGroupId(), artifact.getArtifactId(), artifact.getExtension(), latestVersion);
 
-
         if (latestVersion == null || latest.getVersion().equals(artifact.getVersion())) {
             return Optional.empty();
         } else {
-            ArtifactChange change;
-            if (artifact == null) {
-                change = ArtifactChange.added(latest);
-            } else if (latest == null) {
-                change = ArtifactChange.removed(latest);
-            } else {
-                change = ArtifactChange.updated(artifact, latest);
-            }
-            return Optional.of(change);
+            return Optional.of(ArtifactChange.updated(artifact, latest));
         }
     }
 
