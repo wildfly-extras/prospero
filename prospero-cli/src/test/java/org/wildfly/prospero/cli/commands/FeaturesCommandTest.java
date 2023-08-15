@@ -17,6 +17,7 @@
 
 package org.wildfly.prospero.cli.commands;
 
+import org.jboss.galleon.config.ConfigId;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
@@ -246,6 +247,20 @@ public class FeaturesCommandTest extends AbstractMavenCommandTest {
         assertThat(getErrorOutput())
                 .contains("The feature pack `org.test:test` does not provide requested model `idontexist`.")
                 .contains("Supported models are [model1, model2]");
+    }
+
+    @Test
+    public void nonExistingConfigurationShowsError() throws Exception {
+        doThrow(new FeaturesAddAction.ConfigurationNotFoundException("test", new ConfigId("test", "idontexist")))
+                .when(featuresAddAction).addFeaturePack("org.test:test", Collections.emptySet(), "test", "idontexist");
+        int exitCode = commandLine.execute(CliConstants.Commands.FEATURE_PACKS, CliConstants.Commands.ADD,
+                CliConstants.DIR, installationDir.toString(),
+                CliConstants.MODEL, "test",
+                CliConstants.CONFIG, "idontexist",
+                CliConstants.FPL, "org.test:test");
+        assertEquals(ReturnCodes.INVALID_ARGUMENTS, exitCode);
+        assertThat(getErrorOutput())
+                .contains("The feature pack `org.test:test` does not provide requested configuration `test/idontexist`.");
     }
 
     @Override

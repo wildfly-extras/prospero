@@ -31,6 +31,7 @@ import org.jboss.galleon.layout.ProvisioningLayout;
 import org.jboss.galleon.layout.ProvisioningLayoutFactory;
 import org.jboss.galleon.universe.FeaturePackLocation;
 import org.jboss.galleon.universe.maven.repo.MavenRepoManager;
+import org.jboss.galleon.util.LayoutUtils;
 import org.wildfly.channel.ArtifactTransferException;
 import org.wildfly.channel.Channel;
 import org.wildfly.channel.ChannelSession;
@@ -60,9 +61,11 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.Set;
 import java.util.TreeSet;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 /**
  * Installs a feature pack onto an existing server.
@@ -169,6 +172,8 @@ public class FeaturesAddAction {
         } catch (IOException e) {
             throw ProsperoLogger.ROOT_LOGGER.unableToCreateTemporaryDirectory(e);
         }
+
+        verifyConfigurationsAvailable(newConfig);
 
         // make sure the previous provisioning_config is persisted
         try (InstallationMetadata metadata = InstallationMetadata.loadInstallation(installDir)) {
@@ -333,6 +338,41 @@ public class FeaturesAddAction {
         }
     }
 
+    private void verifyConfigurationsAvailable(ProvisioningConfig config) throws ProvisioningException, OperationException {
+        try( GalleonEnvironment env = GalleonEnvironment
+                .builder(installDir, prosperoConfig.getChannels(), mavenSessionManager).build()) {
+            final MavenRepoManager repositoryManager = env
+                    .getRepositoryManager();
+
+            final ProvisioningLayoutFactory layoutFactory = GalleonUtils.getProvisioningLayoutFactory(repositoryManager);
+
+            final ProvisioningLayout<FeaturePackLayout> layout = layoutFactory.newConfigLayout(config);
+
+            final Stream<ConfigId> configIds = Stream.concat(
+                    config.getFeaturePackDeps().stream().flatMap(fd -> fd.getIncludedConfigs().stream()),
+                    config.getDefinedConfigs().stream().map(ConfigModel::getId));
+
+            final Optional<ConfigId> missingConfig = configIds.filter(cfg -> {
+                boolean found = true;
+                for (FeaturePackLayout fp : layout.getOrderedFeaturePacks()) {
+                    try {
+                        LayoutUtils.getConfigXml(fp.getDir(), cfg, true);
+                        found = true;
+                        break;
+                    } catch (ProvisioningDescriptionException e) {
+                        found = false;
+                    }
+                }
+                return !found;
+            }).findFirst();
+
+            if (missingConfig.isPresent()) {
+                final ConfigId cfg = missingConfig.get();
+                throw new ConfigurationNotFoundException(ProsperoLogger.ROOT_LOGGER.galleonConfigNotFound(cfg.getModel(), cfg.getName()), cfg);
+            }
+        }
+    }
+
     private static String getSelectedModel(String model, Map<String, Set<String>> allLayers)
             throws ModelNotDefinedException {
         if (allLayers.isEmpty()) {
@@ -463,6 +503,25 @@ public class FeaturesAddAction {
 
         public FeaturePackAlreadyInstalledException(String msg) {
             super(msg);
+        }
+    }
+
+    public static class ConfigurationNotFoundException extends OperationException {
+        private final String model;
+        private final String name;
+
+        public ConfigurationNotFoundException(String msg, ConfigId id) {
+            super(msg);
+            model = id.getModel();
+            name = id.getName();
+        }
+
+        public String getModel() {
+            return model;
+        }
+
+        public String getName() {
+            return name;
         }
     }
 

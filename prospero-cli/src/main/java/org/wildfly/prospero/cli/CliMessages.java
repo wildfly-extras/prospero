@@ -565,6 +565,11 @@ public interface CliMessages {
                 fpl, model, StringUtils.join(supportedModels, ", "));
     }
 
+    default String galleonConfigNotSupported(String fpl, String model, String name) {
+        return format(bundle.getString("prospero.features.add.validation.configuration.not_supported"),
+                fpl, model, name);
+    }
+
     default String featuresAddHeader(String fpl, Path dir) {
         return format(bundle.getString("prospero.features.add.header"), fpl, dir);
     }

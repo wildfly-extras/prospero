@@ -264,6 +264,10 @@ public class FeaturesAddActionTest {
                     .addConfigLayer(ConfigLayerSpec.builder()
                             .setModel("model")
                             .setName("layer1")
+                            .build())
+                    .addConfig(ConfigModel.builder()
+                            .setModel("model")
+                            .setName("model.xml")
                             .build());
 
         deployFeaturePacks(creator);
@@ -293,6 +297,10 @@ public class FeaturesAddActionTest {
                 .getCreator()
                 .newFeaturePack(FeaturePackLocation.fromString("org.test:added-pack:1.0.0:zip").getFPID())
                 .addDependency(FeaturePackLocation.fromString("org.test:base-pack:1.0.0"))
+                .addConfig(ConfigModel.builder()
+                        .setModel("model")
+                        .setName("test.xml")
+                        .build())
                 .addConfigLayer(ConfigLayerSpec.builder()
                         .setModel("model")
                         .setName("layer1")
@@ -324,6 +332,10 @@ public class FeaturesAddActionTest {
         creator.newFeaturePack(FeaturePackLocation.fromString("org.test:base-pack:1.0.0:zip").getFPID())
                 .getCreator()
                     .newFeaturePack(FeaturePackLocation.fromString("org.test:added-pack:1.0.0:zip").getFPID())
+                    .addConfig(ConfigModel.builder()
+                        .setModel("model")
+                        .setName("test.xml")
+                        .build())
                     .addConfigLayer(ConfigLayerSpec.builder()
                             .setModel("model")
                             .setName("layer1")
@@ -370,6 +382,10 @@ public class FeaturesAddActionTest {
         // install base feature pack
         final FeaturePackCreator creator = FeaturePackCreator.getInstance().addArtifactResolver(repo);
         creator.newFeaturePack(FeaturePackLocation.fromString("org.test:base-pack:1.0.0:zip").getFPID())
+                .addConfig(ConfigModel.builder()
+                        .setModel("model")
+                        .setName("test.xml")
+                        .build())
                 .addConfigLayer(ConfigLayerSpec.builder()
                         .setModel("model")
                         .setName("layer1")
@@ -474,6 +490,10 @@ public class FeaturesAddActionTest {
         creator.newFeaturePack(FeaturePackLocation.fromString("org.test:base-pack:1.0.0:zip").getFPID())
                 .getCreator()
                 .newFeaturePack(FeaturePackLocation.fromString("org.test:added-pack:1.0.0:zip").getFPID())
+                .addConfig(ConfigModel.builder()
+                        .setModel("model2")
+                        .setName("model2.xml")
+                        .build())
                 .addConfigLayer(ConfigLayerSpec.builder()
                         .setModel("model1")
                         .setName("layer1")
@@ -615,6 +635,7 @@ public class FeaturesAddActionTest {
                     .getFeaturePack()
 
                 .addConfig(ConfigModel.builder()
+                        .setModel("model1")
                         .setName("config2")
                         .includeLayer("layer1")
                         .addPackageDep("p1")
@@ -665,6 +686,10 @@ public class FeaturesAddActionTest {
                 .getFeaturePack()
 
                 .addConfig(ConfigModel.builder()
+                        .setModel("model1")
+                        .setName("model1.xml")
+                        .build())
+                .addConfig(ConfigModel.builder()
                         .setName("config2")
                         .includeLayer("layer1")
                         .addPackageDep("p1")
@@ -697,6 +722,62 @@ public class FeaturesAddActionTest {
         assertExcludeDefaultConfigs(addedPackageConfig);
         assertThat(addedPackageConfig.getIncludedConfigs())
                 .isEmpty();
+    }
+
+    @Test
+    public void nonExistingConfigNameThrowsException() throws Exception {
+        // install base feature pack
+        final FeaturePackCreator creator = FeaturePackCreator.getInstance().addArtifactResolver(repo);
+        creator.newFeaturePack(FeaturePackLocation.fromString("org.test:base-pack:1.0.0:zip").getFPID())
+
+                .getCreator()
+                .newFeaturePack(FeaturePackLocation.fromString("org.test:added-pack:1.0.0:zip").getFPID())
+                .addConfig(ConfigModel.builder()
+                        .setModel("model1")
+                        .setName("config3")
+                        .build())
+                .addConfigLayer(ConfigLayerSpec.builder()
+                        .setModel("model1")
+                        .setName("layer1")
+                        .build());
+        deployFeaturePacks(creator);
+        // install
+        installFeaturePack(installDir, "org.test:base-pack:1.0.0:zip");
+
+        assertThatThrownBy(()->getFeaturesAddAction().addFeaturePack(
+                "org.test:added-pack", Set.of("layer1"), "model1", "idontexist"))
+                .isInstanceOf(FeaturesAddAction.ConfigurationNotFoundException.class)
+                .hasFieldOrPropertyWithValue("model", "model1")
+                .hasFieldOrPropertyWithValue("name", "idontexist");
+
+    }
+
+    @Test
+    public void nonExistingConfigNameWithoutLayersThrowsException() throws Exception {
+        // install base feature pack
+        final FeaturePackCreator creator = FeaturePackCreator.getInstance().addArtifactResolver(repo);
+        creator.newFeaturePack(FeaturePackLocation.fromString("org.test:base-pack:1.0.0:zip").getFPID())
+
+                .getCreator()
+                .newFeaturePack(FeaturePackLocation.fromString("org.test:added-pack:1.0.0:zip").getFPID())
+                .addConfig(ConfigModel.builder()
+                        .setModel("model1")
+                        .setName("config3")
+                        .build())
+                .addConfigLayer(ConfigLayerSpec.builder()
+                        .setModel("model1")
+                        .setName("layer1")
+                        .build());
+        deployFeaturePacks(creator);
+        // install
+        installFeaturePack(installDir, "org.test:base-pack:1.0.0:zip");
+
+        assertThatThrownBy(()->getFeaturesAddAction().addFeaturePack(
+                "org.test:added-pack", Collections.emptySet(), new ConfigId("model1", "idontexist")))
+                .isInstanceOf(FeaturesAddAction.ConfigurationNotFoundException.class)
+                .hasFieldOrPropertyWithValue("model", "model1")
+                .hasFieldOrPropertyWithValue("name", "idontexist");
+
     }
 
     private static FeaturePackConfig getFeaturePackConfig(ProvisioningConfig config, String fpl) {

@@ -106,6 +106,9 @@ public class FeaturesCommand extends AbstractParentCommand {
             } catch (FeaturesAddAction.ModelNotDefinedException e) {
                 console.error(CliMessages.MESSAGES.modelNotSupported(fpl, e.getModel(), e.getSupportedModels()));
                 return ReturnCodes.INVALID_ARGUMENTS;
+            } catch (FeaturesAddAction.ConfigurationNotFoundException e) {
+                console.error(CliMessages.MESSAGES.galleonConfigNotSupported(fpl, e.getModel(), e.getName()));
+                return ReturnCodes.INVALID_ARGUMENTS;
             }
 
             final float totalTime = (System.currentTimeMillis() - startTime) / 1000f;
