@@ -77,9 +77,7 @@ import static org.wildfly.prospero.metadata.ProsperoMetadataUtils.METADATA_DIR;
 
 @RunWith(MockitoJUnitRunner.class)
 public class FeaturesAddActionTest {
-
-    private static final String NO_MODEL = null;
-    private static final String NO_CONFIG = null;
+    private static final ConfigId NO_CONFIG = null;
     @Rule
     public TemporaryFolder temp = new TemporaryFolder();
     @Mock
@@ -198,7 +196,8 @@ public class FeaturesAddActionTest {
         // install
         installFeaturePack(installDir, "org.test:base-pack:1.0.0:zip");
 
-        assertThatThrownBy(()-> getFeaturesAddAction().addFeaturePack("org.test:added-pack", Set.of("idontexist"), null, null))
+        assertThatThrownBy(()-> getFeaturesAddAction().addFeaturePack("org.test:added-pack",
+                Set.of("idontexist"), NO_CONFIG))
                 .isInstanceOf(FeaturesAddAction.LayerNotFoundException.class)
                 .hasFieldOrPropertyWithValue("layers", Set.of("idontexist"))
                 .hasFieldOrPropertyWithValue("supportedLayers", Set.of("layer1"));
@@ -220,7 +219,7 @@ public class FeaturesAddActionTest {
         // install
         installFeaturePack(installDir, "org.test:base-pack:1.0.0:zip");
 
-        getFeaturesAddAction().addFeaturePack("org.test:added-pack", Collections.emptySet(), null, null);
+        getFeaturesAddAction().addFeaturePack("org.test:added-pack", Collections.emptySet(), NO_CONFIG);
 
         final ArgumentCaptor<ProvisioningConfig> provisioningConfigArgumentCaptor = ArgumentCaptor.forClass(ProvisioningConfig.class);
         verify(prepareCandidateAction).buildCandidate(any(), any(), eq(ApplyCandidateAction.Type.FEATURE_ADD),
@@ -245,7 +244,8 @@ public class FeaturesAddActionTest {
         // install
         installFeaturePack(installDir, "org.test:base-pack:1.0.0:zip");
 
-        assertThatThrownBy(()-> getFeaturesAddAction().addFeaturePack("org.test:added-pack", Set.of("idontexist"), null, null))
+        assertThatThrownBy(()-> getFeaturesAddAction().addFeaturePack("org.test:added-pack",
+                Set.of("idontexist"), NO_CONFIG))
                 .isInstanceOf(FeaturesAddAction.LayerNotFoundException.class)
                 .hasFieldOrPropertyWithValue("layers", Set.of("idontexist"));
 
@@ -274,7 +274,7 @@ public class FeaturesAddActionTest {
         // install
         installFeaturePack(installDir, "org.test:base-pack:1.0.0:zip");
 
-        getFeaturesAddAction().addFeaturePack("org.test:added-pack", Set.of("layer1"), null, null);
+        getFeaturesAddAction().addFeaturePack("org.test:added-pack", Set.of("layer1"), NO_CONFIG);
 
         final ArgumentCaptor<ProvisioningConfig> provisioningConfigArgumentCaptor = ArgumentCaptor.forClass(ProvisioningConfig.class);
         verify(prepareCandidateAction).buildCandidate(any(), any(), eq(ApplyCandidateAction.Type.FEATURE_ADD),
@@ -310,7 +310,8 @@ public class FeaturesAddActionTest {
         // install
         installFeaturePack(installDir, "org.test:base-pack:1.0.0:zip");
 
-        getFeaturesAddAction().addFeaturePack("org.test:added-pack", Set.of("layer1"), null, "test.xml");
+        getFeaturesAddAction().addFeaturePack("org.test:added-pack", Set.of("layer1"),
+                new ConfigId(null, "test.xml"));
 
         final ArgumentCaptor<ProvisioningConfig> provisioningConfigArgumentCaptor = ArgumentCaptor.forClass(ProvisioningConfig.class);
         verify(prepareCandidateAction).buildCandidate(any(), any(), eq(ApplyCandidateAction.Type.FEATURE_ADD),
@@ -356,7 +357,7 @@ public class FeaturesAddActionTest {
                 .build());
         mockInstallationData(installDir, "org.test:base-pack:1.0.0", "org.test:added-pack:1.0.0");
 
-        getFeaturesAddAction().addFeaturePack("org.test:added-pack", Set.of("layer2"), null, "test.xml");
+        getFeaturesAddAction().addFeaturePack("org.test:added-pack", Set.of("layer2"), new ConfigId(null, "test.xml"));
 
         final ArgumentCaptor<ProvisioningConfig> provisioningConfigArgumentCaptor = ArgumentCaptor.forClass(ProvisioningConfig.class);
         verify(prepareCandidateAction).buildCandidate(any(), any(), eq(ApplyCandidateAction.Type.FEATURE_ADD),
@@ -413,7 +414,7 @@ public class FeaturesAddActionTest {
                 .build());
         mockInstallationData(installDir, "org.test:base-pack:1.0.0");
 
-        getFeaturesAddAction().addFeaturePack("org.test:added-pack", Set.of("layer2"), null, "test.xml");
+        getFeaturesAddAction().addFeaturePack("org.test:added-pack", Set.of("layer2"), new ConfigId(null, "test.xml"));
 
         final ArgumentCaptor<ProvisioningConfig> provisioningConfigArgumentCaptor = ArgumentCaptor.forClass(ProvisioningConfig.class);
         verify(prepareCandidateAction).buildCandidate(any(), any(), eq(ApplyCandidateAction.Type.FEATURE_ADD),
@@ -457,7 +458,7 @@ public class FeaturesAddActionTest {
         installFeaturePack(installDir, "org.test:base-pack:1.0.0:zip");
 
         assertThatThrownBy(()->getFeaturesAddAction().addFeaturePack(
-                "org.test:added-pack", Collections.emptySet(), null, null))
+                "org.test:added-pack", Collections.emptySet(), new ConfigId(null, "test")))
                 .isInstanceOf(FeaturesAddAction.ModelNotDefinedException.class);
     }
 
@@ -477,7 +478,7 @@ public class FeaturesAddActionTest {
         installFeaturePack(installDir, "org.test:base-pack:1.0.0:zip");
 
         assertThatThrownBy(()->getFeaturesAddAction().addFeaturePack(
-                "org.test:added-pack", Collections.emptySet(), "model2", null))
+                "org.test:added-pack", Collections.emptySet(), new ConfigId("model2", null)))
                 .isInstanceOf(FeaturesAddAction.ModelNotDefinedException.class)
                 .hasFieldOrPropertyWithValue("model", "model2");
 
@@ -507,7 +508,7 @@ public class FeaturesAddActionTest {
         installFeaturePack(installDir, "org.test:base-pack:1.0.0:zip");
 
         getFeaturesAddAction().addFeaturePack(
-                "org.test:added-pack", Set.of("layer1"), "model2", null);
+                "org.test:added-pack", Set.of("layer1"), new ConfigId("model2", null));
         final ArgumentCaptor<ProvisioningConfig> provisioningConfigArgumentCaptor = ArgumentCaptor.forClass(ProvisioningConfig.class);
         verify(prepareCandidateAction).buildCandidate(any(), any(), eq(ApplyCandidateAction.Type.FEATURE_ADD),
                 provisioningConfigArgumentCaptor.capture());
@@ -533,7 +534,7 @@ public class FeaturesAddActionTest {
         installFeaturePack(installDir, "org.test:base-pack:1.0.0:zip");
 
         getFeaturesAddAction().addFeaturePack(
-                "org.test:added-pack", Collections.emptySet(), null, null);
+                "org.test:added-pack", Collections.emptySet(), null);
         final ArgumentCaptor<ProvisioningConfig> provisioningConfigArgumentCaptor = ArgumentCaptor.forClass(ProvisioningConfig.class);
         verify(prepareCandidateAction).buildCandidate(any(), any(), eq(ApplyCandidateAction.Type.FEATURE_ADD),
                 provisioningConfigArgumentCaptor.capture());
@@ -548,21 +549,21 @@ public class FeaturesAddActionTest {
     @Test
     public void invalidFeatureNameThrowsException() throws Exception {
         mockInstallationData(installDir);
-        assertThatThrownBy(()->getFeaturesAddAction().addFeaturePack(null, Collections.emptySet(), NO_MODEL, NO_CONFIG))
+        assertThatThrownBy(()->getFeaturesAddAction().addFeaturePack(null, Collections.emptySet(), NO_CONFIG))
                 .isInstanceOf(IllegalArgumentException.class)
                 .hasMessageContaining("The feature pack coordinate cannot be null");
         assertThatThrownBy(()->getFeaturesAddAction().isFeaturePackAvailable(null))
                 .isInstanceOf(IllegalArgumentException.class)
                 .hasMessageContaining("The feature pack coordinate cannot be null");
 
-        assertThatThrownBy(()->getFeaturesAddAction().addFeaturePack("only_group", Collections.emptySet(), NO_MODEL, NO_CONFIG))
+        assertThatThrownBy(()->getFeaturesAddAction().addFeaturePack("only_group", Collections.emptySet(), NO_CONFIG))
                 .isInstanceOf(IllegalArgumentException.class)
                 .hasMessageContaining("The feature pack coordinate has to consist of <groupId>:<artifactId>");
         assertThatThrownBy(()->getFeaturesAddAction().isFeaturePackAvailable("only_group"))
                 .isInstanceOf(IllegalArgumentException.class)
                 .hasMessageContaining("The feature pack coordinate has to consist of <groupId>:<artifactId>");
 
-        assertThatThrownBy(()->getFeaturesAddAction().addFeaturePack("too:many:parts", Collections.emptySet(), NO_MODEL, NO_CONFIG))
+        assertThatThrownBy(()->getFeaturesAddAction().addFeaturePack("too:many:parts", Collections.emptySet(), NO_CONFIG))
                 .isInstanceOf(IllegalArgumentException.class)
                 .hasMessageContaining("The feature pack coordinate has to consist of <groupId>:<artifactId>");
         assertThatThrownBy(()->getFeaturesAddAction().isFeaturePackAvailable("too:many:parts"))
@@ -586,7 +587,7 @@ public class FeaturesAddActionTest {
         installFeaturePack(installDir, "org.test:base-pack:1.0.0:zip");
 
         assertThatThrownBy(()->getFeaturesAddAction().addFeaturePack(
-                "org.test:base-pack", Collections.emptySet(), null, null))
+                "org.test:base-pack", Collections.emptySet(), NO_CONFIG))
                 .isInstanceOf(FeaturesAddAction.FeaturePackAlreadyInstalledException.class);
     }
 
@@ -605,7 +606,7 @@ public class FeaturesAddActionTest {
         installFeaturePack(installDir, "org.test:base-pack:1.0.0:zip");
 
         getFeaturesAddAction().addFeaturePack(
-                "org.test:added-pack", Collections.emptySet(), null, null);
+                "org.test:added-pack", Collections.emptySet(), NO_CONFIG);
         final ArgumentCaptor<ProvisioningConfig> provisioningConfigArgumentCaptor = ArgumentCaptor.forClass(ProvisioningConfig.class);
         verify(prepareCandidateAction).buildCandidate(any(), any(), eq(ApplyCandidateAction.Type.FEATURE_ADD),
                 provisioningConfigArgumentCaptor.capture());
@@ -653,7 +654,7 @@ public class FeaturesAddActionTest {
         installFeaturePack(installDir, "org.test:base-pack:1.0.0:zip");
 
         getFeaturesAddAction().addFeaturePack(
-                "org.test:added-pack", Collections.emptySet(), "model1", "config2");
+                "org.test:added-pack", Collections.emptySet(), new ConfigId("model1", "config2"));
         final ArgumentCaptor<ProvisioningConfig> provisioningConfigArgumentCaptor = ArgumentCaptor.forClass(ProvisioningConfig.class);
         verify(prepareCandidateAction).buildCandidate(any(), any(), eq(ApplyCandidateAction.Type.FEATURE_ADD),
                 provisioningConfigArgumentCaptor.capture());
@@ -707,7 +708,7 @@ public class FeaturesAddActionTest {
         installFeaturePack(installDir, "org.test:base-pack:1.0.0:zip");
 
         getFeaturesAddAction().addFeaturePack(
-                "org.test:added-pack", Set.of("layer1"), null, null);
+                "org.test:added-pack", Set.of("layer1"), NO_CONFIG);
         final ArgumentCaptor<ProvisioningConfig> provisioningConfigArgumentCaptor = ArgumentCaptor.forClass(ProvisioningConfig.class);
         verify(prepareCandidateAction).buildCandidate(any(), any(), eq(ApplyCandidateAction.Type.FEATURE_ADD),
                 provisioningConfigArgumentCaptor.capture());
@@ -745,7 +746,7 @@ public class FeaturesAddActionTest {
         installFeaturePack(installDir, "org.test:base-pack:1.0.0:zip");
 
         assertThatThrownBy(()->getFeaturesAddAction().addFeaturePack(
-                "org.test:added-pack", Set.of("layer1"), "model1", "idontexist"))
+                "org.test:added-pack", Set.of("layer1"), new ConfigId("model1", "idontexist")))
                 .isInstanceOf(FeaturesAddAction.ConfigurationNotFoundException.class)
                 .hasFieldOrPropertyWithValue("model", "model1")
                 .hasFieldOrPropertyWithValue("name", "idontexist");

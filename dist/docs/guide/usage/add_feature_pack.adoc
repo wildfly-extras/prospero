@@ -42,8 +42,7 @@ The Galleon feature packs may provide different capabilities using https://docs.
 
 NOTE: Using `--layers` parameter overwrites the default configuration defined by some feature packs.
 
-If the feature pack changes server configuration files, the user may also choose which server configuration should be affected using `--model` and `--config`
-parameters. If those parameters are not provided, the layer configuration will use default values. Most Wildfly feature packs provide only a single model (standalone) and the default configuration file of standalone.xml.
+If the feature pack changes server configuration files, the user may also choose which server configuration should be affected using `--config` parameter. If not provided, the layer configuration will use default values. Most Wildfly feature packs provide only a single model (standalone) and the default configuration file of standalone.xml.
 
 NOTE: If the affected configuration file has been modified by the user, that file will not be modified. Instead, a new configuration file with suffix `.glnew` will be created with the changes.
 
@@ -56,6 +55,8 @@ $ prospero feature-pack add \
   --config=standalone-full.xml \
   --dir wildfly
 ```
+
+If the feature pack provides multiple configuration model, the configuration name can be prefixed with model name e.g. `--config standalone/standalone.xml`
 
 #### Offline installation
 

@@ -104,8 +104,7 @@ public class FeaturesAddAction {
      *
      * @param featurePackCoord - maven {@code groupId:artifactId} coordinates of the feature pack to install
      * @param layers - set of layer names to be provisioned
-     * @param model - used to select layer model, if the feature pack provides multiple models
-     * @param configName - name of the configuration file to generate if supported
+     * @param configName - {@code ConfigId} of the configuration file to generate if supported
      *
      * @throws ProvisioningException - if unable to provision the server
      * @throws ModelNotDefinedException - if requested model is not provided by the feature pack
@@ -114,7 +113,7 @@ public class FeaturesAddAction {
      * @throws InvalidUpdateCandidateException - if the folder at {@code updateDir} is not a valid update
      * @throws MetadataException - if unable to read or write the installation of update metadata
      */
-    public void addFeaturePack(String featurePackCoord, Set<String> layers, String model, String configName)
+    public void addFeaturePack(String featurePackCoord, Set<String> layers, ConfigId configName)
             throws ProvisioningException, OperationException {
         Objects.requireNonNull(layers);
         if (featurePackCoord == null || featurePackCoord.isEmpty()) {
@@ -142,18 +141,18 @@ public class FeaturesAddAction {
             }
         }
 
-        selectedModel = getSelectedModel(model, allLayers);
+        selectedModel = getSelectedModel(configName == null?null:configName.getModel(), allLayers);
 
         verifyLayerAvailable(layers, selectedModel, allLayers);
 
-        if (configName == null) {
+        if (configName == null || configName.getName() == null) {
             if (selectedModel == null) {
                 selectedConfig = null;
             } else {
                 selectedConfig = selectedModel + ".xml";
             }
         } else {
-            selectedConfig = configName;
+            selectedConfig = configName.getName();
         }
 
         if (ProsperoLogger.ROOT_LOGGER.isDebugEnabled()) {

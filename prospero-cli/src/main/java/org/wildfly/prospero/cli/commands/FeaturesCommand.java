@@ -17,6 +17,7 @@
 
 package org.wildfly.prospero.cli.commands;
 
+import org.jboss.galleon.config.ConfigId;
 import org.wildfly.channel.Repository;
 import org.wildfly.prospero.actions.FeaturesAddAction;
 import org.wildfly.prospero.api.MavenOptions;
@@ -49,9 +50,6 @@ public class FeaturesCommand extends AbstractParentCommand {
 
         @CommandLine.Option(names = CliConstants.LAYERS, split = ",")
         private Set<String> layers;
-
-        @CommandLine.Option(names = CliConstants.MODEL)
-        private String model;
 
         @CommandLine.Option(names = CliConstants.CONFIG)
         private String config;
@@ -95,7 +93,7 @@ public class FeaturesCommand extends AbstractParentCommand {
             }
 
             try {
-                featuresAddAction.addFeaturePack(fpl, layers == null ? Collections.emptySet() : layers, model, config);
+                featuresAddAction.addFeaturePack(fpl, layers == null ? Collections.emptySet() : layers, parseConfigName());
             } catch (FeaturesAddAction.LayerNotFoundException e) {
                 if (!e.getSupportedLayers().isEmpty()) {
                     console.error(CliMessages.MESSAGES.layerNotSupported(fpl, e.getLayers(), e.getSupportedLayers()));
@@ -115,6 +113,22 @@ public class FeaturesCommand extends AbstractParentCommand {
             console.println(CliMessages.MESSAGES.operationCompleted(totalTime));
 
             return ReturnCodes.SUCCESS;
+        }
+
+        private ConfigId parseConfigName() {
+            if (config == null) {
+                return null;
+            }
+            int i = config.indexOf("/");
+            if (i < 0) {
+                return new ConfigId(null, config.trim());
+            }
+
+            if (i == config.length() -1) {
+                return new ConfigId(config.substring(0, i).trim(), null);
+            } else {
+                return new ConfigId(config.substring(0, i).trim(), config.substring(i+1).trim());
+            }
         }
     }
 
