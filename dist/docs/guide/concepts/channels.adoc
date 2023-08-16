@@ -1,0 +1,71 @@
+### Channels
+
+Wildfly Channels are a way to provide a curated list of compatible, up-to-date components. A channel consists of a YAML definition file and one or more underlying Maven repositories.
+
+There are two types of Wildfly Channels supported by Prospero - open channels and manifest channels. Open channels allow access to the latest artifacts in the underlying repository, while manifest channels define a list of allowed list of components.
+
+For more information on Wildfly Channels see the https://github.com/wildfly-extras/wildfly-channel/blob/main/doc/spec.adoc[spec documentation].
+
+#### Manifest channels
+
+One way to specify channel content is by using manifests. Manifests are YAML file listing streams available in the channel. For example a part of wildfly-27.0.0 manifest looks like:
+
+[source, yaml]
+----
+schemaVersion: "1.0.0"
+name: Manifest for WildFly 27
+description: |-
+  This manifest provides updates for WildFly 27 Feature Pack.
+streams:
+  - groupId: "org.wildfly"
+    artifactId: "wildfly-galleon-pack"
+    version: "27.0.0.Final"
+
+  - groupId: "org.wildfly"
+    artifactId: "wildfly-ee-galleon-pack"
+    version: "27.0.0.Final"
+
+  - groupId: "org.wildfly.core"
+    artifactId: "wildfly-core-galleon-pack"
+    version: "19.0.0.Beta13"
+
+  - groupId: "org.wildfly.core"
+    artifactId: "wildfly-version"
+    version: "19.0.0.Final"
+
+  - groupId: "org.wildfly.security"
+    artifactId: "wildfly-elytron-jaspi"
+    version: "1.20.2.Final"
+----
+
+The channel using this manifest would be defined as:
+[source, yaml]
+----
+schemaVersion: "2.0.0"
+name: Channel for WildFly 27
+manifest:
+  maven:
+    groupId: org.wildfly.channels
+    artifactId: wildfly-27.0
+repositories:
+  - id: central
+    url: https://repo1.maven.org/maven2/
+----
+
+When resolving artifacts using such channel, the versions of artifacts will be dictated by the manifest, even if newer version is available in the channel repositories.
+
+NOTE: The manifest can be distributed as either a static file (referenced in a channel by a URL), or as an artifact in a Maven repository.
+
+#### Open channels
+
+Alternatively the channel can be defined to use the latest versions of artifacts available in its repositories.
+
+[source, yaml]
+----
+schemaVersion: "2.0.0"
+name: Channel for WildFly 27
+resolve-if-no-stream: latest
+repositories:
+  - id: central
+    url: https://repo1.maven.org/maven2/
+----

@@ -1,3 +1,17 @@
 = Prospero documentation
+:toc:
+:sectnums:
+
+include::overview/index.adoc[]
+
+include::concepts/index.adoc[]
+
+include::process/index.adoc[]
+
+include::metadata/index.adoc[]
+
+include::usage/index.adoc[]
 
 include::customization/index.adoc[]
+
+include::channels/index.adoc[]

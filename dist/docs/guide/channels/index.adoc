@@ -1,0 +1,194 @@
+## Working with channels
+
+More information on the Wildfly Channels can be found in https://github.com/wildfly-extras/wildfly-channel/blob/main/doc/spec.adoc. This chapter is intended to explain some concepts behind different channel types and how they can be used to provide software updates.
+
+A channel contains a collections of artifact streams used by a server. Each stream should contain only backwards-compatible artifact updates with new versions of artifacts replacing previous ones.
+
+There are two ways for a stream to determine the versions of its artifact:
+
+ * using an artifact manifest with fixed versions, or
+ * use the latest artifact version available in backing Maven repository.
+
+NOTE: The two mechanisms can be mixed within one channel, using static list to resolve some streams and Maven metadata for others.
+
+Channels using exclusively fixed version manifest can be more stable and make it possible to use 3rd party repositories. The artifact combination in the manifest can be tested before distributing, making sure there are no regressions.
+
+On the other hand channels using Maven metadata can make development and testing of new component updates easier. Any component updates deployed into the Maven repository are immediately made available to the subscribed servers.
+
+### Channels with fixed version manifests
+
+This kind of channels rely on manifests to list all available artifacts and their versions. This can be useful when the content of the repository cannot be fully controlled and might contain incompatible artifact versions.
+
+The manifest is a YAML file, containing a list of available streams:
+
+[source, yaml, title="manifest.yaml"]
+```
+schemaVersion: "1.0.0"
+name: "test-manifest"
+streams:
+  - groupId: "org.test"
+    artifactId: "artifact-one"
+    version: "1.2.0.Final"
+```
+
+The manifest has to be deployed in the channel repository and registered in the channel definition:
+
+[source, yaml, title="channel.yaml"]
+```
+schemaVersion: "2.0.0"
+name: "test-channel"
+resolve-if-no-stream: none #(1)
+repositories:
+  - id: "trusted"
+    url: "https://trusted.repository.org/maven/"
+manifest:
+  maven:
+    groupId: org.test.channel
+    artifactId: test-manifest
+```
+<1> this channel provides only artifacts explicitly listed in the manifest
+
+#### Updating components in fixed version channel
+
+Updating a component in a manifest channel requires publishing a new version of manifest.
+
+For example, if the `org.test:artifact-one` is updated to `1.2.1.Final` version, the new manifest would look like as follows:
+
+[source, yaml, title="manifest.yaml"]
+```
+schemaVersion: "1.0.0"
+name: "test-manifest"
+streams:
+  - groupId: "org.test"
+    artifactId: "artifact-one"
+    version: "1.2.1.Final"
+```
+
+This manifest has to be published in the channel repository with a new version:
+
+```
+mvn deploy:deploy-file -Dfile=manifest.yaml \
+-DgroupId=org.test.channels -DartifactId=test-manifest \
+-Dversion=1.0.1 \ #(1)
+-Dclassifier=manifest -Dpackaging=yaml \
+-Durl=https://trusted.repository.org/maven/
+```
+<1> note the updated version
+
+There are no changes required to the channel definition. Next time components are resolved from this channel, a new version of manifest will be used providing version *1.2.1.Final* of `org.test:artifact-one`.
+
+### Channels using backing Maven repository versions
+
+This type of channels expose the latest available versions of artifacts found in their repositories as the component version. The versions can be curated using either version patterns or a blocklist excluding specific versions.
+
+Channels based on Maven metadata can be useful when the content of repositories can be controlled and trusted. Any new artifact deployed into the channel repository, will automatically be made available for subscribed servers.
+
+An example of channel exposing all underlying artifacts can be seen below:
+
+[source, yaml, title="channel.yaml"]
+```
+schemaVersion: "2.0.0"
+name: "test-channel"
+resolve-if-no-stream: latest #(1)
+repositories: #(2)
+  - id: "trusted"
+    url: "https://trusted.repository.org/maven/"
+```
+<1> `latest` strategy means that if channel cannot find a stream matching the requested artifact, it will attempt to find the latest version in its repositories
+<2> the underlying repository for the channel
+
+#### Using version patterns to limit artifacts
+
+Sometimes the underlying repository might contain versions of artifacts that are not compatible with the installed server. For example the server might require a *1.2.x* version of a certain artifact, but the repository contains a newer version *2.0.x*.
+
+To filter incompatible versions, the channel can use a manifest file with `versionPattern` streams.
+
+[source, yaml, title="manifest.yaml"]
+```
+schemaVersion: "1.0.0"
+name: "test-manifest"
+streams:
+  - groupId: "org.test"
+    artifactId: "artifact-one"
+    versionPattern: "1\\.2\\..*" #(1)
+```
+<1> a https://docs.oracle.com/javase/8/docs/api/java/util/regex/Pattern.html[regular expression] limiting versions to ones starting with `1.2.`
+
+NOTE: The `versionPattern` field uses regular expressions
+
+The above manifest file should be deployed in the channel repository with a classifier `manifest` and extension `yaml`. For example following command will deploy the file as `org.test.channels:test-manifest:1.0.0`
+
+```
+mvn deploy:deploy-file -Dfile=manifest.yaml \
+  -DgroupId=org.test.channels -DartifactId=test-manifest \
+  -Dversion=1.0.0 -Dclassifier=manifest -Dpackaging=yaml \
+  -Durl=https://trusted.repository.org/maven/
+```
+
+The channel definition needs to be updated to reference the new manifest file:
+
+[source, yaml, title="channel.yaml"]
+```
+schemaVersion: "2.0.0"
+name: "test-channel"
+resolve-if-no-stream: latest
+repositories:
+  - id: "trusted"
+    url: "https://trusted.repository.org/maven/"
+manifest:
+  maven:
+    groupId: org.test.channel
+    artifactId: test-manifest
+```
+
+Using this channel definition, all artifacts apart from `org.test:artifact-one` are still resolved to the latest versions available in the repository. The `org.test:artifact-one` will be resolved to the latest available "1.2.x" micro version. For example, if the repository contains versions [*1.2.0.Final*, *1.2.1.Final*, *2.0.0.Final*], the channel will pick version *1.2.1.Final*.
+
+#### Creating blocklist to exclude updates
+
+Another option to exclude certain artifact versions is to use a blocklist. A blocklist is a YAML file deployed in the channel repository listing blocked artifact versions.
+
+[source, yaml, title="blocklist.yaml"]
+```
+schemaVersion: "1.0.0"
+name: "test-blocklist"
+blocks:
+  - groupId: "org.test"
+    artifactId: "artifact-one"
+    versions:
+    - "1.2.2.Final"
+```
+
+Again, the blocklist has to be deployed in the channel repository. The blocklist artifact has to use `blocklist` classifier and `yaml` extension. For example:
+
+```
+mvn deploy:deploy-file -Dfile=blocklist.yaml \
+  -DgroupId=org.test.channels -DartifactId=test-blocklist \
+  -Dversion=1.0.0 -Dclassifier=blocklist -Dpackaging=yaml \
+  -Durl=https://trusted.repository.org/maven/
+```
+
+Finally, the channel definition has to be updated with the reference to the blocklist:
+
+[source, yaml, title="channel.yaml"]
+```
+schemaVersion: "2.0.0"
+name: "test-channel"
+resolve-if-no-stream: latest
+blocklist:
+  maven:
+    groupId: org.test.channel
+    artifactId: test-blocklist
+repositories:
+  - id: "trusted"
+    url: "https://trusted.repository.org/maven/"
+manifest:
+  maven:
+    groupId: org.test.channel
+    artifactId: test-manifest
+```
+
+Resolving `org.test:artifact-one` from this channel will exclude any versions not matching "1.2.*" pattern and version 1.2.2.Final. For example, if the repository contains versions [*1.2.0.Final*, *1.2.1.Final*, *1.2.2.Final*, *2.0.0.Final*], the channel will pick version *1.2.1.Final*.
+
+#### Updating components using "open" channel
+
+Updating component in an open channel requires only deploying the artifact into the channel repository. Neither channel definition not channel manifest has to be changed. Next time components are resolved from this channel, a new version of updated component will be used.

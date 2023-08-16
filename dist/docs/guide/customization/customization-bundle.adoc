@@ -1,10 +1,10 @@
 ### Distributing custom artifacts
 
-The customized artifacts can be distributed as bundles. Each bundle is a ZIP archive containing an `artifact-list.yaml` file and a `repository` directory.
+The customized artifacts can be distributed as bundles. Each bundle is a ZIP archive containing a `maven-repository` directory and an optional `artifact-list.yaml` file.
 
 ```
 |-artifact-list.yaml
-|-repository
+|-maven-repository
   |- org
     |-custom
       |-artifact-one
@@ -13,7 +13,29 @@ The customized artifacts can be distributed as bundles. Each bundle is a ZIP arc
       |-artifact-two
         |-2.3.4
           |-artifact-two-2.3.4.jar
+    |-wildfly
+      |-prospero
+        |-customizations
+          |-1.0.0
+            |-customizations-manifest-1.0.0.yaml
+          |-maven-metadata.xml
 ```
+
+In addition to the custom artifacts, repository has to contain a channel manifest. The manifest should list all streams available in the customization bundle.
+
+```
+schemaVersion: 1.0.0
+name: Customizations manifest
+streams:
+  - groupId: org.custom
+    artifactId: artifact-one
+    version: 1.2.3
+  - groupId: org.custom
+    artifactId: artifact-two
+    version: 2.3.4
+```
+
+NOTE: the Maven metadata has to be present for the manifest artifact.
 
 The `artifact-list.yaml` lists all artifacts included in the bundle using following syntax:
 ```
@@ -23,4 +45,48 @@ artifacts:
     version: "1.2.3"
     packaging: "jar"
     extension: ""
+```
+
+#### Updating custom artifacts
+
+If a new version of customization bundle needs to be distributed, it should contain a customization manifest deployed under the same `groupId:artifactId` coordinates, but with an incremented version.
+
+The repository should contain all customized artifacts required by the updated manifest. For instance, the updated manifest included a new version of `artifact-one` and added `artifact-three`, resulting in following file:
+
+```
+schemaVersion: 1.0.0
+name: Customizations manifest
+streams:
+  - groupId: org.custom
+    artifactId: artifact-one
+    version: 1.2.4
+  - groupId: org.custom
+    artifactId: artifact-two
+    version: 2.3.4
+  - groupId: org.custom
+    artifactId: artifact-three
+    version: 3.4.5
+```
+
+The updated repository should contain three artifacts:
+```
+|-artifact-list.yaml
+|-maven-repository
+  |- org
+    |-custom
+      |-artifact-one
+        |-1.2.4
+          |-artifact-one-1.2.4.jar
+      |-artifact-two
+        |-2.3.4
+          |-artifact-two-2.3.4.jar
+      |-artifact-three
+        |-3.4.5
+          |-artifact-two-3.4.5.jar
+    |-wildfly
+      |-prospero
+        |-customizations
+          |-1.0.1
+            |-customizations-manifest-1.0.1.yaml
+          |-maven-metadata.xml
 ```

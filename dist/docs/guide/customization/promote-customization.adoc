@@ -1,31 +1,34 @@
 ### Promoting custom artifacts
 
-To make the changes available to the servers, they need to be made available in a custom channel. This process is called *promoting artifacts*. Promoted artifacts can come from a different channel (eg. promoting artifacts between STAGE and PROD channels) or from an artifact bundle.
+To make the custom artifact available to registered servers, the update artifacts from the customization bundle have to be added to the existing repository.
 
-If the custom channel is empty, the first promotion will populate it with new artifacts. If the channel already contains artifacts, it will update it - adding new artifacts if they're missing and updating to newer versions if they already exist.
+The updated artifacts are distributed in a `maven-repository` folder inside the customization archive. If the server is subscribed to a local filesystem customization repository, all the artifacts can be simply copied over.
 
-Promotion is a two-step process:
-
-. publish artifacts which the channel references in a Maven repository (or make sure they can be consumed from a public Maven repository),
-. publish a channel file (or a new version of the channel file) in a Maven repository.
-
-The repository (or repositories) containing the artifacts and the channel file needs to be accessible when provisioning or updating server installations. The latest available version of the channel file is used when provisioning or updating a server installation.
-
-#### Promote artifact bundle
-*Single server channel*
-
-If the changes need to be applied only to a single server, a simplified command can be used:
+[source, bash]
 ```
-prospero channel promote --archive=<bundle.zip> --dir=<PATH/TO/SERVER>
-```
-The artifacts will be added to an internal installation repository and a new version of channel file will be created.
+$ ./prospero.sh channel list
+# customizations
+  manifest: org.wildfly.prospero:customizations
+  repositories:
+    id: custom-repo-0
+    url: file:/home/wildfly/custom/repository # <1>
 
-*Shared channel*
+$ unzip customization-1.0.1.zip # <2>
+Archive:  customization-1.0.1.zip
+   creating: customization/
+   inflating: artifact-list.yaml
+   creating: customization/maven-repository/
+   [...]
 
-When a channel is shared between multiple servers, the promote command has to include the URL of the repository and the channel information.
-```
-prospero channel promote --archive=<bundle.zip> --channel-name=<groupId:artifactId> --repository-url=<URL_OF_REPOSITORY>
-```
-If the repository contains a channel file already, it will be updated with promoted artifacts, and it's version will be incremented before being redeployed into the repository.
+$ cp -r customization/maven-repositry/* /home/wildfly/custom/repository/ #<3>
 
-NOTE: Currently, this operation requires filesystem access to the repository.
+$ ./prospero.sh updates perform #<4>
+```
+<1> Location of existing customization repository
+<2> Extracting updated repository
+<3> Adding updated content to existing repository
+<4> Apply updated customizations
+
+If a repository manager like Nexus is used to host the customization repository, the artifacts should be deployed into it.
+
+WARNING: When promoting different versions of the same customization bundle, older versions of the bundle should never be promoted after a newer version is promoted. The customization repository contains `maven-metadata.xml` files associated with the customization's manifest that would be overwritten by such operation.

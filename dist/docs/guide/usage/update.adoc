@@ -1,0 +1,74 @@
+### Update
+
+Once the server is installed, it can receive updates published in the channels it is subscribed to.
+
+Following command can be used to update the server using the subscribed channels:
+
+[source, bash]
+----
+$ ./prospero.sh update perform --dir wfly-27
+----
+
+If any updates are available, Prospero will print the update summary and prompt for confirmation to continue. If the updates are accepted, the updated server will be prepared in a way described in <<update_process>>.
+
+NOTE: The server has to be stopped during `update perform` operation
+
+#### Checking updates
+
+`prospero update list` command can be used to check if any updates are available:
+
+[source, bash]
+----
+$ ./prospero.sh update list --dir wfly-27
+----
+
+
+#### Working with update candidates
+
+When using `prospero update perform` command, the server has to be stopped during the whole update process. In order to reduce server downtime, it is possible to generate an update candidate while the server is running and apply it to a stopped server in a separate step.
+
+[source, bash]
+----
+$ ./wfly-27/bin/standalone.sh > /dev/null & # <1>
+
+$ ./prospero.sh update prepare \ # <2>
+       --dir wfly-27 \
+       --candidate-dir candidate-dir \
+       --yes
+
+$ ./wfly-27/bin/jboss-cli.sh -c "shutdown" # <3>
+
+$ ./prospero.sh update apply \ # <4>
+       --dir wfly-27 \
+       --candidate-dir candidate-dir
+----
+<1> start the server in background
+<2> generate the candidate in `candidate-dir` folder
+<3> stop the server
+<4> merge the updates found in `candidate-dir` into `wfly-27` server
+
+Update candidate is a temporary server provisioned by prospero. It is generated using the latest updates available in the channels, but does not contain any user modifications of the original server.
+
+NOTE: The candidate can only be applied to a server it was based on and only if the server has not been updated since the candidate was generated.
+
+#### Using alternative repository
+
+If the repositories defined in subscribed channels are not available to the server, alternative repositories can be provided using `--repositories` parameter. Those repositories can point to a local copy of the repository or alternate online location.
+
+[source, bash]
+----
+$ ./prospero.sh update perform \
+       --dir wfly-27 \
+       --repositories https://proxy.corp.org/maven-central # <1>
+----
+<1> The updates will be resolved from *https://proxy.corp.org/maven-central* instead of the default repository.
+
+The `--repositories` can also be used to resolve artifact from a local copy of the repository:
+[source, bash]
+----
+$ ./prospero.sh update perform \
+       --dir wfly-27 \
+       --repositories /path/to/repository
+----
+
+NOTE: At minimum, the alternative repositories have to provide all the channel manifests that the server is subscribed to and updated artifacts.

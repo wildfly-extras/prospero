@@ -1,0 +1,18 @@
+## Prospero server metadata
+
+In order for Prospero to be able to update a server, the server installation has to contain some additional metadata files. Those files contain information about server's current state and the subscribed channels. The metadata is generated when the server is installed and can be modified using Prospero commands.
+
+The metadata is split between `<SERVER_HOME>/.galleon` and `<SERVER_HOME>/.installation` folders.
+
+[cols="2*"]
+|===
+| File | Description
+a| `<SERVER_HOME>/.installation/installer-channels.yaml` | List of channels the server is subscribed to receive updates from
+a| `<SERVER_HOME>/.installation/manifest.yaml` | Record of current versions of components installed in the server
+a| `<SERVER_HOME>/.installation/manifest_version.yaml` | Record of channel manifests used to provision current server.
+a| `<SERVER_HOME>/.galleon/provisioning.xml` `<SERVER_HOME>/.galleon/provisioned.xml` | Gallon files recording provisioned feature-packs and their customizations.
+|===
+
+### Prospero update history
+
+The files in the `.installation/` and `.galleon/` folders should only be modified via the prospero tool, not manually. All metadata changes performed by prospero tool are internally versioned and can be later reviewed or rolled back by using the `prospero history` and `prospero revert` commands.

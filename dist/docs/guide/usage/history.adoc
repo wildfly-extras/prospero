@@ -1,0 +1,102 @@
+### Update history
+
+Each time the server is updated, the previous state of the server is recorded. That state includes the channels used to perform the update and the versions of artifacts used to build the server.
+
+This information is used to restore the server back to past state.
+
+#### Viewing history
+
+Command `history` displays a list of all server updates:
+
+[source, base]
+----
+$ ./prospero.sh history --dir wfly-27
+[02805caa] 2023-05-25T15:07:19Z - update [org.wildfly.channel:wfly-27::1.0.1]
+[c5215591] 2023-05-25T15:05:04Z - install [org.wildfly.channel:wfly-27::1.0.0]
+----
+
+The server state record contains following information: a hash identifier, date of the change, type of the change (installation, update, configuration change) and a summary of channel manifests used in that update.
+
+The details of each record can be examined using `--revision` parameter:
+
+[source, base]
+----
+$ ./prospero.sh history --dir wfly-27 --revision 02805caa
+Updates:
+  [Updated artifact] io.undertow:undertow-servlet:		2.2.18.Final ==> 2.2.19.Final
+  [Updated artifact] io.undertow:undertow-websockets-jsr:		2.2.18.Final ==> 2.2.19.Final
+  [Updated artifact] io.undertow:undertow-core:		2.2.18.Final ==> 2.2.19.Final
+----
+
+
+#### Reverting updates
+
+The server can be reverted to any of the recorded states. The `revert` commands operate in similar way to `update`. For example, a following command performs a full revert of a server to an earlier installation state:
+
+[source, base]
+----
+$ ./prospero.sh revert perform --dir wfly-27 --revision c5215591
+Reverting server /tmp/wfly-27 to state c5215591
+
+Feature-packs resolved.
+Packages installed.
+Downloaded artifacts.
+JBoss modules installed.
+Configurations generated.
+
+Reverted server prepared, comparing changes
+Changes found:
+  io.undertow:undertow-servlet                          2.2.19.Final         ==>  2.2.18.Final
+  io.undertow:undertow-websockets-jsr                   2.2.19.Final         ==>  2.2.18.Final
+  io.undertow:undertow-core                             2.2.19.Final         ==>  2.2.18.Final
+Continue with revert [y/N]: y
+Applying changes
+
+Server reverted to state 348b9d9c.
+Operation completed in 45.83 seconds.
+----
+
+The revert process works similar to the update process, but instead of resolving component versions from subscribed channels, the component versions recorded in the requested state will be used.
+
+NOTE: The required components will be downloaded from the channel repositories the server was subscribed to at the requested state. If the channel repositories are no longer available, or do not provide the required component versions, `--repositories` can be used to overwrite them.
+
+NOTE: The server has to be switched off for the duration of the `revert perform` operation.
+
+#### Reverting updates using candidate
+
+Similarly to `update` operation, the `revert` operation can be split into preparing the candidate and applying the changes. In such case, the server downtime is only required during the latter phase.
+
+[source, bash]
+----
+$ ./prospero.sh revert prepare \ #<1>
+    --candidate-dir candidate \
+    --revision c5215591 \
+    --dir wfly-27
+Building revert candidate for /tmp/wfly-27
+
+Feature-packs resolved.
+Packages installed.
+Downloaded artifacts.
+JBoss modules installed.
+Configurations generated.
+
+Update candidate generated in /Users/spyrkob/workspaces/set/prospero/prospero/candidate
+Operation completed in 22.22 seconds.
+
+$  ./prospero.sh revert apply \ #<2>
+    --dir wfly-27 \
+    --candidate-dir candidate
+Reverting server /tmp/wfly-27 to state ab39b0c6
+
+Changes found:
+  io.undertow:undertow-servlet                          2.2.19.Final         ==>  2.2.18.Final
+  io.undertow:undertow-websockets-jsr                   2.2.19.Final         ==>  2.2.18.Final
+  io.undertow:undertow-core                             2.2.19.Final         ==>  2.2.18.Final
+Continue with revert [y/N]: y
+Applying changes
+
+Server reverted to state ab39b0c6.
+Operation completed in 9.40 seconds.
+----
+<1> Prepare a revert candidate in `candidate` folder
+<2> Apply prepared `candidate` to a server in `wfly-27`

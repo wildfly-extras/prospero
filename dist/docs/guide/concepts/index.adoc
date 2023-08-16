@@ -1,0 +1,11 @@
+## Concepts
+
+The Wildfly servers are assembled from a large number of dependencies from various projects. If any of those components is changed, in the traditional update process, the server has to be rebuilt with updated components and distributed as a new version.
+
+Prospero aims to simplify this process by allowing users to apply updated components to already provisioned servers.
+
+To achieve that, Prospero utilizes two projects - Galleon and Wildfly Channels.
+
+include::galleon.adoc[]
+
+include::channels.adoc[]
