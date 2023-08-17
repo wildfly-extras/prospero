@@ -29,6 +29,7 @@
     </dependency>
   </dependencies>
   <default-packages>
+    <package name="docs.licenses"/>
     <package name="org.jboss.prospero"/>
     <package name="org.jboss.prospero-dep"/>
   </default-packages>

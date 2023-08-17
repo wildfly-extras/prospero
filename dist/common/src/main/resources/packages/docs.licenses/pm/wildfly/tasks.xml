@@ -1,0 +1,11 @@
+<?xml version="1.0" ?>
+
+<tasks xmlns="urn:wildfly:wildfly-feature-pack-tasks:3.1">
+    <transform stylesheet="docs/licenses/prospero-licenses.xsl" src="docs/licenses/${prospero.dist.name}-feature-pack-licenses.xml" output="docs/licenses/${prospero.dist.name}-feature-pack-licenses.html" feature-pack-properties="true" phase="FINALIZING"/>
+    <delete path="docs/licenses/prospero-licenses.xsl"/>
+    <line-endings phase="FINALIZING">
+        <unix>
+            <filter pattern="docs?licenses?${prospero.dist.name}-feature-pack-licenses.html" include="true"/>
+        </unix>
+    </line-endings>
+</tasks>
