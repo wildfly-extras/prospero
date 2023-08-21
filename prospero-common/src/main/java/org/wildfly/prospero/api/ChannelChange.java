@@ -76,8 +76,8 @@ public class ChannelChange extends Diff {
         if (channel1 != null && channel2 != null) {
             // as order of repositories matter we compare them by position rather then name
             for (int i = 0; i < channel1.getRepositories().size(); i++) {
-                Repository r1 = channel1.getRepositories().get(i);
-                Repository r2 = (channel2.getRepositories().size() > i) ? channel2.getRepositories().get(i) : null;
+                final Repository r1 = channel1.getRepositories().get(i);
+                final Repository r2 = channel2.getRepositories().size() > i ? channel2.getRepositories().get(i) : null;
                 final String r1Name = r1.getId() + "::" + r1.getUrl();
                 final String r2Name = r2 == null ? null : r2.getId() + "::" + r2.getUrl();
                 // only add if they're changed

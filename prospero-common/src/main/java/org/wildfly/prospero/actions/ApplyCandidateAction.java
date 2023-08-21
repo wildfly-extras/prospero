@@ -77,6 +77,7 @@ import org.wildfly.prospero.wfchannel.MavenSessionManager;
 /**
  * Merges a "candidate" server into base server. The "candidate" can be an update or revert.
  */
+@SuppressWarnings("PMD.TooManyStaticImports")
 public class ApplyCandidateAction {
     public static final Path STANDALONE_STARTUP_MARKER = Path.of("standalone", "tmp", "startup-marker");
     public static final Path DOMAIN_STARTUP_MARKER = Path.of("domain", "tmp", "startup-marker");
@@ -582,17 +583,19 @@ public class ApplyCandidateAction {
                 Path relative = installationDir.relativize(file);
                 Path updateFile = updateDir.resolve(relative);
                 final String fsDiffKey = getFsDiffKey(relative, false);
-                if (fsDiff.getAddedEntry(fsDiffKey) == null && fsDiff.getModifiedEntry(fsDiffKey) == null) {
-                    if (!Files.exists(updateFile) &&
-                            !updateFile.toString().endsWith(Constants.DOT_GLNEW) &&
-                            !updateFile.toString().endsWith(Constants.DOT_GLOLD)) {
-                        if (ProsperoLogger.ROOT_LOGGER.isDebugEnabled()) {
-                            ProsperoLogger.ROOT_LOGGER.debug("Deleting the file " + relative + " that doesn't exist in the update");
-                        }
-                        IoUtils.recursiveDelete(file);
+                if (isNotAddedOrModified(fsDiffKey, fsDiff) && fileNotPresent(updateFile)) {
+                    if (ProsperoLogger.ROOT_LOGGER.isDebugEnabled()) {
+                        ProsperoLogger.ROOT_LOGGER.debug("Deleting the file " + relative + " that doesn't exist in the update");
                     }
+                    IoUtils.recursiveDelete(file);
                 }
                 return FileVisitResult.CONTINUE;
+            }
+
+            private boolean fileNotPresent(Path updateFile) {
+                return !Files.exists(updateFile) &&
+                        !updateFile.toString().endsWith(Constants.DOT_GLNEW) &&
+                        !updateFile.toString().endsWith(Constants.DOT_GLOLD);
             }
 
             @Override
@@ -605,7 +608,7 @@ public class ApplyCandidateAction {
                     Path relative = installationDir.relativize(dir);
                     Path target = updateDir.resolve(relative);
                     String pathKey = getFsDiffKey(relative, true);
-                    if (fsDiff.getAddedEntry(pathKey) != null && !Files.exists(target)) {
+                    if (isAdded(pathKey, fsDiff) && !Files.exists(target)) {
                         if (ProsperoLogger.ROOT_LOGGER.isDebugEnabled()) {
                             ProsperoLogger.ROOT_LOGGER.debug("The directory " + relative + " that doesn't exist in the update is a User changes, skipping it");
                         }
@@ -622,20 +625,34 @@ public class ApplyCandidateAction {
                     Path relative = installationDir.relativize(dir);
                     Path target = updateDir.resolve(relative);
                     String pathKey = getFsDiffKey(relative, true);
-                    if (fsDiff.getAddedEntry(pathKey) == null) {
-                        if (!Files.exists(target) && dir.toFile().list().length == 0) {
-                            if (ProsperoLogger.ROOT_LOGGER.isDebugEnabled()) {
-                                ProsperoLogger.ROOT_LOGGER.debug("Deleting the directory " + relative + " that doesn't exist in the update");
-                            }
-                            IoUtils.recursiveDelete(dir);
-                            return FileVisitResult.SKIP_SUBTREE;
+                    if (!isAdded(pathKey, fsDiff) && !Files.exists(target) && isEmpty(dir)) {
+                        if (ProsperoLogger.ROOT_LOGGER.isDebugEnabled()) {
+                            ProsperoLogger.ROOT_LOGGER.debug("Deleting the directory " + relative + " that doesn't exist in the update");
                         }
+                        IoUtils.recursiveDelete(dir);
+                        return FileVisitResult.SKIP_SUBTREE;
                     }
                 }
                 return FileVisitResult.CONTINUE;
             }
         });
         return Collections.unmodifiableList(conflicts);
+    }
+
+    private static boolean isEmpty(Path dir) {
+        final String[] children = dir.toFile().list();
+        if (children == null) {
+            throw new RuntimeException("Unable to list children of " + dir);
+        }
+        return children.length == 0;
+    }
+
+    private static boolean isAdded(String pathKey, FsDiff fsDiff) {
+        return fsDiff.getAddedEntry(pathKey) != null;
+    }
+
+    private static boolean isNotAddedOrModified(String fsDiffKey, FsDiff fsDiff) {
+        return !isAdded(fsDiffKey, fsDiff) && fsDiff.getModifiedEntry(fsDiffKey) == null;
     }
 
     private String getFsDiffKey(Path relative, boolean appendSeparator) {

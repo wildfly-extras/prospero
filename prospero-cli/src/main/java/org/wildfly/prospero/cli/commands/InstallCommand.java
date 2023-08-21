@@ -18,7 +18,6 @@
 package org.wildfly.prospero.cli.commands;
 
 import java.io.IOException;
-import java.io.InputStream;
 import java.net.URL;
 import java.nio.file.Path;
 import java.util.ArrayList;
@@ -198,8 +197,9 @@ public class InstallCommand extends AbstractInstallCommand {
 
     private void checkFileExists(URL resourceUrl, String argValue) throws ArgumentParsingException {
         if (resourceUrl != null) {
-            try (InputStream is = resourceUrl.openStream()) {
-                // OK ignore, just need to check it exists
+            try {
+                // open stream to check if the resource exists
+                resourceUrl.openStream().close();
             } catch (IOException e) {
                 throw CliMessages.MESSAGES.missingRequiresResource(argValue);
             }

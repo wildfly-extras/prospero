@@ -37,14 +37,15 @@ import static org.wildfly.prospero.galleon.GalleonEnvironment.TRACK_JBMODULES;
 import static org.wildfly.prospero.galleon.GalleonEnvironment.TRACK_JB_ARTIFACTS_RESOLVE;
 import static org.wildfly.prospero.galleon.GalleonEnvironment.TRACK_RESOLVING_VERSIONS;
 
+@SuppressWarnings("PMD.TooManyStaticImports")
 public class CliConsole implements Console {
 
     private static final int MAX_LENGTH = 120;
 
-    private class ProgressLogger {
-        private String starting;
-        private String completed;
-        private String progress;
+    private static class ProgressLogger {
+        private final String starting;
+        private  final String completed;
+        private final String progress;
 
         ProgressLogger(String starting, String completed, String progress) {
             this.starting = starting;

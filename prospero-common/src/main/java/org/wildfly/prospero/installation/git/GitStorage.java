@@ -119,7 +119,7 @@ public class GitStorage implements AutoCloseable {
                 git.commit()
                         .setAuthor(author)
                         .setCommitter(author)
-                        .setMessage(commitType.name() + (msg==null?"":(" " + msg)))
+                        .setMessage(commitType.name() + (msg==null ? "" : " " + msg))
                         .call();
             } else {
                 recordChange(SavedState.Type.UPDATE);
@@ -157,7 +157,7 @@ public class GitStorage implements AutoCloseable {
             git.commit()
                     .setAuthor(author)
                     .setCommitter(author)
-                    .setMessage(commitType.name()+ (msg==null?"":(" " + msg)))
+                    .setMessage(commitType.name()+ (msg==null? "" : " " + msg ))
                     .call();
 
         } catch (IOException | GitAPIException e) {
