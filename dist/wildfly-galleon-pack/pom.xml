@@ -417,6 +417,30 @@
         </executions>
       </plugin>
       <plugin>
+        <groupId>org.wildfly.maven.plugins</groupId>
+        <artifactId>licenses-plugin</artifactId>
+        <inherited>false</inherited>
+        <executions>
+          <execution>
+            <id>update-licenses-xml</id>
+            <goals>
+              <goal>insert-versions</goal>
+            </goals>
+            <phase>process-resources</phase>
+            <configuration>
+              <generateVersionProperty>true</generateVersionProperty>
+              <sortByGroupIdAndArtifactId>true</sortByGroupIdAndArtifactId>
+              <licensesConfigFiles>
+                <licensesConfigFile>../common/src/main/licenses/licenses.xml</licensesConfigFile>
+              </licensesConfigFiles>
+              <licensesOutputFile>${project.build.directory}/resources/packages/docs.licenses/content/docs/licenses/${prospero.dist.name}-feature-pack-licenses.xml</licensesOutputFile>
+              <excludedGroups>org.prospero</excludedGroups>
+              <excludedArtifacts>prospero-dist-common</excludedArtifacts>
+            </configuration>
+          </execution>
+        </executions>
+      </plugin>
+      <plugin>
         <groupId>org.wildfly.galleon-plugins</groupId>
         <artifactId>wildfly-galleon-maven-plugin</artifactId>
         <executions>
