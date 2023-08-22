@@ -27,6 +27,7 @@ import org.jboss.galleon.layout.ProvisioningLayout;
 import org.jboss.galleon.layout.ProvisioningLayoutFactory;
 import org.jboss.galleon.spec.FeaturePackPlugin;
 import org.jboss.galleon.util.HashUtils;
+import org.jboss.logging.Logger;
 import org.wildfly.channel.Channel;
 import org.wildfly.channel.MavenArtifact;
 import org.wildfly.channel.UnresolvedMavenArtifactException;
@@ -43,6 +44,8 @@ import java.util.List;
 import java.util.Set;
 
 public class GalleonFeaturePackAnalyzer {
+
+    private static final Logger LOG = Logger.getLogger(GalleonFeaturePackAnalyzer.class.getName());
 
     private final List<Channel> channels;
     private final MavenSessionManager mavenSessionManager;
@@ -107,6 +110,8 @@ public class GalleonFeaturePackAnalyzer {
                 artifactCache.cache(mavenArtifact);
             } catch (UnresolvedMavenArtifactException e) {
                 // ignore - wildfly-config-gen has not been defined
+                LOG.isDebugEnabled();
+                LOG.debug("Unable to find wildfly-config-get artifact", e);
             }
 
             updateHashes(installedDir);

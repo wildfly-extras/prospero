@@ -81,6 +81,6 @@ public class DiffPrinter {
             diffType = null;
         }
 
-        return String.format("%s%s", statusText, diffType!=null?(" " + diffType):"");
+        return String.format("%s%s", statusText, diffType!=null ? " "+diffType : "");
     }
 }

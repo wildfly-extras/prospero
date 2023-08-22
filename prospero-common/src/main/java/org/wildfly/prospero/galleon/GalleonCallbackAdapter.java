@@ -39,6 +39,7 @@ import static org.wildfly.prospero.galleon.GalleonEnvironment.TRACK_JBMODULES;
  *
  * New {@code GalleonCallbackAdapter} has to be created for each event type registered for.
  */
+@SuppressWarnings("PMD.TooManyStaticImports")
 public class GalleonCallbackAdapter implements ProgressCallback<Object> {
     private static final int PULSE_INTERVAL = 500;
     private static final int PULSE_PCT = 5;
@@ -70,7 +71,7 @@ public class GalleonCallbackAdapter implements ProgressCallback<Object> {
     public void starting(ProgressTracker tracker) {
         final ProvisioningProgressEvent progress = new ProvisioningProgressEvent(id, ProvisioningProgressEvent.EventType.STARTING,
                 tracker.getProcessedVolume(), tracker.getTotalVolume());
-        String total = (tracker.getTotalVolume()>0)?(""+tracker.getTotalVolume()):"";
+        final String total =  tracker.getTotalVolume()>0 ? ""+tracker.getTotalVolume() : "";
         ProsperoLogger.ROOT_LOGGER.startedPhase(name(id), total);
 
         if (console != null) {
@@ -86,7 +87,7 @@ public class GalleonCallbackAdapter implements ProgressCallback<Object> {
     public void complete(ProgressTracker tracker) {
         final ProvisioningProgressEvent progress = new ProvisioningProgressEvent(id, ProvisioningProgressEvent.EventType.COMPLETED,
                 tracker.getProcessedVolume(), tracker.getTotalVolume());
-        String processed = (tracker.getProcessedVolume()>0)?(""+tracker.getProcessedVolume()):"";
+        final String processed = tracker.getProcessedVolume()>0 ? ""+tracker.getProcessedVolume() : "";
         ProsperoLogger.ROOT_LOGGER.completedPhase(name(id), processed);
 
         if (console != null) {

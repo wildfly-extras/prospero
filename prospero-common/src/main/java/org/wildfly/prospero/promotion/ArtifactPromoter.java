@@ -30,6 +30,7 @@ import org.eclipse.aether.resolution.ArtifactResult;
 import org.eclipse.aether.resolution.VersionRangeRequest;
 import org.eclipse.aether.resolution.VersionRangeResolutionException;
 import org.eclipse.aether.resolution.VersionRangeResult;
+import org.eclipse.aether.version.Version;
 import org.jboss.logging.Logger;
 import org.wildfly.channel.ArtifactCoordinate;
 import org.wildfly.channel.ChannelManifest;
@@ -109,8 +110,13 @@ public class ArtifactPromoter {
         final List<RemoteRepository> repositories = Arrays.asList(sourceRepository);
         // generate maven requests
         List<ArtifactRequest> requests = artifacts.stream().map(artifact -> {
-            final String extension = (artifact.getExtension() == null || artifact.getExtension().isEmpty()) ? "jar" : artifact.getExtension();
-            Artifact mavenArtifact = new DefaultArtifact(artifact.getGroupId(), artifact.getArtifactId(), artifact.getClassifier(), extension, artifact.getVersion());
+            final String extension;
+            if (artifact.getExtension() != null && !artifact.getExtension().isEmpty()) {
+                extension = artifact.getExtension();
+            } else {
+                extension = "jar";
+            }
+            final Artifact mavenArtifact = new DefaultArtifact(artifact.getGroupId(), artifact.getArtifactId(), artifact.getClassifier(), extension, artifact.getVersion());
             return new ArtifactRequest(mavenArtifact, repositories, null);
         }).collect(Collectors.toList());
 
@@ -128,14 +134,11 @@ public class ArtifactPromoter {
     private Optional<String> latestAvailableChannelVersion(VersionRangeRequest vr) {
         try {
             final VersionRangeResult result = system.resolveVersionRange(session, vr);
-            if (result.getHighestVersion() != null) {
-                return Optional.of(result.getHighestVersion().toString());
-            }
+            return Optional.ofNullable(result.getHighestVersion()).map(Version::toString);
         } catch (VersionRangeResolutionException e) {
-
             // OK, no custom channel exists so far, we'll create one
+            return Optional.empty();
         }
-        return Optional.empty();
     }
 
     private ChannelManifest resolveDeployedChannel(ChannelCoordinate coordinate, Optional<String> version) throws IOException {
@@ -195,6 +198,6 @@ public class ArtifactPromoter {
             throw ProsperoLogger.ROOT_LOGGER.versionLimitExceeded(baseVersion);
         }
 
-        return String.format("%s%08d", coreVersion, (currentVersion + 1));
+        return String.format("%s%08d", coreVersion, currentVersion + 1);
     }
 }
