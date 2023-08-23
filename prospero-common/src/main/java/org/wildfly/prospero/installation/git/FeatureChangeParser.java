@@ -121,8 +121,8 @@ class FeatureChangeParser implements GitStorage.Parser<FeatureChange> {
             return Optional.empty();
         }
 
-        final String oldConfigId = oldCfgModel==null?null:(oldCfgModel.getModel()+":"+oldCfgModel.getName());
-        final String newConfigId = newCfgModel==null?null:(newCfgModel.getModel()+":"+newCfgModel.getName());
+        final String oldConfigId = oldCfgModel==null ? null : oldCfgModel.getModel()+":"+oldCfgModel.getName();
+        final String newConfigId = newCfgModel==null ? null : newCfgModel.getModel()+":"+newCfgModel.getName();
 
         configChanges.add(new FeatureChange(LAYERS, serialize(oldLayers), serialize(newLayers)));
 

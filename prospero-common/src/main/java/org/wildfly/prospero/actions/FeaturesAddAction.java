@@ -481,6 +481,7 @@ public class FeaturesAddAction {
 
         public ModelNotDefinedException(String msg, Set<String> supportedModels) {
             super(msg);
+            this.supportedModels = supportedModels;
         }
 
         public ModelNotDefinedException(String msg, String model, Set<String> supportedModels) {

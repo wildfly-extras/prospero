@@ -33,7 +33,6 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Set;
 
-import static org.wildfly.prospero.cli.commands.CliConstants.Commands.FEATURE_PACKS;
 import static org.wildfly.prospero.cli.commands.CliConstants.Commands.FEATURE_PACKS_ALIAS;
 
 @CommandLine.Command(name = CliConstants.Commands.FEATURE_PACKS, aliases = {FEATURE_PACKS_ALIAS})
@@ -134,6 +133,6 @@ public class FeaturesCommand extends AbstractParentCommand {
 
 
     public FeaturesCommand(CliConsole console, ActionFactory actionFactory) {
-        super(console, actionFactory, FEATURE_PACKS, List.of(new AddCommand(console, actionFactory)));
+        super(console, actionFactory, CliConstants.Commands.FEATURE_PACKS, List.of(new AddCommand(console, actionFactory)));
     }
 }

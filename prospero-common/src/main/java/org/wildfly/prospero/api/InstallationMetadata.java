@@ -54,8 +54,6 @@ import java.util.zip.ZipInputStream;
 import java.util.zip.ZipOutputStream;
 
 import static org.wildfly.prospero.metadata.ProsperoMetadataUtils.CURRENT_VERSION_FILE;
-import static org.wildfly.prospero.metadata.ProsperoMetadataUtils.METADATA_DIR;
-import static org.wildfly.prospero.metadata.ProsperoMetadataUtils.PROVISIONING_RECORD_XML;
 
 public class InstallationMetadata implements AutoCloseable {
 
@@ -103,7 +101,7 @@ public class InstallationMetadata implements AutoCloseable {
             throw ProsperoLogger.ROOT_LOGGER.unableToReadFile(versionsFile, e);
         }
 
-        final Path provisioningRecordPath = base.resolve(METADATA_DIR).resolve(ProsperoMetadataUtils.PROVISIONING_RECORD_XML);
+        final Path provisioningRecordPath = base.resolve(ProsperoMetadataUtils.METADATA_DIR).resolve(ProsperoMetadataUtils.PROVISIONING_RECORD_XML);
         ProvisioningConfig provisioningConfig = null;
         if (Files.exists(provisioningRecordPath)) {
             try {
@@ -315,10 +313,10 @@ public class InstallationMetadata implements AutoCloseable {
      */
     public void updateProvisioningConfiguration() throws MetadataException {
         try {
-            if (!Files.exists(base.resolve(METADATA_DIR).resolve(PROVISIONING_RECORD_XML))) {
+            if (!Files.exists(base.resolve(ProsperoMetadataUtils.METADATA_DIR).resolve(ProsperoMetadataUtils.PROVISIONING_RECORD_XML))) {
                 ProsperoMetadataUtils.recordProvisioningDefinition(base);
 
-                gitStorage.recordChange(SavedState.Type.INTERNAL_UPDATE, PROVISIONING_RECORD_XML);
+                gitStorage.recordChange(SavedState.Type.INTERNAL_UPDATE, ProsperoMetadataUtils.PROVISIONING_RECORD_XML);
             }
 
             // persist in history
