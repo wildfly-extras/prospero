@@ -34,6 +34,7 @@ import org.wildfly.prospero.api.exceptions.MetadataException;
 import org.wildfly.prospero.api.exceptions.NoChannelException;
 import org.wildfly.prospero.api.exceptions.ProvisioningRuntimeException;
 
+import java.io.IOException;
 import java.net.URI;
 import java.net.URL;
 import java.nio.file.Path;
@@ -350,4 +351,15 @@ public interface ProsperoLogger extends BasicLogger {
 
     @Message(id = 260, value = "The selected folder %s cannot be created.")
     IllegalArgumentException dirMustBeWritable(Path directory);
+
+    @Message(id = 261, value = "Channel map data has been written to %s.")
+    String channelMap(String name);
+
+    @Message(id = 262, value = "An error occurred while writing channel data to the file %s.")
+    @LogMessage(level = Logger.Level.ERROR)
+    void unableToWriteChannelDataToFile(String name, @Cause IOException e);
+
+    @Message(id = 263, value = "Unable to read the channel names from file %s.")
+    @LogMessage(level = Logger.Level.ERROR)
+    void unableToReadChannel(String name, @Cause IOException e);
 }

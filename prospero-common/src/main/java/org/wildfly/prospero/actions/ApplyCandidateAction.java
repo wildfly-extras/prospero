@@ -16,7 +16,38 @@
  */
 package org.wildfly.prospero.actions;
 
+import org.eclipse.aether.artifact.Artifact;
+import org.jboss.galleon.Constants;
+import org.jboss.galleon.Errors;
+import org.jboss.galleon.ProvisioningException;
+import org.jboss.galleon.ProvisioningManager;
+import org.jboss.galleon.diff.FsDiff;
+import org.jboss.galleon.diff.FsEntry;
+import org.jboss.galleon.layout.SystemPaths;
+import org.jboss.galleon.util.HashUtils;
+import org.jboss.galleon.util.IoUtils;
+import org.jboss.galleon.util.PathsUtils;
+import org.jboss.logging.Logger;
+import org.wildfly.prospero.ProsperoLogger;
+import org.wildfly.prospero.api.ArtifactChange;
+import org.wildfly.prospero.api.FileConflict;
+import org.wildfly.prospero.api.InstallationMetadata;
+import org.wildfly.prospero.api.MavenOptions;
+import org.wildfly.prospero.api.SavedState;
+import org.wildfly.prospero.api.exceptions.InvalidUpdateCandidateException;
+import org.wildfly.prospero.api.exceptions.MetadataException;
+import org.wildfly.prospero.api.exceptions.OperationException;
+import org.wildfly.prospero.galleon.ArtifactCache;
+import org.wildfly.prospero.galleon.GalleonEnvironment;
+import org.wildfly.prospero.installation.git.GitStorage;
+import org.wildfly.prospero.metadata.ProsperoMetadataUtils;
+import org.wildfly.prospero.updates.MarkerFile;
+import org.wildfly.prospero.updates.UpdateSet;
+import org.wildfly.prospero.wfchannel.MavenSessionManager;
+
+import java.io.BufferedReader;
 import java.io.File;
+import java.io.FileReader;
 import java.io.IOException;
 import java.nio.file.FileVisitResult;
 import java.nio.file.Files;
@@ -34,22 +65,6 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.stream.Collectors;
 
-import org.eclipse.aether.artifact.Artifact;
-import org.jboss.galleon.Constants;
-import org.jboss.galleon.Errors;
-
-import org.jboss.galleon.ProvisioningManager;
-import org.wildfly.prospero.ProsperoLogger;
-import org.wildfly.prospero.api.ArtifactChange;
-import org.wildfly.prospero.api.FileConflict;
-import org.wildfly.prospero.api.InstallationMetadata;
-import org.wildfly.prospero.api.MavenOptions;
-import org.wildfly.prospero.api.SavedState;
-import org.wildfly.prospero.api.exceptions.InvalidUpdateCandidateException;
-import org.wildfly.prospero.api.exceptions.MetadataException;
-import org.wildfly.prospero.api.exceptions.OperationException;
-import org.jboss.galleon.ProvisioningException;
-import org.jboss.galleon.diff.FsDiff;
 import static org.jboss.galleon.diff.FsDiff.ADDED;
 import static org.jboss.galleon.diff.FsDiff.CONFLICT;
 import static org.jboss.galleon.diff.FsDiff.CONFLICTS_WITH_THE_UPDATED_VERSION;
@@ -61,19 +76,6 @@ import static org.jboss.galleon.diff.FsDiff.REMOVED;
 import static org.jboss.galleon.diff.FsDiff.formatMessage;
 import static org.wildfly.prospero.metadata.ProsperoMetadataUtils.CURRENT_VERSION_FILE;
 
-import org.jboss.galleon.diff.FsEntry;
-import org.jboss.galleon.layout.SystemPaths;
-import org.jboss.galleon.util.HashUtils;
-import org.jboss.galleon.util.IoUtils;
-import org.jboss.galleon.util.PathsUtils;
-import org.wildfly.prospero.galleon.ArtifactCache;
-import org.wildfly.prospero.galleon.GalleonEnvironment;
-import org.wildfly.prospero.installation.git.GitStorage;
-import org.wildfly.prospero.metadata.ProsperoMetadataUtils;
-import org.wildfly.prospero.updates.MarkerFile;
-import org.wildfly.prospero.updates.UpdateSet;
-import org.wildfly.prospero.wfchannel.MavenSessionManager;
-
 /**
  * Merges a "candidate" server into base server. The "candidate" can be an update or revert.
  */
@@ -84,6 +86,8 @@ public class ApplyCandidateAction {
     private final Path updateDir;
     private final Path installationDir;
     private final SystemPaths systemPaths;
+
+    private static final Logger log = Logger.getLogger(ApplyCandidateAction.class);
 
     public enum Type {
         UPDATE("UPDATE"), REVERT("REVERT"), FEATURE_ADD("FEATURE_ADD");
@@ -116,7 +120,6 @@ public class ApplyCandidateAction {
             throws ProvisioningException, OperationException {
         this.updateDir = updateDir;
         this.installationDir = installationDir;
-
         try {
             this.systemPaths = SystemPaths.load(updateDir);
         } catch (IOException ex) {
@@ -278,12 +281,20 @@ public class ApplyCandidateAction {
         }
         for (Artifact artifact : candidate) {
             candidateMap.put(artifact.getGroupId() + ":" + artifact.getArtifactId(), artifact);
+
         }
         List<ArtifactChange> changes = new ArrayList<>();
+
+        Map<String, String> channelMap = getChannelNameMap();
         for (String key : baseMap.keySet()) {
+
             if (candidateMap.containsKey(key)) {
                 if (!baseMap.get(key).getVersion().equals(candidateMap.get(key).getVersion())) {
-                    changes.add(ArtifactChange.updated(baseMap.get(key), candidateMap.get(key)));
+                    if (channelMap.isEmpty()) {
+                        changes.add(ArtifactChange.updated(baseMap.get(key), candidateMap.get(key)));
+                    } else if (channelMap.containsKey(key)) {
+                        changes.add(ArtifactChange.updated(baseMap.get(key), candidateMap.get(key), channelMap.get(key)));
+                    }
                 }
             } else {
                 changes.add(ArtifactChange.removed(baseMap.get(key)));
@@ -705,5 +716,25 @@ public class ApplyCandidateAction {
         } catch (IOException e) {
             throw new ProvisioningException("Failed to persist " + target.getParent().resolve(target.getFileName() + Constants.DOT_GLOLD), e);
         }
+    }
+
+    private Map<String, String> getChannelNameMap() {
+        final Path candidateFile = installationDir.resolve(ProsperoMetadataUtils.METADATA_DIR).resolve(ProsperoMetadataUtils.CANDIDATE);
+        Map<String, String> getInfo = new HashMap<String, String>();
+
+        try (BufferedReader br = new BufferedReader(new FileReader(candidateFile.toFile()))) {
+            String line;
+            while ((line = br.readLine()) != null) {
+                String[] parts = line.split("=");
+                if (parts.length == 2) {
+                    String dependencyName = parts[0];
+                    String channelName = parts[1];
+                    getInfo.put(dependencyName, channelName);
+                }
+            }
+        } catch (IOException e) {
+            ProsperoLogger.ROOT_LOGGER.unableToReadChannel(candidateFile.toFile().getAbsolutePath(),e);
+        }
+        return getInfo;
     }
 }

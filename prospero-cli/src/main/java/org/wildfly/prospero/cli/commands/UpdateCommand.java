@@ -17,17 +17,6 @@
 
 package org.wildfly.prospero.cli.commands;
 
-import java.io.IOException;
-import java.net.MalformedURLException;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
-import java.nio.file.StandardCopyOption;
-import java.util.List;
-import java.util.Optional;
-import java.util.function.Supplier;
-import java.util.stream.Collectors;
-
 import org.apache.commons.io.FileUtils;
 import org.jboss.galleon.ProvisioningException;
 import org.jboss.galleon.config.ProvisioningConfig;
@@ -65,6 +54,16 @@ import org.wildfly.prospero.updates.UpdateSet;
 import picocli.CommandLine;
 
 import javax.xml.stream.XMLStreamException;
+import java.io.IOException;
+import java.net.MalformedURLException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.nio.file.StandardCopyOption;
+import java.util.List;
+import java.util.Optional;
+import java.util.function.Supplier;
+import java.util.stream.Collectors;
 
 @CommandLine.Command(
         name = CliConstants.Commands.UPDATE,
@@ -189,7 +188,7 @@ public class UpdateCommand extends AbstractParentCommand {
 
             try (UpdateAction updateAction = actionFactory.update(installationDir,
                     mavenOptions, console, repositories)) {
-                if (buildUpdate(updateAction, candidateDirectory, yes, console, ()->console.confirmBuildUpdates())) {
+                if (buildUpdate(updateAction, candidateDirectory, yes, console, () -> console.confirmBuildUpdates(), installationDir)) {
                     console.println("");
                     console.buildUpdatesComplete();
                     console.println(CliMessages.MESSAGES.updateCandidateGenerated(candidateDirectory));
@@ -255,7 +254,7 @@ public class UpdateCommand extends AbstractParentCommand {
             applyCandidateAction.applyUpdate(ApplyCandidateAction.Type.UPDATE);
             console.updatesComplete();
 
-            if(remove) {
+            if (remove) {
                 applyCandidateAction.removeCandidate(candidateDir.toFile());
             }
             final float totalTime = (System.currentTimeMillis() - startTime) / 1000f;
@@ -272,6 +271,7 @@ public class UpdateCommand extends AbstractParentCommand {
         public ListCommand(CliConsole console, ActionFactory actionFactory) {
             super(console, actionFactory);
         }
+
         @Override
         public Integer call() throws Exception {
             final long startTime = System.currentTimeMillis();
@@ -313,7 +313,7 @@ public class UpdateCommand extends AbstractParentCommand {
         public Integer call() throws Exception {
             final Path installDir = directory.orElse(currentDir()).toAbsolutePath();
             if (Files.exists(ProsperoMetadataUtils.manifestPath(installDir))
-              || Files.exists(ProsperoMetadataUtils.configurationPath(installDir))) {
+                    || Files.exists(ProsperoMetadataUtils.configurationPath(installDir))) {
                 console.println(CliMessages.MESSAGES.metadataExistsAlready(installDir, DistributionInfo.DIST_NAME));
                 return ReturnCodes.INVALID_ARGUMENTS;
             }
@@ -340,8 +340,8 @@ public class UpdateCommand extends AbstractParentCommand {
         private void generateMeta(Path installDir, SubscribeNewServerAction.GenerateResult generateResult) throws IOException, ProvisioningException {
             // compare hashes
             FsEntryFactory fsEntryFactory = FsEntryFactory.getInstance()
-              .filterGalleonPaths()
-              .filter(ProsperoMetadataUtils.METADATA_DIR);
+                    .filterGalleonPaths()
+                    .filter(ProsperoMetadataUtils.METADATA_DIR);
             final FsEntry originalState = fsEntryFactory.forPath(generateResult.getProvisionDir());
             final FsEntry currentState = fsEntryFactory.forPath(installDir);
             final FsDiff diff = FsDiff.diff(originalState, currentState);
@@ -379,7 +379,7 @@ public class UpdateCommand extends AbstractParentCommand {
                 channels = channels.stream().map(c -> {
                     try {
                         return new Channel(c.getName(), c.getDescription(), c.getVendor(), c.getRepositories(),
-                          new ChannelManifestCoordinate(manifestPathCopy.toUri().toURL()), c.getBlocklistCoordinate(), c.getNoStreamStrategy());
+                                new ChannelManifestCoordinate(manifestPathCopy.toUri().toURL()), c.getBlocklistCoordinate(), c.getNoStreamStrategy());
                     } catch (MalformedURLException e) {
                         throw new RuntimeException(e);
                     }
@@ -409,15 +409,32 @@ public class UpdateCommand extends AbstractParentCommand {
     public UpdateCommand(CliConsole console, ActionFactory actionFactory) {
         super(console, actionFactory, CliConstants.Commands.UPDATE,
                 List.of(
-                    new UpdateCommand.PrepareCommand(console, actionFactory),
-                    new UpdateCommand.ApplyCommand(console, actionFactory),
-                    new UpdateCommand.PerformCommand(console, actionFactory),
-                    new UpdateCommand.ListCommand(console, actionFactory),
-                    new SubscribeCommand(console, actionFactory))
+                        new UpdateCommand.PrepareCommand(console, actionFactory),
+                        new UpdateCommand.ApplyCommand(console, actionFactory),
+                        new UpdateCommand.PerformCommand(console, actionFactory),
+                        new UpdateCommand.ListCommand(console, actionFactory),
+                        new SubscribeCommand(console, actionFactory))
         );
     }
 
     private static boolean buildUpdate(UpdateAction updateAction, Path updateDirectory, boolean yes, CliConsole console, Supplier<Boolean> confirmation) throws OperationException, ProvisioningException {
+        final UpdateSet updateSet = updateAction.findUpdates();
+
+        console.updatesFound(updateSet.getArtifactUpdates());
+        if (updateSet.isEmpty()) {
+            return false;
+        }
+
+        if (!yes && !confirmation.get()) {
+            return false;
+        }
+
+        updateAction.buildUpdate(updateDirectory.toAbsolutePath());
+
+        return true;
+    }
+
+    private static boolean buildUpdate(UpdateAction updateAction, Path updateDirectory, boolean yes, CliConsole console, Supplier<Boolean> confirmation, Path installationDir) throws OperationException, ProvisioningException {
         final UpdateSet updateSet = updateAction.findUpdates();
 
         console.updatesFound(updateSet.getArtifactUpdates());

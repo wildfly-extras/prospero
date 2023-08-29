@@ -110,7 +110,8 @@ public class UpdateAction implements AutoCloseable {
             InstallFolderUtils.verifyIsWritable(targetDir);
         }
 
-        if (findUpdates().isEmpty()) {
+        UpdateSet updateSet = findUpdates();
+        if (updateSet.isEmpty()) {
             ProsperoLogger.ROOT_LOGGER.noUpdatesFound(installDir);
             return false;
         }
@@ -123,6 +124,8 @@ public class UpdateAction implements AutoCloseable {
 
             final boolean result = prepareCandidateAction.buildCandidate(targetDir, galleonEnv,
                     ApplyCandidateAction.Type.UPDATE, provisioningConfig);
+
+            prepareCandidateAction.writeChannelMapToFile(updateSet, installDir);
             ProsperoLogger.ROOT_LOGGER.updateCandidateCompleted(targetDir);
             return result;
         }

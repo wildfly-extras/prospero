@@ -51,6 +51,8 @@ public class ProsperoMetadataUtils {
 
     private static final String WARNING_MESSAGE = "WARNING: The files in .installation directory should be only edited by the provisioning tool.";
 
+    public static final String CANDIDATE = "candidate_artifact_channels.txt";
+
     /**
      * Generate installer metadata inside {@code serverDir}. The generated metadata files allow the server to be
      * managed by Prospero.

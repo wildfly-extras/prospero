@@ -24,9 +24,15 @@ import java.util.Objects;
 import java.util.Optional;
 
 public class ArtifactChange extends Diff {
+    private String channelName;
+
     public static ArtifactChange added(Artifact newVersion) {
         Objects.requireNonNull(newVersion);
         return new ArtifactChange(toGav(newVersion), null, newVersion.getVersion());
+    }
+    public static ArtifactChange added(Artifact newVersion, String channelName) {
+        Objects.requireNonNull(newVersion);
+        return new ArtifactChange(toGav(newVersion), null, newVersion.getVersion(), channelName);
     }
 
     public static ArtifactChange removed(Artifact oldVersion) {
@@ -39,9 +45,19 @@ public class ArtifactChange extends Diff {
         Objects.requireNonNull(newVersion);
         return new ArtifactChange(toGav(oldVersion), oldVersion.getVersion(), newVersion.getVersion());
     }
+    public static ArtifactChange updated(Artifact oldVersion, Artifact newVersion, String channelName) {
+        Objects.requireNonNull(oldVersion);
+        Objects.requireNonNull(newVersion);
+        return new ArtifactChange(toGav(oldVersion), oldVersion.getVersion(), newVersion.getVersion(),channelName);
+    }
 
     private ArtifactChange(String gav, String oldVersion, String newVersion) {
         super(gav, oldVersion, newVersion);
+    }
+
+    private ArtifactChange(String gav, String oldVersion, String newVersion, String channelName) {
+        super(gav, oldVersion, newVersion);
+        this.channelName= channelName;
     }
 
     @SuppressWarnings("OptionalGetWithoutIsPresent")
@@ -52,6 +68,10 @@ public class ArtifactChange extends Diff {
 
     public Optional<String> getOldVersion() {
         return getOldValue();
+    }
+
+    public Optional<String> getChannelName() {
+        return Optional.ofNullable(channelName);
     }
 
     public Optional<String> getNewVersion() {
