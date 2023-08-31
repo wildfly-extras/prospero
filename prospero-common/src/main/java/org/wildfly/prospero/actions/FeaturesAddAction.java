@@ -103,8 +103,7 @@ public class FeaturesAddAction {
      * In order to install a feature pack, a server is re-provisioned and changes are applied to existing server.
      *
      * @param featurePackCoord - maven {@code groupId:artifactId} coordinates of the feature pack to install
-     * @param layers - set of layer names to be provisioned
-     * @param configName - {@code ConfigId} of the configuration file to generate if supported
+     * @param defaultConfigNames - set of {@code ConfigId} of the default configurations to include
      *
      * @throws ProvisioningException - if unable to provision the server
      * @throws ModelNotDefinedException - if requested model is not provided by the feature pack
@@ -113,24 +112,16 @@ public class FeaturesAddAction {
      * @throws InvalidUpdateCandidateException - if the folder at {@code updateDir} is not a valid update
      * @throws MetadataException - if unable to read or write the installation of update metadata
      */
-    public void addFeaturePack(String featurePackCoord, Set<String> layers, ConfigId configName)
+    public void addFeaturePack(String featurePackCoord, Set<ConfigId> defaultConfigNames)
             throws ProvisioningException, OperationException {
-        Objects.requireNonNull(layers);
-        if (featurePackCoord == null || featurePackCoord.isEmpty()) {
-            throw new IllegalArgumentException("The feature pack coordinate cannot be null");
-        }
-        if (featurePackCoord.split(":").length != 2) {
-            throw new IllegalArgumentException("The feature pack coordinate has to consist of <groupId>:<artifactId>");
-        }
+        verifyFeaturePackCoord(featurePackCoord);
+        Objects.requireNonNull(defaultConfigNames);
 
         FeaturePackLocation fpl = FeaturePackLocationParser.resolveFpl(featurePackCoord);
 
         if (ProsperoLogger.ROOT_LOGGER.isTraceEnabled()) {
             ProsperoLogger.ROOT_LOGGER.trace("Adding feature pack " + fpl);
         }
-
-        final String selectedConfig;
-        final String selectedModel;
 
         final Map<String, Set<String>> allLayers = getAllLayers(fpl);
 
@@ -141,26 +132,101 @@ public class FeaturesAddAction {
             }
         }
 
-        selectedModel = getSelectedModel(configName == null?null:configName.getModel(), allLayers);
+        final Set<ConfigId> selectedConfigs = new HashSet<>();
+        for (ConfigId defaultConfigName : defaultConfigNames) {
+            final String selectedModel = getSelectedModel(defaultConfigName==null?null:defaultConfigName.getModel(), allLayers);
 
-        verifyLayerAvailable(layers, selectedModel, allLayers);
-
-        if (configName == null || configName.getName() == null) {
-            if (selectedModel == null) {
-                selectedConfig = null;
-            } else {
-                selectedConfig = selectedModel + ".xml";
+            final String selectedConfig = getSelectedConfig(defaultConfigName, selectedModel);
+            if (selectedConfig != null) {
+                selectedConfigs.add(new ConfigId(selectedModel, selectedConfig));
             }
-        } else {
-            selectedConfig = configName.getName();
         }
 
         if (ProsperoLogger.ROOT_LOGGER.isDebugEnabled()) {
-            ProsperoLogger.ROOT_LOGGER.addingFeaturePack(fpl, selectedConfig, selectedModel, StringUtils.join(layers));
+            ProsperoLogger.ROOT_LOGGER.addingFeaturePack(fpl, StringUtils.join(selectedConfigs, ","), "");
         }
 
-        final ProvisioningConfig newConfig = buildProvisioningConfig(layers, fpl, selectedConfig, selectedModel);
 
+        final ProvisioningConfig newConfig = buildProvisioningConfig(Collections.emptySet(), fpl, selectedConfigs);
+
+        install(newConfig);
+    }
+
+    /**
+     * performs feature pack installation. The added feature pack can be customized by specifying layers and configuration model name.
+     * In order to install a feature pack, a server is re-provisioned and changes are applied to existing server.
+     *
+     * @param featurePackCoord - maven {@code groupId:artifactId} coordinates of the feature pack to install
+     * @param layers - set of layer names to be provisioned
+     * @param configName - {@code ConfigId} of the configuration file to generate if supported
+     *
+     * @throws ProvisioningException - if unable to provision the server
+     * @throws ModelNotDefinedException - if requested model is not provided by the feature pack
+     * @throws LayerNotFoundException - if one of the requested layers is not provided by the feature pack
+     * @throws FeaturePackAlreadyInstalledException - if the requested feature pack configuration wouldn't change the server state
+     * @throws InvalidUpdateCandidateException - if the folder at {@code updateDir} is not a valid update
+     * @throws MetadataException - if unable to read or write the installation of update metadata
+     */
+    public void addFeaturePackWithLayers(String featurePackCoord, Set<String> layers, ConfigId configName)
+            throws ProvisioningException, OperationException {
+        Objects.requireNonNull(layers);
+        if (layers.isEmpty() && configName != null) {
+            throw new IllegalArgumentException("The layers have to be selected if configName is not empty");
+        }
+        verifyFeaturePackCoord(featurePackCoord);
+
+        FeaturePackLocation fpl = FeaturePackLocationParser.resolveFpl(featurePackCoord);
+
+        if (ProsperoLogger.ROOT_LOGGER.isTraceEnabled()) {
+            ProsperoLogger.ROOT_LOGGER.trace("Adding feature pack " + fpl);
+        }
+
+        final Map<String, Set<String>> allLayers = getAllLayers(fpl);
+
+        if (ProsperoLogger.ROOT_LOGGER.isTraceEnabled()) {
+            ProsperoLogger.ROOT_LOGGER.trace("Found layers");
+            for (String key : allLayers.keySet()) {
+                ProsperoLogger.ROOT_LOGGER.trace(key + ": " + StringUtils.join(allLayers.get(key)));
+            }
+        }
+
+        final String selectedModel = getSelectedModel(configName == null?null:configName.getModel(), allLayers);
+
+        verifyLayerAvailable(layers, selectedModel, allLayers);
+
+        final String selectedConfig = getSelectedConfig(configName, selectedModel);
+
+        if (ProsperoLogger.ROOT_LOGGER.isDebugEnabled()) {
+            ProsperoLogger.ROOT_LOGGER.addingFeaturePack(fpl, selectedConfig + ":" + selectedModel, StringUtils.join(layers));
+        }
+
+        final ProvisioningConfig newConfig = buildProvisioningConfig(layers, fpl, selectedConfig==null?Collections.emptySet():Set.of(new ConfigId(selectedModel, selectedConfig)));
+
+        install(newConfig);
+    }
+
+    private static String getSelectedConfig(ConfigId defaultConfigName, String selectedModel) {
+        if (defaultConfigName == null || defaultConfigName.getName() == null) {
+            if (selectedModel == null) {
+                return null;
+            } else {
+                return selectedModel + ".xml";
+            }
+        } else {
+            return defaultConfigName.getName();
+        }
+    }
+
+    private static void verifyFeaturePackCoord(String featurePackCoord) {
+        if (featurePackCoord == null || featurePackCoord.isEmpty()) {
+            throw new IllegalArgumentException("The feature pack coordinate cannot be null");
+        }
+        if (featurePackCoord.split(":").length != 2) {
+            throw new IllegalArgumentException("The feature pack coordinate has to consist of <groupId>:<artifactId>");
+        }
+    }
+
+    private void install(ProvisioningConfig newConfig) throws ProvisioningException, OperationException {
         final Path candidate;
         try {
             candidate = Files.createTempDirectory("prospero-candidate").toAbsolutePath();
@@ -226,8 +292,11 @@ public class FeaturesAddAction {
         return true;
     }
 
-    private ProvisioningConfig buildProvisioningConfig(Set<String> layers, FeaturePackLocation fpl, String selectedConfig, String selectedModel)
+    private ProvisioningConfig buildProvisioningConfig(Set<String> layers, FeaturePackLocation fpl, Set<ConfigId> selectedConfigs)
             throws ProvisioningException, OperationException {
+        if (!layers.isEmpty() && selectedConfigs.size() > 1) {
+            throw new IllegalArgumentException("Only one config can be selected when selecting layers");
+        }
         try (GalleonEnvironment galleonEnv = getGalleonEnv(installDir);
             ProvisioningManager pm = galleonEnv.getProvisioningManager()) {
 
@@ -236,13 +305,19 @@ public class FeaturesAddAction {
 
             final FeaturePackConfig.Builder fpBuilder = buildFeaturePackConfig(fpl, existingConfig, builder);
 
-            if (selectedConfig != null) {
+            if (!selectedConfigs.isEmpty()) {
                 fpBuilder.setInheritConfigs(false);
-                if (!layers.isEmpty()) {
-                    final ConfigModel.Builder configBuilder = buildLayerConfig(layers, selectedConfig, selectedModel, existingConfig, builder);
-                    builder.addConfig(configBuilder.build());
-                } else {
-                    fpBuilder.includeDefaultConfig(selectedModel, selectedConfig);
+            }
+
+            for (ConfigId selectedConfig : selectedConfigs) {
+                if (selectedConfig != null) {
+                    fpBuilder.setInheritConfigs(false);
+                    if (!layers.isEmpty()) {
+                        final ConfigModel.Builder configBuilder = buildLayerConfig(layers, selectedConfig.getName(), selectedConfig.getModel(), existingConfig, builder);
+                        builder.addConfig(configBuilder.build());
+                    } else {
+                        fpBuilder.includeDefaultConfig(selectedConfig.getModel(), selectedConfig.getName());
+                    }
                 }
             }
 

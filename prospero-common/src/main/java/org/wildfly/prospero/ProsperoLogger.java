@@ -342,8 +342,8 @@ public interface ProsperoLogger extends BasicLogger {
     FeaturesAddAction.FeaturePackAlreadyInstalledException featurePackAlreadyInstalled(FeaturePackLocation fpl);
 
     @LogMessage(level = Logger.Level.DEBUG)
-    @Message(id = 258, value = "Adding a feature pack [%s] with configId [%s:%s] and layers [%s]")
-    void addingFeaturePack(FeaturePackLocation fpl, String selectedConfig, String selectedModel, String layers);
+    @Message(id = 258, value = "Adding a feature pack [%s] with configuration %s and layers [%s]")
+    void addingFeaturePack(FeaturePackLocation fpl, String configuration, String layers);
 
     @Message(id = 259, value = "Requested configuration %s/%s is not available in the feature packs.")
     String galleonConfigNotFound(String model, String name);

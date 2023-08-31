@@ -62,6 +62,8 @@ public class FeaturesCommandTest extends AbstractMavenCommandTest {
 
     @Captor
     private ArgumentCaptor<ConfigId> configNameCaptor;
+    @Captor
+    private ArgumentCaptor<Set<ConfigId>> defaultConfigNamesCaptor;
 
     @Rule
     public TemporaryFolder tempFolder = new TemporaryFolder();
@@ -106,13 +108,10 @@ public class FeaturesCommandTest extends AbstractMavenCommandTest {
         assertEquals(ReturnCodes.SUCCESS, exitCode);
 
         final ArgumentCaptor<String> fplCaptor = ArgumentCaptor.forClass(String.class);
-        final ArgumentCaptor<Set<String>> layersCaptor = ArgumentCaptor.forClass(Set.class);
-        verify(featuresAddAction).addFeaturePack(fplCaptor.capture(), layersCaptor.capture(),
-                configNameCaptor.capture());
+        verify(featuresAddAction).addFeaturePack(fplCaptor.capture(), defaultConfigNamesCaptor.capture());
 
         assertEquals(fplCaptor.getValue(), "test:test");
-        assertEquals(Collections.emptySet(), layersCaptor.getValue());
-        assertEquals(configNameCaptor.getValue(), null);
+        assertEquals(defaultConfigNamesCaptor.getValue(), Collections.emptySet());
     }
 
     @Test
@@ -124,7 +123,7 @@ public class FeaturesCommandTest extends AbstractMavenCommandTest {
         assertEquals(ReturnCodes.SUCCESS, exitCode);
 
         final ArgumentCaptor<Set<String>> layersCaptor = ArgumentCaptor.forClass(Set.class);
-        verify(featuresAddAction).addFeaturePack(any(), layersCaptor.capture(),
+        verify(featuresAddAction).addFeaturePackWithLayers(any(), layersCaptor.capture(),
                 any());
 
         assertEquals(Set.of("layer1", "layer2"), layersCaptor.getValue());
@@ -135,13 +134,14 @@ public class FeaturesCommandTest extends AbstractMavenCommandTest {
         int exitCode = commandLine.execute(CliConstants.Commands.FEATURE_PACKS, CliConstants.Commands.ADD,
                 CliConstants.DIR, installationDir.toString(),
                 CliConstants.FPL, "test:test",
-                CliConstants.CONFIG, "test/");
+                CliConstants.DEFAULT_CONFIG, "test/");
         assertEquals(ReturnCodes.SUCCESS, exitCode);
 
-        verify(featuresAddAction).addFeaturePack(any(), any(),
-                configNameCaptor.capture());
+        verify(featuresAddAction).addFeaturePack(any(),
+                defaultConfigNamesCaptor.capture());
 
-        assertEquals(new ConfigId("test", null), configNameCaptor.getValue());
+        assertThat(defaultConfigNamesCaptor.getValue())
+                .contains(new ConfigId("test", null));
     }
 
     @Test
@@ -149,13 +149,14 @@ public class FeaturesCommandTest extends AbstractMavenCommandTest {
         int exitCode = commandLine.execute(CliConstants.Commands.FEATURE_PACKS, CliConstants.Commands.ADD,
                 CliConstants.DIR, installationDir.toString(),
                 CliConstants.FPL, "test:test",
-                CliConstants.CONFIG, "test");
+                CliConstants.DEFAULT_CONFIG, "test");
         assertEquals(ReturnCodes.SUCCESS, exitCode);
 
-        verify(featuresAddAction).addFeaturePack(any(), any(),
-                configNameCaptor.capture());
+        verify(featuresAddAction).addFeaturePack(any(),
+                defaultConfigNamesCaptor.capture());
 
-        assertEquals(new ConfigId(null, "test"), configNameCaptor.getValue());
+        assertThat(defaultConfigNamesCaptor.getValue())
+                .contains(new ConfigId(null, "test"));
     }
 
     @Test
@@ -168,7 +169,7 @@ public class FeaturesCommandTest extends AbstractMavenCommandTest {
         assertEquals(ReturnCodes.SUCCESS, exitCode);
 
         final ArgumentCaptor<Set<String>> layersCaptor = ArgumentCaptor.forClass(Set.class);
-        verify(featuresAddAction).addFeaturePack(any(), layersCaptor.capture(), configNameCaptor.capture());
+        verify(featuresAddAction).addFeaturePackWithLayers(any(), layersCaptor.capture(), configNameCaptor.capture());
 
         assertEquals(Set.of("layer1"), layersCaptor.getValue());
         assertEquals(new ConfigId("model", "config"), configNameCaptor.getValue());
@@ -230,7 +231,7 @@ public class FeaturesCommandTest extends AbstractMavenCommandTest {
     @Test
     public void nonExistingLayersShowsError() throws Exception {
         doThrow(new FeaturesAddAction.LayerNotFoundException("foo", Set.of("idontexist"), Set.of("layer1", "layer2")))
-                .when(featuresAddAction).addFeaturePack("org.test:test", Set.of("idontexist"), null);
+                .when(featuresAddAction).addFeaturePackWithLayers("org.test:test", Set.of("idontexist"), null);
         int exitCode = commandLine.execute(CliConstants.Commands.FEATURE_PACKS, CliConstants.Commands.ADD,
                 CliConstants.DIR, installationDir.toString(),
                 CliConstants.LAYERS, "idontexist",
@@ -244,7 +245,7 @@ public class FeaturesCommandTest extends AbstractMavenCommandTest {
     @Test
     public void nonExistingLayersShowsErrorNoAvailableLayers() throws Exception {
         doThrow(new FeaturesAddAction.LayerNotFoundException("foo", Set.of("idontexist"), Collections.emptySet()))
-                .when(featuresAddAction).addFeaturePack("org.test:test", Set.of("idontexist"), null);
+                .when(featuresAddAction).addFeaturePackWithLayers("org.test:test", Set.of("idontexist"), null);
         int exitCode = commandLine.execute(CliConstants.Commands.FEATURE_PACKS, CliConstants.Commands.ADD,
                 CliConstants.DIR, installationDir.toString(),
                 CliConstants.LAYERS, "idontexist",
@@ -259,11 +260,11 @@ public class FeaturesCommandTest extends AbstractMavenCommandTest {
     @Test
     public void nonExistingModelShowsError() throws Exception {
         doThrow(new FeaturesAddAction.ModelNotDefinedException("test", "idontexist", Set.of("model1", "model2")))
-                .when(featuresAddAction).addFeaturePack("org.test:test", Collections.emptySet(),
-                        new ConfigId("idontexist", "test"));
+                .when(featuresAddAction).addFeaturePack("org.test:test",
+                        Set.of(new ConfigId("idontexist", "test")));
         int exitCode = commandLine.execute(CliConstants.Commands.FEATURE_PACKS, CliConstants.Commands.ADD,
                 CliConstants.DIR, installationDir.toString(),
-                CliConstants.CONFIG, "idontexist/test",
+                CliConstants.DEFAULT_CONFIG, "idontexist/test",
                 CliConstants.FPL, "org.test:test");
         assertEquals(ReturnCodes.INVALID_ARGUMENTS, exitCode);
         assertThat(getErrorOutput())
@@ -274,15 +275,38 @@ public class FeaturesCommandTest extends AbstractMavenCommandTest {
     @Test
     public void nonExistingConfigurationShowsError() throws Exception {
         doThrow(new FeaturesAddAction.ConfigurationNotFoundException("test", new ConfigId("test", "idontexist")))
-                .when(featuresAddAction).addFeaturePack("org.test:test", Collections.emptySet(),
-                        new ConfigId("test", "idontexist"));
+                .when(featuresAddAction).addFeaturePack("org.test:test",
+                        Set.of(new ConfigId("test", "idontexist")));
+        int exitCode = commandLine.execute(CliConstants.Commands.FEATURE_PACKS, CliConstants.Commands.ADD,
+                CliConstants.DIR, installationDir.toString(),
+                CliConstants.DEFAULT_CONFIG, "test/idontexist",
+                CliConstants.FPL, "org.test:test");
+        assertEquals(ReturnCodes.INVALID_ARGUMENTS, exitCode);
+        assertThat(getErrorOutput())
+                .contains("The feature pack `org.test:test` does not provide requested configuration `test/idontexist`.");
+    }
+
+    @Test
+    public void configRequiresLayer() throws Exception {
         int exitCode = commandLine.execute(CliConstants.Commands.FEATURE_PACKS, CliConstants.Commands.ADD,
                 CliConstants.DIR, installationDir.toString(),
                 CliConstants.CONFIG, "test/idontexist",
                 CliConstants.FPL, "org.test:test");
         assertEquals(ReturnCodes.INVALID_ARGUMENTS, exitCode);
         assertThat(getErrorOutput())
-                .contains("The feature pack `org.test:test` does not provide requested configuration `test/idontexist`.");
+                .contains("Missing required argument(s): --layers");
+    }
+
+    @Test
+    public void layersExcludeDefaultConfig() throws Exception {
+        int exitCode = commandLine.execute(CliConstants.Commands.FEATURE_PACKS, CliConstants.Commands.ADD,
+                CliConstants.DIR, installationDir.toString(),
+                CliConstants.DEFAULT_CONFIG, "test/idontexist",
+                CliConstants.LAYERS, "layer1",
+                CliConstants.FPL, "org.test:test");
+        assertEquals(ReturnCodes.INVALID_ARGUMENTS, exitCode);
+        assertThat(getErrorOutput())
+                .contains("are mutually exclusive (specify only one)");
     }
 
     @Override

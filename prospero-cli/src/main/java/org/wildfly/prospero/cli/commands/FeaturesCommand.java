@@ -29,9 +29,10 @@ import org.wildfly.prospero.cli.ReturnCodes;
 import picocli.CommandLine;
 
 import java.nio.file.Path;
-import java.util.Collections;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 import static org.wildfly.prospero.cli.commands.CliConstants.Commands.FEATURE_PACKS_ALIAS;
 
@@ -47,11 +48,25 @@ public class FeaturesCommand extends AbstractParentCommand {
                 required = true)
         private String fpl;
 
-        @CommandLine.Option(names = CliConstants.LAYERS, split = ",")
-        private Set<String> layers;
 
-        @CommandLine.Option(names = CliConstants.CONFIG)
-        private String config;
+        private static class LayersOptions {
+            @CommandLine.Option(names = CliConstants.LAYERS, split = ",", required = true)
+            private Set<String> layers;
+
+            @CommandLine.Option(names = CliConstants.CONFIG)
+            private String config;
+        }
+
+        private static class ConfigOptions {
+
+            @CommandLine.ArgGroup(exclusive = false)
+            private LayersOptions layersOptions = new LayersOptions();
+            @CommandLine.Option(names = CliConstants.DEFAULT_CONFIG, split = ",")
+            private final Set<String> defaultConfig = new HashSet<>();
+        }
+
+        @CommandLine.ArgGroup
+        private final ConfigOptions configOptions = new ConfigOptions();
 
         @CommandLine.Option(names = {CliConstants.Y, CliConstants.YES})
         boolean skipConfirmation;
@@ -92,7 +107,12 @@ public class FeaturesCommand extends AbstractParentCommand {
             }
 
             try {
-                featuresAddAction.addFeaturePack(fpl, layers == null ? Collections.emptySet() : layers, parseConfigName());
+                if (configOptions.layersOptions.layers == null) {
+                    final Set<ConfigId> configurations = configOptions.defaultConfig.stream().map(AddCommand::parseConfigName).collect(Collectors.toSet());
+                    featuresAddAction.addFeaturePack(fpl, configurations);
+                } else {
+                    featuresAddAction.addFeaturePackWithLayers(fpl, configOptions.layersOptions.layers, parseConfigName(configOptions.layersOptions.config));
+                }
             } catch (FeaturesAddAction.LayerNotFoundException e) {
                 if (!e.getSupportedLayers().isEmpty()) {
                     console.error(CliMessages.MESSAGES.layerNotSupported(fpl, e.getLayers(), e.getSupportedLayers()));
@@ -114,7 +134,7 @@ public class FeaturesCommand extends AbstractParentCommand {
             return ReturnCodes.SUCCESS;
         }
 
-        private ConfigId parseConfigName() {
+        private static ConfigId parseConfigName(String config) {
             if (config == null) {
                 return null;
             }
@@ -123,13 +143,14 @@ public class FeaturesCommand extends AbstractParentCommand {
                 return new ConfigId(null, config.trim());
             }
 
-            if (i == config.length() -1) {
+            if (i == config.length() - 1) {
                 return new ConfigId(config.substring(0, i).trim(), null);
             } else {
-                return new ConfigId(config.substring(0, i).trim(), config.substring(i+1).trim());
+                return new ConfigId(config.substring(0, i).trim(), config.substring(i + 1).trim());
             }
         }
     }
+
 
 
     public FeaturesCommand(CliConsole console, ActionFactory actionFactory) {

@@ -58,6 +58,8 @@ $ prospero feature-pack add \
 
 If the feature pack provides multiple configuration model, the configuration name can be prefixed with model name e.g. `--config standalone/standalone.xml`
 
+Some feature packs provide a set of "default" configurations that will be included when installing the feature pack without `--layers` option. This list can be modified using `--default-config` parameter selecting which default configurations should be provisioned.
+
 #### Offline installation
 
 Similarly to other operations, `feature-pack add` can be executed in an offline mode. To do so, users should provide local repositories with all required artifacts (both for base server and the new feature) using `--repositories` parameter.

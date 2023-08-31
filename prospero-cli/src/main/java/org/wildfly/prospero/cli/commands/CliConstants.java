@@ -104,4 +104,5 @@ public final class CliConstants {
 
     public static final String LAYERS = "--layers";
     public static final String CONFIG = "--config";
+    public static final String DEFAULT_CONFIG = "--default-config";
 }
