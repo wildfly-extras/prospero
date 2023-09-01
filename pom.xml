@@ -18,7 +18,6 @@
         <connection>scm:git:git@github.com:wildfly-extras/prospero.git</connection>
         <developerConnection>scm:git:git@github.com:wildfly-extras/prospero.git</developerConnection>
         <url>https://github.com/wildfly-extras/prospero</url>
-        <tag>1.0.3.Final</tag>
     </scm>
 
     <properties>
