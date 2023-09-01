@@ -103,6 +103,5 @@ public final class CliConstants {
     public static final String ACCEPT_AGREEMENTS = "--accept-license-agreements";
 
     public static final String LAYERS = "--layers";
-    public static final String CONFIG = "--config";
-    public static final String DEFAULT_CONFIG = "--default-config";
+    public static final String TARGET_CONFIG = "--target-config";
 }

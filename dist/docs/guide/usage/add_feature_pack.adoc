@@ -40,9 +40,7 @@ NOTE: This specific command does not in fact install any database drivers or dat
 
 The Galleon feature packs may provide different capabilities using https://docs.wildfly.org/galleon/#_layers[layers]. Users may select a set of layers to install using `--layers` parameter.
 
-NOTE: Using `--layers` parameter overwrites the default configuration defined by some feature packs.
-
-If the feature pack changes server configuration files, the user may also choose which server configuration should be affected using `--config` parameter. If not provided, the layer configuration will use default values. Most Wildfly feature packs provide only a single model (standalone) and the default configuration file of standalone.xml.
+If the feature pack changes server configuration files, the user may also choose which server configuration should be affected using `--target-config` parameter. If not provided, the layer configuration will use default values. Most Wildfly feature packs provide only a single model (standalone) and the default configuration file of standalone.xml.
 
 NOTE: If the affected configuration file has been modified by the user, that file will not be modified. Instead, a new configuration file with suffix `.glnew` will be created with the changes.
 
@@ -52,13 +50,11 @@ For example to install mysql support and configure the datasource in Wildfly `st
 $ prospero feature-pack add \
   --fpl org.wildfly:wildfly-datasources-galleon-pack \
   --layers=mysql-datasource \
-  --config=standalone-full.xml \
+  --target-config=standalone-full.xml \
   --dir wildfly
 ```
 
-If the feature pack provides multiple configuration model, the configuration name can be prefixed with model name e.g. `--config standalone/standalone.xml`
-
-Some feature packs provide a set of "default" configurations that will be included when installing the feature pack without `--layers` option. This list can be modified using `--default-config` parameter selecting which default configurations should be provisioned.
+If the feature pack provides multiple configuration model, the configuration name can be prefixed with model name e.g. `--target-config standalone/standalone.xml`
 
 #### Offline installation
 

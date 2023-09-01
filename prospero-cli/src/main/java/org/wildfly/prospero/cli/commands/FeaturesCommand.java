@@ -29,10 +29,8 @@ import org.wildfly.prospero.cli.ReturnCodes;
 import picocli.CommandLine;
 
 import java.nio.file.Path;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
-import java.util.stream.Collectors;
 
 import static org.wildfly.prospero.cli.commands.CliConstants.Commands.FEATURE_PACKS_ALIAS;
 
@@ -49,24 +47,11 @@ public class FeaturesCommand extends AbstractParentCommand {
         private String fpl;
 
 
-        private static class LayersOptions {
-            @CommandLine.Option(names = CliConstants.LAYERS, split = ",", required = true)
-            private Set<String> layers;
+        @CommandLine.Option(names = CliConstants.LAYERS, split = ",", required = true)
+        private Set<String> layers;
 
-            @CommandLine.Option(names = CliConstants.CONFIG)
-            private String config;
-        }
-
-        private static class ConfigOptions {
-
-            @CommandLine.ArgGroup(exclusive = false)
-            private LayersOptions layersOptions = new LayersOptions();
-            @CommandLine.Option(names = CliConstants.DEFAULT_CONFIG, split = ",")
-            private final Set<String> defaultConfig = new HashSet<>();
-        }
-
-        @CommandLine.ArgGroup
-        private final ConfigOptions configOptions = new ConfigOptions();
+        @CommandLine.Option(names = CliConstants.TARGET_CONFIG)
+        private String config;
 
         @CommandLine.Option(names = {CliConstants.Y, CliConstants.YES})
         boolean skipConfirmation;
@@ -107,12 +92,7 @@ public class FeaturesCommand extends AbstractParentCommand {
             }
 
             try {
-                if (configOptions.layersOptions.layers == null) {
-                    final Set<ConfigId> configurations = configOptions.defaultConfig.stream().map(AddCommand::parseConfigName).collect(Collectors.toSet());
-                    featuresAddAction.addFeaturePack(fpl, configurations);
-                } else {
-                    featuresAddAction.addFeaturePackWithLayers(fpl, configOptions.layersOptions.layers, parseConfigName(configOptions.layersOptions.config));
-                }
+                featuresAddAction.addFeaturePackWithLayers(fpl, layers, parseConfigName(config));
             } catch (FeaturesAddAction.LayerNotFoundException e) {
                 if (!e.getSupportedLayers().isEmpty()) {
                     console.error(CliMessages.MESSAGES.layerNotSupported(fpl, e.getLayers(), e.getSupportedLayers()));
