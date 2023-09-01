@@ -45,7 +45,7 @@ public class AbstractConsoleTest {
                 return !denyConfirm;
             }
         };
-        commandLine = CliMain.createCommandLine(console, createActionFactory());
+        commandLine = CliMain.createCommandLine(console, new String[]{}, createActionFactory());
     }
 
     protected void setDenyConfirm(boolean denyConfirm) {

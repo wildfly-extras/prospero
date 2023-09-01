@@ -45,6 +45,9 @@ public class MainCommand implements Callable<Integer> {
     @CommandLine.Option(names = {CliConstants.V, CliConstants.VERSION}, versionHelp = true)
     boolean version;
 
+    @CommandLine.Option(names = {CliConstants.VV, CliConstants.VERBOSE})
+    boolean verbose;
+
     public MainCommand(CliConsole console) {
         this.console = console;
     }
