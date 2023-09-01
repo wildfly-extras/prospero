@@ -50,23 +50,26 @@ public class ExecutionExceptionHandler implements CommandLine.IExecutionExceptio
 
     private static final Set<String> OFFLINE_REPOSITORIES = Set.of(MavenSessionManager.AETHER_OFFLINE_PROTOCOLS_VALUE.split(","));
     private final CliConsole console;
+    private final boolean isVerbose;
 
-    public ExecutionExceptionHandler(CliConsole console) {
+    public ExecutionExceptionHandler(CliConsole console, boolean isVerbose) {
         this.console = console;
+        this.isVerbose = isVerbose;
     }
 
     @Override
     public int handleExecutionException(Exception ex, CommandLine commandLine, CommandLine.ParseResult parseResult)
             throws Exception {
+        Integer returnCode = null;
         if (ex instanceof NoChannelException) {
             console.error(CliMessages.MESSAGES.errorHeader(ex.getLocalizedMessage()));
             console.error(CliMessages.MESSAGES.addChannels(CliConstants.CHANNEL_MANIFEST));
-            return ReturnCodes.INVALID_ARGUMENTS;
+            returnCode = ReturnCodes.INVALID_ARGUMENTS;
         }
         if (ex instanceof IllegalArgumentException) {
             // used to indicate invalid arguments
             console.error(CliMessages.MESSAGES.errorHeader(ex.getLocalizedMessage()));
-            return ReturnCodes.INVALID_ARGUMENTS;
+            returnCode = ReturnCodes.INVALID_ARGUMENTS;
         } else if (ex instanceof ArgumentParsingException) {
             ArgumentParsingException ape = (ArgumentParsingException) ex;
             // used to indicate invalid arguments
@@ -74,7 +77,7 @@ public class ExecutionExceptionHandler implements CommandLine.IExecutionExceptio
             for (String detail : ape.getDetails()) {
                 console.error("  " + detail);
             }
-            return ReturnCodes.INVALID_ARGUMENTS;
+            returnCode = ReturnCodes.INVALID_ARGUMENTS;
         } else if (ex instanceof OperationException) {
             if (ex instanceof ChannelDefinitionException) {
                 if (ex.getCause() != null) {
@@ -101,18 +104,26 @@ public class ExecutionExceptionHandler implements CommandLine.IExecutionExceptio
                 if (ex.getCause() != null && (ex.getCause() instanceof MarkedYAMLException || ex.getCause() instanceof JsonMappingException)) {
                     console.error(ex.getCause().getLocalizedMessage());
                 }
-                return ReturnCodes.PROCESSING_ERROR;
             } else {
                 console.error(CliMessages.MESSAGES.errorHeader(ex.getLocalizedMessage()));
             }
-            return ReturnCodes.PROCESSING_ERROR;
+            returnCode = ReturnCodes.PROCESSING_ERROR;
         } else if (ex instanceof ProvisioningException) {
             handleProvisioningException((ProvisioningException)ex);
-            return ReturnCodes.PROCESSING_ERROR;
+            returnCode = ReturnCodes.PROCESSING_ERROR;
         }
 
-        // re-throw other exceptions
-        throw ex;
+
+        if (returnCode != null) {
+            if (isVerbose) {
+                console.error("");
+                ex.printStackTrace(console.getErrOut());
+            }
+            return returnCode;
+        } else {
+            // re-throw other exceptions
+            throw ex;
+        }
     }
 
     private void handleProvisioningException(ProvisioningException ex) {

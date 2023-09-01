@@ -34,6 +34,8 @@ import org.wildfly.prospero.cli.commands.channel.ChannelPromoteCommand;
 import org.wildfly.prospero.cli.commands.channel.ChannelRemoveCommand;
 import picocli.CommandLine;
 
+import java.util.Arrays;
+
 public class CliMain {
 
     static {
@@ -51,7 +53,7 @@ public class CliMain {
     public static void main(String[] args) {
         try {
             CliConsole console = new CliConsole();
-            CommandLine commandLine = createCommandLine(console);
+            CommandLine commandLine = createCommandLine(console, args);
             int exitCode = commandLine.execute(args);
             System.exit(exitCode);
         } catch (Exception e) {
@@ -61,11 +63,11 @@ public class CliMain {
         }
     }
 
-    public static CommandLine createCommandLine(CliConsole console) {
-        return createCommandLine(console, new ActionFactory());
+    public static CommandLine createCommandLine(CliConsole console, String[] args) {
+        return createCommandLine(console, args, new ActionFactory());
     }
 
-    public static CommandLine createCommandLine(CliConsole console, ActionFactory actionFactory) {
+    public static CommandLine createCommandLine(CliConsole console, String[] args, ActionFactory actionFactory) {
         CommandLine commandLine = new CommandLine(new MainCommand(console));
         // override main command name - this cannot be done via annotation as the value needs to be loaded at runtime
         commandLine.setCommandName(DistributionInfo.DIST_NAME);
@@ -94,9 +96,10 @@ public class CliMain {
         cloneCommand.addSubCommands(commandLine);
 
         commandLine.setUsageHelpAutoWidth(true);
-        commandLine.setExecutionExceptionHandler(new ExecutionExceptionHandler(console));
-
+        final boolean isVerbose = Arrays.stream(args).anyMatch(s -> s.equals(CliConstants.VV) || s.equals(CliConstants.VERBOSE));
         final CommandLine.IParameterExceptionHandler rootParameterExceptionHandler = commandLine.getParameterExceptionHandler();
+        commandLine.setExecutionExceptionHandler(new ExecutionExceptionHandler(console, isVerbose));
+
         commandLine.setParameterExceptionHandler(new UnknownCommandParameterExceptionHandler(rootParameterExceptionHandler, System.err));
 
         return commandLine;

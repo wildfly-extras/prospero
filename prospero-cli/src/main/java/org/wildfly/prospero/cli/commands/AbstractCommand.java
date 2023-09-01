@@ -48,6 +48,12 @@ public abstract class AbstractCommand implements Callable<Integer> {
     )
     boolean help;
 
+    @CommandLine.Option(
+            names = {CliConstants.VV, CliConstants.VERBOSE},
+            order = 101
+    )
+    boolean verbose;
+
     public AbstractCommand(CliConsole console, ActionFactory actionFactory) {
         this.console = console;
         this.actionFactory = actionFactory;
