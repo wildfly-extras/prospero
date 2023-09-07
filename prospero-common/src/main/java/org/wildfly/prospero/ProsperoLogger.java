@@ -18,6 +18,7 @@
 package org.wildfly.prospero;
 
 import org.jboss.galleon.ProvisioningException;
+import org.jboss.galleon.universe.FeaturePackLocation;
 import org.jboss.logging.BasicLogger;
 import org.jboss.logging.Logger;
 import org.jboss.logging.annotations.Cause;
@@ -25,6 +26,7 @@ import org.jboss.logging.annotations.LogMessage;
 import org.jboss.logging.annotations.Message;
 import org.jboss.logging.annotations.MessageLogger;
 import org.wildfly.channel.InvalidChannelMetadataException;
+import org.wildfly.prospero.actions.FeaturesAddAction;
 import org.wildfly.prospero.api.exceptions.ArtifactPromoteException;
 import org.wildfly.prospero.api.exceptions.ChannelDefinitionException;
 import org.wildfly.prospero.api.exceptions.InvalidUpdateCandidateException;
@@ -322,4 +324,27 @@ public interface ProsperoLogger extends BasicLogger {
 
     @Message(id = 252, value = "Invalid metadata bundle [%s]. Expected a ZIP archive containing installation configuration.")
     IllegalArgumentException invalidMetadataBundle(Path path);
+
+    @LogMessage(level = Logger.Level.INFO)
+    @Message(id = 253, value = "Unable to retrieve stored provisioning configuration. Falling back to current configuration")
+    void fallbackToGalleonProvisioningDefinition();
+
+    @Message(id = 254, value = "Multiple models available in the selected feature pack, please select one.")
+    String noDefaultModel();
+
+    @Message(id = 255, value = "Chosen feature pack does not support model %s. Please choose one of supported models.")
+    String modelNotFoundInFeaturePack(String model);
+
+    @Message(id = 256, value = "The feature pack doesn't define requested layers: [%s]")
+    String layerNotFoundInFeaturePack(String layerName);
+
+    @Message(id = 257, value = "Feature pack %s is already provisioned")
+    FeaturesAddAction.FeaturePackAlreadyInstalledException featurePackAlreadyInstalled(FeaturePackLocation fpl);
+
+    @LogMessage(level = Logger.Level.DEBUG)
+    @Message(id = 258, value = "Adding a feature pack [%s] with configuration %s and layers [%s]")
+    void addingFeaturePack(FeaturePackLocation fpl, String configuration, String layers);
+
+    @Message(id = 259, value = "Requested configuration %s/%s is not available in the feature packs.")
+    String galleonConfigNotFound(String model, String name);
 }

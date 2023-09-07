@@ -57,6 +57,7 @@ import org.wildfly.prospero.licenses.License;
 import org.wildfly.prospero.licenses.LicenseManager;
 import org.wildfly.prospero.metadata.ManifestVersionRecord;
 import org.wildfly.prospero.metadata.ManifestVersionResolver;
+import org.wildfly.prospero.metadata.ProsperoMetadataUtils;
 import org.wildfly.prospero.model.ProsperoConfig;
 import org.wildfly.prospero.wfchannel.MavenSessionManager;
 import org.jboss.galleon.ProvisioningException;
@@ -148,6 +149,13 @@ public class ProvisioningAction {
 
             if (ProsperoLogger.ROOT_LOGGER.isDebugEnabled()) {
                 ProsperoLogger.ROOT_LOGGER.debug("Recording installed metadata");
+            }
+
+            try {
+                ProsperoMetadataUtils.recordProvisioningDefinition(installDir);
+            } catch (IOException e) {
+                throw ProsperoLogger.ROOT_LOGGER.unableToSaveConfiguration(
+                        installDir.resolve(ProsperoMetadataUtils.METADATA_DIR).resolve(ProsperoMetadataUtils.PROVISIONING_RECORD_XML), e);
             }
             writeProsperoMetadata(installDir, galleonEnv.getRepositoryManager(), recordedChannels, manifestRecord);
         }

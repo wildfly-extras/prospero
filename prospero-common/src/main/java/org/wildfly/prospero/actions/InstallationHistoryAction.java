@@ -18,6 +18,9 @@
 package org.wildfly.prospero.actions;
 
 import org.apache.commons.io.FileUtils;
+import org.jboss.galleon.config.ProvisioningConfig;
+import org.jboss.galleon.util.PathsUtils;
+import org.jboss.galleon.xml.ProvisioningXmlParser;
 import org.wildfly.channel.Repository;
 import org.wildfly.prospero.ProsperoLogger;
 import org.wildfly.prospero.api.Console;
@@ -107,7 +110,15 @@ public class InstallationHistoryAction {
                              mavenSessionManager, revertMetadata.getProsperoConfig())) {
 
                     System.setProperty(MAVEN_REPO_LOCAL, mavenSessionManager.getProvisioningRepo().toAbsolutePath().toString());
-                    prepareCandidateAction.buildCandidate(targetDir, galleonEnv, ApplyCandidateAction.Type.REVERT);
+
+                    ProvisioningConfig provisioningConfig = revertMetadata.getRecordedProvisioningConfig();
+                    if (provisioningConfig == null) {
+                        ProsperoLogger.ROOT_LOGGER.fallbackToGalleonProvisioningDefinition();
+                        provisioningConfig = ProvisioningXmlParser.parse(PathsUtils.getProvisioningXml(installation));
+                    }
+
+                    prepareCandidateAction.buildCandidate(targetDir, galleonEnv,
+                            ApplyCandidateAction.Type.REVERT, provisioningConfig);
                 }
 
                 revertCurrentVersions(targetDir, revertMetadata);

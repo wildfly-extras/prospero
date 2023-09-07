@@ -23,8 +23,18 @@ import java.util.Objects;
 
 public class SavedState {
 
-    public enum Type {
-        UPDATE, INSTALL, ROLLBACK, CONFIG_CHANGE, UNKNOWN;
+    public enum Type { UPDATE, INSTALL, ROLLBACK, CONFIG_CHANGE,
+        /**
+         * A provisioning state change. For example adding a new feature pack
+          */
+        FEATURE_PACK,
+        /**
+         * Change that should not be visible to users.
+         * It might be a change required to support new capabilities.
+         */
+        INTERNAL_UPDATE,
+        UNKNOWN;
+
         public static Type fromText(String text) {
             for (Type value : Type.values()) {
                 if (value.name().equals(text)) {

@@ -21,6 +21,7 @@ import com.fasterxml.jackson.databind.JsonMappingException;
 import org.apache.commons.lang3.StringUtils;
 import org.jboss.galleon.Constants;
 import org.jboss.galleon.config.ProvisioningConfig;
+import org.jboss.galleon.util.PathsUtils;
 import org.wildfly.channel.Channel;
 import org.wildfly.channel.ChannelManifest;
 import org.apache.commons.io.FileUtils;
@@ -66,6 +67,7 @@ public class InstallationMetadata implements AutoCloseable {
     private final GitStorage gitStorage;
     private final Path base;
     private final Optional<ManifestVersionRecord> manifestVersion;
+    private final ProvisioningConfig provisioningConfig;
     private ProsperoConfig prosperoConfig;
     private ChannelManifest manifest;
 
@@ -99,9 +101,19 @@ public class InstallationMetadata implements AutoCloseable {
             throw ProsperoLogger.ROOT_LOGGER.unableToReadFile(versionsFile, e);
         }
 
+        final Path provisioningRecordPath = base.resolve(ProsperoMetadataUtils.METADATA_DIR).resolve(ProsperoMetadataUtils.PROVISIONING_RECORD_XML);
+        ProvisioningConfig provisioningConfig = null;
+        if (Files.exists(provisioningRecordPath)) {
+            try {
+                provisioningConfig = ProvisioningXmlParser.parse(provisioningRecordPath);
+            } catch (ProvisioningException e) {
+                throw ProsperoLogger.ROOT_LOGGER.unableToReadFile(provisioningRecordPath, e);
+            }
+        }
+
         try {
             final GitStorage gitStorage = new GitStorage(base);
-            final InstallationMetadata metadata = new InstallationMetadata(base, manifest, prosperoConfig, gitStorage, currentVersion);
+            final InstallationMetadata metadata = new InstallationMetadata(base, manifest, prosperoConfig, gitStorage, currentVersion, provisioningConfig);
             if (!gitStorage.isStarted()) {
                 ProsperoLogger.ROOT_LOGGER.debugf("Initializing history storage in %s", base);
                 gitStorage.record();
@@ -125,7 +137,13 @@ public class InstallationMetadata implements AutoCloseable {
      */
     public static InstallationMetadata newInstallation(Path base, ChannelManifest manifest, ProsperoConfig prosperoConfig,
                                                        Optional<ManifestVersionRecord> currentVersions) throws MetadataException {
-        return new InstallationMetadata(base, manifest, prosperoConfig, new GitStorage(base), currentVersions);
+        final ProvisioningConfig provisioningConfig;
+        try {
+            provisioningConfig = ProvisioningXmlParser.parse(PathsUtils.getProvisioningXml(base));
+        } catch (ProvisioningException e) {
+            throw ProsperoLogger.ROOT_LOGGER.unableToReadFile(PathsUtils.getProvisioningXml(base), e);
+        }
+        return new InstallationMetadata(base, manifest, prosperoConfig, new GitStorage(base), currentVersions, provisioningConfig);
     }
 
     /**
@@ -181,13 +199,15 @@ public class InstallationMetadata implements AutoCloseable {
     }
 
     protected InstallationMetadata(Path base, ChannelManifest manifest, ProsperoConfig prosperoConfig,
-                                   GitStorage gitStorage, Optional<ManifestVersionRecord> currentVersions) throws MetadataException {
+                                   GitStorage gitStorage, Optional<ManifestVersionRecord> currentVersions,
+                                   ProvisioningConfig provisioningConfig) throws MetadataException {
         this.base = base;
         this.gitStorage = gitStorage;
         this.manifestFile = ProsperoMetadataUtils.manifestPath(base);
         this.channelsFile = ProsperoMetadataUtils.configurationPath(base);
         this.readmeFile = base.resolve(ProsperoMetadataUtils.METADATA_DIR).resolve(ProsperoMetadataUtils.README_FILE_NAME);
         this.provisioningFile = base.resolve(GALLEON_INSTALLATION_DIR).resolve(InstallationMetadata.PROVISIONING_FILE_NAME);
+        this.provisioningConfig = provisioningConfig;
 
         this.manifest = manifest;
         this.prosperoConfig = new ProsperoConfig(new ArrayList<>(prosperoConfig.getChannels()), prosperoConfig.getMavenOptions());
@@ -288,6 +308,23 @@ public class InstallationMetadata implements AutoCloseable {
         }
     }
 
+    /**
+     * check if the provisioning definition is present. If not add it to the history
+     */
+    public void updateProvisioningConfiguration() throws MetadataException {
+        try {
+            if (!Files.exists(base.resolve(ProsperoMetadataUtils.METADATA_DIR).resolve(ProsperoMetadataUtils.PROVISIONING_RECORD_XML))) {
+                ProsperoMetadataUtils.recordProvisioningDefinition(base);
+
+                gitStorage.recordChange(SavedState.Type.INTERNAL_UPDATE, ProsperoMetadataUtils.PROVISIONING_RECORD_XML);
+            }
+
+            // persist in history
+        } catch (IOException e) {
+            throw ProsperoLogger.ROOT_LOGGER.unableToSaveConfiguration(channelsFile, e);
+        }
+    }
+
     private void writeProsperoConfig() throws MetadataException {
         try {
             ProsperoMetadataUtils.writeChannelsConfiguration(channelsFile, getProsperoConfig().getChannels());
@@ -318,7 +355,10 @@ public class InstallationMetadata implements AutoCloseable {
     }
 
     public InstallationChanges getChangesSince(SavedState savedState) throws MetadataException {
-        return new InstallationChanges(gitStorage.getArtifactChanges(savedState), gitStorage.getChannelChanges(savedState));
+        return new InstallationChanges(
+                gitStorage.getArtifactChanges(savedState),
+                gitStorage.getChannelChanges(savedState),
+                gitStorage.getFeatureChanges(savedState));
     }
 
     public void setManifest(ChannelManifest resolvedChannel) {
@@ -368,5 +408,14 @@ public class InstallationMetadata implements AutoCloseable {
                 ProsperoLogger.ROOT_LOGGER.unableToCloseStore(e);
             }
         }
+    }
+
+    /**
+     * galleon configuration used to provision current state of the server.
+     *
+     * @return
+     */
+    public ProvisioningConfig getRecordedProvisioningConfig() {
+        return provisioningConfig;
     }
 }

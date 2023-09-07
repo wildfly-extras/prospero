@@ -9,3 +9,5 @@ include::channel_mgmt.adoc[]
 include::history.adoc[]
 
 include::clone.adoc[]
+
+include::add_feature_pack.adoc[]

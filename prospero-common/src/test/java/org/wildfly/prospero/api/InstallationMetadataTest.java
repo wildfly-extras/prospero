@@ -17,6 +17,8 @@
 
 package org.wildfly.prospero.api;
 
+import org.jboss.galleon.Constants;
+import org.jboss.galleon.config.ProvisioningConfig;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
@@ -48,6 +50,7 @@ import java.util.Optional;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.Mockito.verify;
@@ -255,6 +258,48 @@ public class InstallationMetadataTest {
                 .hasMessageContaining("PRSP000220");
     }
 
+    @Test
+    public void testLoadMetadataWithProvisioningRecord() throws Exception {
+        Files.writeString(base.resolve(ProsperoMetadataUtils.METADATA_DIR).resolve(ProsperoMetadataUtils.PROVISIONING_RECORD_XML),
+                "<installation xmlns=\"urn:jboss:galleon:provisioning:3.0\"><feature-pack location=\"org.wildfly:wildfly-galleon-pack:zip\"/></installation>");
+        try (final InstallationMetadata metadata = InstallationMetadata.loadInstallation(base)) {
+            final ProvisioningConfig recordedProvisioningConfig = metadata.getRecordedProvisioningConfig();
+            assertNotNull(recordedProvisioningConfig);
+            assertEquals("org.wildfly:wildfly-galleon-pack:zip",
+                    recordedProvisioningConfig.getFeaturePackDeps().stream().findFirst().get()
+                            .getLocation().toString());
+        }
+    }
+
+    @Test
+    public void updateProvisioningConfiguration_PersistIfFileDoesntExist() throws Exception {
+        Files.createDirectory(base.resolve(Constants.PROVISIONED_STATE_DIR));
+        Files.writeString(base.resolve(Constants.PROVISIONED_STATE_DIR).resolve(Constants.PROVISIONING_XML),
+                "<installation xmlns=\"urn:jboss:galleon:provisioning:3.0\"><feature-pack location=\"org.wildfly:wildfly-galleon-pack:zip\"/></installation>");
+        installationMetadata.updateProvisioningConfiguration();
+
+        assertThat(base.resolve(ProsperoMetadataUtils.METADATA_DIR).resolve(ProsperoMetadataUtils.PROVISIONING_RECORD_XML))
+                .exists();
+
+        verify(gitStorage).recordChange(SavedState.Type.INTERNAL_UPDATE, ProsperoMetadataUtils.PROVISIONING_RECORD_XML);
+    }
+
+    @Test
+    public void updateProvisioningConfiguration_DoNothingIfFileExist() throws Exception {
+        Files.writeString(base.resolve(ProsperoMetadataUtils.METADATA_DIR).resolve(ProsperoMetadataUtils.PROVISIONING_RECORD_XML),
+                "<installation xmlns=\"urn:jboss:galleon:provisioning:3.0\"><feature-pack location=\"org.wildfly:wildfly-galleon-pack:zip\"/></installation>");
+        Files.createDirectory(base.resolve(Constants.PROVISIONED_STATE_DIR));
+        Files.writeString(base.resolve(Constants.PROVISIONED_STATE_DIR).resolve(Constants.PROVISIONING_XML),
+                "<installation xmlns=\"urn:jboss:galleon:provisioning:3.0\"><feature-pack location=\"org.wildfly:changed:zip\"/></installation>");
+        try (final InstallationMetadata metadata = InstallationMetadata.loadInstallation(base)) {
+            metadata.updateProvisioningConfiguration();
+
+            assertThat(base.resolve(ProsperoMetadataUtils.METADATA_DIR).resolve(ProsperoMetadataUtils.PROVISIONING_RECORD_XML))
+                    .exists()
+                    .hasContent("<installation xmlns=\"urn:jboss:galleon:provisioning:3.0\"><feature-pack location=\"org.wildfly:wildfly-galleon-pack:zip\"/></installation>");
+        }
+    }
+
     private static Channel createChannel(ChannelManifestCoordinate manifestCoordinate) {
         Channel channel = new Channel("test", null, null,
                 List.of(new Repository("test", "file://foo.bar")),
@@ -270,7 +315,7 @@ public class InstallationMetadataTest {
         final Channel channel = createChannel(new ChannelManifestCoordinate("foo","bar"));
         final ProsperoConfig prosperoConfig = new ProsperoConfig(List.of(channel));
         final InstallationMetadata metadata = new InstallationMetadata(base, manifest, prosperoConfig, gitStorage,
-                Optional.empty());
+                Optional.empty(), null);
         metadata.recordProvision(true);
         return metadata;
     }

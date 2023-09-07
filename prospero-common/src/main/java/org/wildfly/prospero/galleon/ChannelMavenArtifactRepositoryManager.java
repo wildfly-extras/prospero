@@ -155,6 +155,10 @@ public class ChannelMavenArtifactRepositoryManager implements MavenRepoManager, 
     }
 
     private boolean requiresChannel(MavenArtifact artifact) {
+        // if the Galleon pack hasn't defined the version, it needs to come from channel
+        if (artifact.getVersion() == null || artifact.getVersion().isEmpty()) {
+            return true;
+        }
         boolean requireChannel = Boolean.parseBoolean(artifact.getMetadata().get(REQUIRE_CHANNEL_FOR_ALL_ARTIFACT));
         try {
             return requireChannel || fpRequireChannel(artifact);

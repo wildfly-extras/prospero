@@ -21,6 +21,7 @@ import org.apache.commons.io.FileUtils;
 import org.jboss.galleon.ProvisioningException;
 import org.jboss.galleon.ProvisioningManager;
 import org.jboss.galleon.config.ProvisioningConfig;
+import org.jboss.galleon.layout.ProvisioningLayoutFactory;
 import org.jboss.galleon.state.ProvisionedFeaturePack;
 import org.jboss.galleon.universe.FeaturePackLocation;
 import org.jboss.galleon.universe.UniverseResolver;
@@ -193,6 +194,20 @@ public class GalleonUtils {
                 .addArtifactResolver(maven)
                 .setInstallationHome(installDir).build();
         }
+    }
+
+    /**
+     * {@link ProvisioningLayoutFactory} using {@code maven} to resolve artifacts.
+     *
+     * @param maven
+     * @return
+     * @throws ProvisioningException
+     */
+    public static ProvisioningLayoutFactory getProvisioningLayoutFactory(MavenRepoManager maven) throws ProvisioningException {
+        final UniverseResolver resolver = UniverseResolver.builder()
+                .addArtifactResolver(maven).build();
+
+        return ProvisioningLayoutFactory.getInstance(resolver);
     }
 
     public static List<String> getInstalledPacks(Path dir) throws ProvisioningException {

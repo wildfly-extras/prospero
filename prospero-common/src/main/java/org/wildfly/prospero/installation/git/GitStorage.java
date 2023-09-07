@@ -23,6 +23,7 @@ import org.eclipse.jgit.lib.StoredConfig;
 import org.wildfly.channel.Channel;
 import org.wildfly.channel.ChannelManifest;
 import org.wildfly.prospero.ProsperoLogger;
+import org.wildfly.prospero.api.FeatureChange;
 import org.wildfly.prospero.metadata.ManifestVersionRecord;
 import org.wildfly.prospero.api.ChannelChange;
 import org.wildfly.prospero.api.exceptions.MetadataException;
@@ -51,6 +52,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
@@ -91,6 +93,10 @@ public class GitStorage implements AutoCloseable {
 
                 }
                 final SavedState.Type recordType = SavedState.Type.fromText(type.toUpperCase(Locale.ROOT));
+                if (recordType == SavedState.Type.INTERNAL_UPDATE) {
+                    // hide internal records
+                    continue;
+                }
                 if (recordType == SavedState.Type.UNKNOWN) {
                     msg = shortMessage;
                 }
@@ -115,6 +121,7 @@ public class GitStorage implements AutoCloseable {
                 git.add().addFilepattern(ProsperoMetadataUtils.MANIFEST_FILE_NAME).call();
                 git.add().addFilepattern(ProsperoMetadataUtils.INSTALLER_CHANNELS_FILE_NAME).call();
                 git.add().addFilepattern(CURRENT_VERSION_FILE).call();
+                git.add().addFilepattern(ProsperoMetadataUtils.PROVISIONING_RECORD_XML).call();
                 // adjust the date so that when taking over a non-prosper installation date matches creation
                 git.commit()
                         .setAuthor(author)
@@ -141,13 +148,18 @@ public class GitStorage implements AutoCloseable {
     }
 
     public void recordChange(SavedState.Type operation) throws MetadataException {
+        recordChange(operation, ProsperoMetadataUtils.MANIFEST_FILE_NAME, CURRENT_VERSION_FILE, ProsperoMetadataUtils.PROVISIONING_RECORD_XML);
+    }
+
+    public void recordChange(SavedState.Type operation, String... files) throws MetadataException {
         try {
             if (isRepositoryEmpty(git)) {
                 throw new IllegalStateException("This operation cannot be performed on empty repository");
             }
 
-            git.add().addFilepattern(ProsperoMetadataUtils.MANIFEST_FILE_NAME).call();
-            git.add().addFilepattern(CURRENT_VERSION_FILE).call();
+            for (String file : files) {
+                git.add().addFilepattern(file).call();
+            }
 
             final PersonIdent author = getCommitter();
             final SavedState.Type commitType = operation;
@@ -203,6 +215,26 @@ public class GitStorage implements AutoCloseable {
                         .setMode(ResetCommand.ResetType.HARD)
                         .setRef(savedState.getName())
                         .call();
+
+                if (!Files.exists(hist.resolve(ProsperoMetadataUtils.PROVISIONING_RECORD_XML))) {
+                    // find the latest persisted version of provisioning.xml
+                    final Iterable<RevCommit> provRecordHistory = this.git.log()
+                            .addPath(ProsperoMetadataUtils.PROVISIONING_RECORD_XML)
+                            .call();
+
+                    final Iterator<RevCommit> iterator = provRecordHistory.iterator();
+                    RevCommit revCommit = null;
+                    while (iterator.hasNext()) {
+                        revCommit = iterator.next();
+                    }
+
+                    temp.checkout()
+                            .addPath(ProsperoMetadataUtils.PROVISIONING_RECORD_XML)
+                            .setAllPaths(false)
+                            .setStartPoint(revCommit)
+                            .call();
+                }
+
                 return hist.getParent();
             }
         } catch (GitAPIException | IOException e) {
@@ -290,6 +322,10 @@ public class GitStorage implements AutoCloseable {
         return getChanges(savedState, ProsperoMetadataUtils.INSTALLER_CHANNELS_FILE_NAME, parser);
     }
 
+    public List<FeatureChange> getFeatureChanges(SavedState latestState) throws MetadataException {
+        return getChanges(latestState, ProsperoMetadataUtils.PROVISIONING_RECORD_XML, new FeatureChangeParser());
+    }
+
     private <T> List<T> getChanges(SavedState savedState, String manifestFileName, Parser<T> parser) throws MetadataException {
         Path change = null;
         Path base = null;
@@ -374,7 +410,8 @@ public class GitStorage implements AutoCloseable {
         }
     }
 
-    private interface Parser<T> {
+    interface Parser<T> {
         List<T> parse(Path changedPath, Path basePath) throws IOException, MetadataException;
     }
+
 }
