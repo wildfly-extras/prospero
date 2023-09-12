@@ -43,38 +43,37 @@ import java.util.List;
  *
  * @author <a href="mailto:aoingl@gmail.com">Lin Gao</a>
  */
-public class GenerateAction {
-  private final MavenOptions mvnOptions;
+public class SubscribeNewServerAction {
   private final MavenSessionManager mavenSessionManager;
   private final Console console;
 
-  public GenerateAction(MavenOptions mvnOptions, Console console) throws ProvisioningException {
+  public SubscribeNewServerAction(MavenOptions mvnOptions, Console console) throws ProvisioningException {
     this.console = console;
-    this.mvnOptions = mvnOptions;
     this.mavenSessionManager = new MavenSessionManager(mvnOptions);
   }
 
-  public GenerateResult generateServer(List<Channel> channels, FeaturePackLocation loc) throws IOException, ProvisioningException, OperationException {
+  public GenerateResult generateServerMetadata(List<Channel> channels, FeaturePackLocation loc) throws IOException, ProvisioningException, OperationException {
     Path tempDir = Files.createTempDirectory("tmp-prov-");
     boolean manifestCoordDefined = channels.stream().anyMatch(c -> c.getManifestCoordinate() != null);
     tempDir.toFile().deleteOnExit();
-    final GalleonEnvironment galleonEnv = GalleonEnvironment
+    try (GalleonEnvironment galleonEnv = GalleonEnvironment
       .builder(tempDir, channels, mavenSessionManager)
       .setArtifactDirectResolve(!manifestCoordDefined)
       .setConsole(console)
-      .build();
+      .build()) {
 
-    final FeaturePackConfig.Builder configBuilder = FeaturePackConfig.builder(loc)
-      .includePackage("docs.examples.configs");
-    final ProvisioningConfig provisioningConfig = ProvisioningConfig.builder().addFeaturePackDep(configBuilder.build()).build();
-    try {
-      GalleonUtils.executeGalleon(options -> galleonEnv.getProvisioningManager().provision(provisioningConfig, options),
-        mavenSessionManager.getProvisioningRepo().toAbsolutePath());
-    } catch (UnresolvedMavenArtifactException e) {
-      throw new ArtifactResolutionException(ProsperoLogger.ROOT_LOGGER.unableToResolve(), e, e.getUnresolvedArtifacts(),
-        e.getAttemptedRepositories(), mavenSessionManager.isOffline());
+      final FeaturePackConfig.Builder configBuilder = FeaturePackConfig.builder(loc)
+              .includePackage("docs.examples.configs");
+      final ProvisioningConfig provisioningConfig = ProvisioningConfig.builder().addFeaturePackDep(configBuilder.build()).build();
+      try {
+        GalleonUtils.executeGalleon(options -> galleonEnv.getProvisioningManager().provision(provisioningConfig, options),
+                mavenSessionManager.getProvisioningRepo().toAbsolutePath());
+      } catch (UnresolvedMavenArtifactException e) {
+        throw new ArtifactResolutionException(ProsperoLogger.ROOT_LOGGER.unableToResolve(), e, e.getUnresolvedArtifacts(),
+                e.getAttemptedRepositories(), mavenSessionManager.isOffline());
+      }
+      return new GenerateResult(tempDir, channels, galleonEnv.getChannelSession().getRecordedChannel(), manifestCoordDefined);
     }
-    return new GenerateResult(tempDir, channels, galleonEnv.getChannelSession().getRecordedChannel(), manifestCoordDefined);
   }
 
   public static class GenerateResult {

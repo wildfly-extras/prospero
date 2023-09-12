@@ -42,7 +42,7 @@ import org.wildfly.channel.ChannelManifestCoordinate;
 import org.wildfly.channel.Repository;
 import org.wildfly.prospero.ProsperoLogger;
 import org.wildfly.prospero.actions.ApplyCandidateAction;
-import org.wildfly.prospero.actions.GenerateAction;
+import org.wildfly.prospero.actions.SubscribeNewServerAction;
 import org.wildfly.prospero.actions.UpdateAction;
 import org.wildfly.prospero.api.FileConflict;
 import org.wildfly.prospero.api.InstallationMetadata;
@@ -293,8 +293,8 @@ public class UpdateCommand extends AbstractParentCommand {
         }
     }
 
-    @CommandLine.Command(name = CliConstants.Commands.GENERATE, sortOptions = false)
-    public static class GenerateCommand extends AbstractMavenCommand {
+    @CommandLine.Command(name = CliConstants.Commands.SUBSCRIBE, sortOptions = false)
+    public static class SubscribeCommand extends AbstractMavenCommand {
 
         @CommandLine.Option(names = CliConstants.PRODUCT)
         String product;
@@ -305,7 +305,7 @@ public class UpdateCommand extends AbstractParentCommand {
         @CommandLine.Option(names = {CliConstants.Y, CliConstants.YES})
         boolean yes;
 
-        public GenerateCommand(CliConsole console, ActionFactory actionFactory) {
+        public SubscribeCommand(CliConsole console, ActionFactory actionFactory) {
             super(console, actionFactory);
         }
 
@@ -330,26 +330,26 @@ public class UpdateCommand extends AbstractParentCommand {
             FeaturePackLocation loc = getFpl(knownFeaturePack, version);
             log.debugf("Will generate FeaturePackLocation %s.", loc.toString());
 
-            GenerateAction generateAction = actionFactory.generateAction(parseMavenOptions(), console);
-            GenerateAction.GenerateResult generateResult = generateAction.generateServer(channels, loc);
+            SubscribeNewServerAction subscribeNewServerAction = actionFactory.subscribeNewServerAction(parseMavenOptions(), console);
+            SubscribeNewServerAction.GenerateResult generateResult = subscribeNewServerAction.generateServerMetadata(channels, loc);
             generateMeta(installDir, generateResult);
 
             return ReturnCodes.SUCCESS;
         }
 
-        private void generateMeta(Path installDir, GenerateAction.GenerateResult generateResult) throws IOException, ProvisioningException {
+        private void generateMeta(Path installDir, SubscribeNewServerAction.GenerateResult generateResult) throws IOException, ProvisioningException {
             // compare hashes
             FsEntryFactory fsEntryFactory = FsEntryFactory.getInstance()
               .filterGalleonPaths()
               .filter(ProsperoMetadataUtils.METADATA_DIR);
             final FsEntry originalState = fsEntryFactory.forPath(generateResult.getProvisionDir());
             final FsEntry currentState = fsEntryFactory.forPath(installDir);
-            FsDiff diff = FsDiff.diff(originalState, currentState);
-            if (diff.hasAddedEntries() || diff.hasModifiedEntries() || diff.hasRemovedEntries()) {
-                if (!yes && !console.confirm(CliMessages.MESSAGES.conflictsWhenGenerating(diff.toString()),
-                  CliMessages.MESSAGES.continueGenerating(), CliMessages.MESSAGES.quitGenerating())) {
-                    return;
-                }
+            final FsDiff diff = FsDiff.diff(originalState, currentState);
+
+            if (!yes && hasChangedEntries(diff)
+                    && !console.confirm(CliMessages.MESSAGES.conflictsWhenGenerating(diff.toString()),
+                    CliMessages.MESSAGES.continueGenerating(), CliMessages.MESSAGES.quitGenerating())) {
+                return;
             }
 
             Path galleonDir = installDir.resolve(InstallationMetadata.GALLEON_INSTALLATION_DIR);
@@ -390,6 +390,10 @@ public class UpdateCommand extends AbstractParentCommand {
             ProsperoMetadataUtils.writeChannelsConfiguration(channelsPath, channels);
         }
 
+        private static boolean hasChangedEntries(FsDiff diff) {
+            return diff.hasAddedEntries() || diff.hasModifiedEntries() || diff.hasRemovedEntries();
+        }
+
         private FeaturePackLocation getFpl(KnownFeaturePack knownFeaturePack, String version) throws XMLStreamException, ProvisioningException {
             ProvisioningConfig config = GalleonUtils.loadProvisioningConfig(knownFeaturePack.getGalleonConfiguration());
             if (config.getFeaturePackDeps().isEmpty()) {
@@ -409,7 +413,7 @@ public class UpdateCommand extends AbstractParentCommand {
                     new UpdateCommand.ApplyCommand(console, actionFactory),
                     new UpdateCommand.PerformCommand(console, actionFactory),
                     new UpdateCommand.ListCommand(console, actionFactory),
-                    new UpdateCommand.GenerateCommand(console, actionFactory))
+                    new SubscribeCommand(console, actionFactory))
         );
     }
 

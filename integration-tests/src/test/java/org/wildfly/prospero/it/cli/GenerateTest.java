@@ -78,7 +78,7 @@ public class GenerateTest {
 
         Path serverDir = targetDir.resolve(PRODUCT + "-" + VERSION);
         // generate the metadata using prospero CLI
-        ExecutionUtils.prosperoExecution(CliConstants.Commands.UPDATE, CliConstants.Commands.GENERATE,
+        ExecutionUtils.prosperoExecution(CliConstants.Commands.UPDATE, CliConstants.Commands.SUBSCRIBE,
                         CliConstants.PRODUCT, PRODUCT,
                         CliConstants.VERSION, VERSION,
                         CliConstants.Y,

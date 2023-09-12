@@ -58,7 +58,7 @@ public final class CliConstants {
         public static final String PERFORM = "perform";
         public static final String APPLY = "apply";
         public static final String PRINT_LICENSES = "print-licenses";
-        public static final String GENERATE = "generate";
+        public static final String SUBSCRIBE = "subscribe";
     }
 
     // Parameter and option labels:
