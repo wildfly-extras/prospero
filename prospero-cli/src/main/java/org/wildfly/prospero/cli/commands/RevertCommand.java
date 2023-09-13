@@ -139,6 +139,9 @@ public class RevertCommand extends AbstractParentCommand {
         @CommandLine.Option(names = CliConstants.CANDIDATE_DIR, required = true)
         Path candidateDirectory;
 
+        @CommandLine.Option(names = CliConstants.REMOVE)
+        boolean remove;
+
         @CommandLine.Option(names = {CliConstants.Y, CliConstants.YES})
         boolean yes;
 
@@ -158,8 +161,12 @@ public class RevertCommand extends AbstractParentCommand {
             console.println("");
 
             applyCandidate(console, applyCandidateAction, yes);
+            if(remove) {
+                applyCandidateAction.removeCandidate(candidateDirectory.toFile());
+            }
             final float totalTime = (System.currentTimeMillis() - startTime) / 1000f;
             console.println(CliMessages.MESSAGES.operationCompleted(totalTime));
+
             return SUCCESS;
         }
     }

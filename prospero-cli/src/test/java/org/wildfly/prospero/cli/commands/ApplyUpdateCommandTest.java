@@ -68,6 +68,9 @@ public class ApplyUpdateCommandTest extends AbstractConsoleTest {
         return actionFactory;
     }
 
+    private Path installationDir;
+    private Path updateDir;
+
     @Before
     public void setUp() throws Exception {
         super.setUp();

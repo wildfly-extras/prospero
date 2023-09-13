@@ -415,8 +415,7 @@ public class FeaturesAddAction {
     private void verifyConfigurationsAvailable(ProvisioningConfig config) throws ProvisioningException, OperationException {
         try( GalleonEnvironment env = GalleonEnvironment
                 .builder(installDir, prosperoConfig.getChannels(), mavenSessionManager).build()) {
-            final MavenRepoManager repositoryManager = env
-                    .getRepositoryManager();
+            final MavenRepoManager repositoryManager = env.getRepositoryManager();
 
             final ProvisioningLayoutFactory layoutFactory = GalleonUtils.getProvisioningLayoutFactory(repositoryManager);
 

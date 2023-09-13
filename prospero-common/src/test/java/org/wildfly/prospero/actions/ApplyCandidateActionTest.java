@@ -25,6 +25,7 @@ import org.jboss.galleon.creator.FeaturePackCreator;
 import org.jboss.galleon.repo.RepositoryArtifactResolver;
 import org.jboss.galleon.universe.FeaturePackLocation;
 import org.jboss.galleon.universe.maven.repo.SimplisticMavenRepoManager;
+import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
@@ -463,6 +464,19 @@ public class ApplyCandidateActionTest {
                 .contains(newFpl);
         assertThat(Files.readString(installationPath.resolve(METADATA_DIR).resolve(ProsperoMetadataUtils.PROVISIONING_RECORD_XML)))
                 .contains(newFpl);
+    }
+
+    @Test
+    public void verifyRemoveCandidate() throws Exception {
+        createSimpleFeaturePacks();
+        final ApplyCandidateAction applyCandidateAction = new ApplyCandidateAction(installationPath, updatePath);
+
+        install(installationPath, FPL_100);
+        prepareUpdate(updatePath, installationPath, FPL_101);
+
+        applyCandidateAction.removeCandidate(updatePath.toFile());
+
+        Assert.assertFalse(Files.exists(updatePath));
     }
 
     private void createSimpleFeaturePacks() throws ProvisioningException {
