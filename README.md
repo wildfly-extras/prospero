@@ -3,7 +3,7 @@ Prospero is a tool combining Galleon feature packs and wildfly-channels to provi
 and update Wildfly server.
 
 ## Example:
-The demo below provisions and updates Wildfly 27.0.0.Alpha2.
+The demo below provisions and updates Wildfly 29.0.0.Final.
 
 1. Build prospero
    ```
@@ -12,18 +12,18 @@ The demo below provisions and updates Wildfly 27.0.0.Alpha2.
    ```
 2. Provision server
    ```
-      ./prospero install --profile=wildfly --dir=wfly-27 --channel=examples/wildfly-27.0.0.Alpha2-channel.yaml
+      ./prospero install --profile=wildfly --dir=wfly-29 --channel=examples/wildfly-29.0.0.Final-channel.yaml
    ```
 3. Update server
-   1. Edit `examples/wildfly-27.0.0.Alpha2-manifest.yaml` (configured in the wildfly-27.0.0.Alpha2-channel.yaml) and update undertow-core version to:
+   1. Edit `examples/wildfly-29.0.0.Final-manifest.yaml` (configured in the wildfly-29.0.0.Final-channel.yaml) and update undertow-core version to:
    ```
       - groupId: "io.undertow"
         artifactId: "undertow-core"
-        version: "2.2.18.Final"
+        version: "2.3.8.Final"
    ```
    2. Update server
    ```
-      ./prospero update perform --dir=wfly-27
+      ./prospero update perform --dir=wfly-29
    ```
 
 ## Building distribution
