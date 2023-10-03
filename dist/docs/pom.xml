@@ -65,6 +65,7 @@
               <descriptors>
                 <descriptor>scripts/assembly-docs.xml</descriptor>
               </descriptors>
+              <tarLongFileMode>posix</tarLongFileMode>
             </configuration>
           </execution>
         </executions>
