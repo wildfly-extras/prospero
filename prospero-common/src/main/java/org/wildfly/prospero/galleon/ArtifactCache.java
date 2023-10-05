@@ -143,9 +143,11 @@ public class ArtifactCache {
             }
 
             final String hash = HashUtils.hashFile(artifact.getFile().toPath());
+            final Path relativePath = installationDir.relativize(pathToArtifact);
+            final String recordedPath = relativePath.toString().replace(File.separatorChar, '/');
             Files.writeString(cacheList,
                     cacheFileKey + CACHE_LINE_SEPARATOR + hash + CACHE_LINE_SEPARATOR +
-                            installationDir.relativize(pathToArtifact) + System.lineSeparator(), StandardOpenOption.APPEND, StandardOpenOption.CREATE);
+                            recordedPath + "\n", StandardOpenOption.APPEND, StandardOpenOption.CREATE);
 
             invalidate();
             init();

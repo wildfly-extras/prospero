@@ -99,9 +99,11 @@ public class ArtifactCacheTest {
 
         final List<String> line = Files.readAllLines(installationDir.resolve(ArtifactCache.CACHE_FOLDER).resolve(ArtifactCache.CACHE_FILENAME));
         assertEquals(1, line.size());
+        final String expectedPath = ArtifactCache.CACHE_FOLDER.resolve(anArtifact.getFile().getName())
+                .toString().replace(File.separatorChar, '/');
         assertThat(line.get(0))
                 .contains(GROUP_ID + ":" + ARTIFACT_ID)
-                .contains(ArtifactCache.CACHE_FOLDER.resolve(anArtifact.getFile().getName()).toString());
+                .contains(expectedPath);
         assertThat(installationDir.resolve(ArtifactCache.CACHE_FOLDER).resolve(anArtifact.getFile().getName()))
                 .hasSameBinaryContentAs(anArtifact.getFile().toPath());
     }
