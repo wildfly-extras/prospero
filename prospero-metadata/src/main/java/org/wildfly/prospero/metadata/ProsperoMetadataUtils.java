@@ -17,7 +17,6 @@
 
 package org.wildfly.prospero.metadata;
 
-import org.codehaus.plexus.util.FileUtils;
 import org.jboss.galleon.Constants;
 import org.wildfly.channel.Channel;
 import org.wildfly.channel.ChannelManifest;
@@ -28,7 +27,6 @@ import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.StandardCopyOption;
 import java.util.List;
 import java.util.Objects;
 
@@ -205,9 +203,13 @@ public class ProsperoMetadataUtils {
         }
 
         if (!Files.exists(provisioningRecordFile)) {
-            Files.copy(provisioningFile, provisioningRecordFile);
-        } else if (!FileUtils.contentEquals(provisioningFile.toFile(), provisioningRecordFile.toFile())) {
-            Files.copy(provisioningFile, provisioningRecordFile, StandardCopyOption.REPLACE_EXISTING);
+            final String content = Files.readString(provisioningFile);
+            final String lineEndings = content.replaceAll("\\r\\n?", "\n");
+            Files.writeString(provisioningRecordFile, lineEndings);
+        } else {
+            final String content = Files.readString(provisioningFile);
+            final String lineEndings = content.replaceAll("\\r\\n?", "\n");
+            Files.writeString(provisioningRecordFile, lineEndings);
         }
 
     }
