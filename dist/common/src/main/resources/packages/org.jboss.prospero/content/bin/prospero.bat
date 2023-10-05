@@ -17,7 +17,7 @@ rem Set to all parameters by default
 set "SERVER_OPTS=%*"
 
 if NOT "x%DEBUG%" == "x" (
-  set "DEBUG_MODE=%DEBUG%
+  set "DEBUG_MODE=%DEBUG%"
 )
 
 rem Get the program name before using shift as the command modify the variable ~nx0
@@ -32,20 +32,10 @@ if "%OS%" == "Windows_NT" (
 ) else (
   set DIRNAME=.\
 )
-setlocal EnableDelayedExpansion
-call "!DIRNAME!common.bat" :commonConf
-rem check for the security manager system property
-echo(!SERVER_OPTS! | findstr /r /c:"-Djava.security.manager" > nul
-if not errorlevel == 1 (
-    echo(!SERVER_OPTS! | findstr /r /c:"-Djava.security.manager=allow" > nul
-    if errorlevel == 1 (
-        echo ERROR: The use of -Djava.security.manager has been removed. Please use the -secmgr command line argument or SECMGR=true environment variable.
-        GOTO :EOF
-    )
-)
-setlocal DisableDelayedExpansion
 
 rem Read command-line args, the ~ removes the quotes from the parameter
+set LOAD_COMMON=true
+set PARAMS=
 :READ-ARGS
 if "%~1" == "" (
    goto MAIN
@@ -53,6 +43,10 @@ if "%~1" == "" (
    goto READ-DEBUG-PORT
 ) else if "%~1" == "-secmgr" (
    set SECMGR=true
+) else if "%~1" == "--no-load-common" (
+   set LOAD_COMMON=false
+) else (
+   set "PARAMS=%PARAMS%%1 "
 )
 shift
 goto READ-ARGS
@@ -70,6 +64,23 @@ if not %DEBUG_ARG% == "" (
 )
 
 :MAIN
+
+setlocal EnableDelayedExpansion
+if "%LOAD_COMMON%" == "true" (
+   call "!DIRNAME!common.bat" :commonConf
+)
+rem check for the security manager system property
+echo(!SERVER_OPTS! | findstr /r /c:"-Djava.security.manager" > nul
+if not errorlevel == 1 (
+    echo(!SERVER_OPTS! | findstr /r /c:"-Djava.security.manager=allow" > nul
+    if errorlevel == 1 (
+        echo ERROR: The use of -Djava.security.manager has been removed. Please use the -secmgr command line argument or SECMGR=true environment variable.
+        GOTO :EOF
+    )
+)
+setlocal DisableDelayedExpansion
+
+
 rem $Id$
 )
 
@@ -239,7 +250,7 @@ setlocal DisableDelayedExpansion
       %MODULE_OPTS% ^
       -mp "%JBOSS_MODULEPATH%" ^
       org.jboss.prospero ^
-      %SERVER_OPTS%
+      %PARAMS%
 
 if %errorlevel% equ 10 (
     echo Restarting...
