@@ -58,17 +58,6 @@
 
     <dependency>
       <groupId>org.wildfly.prospero</groupId>
-      <artifactId>prospero-cli</artifactId>
-      <exclusions>
-        <exclusion>
-          <groupId>*</groupId>
-          <artifactId>*</artifactId>
-        </exclusion>
-      </exclusions>
-    </dependency>
-
-    <dependency>
-      <groupId>org.wildfly.prospero</groupId>
       <artifactId>prospero-dist-common</artifactId>
       <scope>provided</scope>
       <exclusions>
@@ -104,17 +93,6 @@
     <dependency>
       <groupId>org.codehaus.plexus</groupId>
       <artifactId>plexus-interpolation</artifactId>
-      <exclusions>
-        <exclusion>
-          <groupId>*</groupId>
-          <artifactId>*</artifactId>
-        </exclusion>
-      </exclusions>
-    </dependency>
-
-    <dependency>
-      <groupId>org.codehaus.plexus</groupId>
-      <artifactId>plexus-utils</artifactId>
       <exclusions>
         <exclusion>
           <groupId>*</groupId>
