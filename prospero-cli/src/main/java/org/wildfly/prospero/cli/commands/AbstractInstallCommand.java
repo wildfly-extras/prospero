@@ -86,7 +86,7 @@ public abstract class AbstractInstallCommand extends AbstractCommand {
         super(console, actionFactory);
     }
 
-    protected List<Channel> resolveChannels(ProvisioningDefinition provisioningDefinition, MavenOptions mavenOptions)
+    public static List<Channel> resolveChannels(ProvisioningDefinition provisioningDefinition, MavenOptions mavenOptions)
             throws ArgumentParsingException, ProvisioningException, NoChannelException, ChannelDefinitionException {
         final MavenSessionManager mavenSessionManager = new MavenSessionManager(mavenOptions);
         final VersionResolverFactory versionResolverFactory = InstallCommand.createVersionResolverFactory(mavenSessionManager);
