@@ -23,7 +23,11 @@
             <groupId>${project.groupId}</groupId>
             <artifactId>prospero-cli</artifactId>
         </dependency>
-
+        <dependency>
+            <groupId>org.jboss.galleon</groupId>
+            <artifactId>galleon-core</artifactId>
+            <scope>test</scope>
+        </dependency>
         <dependency>
             <groupId>junit</groupId>
             <artifactId>junit</artifactId>

@@ -17,8 +17,6 @@
 package org.wildfly.prospero.actions;
 
 import org.jboss.galleon.ProvisioningException;
-import org.jboss.galleon.config.FeaturePackConfig;
-import org.jboss.galleon.config.ProvisioningConfig;
 import org.jboss.galleon.universe.FeaturePackLocation;
 import org.wildfly.channel.Channel;
 import org.wildfly.channel.ChannelManifest;
@@ -36,6 +34,8 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
+import org.jboss.galleon.api.config.GalleonFeaturePackConfig;
+import org.jboss.galleon.api.config.GalleonProvisioningConfig;
 
 /**
  * The action used to generate a server based on the Channels and a FeaturePackLocation with specified version.
@@ -57,16 +57,16 @@ public class SubscribeNewServerAction {
     boolean manifestCoordDefined = channels.stream().anyMatch(c -> c.getManifestCoordinate() != null);
     tempDir.toFile().deleteOnExit();
     try (GalleonEnvironment galleonEnv = GalleonEnvironment
-      .builder(tempDir, channels, mavenSessionManager)
+      .builder(tempDir, channels, mavenSessionManager, false)
       .setArtifactDirectResolve(!manifestCoordDefined)
       .setConsole(console)
       .build()) {
 
-      final FeaturePackConfig.Builder configBuilder = FeaturePackConfig.builder(loc)
+      final GalleonFeaturePackConfig.Builder configBuilder = GalleonFeaturePackConfig.builder(loc)
               .includePackage("docs.examples.configs");
-      final ProvisioningConfig provisioningConfig = ProvisioningConfig.builder().addFeaturePackDep(configBuilder.build()).build();
+      final GalleonProvisioningConfig provisioningConfig = GalleonProvisioningConfig.builder().addFeaturePackDep(configBuilder.build()).build();
       try {
-        GalleonUtils.executeGalleon(options -> galleonEnv.getProvisioningManager().provision(provisioningConfig, options),
+        GalleonUtils.executeGalleon(options -> galleonEnv.getProvisioning().provision(provisioningConfig, options),
                 mavenSessionManager.getProvisioningRepo().toAbsolutePath());
       } catch (UnresolvedMavenArtifactException e) {
         throw new ArtifactResolutionException(ProsperoLogger.ROOT_LOGGER.unableToResolve(), e, e.getUnresolvedArtifacts(),

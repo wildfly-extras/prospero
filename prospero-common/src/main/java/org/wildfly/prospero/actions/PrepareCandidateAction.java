@@ -19,8 +19,6 @@ package org.wildfly.prospero.actions;
 
 import org.jboss.galleon.Constants;
 import org.jboss.galleon.ProvisioningException;
-import org.jboss.galleon.ProvisioningManager;
-import org.jboss.galleon.config.ProvisioningConfig;
 import org.jboss.logging.Logger;
 import org.wildfly.channel.Channel;
 import org.wildfly.channel.ChannelManifest;
@@ -53,6 +51,8 @@ import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.function.Function;
+import org.jboss.galleon.api.Provisioning;
+import org.jboss.galleon.api.config.GalleonProvisioningConfig;
 
 class PrepareCandidateAction implements AutoCloseable {
 
@@ -69,7 +69,7 @@ class PrepareCandidateAction implements AutoCloseable {
     }
 
     boolean buildCandidate(Path targetDir, GalleonEnvironment galleonEnv, ApplyCandidateAction.Type operation,
-                           ProvisioningConfig config) throws ProvisioningException, OperationException {
+                           GalleonProvisioningConfig config) throws ProvisioningException, OperationException {
         return this.buildCandidate(targetDir, galleonEnv, operation, config, new UpdateSet(Collections.emptyList()));
     }
 
@@ -87,7 +87,7 @@ class PrepareCandidateAction implements AutoCloseable {
      * @throws OperationException
      */
     boolean buildCandidate(Path targetDir, GalleonEnvironment galleonEnv, ApplyCandidateAction.Type operation,
-                           ProvisioningConfig config, UpdateSet updateSet) throws ProvisioningException, OperationException {
+                           GalleonProvisioningConfig config, UpdateSet updateSet) throws ProvisioningException, OperationException {
         return this.buildCandidate(targetDir, galleonEnv, operation, config, updateSet, this::getManifestVersionRecord);
     }
 
@@ -106,7 +106,7 @@ class PrepareCandidateAction implements AutoCloseable {
      * @throws OperationException
      */
     boolean buildCandidate(Path targetDir, GalleonEnvironment galleonEnv, ApplyCandidateAction.Type operation,
-                           ProvisioningConfig config, UpdateSet updateSet,
+                           GalleonProvisioningConfig config, UpdateSet updateSet,
                            Function<List<Channel>, Optional<ManifestVersionRecord>> manifestVersionRecordSupplier) throws ProvisioningException, OperationException {
         Objects.requireNonNull(manifestVersionRecordSupplier);
 
@@ -123,10 +123,10 @@ class PrepareCandidateAction implements AutoCloseable {
         return true;
     }
 
-    private void doBuildUpdate(Path targetDir, GalleonEnvironment galleonEnv, ProvisioningConfig provisioningConfig,
+    private void doBuildUpdate(Path targetDir, GalleonEnvironment galleonEnv, GalleonProvisioningConfig provisioningConfig,
                                Function<List<Channel>, Optional<ManifestVersionRecord>> manifestVersionResolver)
             throws ProvisioningException, OperationException {
-        final ProvisioningManager provMgr = galleonEnv.getProvisioningManager();
+        final Provisioning provMgr = galleonEnv.getProvisioning();
         try {
             GalleonUtils.executeGalleon((options) -> {
                         options.put(Constants.EXPORT_SYSTEM_PATHS, "true");

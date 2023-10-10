@@ -34,8 +34,8 @@ import javax.xml.stream.XMLStreamException;
 import org.apache.commons.io.IOUtils;
 import org.eclipse.aether.repository.RemoteRepository;
 import org.jboss.galleon.ProvisioningException;
-import org.jboss.galleon.config.FeaturePackConfig;
-import org.jboss.galleon.config.ProvisioningConfig;
+import org.jboss.galleon.api.config.GalleonFeaturePackConfig;
+import org.jboss.galleon.api.config.GalleonProvisioningConfig;
 import org.jboss.galleon.universe.FeaturePackLocation;
 import org.wildfly.channel.Channel;
 import org.wildfly.channel.ChannelManifestCoordinate;
@@ -141,12 +141,12 @@ public class ProvisioningDefinition {
         return definition;
     }
 
-    public ProvisioningConfig toProvisioningConfig() throws MetadataException, ProvisioningException {
+    public GalleonProvisioningConfig toProvisioningConfig() throws MetadataException, ProvisioningException {
         if (fpl != null) {
             FeaturePackLocation loc = FeaturePackLocationParser.resolveFpl(getFpl());
 
-            final FeaturePackConfig.Builder configBuilder = FeaturePackConfig.builder(loc);
-            return ProvisioningConfig.builder().addFeaturePackDep(configBuilder.build()).build();
+            final GalleonFeaturePackConfig.Builder configBuilder = GalleonFeaturePackConfig.builder(loc);
+            return GalleonProvisioningConfig.builder().addFeaturePackDep(configBuilder.build()).build();
         } else if (definition != null) {
             try {
                 return GalleonUtils.loadProvisioningConfig(definition);

@@ -67,12 +67,12 @@ public class InstallationRestoreAction {
                 prosperoConfig.getChannels().addAll(TemporaryRepositoriesHandler.overrideRepositories(originalChannels, remoteRepositories));
             }
             try (GalleonEnvironment galleonEnv = GalleonEnvironment
-                    .builder(installDir, prosperoConfig.getChannels(), mavenSessionManager)
+                    .builder(installDir, prosperoConfig.getChannels(), mavenSessionManager, false)
                     .setConsole(console)
                     .setRestoreManifest(metadataBundle.getManifest())
                     .build()) {
 
-                GalleonUtils.executeGalleon(options -> galleonEnv.getProvisioningManager().provision(metadataBundle.getGalleonProvisioningConfig(), options),
+                GalleonUtils.executeGalleon(options -> galleonEnv.getProvisioning().provision(metadataBundle.getGalleonProvisioningConfig(), options),
                         mavenSessionManager.getProvisioningRepo().toAbsolutePath());
 
                 writeProsperoMetadata(galleonEnv.getChannelSession().getRecordedChannel(), originalChannels);

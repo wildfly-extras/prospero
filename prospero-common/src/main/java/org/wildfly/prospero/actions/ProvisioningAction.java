@@ -19,7 +19,6 @@ package org.wildfly.prospero.actions;
 
 import org.apache.commons.lang3.StringUtils;
 import org.eclipse.aether.resolution.ArtifactResult;
-import org.jboss.galleon.config.ProvisioningConfig;
 import org.jboss.galleon.universe.maven.MavenUniverseException;
 import org.wildfly.channel.ArtifactCoordinate;
 import org.wildfly.channel.Channel;
@@ -62,6 +61,7 @@ import org.wildfly.prospero.metadata.ProsperoMetadataUtils;
 import org.wildfly.prospero.model.ProsperoConfig;
 import org.wildfly.prospero.wfchannel.MavenSessionManager;
 import org.jboss.galleon.ProvisioningException;
+import org.jboss.galleon.api.config.GalleonProvisioningConfig;
 
 public class ProvisioningAction {
 
@@ -90,7 +90,7 @@ public class ProvisioningAction {
      * @param provisioningConfig prospero provisioning definition
      * @param channels list of channels to resolve installed artifacts
      */
-    public void provision(ProvisioningConfig provisioningConfig, List<Channel> channels)
+    public void provision(GalleonProvisioningConfig provisioningConfig, List<Channel> channels)
             throws MalformedURLException, ProvisioningException, OperationException {
         provision(provisioningConfig, channels, Collections.emptyList());
     }
@@ -106,7 +106,7 @@ public class ProvisioningAction {
      * @param channels list of channels to resolve installed artifacts
      * @param overwriteRepositories list of repositories to resolve installed artifacts from. They do not alter persisted channel definitions.
      */
-    public void provision(ProvisioningConfig provisioningConfig, List<Channel> channels, List<Repository> overwriteRepositories)
+    public void provision(GalleonProvisioningConfig provisioningConfig, List<Channel> channels, List<Repository> overwriteRepositories)
             throws ProvisioningException, OperationException, MalformedURLException {
         ProsperoLogger.ROOT_LOGGER.startingProvision(installDir);
         channels = enforceChannelNames(channels);
@@ -120,8 +120,9 @@ public class ProvisioningAction {
         channels = TemporaryRepositoriesHandler.overrideRepositories(channels, overwriteRepositories);
 
         try (GalleonEnvironment galleonEnv = GalleonEnvironment
-                .builder(installDir, channels, mavenSessionManager)
+                .builder(installDir, channels, mavenSessionManager, false)
                 .setConsole(console)
+                .setProvisioningConfig(provisioningConfig)
                 .build()) {
 
             try {
@@ -129,7 +130,7 @@ public class ProvisioningAction {
                     ProsperoLogger.ROOT_LOGGER.debug("Starting Galleon provisioning");
                 }
 
-                GalleonUtils.executeGalleon(options -> galleonEnv.getProvisioningManager().provision(provisioningConfig, options),
+                GalleonUtils.executeGalleon(options -> galleonEnv.getProvisioning().provision(provisioningConfig, options),
                         mavenSessionManager.getProvisioningRepo().toAbsolutePath());
             } catch (UnresolvedMavenArtifactException e) {
                 throw new ArtifactResolutionException(ProsperoLogger.ROOT_LOGGER.unableToResolve(), e, e.getUnresolvedArtifacts(),
@@ -203,7 +204,7 @@ public class ProvisioningAction {
      * @param channels - list of channels used to resolve the Feature Packs
      * @return - list of {@code License}, or empty list if no licenses were required
      */
-    public List<License> getPendingLicenses(ProvisioningConfig provisioningConfig, List<Channel> channels) throws OperationException {
+    public List<License> getPendingLicenses(GalleonProvisioningConfig provisioningConfig, List<Channel> channels) throws OperationException {
         Objects.requireNonNull(provisioningConfig);
         Objects.requireNonNull(channels);
 
@@ -211,7 +212,7 @@ public class ProvisioningAction {
         return getPendingLicenses(provisioningConfig, exporter);
     }
 
-    private List<License> getPendingLicenses(ProvisioningConfig provisioningConfig, GalleonFeaturePackAnalyzer exporter) throws OperationException {
+    private List<License> getPendingLicenses(GalleonProvisioningConfig provisioningConfig, GalleonFeaturePackAnalyzer exporter) throws OperationException {
         try {
             final Set<String> featurePacks = exporter.getFeaturePacks(provisioningConfig);
             return licenseManager.getLicenses(featurePacks);

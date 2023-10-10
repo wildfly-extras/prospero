@@ -19,7 +19,6 @@ package org.wildfly.prospero.updates;
 
 import org.eclipse.aether.artifact.Artifact;
 import org.eclipse.aether.artifact.DefaultArtifact;
-import org.jboss.galleon.ProvisioningManager;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.Mock;
@@ -33,6 +32,7 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
+import org.jboss.galleon.api.Provisioning;
 
 import static org.junit.Assert.*;
 import static org.mockito.Mockito.when;
@@ -44,7 +44,7 @@ public class UpdateFinderTest {
     @Mock
     ChannelSession channelSession;
     @Mock
-    ProvisioningManager provMgr;
+    Provisioning provMgr;
 
     @Test
     public void testDowngradeIsPossible() throws Exception {

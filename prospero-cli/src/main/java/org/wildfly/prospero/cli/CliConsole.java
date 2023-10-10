@@ -29,9 +29,9 @@ import org.wildfly.prospero.api.Console;
 import org.wildfly.prospero.api.ProvisioningProgressEvent;
 import org.wildfly.prospero.api.ArtifactChange;
 
-import static org.jboss.galleon.layout.ProvisioningLayoutFactory.TRACK_CONFIGS;
-import static org.jboss.galleon.layout.ProvisioningLayoutFactory.TRACK_LAYOUT_BUILD;
-import static org.jboss.galleon.layout.ProvisioningLayoutFactory.TRACK_PACKAGES;
+import static org.jboss.galleon.Constants.TRACK_CONFIGS;
+import static org.jboss.galleon.Constants.TRACK_LAYOUT_BUILD;
+import static org.jboss.galleon.Constants.TRACK_PACKAGES;
 import static org.wildfly.prospero.galleon.GalleonEnvironment.TRACK_JBEXAMPLES;
 import static org.wildfly.prospero.galleon.GalleonEnvironment.TRACK_JBMODULES;
 import static org.wildfly.prospero.galleon.GalleonEnvironment.TRACK_JB_ARTIFACTS_RESOLVE;

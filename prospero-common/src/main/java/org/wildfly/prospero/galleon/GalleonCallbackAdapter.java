@@ -19,7 +19,6 @@ package org.wildfly.prospero.galleon;
 
 import org.jboss.galleon.progresstracking.ProgressCallback;
 import org.jboss.galleon.progresstracking.ProgressTracker;
-import org.jboss.galleon.state.ProvisionedConfig;
 import org.jboss.galleon.universe.FeaturePackLocation;
 import org.wildfly.prospero.ProsperoLogger;
 import org.wildfly.prospero.api.Console;
@@ -28,9 +27,10 @@ import org.wildfly.prospero.api.ProvisioningProgressEvent;
 import java.nio.file.Path;
 import java.util.List;
 
-import static org.jboss.galleon.layout.ProvisioningLayoutFactory.TRACK_CONFIGS;
-import static org.jboss.galleon.layout.ProvisioningLayoutFactory.TRACK_LAYOUT_BUILD;
-import static org.jboss.galleon.layout.ProvisioningLayoutFactory.TRACK_PACKAGES;
+import static org.jboss.galleon.Constants.TRACK_CONFIGS;
+import static org.jboss.galleon.Constants.TRACK_LAYOUT_BUILD;
+import static org.jboss.galleon.Constants.TRACK_PACKAGES;
+import org.jboss.galleon.api.config.GalleonProvisionedConfig;
 import static org.wildfly.prospero.galleon.GalleonEnvironment.TRACK_JBEXAMPLES;
 import static org.wildfly.prospero.galleon.GalleonEnvironment.TRACK_JBMODULES;
 
@@ -110,15 +110,15 @@ public class GalleonCallbackAdapter implements ProgressCallback<Object> {
                 break;
             case TRACK_CONFIGS:
                 if (tracker.getItem() != null) {
-                    item = ((ProvisionedConfig) tracker.getItem()).getModel() + "/" + ((ProvisionedConfig) tracker.getItem()).getName();
+                    item = ((GalleonProvisionedConfig) tracker.getItem()).getModel() + "/" + ((GalleonProvisionedConfig) tracker.getItem()).getName();
                 } else {
                     slowPhase = true;
                 }
                 break;
             case TRACK_JBEXAMPLES:
                 List<Object> items = (List<Object>) tracker.getItem();
-                if(items.get(1) instanceof ProvisionedConfig) {
-                    item = "Generating " + ((ProvisionedConfig) items.get(1)).getName();
+                if(items.get(1) instanceof GalleonProvisionedConfig) {
+                    item = "Generating " + ((GalleonProvisionedConfig) items.get(1)).getName();
                 } else if (items.get(1) instanceof Path) {
                     item = "Installing config " + ((Path) items.get(1)).getFileName();
                 }

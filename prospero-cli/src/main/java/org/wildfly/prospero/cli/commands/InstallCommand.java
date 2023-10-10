@@ -23,8 +23,8 @@ import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
+import org.jboss.galleon.api.config.GalleonProvisioningConfig;
 
-import org.jboss.galleon.config.ProvisioningConfig;
 import org.wildfly.channel.Channel;
 import org.wildfly.channel.ChannelManifestCoordinate;
 import org.wildfly.channel.Repository;
@@ -145,7 +145,7 @@ public class InstallCommand extends AbstractInstallCommand {
 
         final ProvisioningDefinition provisioningDefinition = buildDefinition();
         final MavenOptions mavenOptions = getMavenOptions();
-        final ProvisioningConfig provisioningConfig = provisioningDefinition.toProvisioningConfig();
+        final GalleonProvisioningConfig provisioningConfig = provisioningDefinition.toProvisioningConfig();
         final List<Channel> channels = resolveChannels(provisioningDefinition, mavenOptions);
         final List<Repository> shadowRepositories = RepositoryDefinition.from(this.shadowRepositories);
 

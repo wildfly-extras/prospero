@@ -80,7 +80,7 @@ public class GalleonEnvironmentTest {
         when(msm.newRepositorySystemSession(any())).thenReturn(session);
 
         assertThrows(ChannelDefinitionException.class, ()->
-            GalleonEnvironment.builder(temp.newFolder().toPath(), List.of(build), msm).build());
+            GalleonEnvironment.builder(temp.newFolder().toPath(), List.of(build), msm, true).build());
     }
 
     @Test
@@ -89,7 +89,7 @@ public class GalleonEnvironmentTest {
         when(msm.newRepositorySystem()).thenReturn(system);
 
         final ChannelManifest restoreManifest = new ChannelManifest("", null, null, Collections.emptyList());
-        GalleonEnvironment.builder(temp.newFolder().toPath(), List.of(), msm)
+        GalleonEnvironment.builder(temp.newFolder().toPath(), List.of(), msm, true)
                 .setRestoreManifest(restoreManifest, null)
                 .build();
 
@@ -110,7 +110,7 @@ public class GalleonEnvironmentTest {
         final ManifestVersionRecord record = new ManifestVersionRecord();
         record.addManifest(new ManifestVersionRecord.MavenManifest(manifestArtifact.getGroupId(), manifestArtifact.getArtifactId(),
                 manifestArtifact.getVersion(), "desc"));
-        GalleonEnvironment.builder(temp.newFolder().toPath(), List.of(), msm)
+        GalleonEnvironment.builder(temp.newFolder().toPath(), List.of(), msm, true)
                 .setRestoreManifest(restoreManifest, record)
                 .build();
 
@@ -142,7 +142,7 @@ public class GalleonEnvironmentTest {
                 missingArtifact.getVersion(), "desc"));
         record.addManifest(new ManifestVersionRecord.MavenManifest(manifestArtifact.getGroupId(), manifestArtifact.getArtifactId(),
                 manifestArtifact.getVersion(), "desc"));
-        GalleonEnvironment.builder(temp.newFolder().toPath(), List.of(), msm)
+        GalleonEnvironment.builder(temp.newFolder().toPath(), List.of(), msm, true)
                 .setRestoreManifest(restoreManifest, record)
                 .build();
 
@@ -166,7 +166,7 @@ public class GalleonEnvironmentTest {
         final ChannelManifest restoreManifest = new ChannelManifest("restore manifest", null, null, Collections.emptyList());
 
         final URL manifestUrl;
-        try (GalleonEnvironment env = GalleonEnvironment.builder(temp.newFolder().toPath(), List.of(c1, c2), msm)
+        try (GalleonEnvironment env = GalleonEnvironment.builder(temp.newFolder().toPath(), List.of(c1, c2), msm, true)
                 .setRestoreManifest(restoreManifest)
                 .build()) {
 

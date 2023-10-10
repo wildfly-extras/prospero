@@ -20,7 +20,6 @@ package org.wildfly.prospero.api;
 import com.fasterxml.jackson.databind.JsonMappingException;
 import org.apache.commons.lang3.StringUtils;
 import org.jboss.galleon.Constants;
-import org.jboss.galleon.config.ProvisioningConfig;
 import org.jboss.galleon.util.PathsUtils;
 import org.wildfly.channel.Channel;
 import org.wildfly.channel.ChannelManifest;
@@ -35,7 +34,6 @@ import org.wildfly.prospero.model.ProsperoConfig;
 import org.eclipse.aether.artifact.Artifact;
 import org.eclipse.aether.artifact.DefaultArtifact;
 import org.jboss.galleon.ProvisioningException;
-import org.jboss.galleon.xml.ProvisioningXmlParser;
 import org.wildfly.channel.Stream;
 
 import java.io.File;
@@ -52,6 +50,9 @@ import java.util.stream.Collectors;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
 import java.util.zip.ZipOutputStream;
+import org.jboss.galleon.api.GalleonBuilder;
+import org.jboss.galleon.api.Provisioning;
+import org.jboss.galleon.api.config.GalleonProvisioningConfig;
 
 import static org.wildfly.prospero.metadata.ProsperoMetadataUtils.CURRENT_VERSION_FILE;
 
@@ -63,11 +64,11 @@ public class InstallationMetadata implements AutoCloseable {
     private final Path channelsFile;
     private final Path readmeFile;
     private final Path provisioningFile;
-    private final ProvisioningConfig galleonProvisioningConfig;
+    private final GalleonProvisioningConfig galleonProvisioningConfig;
     private final GitStorage gitStorage;
     private final Path base;
     private final Optional<ManifestVersionRecord> manifestVersion;
-    private final ProvisioningConfig provisioningConfig;
+    private final GalleonProvisioningConfig provisioningConfig;
     private ProsperoConfig prosperoConfig;
     private ChannelManifest manifest;
 
@@ -102,10 +103,13 @@ public class InstallationMetadata implements AutoCloseable {
         }
 
         final Path provisioningRecordPath = base.resolve(ProsperoMetadataUtils.METADATA_DIR).resolve(ProsperoMetadataUtils.PROVISIONING_RECORD_XML);
-        ProvisioningConfig provisioningConfig = null;
+        GalleonProvisioningConfig provisioningConfig = null;
         if (Files.exists(provisioningRecordPath)) {
             try {
-                provisioningConfig = ProvisioningXmlParser.parse(provisioningRecordPath);
+                // XXX We should be able to resolve the version from something.
+                try(Provisioning p = new GalleonBuilder().newProvisioningBuilder().build()) {
+                    provisioningConfig = p.loadProvisioningConfig(provisioningRecordPath);
+                }
             } catch (ProvisioningException e) {
                 throw ProsperoLogger.ROOT_LOGGER.unableToReadFile(provisioningRecordPath, e);
             }
@@ -137,9 +141,11 @@ public class InstallationMetadata implements AutoCloseable {
      */
     public static InstallationMetadata newInstallation(Path base, ChannelManifest manifest, ProsperoConfig prosperoConfig,
                                                        Optional<ManifestVersionRecord> currentVersions) throws MetadataException {
-        final ProvisioningConfig provisioningConfig;
+        final GalleonProvisioningConfig provisioningConfig;
         try {
-            provisioningConfig = ProvisioningXmlParser.parse(PathsUtils.getProvisioningXml(base));
+            try (Provisioning p = new GalleonBuilder().newProvisioningBuilder().build()) {
+                provisioningConfig = p.loadProvisioningConfig(PathsUtils.getProvisioningXml(base));
+            }
         } catch (ProvisioningException e) {
             throw ProsperoLogger.ROOT_LOGGER.unableToReadFile(PathsUtils.getProvisioningXml(base), e);
         }
@@ -200,7 +206,7 @@ public class InstallationMetadata implements AutoCloseable {
 
     protected InstallationMetadata(Path base, ChannelManifest manifest, ProsperoConfig prosperoConfig,
                                    GitStorage gitStorage, Optional<ManifestVersionRecord> currentVersions,
-                                   ProvisioningConfig provisioningConfig) throws MetadataException {
+                                   GalleonProvisioningConfig provisioningConfig) throws MetadataException {
         this.base = base;
         this.gitStorage = gitStorage;
         this.manifestFile = ProsperoMetadataUtils.manifestPath(base);
@@ -218,7 +224,13 @@ public class InstallationMetadata implements AutoCloseable {
         }
 
         try {
-            this.galleonProvisioningConfig = ProvisioningXmlParser.parse(provisioningFile);
+            if(Files.exists(provisioningFile)) {
+                try (Provisioning p = new GalleonBuilder().newProvisioningBuilder().build()) {
+                    this.galleonProvisioningConfig = p.loadProvisioningConfig(provisioningFile);
+                }
+            } else {
+                this.galleonProvisioningConfig = null;
+            }
         } catch (ProvisioningException e) {
             throw ProsperoLogger.ROOT_LOGGER.unableToParseConfiguration(provisioningFile, e);
         }
@@ -267,7 +279,7 @@ public class InstallationMetadata implements AutoCloseable {
         return manifest;
     }
 
-    public ProvisioningConfig getGalleonProvisioningConfig() {
+    public GalleonProvisioningConfig getGalleonProvisioningConfig() {
         return galleonProvisioningConfig;
     }
 
@@ -415,7 +427,7 @@ public class InstallationMetadata implements AutoCloseable {
      *
      * @return
      */
-    public ProvisioningConfig getRecordedProvisioningConfig() {
+    public GalleonProvisioningConfig getRecordedProvisioningConfig() {
         return provisioningConfig;
     }
 }

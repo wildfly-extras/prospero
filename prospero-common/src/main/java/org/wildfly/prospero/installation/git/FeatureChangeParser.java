@@ -20,9 +20,6 @@ package org.wildfly.prospero.installation.git;
 import org.apache.commons.lang3.StringUtils;
 import org.jboss.galleon.ProvisioningException;
 import org.jboss.galleon.config.ConfigId;
-import org.jboss.galleon.config.ConfigModel;
-import org.jboss.galleon.config.ProvisioningConfig;
-import org.jboss.galleon.xml.ProvisioningXmlParser;
 import org.wildfly.prospero.ProsperoLogger;
 import org.wildfly.prospero.api.Diff;
 import org.wildfly.prospero.api.FeatureChange;
@@ -39,6 +36,10 @@ import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
+import org.jboss.galleon.api.GalleonBuilder;
+import org.jboss.galleon.api.Provisioning;
+import org.jboss.galleon.api.config.GalleonConfigurationWithLayers;
+import org.jboss.galleon.api.config.GalleonProvisioningConfig;
 
 import static org.wildfly.prospero.api.FeatureChange.Type.FEATURE;
 import static org.wildfly.prospero.api.FeatureChange.Type.LAYERS;
@@ -51,8 +52,8 @@ class FeatureChangeParser implements GitStorage.Parser<FeatureChange> {
     @Override
     public List<FeatureChange> parse(Path changed, Path base) throws IOException, MetadataException {
         final List<FeatureChange> featureChanges = new ArrayList<>();
-        final ProvisioningConfig newConfig;
-        final ProvisioningConfig oldConfig;
+        final GalleonProvisioningConfig newConfig;
+        final GalleonProvisioningConfig oldConfig;
         try {
             newConfig = parseProvisioningConfig(changed);
             oldConfig = parseProvisioningConfig(base);
@@ -75,8 +76,8 @@ class FeatureChangeParser implements GitStorage.Parser<FeatureChange> {
             featureChanges.add(new FeatureChange(FEATURE, removedFeatureName, Diff.Status.REMOVED));
         }
 
-        final Set<ConfigId> oldConfigs = oldConfig.getDefinedConfigs().stream().map(ConfigModel::getId).collect(Collectors.toSet());
-        final Set<ConfigId> newConfigs = newConfig.getDefinedConfigs().stream().map(ConfigModel::getId).collect(Collectors.toSet());
+        final Set<ConfigId> oldConfigs = oldConfig.getDefinedConfigs().stream().map(GalleonConfigurationWithLayers::getId).collect(Collectors.toSet());
+        final Set<ConfigId> newConfigs = newConfig.getDefinedConfigs().stream().map(GalleonConfigurationWithLayers::getId).collect(Collectors.toSet());
 
         final Set<ConfigId> modifiedConfigs = new HashSet<>(newConfigs);
         modifiedConfigs.retainAll(oldConfigs);
@@ -102,18 +103,21 @@ class FeatureChangeParser implements GitStorage.Parser<FeatureChange> {
         return featureChanges;
     }
 
-    private static ProvisioningConfig parseProvisioningConfig(Path changed) throws ProvisioningException {
+    private static GalleonProvisioningConfig parseProvisioningConfig(Path changed) throws ProvisioningException {
         if (changed == null || !Files.exists(changed.resolve(ProsperoMetadataUtils.PROVISIONING_RECORD_XML))) {
-            return ProvisioningConfig.builder().build();
+            return GalleonProvisioningConfig.builder().build();
         } else {
-            return ProvisioningXmlParser.parse(changed.resolve(ProsperoMetadataUtils.PROVISIONING_RECORD_XML));
+            // XXX TODO, WE SHOULD BE ABLE TO RESOLVE here we use default core.
+            try(Provisioning p = new GalleonBuilder().newProvisioningBuilder().build()) {
+                return p.loadProvisioningConfig(changed.resolve(ProsperoMetadataUtils.PROVISIONING_RECORD_XML));
+            }
         }
     }
 
-    private static Optional<FeatureChange> createConfigModelDiff(ProvisioningConfig newConfig, ProvisioningConfig oldConfig, ConfigId cfg) {
+    private static Optional<FeatureChange> createConfigModelDiff(GalleonProvisioningConfig newConfig, GalleonProvisioningConfig oldConfig, ConfigId cfg) {
         final List<FeatureChange> configChanges = new ArrayList<>();
-        final ConfigModel oldCfgModel = oldConfig == null?null:oldConfig.getDefinedConfig(cfg);
-        final ConfigModel newCfgModel = newConfig == null?null:newConfig.getDefinedConfig(cfg);
+        final GalleonConfigurationWithLayers oldCfgModel = oldConfig == null?null:oldConfig.getDefinedConfig(cfg);
+        final GalleonConfigurationWithLayers newCfgModel = newConfig == null?null:newConfig.getDefinedConfig(cfg);
         final Set<String> oldLayers = oldCfgModel == null? Collections.emptySet():oldCfgModel.getIncludedLayers();
         final Set<String> newLayers = newCfgModel == null? Collections.emptySet():newCfgModel.getIncludedLayers();
 

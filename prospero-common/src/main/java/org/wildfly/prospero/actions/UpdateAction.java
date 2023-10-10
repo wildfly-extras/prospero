@@ -24,9 +24,7 @@ import java.util.Collections;
 import java.util.List;
 
 import org.apache.commons.io.FileUtils;
-import org.jboss.galleon.config.ProvisioningConfig;
 import org.jboss.galleon.util.PathsUtils;
-import org.jboss.galleon.xml.ProvisioningXmlParser;
 import org.wildfly.channel.Channel;
 import org.wildfly.channel.Repository;
 import org.wildfly.prospero.ProsperoLogger;
@@ -42,6 +40,9 @@ import org.wildfly.prospero.updates.UpdateFinder;
 import org.wildfly.prospero.updates.UpdateSet;
 import org.wildfly.prospero.wfchannel.MavenSessionManager;
 import org.jboss.galleon.ProvisioningException;
+import org.jboss.galleon.api.GalleonBuilder;
+import org.jboss.galleon.api.Provisioning;
+import org.jboss.galleon.api.config.GalleonProvisioningConfig;
 
 public class UpdateAction implements AutoCloseable {
 
@@ -119,13 +120,14 @@ public class UpdateAction implements AutoCloseable {
         ProsperoLogger.ROOT_LOGGER.updateCandidateStarted(installDir);
         try (PrepareCandidateAction prepareCandidateAction = new PrepareCandidateAction(installDir, mavenSessionManager, prosperoConfig);
              GalleonEnvironment galleonEnv = getGalleonEnv(targetDir)) {
+            try (Provisioning p = new GalleonBuilder().newProvisioningBuilder(PathsUtils.getProvisioningXml(installDir)).build()) {
+                final GalleonProvisioningConfig provisioningConfig = p.loadProvisioningConfig(PathsUtils.getProvisioningXml(installDir));
 
-            final ProvisioningConfig provisioningConfig = ProvisioningXmlParser.parse(PathsUtils.getProvisioningXml(installDir));
-
-            final boolean result = prepareCandidateAction.buildCandidate(targetDir, galleonEnv,
-                    ApplyCandidateAction.Type.UPDATE, provisioningConfig, updateSet);
-            ProsperoLogger.ROOT_LOGGER.updateCandidateCompleted(targetDir);
-            return result;
+                final boolean result = prepareCandidateAction.buildCandidate(targetDir, galleonEnv,
+                        ApplyCandidateAction.Type.UPDATE, provisioningConfig, updateSet);
+                ProsperoLogger.ROOT_LOGGER.updateCandidateCompleted(targetDir);
+                return result;
+            }
         }
     }
 
@@ -149,7 +151,7 @@ public class UpdateAction implements AutoCloseable {
 
     private GalleonEnvironment getGalleonEnv(Path target) throws ProvisioningException, OperationException {
         return GalleonEnvironment
-                .builder(target, prosperoConfig.getChannels(), mavenSessionManager)
+                .builder(target, prosperoConfig.getChannels(), mavenSessionManager, false)
                 .setSourceServerPath(this.installDir)
                 .setConsole(console)
                 .build();

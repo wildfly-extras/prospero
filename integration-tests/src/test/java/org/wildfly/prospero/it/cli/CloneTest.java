@@ -18,8 +18,6 @@
 package org.wildfly.prospero.it.cli;
 
 import org.apache.commons.io.FileUtils;
-import org.jboss.galleon.config.FeaturePackConfig;
-import org.jboss.galleon.config.ProvisioningConfig;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -46,6 +44,8 @@ import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import org.jboss.galleon.api.config.GalleonFeaturePackConfig;
+import org.jboss.galleon.api.config.GalleonProvisioningConfig;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
@@ -106,7 +106,7 @@ public class CloneTest extends WfCoreTestBase {
         try (InstallationMetadata meta = metadata) {
             ChannelManifest channelManifest = meta.getManifest();
             ProsperoConfig prosperoConfig = meta.getProsperoConfig();
-            ProvisioningConfig provisionedConfig = meta.getGalleonProvisioningConfig();
+            GalleonProvisioningConfig provisionedConfig = meta.getGalleonProvisioningConfig();
             // check channelManifest
             assertEquals(ChannelManifestMapper.CURRENT_SCHEMA_VERSION, channelManifest.getSchemaVersion());
             assertNull(channelManifest.getDescription());
@@ -137,7 +137,7 @@ public class CloneTest extends WfCoreTestBase {
             // check provisionedConfig
             assertTrue(provisionedConfig.hasFeaturePackDeps());
             assertEquals(1, provisionedConfig.getFeaturePackDeps().size());
-            FeaturePackConfig featurePackConfig = provisionedConfig.getFeaturePackDeps().iterator().next();
+            GalleonFeaturePackConfig featurePackConfig = provisionedConfig.getFeaturePackDeps().iterator().next();
             assertEquals("org.wildfly.core:wildfly-core-galleon-pack::zip", featurePackConfig.getLocation().getProducerName());
         }
     }

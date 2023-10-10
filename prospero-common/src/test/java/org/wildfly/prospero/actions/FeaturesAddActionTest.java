@@ -21,11 +21,8 @@ import org.apache.commons.io.FileUtils;
 import org.eclipse.aether.deployment.DeploymentException;
 import org.jboss.galleon.Constants;
 import org.jboss.galleon.ProvisioningException;
-import org.jboss.galleon.ProvisioningManager;
 import org.jboss.galleon.config.ConfigId;
 import org.jboss.galleon.config.ConfigModel;
-import org.jboss.galleon.config.FeaturePackConfig;
-import org.jboss.galleon.config.ProvisioningConfig;
 import org.jboss.galleon.creator.FeaturePackCreator;
 import org.jboss.galleon.repo.RepositoryArtifactResolver;
 import org.jboss.galleon.spec.ConfigLayerSpec;
@@ -65,6 +62,11 @@ import java.util.stream.Collectors;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import org.jboss.galleon.api.GalleonBuilder;
+import org.jboss.galleon.api.Provisioning;
+import org.jboss.galleon.api.config.GalleonConfigurationWithLayersBuilder;
+import org.jboss.galleon.api.config.GalleonFeaturePackConfig;
+import org.jboss.galleon.api.config.GalleonProvisioningConfig;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertThrows;
@@ -222,11 +224,11 @@ public class FeaturesAddActionTest {
 
         getFeaturesAddAction().addFeaturePack("org.test:added-pack", NO_DEFAULT_CONFIGS);
 
-        final ArgumentCaptor<ProvisioningConfig> provisioningConfigArgumentCaptor = ArgumentCaptor.forClass(ProvisioningConfig.class);
+        final ArgumentCaptor<GalleonProvisioningConfig> provisioningConfigArgumentCaptor = ArgumentCaptor.forClass(GalleonProvisioningConfig.class);
         verify(prepareCandidateAction).buildCandidate(any(), any(), eq(ApplyCandidateAction.Type.FEATURE_ADD),
                 provisioningConfigArgumentCaptor.capture());
 
-        final ProvisioningConfig config = provisioningConfigArgumentCaptor.getValue();
+        final GalleonProvisioningConfig config = provisioningConfigArgumentCaptor.getValue();
         assertThat(config.getDefinedConfigs()).isEmpty();
         assertIncludeDefaultConfigs(getFeaturePackConfig(config, "org.test:added-pack::zip@maven"));
         assertIncludeDefaultPackages(getFeaturePackConfig(config, "org.test:added-pack::zip@maven"));
@@ -277,13 +279,13 @@ public class FeaturesAddActionTest {
 
         getFeaturesAddAction().addFeaturePackWithLayers("org.test:added-pack", Set.of("layer1"), NO_CONFIG);
 
-        final ArgumentCaptor<ProvisioningConfig> provisioningConfigArgumentCaptor = ArgumentCaptor.forClass(ProvisioningConfig.class);
+        final ArgumentCaptor<GalleonProvisioningConfig> provisioningConfigArgumentCaptor = ArgumentCaptor.forClass(GalleonProvisioningConfig.class);
         verify(prepareCandidateAction).buildCandidate(any(), any(), eq(ApplyCandidateAction.Type.FEATURE_ADD),
                 provisioningConfigArgumentCaptor.capture());
 
-        final ProvisioningConfig config = provisioningConfigArgumentCaptor.getValue();
+        final GalleonProvisioningConfig config = provisioningConfigArgumentCaptor.getValue();
         assertThat(config.getDefinedConfigs())
-                .contains(ConfigModel.builder("model", "model.xml")
+                .contains(GalleonConfigurationWithLayersBuilder.builder("model", "model.xml")
                         .includeLayer("layer1")
                         .build());
         assertExcludeDefaultConfigs(getFeaturePackConfig(config, "org.test:added-pack::zip@maven"));
@@ -314,13 +316,13 @@ public class FeaturesAddActionTest {
         getFeaturesAddAction().addFeaturePackWithLayers("org.test:added-pack", Set.of("layer1"),
                 new ConfigId(null, "test.xml"));
 
-        final ArgumentCaptor<ProvisioningConfig> provisioningConfigArgumentCaptor = ArgumentCaptor.forClass(ProvisioningConfig.class);
+        final ArgumentCaptor<GalleonProvisioningConfig> provisioningConfigArgumentCaptor = ArgumentCaptor.forClass(GalleonProvisioningConfig.class);
         verify(prepareCandidateAction).buildCandidate(any(), any(), eq(ApplyCandidateAction.Type.FEATURE_ADD),
                 provisioningConfigArgumentCaptor.capture());
 
-        final ProvisioningConfig config = provisioningConfigArgumentCaptor.getValue();
+        final GalleonProvisioningConfig config = provisioningConfigArgumentCaptor.getValue();
         assertThat(config.getDefinedConfigs())
-                .contains(ConfigModel.builder("model", "test.xml")
+                .contains(GalleonConfigurationWithLayersBuilder.builder("model", "test.xml")
                         .includeLayer("layer1")
                         .build());
         assertExcludeDefaultConfigs(getFeaturePackConfig(config, "org.test:added-pack::zip@maven"));
@@ -349,29 +351,30 @@ public class FeaturesAddActionTest {
         deployFeaturePacks(creator);
 
         // install
-        getPm(installDir).provision(ProvisioningConfig.builder()
-                        .addFeaturePackDep(FeaturePackLocation.fromString("org.test:base-pack:1.0.0"))
-                        .addFeaturePackDep(FeaturePackLocation.fromString("org.test:added-pack:1.0.0"))
-                        .addConfig(ConfigModel.builder("model", "test.xml")
-                                .includeLayer("layer1")
-                                .build())
-                .build());
+        try (Provisioning p = getPm(installDir)) {
+                p.provision(GalleonProvisioningConfig.builder()
+                    .addFeaturePackDep(FeaturePackLocation.fromString("org.test:base-pack:1.0.0"))
+                    .addFeaturePackDep(FeaturePackLocation.fromString("org.test:added-pack:1.0.0"))
+                    .addConfig(ConfigModel.builder("model", "test.xml")
+                            .includeLayer("layer1")
+                            .build()).build());
+        }
         mockInstallationData(installDir, "org.test:base-pack:1.0.0", "org.test:added-pack:1.0.0");
 
         getFeaturesAddAction().addFeaturePackWithLayers("org.test:added-pack", Set.of("layer2"), new ConfigId(null, "test.xml"));
 
-        final ArgumentCaptor<ProvisioningConfig> provisioningConfigArgumentCaptor = ArgumentCaptor.forClass(ProvisioningConfig.class);
+        final ArgumentCaptor<GalleonProvisioningConfig> provisioningConfigArgumentCaptor = ArgumentCaptor.forClass(GalleonProvisioningConfig.class);
         verify(prepareCandidateAction).buildCandidate(any(), any(), eq(ApplyCandidateAction.Type.FEATURE_ADD),
                 provisioningConfigArgumentCaptor.capture());
 
-        final ProvisioningConfig config = provisioningConfigArgumentCaptor.getValue();
+        final GalleonProvisioningConfig config = provisioningConfigArgumentCaptor.getValue();
         assertThat(config.getDefinedConfigs())
                 .contains(ConfigModel.builder("model", "test.xml")
                         .includeLayer("layer1")
                         .includeLayer("layer2")
                         .build());
         assertThat(config.getFeaturePackDeps())
-                .map(FeaturePackConfig::getLocation)
+                .map(GalleonFeaturePackConfig::getLocation)
                 .contains(
                         FeaturePackLocation.fromString("org.test:base-pack:zip"),
                         FeaturePackLocation.fromString("org.test:added-pack:zip"));
@@ -406,22 +409,24 @@ public class FeaturesAddActionTest {
         deployFeaturePacks(creator);
 
         // install
-        getPm(installDir).provision(ProvisioningConfig.builder()
-                .addFeaturePackDep(FeaturePackLocation.fromString("org.test:base-pack:1.0.0"))
-                .addConfig(ConfigModel.builder("model", "test.xml")
-                        .includeLayer("layer1")
-                        .excludeLayer("layer2")
-                        .build())
-                .build());
+        try (Provisioning p = getPm(installDir)) {
+            p.provision(GalleonProvisioningConfig.builder()
+                    .addFeaturePackDep(FeaturePackLocation.fromString("org.test:base-pack:1.0.0"))
+                    .addConfig(ConfigModel.builder("model", "test.xml")
+                            .includeLayer("layer1")
+                            .excludeLayer("layer2")
+                            .build()).build());
+        }
+
         mockInstallationData(installDir, "org.test:base-pack:1.0.0");
 
         getFeaturesAddAction().addFeaturePackWithLayers("org.test:added-pack", Set.of("layer2"), new ConfigId(null, "test.xml"));
 
-        final ArgumentCaptor<ProvisioningConfig> provisioningConfigArgumentCaptor = ArgumentCaptor.forClass(ProvisioningConfig.class);
+        final ArgumentCaptor<GalleonProvisioningConfig> provisioningConfigArgumentCaptor = ArgumentCaptor.forClass(GalleonProvisioningConfig.class);
         verify(prepareCandidateAction).buildCandidate(any(), any(), eq(ApplyCandidateAction.Type.FEATURE_ADD),
                 provisioningConfigArgumentCaptor.capture());
 
-        final ProvisioningConfig config = provisioningConfigArgumentCaptor.getValue();
+        final GalleonProvisioningConfig config = provisioningConfigArgumentCaptor.getValue();
         assertThat(config.getDefinedConfigs())
                 .contains(ConfigModel.builder("model", "test.xml")
                         .includeLayer("layer1")
@@ -430,7 +435,7 @@ public class FeaturesAddActionTest {
         assertThat(config.getDefinedConfig(new ConfigId("model", "test.xml")).getExcludedLayers())
                 .isEmpty();
         assertThat(config.getFeaturePackDeps())
-                .map(FeaturePackConfig::getLocation)
+                .map(GalleonFeaturePackConfig::getLocation)
                 .contains(
                         FeaturePackLocation.fromString("org.test:base-pack:zip"),
                         FeaturePackLocation.fromString("org.test:added-pack::zip@maven"));
@@ -510,13 +515,13 @@ public class FeaturesAddActionTest {
 
         getFeaturesAddAction().addFeaturePackWithLayers(
                 "org.test:added-pack", Set.of("layer1"), new ConfigId("model2", null));
-        final ArgumentCaptor<ProvisioningConfig> provisioningConfigArgumentCaptor = ArgumentCaptor.forClass(ProvisioningConfig.class);
+        final ArgumentCaptor<GalleonProvisioningConfig> provisioningConfigArgumentCaptor = ArgumentCaptor.forClass(GalleonProvisioningConfig.class);
         verify(prepareCandidateAction).buildCandidate(any(), any(), eq(ApplyCandidateAction.Type.FEATURE_ADD),
                 provisioningConfigArgumentCaptor.capture());
 
-        final ProvisioningConfig config = provisioningConfigArgumentCaptor.getValue();
+        final GalleonProvisioningConfig config = provisioningConfigArgumentCaptor.getValue();
         assertThat(config.getDefinedConfigs())
-                .contains(ConfigModel.builder("model2", "model2.xml")
+                .contains(GalleonConfigurationWithLayersBuilder.builder("model2", "model2.xml")
                         .includeLayer("layer1")
                         .build());
         assertExcludeDefaultConfigs(getFeaturePackConfig(config, "org.test:added-pack::zip@maven"));
@@ -536,11 +541,11 @@ public class FeaturesAddActionTest {
 
         getFeaturesAddAction().addFeaturePackWithLayers(
                 "org.test:added-pack", Set.of(), NO_CONFIG);
-        final ArgumentCaptor<ProvisioningConfig> provisioningConfigArgumentCaptor = ArgumentCaptor.forClass(ProvisioningConfig.class);
+        final ArgumentCaptor<GalleonProvisioningConfig> provisioningConfigArgumentCaptor = ArgumentCaptor.forClass(GalleonProvisioningConfig.class);
         verify(prepareCandidateAction).buildCandidate(any(), any(), eq(ApplyCandidateAction.Type.FEATURE_ADD),
                 provisioningConfigArgumentCaptor.capture());
 
-        final ProvisioningConfig config = provisioningConfigArgumentCaptor.getValue();
+        final GalleonProvisioningConfig config = provisioningConfigArgumentCaptor.getValue();
         assertThat(config.getDefinedConfigs())
                 .isEmpty();
         assertIncludeDefaultConfigs(getFeaturePackConfig(config, "org.test:added-pack::zip@maven"));
@@ -608,11 +613,11 @@ public class FeaturesAddActionTest {
 
         getFeaturesAddAction().addFeaturePack(
                 "org.test:added-pack", NO_DEFAULT_CONFIGS);
-        final ArgumentCaptor<ProvisioningConfig> provisioningConfigArgumentCaptor = ArgumentCaptor.forClass(ProvisioningConfig.class);
+        final ArgumentCaptor<GalleonProvisioningConfig> provisioningConfigArgumentCaptor = ArgumentCaptor.forClass(GalleonProvisioningConfig.class);
         verify(prepareCandidateAction).buildCandidate(any(), any(), eq(ApplyCandidateAction.Type.FEATURE_ADD),
                 provisioningConfigArgumentCaptor.capture());
 
-        final ProvisioningConfig config = provisioningConfigArgumentCaptor.getValue();
+        final GalleonProvisioningConfig config = provisioningConfigArgumentCaptor.getValue();
         assertThat(config.getDefinedConfigs())
                 .isEmpty();
         assertIncludeDefaultConfigs(getFeaturePackConfig(config, "org.test:added-pack::zip@maven"));
@@ -656,14 +661,14 @@ public class FeaturesAddActionTest {
 
         getFeaturesAddAction().addFeaturePack(
                 "org.test:added-pack", Set.of(new ConfigId("model1", "config2")));
-        final ArgumentCaptor<ProvisioningConfig> provisioningConfigArgumentCaptor = ArgumentCaptor.forClass(ProvisioningConfig.class);
+        final ArgumentCaptor<GalleonProvisioningConfig> provisioningConfigArgumentCaptor = ArgumentCaptor.forClass(GalleonProvisioningConfig.class);
         verify(prepareCandidateAction).buildCandidate(any(), any(), eq(ApplyCandidateAction.Type.FEATURE_ADD),
                 provisioningConfigArgumentCaptor.capture());
 
-        final ProvisioningConfig config = provisioningConfigArgumentCaptor.getValue();
+        final GalleonProvisioningConfig config = provisioningConfigArgumentCaptor.getValue();
         assertThat(config.getDefinedConfigs())
                 .isEmpty();
-        final FeaturePackConfig addedPackageConfig = getFeaturePackConfig(config, "org.test:added-pack::zip@maven");
+        final GalleonFeaturePackConfig addedPackageConfig = getFeaturePackConfig(config, "org.test:added-pack::zip@maven");
         assertIncludeDefaultPackages(addedPackageConfig);
         assertExcludeDefaultConfigs(addedPackageConfig);
         assertThat(addedPackageConfig.getIncludedConfigs())
@@ -710,16 +715,16 @@ public class FeaturesAddActionTest {
 
         getFeaturesAddAction().addFeaturePackWithLayers(
                 "org.test:added-pack", Set.of("layer1"), NO_CONFIG);
-        final ArgumentCaptor<ProvisioningConfig> provisioningConfigArgumentCaptor = ArgumentCaptor.forClass(ProvisioningConfig.class);
+        final ArgumentCaptor<GalleonProvisioningConfig> provisioningConfigArgumentCaptor = ArgumentCaptor.forClass(GalleonProvisioningConfig.class);
         verify(prepareCandidateAction).buildCandidate(any(), any(), eq(ApplyCandidateAction.Type.FEATURE_ADD),
                 provisioningConfigArgumentCaptor.capture());
 
-        final ProvisioningConfig config = provisioningConfigArgumentCaptor.getValue();
+        final GalleonProvisioningConfig config = provisioningConfigArgumentCaptor.getValue();
         assertThat(config.getDefinedConfigs())
-                .contains(ConfigModel.builder("model1", "model1.xml")
+                .contains(GalleonConfigurationWithLayersBuilder.builder("model1", "model1.xml")
                         .includeLayer("layer1")
                         .build());
-        final FeaturePackConfig addedPackageConfig = getFeaturePackConfig(config, "org.test:added-pack::zip@maven");
+        final GalleonFeaturePackConfig addedPackageConfig = getFeaturePackConfig(config, "org.test:added-pack::zip@maven");
         assertExcludeDefaultPackages(addedPackageConfig);
         assertExcludeDefaultConfigs(addedPackageConfig);
         assertThat(addedPackageConfig.getIncludedConfigs())
@@ -809,34 +814,34 @@ public class FeaturesAddActionTest {
 
         getFeaturesAddAction().addFeaturePack("org.test:added-pack", NO_DEFAULT_CONFIGS);
 
-        final ArgumentCaptor<ProvisioningConfig> provisioningConfigArgumentCaptor = ArgumentCaptor.forClass(ProvisioningConfig.class);
+        final ArgumentCaptor<GalleonProvisioningConfig> provisioningConfigArgumentCaptor = ArgumentCaptor.forClass(GalleonProvisioningConfig.class);
         verify(prepareCandidateAction).buildCandidate(any(), any(), eq(ApplyCandidateAction.Type.FEATURE_ADD),
                 provisioningConfigArgumentCaptor.capture());
 
-        final ProvisioningConfig config = provisioningConfigArgumentCaptor.getValue();
+        final GalleonProvisioningConfig config = provisioningConfigArgumentCaptor.getValue();
         System.out.println(config);
         assertThat(config.getDefinedConfigs()).isEmpty();
         assertIncludeDefaultConfigs(getFeaturePackConfig(config, "org.test:added-pack::zip@maven"));
         assertIncludeDefaultPackages(getFeaturePackConfig(config, "org.test:added-pack::zip@maven"));
     }
 
-    private static FeaturePackConfig getFeaturePackConfig(ProvisioningConfig config, String fpl) {
+    private static GalleonFeaturePackConfig getFeaturePackConfig(GalleonProvisioningConfig config, String fpl) {
         return config.getFeaturePackDeps().stream().filter(f -> f.getLocation().toString().equals(fpl)).findFirst().get();
     }
 
-    private static void assertIncludeDefaultPackages(FeaturePackConfig cfg) {
+    private static void assertIncludeDefaultPackages(GalleonFeaturePackConfig cfg) {
         assertNull("The inherit configs should be included", cfg.getInheritPackages());
     }
 
-    private static void assertIncludeDefaultConfigs(FeaturePackConfig cfg) {
+    private static void assertIncludeDefaultConfigs(GalleonFeaturePackConfig cfg) {
         assertNull("The inherit configs should be included", cfg.getInheritConfigs());
     }
 
-    private static void assertExcludeDefaultPackages(FeaturePackConfig cfg) {
+    private static void assertExcludeDefaultPackages(GalleonFeaturePackConfig cfg) {
         assertFalse("The inherit configs should be included", cfg.getInheritPackages());
     }
 
-    private static void assertExcludeDefaultConfigs(FeaturePackConfig cfg) {
+    private static void assertExcludeDefaultConfigs(GalleonFeaturePackConfig cfg) {
         assertFalse("The inherit configs should be included", cfg.getInheritConfigs());
     }
 
@@ -874,8 +879,9 @@ public class FeaturesAddActionTest {
     }
 
     private void installFeaturePack(Path path, String fpl) throws Exception {
-        getPm(path).install(FeaturePackLocation.fromString(fpl));
-
+        try (Provisioning p = getPm(path)) {
+            p.install(FeaturePackLocation.fromString(fpl));
+        }
         // mock the installation metadata
         mockInstallationData(path, fpl);
     }
@@ -900,9 +906,10 @@ public class FeaturesAddActionTest {
         }
     }
 
-    protected ProvisioningManager getPm(Path path) throws Exception {
-        return ProvisioningManager.builder()
-                .addArtifactResolver(repo)
+    protected Provisioning getPm(Path path) throws Exception {
+        GalleonBuilder provider = new GalleonBuilder();
+        provider.addArtifactResolver(repo);
+        return provider.newProvisioningBuilder()
                 .setInstallationHome(path)
                 .setRecordState(true)
                 .build();

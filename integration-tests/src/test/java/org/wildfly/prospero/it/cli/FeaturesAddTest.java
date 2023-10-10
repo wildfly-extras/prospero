@@ -117,6 +117,7 @@ public class FeaturesAddTest {
         ExecutionUtils.prosperoExecution(CliConstants.Commands.REVERT, CliConstants.Commands.PERFORM,
                         CliConstants.REVISION, savedState.getName(),
                         CliConstants.YES,
+                        CliConstants.VERBOSE,
                         CliConstants.DIR, targetDir.getAbsolutePath())
                 .withTimeLimit(10, TimeUnit.MINUTES)
                 .execute()
