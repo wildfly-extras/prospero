@@ -30,7 +30,6 @@ public final class CliConstants {
      */
     public static final class Commands {
 
-
         private Commands() {
         }
 
@@ -59,6 +58,7 @@ public final class CliConstants {
         public static final String APPLY = "apply";
         public static final String PRINT_LICENSES = "print-licenses";
         public static final String SUBSCRIBE = "subscribe";
+        protected static final String VERSIONS = "versions";
     }
 
     // Parameter and option labels:

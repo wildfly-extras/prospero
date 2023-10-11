@@ -28,6 +28,7 @@ import org.wildfly.prospero.cli.CliConsole;
 import org.wildfly.prospero.cli.CliMessages;
 import org.wildfly.prospero.cli.ReturnCodes;
 import org.wildfly.prospero.cli.printers.ChannelPrinter;
+import org.wildfly.prospero.metadata.ManifestVersionRecord;
 import picocli.CommandLine;
 
 @CommandLine.Command(name = CliConstants.Commands.CHANNEL)
@@ -75,6 +76,47 @@ public class ChannelCommand extends AbstractCommand {
             }
 
             return ReturnCodes.SUCCESS;
+        }
+    }
+
+    @CommandLine.Command(name = CliConstants.Commands.VERSIONS)
+    public static class ChannelVersionCommand extends AbstractCommand {
+
+        protected static final String PREFIX = "  * ";
+        @CommandLine.Option(names = CliConstants.DIR)
+        private Optional<Path> directory;
+
+        public ChannelVersionCommand(CliConsole console, ActionFactory actionFactory) {
+            super(console, actionFactory);
+        }
+
+        @Override
+        public Integer call() throws Exception {
+            final Path installationDir = determineInstallationDirectory(directory);
+
+            console.println(CliMessages.MESSAGES.serverVersionsHeader());
+            try (MetadataAction metadataAction = actionFactory.metadataActions(installationDir)) {
+                final ManifestVersionRecord channelVersions = metadataAction.getChannelVersions();
+                for (ManifestVersionRecord.MavenManifest mavenManifest : channelVersions.getMavenManifests()) {
+                    if (mavenManifest.getDescription() != null) {
+                        console.println(PREFIX + mavenManifest.getDescription());
+                    } else {
+                        console.println(PREFIX + buildManifestGav(mavenManifest));
+                    }
+                }
+                for (ManifestVersionRecord.UrlManifest urlManifest : channelVersions.getUrlManifests()) {
+                    if (urlManifest.getDescription() != null) {
+                        console.println(PREFIX + urlManifest.getDescription());
+                    } else {
+                        console.println(PREFIX + String.format("%s [%s]", urlManifest.getUrl(), urlManifest.getHash()));
+                    }
+                }
+            }
+            return ReturnCodes.SUCCESS;
+        }
+
+        private static String buildManifestGav(ManifestVersionRecord.MavenManifest mavenManifest) {
+            return String.format("%s:%s [%s]", mavenManifest.getGroupId(), mavenManifest.getArtifactId(), mavenManifest.getVersion());
         }
     }
 

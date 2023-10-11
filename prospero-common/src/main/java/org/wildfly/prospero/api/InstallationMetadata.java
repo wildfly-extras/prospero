@@ -394,7 +394,7 @@ public class InstallationMetadata implements AutoCloseable {
         gitStorage.recordConfigChange();
     }
 
-    public Optional<ManifestVersionRecord> getManifestVersions() throws IOException {
+    public Optional<ManifestVersionRecord> getManifestVersions() {
         return manifestVersion;
     }
 

@@ -623,4 +623,8 @@ public interface CliMessages {
     default String metadataExistsAlready(Path path, String distName) {
         return format(bundle.getString("prospero.update.subscribe.meta.exists"), path, distName);
     }
+
+    default String serverVersionsHeader() {
+        return bundle.getString("prospero.channels.versions.header");
+    }
 }

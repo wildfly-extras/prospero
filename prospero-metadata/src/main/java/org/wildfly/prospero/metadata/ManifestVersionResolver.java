@@ -22,8 +22,11 @@ import org.eclipse.aether.DefaultRepositorySystemSession;
 import org.eclipse.aether.RepositorySystem;
 import org.eclipse.aether.repository.LocalRepository;
 import org.jboss.galleon.util.HashUtils;
+import org.jboss.logging.Logger;
 import org.wildfly.channel.Channel;
+import org.wildfly.channel.ChannelManifest;
 import org.wildfly.channel.ChannelManifestCoordinate;
+import org.wildfly.channel.ChannelManifestMapper;
 import org.wildfly.channel.Repository;
 import org.wildfly.channel.maven.VersionResolverFactory;
 import org.wildfly.channel.spi.MavenVersionsResolver;
@@ -48,6 +51,7 @@ import java.util.stream.Collectors;
  * for open manifests it's list of repositories + strategy.
  */
 public class ManifestVersionResolver {
+    private static final Logger LOG = Logger.getLogger(ManifestVersionResolver.class.getName());
 
     private final VersionResolverFactory resolverFactory;
 
@@ -89,17 +93,51 @@ public class ManifestVersionResolver {
             } else if (manifestCoordinate.getUrl() != null) {
                 final String content = read(manifestCoordinate.getUrl());
                 final String hashCode = HashUtils.hash(content);
-                manifestVersionRecord.addManifest(new ManifestVersionRecord.UrlManifest(manifestCoordinate.getUrl().toExternalForm(), hashCode));
+                final ChannelManifest manifest = ChannelManifestMapper.from(manifestCoordinate.getUrl());
+                manifestVersionRecord.addManifest(new ManifestVersionRecord.UrlManifest(manifestCoordinate.getUrl().toExternalForm(), hashCode, manifest.getName()));
             } else if (manifestCoordinate.getVersion() != null) {
-                manifestVersionRecord.addManifest(new ManifestVersionRecord.MavenManifest(manifestCoordinate.getGroupId(), manifestCoordinate.getArtifactId(), manifestCoordinate.getVersion()));
+                final String description = getManifestDescription(manifestCoordinate, resolverFactory.create(channel.getRepositories()));
+                manifestVersionRecord.addManifest(new ManifestVersionRecord.MavenManifest(
+                        manifestCoordinate.getGroupId(),
+                        manifestCoordinate.getArtifactId(),
+                        manifestCoordinate.getVersion(),
+                        description));
             } else {
                 final MavenVersionsResolver mavenVersionsResolver = resolverFactory.create(channel.getRepositories());
                 final Optional<String> latestVersion = VersionMatcher.getLatestVersion(mavenVersionsResolver.getAllVersions(manifestCoordinate.getGroupId(), manifestCoordinate.getArtifactId(),
                         manifestCoordinate.getExtension(), manifestCoordinate.getClassifier()));
-                manifestVersionRecord.addManifest(new ManifestVersionRecord.MavenManifest(manifestCoordinate.getGroupId(), manifestCoordinate.getArtifactId(), latestVersion.get()));
+                if (latestVersion.isPresent()) {
+                    final String description = getManifestDescription(new ChannelManifestCoordinate(
+                            manifestCoordinate.getGroupId(), manifestCoordinate.getArtifactId(), latestVersion.get()
+                    ), mavenVersionsResolver);
+                    manifestVersionRecord.addManifest(new ManifestVersionRecord.MavenManifest(
+                            manifestCoordinate.getGroupId(),
+                            manifestCoordinate.getArtifactId(),
+                            latestVersion.get(),
+                            description));
+                } else {
+                    LOG.warn("Unable to determine version of manifest used: " + manifestCoordinate);
+                    manifestVersionRecord.addManifest(new ManifestVersionRecord.MavenManifest(
+                            manifestCoordinate.getGroupId(),
+                            manifestCoordinate.getArtifactId(),
+                            "",
+                            null));
+                }
             }
         }
         return manifestVersionRecord;
+    }
+
+    private String getManifestDescription(ChannelManifestCoordinate manifestCoordinate, MavenVersionsResolver mavenVersionsResolver) {
+        final List<URL> urls = mavenVersionsResolver.resolveChannelMetadata(List.of(manifestCoordinate));
+        final String description;
+        if (!urls.isEmpty()) {
+            final ChannelManifest manifest = ChannelManifestMapper.from(urls.get(0));
+            description = manifest.getName();
+        } else {
+            description = null;
+        }
+        return description;
     }
 
     private String read(URL url) throws IOException {
