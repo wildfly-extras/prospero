@@ -89,6 +89,7 @@ public class CliMain {
         channelCmd.addSubcommand(new ChannelAddCommand(console, actionFactory));
         channelCmd.addSubcommand(new ChannelRemoveCommand(console, actionFactory));
         channelCmd.addSubcommand(new ChannelCommand.ChannelListCommand(console, actionFactory));
+        channelCmd.addSubcommand(new ChannelCommand.ChannelVersionCommand(console, actionFactory));
         channelCmd.addSubcommand(new ChannelInitializeCommand(console, actionFactory));
         channelCmd.addSubcommand(new ChannelPromoteCommand(console, actionFactory));
 

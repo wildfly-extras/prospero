@@ -597,4 +597,8 @@ public interface CliMessages {
     default String diffFeaturesChanges() {
         return bundle.getString("prospero.changes.diff.features_changes");
     }
+
+    default String serverVersionsHeader() {
+        return bundle.getString("prospero.channels.versions.header");
+    }
 }
