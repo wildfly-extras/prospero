@@ -33,6 +33,7 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Objects;
 import java.util.Properties;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 /**
@@ -81,7 +82,7 @@ public class LicenseManager {
      * @param fpls - list of Maven coordinates (groupId:artifactId) of installed Feature Packs
      * @return list of required {@License}s. Empty list if no licenses are required.
      */
-    public List<License> getLicenses(List<String> fpls) {
+    public List<License> getLicenses(Set<String> fpls) {
         Objects.requireNonNull(fpls);
 
         return fpls.stream()
