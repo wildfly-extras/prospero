@@ -31,6 +31,7 @@ import java.nio.file.Path;
 import java.util.Collections;
 import java.util.List;
 import java.util.Properties;
+import java.util.Set;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.wildfly.prospero.licenses.LicenseManager.LICENSES_FOLDER;
@@ -58,28 +59,28 @@ public class LicenseManagerTest {
 
     @Test
     public void noLicenseFileDoesNothing() throws Exception {
-        assertThat(new LicenseManager(null).getLicenses(List.of(A_FEATURE_PACK)))
+        assertThat(new LicenseManager(null).getLicenses(Set.of(A_FEATURE_PACK)))
                 .isEmpty();
     }
 
     @Test
     public void emptyListIfNoLicensesMatched() throws Exception {
         License.writeLicenses(List.of(LICENSE_ONE), licenseFile);
-        assertThat(new LicenseManager(licenseFile.toURI().toURL()).getLicenses(List.of(UNKNOWN_FEATURE_PACK)))
+        assertThat(new LicenseManager(licenseFile.toURI().toURL()).getLicenses(Set.of(UNKNOWN_FEATURE_PACK)))
                 .isEmpty();
     }
 
     @Test
     public void matchesLicenseByFpGav() throws Exception {
         License.writeLicenses(List.of(LICENSE_ONE), licenseFile);
-        assertThat(new LicenseManager(licenseFile.toURI().toURL()).getLicenses(List.of(A_FEATURE_PACK)))
+        assertThat(new LicenseManager(licenseFile.toURI().toURL()).getLicenses(Set.of(A_FEATURE_PACK)))
                 .contains(LICENSE_ONE);
     }
 
     @Test
     public void matchesMultipleLicenseByFpGav() throws Exception {
         License.writeLicenses(List.of(LICENSE_ONE, LICENSE_TWO), licenseFile);
-        assertThat(new LicenseManager(licenseFile.toURI().toURL()).getLicenses(List.of(A_FEATURE_PACK)))
+        assertThat(new LicenseManager(licenseFile.toURI().toURL()).getLicenses(Set.of(A_FEATURE_PACK)))
                 .contains(LICENSE_ONE, LICENSE_TWO);
     }
 
