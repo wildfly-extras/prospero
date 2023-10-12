@@ -200,7 +200,7 @@ public class ProvisioningAction {
 
     private List<License> getPendingLicenses(ProvisioningConfig provisioningConfig, GalleonFeaturePackAnalyzer exporter) throws OperationException {
         try {
-            final List<String> featurePacks = exporter.getFeaturePacks(provisioningConfig);
+            final Set<String> featurePacks = exporter.getFeaturePacks(provisioningConfig);
             return licenseManager.getLicenses(featurePacks);
         } catch (MavenUniverseException e) {
             if (e.getCause() instanceof org.eclipse.aether.resolution.ArtifactResolutionException) {

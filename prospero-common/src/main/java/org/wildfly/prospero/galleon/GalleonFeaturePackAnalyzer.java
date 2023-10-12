@@ -38,7 +38,6 @@ import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -68,7 +67,7 @@ public class GalleonFeaturePackAnalyzer {
     public void cacheGalleonArtifacts(Path installedDir, ProvisioningConfig provisioningConfig) throws Exception {
         // no data will be actually written out, but we need a path to init the Galleon
         final Path tempInstallationPath = Files.createTempDirectory("temp");
-        final List<String> fps = new ArrayList<>();
+        final Set<String> fps = new HashSet<>();
 
         GalleonEnvironment galleonEnv = null;
         ProvisioningLayoutFactory layoutFactory = null;
@@ -151,10 +150,10 @@ public class GalleonFeaturePackAnalyzer {
      * @throws ProvisioningException
      * @throws OperationException
      */
-    public List<String> getFeaturePacks(ProvisioningConfig provisioningConfig) throws IOException, ProvisioningException, OperationException {
+    public Set<String> getFeaturePacks(ProvisioningConfig provisioningConfig) throws IOException, ProvisioningException, OperationException {
         // no data will be actually written out, but we need a path to init the Galleon
         final Path tempInstallationPath = Files.createTempDirectory("temp");
-        final List<String> fps = new ArrayList<>();
+        final Set<String> fps = new HashSet<>();
         try (GalleonEnvironment galleonEnv = galleonEnvWithFpMapper(tempInstallationPath, fps)) {
             final ProvisioningManager pm = galleonEnv.getProvisioningManager();
 
@@ -166,7 +165,7 @@ public class GalleonFeaturePackAnalyzer {
         }
     }
 
-    private GalleonEnvironment galleonEnvWithFpMapper(Path tempInstallationPath, List<String> fps) throws ProvisioningException, OperationException {
+    private GalleonEnvironment galleonEnvWithFpMapper(Path tempInstallationPath, Set<String> fps) throws ProvisioningException, OperationException {
         final GalleonEnvironment galleonEnv = GalleonEnvironment
                 .builder(tempInstallationPath, channels, mavenSessionManager)
                 .setConsole(null)
