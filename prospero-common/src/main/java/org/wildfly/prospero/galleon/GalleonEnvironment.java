@@ -19,6 +19,7 @@ package org.wildfly.prospero.galleon;
 
 import org.eclipse.aether.DefaultRepositorySystemSession;
 import org.eclipse.aether.RepositorySystem;
+import org.jboss.galleon.Constants;
 import org.jboss.galleon.ProvisioningException;
 import org.jboss.galleon.ProvisioningManager;
 import org.jboss.galleon.layout.ProvisioningLayoutFactory;
@@ -66,6 +67,8 @@ public class GalleonEnvironment implements AutoCloseable {
     private final ChannelSession channelSession;
     private final List<Channel> channels;
 
+    private boolean resetGalleonLineEndings = true;
+
     private GalleonEnvironment(Builder builder) throws ProvisioningException, MetadataException, ChannelDefinitionException, UnresolvedChannelMetadataException {
         Optional<Console> console = Optional.ofNullable(builder.console);
         Optional<ChannelManifest> restoreManifest = Optional.ofNullable(builder.manifest);
@@ -94,6 +97,13 @@ public class GalleonEnvironment implements AutoCloseable {
         } else {
             repositoryManager = new ChannelMavenArtifactRepositoryManager(channelSession, restoreManifest.get());
         }
+
+        if (System.getProperty(Constants.PROP_LINUX_LINE_ENDINGS) == null) {
+            System.setProperty(Constants.PROP_LINUX_LINE_ENDINGS, "true");
+        } else {
+            resetGalleonLineEndings = false;
+        }
+
         provisioningManager = GalleonUtils.getProvisioningManager(builder.installDir, repositoryManager, builder.fpTracker);
 
         final ProvisioningLayoutFactory layoutFactory = provisioningManager.getLayoutFactory();
@@ -153,6 +163,9 @@ public class GalleonEnvironment implements AutoCloseable {
 
     @Override
     public void close() {
+        if (resetGalleonLineEndings) {
+            System.clearProperty(Constants.PROP_LINUX_LINE_ENDINGS);
+        }
         provisioningManager.close();
     }
 
