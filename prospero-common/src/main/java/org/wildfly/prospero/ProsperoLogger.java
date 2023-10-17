@@ -347,4 +347,7 @@ public interface ProsperoLogger extends BasicLogger {
 
     @Message(id = 259, value = "Requested configuration %s/%s is not available in the feature packs.")
     String galleonConfigNotFound(String model, String name);
+
+    @Message(id = 260, value = "The selected folder %s cannot be created.")
+    IllegalArgumentException dirMustBeWritable(Path directory);
 }

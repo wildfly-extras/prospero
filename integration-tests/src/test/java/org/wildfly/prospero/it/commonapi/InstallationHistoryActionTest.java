@@ -55,6 +55,7 @@ import java.util.Map;
 import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
@@ -354,6 +355,42 @@ public class InstallationHistoryActionTest extends WfCoreTestBase {
             }
         }
         assertEquals("Not all expected changes were listed", 0, expected.size());
+    }
+
+    @Test
+    public void candidateFolderHasToBeEmpty() throws Exception {
+        channelsFile = MetadataTestUtils.prepareChannel(CHANNEL_BASE_CORE_19);
+        final Path modulesPaths = outputPath.resolve(Paths.get("modules", "system", "layers", "base"));
+        final Path wildflyCliModulePath = modulesPaths.resolve(Paths.get("org", "jboss", "as", "cli", "main"));
+        final Path candidate = temp.newFolder().toPath();
+
+        final ProvisioningDefinition provisioningDefinition = defaultWfCoreDefinition()
+                .setChannelCoordinates(channelsFile.toString())
+                .build();
+        installation.provision(provisioningDefinition.toProvisioningConfig(),
+                provisioningDefinition.resolveChannels(CHANNELS_RESOLVER_FACTORY));
+
+        MetadataTestUtils.prepareChannel(outputPath.resolve(MetadataTestUtils.INSTALLER_CHANNELS_FILE_PATH), CHANNEL_COMPONENT_UPDATES, CHANNEL_BASE_CORE_19);
+        updateAction().performUpdate();
+        Optional<Artifact> wildflyCliArtifact = readArtifactFromManifest("org.wildfly.core", "wildfly-cli");
+        assertEquals(UPGRADE_VERSION, wildflyCliArtifact.get().getVersion());
+        assertTrue("Updated jar should be present in module", wildflyCliModulePath.resolve(UPGRADE_JAR).toFile().exists());
+
+        Optional<ManifestVersionRecord> manifestVersionRecord = ManifestVersionRecord.read(
+                outputPath.resolve(ProsperoMetadataUtils.METADATA_DIR).resolve(ProsperoMetadataUtils.CURRENT_VERSION_FILE));
+        assertTrue("Manifest version record should be present", manifestVersionRecord.isPresent());
+        assertEquals("Manifest version record should contain base and update channels",
+                2, manifestVersionRecord.get().getUrlManifests().size());
+
+        final InstallationHistoryAction historyAction = new InstallationHistoryAction(outputPath, new AcceptingConsole());
+        final List<SavedState> revisions = historyAction.getRevisions();
+
+        Files.writeString(candidate.resolve("dirty.txt"), "foobar");
+
+        final SavedState savedState = revisions.get(1);
+        assertThatThrownBy(() -> historyAction.prepareRevert(savedState, mavenOptions, Collections.emptyList(), candidate))
+                .isInstanceOf(IllegalArgumentException.class)
+                .message().contains("Can't install into a non empty directory");
     }
 
     private UpdateAction updateAction() throws ProvisioningException, OperationException {
