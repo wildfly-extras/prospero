@@ -104,10 +104,17 @@ public class UpdateAction implements AutoCloseable {
      * @throws OperationException
      */
     public boolean buildUpdate(Path targetDir) throws ProvisioningException, OperationException {
+        if (Files.exists(targetDir)) {
+            InstallFolderUtils.verifyIsEmptyDir(targetDir);
+        } else {
+            InstallFolderUtils.verifyIsWritable(targetDir);
+        }
+
         if (findUpdates().isEmpty()) {
             ProsperoLogger.ROOT_LOGGER.noUpdatesFound(installDir);
             return false;
         }
+
         ProsperoLogger.ROOT_LOGGER.updateCandidateStarted(installDir);
         try (PrepareCandidateAction prepareCandidateAction = new PrepareCandidateAction(installDir, mavenSessionManager, prosperoConfig);
              GalleonEnvironment galleonEnv = getGalleonEnv(targetDir)) {

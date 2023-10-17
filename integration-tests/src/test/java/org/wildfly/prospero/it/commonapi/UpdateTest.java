@@ -62,6 +62,7 @@ import java.util.Optional;
 import java.util.stream.Collectors;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 import static org.wildfly.prospero.updates.MarkerFile.UPDATE_MARKER_FILE;
@@ -206,6 +207,40 @@ public class UpdateTest extends WfCoreTestBase {
 
         Optional<Artifact> wildflyCliArtifact = readArtifactFromManifest("org.wildfly.core", "wildfly-cli");
         assertEquals(UPGRADE_VERSION, wildflyCliArtifact.get().getVersion());
+    }
+
+    @Test
+    public void candidateFolderHasToBeEmpty() throws Exception {
+        // deploy manifest file
+        File manifestFile = new File(MetadataTestUtils.class.getClassLoader().getResource(CHANNEL_BASE_CORE_19).toURI());
+        deployManifestFile(mockRepo.toURI().toURL(), manifestFile, "1.0.0");
+
+        // provision using manifest gav
+        final ProvisioningDefinition provisioningDefinition = defaultWfCoreDefinition()
+                .setChannelCoordinates(buildConfigWithMockRepo().toPath().toString())
+                .setOverrideRepositories(Collections.emptyList()) // reset overrides from defaultWfCoreDefinition()
+                .build();
+        installation.provision(provisioningDefinition.toProvisioningConfig(),
+                provisioningDefinition.resolveChannels(CHANNELS_RESOLVER_FACTORY));
+
+        // update manifest file
+        final URL tempRepo = mockTemporaryRepo(true);
+        final File updatedChannel = upgradeTestArtifactIn(manifestFile);
+        deployManifestFile(tempRepo, updatedChannel, "1.0.1");
+
+        // offline MSM will disable http(s) repositories and local maven cache
+        final MavenOptions offlineOptions = MavenOptions.OFFLINE_NO_CACHE;
+
+        // update installation
+        final Path candidateFolder = temp.newFolder("candidate").toPath();
+        Files.writeString(candidateFolder.resolve("dirty.txt"), "foobar");
+
+        assertThatThrownBy(
+                () -> new UpdateAction(outputPath, offlineOptions, new AcceptingConsole(),
+                        List.of(new Repository("temp", tempRepo.toExternalForm())))
+                        .buildUpdate(candidateFolder))
+                .isInstanceOf(IllegalArgumentException.class)
+                .message().contains("Can't install into a non empty directory");
     }
 
     private File upgradeTestArtifactIn(File manifestFile) throws IOException, MetadataException {
