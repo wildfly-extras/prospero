@@ -240,7 +240,7 @@ public class UpdateTest extends WfCoreTestBase {
                         List.of(new Repository("temp", tempRepo.toExternalForm())))
                         .buildUpdate(candidateFolder))
                 .isInstanceOf(IllegalArgumentException.class)
-                .message().contains("Can't install into a non empty directory");
+                .message().contains("Can't install the server into a non empty directory");
     }
 
     private File upgradeTestArtifactIn(File manifestFile) throws IOException, MetadataException {
