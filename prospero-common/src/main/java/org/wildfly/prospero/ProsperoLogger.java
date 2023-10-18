@@ -173,7 +173,7 @@ public interface ProsperoLogger extends BasicLogger {
     @Message(id = 202, value = "Invalid channel manifest definition")
     ChannelDefinitionException invalidManifest(@Cause InvalidChannelMetadataException e);
 
-    @Message(id = 203, value = "Can't install into a non empty directory '%s'. Use `update` command if you want to modify existing installation.")
+    @Message(id = 203, value = "Can't install the server into a non empty directory '%s'.")
     IllegalArgumentException cannotInstallIntoNonEmptyDirectory(Path path);
 
     @Message(id = 204, value = "Installation dir '%s' doesn't exist")
