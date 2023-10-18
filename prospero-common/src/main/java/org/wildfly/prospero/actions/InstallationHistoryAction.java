@@ -92,6 +92,12 @@ public class InstallationHistoryAction {
 
     public void prepareRevert(SavedState savedState, MavenOptions mavenOptions, List<Repository> overrideRepositories, Path targetDir)
             throws OperationException, ProvisioningException {
+        if (Files.exists(targetDir)) {
+            InstallFolderUtils.verifyIsEmptyDir(targetDir);
+        } else {
+            InstallFolderUtils.verifyIsWritable(targetDir);
+        }
+
         try (InstallationMetadata metadata = InstallationMetadata.loadInstallation(installation)) {
             ProsperoLogger.ROOT_LOGGER.revertCandidateStarted(installation);
 
