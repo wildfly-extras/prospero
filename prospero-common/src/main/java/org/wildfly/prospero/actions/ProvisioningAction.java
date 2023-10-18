@@ -43,6 +43,7 @@ import org.wildfly.prospero.galleon.ChannelMavenArtifactRepositoryManager;
 
 import java.io.IOException;
 import java.net.MalformedURLException;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -246,18 +247,11 @@ public class ProvisioningAction {
     }
 
     private static void verifyInstallDir(Path directory) {
-        if (directory.toFile().isFile()) {
-            // file exists and is a regular file
-            throw ProsperoLogger.ROOT_LOGGER.dirMustBeDirectory(directory);
+        if (Files.exists(directory)) {
+            InstallFolderUtils.verifyIsEmptyDir(directory);
+        } else {
+            InstallFolderUtils.verifyIsWritable(directory);
         }
-        if (!isEmptyDirectory(directory)) {
-            throw ProsperoLogger.ROOT_LOGGER.cannotInstallIntoNonEmptyDirectory(directory);
-        }
-    }
-
-    private static boolean isEmptyDirectory(Path directory) {
-        String[] list = directory.toFile().list();
-        return list == null || list.length == 0;
     }
 
     private ArtifactResolutionException wrapAetherException(org.eclipse.aether.resolution.ArtifactResolutionException e) throws ArtifactResolutionException {

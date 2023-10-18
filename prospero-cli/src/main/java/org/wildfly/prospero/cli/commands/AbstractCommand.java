@@ -106,7 +106,11 @@ public abstract class AbstractCommand implements Callable<Integer> {
         if (Files.exists(absPath)) {
             return Files.isWritable(absPath);
         } else {
-            return isWritable(absPath.getParent());
+            if (absPath.getParent() == null) {
+                return false;
+            } else {
+                return isWritable(absPath.getParent());
+            }
         }
     }
 }
