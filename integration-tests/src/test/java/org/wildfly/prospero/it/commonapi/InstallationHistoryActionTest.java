@@ -390,7 +390,7 @@ public class InstallationHistoryActionTest extends WfCoreTestBase {
         final SavedState savedState = revisions.get(1);
         assertThatThrownBy(() -> historyAction.prepareRevert(savedState, mavenOptions, Collections.emptyList(), candidate))
                 .isInstanceOf(IllegalArgumentException.class)
-                .message().contains("Can't install into a non empty directory");
+                .message().contains("Can't install the server into a non empty directory");
     }
 
     private UpdateAction updateAction() throws ProvisioningException, OperationException {
