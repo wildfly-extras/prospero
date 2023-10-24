@@ -19,6 +19,7 @@ package org.wildfly.prospero.metadata;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -33,19 +34,35 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 
+@JsonIgnoreProperties(ignoreUnknown = true)
 public class ManifestVersionRecord {
 
+    protected static final String SCHEMA_100 = "1.0.0";
+    protected static final String DEFAULT_SCHEMA = SCHEMA_100;
+
+    @JsonIgnoreProperties(ignoreUnknown = true)
     public static class MavenManifest {
 
+        private final String description;
         private String groupId;
         private String artifactId;
         private String version;
+
+        @Deprecated
+        public MavenManifest(String groupId,
+                             String artifactId,
+                             String version) {
+            this(groupId, artifactId, version, null);
+        }
+
         public MavenManifest(@JsonProperty("groupId") String groupId,
                              @JsonProperty("artifactId") String artifactId,
-                             @JsonProperty("version") String version) {
+                             @JsonProperty("version") String version,
+                             @JsonProperty(value = "description", required = false) String description) {
             this.groupId = groupId;
             this.artifactId = artifactId;
             this.version = version;
+            this.description = description;
         }
 
         public String getGroupId() {
@@ -59,6 +76,12 @@ public class ManifestVersionRecord {
         public String getVersion() {
             return version;
         }
+
+        @JsonInclude(JsonInclude.Include.NON_NULL)
+        public String getDescription() {
+            return description;
+        }
+
         @JsonIgnore
         public String getSummary() {
             return String.format("[%s:%s::%s]", groupId, artifactId, version);
@@ -66,13 +89,24 @@ public class ManifestVersionRecord {
 
     }
 
+    @JsonIgnoreProperties(ignoreUnknown = true)
     public static class UrlManifest {
 
         private String url;
         private String hash;
-        public UrlManifest(@JsonProperty("url") String url, @JsonProperty("hash") String hash) {
+        private String description;
+
+        @Deprecated
+        public UrlManifest(String url, String hash) {
             this.url = url;
             this.hash = hash;
+            this.description = null;
+        }
+
+        public UrlManifest(@JsonProperty("url") String url, @JsonProperty("hash") String hash, @JsonProperty("description") String description) {
+            this.url = url;
+            this.hash = hash;
+            this.description = description;
         }
 
         public String getUrl() {
@@ -83,6 +117,11 @@ public class ManifestVersionRecord {
             return hash;
         }
 
+        @JsonInclude(JsonInclude.Include.NON_NULL)
+        public String getDescription() {
+            return description;
+        }
+
         @JsonIgnore
         public String getSummary() {
             return String.format("[%s::%s]", url, hash);
@@ -90,6 +129,7 @@ public class ManifestVersionRecord {
 
     }
 
+    @JsonIgnoreProperties(ignoreUnknown = true)
     public static class NoManifest {
 
         private List<String> repos;
@@ -114,21 +154,26 @@ public class ManifestVersionRecord {
         }
 
     }
+
+    private String schemaVersion;
     private List<MavenManifest> mavenManifests = new ArrayList<>();
 
     private List<UrlManifest> urlManifests = new ArrayList<>();
     private List<NoManifest> noManifests = new ArrayList<>();
 
     @JsonCreator
-    public ManifestVersionRecord(@JsonProperty("maven") List<MavenManifest> mavenManifests,
+    public ManifestVersionRecord(@JsonProperty("schemaVersion") String schemaVersion,
+                                 @JsonProperty("maven") List<MavenManifest> mavenManifests,
                                  @JsonProperty("url") List<UrlManifest> urlManifests,
                                  @JsonProperty("open") List<NoManifest> noManifests) {
+        this.schemaVersion = schemaVersion;
         this.mavenManifests = mavenManifests==null?Collections.emptyList():mavenManifests;
         this.urlManifests = urlManifests==null?Collections.emptyList():urlManifests;
         this.noManifests = noManifests==null?Collections.emptyList():noManifests;
     }
 
     public ManifestVersionRecord() {
+        this.schemaVersion = DEFAULT_SCHEMA;
     }
 
     @JsonProperty("maven")
@@ -147,6 +192,10 @@ public class ManifestVersionRecord {
     @JsonInclude(JsonInclude.Include.NON_EMPTY)
     public List<NoManifest> getOpenManifests() {
         return noManifests;
+    }
+
+    public String getSchemaVersion() {
+        return schemaVersion;
     }
 
     public void addManifest(MavenManifest manifest) {

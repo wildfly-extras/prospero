@@ -60,7 +60,7 @@
         <version.org.jboss.xnio>3.8.10.Final</version.org.jboss.xnio>
         <version.org.wildfly.common>1.6.0.Final</version.org.wildfly.common>
         <version.org.wildfly.galleon-plugins>6.4.3.Final</version.org.wildfly.galleon-plugins>
-        <version.org.wildfly.installation-manager>1.0.1.Final</version.org.wildfly.installation-manager>
+        <version.org.wildfly.installation-manager>1.0.2.Final</version.org.wildfly.installation-manager>
         <version.org.wildfly.maven.plugins.licenses-plugin>2.3.1.Final</version.org.wildfly.maven.plugins.licenses-plugin>
         <version.org.mockito>5.3.0</version.org.mockito>
         <version.org.slf4j>2.0.7</version.org.slf4j>

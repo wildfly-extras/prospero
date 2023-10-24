@@ -26,6 +26,7 @@ import org.wildfly.channel.Channel;
 import org.wildfly.prospero.ProsperoLogger;
 import org.wildfly.prospero.api.InstallationMetadata;
 import org.wildfly.prospero.api.exceptions.MetadataException;
+import org.wildfly.prospero.metadata.ManifestVersionRecord;
 import org.wildfly.prospero.model.ProsperoConfig;
 
 /**
@@ -88,6 +89,10 @@ public class MetadataAction implements AutoCloseable {
     public List<Channel> getChannels() throws MetadataException {
         ProsperoLogger.ROOT_LOGGER.listChannels();
         return new ArrayList<>(installationMetadata.getProsperoConfig().getChannels());
+    }
+
+    public ManifestVersionRecord getChannelVersions() {
+        return installationMetadata.getManifestVersions().orElse(new ManifestVersionRecord());
     }
 
     @Override
