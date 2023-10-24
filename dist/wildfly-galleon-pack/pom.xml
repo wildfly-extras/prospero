@@ -70,6 +70,7 @@
     <dependency>
       <groupId>org.wildfly.prospero</groupId>
       <artifactId>prospero-dist-common</artifactId>
+      <type>pom</type>
       <scope>provided</scope>
       <exclusions>
         <exclusion>
