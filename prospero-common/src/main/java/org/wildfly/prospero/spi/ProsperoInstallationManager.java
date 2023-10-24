@@ -9,6 +9,7 @@ import org.wildfly.installationmanager.Channel;
 import org.wildfly.installationmanager.ChannelChange;
 import org.wildfly.installationmanager.HistoryResult;
 import org.wildfly.installationmanager.InstallationChanges;
+import org.wildfly.installationmanager.ManifestVersion;
 import org.wildfly.installationmanager.MavenOptions;
 import org.wildfly.installationmanager.OperationNotAvailableException;
 import org.wildfly.installationmanager.Repository;
@@ -21,6 +22,7 @@ import org.wildfly.prospero.actions.MetadataAction;
 import org.wildfly.prospero.actions.UpdateAction;
 import org.wildfly.prospero.api.MavenOptions.Builder;
 import org.wildfly.prospero.galleon.GalleonCallbackAdapter;
+import org.wildfly.prospero.metadata.ManifestVersionRecord;
 import org.wildfly.prospero.spi.internal.CliProvider;
 import org.wildfly.prospero.api.SavedState;
 import org.wildfly.prospero.api.exceptions.MetadataException;
@@ -41,6 +43,7 @@ import java.util.Optional;
 import java.util.ServiceLoader;
 import java.util.function.Function;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 public class ProsperoInstallationManager implements InstallationManager {
 
@@ -213,6 +216,20 @@ public class ProsperoInstallationManager implements InstallationManager {
 
         final CliProvider cliProvider = cliProviderLoader.get();
         return escape(scriptHome.resolve(cliProvider.getScriptName(shell))) + " " + cliProvider.getApplyRevertCommand(installationDir, candidatePath);
+    }
+
+    @Override
+    public Collection<ManifestVersion> getInstalledVersions() throws MetadataException {
+        try (MetadataAction metadataAction = actionFactory.getMetadataAction()) {
+            final ManifestVersionRecord versionRecord = metadataAction.getChannelVersions();
+            return Stream.concat(
+                    versionRecord.getMavenManifests().stream()
+                            .map(m->new ManifestVersion(m.getGroupId()+":"+m.getArtifactId(), m.getDescription(), m.getVersion(), ManifestVersion.Type.MAVEN)),
+                    versionRecord.getUrlManifests().stream()
+                            .map(m->new ManifestVersion(m.getUrl(), m.getDescription(), m.getHash(), ManifestVersion.Type.URL))
+                    )
+                    .collect(Collectors.toList());
+        }
     }
 
     private String escape(Path absolutePath) {

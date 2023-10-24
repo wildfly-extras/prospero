@@ -78,6 +78,15 @@ public class ChannelCommandTest extends AbstractConsoleTest {
     }
 
     @Test
+    public void testVersionInvalidInstallationDir() {
+        int exitCode = commandLine.execute(CliConstants.Commands.CHANNEL, CliConstants.Commands.VERSIONS);
+
+        Assert.assertEquals(ReturnCodes.INVALID_ARGUMENTS, exitCode);
+        assertTrue(getErrorOutput().contains(CliMessages.MESSAGES.invalidInstallationDir(ChannelCommand.currentDir())
+                .getMessage()));
+    }
+
+    @Test
     public void testAddEmptyRepository() {
         int exitCode = commandLine.execute(CliConstants.Commands.CHANNEL, CliConstants.Commands.ADD,
                 CliConstants.DIR, dir.toString(),
