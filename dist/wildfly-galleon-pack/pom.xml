@@ -21,6 +21,12 @@
       <groupId>${prospero.base.feature-pack.groupId}</groupId>
       <artifactId>${prospero.base.feature-pack.artifactId}</artifactId>
       <type>zip</type>
+      <exclusions>
+        <exclusion>
+          <groupId>*</groupId>
+          <artifactId>*</artifactId>
+        </exclusion>
+      </exclusions>
     </dependency>
 
     <dependency>
@@ -414,7 +420,7 @@
               </licensesConfigFiles>
               <licensesOutputFile>${project.build.directory}/resources/packages/docs.licenses/content/docs/licenses/${prospero.dist.name}-feature-pack-licenses.xml</licensesOutputFile>
               <excludedGroups>org.prospero</excludedGroups>
-              <excludedArtifacts>prospero-dist-common</excludedArtifacts>
+              <excludedArtifacts>prospero-dist-common|wildfly-ee-galleon-pack</excludedArtifacts>
             </configuration>
           </execution>
         </executions>
