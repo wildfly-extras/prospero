@@ -35,54 +35,47 @@ public class CliConsoleTest extends AbstractConsoleTest {
     private CliConsole cliConsole;
 
     private ByteArrayOutputStream outputStream;
+    private PrintStream originalOut;
 
     @Before
     public void setUp() {
         cliConsole = new CliConsole();
         outputStream = new ByteArrayOutputStream();
+        originalOut = System.out;
         System.setOut(new PrintStream(outputStream));
     }
 
     @Test
     public void testUpdatesFoundWithUpdates_ArtifactChange_update() {
-        List<ArtifactChange> artifactChanges = new ArrayList<>();
-        ArtifactChange artifactChange = ArtifactChange.updated(new DefaultArtifact("test.group", "test-artifact2", "jar", "2.0.0"), new DefaultArtifact("test.group", "test-artifact2", "jar", "2.1.0"), "channel-1");
+        final List<ArtifactChange> artifactChanges = new ArrayList<>();
+        final ArtifactChange artifactChange = ArtifactChange.updated(new DefaultArtifact("test.group", "test-artifact2", "jar", "2.0.0"), new DefaultArtifact("test.group", "test-artifact2", "jar", "2.1.0"), "channel-1");
 
         artifactChanges.add(artifactChange);
         cliConsole.updatesFound(artifactChanges);
-        String capturedOutput = outputStream.toString();
+        final String capturedOutput = outputStream.toString();
 
-        assertThat(capturedOutput.contains(String.format(
-                "  %s%-50s    %-20s ==>  %-20s ==> %-20s%n",
-                "",
-                artifactChange.getArtifactName(),
-                artifactChange.getOldVersion().orElse("[]"),
-                artifactChange.getNewVersion().orElse("[]"),
-                artifactChange.getChannelName()
-        )));
+        assertThat(capturedOutput)
+                .contains("test.group:test-artifact2")
+                .contains("[channel-1]");
     }
     @Test
     public void testUpdatesFoundWithUpdates_ArtifactChange_add() {
-        List<ArtifactChange> artifactChanges = new ArrayList<>();
-        ArtifactChange artifactChange = ArtifactChange.added(new DefaultArtifact("test.group", "test-artifact2", "jar", "2.0.0"), "channel-1");
+        final List<ArtifactChange> artifactChanges = new ArrayList<>();
+        final ArtifactChange artifactChange = ArtifactChange.added(new DefaultArtifact("test.group", "test-artifact2", "jar", "2.0.0"), "channel-1");
 
         artifactChanges.add(artifactChange);
         cliConsole.updatesFound(artifactChanges);
-        String capturedOutput = outputStream.toString();
+        final String capturedOutput = outputStream.toString();
 
-        assertThat(capturedOutput.contains(String.format(
-                "  %s%-50s    %-20s ==>  %-20s ==> %-20s%n",
-                "",
-                artifactChange.getArtifactName(),
-                artifactChange.getOldVersion().orElse("[]"),
-                artifactChange.getNewVersion().orElse("[]"),
-                artifactChange.getChannelName()
-        )));
+        assertThat(capturedOutput)
+                .contains("test.group:test-artifact2")
+                .contains("[channel-1]");
     }
 
     @After
     public void destory() throws IOException {
         outputStream.close();
         cliConsole = null;
+        System.setOut(originalOut);
     }
 }

@@ -24,7 +24,7 @@ import java.util.Objects;
 import java.util.Optional;
 
 public class ArtifactChange extends Diff {
-    private String channelName;
+    private final String channelName;
 
     public static ArtifactChange added(Artifact newVersion) {
         Objects.requireNonNull(newVersion);
@@ -48,16 +48,16 @@ public class ArtifactChange extends Diff {
     public static ArtifactChange updated(Artifact oldVersion, Artifact newVersion, String channelName) {
         Objects.requireNonNull(oldVersion);
         Objects.requireNonNull(newVersion);
-        return new ArtifactChange(toGav(oldVersion), oldVersion.getVersion(), newVersion.getVersion(),channelName);
+        return new ArtifactChange(toGav(oldVersion), oldVersion.getVersion(), newVersion.getVersion(), channelName);
     }
 
     private ArtifactChange(String gav, String oldVersion, String newVersion) {
-        super(gav, oldVersion, newVersion);
+        this(gav, oldVersion, newVersion, null);
     }
 
     private ArtifactChange(String gav, String oldVersion, String newVersion, String channelName) {
         super(gav, oldVersion, newVersion);
-        this.channelName= channelName;
+        this.channelName = channelName;
     }
 
     @SuppressWarnings("OptionalGetWithoutIsPresent")
@@ -109,6 +109,7 @@ public class ArtifactChange extends Diff {
     }
 
     public String prettyPrint() {
-        return String.format("[%s] %s %s ==> %s", getStatus(), getName().orElse(""), getOldValue().orElse("[]"), getNewValue().orElse("[]"));
+        return String.format("[%s] %s %s ==> %s @ %s", getStatus(), getName().orElse(""), getOldValue().orElse("[]"),
+                getNewValue().orElse("[]"), getChannelName().orElse("Unknown"));
     }
 }

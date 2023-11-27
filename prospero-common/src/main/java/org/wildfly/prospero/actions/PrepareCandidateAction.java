@@ -38,14 +38,16 @@ import org.wildfly.prospero.metadata.ManifestVersionRecord;
 import org.wildfly.prospero.metadata.ManifestVersionResolver;
 import org.wildfly.prospero.metadata.ProsperoMetadataUtils;
 import org.wildfly.prospero.model.ProsperoConfig;
+import org.wildfly.prospero.updates.CandidateProperties;
+import org.wildfly.prospero.updates.CandidatePropertiesParser;
 import org.wildfly.prospero.updates.MarkerFile;
 import org.wildfly.prospero.updates.UpdateSet;
 import org.wildfly.prospero.wfchannel.MavenSessionManager;
 
-import java.io.BufferedWriter;
-import java.io.FileWriter;
 import java.io.IOException;
 import java.nio.file.Path;
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 
@@ -64,11 +66,29 @@ class PrepareCandidateAction implements AutoCloseable{
 
     boolean buildCandidate(Path targetDir, GalleonEnvironment galleonEnv, ApplyCandidateAction.Type operation,
                            ProvisioningConfig config) throws ProvisioningException, OperationException {
+        return this.buildCandidate(targetDir, galleonEnv, operation, config, new UpdateSet(Collections.emptyList()));
+    }
+
+    /**
+     * Builds an update/revert candidate server in {@code targetDir}.
+     *
+     * @param targetDir
+     * @param galleonEnv
+     * @param operation
+     * @param config
+     * @param updateSet
+     * @return
+     * @throws ProvisioningException
+     * @throws OperationException
+     */
+    boolean buildCandidate(Path targetDir, GalleonEnvironment galleonEnv, ApplyCandidateAction.Type operation,
+                           ProvisioningConfig config, UpdateSet updateSet) throws ProvisioningException, OperationException {
         doBuildUpdate(targetDir, galleonEnv, config);
 
         try {
             final SavedState savedState = metadata.getRevisions().get(0);
             new MarkerFile(savedState.getName(), operation).write(targetDir);
+            writeCandidateProperties(updateSet, targetDir);
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
@@ -121,22 +141,22 @@ class PrepareCandidateAction implements AutoCloseable{
         }
     }
 
-    public void writeChannelMapToFile(UpdateSet updateSet, Path installationDir) {
+    private void writeCandidateProperties(UpdateSet updateSet, Path installationDir) {
+        final List<CandidateProperties.ComponentUpdate> updates = new ArrayList<>();
 
-        final Path candidateFile = installationDir.resolve(ProsperoMetadataUtils.METADATA_DIR).resolve(ProsperoMetadataUtils.CANDIDATE);
-        try {
-            FileWriter fileWriter = new FileWriter(candidateFile.toFile());
-            BufferedWriter bufferedWriter = new BufferedWriter(fileWriter);
-
-            for (ArtifactChange artifactChange : updateSet.getArtifactUpdates()) {
-                String channelData = artifactChange.getArtifactName() + "=" + (artifactChange.getChannelName().isEmpty() ? "" : artifactChange.getChannelName().get());
-                bufferedWriter.write(channelData);
-                bufferedWriter.newLine(); // Add a newline after each entry
+        for (ArtifactChange artifactChange : updateSet.getArtifactUpdates()) {
+            final String[] gaSplit = artifactChange.getArtifactName().split(":");
+            if (artifactChange.getChannelName().isPresent()) {
+                updates.add(new CandidateProperties.ComponentUpdate(gaSplit[0], gaSplit[1], artifactChange.getChannelName().get()));
             }
-            bufferedWriter.close();
-            ProsperoLogger.ROOT_LOGGER.channelMap(candidateFile.toFile().getAbsolutePath());
+        }
+
+        final Path candidateFile = installationDir.resolve(ProsperoMetadataUtils.METADATA_DIR).resolve(ApplyCandidateAction.CANDIDATE_CHANNEL_NAME_LIST);
+        try {
+            CandidatePropertiesParser.write(new CandidateProperties(updates), candidateFile);
+            ProsperoLogger.ROOT_LOGGER.channelNamesWrittenToFile(candidateFile.toFile().getAbsolutePath());
         } catch (IOException e) {
-            ProsperoLogger.ROOT_LOGGER.unableToWriteChannelDataToFile(candidateFile.toFile().getAbsolutePath(),e);
+            ProsperoLogger.ROOT_LOGGER.unableToWriteChannelNamesToFile(candidateFile.toFile().getAbsolutePath(),e);
         }
 
     }

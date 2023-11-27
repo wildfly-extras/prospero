@@ -85,7 +85,7 @@ public class UpdateFinder implements AutoCloseable {
         final String latestVersion;
         final Optional<String> channelName;
         try {
-            VersionResult versionResult = channelSession.findLatestMavenArtifactVersion(artifact.getGroupId(),
+            final VersionResult versionResult = channelSession.findLatestMavenArtifactVersion(artifact.getGroupId(),
                     artifact.getArtifactId(), artifact.getExtension(), artifact.getClassifier(), null);
             latestVersion = versionResult.getVersion();
             channelName = versionResult.getChannelName();
@@ -97,10 +97,8 @@ public class UpdateFinder implements AutoCloseable {
 
         if (latestVersion == null || latest.getVersion().equals(artifact.getVersion())) {
             return Optional.empty();
-        } else if (channelName == null || channelName.isEmpty()) {
-            return Optional.of(ArtifactChange.updated(artifact, latest));
-        }else {
-            return Optional.of(ArtifactChange.updated(artifact, latest, channelName.get()));
+        } else {
+            return Optional.of(ArtifactChange.updated(artifact, latest, channelName.orElse(null)));
         }
     }
 

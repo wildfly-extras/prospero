@@ -34,6 +34,7 @@ import org.wildfly.channel.ChannelManifestCoordinate;
 import org.wildfly.channel.ChannelMapper;
 import org.wildfly.channel.Repository;
 import org.wildfly.channel.Stream;
+import org.wildfly.prospero.actions.ApplyCandidateAction;
 import org.wildfly.prospero.api.exceptions.MetadataException;
 import org.wildfly.prospero.metadata.ManifestVersionRecord;
 import org.wildfly.prospero.actions.UpdateAction;
@@ -44,6 +45,8 @@ import org.wildfly.prospero.it.AcceptingConsole;
 import org.wildfly.prospero.metadata.ProsperoMetadataUtils;
 import org.wildfly.prospero.model.ManifestYamlSupport;
 import org.wildfly.prospero.test.MetadataTestUtils;
+import org.wildfly.prospero.updates.CandidateProperties;
+import org.wildfly.prospero.updates.CandidatePropertiesParser;
 import org.wildfly.prospero.wfchannel.MavenSessionManager;
 
 import java.io.File;
@@ -176,6 +179,12 @@ public class UpdateTest extends WfCoreTestBase {
         assertThat(record.get().getMavenManifests())
                 .map(ManifestVersionRecord.MavenManifest::getVersion)
                 .containsExactly("1.0.1");
+
+        final Path channelNamesFile = preparedUpdatePath.resolve(ProsperoMetadataUtils.METADATA_DIR).resolve(ApplyCandidateAction.CANDIDATE_CHANNEL_NAME_LIST);
+        assertTrue(Files.exists(channelNamesFile));
+
+        final CandidateProperties candidateProperties = CandidatePropertiesParser.read(channelNamesFile);
+        assertEquals("test", candidateProperties.getUpdateChannel("org.wildfly.core:wildfly-cli"));
     }
 
     @Test
