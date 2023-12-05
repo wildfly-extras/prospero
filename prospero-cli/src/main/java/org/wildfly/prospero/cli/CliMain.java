@@ -49,17 +49,14 @@ public class CliMain {
         }
     }
 
-    private static final Logger logger = Logger.getLogger(CliMain.class);
+    static final Logger logger = Logger.getLogger(CliMain.class);
 
     public static void main(String[] args) {
         try {
-            CliConsole console = new CliConsole();
-            CommandLine commandLine = createCommandLine(console, args);
-            int exitCode = commandLine.execute(args);
+            int exitCode = execute(args);
             System.exit(exitCode);
         } catch (Exception e) {
-            System.err.println(CliMessages.MESSAGES.errorWhenProcessingCommand() + e.getMessage());
-            logger.error(CliMessages.MESSAGES.errorWhenProcessingCommand(), e);
+            logException(e);
             System.exit(ReturnCodes.PROCESSING_ERROR);
         }
     }
@@ -109,6 +106,17 @@ public class CliMain {
         commandLine.setParameterExceptionHandler(new UnknownCommandParameterExceptionHandler(rootParameterExceptionHandler, System.err));
 
         return commandLine;
+    }
+
+    static int execute(String[] args) {
+        CliConsole console = new CliConsole();
+        CommandLine commandLine = createCommandLine(console, args);
+        return commandLine.execute(args);
+    }
+
+    static void logException(Exception e) {
+        System.err.println(CliMessages.MESSAGES.errorWhenProcessingCommand() + e.getMessage());
+        logger.error(CliMessages.MESSAGES.errorWhenProcessingCommand(), e);
     }
 
 }
