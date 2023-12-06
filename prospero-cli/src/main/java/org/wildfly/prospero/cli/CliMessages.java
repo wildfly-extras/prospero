@@ -184,6 +184,10 @@ public interface CliMessages {
         return bundle.getString("prospero.general.processing_error") + " ";
     }
 
+    default String unexpectedExitWhenProcessingCommand(int exitCode) {
+        return format(bundle.getString("prospero.general.processing_exit error"), exitCode);
+    }
+
     default String possibleDowngrade() {
         return bundle.getString("prospero.updates.downgrade.warning");
     }
