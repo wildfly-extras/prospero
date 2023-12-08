@@ -21,6 +21,7 @@ import org.eclipse.aether.artifact.Artifact;
 import org.eclipse.aether.artifact.DefaultArtifact;
 import org.wildfly.channel.ChannelSession;
 import org.wildfly.channel.UnresolvedMavenArtifactException;
+import org.wildfly.channel.VersionResult;
 import org.wildfly.prospero.api.ArtifactChange;
 import org.wildfly.prospero.api.exceptions.ArtifactResolutionException;
 
@@ -82,10 +83,13 @@ public class UpdateFinder implements AutoCloseable {
     private Optional<ArtifactChange> findUpdates(Artifact artifact) throws ArtifactResolutionException {
 
         final String latestVersion;
+        final Optional<String> channelName;
         try {
-            latestVersion = channelSession.findLatestMavenArtifactVersion(artifact.getGroupId(),
-                    artifact.getArtifactId(), artifact.getExtension(), artifact.getClassifier(), null)
-                    .getVersion();
+            final VersionResult versionResult = channelSession.findLatestMavenArtifactVersion(artifact.getGroupId(),
+                    artifact.getArtifactId(), artifact.getExtension(), artifact.getClassifier(), null);
+            latestVersion = versionResult.getVersion();
+            channelName = versionResult.getChannelName();
+
         } catch (UnresolvedMavenArtifactException e) {
             return Optional.of(ArtifactChange.removed(artifact));
         }
@@ -94,7 +98,7 @@ public class UpdateFinder implements AutoCloseable {
         if (latestVersion == null || latest.getVersion().equals(artifact.getVersion())) {
             return Optional.empty();
         } else {
-            return Optional.of(ArtifactChange.updated(artifact, latest));
+            return Optional.of(ArtifactChange.updated(artifact, latest, channelName.orElse(null)));
         }
     }
 

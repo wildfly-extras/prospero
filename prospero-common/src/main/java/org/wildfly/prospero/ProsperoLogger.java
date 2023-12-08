@@ -350,4 +350,16 @@ public interface ProsperoLogger extends BasicLogger {
 
     @Message(id = 260, value = "The selected folder %s cannot be created.")
     IllegalArgumentException dirMustBeWritable(Path directory);
+
+    @Message(id = 261, value = "Channel map data has been written to %s.")
+    @LogMessage(level = Logger.Level.DEBUG)
+    void channelNamesWrittenToFile(String fileName);
+
+    @Message(id = 262, value = "Unable to create a candidate properties file %s.")
+    @LogMessage(level = Logger.Level.ERROR)
+    void unableToWriteChannelNamesToFile(String fileName, @Cause Exception e);
+
+    @Message(id = 263, value = "Unable to read the candidate properties file %s.")
+    @LogMessage(level = Logger.Level.ERROR)
+    void unableToReadChannelNames(String fileName, @Cause Exception e);
 }

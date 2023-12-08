@@ -39,6 +39,7 @@ import org.jboss.galleon.Constants;
 import org.jboss.galleon.Errors;
 
 import org.jboss.galleon.ProvisioningManager;
+import org.jboss.logging.Logger;
 import org.wildfly.prospero.ProsperoLogger;
 import org.wildfly.prospero.api.ArtifactChange;
 import org.wildfly.prospero.api.FileConflict;
@@ -70,6 +71,8 @@ import org.wildfly.prospero.galleon.ArtifactCache;
 import org.wildfly.prospero.galleon.GalleonEnvironment;
 import org.wildfly.prospero.installation.git.GitStorage;
 import org.wildfly.prospero.metadata.ProsperoMetadataUtils;
+import org.wildfly.prospero.updates.CandidateProperties;
+import org.wildfly.prospero.updates.CandidatePropertiesParser;
 import org.wildfly.prospero.updates.MarkerFile;
 import org.wildfly.prospero.updates.UpdateSet;
 import org.wildfly.prospero.wfchannel.MavenSessionManager;
@@ -81,9 +84,12 @@ import org.wildfly.prospero.wfchannel.MavenSessionManager;
 public class ApplyCandidateAction {
     public static final Path STANDALONE_STARTUP_MARKER = Path.of("standalone", "tmp", "startup-marker");
     public static final Path DOMAIN_STARTUP_MARKER = Path.of("domain", "tmp", "startup-marker");
+    public static final String CANDIDATE_CHANNEL_NAME_LIST = "candidate_properties.yaml";
     private final Path updateDir;
     private final Path installationDir;
     private final SystemPaths systemPaths;
+
+    private static final Logger log = Logger.getLogger(ApplyCandidateAction.class);
 
     public enum Type {
         UPDATE("UPDATE"), REVERT("REVERT"), FEATURE_ADD("FEATURE_ADD");
@@ -280,10 +286,14 @@ public class ApplyCandidateAction {
             candidateMap.put(artifact.getGroupId() + ":" + artifact.getArtifactId(), artifact);
         }
         List<ArtifactChange> changes = new ArrayList<>();
+
+        final CandidateProperties candidateProperties = readCandidateProperties();
+
         for (String key : baseMap.keySet()) {
             if (candidateMap.containsKey(key)) {
                 if (!baseMap.get(key).getVersion().equals(candidateMap.get(key).getVersion())) {
-                    changes.add(ArtifactChange.updated(baseMap.get(key), candidateMap.get(key)));
+                    final String updateChannelName = candidateProperties.getUpdateChannel(key);
+                    changes.add(ArtifactChange.updated(baseMap.get(key), candidateMap.get(key), updateChannelName));
                 }
             } else {
                 changes.add(ArtifactChange.removed(baseMap.get(key)));
@@ -297,6 +307,21 @@ public class ApplyCandidateAction {
         }
 
         return new UpdateSet(changes);
+    }
+
+    private CandidateProperties readCandidateProperties() {
+        final Path candidatePropertiesPath = updateDir
+                .resolve(ProsperoMetadataUtils.METADATA_DIR).resolve(CANDIDATE_CHANNEL_NAME_LIST);
+        if (Files.exists(candidatePropertiesPath)) {
+            try {
+                return CandidatePropertiesParser.read(candidatePropertiesPath);
+            } catch (IOException | MetadataException e) {
+                ProsperoLogger.ROOT_LOGGER.unableToReadChannelNames(candidatePropertiesPath.toString(), e);
+            }
+        }
+
+        // return default properties if not able to read the file
+        return new CandidateProperties(Collections.emptyList());
     }
 
     /**

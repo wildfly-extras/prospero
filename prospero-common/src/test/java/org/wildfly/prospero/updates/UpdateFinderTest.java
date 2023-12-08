@@ -27,6 +27,7 @@ import org.mockito.junit.MockitoJUnitRunner;
 import org.wildfly.channel.ArtifactTransferException;
 import org.wildfly.channel.ChannelSession;
 import org.wildfly.channel.VersionResult;
+import org.wildfly.prospero.api.ArtifactChange;
 
 import java.util.Arrays;
 import java.util.Collections;
@@ -57,9 +58,11 @@ public class UpdateFinderTest {
         final UpdateSet updates = finder.findUpdates(artifacts);
 
         assertEquals(1, updates.getArtifactUpdates().size());
-        assertEquals("org.foo:bar", updates.getArtifactUpdates().get(0).getArtifactName());
-        assertEquals("1.0.0", updates.getArtifactUpdates().get(0).getNewVersion().get());
-        assertEquals("1.0.1", updates.getArtifactUpdates().get(0).getOldVersion().get());
+        final ArtifactChange actualChange = updates.getArtifactUpdates().get(0);
+        assertEquals("org.foo:bar", actualChange.getArtifactName());
+        assertEquals("1.0.0", actualChange.getNewVersion().get());
+        assertEquals("1.0.1", actualChange.getOldVersion().get());
+        assertEquals(Optional.empty(), actualChange.getChannelName());
     }
 
     @Test
@@ -108,5 +111,24 @@ public class UpdateFinderTest {
         assertEquals("org.foo:bar", updates.getArtifactUpdates().get(0).getArtifactName());
         assertEquals(Optional.empty(), updates.getArtifactUpdates().get(0).getNewVersion());
         assertEquals("1.0.0", updates.getArtifactUpdates().get(0).getOldVersion().get());
+    }
+
+    @Test
+    public void findUpdatesIncludesChannelNames() throws Exception {
+        when(channelSession.findLatestMavenArtifactVersion("org.foo", "bar", "jar", "", null))
+                .thenReturn(new VersionResult("1.0.0", "test-channel"));
+
+        UpdateFinder finder = new UpdateFinder(channelSession);
+        final List<Artifact> artifacts = Arrays.asList(
+                new DefaultArtifact("org.foo", "bar", "jar", "1.0.1")
+        );
+        final UpdateSet updates = finder.findUpdates(artifacts);
+
+        assertEquals(1, updates.getArtifactUpdates().size());
+        final ArtifactChange actualUpdate = updates.getArtifactUpdates().get(0);
+        assertEquals("org.foo:bar", actualUpdate.getArtifactName());
+        assertEquals("1.0.0", actualUpdate.getNewVersion().get());
+        assertEquals("1.0.1", actualUpdate.getOldVersion().get());
+        assertEquals("test-channel", actualUpdate.getChannelName().orElse(null));
     }
 }

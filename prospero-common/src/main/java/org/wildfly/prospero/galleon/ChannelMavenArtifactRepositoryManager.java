@@ -20,6 +20,7 @@ package org.wildfly.prospero.galleon;
 import org.jboss.galleon.ProvisioningException;
 import org.jboss.galleon.layout.FeaturePackDescriber;
 import org.jboss.galleon.util.ZipUtils;
+import org.jboss.logging.Logger;
 import org.wildfly.channel.ArtifactTransferException;
 import org.wildfly.channel.ChannelManifest;
 import org.wildfly.channel.NoStreamFoundException;
@@ -48,6 +49,7 @@ import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 public class ChannelMavenArtifactRepositoryManager implements MavenRepoManager, ChannelResolvable {
+    private static final Logger LOG = Logger.getLogger(ChannelMavenArtifactRepositoryManager.class);
     private static final String REQUIRE_CHANNEL_FOR_ALL_ARTIFACT = "org.wildfly.plugins.galleon.all.artifact.requires.channel.resolution";
     private final ChannelSession channelSession;
     private final ChannelManifest manifest;
@@ -214,6 +216,9 @@ public class ChannelMavenArtifactRepositoryManager implements MavenRepoManager, 
         List<org.wildfly.channel.MavenArtifact> channelArtifacts;
         try {
             channelArtifacts = channelSession.resolveMavenArtifacts(coordinates);
+            if (LOG.isDebugEnabled()) {
+                channelArtifacts.forEach(a->LOG.debugf("Installing artifact [%s:%s:%s] from channel [%s]", a.getGroupId(), a.getArtifactId(), a.getVersion(), a.getChannelName().orElse("Unknown")));
+            }
             mapperNotRequiringChannels.applyResolution(channelArtifacts);
         } catch (ArtifactTransferException e) {
             throw new MavenUniverseException(e.getLocalizedMessage(), e);

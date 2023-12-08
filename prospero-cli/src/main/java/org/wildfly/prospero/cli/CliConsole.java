@@ -160,9 +160,11 @@ public class CliConsole implements Console {
                 final Optional<String> newVersion = artifactUpdate.getNewVersion();
                 final Optional<String> oldVersion = artifactUpdate.getOldVersion();
                 final String artifactName = artifactUpdate.getArtifactName();
+                final String channelName = artifactUpdate.getChannelName().map(name -> "[" + name + "]")
+                        .orElse("");
 
-                getStdOut().printf("  %s%-50s    %-20s ==>  %-20s%n", artifactUpdate.isDowngrade()?"[*]":"", artifactName, oldVersion.orElse("[]"),
-                        newVersion.orElse("[]"));
+                getStdOut().printf("  %s%-50s    %-20s ==>  %-20s   %-20s%n", artifactUpdate.isDowngrade()?"[*]":"", artifactName, oldVersion.orElse("[]"),
+                        newVersion.orElse("[]"), channelName);
             }
 
             if (artifactUpdates.stream().anyMatch(ArtifactChange::isDowngrade)) {
@@ -180,9 +182,11 @@ public class CliConsole implements Console {
                 final Optional<String> newVersion = artifactUpdate.getNewVersion();
                 final Optional<String> oldVersion = artifactUpdate.getOldVersion();
                 final String artifactName = artifactUpdate.getArtifactName();
+                final String channelName = artifactUpdate.getChannelName().map(name -> "[" + name + "]")
+                        .orElse("");
 
-                getStdOut().printf("  %-50s    %-20s ==>  %-20s%n", artifactName, oldVersion.orElse("[]"),
-                        newVersion.orElse("[]"));
+                getStdOut().printf("  %-50s    %-20s ==>  %-20s   %-20s%n", artifactName, oldVersion.orElse("[]"),
+                        newVersion.orElse("[]"),channelName);
             }
         }
     }

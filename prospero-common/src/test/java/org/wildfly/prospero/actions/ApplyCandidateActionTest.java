@@ -45,6 +45,8 @@ import org.wildfly.prospero.galleon.ArtifactCache;
 import org.wildfly.prospero.installation.git.GitStorage;
 import org.wildfly.prospero.metadata.ProsperoMetadataUtils;
 import org.wildfly.prospero.metadata.ManifestVersionRecord;
+import org.wildfly.prospero.updates.CandidateProperties;
+import org.wildfly.prospero.updates.CandidatePropertiesParser;
 import org.wildfly.prospero.updates.MarkerFile;
 import org.wildfly.prospero.utils.filestate.DirState;
 
@@ -477,6 +479,47 @@ public class ApplyCandidateActionTest {
         applyCandidateAction.removeCandidate(updatePath.toFile());
 
         Assert.assertFalse(Files.exists(updatePath));
+    }
+
+    @Test
+    public void findUpdatesContainsChannelNameIfProvided() throws Exception {
+        createSimpleFeaturePacks();
+
+        install(installationPath, FPL_100);
+        Files.writeString(installationPath.resolve(METADATA_DIR).resolve(ProsperoMetadataUtils.MANIFEST_FILE_NAME), manifest("manifest 01",
+                List.of(new Stream("org.test", "foo", "1.0.0"),
+                        new Stream("org.test", "bar", "1.0.0"))));
+        prepareUpdate(updatePath, installationPath, FPL_101);
+        Files.writeString(updatePath.resolve(METADATA_DIR).resolve(ProsperoMetadataUtils.MANIFEST_FILE_NAME), manifest("manifest 01",
+                List.of(new Stream("org.test", "foo", "1.0.1"),
+                        new Stream("org.test", "bar", "1.0.0"))));
+        CandidatePropertiesParser.write(
+                new CandidateProperties(List.of(new CandidateProperties.ComponentUpdate("org.test", "foo", "test-channel"))),
+                updatePath.resolve(METADATA_DIR).resolve(ApplyCandidateAction.CANDIDATE_CHANNEL_NAME_LIST));
+
+        assertThat(new ApplyCandidateAction(installationPath, updatePath).findUpdates().getArtifactUpdates())
+                .containsOnly(ArtifactChange.updated(new DefaultArtifact("org.test", "foo", null, "1.0.0"),
+                        new DefaultArtifact("org.test", "foo", null, "1.0.1"),
+                        "test-channel"),
+                        ArtifactChange.updated(new DefaultArtifact("org.test", "foo", null, "1.0.0"),
+                                new DefaultArtifact("org.test", "bar", null, "1.0.1")));
+    }
+
+    @Test
+    public void findUpdatesIgnoresInvalidCandidatePropertiesFile() throws Exception {
+        createSimpleFeaturePacks();
+
+        install(installationPath, FPL_100);
+        Files.writeString(installationPath.resolve(METADATA_DIR).resolve(ProsperoMetadataUtils.MANIFEST_FILE_NAME), manifest("manifest 01",
+                List.of(new Stream("org.test", "foo", "1.0.0"))));
+        prepareUpdate(updatePath, installationPath, FPL_101);
+        Files.writeString(updatePath.resolve(METADATA_DIR).resolve(ProsperoMetadataUtils.MANIFEST_FILE_NAME), manifest("manifest 01",
+                List.of(new Stream("org.test", "foo", "1.0.1"))));
+        Files.writeString(updatePath.resolve(METADATA_DIR).resolve(ApplyCandidateAction.CANDIDATE_CHANNEL_NAME_LIST), "I'm invalid");
+
+        assertThat(new ApplyCandidateAction(installationPath, updatePath).findUpdates().getArtifactUpdates())
+                .containsOnly(ArtifactChange.updated(new DefaultArtifact("org.test", "foo", null, "1.0.0"),
+                                new DefaultArtifact("org.test", "foo", null, "1.0.1")));
     }
 
     private void createSimpleFeaturePacks() throws ProvisioningException {
