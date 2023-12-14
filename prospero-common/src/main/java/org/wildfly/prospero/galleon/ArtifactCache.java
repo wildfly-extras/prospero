@@ -82,6 +82,12 @@ public class ArtifactCache {
         }
     }
 
+    public static void cleanInstancesCache() {
+        synchronized (instances) {
+            instances.clear();
+        }
+    }
+
     private ArtifactCache(Path installationDir) throws IOException {
         this.installationDir = installationDir;
         this.cacheDir = installationDir.resolve(CACHE_FOLDER);
@@ -219,6 +225,17 @@ public class ArtifactCache {
     }
 
     private static String asKey(String groupId, String artifactId, String extension, String classifier, String version) {
-        return String.format("%s:%s:%s:%s:%s", groupId, artifactId, version, classifier, extension);
+        final StringBuilder buf = new StringBuilder();
+        buf.append(groupId).append(':').append(artifactId);
+        if (version == null) {
+            return buf.toString();
+        }
+        if (extension != null) {
+            buf.append(':').append(extension);
+        }
+        if (classifier != null && !classifier.isEmpty()) {
+            buf.append(':').append(classifier);
+        }
+        return buf.append(':').append(version).toString();
     }
 }
