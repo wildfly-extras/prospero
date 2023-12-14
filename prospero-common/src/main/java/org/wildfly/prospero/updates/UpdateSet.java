@@ -19,10 +19,12 @@ package org.wildfly.prospero.updates;
 
 import org.wildfly.prospero.api.ArtifactChange;
 
+import java.util.Collections;
 import java.util.List;
 
 public class UpdateSet {
 
+    public static final UpdateSet EMPTY = new UpdateSet(Collections.emptyList());
     private final List<ArtifactChange> artifactUpdates;
 
     public UpdateSet(List<ArtifactChange> updates) {

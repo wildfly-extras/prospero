@@ -17,14 +17,20 @@
 
 package org.wildfly.prospero.galleon;
 
+import org.apache.commons.io.FileUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.eclipse.aether.DefaultRepositorySystemSession;
 import org.eclipse.aether.RepositorySystem;
 import org.jboss.galleon.Constants;
 import org.jboss.galleon.ProvisioningException;
 import org.jboss.galleon.ProvisioningManager;
 import org.jboss.galleon.layout.ProvisioningLayoutFactory;
+import org.jboss.logging.Logger;
+import org.wildfly.channel.ArtifactTransferException;
 import org.wildfly.channel.Channel;
 import org.wildfly.channel.ChannelManifest;
+import org.wildfly.channel.ChannelManifestCoordinate;
+import org.wildfly.channel.ChannelManifestMapper;
 import org.wildfly.channel.ChannelMetadataCoordinate;
 import org.wildfly.channel.ChannelSession;
 import org.wildfly.channel.InvalidChannelMetadataException;
@@ -37,12 +43,14 @@ import org.wildfly.prospero.api.exceptions.ChannelDefinitionException;
 import org.wildfly.prospero.api.exceptions.MetadataException;
 import org.wildfly.prospero.api.exceptions.UnresolvedChannelMetadataException;
 import org.wildfly.prospero.api.exceptions.OperationException;
+import org.wildfly.prospero.metadata.ManifestVersionRecord;
 import org.wildfly.prospero.wfchannel.MavenSessionManager;
 
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.URL;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -56,6 +64,7 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 public class GalleonEnvironment implements AutoCloseable {
+    private static final Logger LOG = Logger.getLogger(GalleonEnvironment.class.getName());
 
     public static final String TRACK_JBMODULES = "JBMODULES";
     public static final String TRACK_JBEXAMPLES = "JBEXTRACONFIGS";
@@ -66,13 +75,21 @@ public class GalleonEnvironment implements AutoCloseable {
     private final ChannelMavenArtifactRepositoryManager repositoryManager;
     private final ChannelSession channelSession;
     private final List<Channel> channels;
+    private Path restoreManifestPath = null;
 
     private boolean resetGalleonLineEndings = true;
 
     private GalleonEnvironment(Builder builder) throws ProvisioningException, MetadataException, ChannelDefinitionException, UnresolvedChannelMetadataException {
         Optional<Console> console = Optional.ofNullable(builder.console);
         Optional<ChannelManifest> restoreManifest = Optional.ofNullable(builder.manifest);
-        channels = builder.channels;
+        if (restoreManifest.isPresent()) {
+            if (LOG.isDebugEnabled()) {
+                LOG.debug("Replacing channel manifests with restore manifest");
+            }
+            channels = replaceManifestWithRestoreManifests(builder, restoreManifest);
+        } else {
+            channels = builder.channels;
+        }
         List<Channel> substitutedChannels = new ArrayList<>();
         final ChannelManifestSubstitutor substitutor = new ChannelManifestSubstitutor(Map.of("installation.home", builder.installDir.toString()));
         // substitute any properties found in URL of ChannelManifestCoordinate.
@@ -90,7 +107,16 @@ public class GalleonEnvironment implements AutoCloseable {
             ProsperoLogger.ROOT_LOGGER.debug("Unable to read artifact cache, falling back to Maven resolver.", e);
             factory = new VersionResolverFactory(system, session, MavenProxyHandler::addProxySettings);
         }
+
         channelSession = initChannelSession(session, factory);
+
+        if (restoreManifest.isPresent()) {
+            // try to load the manifests used by the state that's being reverted to
+            // they have to be in the maven cache for later version resolution
+            final ManifestVersionRecord manifestVersions = new ManifestVersionRecord("1.0.0",
+                    builder.restoredManifestVersions, Collections.emptyList(), Collections.emptyList());
+            populateMavenCacheWithManifests(manifestVersions.getMavenManifests(), channelSession);
+        }
 
         if (restoreManifest.isEmpty()) {
             repositoryManager = new ChannelMavenArtifactRepositoryManager(channelSession);
@@ -117,6 +143,33 @@ public class GalleonEnvironment implements AutoCloseable {
         final DownloadsCallbackAdapter callback = new DownloadsCallbackAdapter(console.orElse(null));
         session.setTransferListener(callback);
         layoutFactory.setProgressCallback(TRACK_JB_ARTIFACTS_RESOLVE, callback);
+    }
+
+    private List<Channel> replaceManifestWithRestoreManifests(Builder builder, Optional<ChannelManifest> restoreManifest) throws ProvisioningException {
+        ChannelManifestCoordinate manifestCoord;
+        try {
+            restoreManifestPath = Files.createTempFile("prospero-restore-manifest", "yaml");
+            restoreManifestPath.toFile().deleteOnExit();
+            if (LOG.isDebugEnabled()) {
+                LOG.debugf("Created temporary restore manifest file at %s", restoreManifestPath);
+            }
+            Files.writeString(restoreManifestPath, ChannelManifestMapper.toYaml(restoreManifest.get()));
+            manifestCoord = new ChannelManifestCoordinate(restoreManifestPath.toUri().toURL());
+        } catch (IOException e) {
+            throw ProsperoLogger.ROOT_LOGGER.unableToCreateTemporaryFile(e);
+        }
+        List<Channel> channels = builder.channels.stream()
+                .map(c-> new Channel(
+                        c.getSchemaVersion(),
+                        c.getName(),
+                        c.getDescription(),
+                        c.getVendor(),
+                        c.getRepositories(),
+                        manifestCoord,
+                        c.getBlocklistCoordinate(),
+                        c.getNoStreamStrategy()))
+                .collect(Collectors.toList());
+        return channels;
     }
 
     private ChannelSession initChannelSession(DefaultRepositorySystemSession session, MavenVersionsResolver.Factory factory) throws UnresolvedChannelMetadataException, ChannelDefinitionException {
@@ -166,7 +219,42 @@ public class GalleonEnvironment implements AutoCloseable {
         if (resetGalleonLineEndings) {
             System.clearProperty(Constants.PROP_LINUX_LINE_ENDINGS);
         }
+        if (restoreManifestPath != null) {
+            FileUtils.deleteQuietly(restoreManifestPath.toFile());
+        }
         provisioningManager.close();
+    }
+
+    /*
+     * Attempts to populate current's {@code channelSession} maven cache with the maven manifest artifacts.
+     * Used when the provisioning is by-passing the manifest resolution (e.g. during revert when it's using old
+     * provisioned manifest)
+     */
+    static void populateMavenCacheWithManifests(List<ManifestVersionRecord.MavenManifest> mavenManifests, ChannelSession channelSession) {
+        Objects.requireNonNull(mavenManifests);
+        Objects.requireNonNull(channelSession);
+
+        if (LOG.isDebugEnabled()) {
+            LOG.debugf("Resolving manifests %s to prepopulate maven cache.", StringUtils.join(mavenManifests, ","));
+        }
+
+        for (ManifestVersionRecord.MavenManifest mavenManifest : mavenManifests) {
+            try {
+                if (LOG.isTraceEnabled()) {
+                    LOG.tracef("Trying to resolve %s.", mavenManifest);
+                }
+                channelSession.resolveDirectMavenArtifact(
+                        mavenManifest.getGroupId(),
+                        mavenManifest.getArtifactId(),
+                        ChannelManifest.EXTENSION,
+                        ChannelManifest.CLASSIFIER,
+                        mavenManifest.getVersion()
+                );
+            } catch (ArtifactTransferException e) {
+                ProsperoLogger.ROOT_LOGGER.debugf(e, "Unable to resolve manifest %s:%s:%s for maven cache",
+                        mavenManifest.getGroupId(), mavenManifest.getArtifactId(), mavenManifest.getVersion());
+            }
+        }
     }
 
     public static Builder builder(Path installDir, List<Channel> channels, MavenSessionManager mavenSessionManager) {
@@ -186,6 +274,7 @@ public class GalleonEnvironment implements AutoCloseable {
         private ChannelManifest manifest;
         private Consumer<String> fpTracker;
         private Path sourceServerPath;
+        private List<ManifestVersionRecord.MavenManifest> restoredManifestVersions;
 
         private Builder(Path installDir, List<Channel> channels, MavenSessionManager mavenSessionManager) {
             this.installDir = installDir;
@@ -201,6 +290,19 @@ public class GalleonEnvironment implements AutoCloseable {
         public Builder setRestoreManifest(ChannelManifest manifest) {
             this.manifest = manifest;
             return this;
+        }
+
+        /**
+         * use the {@code manifest} to resolve artifact versions instead of defined channels. If {@code manifestVersions}
+         * is provided, they will be pre-loaded for maven cache.
+         *
+         * @param manifest
+         * @param manifestVersions
+         * @return
+         */
+        public Builder setRestoreManifest(ChannelManifest manifest, ManifestVersionRecord manifestVersions) {
+            this.restoredManifestVersions = manifestVersions == null ? Collections.emptyList() : manifestVersions.getMavenManifests();
+            return this.setRestoreManifest(manifest);
         }
 
         public Builder setResolvedFpTracker(Consumer<String> fpTracker) {
