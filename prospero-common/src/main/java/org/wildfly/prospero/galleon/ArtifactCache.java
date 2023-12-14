@@ -21,9 +21,12 @@ import org.jboss.galleon.universe.maven.MavenUniverseException;
 import org.jboss.galleon.util.HashUtils;
 import org.jboss.galleon.util.IoUtils;
 import org.jboss.logging.Logger;
+import org.wildfly.channel.ChannelManifest;
 import org.wildfly.channel.MavenArtifact;
 import org.wildfly.prospero.ProsperoLogger;
+import org.wildfly.prospero.metadata.ManifestVersionRecord;
 import org.wildfly.prospero.metadata.ProsperoMetadataUtils;
+import org.wildfly.prospero.wfchannel.ResolvedArtifactsStore;
 
 import java.io.BufferedWriter;
 import java.io.File;
@@ -36,6 +39,7 @@ import java.nio.file.StandardOpenOption;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
@@ -173,6 +177,41 @@ public class ArtifactCache {
         IoUtils.copy(artifact.getFile().toPath(), cacheDir.resolve(artifact.getFile().getName()), false);
 
         record(artifact, cacheDir.resolve(artifact.getFile().getName()));
+    }
+
+    /**
+     * detects and caches the manifests from {@code manifestRecord} in {@code CACHE_FOLDER}.
+     * The version and content of the manifest is resolved using {@code resolvedArtifacts}.
+     * NOTE: only manifests identified by maven coordinates are cached.
+     *
+     * @param manifestRecord - record containing all manifest used in installation.
+     * @param resolvedArtifacts - artifacts resolved during provisioning.
+     * @throws IOException
+     */
+    public void cache(ManifestVersionRecord manifestRecord, ResolvedArtifactsStore resolvedArtifacts) throws IOException {
+        Objects.requireNonNull(manifestRecord);
+        Objects.requireNonNull(resolvedArtifacts);
+
+        for (ManifestVersionRecord.MavenManifest manifest : manifestRecord.getMavenManifests()) {
+            final MavenArtifact record = resolvedArtifacts.getManifestVersion(manifest.getGroupId(), manifest.getArtifactId());
+            if (record != null && record.getVersion().equals(manifest.getVersion())) {
+                if (LOG.isDebugEnabled()) {
+                    LOG.debugf("Adding manifest %s to the cache", record);
+                }
+                final File cachedManifest = record.getFile();
+
+                if (cachedManifest.exists()) {
+                    cache(new MavenArtifact(
+                            manifest.getGroupId(),
+                            manifest.getArtifactId(),
+                            ChannelManifest.EXTENSION,
+                            ChannelManifest.CLASSIFIER,
+                            manifest.getVersion(),
+                            cachedManifest
+                    ));
+                }
+            }
+        }
     }
 
     private static String getCacheFileKey(MavenArtifact artifact) {

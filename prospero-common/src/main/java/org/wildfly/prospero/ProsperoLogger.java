@@ -366,4 +366,7 @@ public interface ProsperoLogger extends BasicLogger {
 
     @Message(id = 264, value = "Bad artifact record format in the cache descriptor, line %d: '%s'")
     IOException unableToReadArtifactCache(int row, String line, @Cause Exception e);
+
+    @Message(id = 265, value = "Unable to create temporary file")
+    ProvisioningException unableToCreateTemporaryFile(@Cause Throwable t);
 }

@@ -17,6 +17,7 @@
 
 package org.wildfly.prospero.galleon;
 
+import org.eclipse.aether.RepositoryListener;
 import org.eclipse.aether.RepositorySystem;
 import org.eclipse.aether.RepositorySystemSession;
 import org.eclipse.aether.artifact.Artifact;
@@ -34,13 +35,21 @@ import org.mockito.Captor;
 import org.mockito.Mock;
 import org.mockito.junit.MockitoJUnitRunner;
 import org.wildfly.channel.ArtifactCoordinate;
+import org.wildfly.channel.ArtifactTransferException;
+import org.wildfly.channel.ChannelManifest;
+import org.wildfly.channel.ChannelManifestCoordinate;
+import org.wildfly.channel.ChannelMetadataCoordinate;
 import org.wildfly.channel.spi.MavenVersionsResolver;
 
 import java.io.File;
+import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
+import java.util.function.Function;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.junit.Assert.assertEquals;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
@@ -62,6 +71,10 @@ public class CachedVersionResolverTest {
     private RepositorySystem system;
     @Mock
     private ArtifactCache artifactCache;
+    @Mock
+    private Function<ArtifactCoordinate, String> manifestVersionProvider;
+    @Mock
+    private RepositoryListener repositoryListener;
     @Captor
     private ArgumentCaptor<InstallRequest> requestCaptor;
     @Captor
@@ -81,7 +94,8 @@ public class CachedVersionResolverTest {
 
     @Before
     public void setUp() throws Exception {
-        resolver = new CachedVersionResolver(mockResolver, artifactCache, system, session);
+        when(session.getRepositoryListener()).thenReturn(repositoryListener);
+        resolver = new CachedVersionResolver(mockResolver, artifactCache, system, session, manifestVersionProvider);
     }
 
     @Test
@@ -183,5 +197,98 @@ public class CachedVersionResolverTest {
         verify(mockResolver).resolveArtifacts(any());
         assertEquals("artifact", listCaptor.getValue().get(0).getArtifactId());
         assertEquals("artifactTwo", listCaptor.getValue().get(1).getArtifactId());
+    }
+
+    @Test
+    public void testResolveChannelMetadata_FallbackFailsIfNoCurrentVersionFound() throws Exception {
+        final ArtifactTransferException resolutionException = new ArtifactTransferException("",
+                Set.of(new ArtifactCoordinate("org.test", "manifest-one", ChannelManifest.EXTENSION, ChannelManifest.CLASSIFIER, "")),
+                Collections.emptySet());
+        when(mockResolver.resolveChannelMetadata(any())).thenThrow(resolutionException);
+        when(manifestVersionProvider.apply(any())).thenReturn(null);
+        assertThatThrownBy(()->resolver.resolveChannelMetadata(List.of(new ChannelMetadataCoordinate("org.test", "manifest-one", ChannelManifest.CLASSIFIER, ChannelManifest.EXTENSION))))
+                .isEqualTo(resolutionException);
+    }
+
+    @Test
+    public void testResolveChannelMetadata_FallbackFailsIfCacheDoesntHaveCurrentVersion() throws Exception {
+        final ArtifactTransferException resolutionException = new ArtifactTransferException("",
+                Set.of(new ArtifactCoordinate("org.test", "manifest-one", ChannelManifest.EXTENSION, ChannelManifest.CLASSIFIER, "")),
+                Collections.emptySet());
+        when(mockResolver.resolveChannelMetadata(any())).thenThrow(resolutionException);
+        when(manifestVersionProvider.apply(any())).thenReturn("1.2.3");
+        when(artifactCache.getArtifact("org.test", "manifest-one", ChannelManifest.EXTENSION, ChannelManifest.CLASSIFIER, "1.2.3"))
+                .thenReturn(Optional.empty());
+
+        assertThatThrownBy(()->resolver.resolveChannelMetadata(List.of(new ChannelMetadataCoordinate("org.test", "manifest-one", ChannelManifest.CLASSIFIER, ChannelManifest.EXTENSION))))
+                .isEqualTo(resolutionException);
+    }
+
+    @Test
+    public void testResolveChannelMetadata_FallbackReturnsCachedFile() throws Exception {
+        final ArtifactTransferException resolutionException = new ArtifactTransferException("",
+                Set.of(new ArtifactCoordinate("org.test", "manifest-one", ChannelManifest.EXTENSION, ChannelManifest.CLASSIFIER, "")),
+                Collections.emptySet());
+        when(mockResolver.resolveChannelMetadata(any())).thenThrow(resolutionException);
+        when(manifestVersionProvider.apply(any())).thenReturn("1.2.3");
+        final File testFile = new File("test");
+        when(artifactCache.getArtifact("org.test", "manifest-one", ChannelManifest.EXTENSION, ChannelManifest.CLASSIFIER, "1.2.3"))
+                .thenReturn(Optional.of(testFile));
+
+        assertThat(resolver.resolveChannelMetadata(List.of(new ChannelMetadataCoordinate("org.test", "manifest-one", ChannelManifest.CLASSIFIER, ChannelManifest.EXTENSION))))
+                .containsExactly(testFile.toURI().toURL());
+        verify(repositoryListener).artifactResolved(any());
+    }
+
+    @Test
+    public void testResolveChannelMetadata_FallbackReturnsCachedFile_WithTwoManifests() throws Exception {
+        final ArtifactTransferException resolutionException = new ArtifactTransferException("",
+                Set.of(
+                        new ArtifactCoordinate("org.test", "manifest-one", ChannelManifest.EXTENSION, ChannelManifest.CLASSIFIER, ""),
+                        new ArtifactCoordinate("org.test", "manifest-two", ChannelManifest.EXTENSION, ChannelManifest.CLASSIFIER, "")),
+                Collections.emptySet());
+        when(mockResolver.resolveChannelMetadata(any())).thenThrow(resolutionException);
+        when(manifestVersionProvider.apply(any())).thenReturn("1.2.3");
+        final File testFileOne = new File("testOne");
+        final File testFileTwo = new File("testTwo");
+        when(artifactCache.getArtifact("org.test", "manifest-one", ChannelManifest.EXTENSION, ChannelManifest.CLASSIFIER, "1.2.3"))
+                .thenReturn(Optional.of(testFileOne));
+        when(artifactCache.getArtifact("org.test", "manifest-two", ChannelManifest.EXTENSION, ChannelManifest.CLASSIFIER, "1.2.3"))
+                .thenReturn(Optional.of(testFileTwo));
+
+        assertThat(resolver.resolveChannelMetadata(List.of(
+                new ChannelMetadataCoordinate("org.test", "manifest-one", ChannelManifest.CLASSIFIER, ChannelManifest.EXTENSION),
+                new ChannelMetadataCoordinate("org.test", "manifest-two", ChannelManifest.CLASSIFIER, ChannelManifest.EXTENSION))))
+                .containsExactly(testFileOne.toURI().toURL(), testFileTwo.toURI().toURL());
+        verify(repositoryListener, times(2)).artifactResolved(any());
+    }
+
+    @Test
+    public void testResolveChannelMetadata_OneManifestResolvedNormally() throws Exception {
+        final ArtifactTransferException resolutionException = new ArtifactTransferException("",
+                Set.of(
+                        new ArtifactCoordinate("org.test", "manifest-two", ChannelManifest.EXTENSION, ChannelManifest.CLASSIFIER, "")),
+                Collections.emptySet());
+        final File testFileOne = new File("testOne");
+        final File testFileTwo = new File("testTwo");
+        // throw resolution exception on first attempt to resolve channel metadata
+        when(mockResolver.resolveChannelMetadata(List.of(
+                new ChannelManifestCoordinate("org.test", "manifest-one"),
+                new ChannelManifestCoordinate("org.test", "manifest-two"))))
+                .thenThrow(resolutionException);
+        // resolve the URL of existing artifact
+        when(mockResolver.resolveChannelMetadata(List.of(
+                new ChannelManifestCoordinate("org.test", "manifest-one"))))
+                .thenReturn(List.of(testFileOne.toURI().toURL()));
+        when(manifestVersionProvider.apply(any())).thenReturn("1.2.3");
+        when(artifactCache.getArtifact("org.test", "manifest-two", ChannelManifest.EXTENSION, ChannelManifest.CLASSIFIER, "1.2.3"))
+                .thenReturn(Optional.of(testFileTwo));
+
+        assertThat(resolver.resolveChannelMetadata(List.of(
+                new ChannelManifestCoordinate("org.test", "manifest-one"),
+                new ChannelManifestCoordinate("org.test", "manifest-two"))))
+                .containsExactly(testFileOne.toURI().toURL(), testFileTwo.toURI().toURL());
+        // only called on the cached artifact
+        verify(repositoryListener).artifactResolved(any());
     }
 }

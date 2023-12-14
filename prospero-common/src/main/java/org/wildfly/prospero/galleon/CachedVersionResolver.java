@@ -17,6 +17,9 @@
 
 package org.wildfly.prospero.galleon;
 
+import org.eclipse.aether.AbstractRepositoryListener;
+import org.eclipse.aether.RepositoryEvent;
+import org.eclipse.aether.RepositoryListener;
 import org.eclipse.aether.RepositorySystem;
 import org.eclipse.aether.RepositorySystemSession;
 import org.eclipse.aether.artifact.DefaultArtifact;
@@ -24,13 +27,16 @@ import org.eclipse.aether.installation.InstallRequest;
 import org.eclipse.aether.installation.InstallationException;
 import org.jboss.logging.Logger;
 import org.wildfly.channel.ArtifactCoordinate;
+import org.wildfly.channel.ArtifactTransferException;
 import org.wildfly.channel.ChannelMetadataCoordinate;
 import org.wildfly.channel.UnresolvedMavenArtifactException;
 import org.wildfly.channel.spi.MavenVersionsResolver;
 
 import java.io.File;
+import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
@@ -44,18 +50,32 @@ import java.util.stream.Collectors;
  * Installs locally resolved artifacts in LRM to allow galleon to start thin servers.
  */
 public class CachedVersionResolver implements MavenVersionsResolver {
+    private static final Logger LOG = Logger.getLogger(CachedVersionResolver.class.getName());
+
+    private static final RepositoryListener NOOP_REPOSITORY_LISTENER = new AbstractRepositoryListener(){};
     private final MavenVersionsResolver fallbackResolver;
     private final RepositorySystem system;
     private final RepositorySystemSession session;
     private final ArtifactCache artifactCache;
 
     private final Logger log = Logger.getLogger(CachedVersionResolver.class);
+    private final RepositoryListener listener;
+    private final Function<ArtifactCoordinate, String> manifestVersionProvider;
 
+    @Deprecated
     public CachedVersionResolver(MavenVersionsResolver fallbackResolver, ArtifactCache cache, RepositorySystem system, RepositorySystemSession session) {
+        this(fallbackResolver, cache, system, session, (a)->null);
+    }
+
+    public CachedVersionResolver(MavenVersionsResolver fallbackResolver, ArtifactCache cache, RepositorySystem system,
+                                 RepositorySystemSession session,
+                                 Function<ArtifactCoordinate, String> manifestVersionProvider) {
         this.fallbackResolver = fallbackResolver;
         this.system = system;
         this.session = session;
         this.artifactCache = cache;
+        this.manifestVersionProvider = manifestVersionProvider;
+        this.listener = session.getRepositoryListener() != null ? session.getRepositoryListener() : NOOP_REPOSITORY_LISTENER;
     }
 
     @Override
@@ -110,7 +130,78 @@ public class CachedVersionResolver implements MavenVersionsResolver {
 
     @Override
     public List<URL> resolveChannelMetadata(List<? extends ChannelMetadataCoordinate> manifestCoords) throws UnresolvedMavenArtifactException {
-        return fallbackResolver.resolveChannelMetadata(manifestCoords);
+        try {
+            return fallbackResolver.resolveChannelMetadata(manifestCoords);
+        } catch (ArtifactTransferException e) {
+            if (LOG.isDebugEnabled()) {
+                LOG.debug("Failed to resolve manifests, attempting to fall back to the cache.");
+            }
+            final URL[] cachedMetadata = new URL[manifestCoords.size()];
+            for (ArtifactCoordinate a : e.getUnresolvedArtifacts()) {
+                // get version from manifest_versions to verify this is the latest version
+                final String version = manifestVersionProvider.apply(a);
+                if (LOG.isDebugEnabled()) {
+                    LOG.debugf("Last used version for manifest %s is %s.", a, version);
+                }
+
+                if (version == null) {
+                    // we can't use cache, just throw the resolution exception
+                    throw e;
+                }
+
+                final Optional<File> artifact = artifactCache.getArtifact(
+                        a.getGroupId(),
+                        a.getArtifactId(),
+                        a.getExtension(),
+                        a.getClassifier(),
+                        version
+                );
+
+
+                if (artifact.isPresent()) {
+                    if (LOG.isDebugEnabled()) {
+                        LOG.debugf("Found cached manifest for %s.", a);
+                    }
+                    log.warnf("Unable to resolve manifest for channel %s, no updates will be resolved for this channel.", a);
+                    this.listener.artifactResolved(new RepositoryEvent.Builder(session, RepositoryEvent.EventType.ARTIFACT_RESOLVED)
+                            .setArtifact(new DefaultArtifact(
+                                    a.getGroupId(),
+                                    a.getArtifactId(),
+                                    a.getClassifier(),
+                                    a.getExtension(),
+                                    version,
+                                    null,
+                                    artifact.get()
+                            ))
+                            .build());
+                    try {
+                        // maintain order as in manifestCoords
+                        for (int i = 0; i < manifestCoords.size(); i++) {
+                            final ChannelMetadataCoordinate coord = manifestCoords.get(i);
+                            if (coord.getGroupId().equals(a.getGroupId()) && coord.getArtifactId().equals(a.getArtifactId()) &&
+                                coord.getClassifier().equals(a.getClassifier()) && coord.getExtension().equals(a.getExtension())) {
+                                cachedMetadata[i] = artifact.get().toURI().toURL();
+                                break;
+                            }
+                        }
+                    } catch (MalformedURLException ex) {
+                        throw new RuntimeException(ex);
+                    }
+                } else {
+                    throw e;
+                }
+            }
+            for (int i = 0; i < cachedMetadata.length; i++) {
+                // retry urls that were before resolved
+                if (cachedMetadata[i] == null) {
+                    if (LOG.isDebugEnabled()) {
+                        LOG.debugf("Retrying resolution of manifest %s.", cachedMetadata[i]);
+                    }
+                    cachedMetadata[i] = fallbackResolver.resolveChannelMetadata(List.of(manifestCoords.get(i))).get(0);
+                }
+            }
+            return Arrays.asList(cachedMetadata);
+        }
     }
 
     @Override
