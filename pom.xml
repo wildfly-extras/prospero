@@ -34,7 +34,7 @@
         <prospero.repo.url>https://repo1.maven.org/maven2/</prospero.repo.url>
         <prospero.channel.resolution.mode>NOT_REQUIRED</prospero.channel.resolution.mode>
 
-        <version.io.undertow>2.3.5.Final</version.io.undertow>
+        <version.io.undertow>2.3.10.Final</version.io.undertow>
         <version.commons-codec>1.15</version.commons-codec>
         <version.commons-io>2.11.0</version.commons-io>
         <version.org.asciidoctor.asciidoctor-maven-plugin>2.2.3</version.org.asciidoctor.asciidoctor-maven-plugin>
