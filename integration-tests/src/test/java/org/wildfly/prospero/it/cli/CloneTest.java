@@ -132,7 +132,8 @@ public class CloneTest extends WfCoreTestBase {
             Channel channel = prosperoConfig.getChannels().get(0);
             assertEquals("test-channel-0", channel.getName());
             assertThat(channel.getRepositories())
-              .map(Repository::getId).containsExactly("maven-central", "nexus", "maven-redhat-ga", "test-fp-repo", "galleon-plugin-repo");
+              .map(Repository::getId).containsExactly("maven-central", "nexus", "maven-redhat-ga",
+                            "test-fp-repo", "galleon-plugin-repo", "update-repository");
 
             // check provisionedConfig
             assertTrue(provisionedConfig.hasFeaturePackDeps());

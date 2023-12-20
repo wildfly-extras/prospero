@@ -83,7 +83,9 @@ public final class CliConstants {
     public static final String H = "-h";
     public static final String HELP = "--help";
     public static final String LOCAL_CACHE = "--local-cache";
+    @Deprecated
     public static final String NO_LOCAL_MAVEN_CACHE = "--no-resolve-local-cache";
+    public static final String USE_LOCAL_MAVEN_CACHE = "--use-default-local-cache";
     public static final String OFFLINE = "--offline";
     public static final String REVISION = "--revision";
     public static final String SELF = "--self";
