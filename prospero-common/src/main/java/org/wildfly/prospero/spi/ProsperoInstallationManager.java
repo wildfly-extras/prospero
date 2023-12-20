@@ -55,9 +55,8 @@ public class ProsperoInstallationManager implements InstallationManager {
     public ProsperoInstallationManager(Path installationDir, MavenOptions mavenOptions) throws Exception {
         final Builder options = org.wildfly.prospero.api.MavenOptions.builder()
                 .setOffline(mavenOptions.isOffline());
-        if (mavenOptions.getLocalRepository() == null) {
-            options.setNoLocalCache(true);
-        } else {
+        if (mavenOptions.getLocalRepository() != null) {
+            options.setNoLocalCache(false);
             options.setLocalCachePath(mavenOptions.getLocalRepository());
         }
         actionFactory = new ActionFactory(installationDir, options.build());
