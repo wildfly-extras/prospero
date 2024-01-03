@@ -104,12 +104,12 @@ public class HistoryCommandTest extends AbstractConsoleTest {
         final List<ArtifactChange> changes = Arrays.asList(ArtifactChange.updated(
                 new DefaultArtifact("foo", "bar", "jar", "1.1"),
                 new DefaultArtifact("foo", "bar", "jar", "1.2")));
-        when(historyAction.compare(any())).thenReturn(new InstallationChanges(changes, Collections.emptyList(), Collections.emptyList()));
+        when(historyAction.getRevisionChanges(any())).thenReturn(new InstallationChanges(changes, Collections.emptyList(), Collections.emptyList()));
 
         int exitCode = commandLine.execute(CliConstants.Commands.HISTORY, CliConstants.DIR, installationDir.toString(),
                 CliConstants.REVISION, "abcd");
         assertEquals(ReturnCodes.SUCCESS, exitCode);
-        verify(historyAction).compare(eq(new SavedState("abcd")));
+        verify(historyAction).getRevisionChanges(eq(new SavedState("abcd")));
         assertTrue(getStandardOutput().contains("foo:bar"));
     }
 }

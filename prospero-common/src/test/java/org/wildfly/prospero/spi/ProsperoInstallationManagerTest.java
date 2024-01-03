@@ -73,7 +73,7 @@ public class ProsperoInstallationManagerTest {
     public void testChannelChanges() throws Exception {
         final ProsperoInstallationManager mgr = new ProsperoInstallationManager(actionFactory);
         when(actionFactory.getHistoryAction()).thenReturn(historyAction);
-        when(historyAction.compare(any())).thenReturn(
+        when(historyAction.getRevisionChanges(any())).thenReturn(
                 new org.wildfly.prospero.api.InstallationChanges(Collections.emptyList(),
                         List.of(ChannelChange.modified(CHANNEL_1, CHANNEL_2)), Collections.emptyList()));
 
@@ -95,7 +95,7 @@ public class ProsperoInstallationManagerTest {
     public void testChannelChangesNewChannel() throws Exception {
         final ProsperoInstallationManager mgr = new ProsperoInstallationManager(actionFactory);
         when(actionFactory.getHistoryAction()).thenReturn(historyAction);
-        when(historyAction.compare(any())).thenReturn(
+        when(historyAction.getRevisionChanges(any())).thenReturn(
                 new org.wildfly.prospero.api.InstallationChanges(Collections.emptyList(),
                         List.of(ChannelChange.added(CHANNEL_1)), Collections.emptyList()));
 
