@@ -112,4 +112,15 @@ public class ArtifactChange extends Diff {
         return String.format("[%s] %s %s ==> %s @ %s", getStatus(), getName().orElse(""), getOldValue().orElse("[]"),
                 getNewValue().orElse("[]"), getChannelName().orElse("Unknown"));
     }
+
+    public ArtifactChange reverse() {
+        if (isUpdated()) {
+            return new ArtifactChange(getName().get(), getNewVersion().get(), getOldVersion().get(), channelName);
+        }
+        else if (isInstalled()) {
+            return new ArtifactChange(getArtifactName(), getNewVersion().get(), null, channelName);
+        } else {
+            return new ArtifactChange(getArtifactName(), null, getOldVersion().get(), channelName);
+        }
+    }
 }

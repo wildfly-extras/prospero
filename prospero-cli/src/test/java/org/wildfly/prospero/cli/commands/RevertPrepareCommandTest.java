@@ -30,6 +30,7 @@ import org.mockito.junit.MockitoJUnitRunner;
 import org.wildfly.channel.Repository;
 import org.wildfly.prospero.api.Console;
 import org.wildfly.prospero.actions.InstallationHistoryAction;
+import org.wildfly.prospero.api.InstallationChanges;
 import org.wildfly.prospero.api.MavenOptions;
 import org.wildfly.prospero.api.SavedState;
 import org.wildfly.prospero.cli.ActionFactory;
@@ -38,6 +39,7 @@ import org.wildfly.prospero.cli.ReturnCodes;
 import org.wildfly.prospero.test.MetadataTestUtils;
 
 import java.nio.file.Path;
+import java.util.Collections;
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -46,6 +48,7 @@ import static org.junit.Assert.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 @RunWith(MockitoJUnitRunner.class)
 public class RevertPrepareCommandTest extends AbstractMavenCommandTest {
@@ -115,6 +118,9 @@ public class RevertPrepareCommandTest extends AbstractMavenCommandTest {
 
     @Test
     public void callPrepareOperation() throws Exception {
+        when(historyAction.getChangesSinceRevision(any())).thenReturn(new InstallationChanges(
+                Collections.emptyList(), Collections.emptyList(), Collections.emptyList()));
+
         int exitCode = commandLine.execute(CliConstants.Commands.REVERT, CliConstants.Commands.PREPARE,
                 CliConstants.DIR, installationDir.toString(),
                 CliConstants.CANDIDATE_DIR, "update_test",
@@ -126,6 +132,9 @@ public class RevertPrepareCommandTest extends AbstractMavenCommandTest {
 
     @Test
     public void useOfflineMavenSessionManagerIfOfflineSet() throws Exception {
+        when(historyAction.getChangesSinceRevision(any())).thenReturn(new InstallationChanges(
+                Collections.emptyList(), Collections.emptyList(), Collections.emptyList()));
+
         int exitCode = commandLine.execute(CliConstants.Commands.REVERT, CliConstants.Commands.PREPARE,
                 CliConstants.DIR, installationDir.toString(),
                 CliConstants.CANDIDATE_DIR, "update_test",
@@ -139,6 +148,8 @@ public class RevertPrepareCommandTest extends AbstractMavenCommandTest {
 
     @Test
     public void passRemoteRepositories() throws Exception {
+        when(historyAction.getChangesSinceRevision(any())).thenReturn(new InstallationChanges(
+                Collections.emptyList(), Collections.emptyList(), Collections.emptyList()));
         int exitCode = commandLine.execute(CliConstants.Commands.REVERT, CliConstants.Commands.PREPARE,
                 CliConstants.DIR, installationDir.toString(),
                 CliConstants.CANDIDATE_DIR, "update_test",
@@ -164,5 +175,11 @@ public class RevertPrepareCommandTest extends AbstractMavenCommandTest {
     protected String[] getDefaultArguments() {
         return new String[]{CliConstants.Commands.REVERT, CliConstants.Commands.PREPARE, CliConstants.DIR, installationDir.toString(),
                 CliConstants.REVISION, "abcd", CliConstants.CANDIDATE_DIR, "update_test"};
+    }
+
+    @Override
+    protected void doLocalMock() throws Exception {
+        when(historyAction.getChangesSinceRevision(any())).thenReturn(new InstallationChanges(
+                Collections.emptyList(), Collections.emptyList(), Collections.emptyList()));
     }
 }

@@ -650,6 +650,94 @@ public class GitStorageTest {
                 .isEmpty();
     }
 
+    @Test
+    public void getArtifactChangesToCurrent() throws Exception {
+        final GitStorage gitStorage = new GitStorage(base.getParent());
+
+        setArtifact(manifest, "org.test:test:1.2.3");
+        gitStorage.record();
+
+        setArtifact(manifest, "org.test:test:1.2.4");
+        gitStorage.record();
+
+        setArtifact(manifest, "org.test:test:1.2.5");
+        gitStorage.record();
+
+        final List<SavedState> revisions = gitStorage.getRevisions();
+        final SavedState savedState = revisions.get(2);
+
+        final List<ArtifactChange> changes = gitStorage.getArtifactChangesSince(savedState);
+        assertEquals(1, changes.size());
+        assertEquals("1.2.3", changes.get(0).getOldVersion().get());
+        assertEquals("1.2.5", changes.get(0).getNewVersion().get());
+    }
+
+    @Test
+    public void testChangedChannelToCurrent() throws Exception {
+        final GitStorage gitStorage = new GitStorage(base.getParent());
+        ProsperoMetadataUtils.writeManifest(base.resolve(ProsperoMetadataUtils.MANIFEST_FILE_NAME), manifest);
+        generateProsperoConfig(List.of(new Channel("channel-1", "old", null,
+                List.of(new Repository("test", "http://test.te")),
+                new ChannelManifestCoordinate("foo", "bar"),
+                null, null)));
+        gitStorage.record();
+
+        generateProsperoConfig(List.of(new Channel("channel-1", "new", null,
+                List.of(new Repository("test", "http://test.te")),
+                new ChannelManifestCoordinate("foo", "bar2"),
+                null, null)));
+        gitStorage.recordConfigChange();
+
+        generateProsperoConfig(List.of(new Channel("channel-1", "latest", null,
+                List.of(new Repository("test", "http://test.te")),
+                new ChannelManifestCoordinate("foo", "bar3"),
+                null, null)));
+        gitStorage.recordConfigChange();
+
+        final SavedState savedState = gitStorage.getRevisions().get(2);
+        final List<ChannelChange> changes = gitStorage.getChannelChangesSince(savedState);
+
+        assertThat(changes)
+                .map(compareAttr((c)->c.getDescription()))
+                .containsExactly("old::latest");
+    }
+
+    @Test
+    public void includeAddedFeaturesInHistoryToCurrent() throws Exception {
+        final GitStorage gitStorage = new GitStorage(base.getParent());
+        ProsperoMetadataUtils.writeManifest(base.resolve(ProsperoMetadataUtils.MANIFEST_FILE_NAME), manifest);
+
+        generateProsperoConfig(List.of(A_CHANNEL));
+        // write provisioning.xml
+        ProvisioningConfig config = ProvisioningConfig.builder()
+                .addFeaturePackDep(FeaturePackLocation.fromString("org.test:feature-one:zip"))
+                .addFeaturePackDep(FeaturePackLocation.fromString("org.test:feature-two:zip"))
+                .build();
+        ProvisioningXmlWriter.getInstance().write(config, base.resolve(ProsperoMetadataUtils.PROVISIONING_RECORD_XML));
+        gitStorage.record();
+
+        config = ProvisioningConfig.builder()
+                .addFeaturePackDep(FeaturePackLocation.fromString("org.test:feature-one:zip"))
+                .addFeaturePackDep(FeaturePackLocation.fromString("org.test:feature-three:zip"))
+                .build();
+        ProvisioningXmlWriter.getInstance().write(config, base.resolve(ProsperoMetadataUtils.PROVISIONING_RECORD_XML));
+        gitStorage.record();
+
+        config = ProvisioningConfig.builder()
+                .addFeaturePackDep(FeaturePackLocation.fromString("org.test:feature-one:zip"))
+                .addFeaturePackDep(FeaturePackLocation.fromString("org.test:feature-four:zip"))
+                .build();
+        ProvisioningXmlWriter.getInstance().write(config, base.resolve(ProsperoMetadataUtils.PROVISIONING_RECORD_XML));
+        gitStorage.record();
+
+        final SavedState latestState = gitStorage.getRevisions().get(2);
+        final List<FeatureChange> featureChanges = gitStorage.getFeatureChangesSince(latestState);
+        assertThat(featureChanges)
+                .containsOnly(
+                        new FeatureChange(FEATURE, "org.test:feature-two:zip", Diff.Status.REMOVED),
+                        new FeatureChange(FEATURE, "org.test:feature-four:zip", Diff.Status.ADDED));
+    }
+
     private HashSet<String> getPathsInCommit() throws IOException, GitAPIException {
         final Git git = Git.open(base.resolve(".git").toFile());
         HashSet<String> paths = new HashSet<>();

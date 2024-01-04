@@ -103,7 +103,7 @@ public class LocalInstallationHistoryTest {
     }
 
     @Test
-    public void showDifferences() throws Exception {
+    public void showDifferencesInState() throws Exception {
         final InstallationMetadata metadata = mockInstallation();
 
         updateManifest(metadata);
@@ -111,6 +111,21 @@ public class LocalInstallationHistoryTest {
         final SavedState previousState = metadata.getRevisions().get(0);
 
         final List<ArtifactChange> changes = metadata.getChangesIn(previousState).getArtifactChanges();
+        assertEquals(1, changes.size());
+        assertEquals("foo:bar", changes.get(0).getArtifactName());
+        assertEquals("1.1.1", changes.get(0).getOldVersion().get());
+        assertEquals("1.1.2", changes.get(0).getNewVersion().get());
+    }
+
+    @Test
+    public void showDifferencesFromState() throws Exception {
+        final InstallationMetadata metadata = mockInstallation();
+
+        updateManifest(metadata);
+
+        final SavedState previousState = metadata.getRevisions().get(1);
+
+        final List<ArtifactChange> changes = metadata.getChangesToCurrent(previousState).getArtifactChanges();
         assertEquals(1, changes.size());
         assertEquals("foo:bar", changes.get(0).getArtifactName());
         assertEquals("1.1.1", changes.get(0).getOldVersion().get());

@@ -67,6 +67,13 @@ public class InstallationHistoryAction {
         return installationMetadata.getChangesIn(savedState);
     }
 
+    public InstallationChanges getChangesSinceRevision(SavedState savedState) throws MetadataException {
+        ProsperoLogger.ROOT_LOGGER.historyDetails(savedState.getName(), installation);
+        final InstallationMetadata installationMetadata = InstallationMetadata.loadInstallation(installation);
+        verifyStateExists(savedState, installationMetadata);
+        return installationMetadata.getChangesToCurrent(savedState);
+    }
+
     public List<SavedState> getRevisions() throws MetadataException {
         ProsperoLogger.ROOT_LOGGER.listHistory(installation);
         try(InstallationMetadata installationMetadata = InstallationMetadata.loadInstallation(installation)) {

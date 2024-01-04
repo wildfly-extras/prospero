@@ -254,87 +254,50 @@ public class GitStorage implements AutoCloseable {
     }
 
     public List<ArtifactChange> getArtifactChanges(SavedState savedState) throws MetadataException {
-        Parser<ArtifactChange> parser = (changed, base) -> {
-            final Map<String, Artifact> oldArtifacts;
-            if (base != null ) {
-                final ChannelManifest parseOld = ManifestYamlSupport.parse(base.resolve(ProsperoMetadataUtils.MANIFEST_FILE_NAME).toFile());
-                oldArtifacts = toMap(parseOld.getStreams());
-            } else {
-                oldArtifacts = Collections.emptyMap();
-            }
+        final Parser<ArtifactChange> parser = new ArtifactChangeParser();
 
-            final ChannelManifest parseCurrent = ManifestYamlSupport.parse(changed.resolve(ProsperoMetadataUtils.MANIFEST_FILE_NAME).toFile());
-            final Map<String, Artifact> currentArtifacts = toMap(parseCurrent.getStreams());
+        final SavedState other = getStateFromName(savedState.getName() + "^");
+        return getChanges(savedState, other, ProsperoMetadataUtils.MANIFEST_FILE_NAME, parser);
+    }
 
-            final ArrayList<ArtifactChange> artifactChanges = new ArrayList<>();
-            for (String ga : currentArtifacts.keySet()) {
-                if (!oldArtifacts.containsKey(ga)) {
-                    artifactChanges.add(ArtifactChange.added(currentArtifacts.get(ga)));
-                } else if (!currentArtifacts.get(ga).getVersion().equals(oldArtifacts.get(ga).getVersion())) {
-                    artifactChanges.add(ArtifactChange.updated(oldArtifacts.get(ga), currentArtifacts.get(ga)));
-                }
-            }
-            for (String ga : oldArtifacts.keySet()) {
-                if (!currentArtifacts.containsKey(ga)) {
-                    artifactChanges.add(ArtifactChange.removed(oldArtifacts.get(ga)));
-                }
-            }
+    public List<ArtifactChange> getArtifactChangesSince(SavedState savedState) throws MetadataException {
+        final Parser<ArtifactChange> parser = new ArtifactChangeParser();
 
-            return artifactChanges;
-        };
-
-        return getChanges(savedState, ProsperoMetadataUtils.MANIFEST_FILE_NAME, parser);
+        final SavedState other = getStateFromName("HEAD");
+        return getChanges(other, savedState, ProsperoMetadataUtils.MANIFEST_FILE_NAME, parser);
     }
 
     public List<ChannelChange> getChannelChanges(SavedState savedState) throws MetadataException {
-        Parser<ChannelChange> parser = (changed, base) -> {
-            final List<Channel> oldChannels = base == null?Collections.emptyList():ProsperoConfig.readConfig(base).getChannels();
-            final List<Channel> currentChannels = ProsperoConfig.readConfig(changed).getChannels();
+        Parser<ChannelChange> parser = new ChannelChangeParser();
 
-            final ArrayList<ChannelChange> channelChanges = new ArrayList<>();
+        final SavedState other = getStateFromName(savedState.getName() + "^");
+        return getChanges(savedState, other, ProsperoMetadataUtils.INSTALLER_CHANNELS_FILE_NAME, parser);
+    }
 
-            for (Channel current : currentChannels) {
-                final Optional<Channel> oldChannel = oldChannels.stream()
-                        .filter(old -> current.getName().equals(old.getName()))
-                        .findFirst();
-                if (oldChannel.isEmpty()) {
-                    channelChanges.add(ChannelChange.added(current));
-                } else {
-                    final ChannelChange change = ChannelChange.modified(oldChannel.get(), current);
-                    if (!change.getChildren().isEmpty()) {
-                        channelChanges.add(change);
-                    }
-                }
-            }
+    public List<ChannelChange> getChannelChangesSince(SavedState savedState) throws MetadataException {
+        final Parser<ChannelChange> parser = new ChannelChangeParser();
 
-            for (Channel old : oldChannels) {
-                final Optional<Channel> currentChannel = currentChannels.stream()
-                        .filter(current -> current.getName().equals(old.getName()))
-                        .findFirst();
-                if (currentChannel.isEmpty()) {
-                    channelChanges.add(ChannelChange.removed(old));
-                }
-            }
-
-            return channelChanges;
-        };
-
-        return getChanges(savedState, ProsperoMetadataUtils.INSTALLER_CHANNELS_FILE_NAME, parser);
+        final SavedState other = getStateFromName("HEAD");
+        return getChanges(other, savedState, ProsperoMetadataUtils.INSTALLER_CHANNELS_FILE_NAME, parser);
     }
 
     public List<FeatureChange> getFeatureChanges(SavedState latestState) throws MetadataException {
-        return getChanges(latestState, ProsperoMetadataUtils.PROVISIONING_RECORD_XML, new FeatureChangeParser());
+        final SavedState other = getStateFromName(latestState.getName() + "^");
+        return getChanges(latestState, other, ProsperoMetadataUtils.PROVISIONING_RECORD_XML, new FeatureChangeParser());
     }
 
-    private <T> List<T> getChanges(SavedState savedState, String manifestFileName, Parser<T> parser) throws MetadataException {
+    public List<FeatureChange> getFeatureChangesSince(SavedState latestState) throws MetadataException {
+        final SavedState other = getStateFromName("HEAD");
+        return getChanges(other, latestState, ProsperoMetadataUtils.PROVISIONING_RECORD_XML, new FeatureChangeParser());
+    }
+
+    private <T> List<T> getChanges(SavedState savedState, SavedState other, String manifestFileName, Parser<T> parser) throws MetadataException {
         Path change = null;
         Path base = null;
         try {
-            final ObjectId parentRef = git.getRepository().resolve(savedState.getName() + "^");
             change = checkoutPastState(savedState, manifestFileName);
-
-            if (parentRef != null) {
-                base = checkoutPastState(new SavedState(parentRef.getName()), manifestFileName);
+            if (other != null) {
+                base = checkoutPastState(other, manifestFileName);
             }
 
             return parser.parse(change, base);
@@ -353,6 +316,15 @@ public class GitStorage implements AutoCloseable {
             } catch (IOException e) {
                 throw new RuntimeException(e);
             }
+        }
+    }
+
+    private SavedState getStateFromName(String savedState) throws MetadataException {
+        try {
+            final ObjectId parentRef = git.getRepository().resolve(savedState);
+            return parentRef == null ? null : new SavedState(parentRef.getName());
+        } catch (IOException e) {
+            throw ProsperoLogger.ROOT_LOGGER.unableToAccessHistoryStorage(this.base, e);
         }
     }
 
@@ -414,4 +386,70 @@ public class GitStorage implements AutoCloseable {
         List<T> parse(Path changedPath, Path basePath) throws IOException, MetadataException;
     }
 
+    private static class ChannelChangeParser implements Parser<ChannelChange> {
+        @Override
+        public List<ChannelChange> parse(Path changed, Path base) throws IOException, MetadataException {
+            final List<Channel> oldChannels = base == null ? Collections.emptyList() : ProsperoConfig.readConfig(base).getChannels();
+            final List<Channel> currentChannels = ProsperoConfig.readConfig(changed).getChannels();
+
+            final ArrayList<ChannelChange> channelChanges = new ArrayList<>();
+
+            for (Channel current : currentChannels) {
+                final Optional<Channel> oldChannel = oldChannels.stream()
+                        .filter(old -> current.getName().equals(old.getName()))
+                        .findFirst();
+                if (oldChannel.isEmpty()) {
+                    channelChanges.add(ChannelChange.added(current));
+                } else {
+                    final ChannelChange change = ChannelChange.modified(oldChannel.get(), current);
+                    if (!change.getChildren().isEmpty()) {
+                        channelChanges.add(change);
+                    }
+                }
+            }
+
+            for (Channel old : oldChannels) {
+                final Optional<Channel> currentChannel = currentChannels.stream()
+                        .filter(current -> current.getName().equals(old.getName()))
+                        .findFirst();
+                if (currentChannel.isEmpty()) {
+                    channelChanges.add(ChannelChange.removed(old));
+                }
+            }
+
+            return channelChanges;
+        }
+    }
+
+    private class ArtifactChangeParser implements Parser<ArtifactChange> {
+        @Override
+        public List<ArtifactChange> parse(Path changed, Path base) throws IOException, MetadataException {
+            final Map<String, Artifact> oldArtifacts;
+            if (base != null) {
+                final ChannelManifest parseOld = ManifestYamlSupport.parse(base.resolve(ProsperoMetadataUtils.MANIFEST_FILE_NAME).toFile());
+                oldArtifacts = GitStorage.this.toMap(parseOld.getStreams());
+            } else {
+                oldArtifacts = Collections.emptyMap();
+            }
+
+            final ChannelManifest parseCurrent = ManifestYamlSupport.parse(changed.resolve(ProsperoMetadataUtils.MANIFEST_FILE_NAME).toFile());
+            final Map<String, Artifact> currentArtifacts = GitStorage.this.toMap(parseCurrent.getStreams());
+
+            final ArrayList<ArtifactChange> artifactChanges = new ArrayList<>();
+            for (String ga : currentArtifacts.keySet()) {
+                if (!oldArtifacts.containsKey(ga)) {
+                    artifactChanges.add(ArtifactChange.added(currentArtifacts.get(ga)));
+                } else if (!currentArtifacts.get(ga).getVersion().equals(oldArtifacts.get(ga).getVersion())) {
+                    artifactChanges.add(ArtifactChange.updated(oldArtifacts.get(ga), currentArtifacts.get(ga)));
+                }
+            }
+            for (String ga : oldArtifacts.keySet()) {
+                if (!currentArtifacts.containsKey(ga)) {
+                    artifactChanges.add(ArtifactChange.removed(oldArtifacts.get(ga)));
+                }
+            }
+
+            return artifactChanges;
+        }
+    }
 }

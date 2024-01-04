@@ -20,6 +20,7 @@ package org.wildfly.prospero.api;
 import org.eclipse.aether.artifact.DefaultArtifact;
 import org.junit.Test;
 
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 
 public class ArtifactChangeTest {
@@ -38,9 +39,37 @@ public class ArtifactChangeTest {
         assertFalse(change.isDowngrade());
     }
 
+    @Test
+    public void testReverseUpdate() {
+        final ArtifactChange change = change("1.0.0", "1.0.1");
+
+        assertEquals(change("1.0.1", "1.0.0"), change.reverse());
+    }
+
+    @Test
+    public void testReverseAdd() {
+        final ArtifactChange change = add("1.0.1");
+
+        assertEquals(remove("1.0.1"), change.reverse());
+    }
+
+    @Test
+    public void testReverseRemove() {
+        final ArtifactChange change = remove("1.0.1");
+
+        assertEquals(add("1.0.1"), change.reverse());
+    }
+
     private ArtifactChange change(String oldVersion, String newVersion) {
         return ArtifactChange.updated(new DefaultArtifact("org.foo", "bar", null, oldVersion),
                 new DefaultArtifact("org.foo", "bar", null, newVersion));
     }
 
+    private ArtifactChange add(String newVersion) {
+        return ArtifactChange.added(new DefaultArtifact("org.foo", "bar", null, newVersion));
+    }
+
+    private ArtifactChange remove(String oldVersion) {
+        return ArtifactChange.removed(new DefaultArtifact("org.foo", "bar", null, oldVersion));
+    }
 }
