@@ -366,14 +366,6 @@ public class InstallationMetadata implements AutoCloseable {
         }
     }
 
-    /**
-     * use {@link this#getChangesIn(SavedState)}
-     */
-    @Deprecated
-    public InstallationChanges getChangesSince(SavedState savedState) throws MetadataException {
-        return getChangesIn(savedState);
-    }
-
     public InstallationChanges getChangesIn(SavedState savedState) throws MetadataException {
         return new InstallationChanges(
                 gitStorage.getArtifactChanges(savedState),

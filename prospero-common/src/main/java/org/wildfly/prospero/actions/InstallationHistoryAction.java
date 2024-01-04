@@ -67,15 +67,6 @@ public class InstallationHistoryAction {
         return installationMetadata.getChangesIn(savedState);
     }
 
-    /**
-     * use {@link InstallationHistoryAction#getRevisionChanges(SavedState)}
-     *
-     */
-    @Deprecated
-    public InstallationChanges compare(SavedState savedState) throws MetadataException {
-        return getRevisionChanges(savedState);
-    }
-
     public List<SavedState> getRevisions() throws MetadataException {
         ProsperoLogger.ROOT_LOGGER.listHistory(installation);
         try(InstallationMetadata installationMetadata = InstallationMetadata.loadInstallation(installation)) {
