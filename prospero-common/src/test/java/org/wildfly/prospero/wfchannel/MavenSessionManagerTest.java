@@ -28,14 +28,8 @@ import static org.junit.Assert.*;
 public class MavenSessionManagerTest {
 
     @Test
-    public void defaultToMavenHome() throws Exception {
+    public void defaultToTempFolderIfNoCacheOptionSet() throws Exception {
         final MavenSessionManager msm = new MavenSessionManager(MavenOptions.DEFAULT_OPTIONS);
-        assertEquals(MavenSessionManager.LOCAL_MAVEN_REPO, msm.getProvisioningRepo());
-    }
-
-    @Test
-    public void useTempFolderIfNoCacheOptionSet() throws Exception {
-        final MavenSessionManager msm = new MavenSessionManager(MavenOptions.builder().setNoLocalCache(true).build());
 
         // JDK 17 reads the java.io.tmpdir property before it's altered by mvn
         final Path test = Files.createTempDirectory("test");
@@ -43,5 +37,12 @@ public class MavenSessionManagerTest {
         Files.delete(test);
 
         assertTrue(msm.getProvisioningRepo().toString() + " should start with  " + defaultTempPath, msm.getProvisioningRepo().startsWith(defaultTempPath));
+    }
+
+    @Test
+    public void useMavenHomeIfUseLocalCache() throws Exception {
+        final MavenSessionManager msm = new MavenSessionManager(MavenOptions.builder().setNoLocalCache(false).build());
+
+        assertEquals(MavenSessionManager.LOCAL_MAVEN_REPO, msm.getProvisioningRepo());
     }
 }

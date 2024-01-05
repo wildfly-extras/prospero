@@ -29,7 +29,6 @@ import java.util.Arrays;
 import java.util.List;
 
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 
@@ -42,8 +41,8 @@ public abstract class AbstractMavenCommandTest extends AbstractConsoleTest {
 
         assertEquals(ReturnCodes.SUCCESS, exitCode);
         MavenOptions options = getCapturedMavenOptions();
-        assertEquals(null, options.getLocalCache());
-        assertFalse(options.isNoLocalCache());
+        assertNull(options.getLocalCache());
+        assertTrue(options.isNoLocalCache());
     }
 
     @Test

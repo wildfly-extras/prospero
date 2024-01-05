@@ -125,7 +125,9 @@ public class SimpleProvisionTest extends WfCoreTestBase {
         installation.provision(provisioningDefinition.toProvisioningConfig(),
                 provisioningDefinition.resolveChannels(CHANNELS_RESOLVER_FACTORY));
 
-        MetadataTestUtils.prepareChannel(outputPath.resolve(MetadataTestUtils.INSTALLER_CHANNELS_FILE_PATH), CHANNEL_COMPONENT_UPDATES, CHANNEL_BASE_CORE_19);
+        MetadataTestUtils.prepareChannel(outputPath.resolve(MetadataTestUtils.INSTALLER_CHANNELS_FILE_PATH),
+                defaultRemoteRepositories(),
+                CHANNEL_COMPONENT_UPDATES, CHANNEL_BASE_CORE_19);
         getUpdateAction().performUpdate();
 
         // verify manifest contains versions 17.0.1
@@ -143,7 +145,9 @@ public class SimpleProvisionTest extends WfCoreTestBase {
         installation.provision(provisioningDefinition.toProvisioningConfig(),
                 provisioningDefinition.resolveChannels(CHANNELS_RESOLVER_FACTORY));
 
-        MetadataTestUtils.prepareChannel(outputPath.resolve(MetadataTestUtils.INSTALLER_CHANNELS_FILE_PATH), CHANNEL_FP_UPDATES, CHANNEL_BASE_CORE_19);
+        MetadataTestUtils.prepareChannel(outputPath.resolve(MetadataTestUtils.INSTALLER_CHANNELS_FILE_PATH),
+                defaultRemoteRepositories(),
+                CHANNEL_FP_UPDATES, CHANNEL_BASE_CORE_19);
         getUpdateAction().performUpdate();
 
         // verify manifest contains versions 17.0.1
@@ -165,7 +169,9 @@ public class SimpleProvisionTest extends WfCoreTestBase {
         installation.provision(provisioningDefinition.toProvisioningConfig(),
                 provisioningDefinition.resolveChannels(CHANNELS_RESOLVER_FACTORY));
 
-        MetadataTestUtils.prepareChannel(outputPath.resolve(MetadataTestUtils.INSTALLER_CHANNELS_FILE_PATH), CHANNEL_FP_UPDATES, CHANNEL_BASE_CORE_19);
+        MetadataTestUtils.prepareChannel(outputPath.resolve(MetadataTestUtils.INSTALLER_CHANNELS_FILE_PATH),
+                defaultRemoteRepositories(),
+                CHANNEL_FP_UPDATES, CHANNEL_BASE_CORE_19);
         getUpdateAction().performUpdate();
 
         // verify manifest contains versions 17.0.1
@@ -232,7 +238,8 @@ public class SimpleProvisionTest extends WfCoreTestBase {
 
     @Test
     public void installWildflyCoreFromInstallationFile() throws Exception {
-        final Path channelsFile = MetadataTestUtils.prepareChannel(CHANNEL_BASE_CORE_19);
+        final Path channelsFile = temp.newFile("channels.yaml").toPath();
+        MetadataTestUtils.prepareChannel(channelsFile, defaultRemoteRepositories(), CHANNEL_BASE_CORE_19);
         final URI installationFile = this.getClass().getClassLoader().getResource("provisioning.xml").toURI();
 
         ProvisioningDefinition definition = ProvisioningDefinition.builder()
