@@ -81,7 +81,7 @@ public class MavenOptions {
     }
 
     public boolean isNoLocalCache() {
-        return noLocalCache.orElse(false);
+        return noLocalCache.orElseGet(localCache::isEmpty);
     }
 
 

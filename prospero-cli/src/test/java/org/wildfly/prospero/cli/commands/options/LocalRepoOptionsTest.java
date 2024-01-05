@@ -30,6 +30,7 @@ import java.util.Optional;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 
 public class LocalRepoOptionsTest {
@@ -40,8 +41,8 @@ public class LocalRepoOptionsTest {
     @Test
     public void defaultLocalPathIfNoOptionsSpecified() throws Exception {
         final MavenOptions mavenOptions = new LocalRepoOptions().toOptions().build();
-        assertEquals(null, mavenOptions.getLocalCache());
-        assertFalse(mavenOptions.isNoLocalCache());
+        assertNull(null, mavenOptions.getLocalCache());
+        assertTrue(mavenOptions.isNoLocalCache());
     }
 
     @Test
@@ -61,7 +62,6 @@ public class LocalRepoOptionsTest {
         localRepoParam.localMavenCache = localRepo;
 
         final MavenOptions mavenOptions = localRepoParam.toOptions().build();
-        assertEquals(localRepo, mavenOptions.getLocalCache());
         assertEquals(localRepo, mavenOptions.getLocalCache());
         assertFalse(mavenOptions.isNoLocalCache());
     }

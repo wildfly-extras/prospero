@@ -144,7 +144,7 @@ public class MavenOptionsTest {
         base.write(target);
         assertEquals(MavenOptions.builder()
                 .setOffline(false)
-                .setNoLocalCache(false)
+                .setNoLocalCache(true)
                 .build(), MavenOptions.read(target));
 
         base = MavenOptions.builder()
