@@ -78,7 +78,6 @@ public class WfCoreTestBase {
     public static final String CHANNEL_COMPONENT_UPDATES = "manifests/wfcore-upgrade-component.yaml";
     public static final Repository REPOSITORY_MAVEN_CENTRAL = new Repository("maven-central", "https://repo1.maven.org/maven2/");
     public static final Repository REPOSITORY_NEXUS = new Repository("nexus", "https://repository.jboss.org/nexus/content/groups/public-jboss");
-    public static final Repository REPOSITORY_MRRC_GA = new Repository("maven-redhat-ga", "https://maven.repository.redhat.com/ga");
     public static final VersionResolverFactory CHANNELS_RESOLVER_FACTORY = new VersionResolverFactory(null, null);
 
     protected static Artifact resolvedUpgradeArtifact;
@@ -195,10 +194,7 @@ public class WfCoreTestBase {
         return Arrays.asList(
                 REPOSITORY_MAVEN_CENTRAL,
                 REPOSITORY_NEXUS,
-                REPOSITORY_MRRC_GA,
                 new Repository("test-fp-repo", testRepo.toFile().toURI().toString()),
-                // remove when galleon-plugin 6.4.1.Final is available
-                new Repository("galleon-plugin-repo", "file:/Users/spyrkob/workspaces/set/prospero/prospero/local-repo"),
                 new Repository("update-repository", updateRepository.getUrl())
         );
     }
