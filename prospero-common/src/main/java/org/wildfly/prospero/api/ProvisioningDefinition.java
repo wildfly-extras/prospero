@@ -125,8 +125,7 @@ public class ProvisioningDefinition {
 
     private List<RemoteRepository> channelResolutionRepositories() {
         if (overrideRepositories.isEmpty()) {
-            return List.of(new RemoteRepository.Builder("MRRC", null, "https://maven.repository.redhat.com/ga/").build(),
-                    new RemoteRepository.Builder("central", null, "https://repo1.maven.org/maven2").build());
+            return List.of(new RemoteRepository.Builder("central", null, "https://repo1.maven.org/maven2").build());
         } else {
             return overrideRepositories.stream()
                     .map(RepositoryUtils::toRemoteRepository)

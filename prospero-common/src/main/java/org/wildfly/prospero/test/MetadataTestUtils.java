@@ -186,8 +186,7 @@ public final class MetadataTestUtils {
     public static List<RemoteRepository> defaultRemoteRepositories() {
         return Arrays.asList(
                 new RemoteRepository.Builder("maven-central", "default", "https://repo1.maven.org/maven2/").build(),
-                new RemoteRepository.Builder("nexus", "default", "https://repository.jboss.org/nexus/content/groups/public").build(),
-                new RemoteRepository.Builder("maven-redhat-ga", "default", "https://maven.repository.redhat.com/ga").build()
+                new RemoteRepository.Builder("nexus", "default", "https://repository.jboss.org/nexus/content/groups/public").build()
         );
     }
 
