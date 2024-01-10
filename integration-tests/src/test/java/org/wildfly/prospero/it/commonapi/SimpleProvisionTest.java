@@ -87,8 +87,12 @@ public class SimpleProvisionTest extends WfCoreTestBase {
                 .containsExactly(MetadataTestUtils.class.getClassLoader().getResource(CHANNEL_BASE_CORE_19).toExternalForm());
 
         // verify the provisioning.xml was recorded in the .installation folder
-        assertThat(outputPath.resolve(ProsperoMetadataUtils.METADATA_DIR).resolve(ProsperoMetadataUtils.PROVISIONING_RECORD_XML))
+        final Path provisioningRecordFile = outputPath.resolve(ProsperoMetadataUtils.METADATA_DIR).resolve(ProsperoMetadataUtils.PROVISIONING_RECORD_XML);
+        assertThat(provisioningRecordFile)
                 .hasSameTextualContentAs(PathsUtils.getProvisioningXml(outputPath));
+        // verify the cache dir always uses linux file separator
+        assertThat(Files.readString(provisioningRecordFile))
+                .contains(String.format("<option name=\"jboss-resolved-artifacts-cache\" value=\"%s/%s\"/>", ProsperoMetadataUtils.METADATA_DIR, ".cache"));
     }
 
     @Test
