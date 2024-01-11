@@ -80,8 +80,7 @@ public class UpdateWithAdditionalRepositoryTest extends CliTestBase {
                 .flatMap(Channel::getRepositories)
                 .map(Repository::getUrl)
                 .containsExactlyInAnyOrder("https://repo1.maven.org/maven2/",
-                        "https://repository.jboss.org/nexus/content/groups/public",
-                        "https://maven.repository.redhat.com/ga"
+                        "https://repository.jboss.org/nexus/content/groups/public"
                         )
                 .doesNotContain(temporaryRepo.toExternalForm());
     }
