@@ -22,6 +22,7 @@ import org.jboss.galleon.util.HashUtils;
 import org.jboss.galleon.util.IoUtils;
 import org.jboss.logging.Logger;
 import org.wildfly.channel.MavenArtifact;
+import org.wildfly.prospero.ProsperoLogger;
 import org.wildfly.prospero.metadata.ProsperoMetadataUtils;
 
 import java.io.BufferedWriter;
@@ -195,10 +196,14 @@ public class ArtifactCache {
         Path artifactLog = cacheDir.resolve(ArtifactCache.CACHE_FILENAME);
 
         if (Files.exists(artifactLog)) {
+            int row = 0;
+            final List<String> lines = Files.readAllLines(artifactLog);
             try {
-                final List<String> lines = Files.readAllLines(artifactLog);
-                for (String line : lines) {
-                    final String[] splitLine = line.split(ArtifactCache.CACHE_LINE_SEPARATOR);
+                for ( ; row < lines.size(); row++) {
+                    final String[] splitLine = lines.get(row).split(ArtifactCache.CACHE_LINE_SEPARATOR);
+                    if (splitLine.length < 3) {
+                        throw new IOException("Not enough segments, expected format is <GAV>::<hash>::<path>");
+                    }
                     String gav = splitLine[0];
                     String hash = splitLine[1];
                     Path path = Paths.get(splitLine[2]);
@@ -207,8 +212,8 @@ public class ArtifactCache {
                     paths.put(key, installationDir.resolve(path));
                     hashes.put(key, hash);
                 }
-            } catch (MavenUniverseException e) {
-                throw new IOException("Unable to read cached items.", e);
+            } catch (MavenUniverseException | IOException e) {
+                throw ProsperoLogger.ROOT_LOGGER.unableToReadArtifactCache(row + 1, lines.get(row), e);
             }
         }
     }
