@@ -75,7 +75,7 @@
         <version.org.wildfly.galleon-pack>${prospero.base.feature-pack.version}</version.org.wildfly.galleon-pack>
         <version.info.picocli>4.7.5</version.info.picocli>
         <version.system-rules>1.19.0</version.system-rules>
-        <version.assertj>3.25.1</version.assertj>
+        <version.assertj>3.25.2</version.assertj>
 
         <version.org.wildfly.checkstyle-config>1.0.8.Final</version.org.wildfly.checkstyle-config>
     </properties>
