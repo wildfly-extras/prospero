@@ -132,6 +132,19 @@ public class ProsperoMetadataUtilsTest {
                 .hasContent("<provisioning></provisioning>");
     }
 
+    @Test
+    public void overrideProvisioningConfigurationIfContentNotEquals() throws Exception {
+        Files.createDirectory(server.resolve(Constants.PROVISIONED_STATE_DIR));
+        Files.writeString(server.resolve(Constants.PROVISIONED_STATE_DIR).resolve(Constants.PROVISIONING_XML), "<provisioning></provisioning>");
+        Files.createDirectory(server.resolve(METADATA_DIR));
+        Files.writeString(server.resolve(METADATA_DIR).resolve(PROVISIONING_RECORD_XML), "<provisioning>content</provisioning>");
+
+        ProsperoMetadataUtils.generate(server, List.of(A_CHANNEL), A_MANIFEST, null);
+
+        Assertions.assertThat(server.resolve(METADATA_DIR).resolve(PROVISIONING_RECORD_XML))
+                .hasContent("<provisioning></provisioning>");
+    }
+
     private void assertMetadataWritten() throws MalformedURLException {
         final Channel channel = ChannelMapper.from(channelPath.toUri().toURL());
         final ChannelManifest manifest = ChannelManifestMapper.from(manifestPath.toUri().toURL());
