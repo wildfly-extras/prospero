@@ -54,6 +54,13 @@ public abstract class AbstractCommand implements Callable<Integer> {
     )
     boolean verbose;
 
+    @SuppressWarnings("unused")
+    @CommandLine.Option(
+            names = {CliConstants.DEBUG},
+            order = 102
+    )
+    boolean debug;
+
     public AbstractCommand(CliConsole console, ActionFactory actionFactory) {
         this.console = console;
         this.actionFactory = actionFactory;

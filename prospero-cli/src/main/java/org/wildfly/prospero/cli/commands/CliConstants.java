@@ -95,6 +95,7 @@ public final class CliConstants {
     public static final String VERSION = "--version";
     public static final String VV = "-vv";
     public static final String VERBOSE = "--verbose";
+    public static final String DEBUG = "--debug";
     public static final String Y = "-y";
     public static final String YES = "--yes";
 
