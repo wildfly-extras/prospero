@@ -34,6 +34,7 @@ import org.jboss.logging.Logger;
 import org.wildfly.channel.UnresolvedMavenArtifactException;
 import org.wildfly.prospero.ProsperoLogger;
 
+import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
@@ -65,7 +66,7 @@ public class GalleonUtils {
     public static final String STORE_INPUT_PROVISIONING_CONFIG_PROPERTY = "store-input-provisioning-config";
     public static final String STORE_INPUT_PROVISIONING_CONFIG_VALUE = "true";
     public static final String STORE_PROVISIONED_ARTIFACTS = "jboss-resolved-artifacts-cache";
-    public static final String STORE_PROVISIONED_ARTIFACTS_VALUE = ArtifactCache.CACHE_FOLDER.toString();
+    public static final String STORE_PROVISIONED_ARTIFACTS_VALUE = ArtifactCache.CACHE_FOLDER.toString().replace(File.separatorChar, '/');
 
     private static final String CLASSPATH_SCHEME = "classpath";
     private static final String FILE_SCHEME = "file";
