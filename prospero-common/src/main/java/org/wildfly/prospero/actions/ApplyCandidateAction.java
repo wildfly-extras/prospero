@@ -392,6 +392,11 @@ public class ApplyCandidateAction {
                     break;
                 case REVERT:
                     git.recordChange(SavedState.Type.ROLLBACK);
+
+                    final Path updateChannels = updateMetadataDir.resolve(ProsperoMetadataUtils.INSTALLER_CHANNELS_FILE_NAME);
+                    final Path installationChannels = installationMetadataDir.resolve(ProsperoMetadataUtils.INSTALLER_CHANNELS_FILE_NAME);
+                    IoUtils.copy(updateChannels, installationChannels);
+
                     break;
                 case FEATURE_ADD:
                     git.recordChange(SavedState.Type.FEATURE_PACK);
