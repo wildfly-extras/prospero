@@ -23,6 +23,7 @@ import org.wildfly.channel.ChannelManifest;
 import org.wildfly.channel.ChannelManifestMapper;
 import org.wildfly.channel.ChannelMapper;
 
+import java.io.BufferedReader;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
@@ -206,12 +207,30 @@ public class ProsperoMetadataUtils {
             final String content = Files.readString(provisioningFile);
             final String lineEndings = content.replaceAll("\\r\\n?", "\n");
             Files.writeString(provisioningRecordFile, lineEndings);
-        } else {
+        } else if (!isFileContentEquals(provisioningFile, provisioningRecordFile)) {
             final String content = Files.readString(provisioningFile);
             final String lineEndings = content.replaceAll("\\r\\n?", "\n");
             Files.writeString(provisioningRecordFile, lineEndings);
         }
 
+    }
+
+    static boolean isFileContentEquals(Path path1, Path path2) throws IOException {
+        try (BufferedReader bf1 = Files.newBufferedReader(path1);
+             BufferedReader bf2 = Files.newBufferedReader(path2)) {
+            String line1 = "", line2 = "";
+            while ((line1 = bf1.readLine()) != null) {
+                line2 = bf2.readLine();
+                if (!line1.equals(line2)) {
+                    return false;
+                }
+            }
+            if (bf2.readLine() == null) {
+                return true;
+            } else {
+                return false;
+            }
+        }
     }
 
     protected static void writeToFile(Path path, String text) throws IOException {
