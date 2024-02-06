@@ -23,6 +23,7 @@ import org.junit.Assert;
 import org.wildfly.channel.Channel;
 import org.wildfly.channel.Repository;
 import org.wildfly.prospero.api.exceptions.MetadataException;
+import org.wildfly.prospero.galleon.ArtifactCache;
 import org.wildfly.prospero.metadata.ManifestVersionRecord;
 import org.wildfly.prospero.api.ArtifactChange;
 import org.wildfly.prospero.actions.InstallationHistoryAction;
@@ -412,6 +413,51 @@ public class InstallationHistoryActionTest extends WfCoreTestBase {
         assertThatThrownBy(() -> historyAction.prepareRevert(savedState, mavenOptions, Collections.emptyList(), candidate))
                 .isInstanceOf(IllegalArgumentException.class)
                 .message().contains("Can't install the server into a non empty directory");
+    }
+
+    @Test
+    public void rollbackChangesUsesCache() throws Exception {
+        // install server
+        final Path manifestPath = temp.newFile().toPath();
+        channelsFile = temp.newFile().toPath();
+        MetadataTestUtils.copyManifest("manifests/wfcore-base.yaml", manifestPath);
+        MetadataTestUtils.prepareChannel(channelsFile, List.of(manifestPath.toUri().toURL()));
+
+        final Path modulesPaths = outputPath.resolve(Paths.get("modules", "system", "layers", "base"));
+        final Path wildflyCliModulePath = modulesPaths.resolve(Paths.get("org", "jboss", "as", "cli", "main"));
+
+        final ProvisioningDefinition provisioningDefinition = defaultWfCoreDefinition()
+                .setChannelCoordinates(channelsFile.toString())
+                .build();
+        installation.provision(provisioningDefinition.toProvisioningConfig(),
+                provisioningDefinition.resolveChannels(CHANNELS_RESOLVER_FACTORY));
+
+        MetadataTestUtils.upgradeStreamInManifest(manifestPath, resolvedUpgradeArtifact);
+        updateAction().performUpdate();
+        Optional<Artifact> wildflyCliArtifact = readArtifactFromManifest("org.wildfly.core", "wildfly-cli");
+        assertEquals(UPGRADE_VERSION, wildflyCliArtifact.get().getVersion());
+        assertTrue("Updated jar should be present in module", wildflyCliModulePath.resolve(UPGRADE_JAR).toFile().exists());
+
+        ArtifactCache.cleanInstancesCache();
+
+        final InstallationHistoryAction historyAction = new InstallationHistoryAction(outputPath, new AcceptingConsole());
+        final List<SavedState> revisions = historyAction.getRevisions();
+        final SavedState savedState = revisions.get(0);
+
+        // perform the rollback using only internal cache. Offline mode disables other repositories
+        final URL temporaryRepo = mockTemporaryRepo(false);
+        final MavenOptions offlineOptions = MavenOptions.OFFLINE;
+        historyAction.rollback(savedState, offlineOptions, Collections.emptyList());
+
+        // this rollback does nothing as it builds a candidate from current server
+        wildflyCliArtifact = readArtifactFromManifest("org.wildfly.core", "wildfly-cli");
+        assertEquals(UPGRADE_VERSION, wildflyCliArtifact.get().getVersion());
+        assertTrue("Reverted jar should be present in module", wildflyCliModulePath.resolve(UPGRADE_JAR).toFile().exists());
+        assertThat(ProsperoConfig.readConfig(outputPath.resolve(ProsperoMetadataUtils.METADATA_DIR)).getChannels())
+                .withFailMessage("Temporary repository should not be listed")
+                .flatMap(Channel::getRepositories)
+                .map(Repository::getUrl)
+                .doesNotContain(temporaryRepo.toExternalForm());
     }
 
     private UpdateAction updateAction() throws ProvisioningException, OperationException {

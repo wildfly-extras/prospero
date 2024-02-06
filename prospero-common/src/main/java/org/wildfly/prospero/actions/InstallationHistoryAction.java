@@ -111,6 +111,7 @@ public class InstallationHistoryAction {
                         .builder(targetDir, prosperoConfig.getChannels(), mavenSessionManager)
                         .setConsole(console)
                         .setRestoreManifest(revertMetadata.getManifest())
+                        .setSourceServerPath(installation)
                         .build();
                      PrepareCandidateAction prepareCandidateAction = new PrepareCandidateAction(installation,
                              mavenSessionManager, revertMetadata.getProsperoConfig())) {
