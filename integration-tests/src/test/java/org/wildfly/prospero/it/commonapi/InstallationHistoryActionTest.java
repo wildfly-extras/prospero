@@ -48,11 +48,13 @@ import java.net.URL;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -302,10 +304,11 @@ public class InstallationHistoryActionTest extends WfCoreTestBase {
         // create a "broken" channel that would prevent revert if the latest avilable configuration is used
         final InstallationMetadata metadata = InstallationMetadata.loadInstallation(outputPath);
         final ProsperoConfig prosperoConfig = metadata.getProsperoConfig();
+        final List<Channel> preUpdateChannels = new ArrayList<>(prosperoConfig.getChannels());
         prosperoConfig.getChannels().add(new Channel.Builder()
                 .setName("idontexist")
                 .setManifestCoordinate("idont", "exit", "1.0.0")
-                .addRepository("test", "http://test.te")
+                .addRepository("test", "http://idont.exist")
                 .build());
         metadata.updateProsperoConfig(prosperoConfig);
 
@@ -321,11 +324,17 @@ public class InstallationHistoryActionTest extends WfCoreTestBase {
         wildflyCliArtifact = readArtifactFromManifest("org.wildfly.core", "wildfly-cli");
         assertEquals(BASE_VERSION, wildflyCliArtifact.get().getVersion());
         assertTrue("Reverted jar should be present in module", wildflyCliModulePath.resolve(BASE_JAR).toFile().exists());
-        assertThat(ProsperoConfig.readConfig(outputPath.resolve(ProsperoMetadataUtils.METADATA_DIR)).getChannels())
+        final List<Channel> revertedChannels = ProsperoConfig.readConfig(outputPath.resolve(ProsperoMetadataUtils.METADATA_DIR)).getChannels();
+        assertThat(revertedChannels)
                 .withFailMessage("Temporary repository should not be listed")
                 .flatMap(Channel::getRepositories)
                 .map(Repository::getUrl)
-                .doesNotContain(temporaryRepo.toExternalForm());
+                    .doesNotContain(temporaryRepo.toExternalForm())
+                    .doesNotContain("http://idont.exist");
+        assertThat(revertedChannels)
+                .map(Channel::getName)
+                    .containsOnlyOnceElementsOf(preUpdateChannels.stream().map(Channel::getName).collect(Collectors.toList()));
+
     }
 
     @Test
