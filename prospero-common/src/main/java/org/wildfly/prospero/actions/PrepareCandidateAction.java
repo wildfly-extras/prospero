@@ -21,6 +21,7 @@ import org.jboss.galleon.Constants;
 import org.jboss.galleon.ProvisioningException;
 import org.jboss.galleon.ProvisioningManager;
 import org.jboss.galleon.config.ProvisioningConfig;
+import org.jboss.logging.Logger;
 import org.wildfly.channel.Channel;
 import org.wildfly.channel.ChannelManifest;
 import org.wildfly.channel.UnresolvedMavenArtifactException;
@@ -31,11 +32,11 @@ import org.wildfly.prospero.api.SavedState;
 import org.wildfly.prospero.api.exceptions.ArtifactResolutionException;
 import org.wildfly.prospero.api.exceptions.MetadataException;
 import org.wildfly.prospero.api.exceptions.OperationException;
+import org.wildfly.prospero.galleon.ArtifactCache;
 import org.wildfly.prospero.galleon.GalleonEnvironment;
 import org.wildfly.prospero.galleon.GalleonFeaturePackAnalyzer;
 import org.wildfly.prospero.galleon.GalleonUtils;
 import org.wildfly.prospero.metadata.ManifestVersionRecord;
-import org.wildfly.prospero.metadata.ManifestVersionResolver;
 import org.wildfly.prospero.metadata.ProsperoMetadataUtils;
 import org.wildfly.prospero.model.ProsperoConfig;
 import org.wildfly.prospero.updates.CandidateProperties;
@@ -49,10 +50,13 @@ import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
+import java.util.function.Function;
 
-class PrepareCandidateAction implements AutoCloseable{
+class PrepareCandidateAction implements AutoCloseable {
 
+    private static final Logger LOG = Logger.getLogger(PrepareCandidateAction.class.getName());
     private final InstallationMetadata metadata;
     private final ProsperoConfig prosperoConfig;
     private final MavenSessionManager mavenSessionManager;
@@ -70,7 +74,8 @@ class PrepareCandidateAction implements AutoCloseable{
     }
 
     /**
-     * Builds an update/revert candidate server in {@code targetDir}.
+     * Builds an update/revert candidate server in {@code targetDir}. Uses the manifests resolved during
+     * provisioning of the candidate to generate metadata.
      *
      * @param targetDir
      * @param galleonEnv
@@ -83,7 +88,29 @@ class PrepareCandidateAction implements AutoCloseable{
      */
     boolean buildCandidate(Path targetDir, GalleonEnvironment galleonEnv, ApplyCandidateAction.Type operation,
                            ProvisioningConfig config, UpdateSet updateSet) throws ProvisioningException, OperationException {
-        doBuildUpdate(targetDir, galleonEnv, config);
+        return this.buildCandidate(targetDir, galleonEnv, operation, config, updateSet, this::getManifestVersionRecord);
+    }
+
+    /**
+     * Builds an update/revert candidate server in {@code targetDir}.
+     *
+     * @param targetDir
+     * @param galleonEnv
+     * @param operation
+     * @param config
+     * @param updateSet
+     * @param manifestVersionRecordSupplier - provides information about manifest versions that should be used to generate
+     *                                      metadata and cache after provisioning
+     * @return
+     * @throws ProvisioningException
+     * @throws OperationException
+     */
+    boolean buildCandidate(Path targetDir, GalleonEnvironment galleonEnv, ApplyCandidateAction.Type operation,
+                           ProvisioningConfig config, UpdateSet updateSet,
+                           Function<List<Channel>, Optional<ManifestVersionRecord>> manifestVersionRecordSupplier) throws ProvisioningException, OperationException {
+        Objects.requireNonNull(manifestVersionRecordSupplier);
+
+        doBuildUpdate(targetDir, galleonEnv, config, manifestVersionRecordSupplier);
 
         try {
             final SavedState savedState = metadata.getRevisions().get(0);
@@ -96,7 +123,8 @@ class PrepareCandidateAction implements AutoCloseable{
         return true;
     }
 
-    private void doBuildUpdate(Path targetDir, GalleonEnvironment galleonEnv, ProvisioningConfig provisioningConfig)
+    private void doBuildUpdate(Path targetDir, GalleonEnvironment galleonEnv, ProvisioningConfig provisioningConfig,
+                               Function<List<Channel>, Optional<ManifestVersionRecord>> manifestVersionResolver)
             throws ProvisioningException, OperationException {
         final ProvisioningManager provMgr = galleonEnv.getProvisioningManager();
         try {
@@ -110,22 +138,39 @@ class PrepareCandidateAction implements AutoCloseable{
                     e.getAttemptedRepositories(), mavenSessionManager.isOffline());
         }
 
-        try {
-            final ManifestVersionRecord manifestRecord =
-                    new ManifestVersionResolver(mavenSessionManager.getProvisioningRepo(), mavenSessionManager.newRepositorySystem())
-                            .getCurrentVersions(galleonEnv.getChannels());
-            writeProsperoMetadata(targetDir, galleonEnv.getChannelSession().getRecordedChannel(), prosperoConfig.getChannels(),
-                    manifestRecord);
-        } catch (IOException ex) {
-            throw ProsperoLogger.ROOT_LOGGER.unableToDownloadFile(ex);
+
+        final Optional<ManifestVersionRecord> manifestRecord = manifestVersionResolver.apply(galleonEnv.getChannels());
+
+        if (LOG.isTraceEnabled()) {
+            LOG.tracef("Recording manifests: %s", manifestRecord.orElse(new ManifestVersionRecord()));
         }
+        manifestRecord.ifPresent(rec -> cacheManifests(rec, targetDir));
+        writeProsperoMetadata(targetDir, galleonEnv.getChannelSession().getRecordedChannel(), prosperoConfig.getChannels(),
+                manifestRecord);
 
         try {
             final GalleonFeaturePackAnalyzer galleonFeaturePackAnalyzer = new GalleonFeaturePackAnalyzer(galleonEnv.getChannels(), mavenSessionManager);
-
             galleonFeaturePackAnalyzer.cacheGalleonArtifacts(targetDir, provisioningConfig);
         } catch (Exception e) {
             throw new RuntimeException(e);
+        }
+    }
+
+    private Optional<ManifestVersionRecord> getManifestVersionRecord(List<Channel> channels) {
+        final ProsperoManifestVersionResolver manifestResolver = new ProsperoManifestVersionResolver(mavenSessionManager);
+        try {
+            return Optional.of(manifestResolver.getCurrentVersions(channels));
+        } catch (IOException e) {
+            ProsperoLogger.ROOT_LOGGER.debug("Unable to retrieve current manifest versions", e);
+            return Optional.empty();
+        }
+    }
+
+    private void cacheManifests(ManifestVersionRecord manifestRecord, Path installDir) {
+        try {
+            ArtifactCache.getInstance(installDir).cache(manifestRecord, mavenSessionManager.getResolvedArtifactVersions());
+        } catch (IOException e) {
+            ProsperoLogger.ROOT_LOGGER.debug("Unable to record manifests in the internal cache", e);
         }
     }
 
@@ -134,9 +179,9 @@ class PrepareCandidateAction implements AutoCloseable{
         metadata.close();
     }
 
-    private void writeProsperoMetadata(Path home, ChannelManifest manifest, List<Channel> channels, ManifestVersionRecord manifestVersions) throws MetadataException {
+    private void writeProsperoMetadata(Path home, ChannelManifest manifest, List<Channel> channels, Optional<ManifestVersionRecord> manifestVersions) throws MetadataException {
         try (InstallationMetadata installationMetadata = InstallationMetadata.newInstallation(home, manifest,
-                new ProsperoConfig(channels), Optional.of(manifestVersions))) {
+                new ProsperoConfig(channels), manifestVersions)) {
             installationMetadata.recordProvision(true, false);
         }
     }
@@ -158,6 +203,5 @@ class PrepareCandidateAction implements AutoCloseable{
         } catch (IOException e) {
             ProsperoLogger.ROOT_LOGGER.unableToWriteChannelNamesToFile(candidateFile.toFile().getAbsolutePath(),e);
         }
-
     }
 }
