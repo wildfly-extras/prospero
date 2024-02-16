@@ -24,12 +24,14 @@ import org.junit.rules.TemporaryFolder;
 import org.wildfly.channel.MavenArtifact;
 
 import java.io.File;
+import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
 import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
@@ -61,6 +63,18 @@ public class ArtifactCacheTest {
         final ArtifactCache cache = ArtifactCache.getInstance(temp.newFolder().toPath());
 
         assertEquals(Optional.empty(),cache.getArtifact(GROUP_ID, ARTIFACT_ID, EXTENSION, CLASSIFIER, VERSION));
+    }
+
+    @Test
+    public void testReadBadlyFormattedFile() throws Exception {
+        Path newFolder = temp.newFolder().toPath();
+        Files.createDirectories(newFolder.resolve(ArtifactCache.CACHE_FOLDER));
+        Files.writeString(newFolder.resolve(ArtifactCache.CACHE_FOLDER).resolve(ArtifactCache.CACHE_FILENAME),"badformat");
+
+        assertThatThrownBy(() -> ArtifactCache.getInstance(newFolder))
+                .isInstanceOf(IOException.class)
+                .hasMessageContaining("PRSP000264")
+                .hasStackTraceContaining("Not enough segments");
     }
 
     @Test

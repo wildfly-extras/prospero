@@ -34,6 +34,7 @@ import org.wildfly.prospero.api.exceptions.MetadataException;
 import org.wildfly.prospero.api.exceptions.NoChannelException;
 import org.wildfly.prospero.api.exceptions.ProvisioningRuntimeException;
 
+import java.io.IOException;
 import java.net.URI;
 import java.net.URL;
 import java.nio.file.Path;
@@ -350,4 +351,7 @@ public interface ProsperoLogger extends BasicLogger {
 
     @Message(id = 260, value = "The selected folder %s cannot be created.")
     IllegalArgumentException dirMustBeWritable(Path directory);
+
+    @Message(id = 264, value = "Bad artifact record format in the cache descriptor, line %d: '%s'")
+    IOException unableToReadArtifactCache(int row, String line, @Cause Exception e);
 }
