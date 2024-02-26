@@ -17,6 +17,8 @@
 
 package org.wildfly.prospero.it.cli;
 
+import org.apache.commons.io.FileUtils;
+import org.jboss.galleon.util.ZipUtils;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
@@ -29,7 +31,10 @@ import org.wildfly.prospero.it.commonapi.WfCoreTestBase;
 import org.wildfly.prospero.test.MetadataTestUtils;
 
 import java.io.File;
+import java.io.IOException;
+import java.net.URISyntaxException;
 import java.net.URL;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
 import java.util.Optional;
@@ -89,5 +94,55 @@ public class ApplyUpdateTest extends CliTestBase  {
         // verify the original server has been modified
         wildflyCliStream = getInstalledArtifact(resolvedUpgradeArtifact.getArtifactId(), targetDir.toPath());
         assertEquals(WfCoreTestBase.UPGRADE_VERSION, wildflyCliStream.get().getVersion());
+    }
+
+    @Test
+    public void generateUpdateAndApplyUsingRepositoryArchive() throws Exception {
+        final Path manifestPath = temp.newFile().toPath();
+        final Path provisionConfig = temp.newFile().toPath();
+        final Path updatePath = tempDir.newFolder("update-candidate").toPath();
+        MetadataTestUtils.copyManifest("manifests/wfcore-base.yaml", manifestPath);
+        MetadataTestUtils.prepareChannel(provisionConfig, List.of(manifestPath.toUri().toURL()), defaultRemoteRepositories());
+
+        install(provisionConfig, targetDir.toPath());
+
+        upgradeStreamInManifest(manifestPath, resolvedUpgradeArtifact);
+
+        final URL temporaryRepo = mockTemporaryRepo(true);
+        final Path repoArchive = createRepositoryArchive(temporaryRepo);
+
+        // generate update-candidate
+        ExecutionUtils.prosperoExecution(CliConstants.Commands.UPDATE, CliConstants.Commands.PREPARE,
+                        CliConstants.REPOSITORIES, repoArchive.toUri().toString(),
+                        CliConstants.CANDIDATE_DIR, updatePath.toAbsolutePath().toString(),
+                        CliConstants.Y,
+                        CliConstants.DIR, targetDir.getAbsolutePath())
+                .execute()
+                .assertReturnCode(ReturnCodes.SUCCESS);
+
+        // verify the original server has not been modified
+        Optional<Stream> wildflyCliStream = getInstalledArtifact(resolvedUpgradeArtifact.getArtifactId(), targetDir.toPath());
+        assertEquals(WfCoreTestBase.BASE_VERSION, wildflyCliStream.get().getVersion());
+
+        // apply update-candidate
+        ExecutionUtils.prosperoExecution(CliConstants.Commands.UPDATE, CliConstants.Commands.APPLY,
+                        CliConstants.CANDIDATE_DIR, updatePath.toAbsolutePath().toString(),
+                        CliConstants.Y,
+                        CliConstants.DIR, targetDir.getAbsolutePath())
+                .execute()
+                .assertReturnCode(ReturnCodes.SUCCESS);
+
+        // verify the original server has been modified
+        wildflyCliStream = getInstalledArtifact(resolvedUpgradeArtifact.getArtifactId(), targetDir.toPath());
+        assertEquals(WfCoreTestBase.UPGRADE_VERSION, wildflyCliStream.get().getVersion());
+    }
+
+    private Path createRepositoryArchive(URL temporaryRepo) throws URISyntaxException, IOException {
+        final Path repoPath = Path.of(temporaryRepo.toURI());
+        final Path root = tempDir.newFolder("repo-root").toPath();
+        FileUtils.createParentDirectories(root.resolve("update-repository").resolve("maven-repository").toFile());
+        Files.move(repoPath, root.resolve("update-repository").resolve("maven-repository"));
+        ZipUtils.zip(root, root.resolve("repository.zip"));
+        return root.resolve("repository.zip");
     }
 }
