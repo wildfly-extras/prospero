@@ -21,11 +21,13 @@ import org.jboss.galleon.config.ConfigId;
 import org.wildfly.channel.Repository;
 import org.wildfly.prospero.actions.FeaturesAddAction;
 import org.wildfly.prospero.api.MavenOptions;
+import org.wildfly.prospero.api.RepositoryUtils;
 import org.wildfly.prospero.cli.ActionFactory;
 import org.wildfly.prospero.cli.CliConsole;
 import org.wildfly.prospero.cli.CliMessages;
 import org.wildfly.prospero.cli.RepositoryDefinition;
 import org.wildfly.prospero.cli.ReturnCodes;
+import org.wildfly.prospero.api.TemporaryFilesManager;
 import picocli.CommandLine;
 
 import java.nio.file.Path;
@@ -72,43 +74,46 @@ public class FeaturesCommand extends AbstractParentCommand {
 
             final MavenOptions mavenOptions = parseMavenOptions();
 
-            final List<Repository> repositories = RepositoryDefinition.from(temporaryRepositories);
+            try (TemporaryFilesManager temporaryFiles = TemporaryFilesManager.getInstance()) {
+                final List<Repository> repositories = RepositoryUtils.unzipArchives(
+                        RepositoryDefinition.from(temporaryRepositories), temporaryFiles);
 
-            console.println(CliMessages.MESSAGES.featuresAddHeader(fpl, installationDir));
+                console.println(CliMessages.MESSAGES.featuresAddHeader(fpl, installationDir));
 
-            final FeaturesAddAction featuresAddAction = actionFactory.featuresAddAction(installationDir, mavenOptions, repositories, console);
+                final FeaturesAddAction featuresAddAction = actionFactory.featuresAddAction(installationDir, mavenOptions, repositories, console);
 
-            if (!featuresAddAction.isFeaturePackAvailable(fpl)) {
-                console.error(CliMessages.MESSAGES.featurePackNotFound(fpl));
-                return ReturnCodes.INVALID_ARGUMENTS;
-            }
+                if (!featuresAddAction.isFeaturePackAvailable(fpl)) {
+                    console.error(CliMessages.MESSAGES.featurePackNotFound(fpl));
+                    return ReturnCodes.INVALID_ARGUMENTS;
+                }
 
-            final boolean accepted;
-            if (!skipConfirmation) {
-                accepted = console.confirm(CliMessages.MESSAGES.featuresAddPrompt(),
-                        CliMessages.MESSAGES.featuresAddPromptAccepted(),
-                        CliMessages.MESSAGES.featuresAddPromptCancelled());
-            } else {
-                console.println(CliMessages.MESSAGES.featuresAddPromptAccepted());
-                accepted = true;
-            }
+                final boolean accepted;
+                if (!skipConfirmation) {
+                    accepted = console.confirm(CliMessages.MESSAGES.featuresAddPrompt(),
+                            CliMessages.MESSAGES.featuresAddPromptAccepted(),
+                            CliMessages.MESSAGES.featuresAddPromptCancelled());
+                } else {
+                    console.println(CliMessages.MESSAGES.featuresAddPromptAccepted());
+                    accepted = true;
+                }
 
-            if(accepted) {
-                try {
-                    featuresAddAction.addFeaturePackWithLayers(fpl, layers, parseConfigName(config));
-                } catch (FeaturesAddAction.LayerNotFoundException e) {
-                    if (!e.getSupportedLayers().isEmpty()) {
-                        console.error(CliMessages.MESSAGES.layerNotSupported(fpl, e.getLayers(), e.getSupportedLayers()));
-                    } else {
-                        console.error(CliMessages.MESSAGES.layerNotSupported(fpl));
+                if(accepted) {
+                    try {
+                        featuresAddAction.addFeaturePackWithLayers(fpl, layers, parseConfigName(config));
+                    } catch (FeaturesAddAction.LayerNotFoundException e) {
+                        if (!e.getSupportedLayers().isEmpty()) {
+                            console.error(CliMessages.MESSAGES.layerNotSupported(fpl, e.getLayers(), e.getSupportedLayers()));
+                        } else {
+                            console.error(CliMessages.MESSAGES.layerNotSupported(fpl));
+                        }
+                        return ReturnCodes.INVALID_ARGUMENTS;
+                    } catch (FeaturesAddAction.ModelNotDefinedException e) {
+                        console.error(CliMessages.MESSAGES.modelNotSupported(fpl, e.getModel(), e.getSupportedModels()));
+                        return ReturnCodes.INVALID_ARGUMENTS;
+                    } catch (FeaturesAddAction.ConfigurationNotFoundException e) {
+                        console.error(CliMessages.MESSAGES.galleonConfigNotSupported(fpl, e.getModel(), e.getName()));
+                        return ReturnCodes.INVALID_ARGUMENTS;
                     }
-                    return ReturnCodes.INVALID_ARGUMENTS;
-                } catch (FeaturesAddAction.ModelNotDefinedException e) {
-                    console.error(CliMessages.MESSAGES.modelNotSupported(fpl, e.getModel(), e.getSupportedModels()));
-                    return ReturnCodes.INVALID_ARGUMENTS;
-                } catch (FeaturesAddAction.ConfigurationNotFoundException e) {
-                    console.error(CliMessages.MESSAGES.galleonConfigNotSupported(fpl, e.getModel(), e.getName()));
-                    return ReturnCodes.INVALID_ARGUMENTS;
                 }
             }
 

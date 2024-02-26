@@ -34,6 +34,7 @@ import org.wildfly.prospero.actions.ApplyCandidateAction;
 import org.wildfly.prospero.actions.UpdateAction;
 import org.wildfly.prospero.api.FileConflict;
 import org.wildfly.prospero.api.MavenOptions;
+import org.wildfly.prospero.api.RepositoryUtils;
 import org.wildfly.prospero.api.exceptions.OperationException;
 import org.wildfly.prospero.cli.ActionFactory;
 import org.wildfly.prospero.cli.ArgumentParsingException;
@@ -42,6 +43,7 @@ import org.wildfly.prospero.cli.CliMessages;
 import org.wildfly.prospero.cli.FileConflictPrinter;
 import org.wildfly.prospero.cli.RepositoryDefinition;
 import org.wildfly.prospero.cli.ReturnCodes;
+import org.wildfly.prospero.api.TemporaryFilesManager;
 import org.wildfly.prospero.galleon.GalleonUtils;
 import org.wildfly.prospero.updates.UpdateSet;
 import picocli.CommandLine;
@@ -88,14 +90,17 @@ public class UpdateCommand extends AbstractParentCommand {
             }
 
             final MavenOptions mavenOptions = parseMavenOptions();
-            final List<Repository> repositories = RepositoryDefinition.from(temporaryRepositories);
+            try (TemporaryFilesManager temporaryFiles = TemporaryFilesManager.getInstance()) {
+                final List<Repository> repositories = RepositoryUtils.unzipArchives(
+                        RepositoryDefinition.from(temporaryRepositories), temporaryFiles);
 
-            log.tracef("Perform full update");
+                log.tracef("Perform full update");
 
-            console.println(CliMessages.MESSAGES.updateHeader(installationDir));
+                console.println(CliMessages.MESSAGES.updateHeader(installationDir));
 
-            try (UpdateAction updateAction = actionFactory.update(installationDir, mavenOptions, console, repositories)) {
-                performUpdate(updateAction, yes, console, installationDir);
+                try (UpdateAction updateAction = actionFactory.update(installationDir, mavenOptions, console, repositories)) {
+                    performUpdate(updateAction, yes, console, installationDir);
+                }
             }
 
             final float totalTime = (System.currentTimeMillis() - startTime) / 1000f;
@@ -158,21 +163,24 @@ public class UpdateCommand extends AbstractParentCommand {
             final Path installationDir = determineInstallationDirectory(directory);
 
             final MavenOptions mavenOptions = parseMavenOptions();
-            final List<Repository> repositories = RepositoryDefinition.from(temporaryRepositories);
+            try (TemporaryFilesManager temporaryFiles = TemporaryFilesManager.getInstance()) {
+                final List<Repository> repositories = RepositoryUtils.unzipArchives(
+                        RepositoryDefinition.from(temporaryRepositories), temporaryFiles);
 
-            log.tracef("Generate update in %s", candidateDirectory);
+                log.tracef("Generate update in %s", candidateDirectory);
 
-            console.println(CliMessages.MESSAGES.buildUpdateCandidateHeader(installationDir));
+                console.println(CliMessages.MESSAGES.buildUpdateCandidateHeader(installationDir));
 
 
-            verifyTargetDirectoryIsEmpty(candidateDirectory);
+                verifyTargetDirectoryIsEmpty(candidateDirectory);
 
-            try (UpdateAction updateAction = actionFactory.update(installationDir,
-                    mavenOptions, console, repositories)) {
-                if (buildUpdate(updateAction, candidateDirectory, yes, console, ()->console.confirmBuildUpdates())) {
-                    console.println("");
-                    console.buildUpdatesComplete();
-                    console.println(CliMessages.MESSAGES.updateCandidateGenerated(candidateDirectory));
+                try (UpdateAction updateAction = actionFactory.update(installationDir,
+                        mavenOptions, console, repositories)) {
+                    if (buildUpdate(updateAction, candidateDirectory, yes, console, () -> console.confirmBuildUpdates())) {
+                        console.println("");
+                        console.buildUpdatesComplete();
+                        console.println(CliMessages.MESSAGES.updateCandidateGenerated(candidateDirectory));
+                    }
                 }
             }
 
@@ -261,12 +269,15 @@ public class UpdateCommand extends AbstractParentCommand {
             final Path installationDir = determineInstallationDirectory(directory);
 
             final MavenOptions mavenOptions = parseMavenOptions();
-            final List<Repository> repositories = RepositoryDefinition.from(temporaryRepositories);
 
-            console.println(CliMessages.MESSAGES.checkUpdatesHeader(installationDir));
-            try (UpdateAction updateAction = actionFactory.update(installationDir, mavenOptions, console, repositories)) {
-                final UpdateSet updateSet = updateAction.findUpdates();
-                console.updatesFound(updateSet.getArtifactUpdates());
+            try (TemporaryFilesManager temporaryFiles = TemporaryFilesManager.getInstance()) {
+                final List<Repository> repositories = RepositoryUtils.unzipArchives(
+                        RepositoryDefinition.from(temporaryRepositories), temporaryFiles);
+                console.println(CliMessages.MESSAGES.checkUpdatesHeader(installationDir));
+                try (UpdateAction updateAction = actionFactory.update(installationDir, mavenOptions, console, repositories)) {
+                    final UpdateSet updateSet = updateAction.findUpdates();
+                    console.updatesFound(updateSet.getArtifactUpdates());
+                }
 
                 final float totalTime = (System.currentTimeMillis() - startTime) / 1000f;
                 console.println("");
