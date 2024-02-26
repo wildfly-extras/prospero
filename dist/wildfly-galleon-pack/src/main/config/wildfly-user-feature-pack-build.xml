@@ -26,6 +26,7 @@
   <dependencies>
     <dependency group-id="${prospero.base.feature-pack.groupId}" artifact-id="${prospero.base.feature-pack.artifactId}">
       <packages inherit="true"/>
+      <default-configs inherit="false"/>
     </dependency>
   </dependencies>
   <default-packages>
