@@ -19,19 +19,26 @@ package org.wildfly.prospero.cli.commands;
 
 import org.jboss.galleon.config.ConfigId;
 import org.wildfly.channel.Repository;
+import org.wildfly.prospero.actions.ApplyCandidateAction;
 import org.wildfly.prospero.actions.FeaturesAddAction;
+import org.wildfly.prospero.api.FileConflict;
 import org.wildfly.prospero.api.MavenOptions;
 import org.wildfly.prospero.api.RepositoryUtils;
 import org.wildfly.prospero.cli.ActionFactory;
 import org.wildfly.prospero.cli.CliConsole;
 import org.wildfly.prospero.cli.CliMessages;
+import org.wildfly.prospero.cli.FileConflictPrinter;
 import org.wildfly.prospero.cli.RepositoryDefinition;
 import org.wildfly.prospero.cli.ReturnCodes;
 import org.wildfly.prospero.api.TemporaryFilesManager;
+import org.wildfly.prospero.model.FeaturePackTemplate;
 import picocli.CommandLine;
 
 import java.nio.file.Path;
+import java.util.Collections;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Optional;
 import java.util.Set;
 
 import static org.wildfly.prospero.cli.commands.CliConstants.Commands.FEATURE_PACKS_ALIAS;
@@ -49,11 +56,12 @@ public class FeaturesCommand extends AbstractParentCommand {
         private String fpl;
 
 
-        @CommandLine.Option(names = CliConstants.LAYERS, split = ",", required = true)
-        private Set<String> layers;
+        @CommandLine.Option(names = CliConstants.LAYERS, split = ",", required = false)
+        private final Set<String> layers = new HashSet<>();
 
+        @SuppressWarnings("OptionalUsedAsFieldOrParameterType")
         @CommandLine.Option(names = CliConstants.TARGET_CONFIG)
-        private String config;
+        private Optional<String> config = Optional.empty();
 
         @CommandLine.Option(names = {CliConstants.Y, CliConstants.YES})
         boolean skipConfirmation;
@@ -82,6 +90,18 @@ public class FeaturesCommand extends AbstractParentCommand {
 
                 final FeaturesAddAction featuresAddAction = actionFactory.featuresAddAction(installationDir, mavenOptions, repositories, console);
 
+                final FeaturePackTemplate featurePackRecipe = featuresAddAction.getFeaturePackRecipe(fpl);
+
+                if (featurePackRecipe != null) {
+                    if (featurePackRecipe.isRequiresLayers() && layers.isEmpty()) {
+                        console.error(CliMessages.MESSAGES.featurePackRequiresLayers(fpl));
+                        return ReturnCodes.INVALID_ARGUMENTS;
+                    } else if (!featurePackRecipe.isSupportsCustomization() && (!layers.isEmpty() || config.isPresent())) {
+                        console.error(CliMessages.MESSAGES.featurePackDoesNotSupportCustomization(fpl));
+                        return ReturnCodes.INVALID_ARGUMENTS;
+                    }
+                }
+
                 if (!featuresAddAction.isFeaturePackAvailable(fpl)) {
                     console.error(CliMessages.MESSAGES.featurePackNotFound(fpl));
                     return ReturnCodes.INVALID_ARGUMENTS;
@@ -98,8 +118,20 @@ public class FeaturesCommand extends AbstractParentCommand {
                 }
 
                 if (accepted) {
-                    try {
-                        featuresAddAction.addFeaturePackWithLayers(fpl, layers, parseConfigName(config));
+                    try (TemporaryFilesManager temporaryFilesManager = TemporaryFilesManager.getInstance()) {
+                        final Path candidate = temporaryFilesManager.createTempDirectory("prospero-fp-candidate");
+                        final ConfigId configId = parseConfigName(config.orElse(null));
+                        if (layers.isEmpty()) {
+                            featuresAddAction.addFeaturePack(fpl, configId == null ? Collections.emptySet() : Set.of(configId), candidate);
+                        } else {
+                            featuresAddAction.addFeaturePackWithLayers(fpl, layers, configId, candidate);
+                        }
+
+                        // list conflicts (e.g. config files) and apply the update
+                        final ApplyCandidateAction applyCandidateAction = actionFactory.applyUpdate(installationDir, candidate);
+                        if (confirmConflicts(applyCandidateAction.getConflicts())) {
+                            applyCandidateAction.applyUpdate(ApplyCandidateAction.Type.FEATURE_ADD);
+                        }
                     } catch (FeaturesAddAction.LayerNotFoundException e) {
                         if (!e.getSupportedLayers().isEmpty()) {
                             console.error(CliMessages.MESSAGES.layerNotSupported(fpl, e.getLayers(), e.getSupportedLayers()));
@@ -121,6 +153,18 @@ public class FeaturesCommand extends AbstractParentCommand {
 
                 return ReturnCodes.SUCCESS;
             }
+        }
+
+        private boolean confirmConflicts(List<FileConflict> conflicts) {
+            if (conflicts.isEmpty() || skipConfirmation) {
+                console.println(CliMessages.MESSAGES.featuresAddPromptAccepted());
+                return true;
+            }
+
+            FileConflictPrinter.print(conflicts, console);
+            return skipConfirmation || console.confirm(CliMessages.MESSAGES.featuresAddPrompt(),
+                    CliMessages.MESSAGES.featuresAddPromptAccepted(),
+                    CliMessages.MESSAGES.featuresAddPromptCancelled());
         }
 
         private static ConfigId parseConfigName(String config) {

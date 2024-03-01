@@ -44,6 +44,8 @@ If the feature pack changes server configuration files, the user may also choose
 
 NOTE: If the affected configuration file has been modified by the user, that file will not be modified. Instead, a new configuration file with suffix `.glnew` will be created with the changes.
 
+NOTE: Some feature packs do not allow customization of layers or selected configuration files. Those feature packs have to be installed without `--layers` or `--target-config` parameters.
+
 For example to install mysql support and configure the datasource in Wildfly `standalone-full.xml` configuration file, a following command can be used:
 
 ```
