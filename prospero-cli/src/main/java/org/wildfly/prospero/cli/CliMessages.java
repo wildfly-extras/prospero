@@ -601,4 +601,12 @@ public interface CliMessages {
     default String serverVersionsHeader() {
         return bundle.getString("prospero.channels.versions.header");
     }
+    default String featurePackRequiresLayers(String featurePackName) {
+        return format(bundle.getString("prospero.features.add.validation.layers_required"), featurePackName, CliConstants.LAYERS);
+    }
+    default String featurePackDoesNotSupportCustomization(String featurePackName) {
+        return format(bundle.getString("prospero.features.add.validation.customization_not_supported"), featurePackName,
+                String.join(",", List.of(CliConstants.LAYERS, CliConstants.TARGET_CONFIG)));
+    }
+
 }
