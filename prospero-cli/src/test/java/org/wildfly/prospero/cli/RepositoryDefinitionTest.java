@@ -19,35 +19,26 @@ package org.wildfly.prospero.cli;
 
 import org.apache.commons.lang3.StringUtils;
 import org.junit.Before;
-import org.junit.Rule;
 import org.junit.Test;
-import org.junit.rules.TemporaryFolder;
 import org.wildfly.channel.Repository;
 
 import java.io.File;
+import java.nio.file.Path;
 import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertThrows;
+import static org.junit.Assert.*;
 import static org.wildfly.prospero.cli.RepositoryDefinition.from;
 
 public class RepositoryDefinitionTest {
 
-    @Rule
-    public TemporaryFolder tempDir = new TemporaryFolder();
-
-    public String fileURL;
-
-    public String filePath;
+    private String tempRepoURL;
 
     @Before
     public void setUp() throws Exception {
-        File target = tempDir.newFolder();
-        filePath = target.getAbsolutePath();
-        fileURL = target.toURI().toURL().toString();
+        tempRepoURL = Path.of(".").normalize().toAbsolutePath().toUri().toString().replace("///","/");
     }
 
     @Test
@@ -97,17 +88,47 @@ public class RepositoryDefinitionTest {
     }
 
     @Test
-    public void throwsErrorIfFormatIsIncorrectForFileURLOrPathDoesNotExist() throws Exception {
-        assertThrows(ArgumentParsingException.class, ()->from(List.of("::"+fileURL)));
+    public void throwsErrorIfFormatIsIncorrectForFileURLorPathDoesNotExist() throws Exception {
+        assertThrows(ArgumentParsingException.class, ()->from(List.of("::"+tempRepoURL)));
 
         assertThrows(ArgumentParsingException.class, ()->from(List.of("repo-1::")));
 
-        assertThrows(ArgumentParsingException.class, ()->from(List.of("repo-1:::"+fileURL)));
+        assertThrows(ArgumentParsingException.class, ()->from(List.of("repo-1:::"+tempRepoURL)));
 
-        assertThrows(ArgumentParsingException.class, ()->from(List.of("foo::bar::"+fileURL)));
+        assertThrows(ArgumentParsingException.class, ()->from(List.of("foo::bar::"+tempRepoURL)));
+    }
 
-        assertThrows(ArgumentParsingException.class, ()->from(List.of("file:/path/to/repo")));
+    @Test
+    public void testCorrectRelativeOrAbsolutePathForFileURL() throws Exception {
+        Repository repository = new Repository("temp-repo-0", tempRepoURL);
+        List<Repository> actualList = from(List.of("file:../prospero-cli"));
 
-        assertThrows(ArgumentParsingException.class, ()->from(List.of(filePath)));
+        assertNotNull(actualList);
+        assertEquals(1, actualList.size());
+        assertTrue(actualList.contains(repository));
+
+        actualList = from(List.of(("file:/"+(System.getProperty("user.dir").replaceAll("\\\\","/"))).replace("//","/")));
+
+        assertNotNull(actualList);
+        assertEquals(1, actualList.size());
+        assertTrue(actualList.contains(repository));
+
+        actualList = from(List.of(("file:///"+(System.getProperty("user.dir").replaceAll("\\\\","/"))).replace("////","///")));
+
+        assertNotNull(actualList);
+        assertEquals(1, actualList.size());
+        assertTrue(actualList.contains(repository));
+
+        actualList = from(List.of(System.getProperty("user.dir")));
+
+        assertNotNull(actualList);
+        assertEquals(1, actualList.size());
+        assertTrue(actualList.contains(repository));
+
+        actualList = from(List.of(".."+File.separator+"prospero-cli"));
+
+        assertNotNull(actualList);
+        assertEquals(1, actualList.size());
+        assertTrue(actualList.contains(repository));
     }
 }

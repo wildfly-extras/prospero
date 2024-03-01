@@ -20,13 +20,12 @@ package org.wildfly.prospero.it.cli;
 import java.io.File;
 import java.net.URL;
 import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 
 import org.junit.Before;
-import org.junit.Rule;
 import org.junit.Test;
-import org.junit.rules.TemporaryFolder;
 import org.wildfly.prospero.cli.ReturnCodes;
 import org.wildfly.prospero.cli.commands.CliConstants;
 import org.wildfly.prospero.it.ExecutionUtils;
@@ -36,15 +35,12 @@ import static org.wildfly.prospero.test.MetadataTestUtils.upgradeStreamInManifes
 
 public class InstallTest extends CliTestBase {
 
-    @Rule
-    public TemporaryFolder tempDir = new TemporaryFolder();
-
     private File targetDir;
 
     @Before
     public void setUp() throws Exception {
         super.setUp();
-        targetDir = tempDir.newFolder();
+        targetDir = temp.newFolder();
     }
 
     @Test
@@ -62,8 +58,8 @@ public class InstallTest extends CliTestBase {
 
     @Test
     public void testInstallWithLocalRepositories() throws Exception {
-        final Path manifestPath = tempDir.newFile().toPath();
-        final Path provisionConfig = tempDir.newFile().toPath();
+        final Path manifestPath = temp.newFile().toPath();
+        final Path provisionConfig = temp.newFile().toPath();
         MetadataTestUtils.copyManifest("manifests/wfcore-base.yaml", manifestPath);
         MetadataTestUtils.prepareChannel(provisionConfig, List.of(manifestPath.toUri().toURL()));
 
@@ -73,10 +69,12 @@ public class InstallTest extends CliTestBase {
 
         final URL temporaryRepo = mockTemporaryRepo(true);
 
+        Path relativePath = Paths.get(System.getProperty("user.dir")).relativize(Path.of(temporaryRepo.toURI()));
+
         ExecutionUtils.prosperoExecution(CliConstants.Commands.UPDATE, CliConstants.Commands.PERFORM,
-                        CliConstants.REPOSITORIES, temporaryRepo.toString(),
+                        CliConstants.REPOSITORIES, relativePath.toString(),
                         CliConstants.Y,
-                        CliConstants.NO_LOCAL_MAVEN_CACHE,
+                        CliConstants.VERBOSE,
                         CliConstants.DIR, targetDir.getAbsolutePath())
                 .execute()
                 .assertReturnCode(ReturnCodes.SUCCESS);
