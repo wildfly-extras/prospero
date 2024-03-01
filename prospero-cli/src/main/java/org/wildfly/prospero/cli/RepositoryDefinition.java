@@ -21,10 +21,14 @@ import org.wildfly.channel.Repository;
 
 import java.io.File;
 import java.net.MalformedURLException;
+import java.net.URISyntaxException;
 import java.net.URL;
+import java.nio.file.InvalidPathException;
+import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.regex.Pattern;
 
 public class RepositoryDefinition {
 
@@ -51,15 +55,22 @@ public class RepositoryDefinition {
     }
 
     private static boolean isValidUrl(String text) {
+        Path path;
+
         try {
             URL url = new URL(text);
-            if (text.startsWith("file")){
-                String path = Paths.get(url.getPath()).normalize().toString();
-                File f = new File(path);
-                return f.exists();
+            if (text.startsWith("file://..")){
+                return false;
+            } else if (text.startsWith("file")){
+                if (Pattern.compile("/[A-Z]:").matcher(text).find()){
+                    path = Path.of(Paths.get(url.toURI()).toString());
+                } else {
+                    path = Paths.get(url.getPath()).toAbsolutePath();
+                }
+                return new File(String.valueOf(path)).exists();
             }
             return true;
-        } catch (MalformedURLException e) {
+        } catch (URISyntaxException | InvalidPathException | MalformedURLException e) {
             return false;
         }
     }

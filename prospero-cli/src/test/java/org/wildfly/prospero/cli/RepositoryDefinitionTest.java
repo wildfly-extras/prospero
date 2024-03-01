@@ -30,8 +30,7 @@ import java.util.Set;
 import java.util.stream.Collectors;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertThrows;
+import static org.junit.Assert.*;
 import static org.wildfly.prospero.cli.RepositoryDefinition.from;
 
 public class RepositoryDefinitionTest {
@@ -39,14 +38,14 @@ public class RepositoryDefinitionTest {
     @Rule
     public TemporaryFolder tempDir = new TemporaryFolder();
 
-    public String fileURL;
+    private String fileURL;
 
-    public String filePath;
+    private String filePath;
 
     @Before
     public void setUp() throws Exception {
         File target = tempDir.newFolder();
-        filePath = target.getAbsolutePath();
+        filePath = target.getAbsolutePath() + File.separator;
         fileURL = target.toURI().toURL().toString();
     }
 
@@ -97,7 +96,7 @@ public class RepositoryDefinitionTest {
     }
 
     @Test
-    public void throwsErrorIfFormatIsIncorrectForFileURLOrPathDoesNotExist() throws Exception {
+    public void throwsErrorIfFormatIsIncorrectForFileURLorPathDoesNotExist() throws Exception {
         assertThrows(ArgumentParsingException.class, ()->from(List.of("::"+fileURL)));
 
         assertThrows(ArgumentParsingException.class, ()->from(List.of("repo-1::")));
@@ -109,5 +108,32 @@ public class RepositoryDefinitionTest {
         assertThrows(ArgumentParsingException.class, ()->from(List.of("file:/path/to/repo")));
 
         assertThrows(ArgumentParsingException.class, ()->from(List.of(filePath)));
+
+        assertThrows(ArgumentParsingException.class, ()->from(List.of("file://../repo")));
+
+    }
+
+    @Test
+    public void testCorrectRelativeOrAbsolutePathForFileURL() throws Exception {
+            Repository repository = new Repository("temp-repo-0","file:../prospero-common");
+            List<Repository> actualList = from(List.of("file:../prospero-common"));
+
+            assertNotNull(actualList);
+            assertEquals(1, actualList.size());
+            assertTrue(actualList.contains(repository));
+
+            repository = new Repository("temp-repo-0",fileURL);
+            actualList = from(List.of(fileURL));
+
+            assertNotNull(actualList);
+            assertEquals(1, actualList.size());
+            assertTrue(actualList.contains(repository));
+
+            repository = new Repository("temp-repo-0","file:///"+filePath);
+            actualList = from(List.of("file:///"+filePath));
+
+            assertNotNull(actualList);
+            assertEquals(1, actualList.size());
+            assertTrue(actualList.contains(repository));
     }
 }
