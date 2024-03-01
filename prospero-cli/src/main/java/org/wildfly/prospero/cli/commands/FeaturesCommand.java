@@ -17,20 +17,27 @@
 
 package org.wildfly.prospero.cli.commands;
 
+import org.apache.commons.io.FileUtils;
 import org.jboss.galleon.config.ConfigId;
 import org.wildfly.channel.Repository;
+import org.wildfly.prospero.actions.ApplyCandidateAction;
 import org.wildfly.prospero.actions.FeaturesAddAction;
+import org.wildfly.prospero.api.FileConflict;
 import org.wildfly.prospero.api.MavenOptions;
 import org.wildfly.prospero.api.RepositoryUtils;
 import org.wildfly.prospero.cli.ActionFactory;
 import org.wildfly.prospero.cli.CliConsole;
 import org.wildfly.prospero.cli.CliMessages;
+import org.wildfly.prospero.cli.FileConflictPrinter;
 import org.wildfly.prospero.cli.RepositoryDefinition;
 import org.wildfly.prospero.cli.ReturnCodes;
 import org.wildfly.prospero.api.TemporaryFilesManager;
+import org.wildfly.prospero.model.FeaturePackTemplate;
 import picocli.CommandLine;
 
 import java.nio.file.Path;
+import java.util.Collections;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
@@ -49,8 +56,8 @@ public class FeaturesCommand extends AbstractParentCommand {
         private String fpl;
 
 
-        @CommandLine.Option(names = CliConstants.LAYERS, split = ",", required = true)
-        private Set<String> layers;
+        @CommandLine.Option(names = CliConstants.LAYERS, split = ",", required = false)
+        private Set<String> layers = new HashSet<>();
 
         @CommandLine.Option(names = CliConstants.TARGET_CONFIG)
         private String config;
@@ -82,6 +89,18 @@ public class FeaturesCommand extends AbstractParentCommand {
 
                 final FeaturesAddAction featuresAddAction = actionFactory.featuresAddAction(installationDir, mavenOptions, repositories, console);
 
+                final FeaturePackTemplate featurePackRecipe = featuresAddAction.getFeaturePackRecipe(fpl);
+
+                if (featurePackRecipe != null) {
+                    if (featurePackRecipe.isRequiresLayers() && layers.isEmpty()) {
+                        console.error(CliMessages.MESSAGES.featurePackRequiresLayers(fpl));
+                        return ReturnCodes.INVALID_ARGUMENTS;
+                    }else if (!featurePackRecipe.isSupportsCustomization() && (!layers.isEmpty() || !(config == null || config.isEmpty()))) {
+                        console.error(CliMessages.MESSAGES.featurePackDoesNotSupportCustomization(fpl));
+                        return ReturnCodes.INVALID_ARGUMENTS;
+                    }
+                }
+
                 if (!featuresAddAction.isFeaturePackAvailable(fpl)) {
                     console.error(CliMessages.MESSAGES.featurePackNotFound(fpl));
                     return ReturnCodes.INVALID_ARGUMENTS;
@@ -98,8 +117,27 @@ public class FeaturesCommand extends AbstractParentCommand {
                 }
 
                 if (accepted) {
+                    Path candidate = null;
                     try {
-                        featuresAddAction.addFeaturePackWithLayers(fpl, layers, parseConfigName(config));
+                        final ConfigId configId = parseConfigName(config);
+                        if (layers.isEmpty()) {
+                            candidate = featuresAddAction.addFeaturePack(fpl, configId == null? Collections.emptySet():Set.of(configId));
+                        } else {
+                            candidate = featuresAddAction.addFeaturePackWithLayers(fpl, layers, configId);
+                        }
+
+                        final ApplyCandidateAction applyCandidateAction = actionFactory.applyUpdate(installationDir, candidate);
+                        final List<FileConflict> conflicts = applyCandidateAction.getConflicts();
+                        if (!conflicts.isEmpty()) {
+                            FileConflictPrinter.print(conflicts, console);
+                            if (skipConfirmation || console.confirm(CliMessages.MESSAGES.continueWithUpdate(), "", CliMessages.MESSAGES.updateCancelled())) {
+                                console.println(CliMessages.MESSAGES.applyingUpdates());
+                                applyCandidateAction.applyUpdate(ApplyCandidateAction.Type.FEATURE_ADD);
+                            }
+                        } else {
+                            console.println(CliMessages.MESSAGES.applyingUpdates());
+                            applyCandidateAction.applyUpdate(ApplyCandidateAction.Type.FEATURE_ADD);
+                        }
                     } catch (FeaturesAddAction.LayerNotFoundException e) {
                         if (!e.getSupportedLayers().isEmpty()) {
                             console.error(CliMessages.MESSAGES.layerNotSupported(fpl, e.getLayers(), e.getSupportedLayers()));
@@ -113,6 +151,10 @@ public class FeaturesCommand extends AbstractParentCommand {
                     } catch (FeaturesAddAction.ConfigurationNotFoundException e) {
                         console.error(CliMessages.MESSAGES.galleonConfigNotSupported(fpl, e.getModel(), e.getName()));
                         return ReturnCodes.INVALID_ARGUMENTS;
+                    }  finally {
+                        if (candidate != null) {
+                            FileUtils.deleteQuietly(candidate.toFile());
+                        }
                     }
                 }
 

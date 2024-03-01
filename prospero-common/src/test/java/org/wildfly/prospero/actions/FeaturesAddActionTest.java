@@ -45,6 +45,9 @@ import org.wildfly.prospero.api.MavenOptions;
 import org.wildfly.prospero.api.exceptions.ArtifactResolutionException;
 import org.wildfly.prospero.api.exceptions.MetadataException;
 import org.wildfly.prospero.api.exceptions.OperationException;
+import org.wildfly.prospero.galleon.FeaturePackLocationParser;
+import org.wildfly.prospero.model.FeaturePackTemplateManager;
+import org.wildfly.prospero.model.FeaturePackTemplate;
 import org.wildfly.prospero.model.ProsperoConfig;
 import org.wildfly.prospero.test.MetadataTestUtils;
 import org.wildfly.prospero.utils.MavenUtils;
@@ -68,6 +71,7 @@ import org.jboss.galleon.api.config.GalleonConfigurationWithLayersBuilder;
 import org.jboss.galleon.api.config.GalleonFeaturePackConfig;
 import org.jboss.galleon.api.config.GalleonProvisioningConfig;
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertThrows;
 import static org.junit.Assert.assertTrue;
@@ -75,6 +79,7 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
+import static org.mockito.Mockito.when;
 import static org.wildfly.prospero.metadata.ProsperoMetadataUtils.METADATA_DIR;
 
 @RunWith(MockitoJUnitRunner.class)
@@ -93,6 +98,8 @@ public class FeaturesAddActionTest {
     private Path installDir;
     private RepositoryArtifactResolver repo;
     private FeaturesAddAction.CandidateActionsFactory candidateActionsFactory;
+    @Mock
+    private FeaturePackTemplateManager featurePackTemplateManager;
 
     @Before
     public void setUp() throws Exception {
@@ -825,8 +832,201 @@ public class FeaturesAddActionTest {
         assertIncludeDefaultPackages(getFeaturePackConfig(config, "org.test:added-pack::zip@maven"));
     }
 
+    @Test
+    public void findAndApplyTemplateWithReplaceDependency() throws Exception {
+        // install base feature pack
+        final FeaturePackCreator creator = FeaturePackCreator.getInstance().addArtifactResolver(repo);
+        creator.newFeaturePack(FeaturePackLocation.fromString("org.test:base-pack:1.0.0:zip").getFPID())
+                .getCreator()
+                .newFeaturePack(FeaturePackLocation.fromString("org.test:added-pack:1.0.0:zip").getFPID())
+                .addConfig(ConfigModel.builder()
+                        .setModel("standalone")
+                        .setName("standalone.xml")
+                        .build(), true)
+                .addConfig(ConfigModel.builder()
+                        .setModel("standalone")
+                        .setName("test.xml")
+                        .build(), true)
+                .addConfigLayer(ConfigLayerSpec.builder()
+                        .setModel("standalone")
+                        .setName("layer1")
+                        .build())
+                .addDependency(FeaturePackLocation.fromString("org.test:base-pack:1.0.0"))
+        ;
+        deployFeaturePacks(creator);
+        when(featurePackTemplateManager.find(any(), any(), any()))
+                .thenReturn(new FeaturePackTemplate(
+                        "", "", "",
+                        Collections.emptyList(),
+                        null,
+                        "org.test:base-pack::zip",
+                        false, false
+                ));
+        // install
+        installFeaturePack(installDir, "org.test:base-pack:1.0.0:zip");
+
+        getFeaturesAddAction().addFeaturePack("org.test:added-pack", NO_DEFAULT_CONFIGS);
+
+        final ArgumentCaptor<GalleonProvisioningConfig> provisioningConfigArgumentCaptor = ArgumentCaptor.forClass(GalleonProvisioningConfig.class);
+        verify(prepareCandidateAction).buildCandidate(any(), any(), eq(ApplyCandidateAction.Type.FEATURE_ADD),
+                provisioningConfigArgumentCaptor.capture());
+
+        final GalleonProvisioningConfig config = provisioningConfigArgumentCaptor.getValue();
+        System.out.println(config);
+        assertThat(config.getDefinedConfigs()).isEmpty();
+        assertIncludeDefaultConfigs(getFeaturePackConfig(config, "org.test:added-pack::zip@maven"));
+        assertFalse(config.hasFeaturePackDep(FeaturePackLocationParser.resolveFpl("org.test:base-pack:zip").getProducer()));
+    }
+
+    @Test
+    public void findAndApplyTemplateWithTransitiveDependency() throws Exception {
+        // install base feature pack
+        final FeaturePackCreator creator = FeaturePackCreator.getInstance().addArtifactResolver(repo);
+        creator.newFeaturePack(FeaturePackLocation.fromString("org.test:base-pack:1.0.0:zip").getFPID())
+                .getCreator()
+                .newFeaturePack(FeaturePackLocation.fromString("org.test:added-pack:1.0.0:zip").getFPID())
+                .addConfig(ConfigModel.builder()
+                        .setModel("standalone")
+                        .setName("standalone.xml")
+                        .build(), true)
+                .addConfig(ConfigModel.builder()
+                        .setModel("standalone")
+                        .setName("test.xml")
+                        .build(), true)
+                .addConfigLayer(ConfigLayerSpec.builder()
+                        .setModel("standalone")
+                        .setName("layer1")
+                        .build())
+                .addDependency(FeaturePackLocation.fromString("org.test:base-pack:1.0.0"))
+        ;
+        deployFeaturePacks(creator);
+        when(featurePackTemplateManager.find(any(), any(), any()))
+                .thenReturn(new FeaturePackTemplate(
+                        "", "", "",
+                        Collections.emptyList(),
+                        List.of("org.test:base-pack::zip"),
+                        null,
+                        false, false
+                ));
+        // install
+        installFeaturePack(installDir, "org.test:base-pack:1.0.0:zip");
+
+        getFeaturesAddAction().addFeaturePack("org.test:added-pack", NO_DEFAULT_CONFIGS);
+
+        final ArgumentCaptor<GalleonProvisioningConfig> provisioningConfigArgumentCaptor = ArgumentCaptor.forClass(GalleonProvisioningConfig.class);
+        verify(prepareCandidateAction).buildCandidate(any(), any(), eq(ApplyCandidateAction.Type.FEATURE_ADD),
+                provisioningConfigArgumentCaptor.capture());
+
+        final GalleonProvisioningConfig config = provisioningConfigArgumentCaptor.getValue();
+        System.out.println(config);
+        assertThat(config.getDefinedConfigs()).isEmpty();
+        assertIncludeDefaultConfigs(getFeaturePackConfig(config, "org.test:added-pack::zip@maven"));
+        assertIncludeDefaultPackages(getTransitiveFeaturePackConfig(config, "org.test:base-pack:zip"));
+    }
+
+    @Test
+    public void findAndApplyTemplateWithLayersWithTransitiveDependency() throws Exception {
+        // install base feature pack
+        final FeaturePackCreator creator = FeaturePackCreator.getInstance().addArtifactResolver(repo);
+        creator.newFeaturePack(FeaturePackLocation.fromString("org.test:base-pack:1.0.0:zip").getFPID())
+                .getCreator()
+                .newFeaturePack(FeaturePackLocation.fromString("org.test:added-pack:1.0.0:zip").getFPID())
+                .addConfig(ConfigModel.builder()
+                        .setModel("standalone")
+                        .setName("standalone.xml")
+                        .build(), true)
+                .addConfig(ConfigModel.builder()
+                        .setModel("standalone")
+                        .setName("test.xml")
+                        .build(), true)
+                .addConfigLayer(ConfigLayerSpec.builder()
+                        .setModel("standalone")
+                        .setName("layer1")
+                        .build())
+                .addDependency(FeaturePackLocation.fromString("org.test:base-pack:1.0.0"))
+        ;
+        deployFeaturePacks(creator);
+        when(featurePackTemplateManager.find(any(), any(), any()))
+                .thenReturn(new FeaturePackTemplate(
+                        "", "", "",
+                        Collections.emptyList(),
+                        List.of("org.test:base-pack::zip"),
+                        null,
+                        false, false
+                ));
+        // install
+        installFeaturePack(installDir, "org.test:base-pack:1.0.0:zip");
+
+        getFeaturesAddAction().addFeaturePackWithLayers("org.test:added-pack", Set.of("layer1"), null);
+
+
+
+        final ArgumentCaptor<GalleonProvisioningConfig> provisioningConfigArgumentCaptor = ArgumentCaptor.forClass(GalleonProvisioningConfig.class);
+        verify(prepareCandidateAction).buildCandidate(any(), any(), eq(ApplyCandidateAction.Type.FEATURE_ADD),
+                provisioningConfigArgumentCaptor.capture());
+
+        final GalleonProvisioningConfig config = provisioningConfigArgumentCaptor.getValue();
+        System.out.println(config);
+        assertNotNull(getFeaturePackConfig(config, "org.test:added-pack::zip@maven"));
+        assertNotNull(getTransitiveFeaturePackConfig(config, "org.test:base-pack:zip"));
+    }
+
+    @Test
+    public void findAndApplyTemplateWithAdditionalPackages() throws Exception {
+        // install base feature pack
+        final FeaturePackCreator creator = FeaturePackCreator.getInstance().addArtifactResolver(repo);
+        creator.newFeaturePack(FeaturePackLocation.fromString("org.test:base-pack:1.0.0:zip").getFPID())
+                .getCreator()
+                .newFeaturePack(FeaturePackLocation.fromString("org.test:added-pack:1.0.0:zip").getFPID())
+                .addConfig(ConfigModel.builder()
+                        .setModel("standalone")
+                        .setName("standalone.xml")
+                        .build(), true)
+                .addConfig(ConfigModel.builder()
+                        .setModel("standalone")
+                        .setName("test.xml")
+                        .build(), true)
+                .addConfigLayer(ConfigLayerSpec.builder()
+                        .setModel("standalone")
+                        .setName("layer1")
+                        .build())
+                .addDependency(FeaturePackLocation.fromString("org.test:base-pack:1.0.0"))
+        ;
+        deployFeaturePacks(creator);
+        when(featurePackTemplateManager.find(any(), any(), any()))
+                .thenReturn(new FeaturePackTemplate(
+                        "", "", "",
+                        List.of("additional.package"),
+                        null,
+                        null,
+                        false, false
+                ));
+        // install
+        installFeaturePack(installDir, "org.test:base-pack:1.0.0:zip");
+
+        getFeaturesAddAction().addFeaturePack("org.test:added-pack", NO_DEFAULT_CONFIGS);
+
+        final ArgumentCaptor<GalleonProvisioningConfig> provisioningConfigArgumentCaptor = ArgumentCaptor.forClass(GalleonProvisioningConfig.class);
+        verify(prepareCandidateAction).buildCandidate(any(), any(), eq(ApplyCandidateAction.Type.FEATURE_ADD),
+                provisioningConfigArgumentCaptor.capture());
+
+        final GalleonProvisioningConfig config = provisioningConfigArgumentCaptor.getValue();
+        System.out.println(config);
+        assertThat(config.getDefinedConfigs()).isEmpty();
+        assertIncludeDefaultConfigs(getFeaturePackConfig(config, "org.test:added-pack::zip@maven"));
+        final FeaturePackLocation.ProducerSpec fpName = FeaturePackLocationParser
+                .resolveFpl("org.test:added-pack::zip")
+                .getProducer();
+        assertThat(config.getFeaturePackDep(fpName).getIncludedPackages())
+                .contains("additional.package");
+    }
+
     private static GalleonFeaturePackConfig getFeaturePackConfig(GalleonProvisioningConfig config, String fpl) {
         return config.getFeaturePackDeps().stream().filter(f -> f.getLocation().toString().equals(fpl)).findFirst().get();
+    }
+
+    private static GalleonFeaturePackConfig getTransitiveFeaturePackConfig(GalleonProvisioningConfig config, String fpl) {
+        return config.getTransitiveDeps().stream().filter(f -> f.getLocation().toString().equals(fpl)).findFirst().get();
     }
 
     private static void assertIncludeDefaultPackages(GalleonFeaturePackConfig cfg) {
@@ -846,9 +1046,10 @@ public class FeaturesAddActionTest {
     }
 
     private FeaturesAddAction getFeaturesAddAction() throws MetadataException, ProvisioningException {
+
         final FeaturesAddAction featuresAddAction = new FeaturesAddAction(MavenOptions.OFFLINE_NO_CACHE, installDir,
                 List.of(new Repository("test", repositoryUrl.toExternalForm())), null,
-                candidateActionsFactory);
+                candidateActionsFactory, featurePackTemplateManager);
         return featuresAddAction;
     }
 

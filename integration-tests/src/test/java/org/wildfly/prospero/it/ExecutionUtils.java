@@ -106,6 +106,10 @@ public class ExecutionUtils {
         }
     }
 
+    private static String getCommandOutput() throws IOException {
+        return Files.readString(Path.of("target/test-out.log"));
+    }
+
 
     /**
      * Prospero execution results.
@@ -118,14 +122,17 @@ public class ExecutionUtils {
             this.process = process;
         }
 
-        public void assertReturnCode(int expectedReturnCode) {
-            try {
-                assertThat(process.exitValue())
-                        .overridingErrorMessage(Files.readString(Path.of("target/test-out.log")))
-                        .isEqualTo(expectedReturnCode);
-            } catch (IOException e) {
-                throw new RuntimeException(e);
-            }
+        public ExecutionResult assertReturnCode(int expectedReturnCode) throws IOException {
+            assertThat(process.exitValue())
+                    .overridingErrorMessage(getCommandOutput())
+                    .isEqualTo(expectedReturnCode);
+            return this;
+        }
+
+        public ExecutionResult assertErrorContains(String text) throws IOException {
+            final String output = getCommandOutput();
+            assertThat(output).contains(text);
+            return this;
         }
     }
 }

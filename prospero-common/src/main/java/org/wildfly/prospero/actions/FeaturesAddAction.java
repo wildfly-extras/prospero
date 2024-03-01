@@ -24,6 +24,7 @@ import org.jboss.galleon.ProvisioningException;
 import org.jboss.galleon.config.ConfigId;
 import org.jboss.galleon.universe.FeaturePackLocation;
 import org.jboss.galleon.universe.maven.repo.MavenRepoManager;
+import org.wildfly.channel.ArtifactCoordinate;
 import org.wildfly.channel.ArtifactTransferException;
 import org.wildfly.channel.Channel;
 import org.wildfly.channel.ChannelSession;
@@ -40,6 +41,8 @@ import org.wildfly.prospero.api.exceptions.MetadataException;
 import org.wildfly.prospero.api.exceptions.OperationException;
 import org.wildfly.prospero.galleon.FeaturePackLocationParser;
 import org.wildfly.prospero.galleon.GalleonEnvironment;
+import org.wildfly.prospero.model.FeaturePackTemplateManager;
+import org.wildfly.prospero.model.FeaturePackTemplate;
 import org.wildfly.prospero.model.ProsperoConfig;
 import org.wildfly.prospero.wfchannel.MavenSessionManager;
 
@@ -78,14 +81,18 @@ public class FeaturesAddAction {
     private final ProsperoConfig prosperoConfig;
     private final Console console;
     private final CandidateActionsFactory candidateActionsFactory;
+    private final FeaturePackTemplateManager featurePackTemplateManager;
 
     public FeaturesAddAction(MavenOptions mavenOptions, Path installDir, List<Repository> repositories, Console console) throws MetadataException, ProvisioningException {
-        this(mavenOptions, installDir, repositories, console, new DefaultCandidateActionsFactory(installDir));
+        this(mavenOptions, installDir, repositories, console,
+                new DefaultCandidateActionsFactory(installDir),
+                new FeaturePackTemplateManager());
     }
 
     // used for testing
     FeaturesAddAction(MavenOptions mavenOptions, Path installDir,
-                      List<Repository> repositories, Console console, CandidateActionsFactory candidateActionsFactory)
+                      List<Repository> repositories, Console console, CandidateActionsFactory candidateActionsFactory,
+                      FeaturePackTemplateManager featurePackTemplateManager)
             throws MetadataException, ProvisioningException {
         this.installDir = installDir;
         this.console = console;
@@ -96,23 +103,28 @@ public class FeaturesAddAction {
         this.mavenSessionManager = new MavenSessionManager(mergedOptions);
 
         this.candidateActionsFactory = candidateActionsFactory;
+
+        this.featurePackTemplateManager = featurePackTemplateManager;
     }
 
     /**
-     * performs feature pack installation. The added feature pack can be customized by specifying layers and configuration model name.
+     * performs feature pack installation as a new candidate server. The added feature pack can be customized by specifying layers and configuration model name.
      * In order to install a feature pack, a server is re-provisioned and changes are applied to existing server.
+     * <p>
+     * The candidate server is created in a temp directory. To apply the changes and complete the installation,
+     * {@link ApplyCandidateAction#applyUpdate(ApplyCandidateAction.Type)} should be used.
      *
-     * @param featurePackCoord - maven {@code groupId:artifactId} coordinates of the feature pack to install
+     * @param featurePackCoord   - maven {@code groupId:artifactId} coordinates of the feature pack to install
      * @param defaultConfigNames - set of {@code ConfigId} of the default configurations to include
-     *
-     * @throws ProvisioningException - if unable to provision the server
-     * @throws ModelNotDefinedException - if requested model is not provided by the feature pack
-     * @throws LayerNotFoundException - if one of the requested layers is not provided by the feature pack
+     * @return - path to the generated candidate server
+     * @throws ProvisioningException                - if unable to provision the server
+     * @throws ModelNotDefinedException             - if requested model is not provided by the feature pack
+     * @throws LayerNotFoundException               - if one of the requested layers is not provided by the feature pack
      * @throws FeaturePackAlreadyInstalledException - if the requested feature pack configuration wouldn't change the server state
-     * @throws InvalidUpdateCandidateException - if the folder at {@code updateDir} is not a valid update
-     * @throws MetadataException - if unable to read or write the installation of update metadata
+     * @throws InvalidUpdateCandidateException      - if the folder at {@code updateDir} is not a valid update
+     * @throws MetadataException                    - if unable to read or write the installation of update metadata
      */
-    public void addFeaturePack(String featurePackCoord, Set<ConfigId> defaultConfigNames)
+    public Path addFeaturePack(String featurePackCoord, Set<ConfigId> defaultConfigNames)
             throws ProvisioningException, OperationException {
         verifyFeaturePackCoord(featurePackCoord);
         Objects.requireNonNull(defaultConfigNames);
@@ -146,28 +158,30 @@ public class FeaturesAddAction {
             ProsperoLogger.ROOT_LOGGER.addingFeaturePack(fpl, StringUtils.join(selectedConfigs, ","), "");
         }
 
-
         final GalleonProvisioningConfig newConfig = buildProvisioningConfig(Collections.emptySet(), fpl, selectedConfigs);
 
-        install(newConfig);
+        return install(newConfig);
     }
 
     /**
-     * performs feature pack installation. The added feature pack can be customized by specifying layers and configuration model name.
+     * performs feature pack installation as a new candidate server. The added feature pack can be customized by specifying layers and configuration model name.
      * In order to install a feature pack, a server is re-provisioned and changes are applied to existing server.
+     *<p>
+     * The candidate server is created in a temp directory. To apply the changes and complete the installation,
+     * {@link ApplyCandidateAction#applyUpdate(ApplyCandidateAction.Type)} should be used.
      *
      * @param featurePackCoord - maven {@code groupId:artifactId} coordinates of the feature pack to install
-     * @param layers - set of layer names to be provisioned
-     * @param configName - {@code ConfigId} of the configuration file to generate if supported
-     *
-     * @throws ProvisioningException - if unable to provision the server
-     * @throws ModelNotDefinedException - if requested model is not provided by the feature pack
-     * @throws LayerNotFoundException - if one of the requested layers is not provided by the feature pack
+     * @param layers           - set of layer names to be provisioned
+     * @param configName       - {@code ConfigId} of the configuration file to generate if supported
+     * @return - path to the generated candidate server
+     * @throws ProvisioningException                - if unable to provision the server
+     * @throws ModelNotDefinedException             - if requested model is not provided by the feature pack
+     * @throws LayerNotFoundException               - if one of the requested layers is not provided by the feature pack
      * @throws FeaturePackAlreadyInstalledException - if the requested feature pack configuration wouldn't change the server state
-     * @throws InvalidUpdateCandidateException - if the folder at {@code updateDir} is not a valid update
-     * @throws MetadataException - if unable to read or write the installation of update metadata
+     * @throws InvalidUpdateCandidateException      - if the folder at {@code updateDir} is not a valid update
+     * @throws MetadataException                    - if unable to read or write the installation of update metadata
      */
-    public void addFeaturePackWithLayers(String featurePackCoord, Set<String> layers, ConfigId configName)
+    public Path addFeaturePackWithLayers(String featurePackCoord, Set<String> layers, ConfigId configName)
             throws ProvisioningException, OperationException {
         Objects.requireNonNull(layers);
         if (layers.isEmpty() && configName != null) {
@@ -202,7 +216,50 @@ public class FeaturesAddAction {
 
         final GalleonProvisioningConfig newConfig = buildProvisioningConfig(layers, fpl, selectedConfig==null?Collections.emptySet():Set.of(new ConfigId(selectedModel, selectedConfig)));
 
-        install(newConfig);
+        return install(newConfig);
+    }
+
+    /**
+     * find a template matching feature pack coordinates
+     *
+     * @param featurePackCoord - coordinates of the feature pack in {@code groupId:artifactId} format
+     * @return - template matching the feature pack or null if none found.
+     * @throws ProvisioningException
+     * @throws OperationException
+     */
+    public FeaturePackTemplate getFeaturePackRecipe(String featurePackCoord)
+            throws ProvisioningException, OperationException {
+        Path tempDirectory = null;
+        GalleonEnvironment galleonEnv = null;
+        try {
+            if (ProsperoLogger.ROOT_LOGGER.isDebugEnabled()) {
+                ProsperoLogger.ROOT_LOGGER.debug("Looking up version of " + featurePackCoord);
+            }
+            // nothing should be written out in the temp folder, but we need to create it in order to create galleon
+            // TODO: future improvement - replace it with just creating ChannelSession
+            tempDirectory = Files.createTempDirectory("prospero-temp-target");
+            galleonEnv = getGalleonEnv(tempDirectory);
+
+            final ArtifactCoordinate coord = toMavenCoordinates(featurePackCoord);
+
+            final String version = galleonEnv.getChannelSession().findLatestMavenArtifactVersion(coord.getGroupId(), coord.getArtifactId(),
+                    coord.getExtension(), coord.getClassifier(), coord.getVersion()).getVersion();
+
+            if (ProsperoLogger.ROOT_LOGGER.isDebugEnabled()) {
+                ProsperoLogger.ROOT_LOGGER.debugf("Found version %s of %s, matching template", version, featurePackCoord);
+            }
+
+            return featurePackTemplateManager.find(coord.getGroupId(), coord.getArtifactId(), coord.getVersion());
+        } catch (IOException e) {
+            throw ProsperoLogger.ROOT_LOGGER.unableToCreateTemporaryDirectory(e);
+        } finally {
+            if (galleonEnv != null) {
+                galleonEnv.close();
+            }
+            if (tempDirectory != null) {
+                FileUtils.deleteQuietly(tempDirectory.toFile());
+            }
+        }
     }
 
     private static String getSelectedConfig(ConfigId defaultConfigName, String selectedModel) {
@@ -226,7 +283,7 @@ public class FeaturesAddAction {
         }
     }
 
-    private void install(GalleonProvisioningConfig newConfig) throws ProvisioningException, OperationException {
+    private Path install(GalleonProvisioningConfig newConfig) throws ProvisioningException, OperationException {
         final Path candidate;
         try {
             candidate = Files.createTempDirectory("prospero-candidate").toAbsolutePath();
@@ -247,13 +304,13 @@ public class FeaturesAddAction {
 
         try (PrepareCandidateAction prepareCandidateAction = candidateActionsFactory.newPrepareCandidateActionInstance(mavenSessionManager, prosperoConfig);
              GalleonEnvironment galleonEnv = getGalleonEnv(candidate)) {
+
             ProsperoLogger.ROOT_LOGGER.updateCandidateStarted(installDir);
             prepareCandidateAction.buildCandidate(candidate, galleonEnv, ApplyCandidateAction.Type.FEATURE_ADD, newConfig);
             ProsperoLogger.ROOT_LOGGER.updateCandidateCompleted(installDir);
         }
 
-        final ApplyCandidateAction applyCandidateAction = candidateActionsFactory.newApplyCandidateActionInstance(candidate);
-        applyCandidateAction.applyUpdate(ApplyCandidateAction.Type.FEATURE_ADD);
+        return candidate;
     }
 
     /**
@@ -261,17 +318,11 @@ public class FeaturesAddAction {
      *
      * @param featurePackCoord - maven {@code groupId:artifactId} coordinates of the feature pack to install
      * @return true if the feature pack is available, false otherwise
-     * @throws OperationException - if unable to read the metadata
+     * @throws OperationException    - if unable to read the metadata
      * @throws ProvisioningException - if unable to read the metadata
      */
     public boolean isFeaturePackAvailable(String featurePackCoord) throws OperationException, ProvisioningException {
-        if (featurePackCoord == null || featurePackCoord.isEmpty()) {
-            throw new IllegalArgumentException("The feature pack coordinate cannot be null");
-        }
-        final String[] splitCoordinates = featurePackCoord.split(":");
-        if (splitCoordinates.length != 2) {
-            throw new IllegalArgumentException("The feature pack coordinate has to consist of <groupId>:<artifactId>");
-        }
+        final ArtifactCoordinate coord = toMavenCoordinates(featurePackCoord);
         final ChannelSession channelSession = GalleonEnvironment
                 .builder(installDir, prosperoConfig.getChannels(), mavenSessionManager, false).build()
                 .getChannelSession();
@@ -280,8 +331,8 @@ public class FeaturesAddAction {
             if (ProsperoLogger.ROOT_LOGGER.isTraceEnabled()) {
                 ProsperoLogger.ROOT_LOGGER.trace("Resolving a feature pack: " + featurePackCoord);
             }
-            channelSession.resolveMavenArtifact(splitCoordinates[0], splitCoordinates[1],
-                    "zip", null, null);
+            channelSession.resolveMavenArtifact(coord.getGroupId(), coord.getArtifactId(),
+                    coord.getExtension(), coord.getClassifier(), coord.getVersion());
         } catch (NoStreamFoundException e) {
             return false;
         } catch (ArtifactTransferException e) {
@@ -290,6 +341,23 @@ public class FeaturesAddAction {
         }
 
         return true;
+    }
+
+    private static ArtifactCoordinate toMavenCoordinates(String featurePackCoord) {
+        if (featurePackCoord == null || featurePackCoord.isEmpty()) {
+            throw new IllegalArgumentException("The feature pack coordinate cannot be null");
+        }
+        // a workaround for tests
+        if (featurePackCoord.endsWith("::zip")) {
+            featurePackCoord = featurePackCoord.substring(0, featurePackCoord.length() - "::zip".length());
+        }
+        final String[] splitCoordinates = featurePackCoord.split(":");
+        if (splitCoordinates.length != 2) {
+            throw new IllegalArgumentException("The feature pack coordinate has to consist of <groupId>:<artifactId>");
+        }
+        final ArtifactCoordinate coord = new ArtifactCoordinate(splitCoordinates[0], splitCoordinates[1],
+                "zip", null, "");
+        return coord;
     }
 
     private GalleonProvisioningConfig buildProvisioningConfig(Set<String> layers, FeaturePackLocation fpl, Set<ConfigId> selectedConfigs)
@@ -330,12 +398,51 @@ public class FeaturesAddAction {
                 fpBuilder.setInheritPackages(false);
             }
 
+            // order of feature packs matter. if the feature pack redefines an existing package, insert it in its place
+            int fpIndex = existingConfig.getFeaturePackDeps().size();
+
+            final FeaturePackTemplate mapping = getFeaturePackRecipe(fpl.getProducerName());
+            if (mapping != null) {
+                final ProvisioningConfigManipulator provisioningConfigManipulator = new ProvisioningConfigManipulator(builder);
+                if (mapping.getReplacesDependency() != null) {
+                    if (ProsperoLogger.ROOT_LOGGER.isTraceEnabled()) {
+                        ProsperoLogger.ROOT_LOGGER.tracef("Replacing %s dependency with %s", mapping.getReplacesDependency(), fpl);
+                    }
+                    fpIndex = provisioningConfigManipulator.removeFeaturePackDefinition(mapping.getReplacesDependency());
+
+                    final GalleonFeaturePackConfig removedConfig = existingConfig.getFeaturePackDep(
+                            FeaturePackLocationParser.resolveFpl(mapping.getReplacesDependency()).getProducer());
+                    ProvisioningConfigManipulator.copyFeaturePackConfig(fpBuilder, removedConfig);
+                } else {
+                    for (String transitiveDependency : mapping.getTransitiveDependencies()) {
+                        if (ProsperoLogger.ROOT_LOGGER.isTraceEnabled()) {
+                            ProsperoLogger.ROOT_LOGGER.tracef("Marking %s as a transitive dependency", transitiveDependency);
+                        }
+
+                        fpIndex = provisioningConfigManipulator.convertToTransitiveDep(transitiveDependency, existingConfig);
+                    }
+                }
+
+                for (String additionalPackage : mapping.getAdditionalPackages()) {
+                    if (ProsperoLogger.ROOT_LOGGER.isTraceEnabled()) {
+                        ProsperoLogger.ROOT_LOGGER.tracef("Adding additional package %s to %s", additionalPackage, fpl);
+                    }
+                    if (!fpBuilder.isPackageExcluded(additionalPackage)) {
+                        fpBuilder.includePackage(additionalPackage);
+                    }
+                }
+            }
+
             final GalleonProvisioningConfig newConfig = builder
-                    .addFeaturePackDep(fpBuilder.build())
+                    .addFeaturePackDep(fpIndex, fpBuilder.build())
                     .build();
 
             if (newConfig.equals(existingConfig)) {
                 throw ProsperoLogger.ROOT_LOGGER.featurePackAlreadyInstalled(fpl);
+            }
+
+            if (ProsperoLogger.ROOT_LOGGER.isTraceEnabled()) {
+                ProsperoLogger.ROOT_LOGGER.trace("New provisioning configuration: " + newConfig);
             }
 
             return newConfig;
