@@ -101,7 +101,7 @@ public abstract class AbstractInstallCommand extends AbstractCommand {
     }
 
     protected ProvisioningDefinition buildDefinition() throws MetadataException, NoChannelException, ArgumentParsingException {
-        final ProvisioningDefinition provisioningDefinition = ProvisioningDefinition.builder()
+        return ProvisioningDefinition.builder()
                 .setFpl(featurePackOrDefinition.fpl.orElse(null))
                 .setProfile(featurePackOrDefinition.profile.orElse(null))
                 .setManifest(manifestCoordinate.orElse(null))
@@ -109,7 +109,6 @@ public abstract class AbstractInstallCommand extends AbstractCommand {
                 .setOverrideRepositories(RepositoryDefinition.from(remoteRepositories))
                 .setDefinitionFile(featurePackOrDefinition.definition.map(Path::toUri).orElse(null))
                 .build();
-        return provisioningDefinition;
     }
 
     protected static VersionResolverFactory createVersionResolverFactory(MavenSessionManager mavenSessionManager) {
