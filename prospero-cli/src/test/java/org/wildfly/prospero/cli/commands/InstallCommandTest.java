@@ -241,29 +241,33 @@ public class InstallCommandTest extends AbstractMavenCommandTest {
     @Test
     public void provisionConfigAndRemoteRepoSet() throws Exception {
         Path channelsFile = temporaryFolder.newFile().toPath();
+        String test = temporaryFolder.newFolder().toURI().toURL().toString();
+
         MetadataTestUtils.prepareChannel(channelsFile, List.of(new URL("file:some-manifest.yaml")));
 
-        int exitCode = commandLine.execute(CliConstants.Commands.INSTALL, CliConstants.DIR, "test",
+        int exitCode = commandLine.execute(CliConstants.Commands.INSTALL, CliConstants.DIR, test,
                 CliConstants.CHANNELS, channelsFile.toString(),
-                CliConstants.REPOSITORIES, "file:/test",
+                CliConstants.REPOSITORIES, test,
                 CliConstants.FPL, "g:a");
 
         assertEquals(ReturnCodes.SUCCESS, exitCode);
         Mockito.verify(provisionAction).provision(configCaptor.capture(), channelCaptor.capture(), any());
         assertThat(channelCaptor.getValue().get(0).getRepositories()
                 .stream().map(Repository::getUrl).collect(Collectors.toList()))
-                .containsOnly("file:/test");
+                .containsOnly(test);
     }
 
     @SuppressWarnings("unchecked")
     @Test
     public void passShadowRepositories() throws Exception {
         Path channelsFile = temporaryFolder.newFile().toPath();
+        String test = temporaryFolder.newFolder().toURI().toURL().toString();
+
         MetadataTestUtils.prepareChannel(channelsFile, List.of(new URL("file:some-manifest.yaml")));
 
-        int exitCode = commandLine.execute(CliConstants.Commands.INSTALL, CliConstants.DIR, "test",
+        int exitCode = commandLine.execute(CliConstants.Commands.INSTALL, CliConstants.DIR, test,
                 CliConstants.CHANNELS, channelsFile.toString(),
-                CliConstants.SHADE_REPOSITORIES, "file:/test",
+                CliConstants.SHADE_REPOSITORIES, test,
                 CliConstants.FPL, "g:a");
 
         assertEquals(ReturnCodes.SUCCESS, exitCode);
@@ -271,7 +275,7 @@ public class InstallCommandTest extends AbstractMavenCommandTest {
         Mockito.verify(provisionAction).provision(configCaptor.capture(), channelCaptor.capture(), listArgumentCaptor.capture());
         assertThat(listArgumentCaptor.getValue())
                 .map(Repository::getUrl)
-                .contains("file:/test");
+                .contains(test);
     }
 
     @Test
