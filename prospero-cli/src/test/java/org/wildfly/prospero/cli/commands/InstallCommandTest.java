@@ -26,6 +26,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
 
+import org.jboss.galleon.Constants;
 import org.jboss.galleon.universe.FeaturePackLocation;
 import org.junit.Assert;
 import org.junit.Before;
@@ -51,10 +52,12 @@ import org.wildfly.prospero.cli.CliMessages;
 import org.wildfly.prospero.cli.ReturnCodes;
 import org.wildfly.prospero.test.MetadataTestUtils;
 
-import static org.assertj.core.api.Assertions.assertThat;
 import org.jboss.galleon.api.GalleonBuilder;
 import org.jboss.galleon.api.Provisioning;
 import org.jboss.galleon.api.config.GalleonProvisioningConfig;
+
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.entry;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
@@ -269,6 +272,22 @@ public class InstallCommandTest extends AbstractMavenCommandTest {
         assertThat(listArgumentCaptor.getValue())
                 .map(Repository::getUrl)
                 .contains("file:/test");
+    }
+
+    @Test
+    public void stabilityLevelIsPassedOn() throws Exception {
+        final File channelsFile = temporaryFolder.newFile();
+        Channel channel = createChannel("test", "test", "http://test.org", "org.test");
+        MetadataTestUtils.writeChannels(channelsFile.toPath(), List.of(channel));
+
+        int exitCode = commandLine.execute(CliConstants.Commands.INSTALL, CliConstants.DIR, "test",
+                CliConstants.FPL, "org.wildfly:wildfly-ee-galleon-pack",
+                CliConstants.CHANNELS, channelsFile.getAbsolutePath(),
+                CliConstants.STABILITY_LEVEL, "default");
+        assertEquals(ReturnCodes.SUCCESS, exitCode);
+        Mockito.verify(provisionAction).provision(configCaptor.capture(), any(), any());
+        assertThat(configCaptor.getValue().getOptions())
+                .contains(entry(Constants.STABILITY_LEVEL, "default"));
     }
 
     @Override

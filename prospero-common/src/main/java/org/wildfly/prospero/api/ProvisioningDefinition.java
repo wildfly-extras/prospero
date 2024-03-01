@@ -33,6 +33,7 @@ import javax.xml.stream.XMLStreamException;
 
 import org.apache.commons.io.IOUtils;
 import org.eclipse.aether.repository.RemoteRepository;
+import org.jboss.galleon.Constants;
 import org.jboss.galleon.ProvisioningException;
 import org.jboss.galleon.api.config.GalleonFeaturePackConfig;
 import org.jboss.galleon.api.config.GalleonProvisioningConfig;
@@ -87,9 +88,13 @@ public class ProvisioningDefinition {
      */
     private final URI definition;
 
+    private final String stabilityLevel;
+
     private ProvisioningDefinition(Builder builder) throws NoChannelException {
         this.overrideRepositories.addAll(builder.overrideRepositories);
         this.channelCoordinates.addAll(builder.channelCoordinates);
+
+        this.stabilityLevel = builder.stabilityLevel;
 
         if (builder.profile.isPresent()) {
 
@@ -146,10 +151,23 @@ public class ProvisioningDefinition {
             FeaturePackLocation loc = FeaturePackLocationParser.resolveFpl(getFpl());
 
             final GalleonFeaturePackConfig.Builder configBuilder = GalleonFeaturePackConfig.builder(loc);
-            return GalleonProvisioningConfig.builder().addFeaturePackDep(configBuilder.build()).build();
+            final GalleonProvisioningConfig.Builder builder = GalleonProvisioningConfig.builder()
+                    .addFeaturePackDep(configBuilder.build());
+            if (stabilityLevel != null) {
+                builder.addOption(Constants.STABILITY_LEVEL, stabilityLevel);
+            }
+            return builder.build();
+
         } else if (definition != null) {
             try {
-                return GalleonUtils.loadProvisioningConfig(definition);
+                final GalleonProvisioningConfig config = GalleonUtils.loadProvisioningConfig(definition);
+                if (stabilityLevel == null) {
+                    return config;
+                } else {
+                    return GalleonProvisioningConfig.builder(config)
+                            .addOption(Constants.STABILITY_LEVEL, stabilityLevel)
+                            .build();
+                }
             } catch (XMLStreamException e) {
                 throw ProsperoLogger.ROOT_LOGGER.unableToParseConfigurationUri(definition, e);
             }
@@ -242,6 +260,7 @@ public class ProvisioningDefinition {
         private Optional<ChannelManifestCoordinate> manifest = Optional.empty();
         private List<ChannelCoordinate> channelCoordinates = Collections.emptyList();
         private Optional<String> profile = Optional.empty();
+        private String stabilityLevel;
 
         public ProvisioningDefinition build() throws MetadataException, NoChannelException {
             return new ProvisioningDefinition(this);
@@ -284,6 +303,11 @@ public class ProvisioningDefinition {
 
         public Builder setProfile(String profile) {
             this.profile = Optional.ofNullable(profile);
+            return this;
+        }
+
+        public Builder setStabilityLevel(String stabilityLevel) {
+            this.stabilityLevel = stabilityLevel;
             return this;
         }
     }

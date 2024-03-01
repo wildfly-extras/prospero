@@ -43,6 +43,7 @@ import java.util.List;
 import javax.xml.stream.XMLStreamException;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.entry;
 import static org.assertj.core.api.Assertions.tuple;
 import org.jboss.galleon.api.config.GalleonProvisioningConfig;
 import static org.junit.Assert.assertEquals;
@@ -250,6 +251,32 @@ public class ProvisioningDefinitionTest {
         assertThrows(IllegalArgumentException.class, ()-> {
             builder.build();
         });
+    }
+
+    @Test
+    public void setStabilityLevelWithFpl() throws Exception {
+        final ProvisioningDefinition.Builder builder = new ProvisioningDefinition.Builder()
+                .setFpl("custom:fpl")
+                .setManifest("tmp/foo.bar")
+                .setStabilityLevel("default")
+                .setOverrideRepositories(Arrays.asList(
+                        new Repository("temp-repo-0", "http://test.repo1"),
+                        new Repository("temp-repo-1", "http://test.repo2")));
+
+        final ProvisioningDefinition def = builder.build();
+        assertThat(def.toProvisioningConfig().getOptions())
+                .contains(entry("stability-level", "default"));
+    }
+
+    @Test
+    public void setStabilityLevelWithProfile() throws Exception {
+        final ProvisioningDefinition.Builder builder = new ProvisioningDefinition.Builder()
+                .setProfile(EAP_FPL)
+                .setStabilityLevel("default");
+
+        final ProvisioningDefinition def = builder.build();
+        assertThat(def.toProvisioningConfig().getOptions())
+                .contains(entry("stability-level", "default"));
     }
 
     private void verifyFeaturePackLocation(ProvisioningDefinition definition) throws ProvisioningException, XMLStreamException {

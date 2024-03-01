@@ -631,4 +631,9 @@ public interface CliMessages {
     default String serverVersionsHeader() {
         return bundle.getString("prospero.channels.versions.header");
     }
+
+    default  IllegalArgumentException unknownStabilityLevel(String stabilityLevel, List<String> supportedStabilityLevels) {
+        return new IllegalArgumentException(format(bundle.getString("prospero.install.unknown_stability_level"),
+                stabilityLevel, String.join(",", supportedStabilityLevels)));
+    }
 }
