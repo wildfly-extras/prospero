@@ -18,9 +18,13 @@
 package org.wildfly.prospero.cli;
 
 import org.apache.commons.lang3.StringUtils;
+import org.junit.Before;
+import org.junit.Rule;
 import org.junit.Test;
+import org.junit.rules.TemporaryFolder;
 import org.wildfly.channel.Repository;
 
+import java.io.File;
 import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -31,6 +35,20 @@ import static org.junit.Assert.assertThrows;
 import static org.wildfly.prospero.cli.RepositoryDefinition.from;
 
 public class RepositoryDefinitionTest {
+
+    @Rule
+    public TemporaryFolder tempDir = new TemporaryFolder();
+
+    public String fileURL;
+
+    public String filePath;
+
+    @Before
+    public void setUp() throws Exception {
+        File target = tempDir.newFolder();
+        filePath = target.getAbsolutePath();
+        fileURL = target.toURI().toURL().toString();
+    }
 
     @Test
     public void generatesRepositoryIdsIfNotProvided() throws Exception {
@@ -75,5 +93,21 @@ public class RepositoryDefinitionTest {
         assertThrows(ArgumentParsingException.class, ()->from(List.of("foo::bar::http://test1.te")));
 
         assertThrows(ArgumentParsingException.class, ()->from(List.of("imnoturl")));
+
+    }
+
+    @Test
+    public void throwsErrorIfFormatIsIncorrectForFileURLOrPathDoesNotExist() throws Exception {
+        assertThrows(ArgumentParsingException.class, ()->from(List.of("::"+fileURL)));
+
+        assertThrows(ArgumentParsingException.class, ()->from(List.of("repo-1::")));
+
+        assertThrows(ArgumentParsingException.class, ()->from(List.of("repo-1:::"+fileURL)));
+
+        assertThrows(ArgumentParsingException.class, ()->from(List.of("foo::bar::"+fileURL)));
+
+        assertThrows(ArgumentParsingException.class, ()->from(List.of("file:/path/to/repo")));
+
+        assertThrows(ArgumentParsingException.class, ()->from(List.of(filePath)));
     }
 }

@@ -19,8 +19,10 @@ package org.wildfly.prospero.cli;
 
 import org.wildfly.channel.Repository;
 
+import java.io.File;
 import java.net.MalformedURLException;
 import java.net.URL;
+import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -50,7 +52,12 @@ public class RepositoryDefinition {
 
     private static boolean isValidUrl(String text) {
         try {
-            new URL(text);
+            URL url = new URL(text);
+            if (text.startsWith("file")){
+                String path = Paths.get(url.getPath()).normalize().toString();
+                File f = new File(path);
+                return f.exists();
+            }
             return true;
         } catch (MalformedURLException e) {
             return false;
