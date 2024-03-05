@@ -84,6 +84,8 @@ public class CreateSnapshotTest extends WfCoreTestBase {
         expected.append(CliConstants.CANDIDATE_DIR).append(" \"").append(Path.of("foo").toAbsolutePath()).append("\"");
         expected.append(" ");
         expected.append(CliConstants.YES);
+        expected.append(" ");
+        expected.append(CliConstants.REMOVE);
 
         final ProvisioningDefinition provisioningDefinition = defaultWfCoreDefinition()
                 .setChannelCoordinates(channelsFile.toString())
@@ -115,6 +117,8 @@ public class CreateSnapshotTest extends WfCoreTestBase {
         expected.append(CliConstants.CANDIDATE_DIR).append(" \"").append(Path.of("foo").toAbsolutePath()).append("\"");
         expected.append(" ");
         expected.append(CliConstants.YES);
+        expected.append(" ");
+        expected.append(CliConstants.REMOVE);
 
         final ProvisioningDefinition provisioningDefinition = defaultWfCoreDefinition()
                 .setChannelCoordinates(channelsFile.toString())
