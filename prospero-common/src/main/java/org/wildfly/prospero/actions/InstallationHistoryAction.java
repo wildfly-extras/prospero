@@ -18,9 +18,7 @@
 package org.wildfly.prospero.actions;
 
 import org.apache.commons.io.FileUtils;
-import org.jboss.galleon.config.ProvisioningConfig;
 import org.jboss.galleon.util.PathsUtils;
-import org.jboss.galleon.xml.ProvisioningXmlParser;
 import org.wildfly.channel.Repository;
 import org.wildfly.prospero.ProsperoLogger;
 import org.wildfly.prospero.api.Console;
@@ -41,6 +39,7 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
+import org.jboss.galleon.api.config.GalleonProvisioningConfig;
 
 import static org.wildfly.prospero.galleon.GalleonUtils.MAVEN_REPO_LOCAL;
 
@@ -106,7 +105,7 @@ public class InstallationHistoryAction {
                 final ProsperoConfig prosperoConfig = new ProsperoConfig(
                         TemporaryRepositoriesHandler.overrideRepositories(revertMetadata.getProsperoConfig().getChannels(), overrideRepositories));
                 try (GalleonEnvironment galleonEnv = GalleonEnvironment
-                        .builder(targetDir, prosperoConfig.getChannels(), mavenSessionManager)
+                        .builder(targetDir, prosperoConfig.getChannels(), mavenSessionManager, false)
                         .setConsole(console)
                         .setRestoreManifest(revertMetadata.getManifest(), revertMetadata.getManifestVersions().orElse(null))
                         .setSourceServerPath(installation)
@@ -116,10 +115,10 @@ public class InstallationHistoryAction {
 
                     System.setProperty(MAVEN_REPO_LOCAL, mavenSessionManager.getProvisioningRepo().toAbsolutePath().toString());
 
-                    ProvisioningConfig provisioningConfig = revertMetadata.getRecordedProvisioningConfig();
+                    GalleonProvisioningConfig provisioningConfig = revertMetadata.getRecordedProvisioningConfig();
                     if (provisioningConfig == null) {
                         ProsperoLogger.ROOT_LOGGER.fallbackToGalleonProvisioningDefinition();
-                        provisioningConfig = ProvisioningXmlParser.parse(PathsUtils.getProvisioningXml(installation));
+                        provisioningConfig = galleonEnv.getProvisioning().loadProvisioningConfig(PathsUtils.getProvisioningXml(installation));
                     }
 
                     prepareCandidateAction.buildCandidate(targetDir, galleonEnv,

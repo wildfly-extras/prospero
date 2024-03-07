@@ -22,7 +22,7 @@ import org.eclipse.aether.RepositorySystem;
 import org.eclipse.aether.artifact.DefaultArtifact;
 import org.eclipse.aether.deployment.DeploymentException;
 import org.jboss.galleon.ProvisioningException;
-import org.jboss.galleon.config.ProvisioningConfig;
+import org.jboss.galleon.api.config.GalleonProvisioningConfig;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Rule;
@@ -67,7 +67,7 @@ public class CacheManifestTest extends WfCoreTestBase {
 
     @Rule
     public TemporaryFolder tempDir = new TemporaryFolder();
-    private ProvisioningConfig baseProvCfg;
+    private GalleonProvisioningConfig baseProvCfg;
     private Channel baseChannel;
     private File baseManifest;
     private TestRepositoryUtils repositoryUtils;

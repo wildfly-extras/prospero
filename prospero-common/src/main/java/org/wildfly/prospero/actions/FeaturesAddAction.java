@@ -21,17 +21,9 @@ import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.jboss.galleon.ProvisioningDescriptionException;
 import org.jboss.galleon.ProvisioningException;
-import org.jboss.galleon.ProvisioningManager;
 import org.jboss.galleon.config.ConfigId;
-import org.jboss.galleon.config.ConfigModel;
-import org.jboss.galleon.config.FeaturePackConfig;
-import org.jboss.galleon.config.ProvisioningConfig;
-import org.jboss.galleon.layout.FeaturePackLayout;
-import org.jboss.galleon.layout.ProvisioningLayout;
-import org.jboss.galleon.layout.ProvisioningLayoutFactory;
 import org.jboss.galleon.universe.FeaturePackLocation;
 import org.jboss.galleon.universe.maven.repo.MavenRepoManager;
-import org.jboss.galleon.util.LayoutUtils;
 import org.wildfly.channel.ArtifactTransferException;
 import org.wildfly.channel.Channel;
 import org.wildfly.channel.ChannelSession;
@@ -48,7 +40,6 @@ import org.wildfly.prospero.api.exceptions.MetadataException;
 import org.wildfly.prospero.api.exceptions.OperationException;
 import org.wildfly.prospero.galleon.FeaturePackLocationParser;
 import org.wildfly.prospero.galleon.GalleonEnvironment;
-import org.wildfly.prospero.galleon.GalleonUtils;
 import org.wildfly.prospero.model.ProsperoConfig;
 import org.wildfly.prospero.wfchannel.MavenSessionManager;
 
@@ -66,6 +57,15 @@ import java.util.Set;
 import java.util.TreeSet;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
+import org.jboss.galleon.api.GalleonBuilder;
+import org.jboss.galleon.api.GalleonFeaturePackLayout;
+import org.jboss.galleon.api.GalleonProvisioningLayout;
+import org.jboss.galleon.api.Provisioning;
+import org.jboss.galleon.api.config.GalleonConfigurationWithLayers;
+import org.jboss.galleon.api.config.GalleonConfigurationWithLayersBuilder;
+import org.jboss.galleon.api.config.GalleonConfigurationWithLayersBuilderItf;
+import org.jboss.galleon.api.config.GalleonFeaturePackConfig;
+import org.jboss.galleon.api.config.GalleonProvisioningConfig;
 
 /**
  * Installs a feature pack onto an existing server.
@@ -147,7 +147,7 @@ public class FeaturesAddAction {
         }
 
 
-        final ProvisioningConfig newConfig = buildProvisioningConfig(Collections.emptySet(), fpl, selectedConfigs);
+        final GalleonProvisioningConfig newConfig = buildProvisioningConfig(Collections.emptySet(), fpl, selectedConfigs);
 
         install(newConfig);
     }
@@ -200,7 +200,7 @@ public class FeaturesAddAction {
             ProsperoLogger.ROOT_LOGGER.addingFeaturePack(fpl, selectedConfig + ":" + selectedModel, StringUtils.join(layers));
         }
 
-        final ProvisioningConfig newConfig = buildProvisioningConfig(layers, fpl, selectedConfig==null?Collections.emptySet():Set.of(new ConfigId(selectedModel, selectedConfig)));
+        final GalleonProvisioningConfig newConfig = buildProvisioningConfig(layers, fpl, selectedConfig==null?Collections.emptySet():Set.of(new ConfigId(selectedModel, selectedConfig)));
 
         install(newConfig);
     }
@@ -226,7 +226,7 @@ public class FeaturesAddAction {
         }
     }
 
-    private void install(ProvisioningConfig newConfig) throws ProvisioningException, OperationException {
+    private void install(GalleonProvisioningConfig newConfig) throws ProvisioningException, OperationException {
         final Path candidate;
         try {
             candidate = Files.createTempDirectory("prospero-candidate").toAbsolutePath();
@@ -273,7 +273,7 @@ public class FeaturesAddAction {
             throw new IllegalArgumentException("The feature pack coordinate has to consist of <groupId>:<artifactId>");
         }
         final ChannelSession channelSession = GalleonEnvironment
-                .builder(installDir, prosperoConfig.getChannels(), mavenSessionManager).build()
+                .builder(installDir, prosperoConfig.getChannels(), mavenSessionManager, false).build()
                 .getChannelSession();
 
         try {
@@ -292,18 +292,18 @@ public class FeaturesAddAction {
         return true;
     }
 
-    private ProvisioningConfig buildProvisioningConfig(Set<String> layers, FeaturePackLocation fpl, Set<ConfigId> selectedConfigs)
+    private GalleonProvisioningConfig buildProvisioningConfig(Set<String> layers, FeaturePackLocation fpl, Set<ConfigId> selectedConfigs)
             throws ProvisioningException, OperationException {
         if (!layers.isEmpty() && selectedConfigs.size() > 1) {
             throw new IllegalArgumentException("Only one config can be selected when selecting layers");
         }
         try (GalleonEnvironment galleonEnv = getGalleonEnv(installDir);
-            ProvisioningManager pm = galleonEnv.getProvisioningManager()) {
+            Provisioning pm = galleonEnv.getProvisioning()) {
 
-            final ProvisioningConfig existingConfig = pm.getProvisioningConfig();
-            final ProvisioningConfig.Builder builder = ProvisioningConfig.builder(existingConfig);
+            final GalleonProvisioningConfig existingConfig = pm.getProvisioningConfig();
+            final GalleonProvisioningConfig.Builder builder = GalleonProvisioningConfig.builder(existingConfig);
 
-            final FeaturePackConfig.Builder fpBuilder = buildFeaturePackConfig(fpl, existingConfig, builder);
+            final GalleonFeaturePackConfig.Builder fpBuilder = buildFeaturePackConfig(fpl, existingConfig, builder);
 
             if (!selectedConfigs.isEmpty()) {
                 fpBuilder.setInheritConfigs(false);
@@ -313,7 +313,12 @@ public class FeaturesAddAction {
                 if (selectedConfig != null) {
                     fpBuilder.setInheritConfigs(false);
                     if (!layers.isEmpty()) {
-                        final ConfigModel.Builder configBuilder = buildLayerConfig(layers, selectedConfig.getName(), selectedConfig.getModel(), existingConfig, builder);
+                        final GalleonConfigurationWithLayersBuilderItf configBuilder = buildLayerConfig(layers,
+                                selectedConfig.getName(),
+                                selectedConfig.getModel(),
+                                pm,
+                                existingConfig,
+                                builder);
                         builder.addConfig(configBuilder.build());
                     } else {
                         fpBuilder.includeDefaultConfig(selectedConfig.getModel(), selectedConfig.getName());
@@ -325,7 +330,7 @@ public class FeaturesAddAction {
                 fpBuilder.setInheritPackages(false);
             }
 
-            final ProvisioningConfig newConfig = builder
+            final GalleonProvisioningConfig newConfig = builder
                     .addFeaturePackDep(fpBuilder.build())
                     .build();
 
@@ -337,39 +342,39 @@ public class FeaturesAddAction {
         }
     }
 
-    private static FeaturePackConfig.Builder buildFeaturePackConfig(FeaturePackLocation fpl,
-                                                                    ProvisioningConfig existingConfig,
-                                                                    ProvisioningConfig.Builder builder)
+    private static GalleonFeaturePackConfig.Builder buildFeaturePackConfig(FeaturePackLocation fpl,
+                                                                    GalleonProvisioningConfig existingConfig,
+                                                                    GalleonProvisioningConfig.Builder builder)
             throws ProvisioningException {
-        final FeaturePackConfig.Builder fpBuilder;
+        final GalleonFeaturePackConfig.Builder fpBuilder;
         if (existingConfig.hasFeaturePackDep(fpl.getProducer())) {
-            FeaturePackConfig fp = existingConfig.getFeaturePackDep(fpl.getProducer());
-            fpBuilder = FeaturePackConfig.builder(fp);
+            GalleonFeaturePackConfig fp = existingConfig.getFeaturePackDep(fpl.getProducer());
+            fpBuilder = GalleonFeaturePackConfig.builder(fp);
             builder.removeFeaturePackDep(fp.getLocation());
         } else {
-            fpBuilder = FeaturePackConfig.builder(fpl);
+            fpBuilder = GalleonFeaturePackConfig.builder(fpl);
         }
         return fpBuilder;
     }
 
-    private static ConfigModel.Builder buildLayerConfig(Set<String> layers, String selectedConfig, String selectedModel,
-                                                        ProvisioningConfig existingConfig, ProvisioningConfig.Builder builder)
-            throws ProvisioningDescriptionException {
-        final ConfigModel.Builder configBuilder;
+    private static GalleonConfigurationWithLayersBuilderItf buildLayerConfig(Set<String> layers, String selectedConfig, String selectedModel,
+                                                        Provisioning provisioning, GalleonProvisioningConfig existingConfig, GalleonProvisioningConfig.Builder builder)
+            throws ProvisioningDescriptionException, ProvisioningException {
+        final GalleonConfigurationWithLayersBuilderItf configBuilder;
         final ConfigId id = new ConfigId(selectedModel, selectedConfig);
         if (existingConfig.hasDefinedConfig(id)) {
             if (ProsperoLogger.ROOT_LOGGER.isTraceEnabled()) {
                 ProsperoLogger.ROOT_LOGGER.trace("Replacing existing ConfigModel " + id);
             }
-            ConfigModel cmodel = existingConfig.getDefinedConfig(id);
-            configBuilder = ConfigModel.builder(cmodel);
+            GalleonConfigurationWithLayers cmodel = existingConfig.getDefinedConfig(id);
+            configBuilder = provisioning.buildConfigurationBuilder(cmodel);
             includeLayers(layers, configBuilder, cmodel);
             builder.removeConfig(id);
         } else {
             if (ProsperoLogger.ROOT_LOGGER.isTraceEnabled()) {
                 ProsperoLogger.ROOT_LOGGER.trace("Adding new ConfigModel " + id);
             }
-            configBuilder = ConfigModel.builder(selectedModel, selectedConfig);
+            configBuilder = GalleonConfigurationWithLayersBuilder.builder(selectedModel, selectedConfig);
             for (String layer: layers) {
                 configBuilder.includeLayer(layer);
             }
@@ -377,7 +382,7 @@ public class FeaturesAddAction {
         return configBuilder;
     }
 
-    private static void includeLayers(Set<String> layers, ConfigModel.Builder configBuilder, ConfigModel cmodel) throws ProvisioningDescriptionException {
+    private static void includeLayers(Set<String> layers, GalleonConfigurationWithLayersBuilderItf configBuilder, GalleonConfigurationWithLayers cmodel) throws ProvisioningDescriptionException {
         for (String layer: layers) {
             if (cmodel.getExcludedLayers().contains(layer)){
                 if (ProsperoLogger.ROOT_LOGGER.isTraceEnabled()) {
@@ -412,31 +417,19 @@ public class FeaturesAddAction {
         }
     }
 
-    private void verifyConfigurationsAvailable(ProvisioningConfig config) throws ProvisioningException, OperationException {
-        try( GalleonEnvironment env = GalleonEnvironment
-                .builder(installDir, prosperoConfig.getChannels(), mavenSessionManager).build()) {
-            final MavenRepoManager repositoryManager = env.getRepositoryManager();
-
-            final ProvisioningLayoutFactory layoutFactory = GalleonUtils.getProvisioningLayoutFactory(repositoryManager);
-
-            final ProvisioningLayout<FeaturePackLayout> layout = layoutFactory.newConfigLayout(config);
-
+    private void verifyConfigurationsAvailable(GalleonProvisioningConfig config) throws ProvisioningException, OperationException {
+        try (GalleonEnvironment env = GalleonEnvironment
+                .builder(installDir, prosperoConfig.getChannels(), mavenSessionManager, false).build()) {
             final Stream<ConfigId> configIds = Stream.concat(
                     config.getFeaturePackDeps().stream().flatMap(fd -> fd.getIncludedConfigs().stream()),
-                    config.getDefinedConfigs().stream().map(ConfigModel::getId));
+                    config.getDefinedConfigs().stream().map(GalleonConfigurationWithLayers::getId));
 
             final Optional<ConfigId> missingConfig = configIds.filter(cfg -> {
-                boolean found = true;
-                for (FeaturePackLayout fp : layout.getOrderedFeaturePacks()) {
-                    try {
-                        LayoutUtils.getConfigXml(fp.getDir(), cfg, true);
-                        found = true;
-                        break;
-                    } catch (ProvisioningDescriptionException e) {
-                        found = false;
-                    }
+                try {
+                    return !env.getProvisioning().hasOrderedFeaturePacksConfig(config, cfg);
+                } catch (ProvisioningException ex) {
+                    throw new RuntimeException(ex);
                 }
-                return !found;
             }).findFirst();
 
             if (missingConfig.isPresent()) {
@@ -469,7 +462,7 @@ public class FeaturesAddAction {
 
     private GalleonEnvironment getGalleonEnv(Path target) throws ProvisioningException, OperationException {
         return GalleonEnvironment
-                .builder(target, prosperoConfig.getChannels(), mavenSessionManager)
+                .builder(target, prosperoConfig.getChannels(), mavenSessionManager, false)
                 .setSourceServerPath(this.installDir)
                 .setConsole(console)
                 .build();
@@ -477,36 +470,34 @@ public class FeaturesAddAction {
 
     private Map<String, Set<String>> getAllLayers(FeaturePackLocation fpl)
             throws ProvisioningException, OperationException {
-        final ProvisioningConfig config = ProvisioningConfig.builder()
-                .addFeaturePackDep(FeaturePackConfig.builder(fpl).build())
+        final GalleonProvisioningConfig config = GalleonProvisioningConfig.builder()
+                .addFeaturePackDep(GalleonFeaturePackConfig.builder(fpl).build())
                 .build();
 
         final MavenRepoManager repositoryManager = GalleonEnvironment
-                .builder(installDir, prosperoConfig.getChannels(), mavenSessionManager).build()
+                .builder(installDir, prosperoConfig.getChannels(), mavenSessionManager, false).build()
                 .getRepositoryManager();
-
-        final ProvisioningLayoutFactory layoutFactory = GalleonUtils.getProvisioningLayoutFactory(repositoryManager);
-
-        final ProvisioningLayout<FeaturePackLayout> layout = layoutFactory.newConfigLayout(config);
-
         final Map<String, Set<String>> layersMap = new HashMap<>();
-
-        for (FeaturePackLayout fp : layout.getOrderedFeaturePacks()) {
-            final Set<ConfigId> configIds;
-            try {
-                configIds = fp.loadLayers();
-            } catch (IOException e) {
-                // this should not happen as the code IOException is not actually thrown by loadLayers
-                throw new RuntimeException(e);
-            }
-            for (ConfigId layer : configIds) {
-                final String model = layer.getModel();
-                Set<String> names = layersMap.get(model);
-                if (names == null) {
-                    names = new HashSet<>();
-                    layersMap.put(model, names);
+        try (Provisioning p = new GalleonBuilder().addArtifactResolver(repositoryManager).newProvisioningBuilder(config).build()) {
+            try (GalleonProvisioningLayout layout = p.newProvisioningLayout(config)) {
+                for (GalleonFeaturePackLayout fp : layout.getOrderedFeaturePacks()) {
+                    final Set<ConfigId> configIds;
+                    try {
+                        configIds = fp.loadLayers();
+                    } catch (IOException e) {
+                        // this should not happen as the code IOException is not actually thrown by loadLayers
+                        throw new RuntimeException(e);
+                    }
+                    for (ConfigId layer : configIds) {
+                        final String model = layer.getModel();
+                        Set<String> names = layersMap.get(model);
+                        if (names == null) {
+                            names = new HashSet<>();
+                            layersMap.put(model, names);
+                        }
+                        names.add(layer.getName());
+                    }
                 }
-                names.add(layer.getName());
             }
         }
 

@@ -18,6 +18,8 @@
 package org.wildfly.prospero.it;
 
 import java.io.File;
+import java.io.IOException;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Arrays;
@@ -117,9 +119,13 @@ public class ExecutionUtils {
         }
 
         public void assertReturnCode(int expectedReturnCode) {
-            assertThat(process.exitValue())
-                    .overridingErrorMessage(new ProcessErrorStreamReader(process))
-                    .isEqualTo(expectedReturnCode);
+            try {
+                assertThat(process.exitValue())
+                        .overridingErrorMessage(Files.readString(Path.of("target/test-out.log")))
+                        .isEqualTo(expectedReturnCode);
+            } catch (IOException e) {
+                throw new RuntimeException(e);
+            }
         }
     }
 }

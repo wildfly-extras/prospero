@@ -35,7 +35,8 @@
     <artifact name="${org.wildfly.prospero:prospero-common}"/>
     <artifact name="${org.wildfly.prospero:prospero-metadata}"/>
     <artifact name="${org.wildfly.prospero:prospero-cli}"/>
-    <artifact name="${org.jboss.galleon:galleon-core}"/>
+    <artifact name="${org.jboss.galleon:galleon-api}"/>
+    <artifact name="${org.jboss.galleon:galleon-common-api}"/>
     <artifact name="${org.jboss.galleon:galleon-maven-universe}"/>
     <artifact name="${info.picocli:picocli}"/>
     <artifact name="${com.fasterxml.jackson.dataformat:jackson-dataformat-yaml}"/>

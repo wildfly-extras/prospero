@@ -19,7 +19,6 @@ package org.wildfly.prospero.api;
 
 import org.assertj.core.groups.Tuple;
 import org.jboss.galleon.ProvisioningException;
-import org.jboss.galleon.config.ProvisioningConfig;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
@@ -45,6 +44,7 @@ import javax.xml.stream.XMLStreamException;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.tuple;
+import org.jboss.galleon.api.config.GalleonProvisioningConfig;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertThrows;
@@ -254,7 +254,7 @@ public class ProvisioningDefinitionTest {
 
     private void verifyFeaturePackLocation(ProvisioningDefinition definition) throws ProvisioningException, XMLStreamException {
         assertNull(definition.getFpl());
-        ProvisioningConfig galleonConfig = GalleonUtils.loadProvisioningConfig(definition.getDefinition());
+        GalleonProvisioningConfig galleonConfig = GalleonUtils.loadProvisioningConfig(definition.getDefinition());
         assertEquals(1, galleonConfig.getFeaturePackDeps().size());
         assertEquals("org.wildfly.core:wildfly-core-galleon-pack:zip",
                 galleonConfig.getFeaturePackDeps().iterator().next().getLocation().toString());

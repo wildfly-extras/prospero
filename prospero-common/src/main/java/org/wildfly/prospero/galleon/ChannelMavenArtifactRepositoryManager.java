@@ -17,8 +17,6 @@
 
 package org.wildfly.prospero.galleon;
 
-import org.jboss.galleon.ProvisioningException;
-import org.jboss.galleon.layout.FeaturePackDescriber;
 import org.jboss.galleon.util.ZipUtils;
 import org.jboss.logging.Logger;
 import org.wildfly.channel.ArtifactTransferException;
@@ -47,8 +45,11 @@ import java.util.Properties;
 import java.util.Set;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
+import org.jboss.galleon.api.MavenStreamResolver;
+import org.jboss.galleon.api.Provisioning;
+import org.wildfly.channel.VersionResult;
 
-public class ChannelMavenArtifactRepositoryManager implements MavenRepoManager, ChannelResolvable {
+public class ChannelMavenArtifactRepositoryManager implements MavenRepoManager, ChannelResolvable, MavenStreamResolver{
     private static final Logger LOG = Logger.getLogger(ChannelMavenArtifactRepositoryManager.class);
     private static final String REQUIRE_CHANNEL_FOR_ALL_ARTIFACT = "org.wildfly.plugins.galleon.all.artifact.requires.channel.resolution";
     private final ChannelSession channelSession;
@@ -115,9 +116,7 @@ public class ChannelMavenArtifactRepositoryManager implements MavenRepoManager, 
                             artifact.getExtension(),
                             artifact.getClassifier(),
                             artifact.getVersion());
-            try {
-                FeaturePackDescriber.readSpec(mavenArtifact.getFile().toPath());
-            } catch(ProvisioningException ex) {
+            if (!Provisioning.isFeaturePack(mavenArtifact.getFile().toPath())) {
                 // Not a feature-pack
                 return requireChannel;
             }
@@ -345,5 +344,12 @@ public class ChannelMavenArtifactRepositoryManager implements MavenRepoManager, 
 
     public ChannelManifest resolvedChannel() {
         return channelSession.getRecordedChannel();
+    }
+
+    @Override
+    public String getLatestVersion(String groupId, String artifactId, String extension, String classifier, String baseVersion) {
+        VersionResult res = channelSession.findLatestMavenArtifactVersion(groupId, artifactId, extension, classifier,
+                baseVersion);
+        return res.getVersion();
     }
 }

@@ -26,9 +26,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
 
-import org.jboss.galleon.config.ProvisioningConfig;
 import org.jboss.galleon.universe.FeaturePackLocation;
-import org.jboss.galleon.xml.ProvisioningXmlWriter;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Rule;
@@ -54,6 +52,9 @@ import org.wildfly.prospero.cli.ReturnCodes;
 import org.wildfly.prospero.test.MetadataTestUtils;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import org.jboss.galleon.api.GalleonBuilder;
+import org.jboss.galleon.api.Provisioning;
+import org.jboss.galleon.api.config.GalleonProvisioningConfig;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
@@ -74,7 +75,7 @@ public class InstallCommandTest extends AbstractMavenCommandTest {
     private ProvisioningAction provisionAction;
 
     @Captor
-    private ArgumentCaptor<ProvisioningConfig> configCaptor;
+    private ArgumentCaptor<GalleonProvisioningConfig> configCaptor;
 
     @Captor
     private ArgumentCaptor<List<Channel>> channelCaptor;
@@ -182,10 +183,11 @@ public class InstallCommandTest extends AbstractMavenCommandTest {
     @Test
     public void usingProvisionDefinitonRequiresChannel() throws Exception {
         final File provisionDefinitionFile = temporaryFolder.newFile("provision.xml");
-        ProvisioningXmlWriter.getInstance().write(ProvisioningConfig.builder()
+        try(Provisioning p = new GalleonBuilder().newProvisioningBuilder().build()) {
+            p.storeProvisioningConfig(GalleonProvisioningConfig.builder()
                         .addFeaturePackDep(FeaturePackLocation.fromString("org.wildfly.core:wildfly-core-galleon-pack::zip"))
-                        .build(),
-                provisionDefinitionFile.toPath());
+                        .build(), provisionDefinitionFile.toPath());
+        }
 
         final File channelsFile = temporaryFolder.newFile();
         Channel channel = createChannel("dev", "wildfly-channel", "http://test.test", "org.wildfly");

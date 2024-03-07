@@ -30,7 +30,6 @@ import java.util.stream.Collectors;
 
 import org.apache.commons.io.FileUtils;
 import org.jboss.galleon.ProvisioningException;
-import org.jboss.galleon.config.ProvisioningConfig;
 import org.jboss.galleon.diff.FsDiff;
 import org.jboss.galleon.diff.FsEntry;
 import org.jboss.galleon.diff.FsEntryFactory;
@@ -65,6 +64,7 @@ import org.wildfly.prospero.updates.UpdateSet;
 import picocli.CommandLine;
 
 import javax.xml.stream.XMLStreamException;
+import org.jboss.galleon.api.config.GalleonProvisioningConfig;
 
 @CommandLine.Command(
         name = CliConstants.Commands.UPDATE,
@@ -395,7 +395,7 @@ public class UpdateCommand extends AbstractParentCommand {
         }
 
         private FeaturePackLocation getFpl(KnownFeaturePack knownFeaturePack, String version) throws XMLStreamException, ProvisioningException {
-            ProvisioningConfig config = GalleonUtils.loadProvisioningConfig(knownFeaturePack.getGalleonConfiguration());
+            GalleonProvisioningConfig config = GalleonUtils.loadProvisioningConfig(knownFeaturePack.getGalleonConfiguration());
             if (config.getFeaturePackDeps().isEmpty()) {
                 throw new ProvisioningException("At least one feature pack location must be specified in the provisioning configuration");
             }

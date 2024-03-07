@@ -17,7 +17,6 @@
 
 package org.wildfly.prospero.cli.commands;
 
-import org.jboss.galleon.config.FeaturePackConfig;
 import org.wildfly.channel.Channel;
 import org.wildfly.prospero.ProsperoLogger;
 import org.wildfly.prospero.api.InstallationMetadata;
@@ -37,6 +36,7 @@ import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
+import org.jboss.galleon.api.config.GalleonFeaturePackConfig;
 
 @CommandLine.Command(name = CliConstants.Commands.CLONE)
 public class CloneCommand extends AbstractCommand {
@@ -129,7 +129,7 @@ public class CloneCommand extends AbstractCommand {
 
             try (InstallationMetadata metadataBundle = InstallationMetadata.fromMetadataBundle(inPath.toAbsolutePath())) {
                 console.println(CliMessages.MESSAGES.provisioningConfigHeader());
-                for (FeaturePackConfig featurePackDep : metadataBundle.getGalleonProvisioningConfig().getFeaturePackDeps()) {
+                for (GalleonFeaturePackConfig featurePackDep : metadataBundle.getGalleonProvisioningConfig().getFeaturePackDeps()) {
                     console.println(" * " + featurePackDep.getLocation().toString());
                 }
                 console.println(CliMessages.MESSAGES.subscribedChannelsHeader());

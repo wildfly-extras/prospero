@@ -24,7 +24,6 @@ import java.util.Map;
 import javax.xml.stream.XMLStreamException;
 
 import org.jboss.galleon.ProvisioningException;
-import org.jboss.galleon.config.ProvisioningConfig;
 import org.junit.Test;
 import org.wildfly.channel.MavenCoordinate;
 import org.wildfly.channel.Repository;
@@ -32,6 +31,7 @@ import org.wildfly.prospero.galleon.GalleonUtils;
 import org.wildfly.prospero.model.KnownFeaturePack;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import org.jboss.galleon.api.config.GalleonProvisioningConfig;
 
 public class KnownFeaturePacksTest {
 
@@ -46,7 +46,7 @@ public class KnownFeaturePacksTest {
             assertThat(channel.getRepositories()).containsOnly(new Repository("central", "https://repo1.maven.org/maven2/"));
         });
 
-        ProvisioningConfig galleonConfig = GalleonUtils.loadProvisioningConfig(knownFeaturePack.getGalleonConfiguration());
+        GalleonProvisioningConfig galleonConfig = GalleonUtils.loadProvisioningConfig(knownFeaturePack.getGalleonConfiguration());
         assertThat(galleonConfig.getOptions()).containsOnly(Map.entry("jboss-bulk-resolve-artifacts", "true"));
         assertThat(galleonConfig.getFeaturePackDeps().iterator().next()).satisfies(fp -> {
             assertThat(fp.getLocation().toString()).isEqualTo("org.wildfly.core:wildfly-core-galleon-pack:zip");

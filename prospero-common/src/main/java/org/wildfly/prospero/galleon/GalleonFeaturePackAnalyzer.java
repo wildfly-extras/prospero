@@ -20,12 +20,6 @@ package org.wildfly.prospero.galleon;
 import org.apache.commons.io.FileUtils;
 import org.jboss.galleon.Constants;
 import org.jboss.galleon.ProvisioningException;
-import org.jboss.galleon.ProvisioningManager;
-import org.jboss.galleon.config.ProvisioningConfig;
-import org.jboss.galleon.layout.FeaturePackLayout;
-import org.jboss.galleon.layout.ProvisioningLayout;
-import org.jboss.galleon.layout.ProvisioningLayoutFactory;
-import org.jboss.galleon.spec.FeaturePackPlugin;
 import org.jboss.galleon.util.HashUtils;
 import org.jboss.logging.Logger;
 import org.wildfly.channel.Channel;
@@ -41,6 +35,8 @@ import java.nio.file.Path;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+import org.jboss.galleon.api.Provisioning;
+import org.jboss.galleon.api.config.GalleonProvisioningConfig;
 
 public class GalleonFeaturePackAnalyzer {
 
@@ -64,30 +60,16 @@ public class GalleonFeaturePackAnalyzer {
      * @param installedDir - path to the installation. Used to access the cache
      * @param provisioningConfig - Galleon configuration to analyze
      */
-    public void cacheGalleonArtifacts(Path installedDir, ProvisioningConfig provisioningConfig) throws Exception {
+    public void cacheGalleonArtifacts(Path installedDir, GalleonProvisioningConfig provisioningConfig) throws Exception {
         // no data will be actually written out, but we need a path to init the Galleon
         final Path tempInstallationPath = Files.createTempDirectory("temp");
         final Set<String> fps = new HashSet<>();
 
         GalleonEnvironment galleonEnv = null;
-        ProvisioningLayoutFactory layoutFactory = null;
-        ProvisioningLayout<FeaturePackLayout> layout = null;
         try {
-            galleonEnv = galleonEnvWithFpMapper(tempInstallationPath, installedDir, fps);
-            final ProvisioningManager pm = galleonEnv.getProvisioningManager();
-
-
-            layoutFactory = pm.getLayoutFactory();
-            layout = layoutFactory.newConfigLayout(provisioningConfig);
-
-
-            Set<String> pluginGavs = new HashSet<>();
-            for (FeaturePackLayout fp : layout.getOrderedFeaturePacks()) {
-                for (FeaturePackPlugin plugin : fp.getSpec().getPlugins().values()) {
-                    pluginGavs.add(plugin.getLocation());
-                }
-            }
-
+            galleonEnv = galleonEnvWithFpMapper(tempInstallationPath, installedDir, fps, provisioningConfig);
+            final Provisioning pm = galleonEnv.getProvisioning();
+            final Set<String> pluginGavs = pm.getOrderedFeaturePackPluginLocations(provisioningConfig);
             final ArtifactCache artifactCache = ArtifactCache.getInstance(installedDir);
             for (String pluginGav : pluginGavs) {
                 final String[] pluginLoc = pluginGav.split(":");
@@ -115,12 +97,6 @@ public class GalleonFeaturePackAnalyzer {
 
             updateHashes(installedDir);
         } finally {
-            if (layout != null) {
-                layout.close();
-            }
-            if (layoutFactory != null) {
-                layoutFactory.close();
-            }
             if (galleonEnv != null) {
                 galleonEnv.close();
             }
@@ -150,27 +126,24 @@ public class GalleonFeaturePackAnalyzer {
      * @throws ProvisioningException
      * @throws OperationException
      */
-    public Set<String> getFeaturePacks(ProvisioningConfig provisioningConfig) throws IOException, ProvisioningException, OperationException {
+    public Set<String> getFeaturePacks(GalleonProvisioningConfig provisioningConfig) throws IOException, ProvisioningException, OperationException {
         // no data will be actually written out, but we need a path to init the Galleon
         final Path tempInstallationPath = Files.createTempDirectory("temp");
         final Set<String> fps = new HashSet<>();
-        try (GalleonEnvironment galleonEnv = galleonEnvWithFpMapper(tempInstallationPath, tempInstallationPath, fps)) {
-            final ProvisioningManager pm = galleonEnv.getProvisioningManager();
-
-            final ProvisioningLayoutFactory layoutFactory = pm.getLayoutFactory();
-            layoutFactory.newConfigLayout(provisioningConfig).close();
+        try (GalleonEnvironment galleonEnv = galleonEnvWithFpMapper(tempInstallationPath, tempInstallationPath, fps, provisioningConfig)) {
             return fps;
         } finally {
             FileUtils.deleteQuietly(tempInstallationPath.toFile());
         }
     }
 
-    private GalleonEnvironment galleonEnvWithFpMapper(Path tempInstallationPath, Path sourcePath, Set<String> fps) throws ProvisioningException, OperationException {
+    private GalleonEnvironment galleonEnvWithFpMapper(Path tempInstallationPath, Path sourcePath, Set<String> fps, GalleonProvisioningConfig provisioningConfig) throws ProvisioningException, OperationException {
         final GalleonEnvironment galleonEnv = GalleonEnvironment
-                .builder(tempInstallationPath, channels, mavenSessionManager)
+                .builder(tempInstallationPath, channels, mavenSessionManager, false)
                 .setConsole(null)
                 .setSourceServerPath(sourcePath)
                 .setResolvedFpTracker(fps::add)
+                .setProvisioningConfig(provisioningConfig)
                 .build();
         return galleonEnv;
     }

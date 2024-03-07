@@ -21,10 +21,7 @@ import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.eclipse.aether.DefaultRepositorySystemSession;
 import org.eclipse.aether.RepositorySystem;
-import org.jboss.galleon.Constants;
 import org.jboss.galleon.ProvisioningException;
-import org.jboss.galleon.ProvisioningManager;
-import org.jboss.galleon.layout.ProvisioningLayoutFactory;
 import org.jboss.galleon.universe.maven.repo.MavenRepoManager;
 import org.jboss.logging.Logger;
 import org.wildfly.channel.ArtifactTransferException;
@@ -63,6 +60,11 @@ import java.util.Set;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
+import org.jboss.galleon.Constants;
+import org.jboss.galleon.api.GalleonBuilder;
+import org.jboss.galleon.api.Provisioning;
+import org.jboss.galleon.api.config.GalleonProvisioningConfig;
+import org.jboss.galleon.util.PathsUtils;
 
 public class GalleonEnvironment implements AutoCloseable {
     private static final Logger LOG = Logger.getLogger(GalleonEnvironment.class.getName());
@@ -72,7 +74,7 @@ public class GalleonEnvironment implements AutoCloseable {
     public static final String TRACK_JB_ARTIFACTS_RESOLVE = "JB_ARTIFACTS_RESOLVE";
 
     public static final String TRACK_RESOLVING_VERSIONS = "RESOLVING_VERSIONS";
-    private final ProvisioningManager provisioningManager;
+    private final Provisioning provisioning;
     private final MavenRepoManager repositoryManager;
     private final ChannelSession channelSession;
     private final List<Channel> channels;
@@ -135,19 +137,19 @@ public class GalleonEnvironment implements AutoCloseable {
             resetGalleonLineEndings = false;
         }
 
-        provisioningManager = GalleonUtils.getProvisioningManager(builder.installDir, repositoryManager, builder.fpTracker);
+        final GalleonBuilder provider = GalleonUtils.newGalleonBuilder(repositoryManager, builder.fpTracker);
+        provisioning = GalleonUtils.newProvisioning(provider, builder.installDir, builder.config, PathsUtils.getProvisioningXml(builder.installDir), builder.useDefaultCore);
 
-        final ProvisioningLayoutFactory layoutFactory = provisioningManager.getLayoutFactory();
-        Stream.of(ProvisioningLayoutFactory.TRACK_LAYOUT_BUILD,
-                  ProvisioningLayoutFactory.TRACK_PACKAGES,
-                  ProvisioningLayoutFactory.TRACK_CONFIGS,
+        Stream.of(Constants.TRACK_LAYOUT_BUILD,
+                  Constants.TRACK_PACKAGES,
+                  Constants.TRACK_CONFIGS,
                   TRACK_JBMODULES,
                   TRACK_JBEXAMPLES)
-                .forEach(t->layoutFactory.setProgressCallback(t, new GalleonCallbackAdapter(console.orElse(null), t)));
+                .forEach(t->provisioning.setProgressCallback(t, new GalleonCallbackAdapter(console.orElse(null), t)));
 
         final DownloadsCallbackAdapter callback = new DownloadsCallbackAdapter(console.orElse(null));
         session.setTransferListener(callback);
-        layoutFactory.setProgressCallback(TRACK_JB_ARTIFACTS_RESOLVE, callback);
+        provisioning.setProgressCallback(TRACK_JB_ARTIFACTS_RESOLVE, callback);
     }
 
     private List<Channel> replaceManifestWithRestoreManifests(Builder builder, Optional<ChannelManifest> restoreManifest) throws ProvisioningException {
@@ -203,8 +205,8 @@ public class GalleonEnvironment implements AutoCloseable {
         return channelSession;
     }
 
-    public ProvisioningManager getProvisioningManager() {
-        return provisioningManager;
+    public Provisioning getProvisioning() {
+        return provisioning;
     }
 
     public ChannelSession getChannelSession() {
@@ -227,7 +229,7 @@ public class GalleonEnvironment implements AutoCloseable {
         if (restoreManifestPath != null) {
             FileUtils.deleteQuietly(restoreManifestPath.toFile());
         }
-        provisioningManager.close();
+        provisioning.close();
     }
 
     /*
@@ -262,12 +264,12 @@ public class GalleonEnvironment implements AutoCloseable {
         }
     }
 
-    public static Builder builder(Path installDir, List<Channel> channels, MavenSessionManager mavenSessionManager) {
+    public static Builder builder(Path installDir, List<Channel> channels, MavenSessionManager mavenSessionManager, boolean useDefaultCore) {
         Objects.requireNonNull(installDir);
         Objects.requireNonNull(channels);
         Objects.requireNonNull(mavenSessionManager);
 
-        return new Builder(installDir, channels, mavenSessionManager);
+        return new Builder(installDir, channels, mavenSessionManager, useDefaultCore);
     }
 
     public static class Builder {
@@ -281,15 +283,24 @@ public class GalleonEnvironment implements AutoCloseable {
         private Path sourceServerPath;
         private boolean artifactDirectResolve;
         private List<ManifestVersionRecord.MavenManifest> restoredManifestVersions;
+        private final boolean useDefaultCore;
 
-        private Builder(Path installDir, List<Channel> channels, MavenSessionManager mavenSessionManager) {
+        private GalleonProvisioningConfig config;
+
+        private Builder(Path installDir, List<Channel> channels, MavenSessionManager mavenSessionManager, boolean useDefaultCore) {
             this.installDir = installDir;
             this.channels = channels;
             this.mavenSessionManager = mavenSessionManager;
+            this.useDefaultCore = useDefaultCore;
         }
 
         public Builder setConsole(Console console) {
             this.console = console;
+            return this;
+        }
+
+        public Builder setProvisioningConfig(GalleonProvisioningConfig config) {
+            this.config = config;
             return this;
         }
 

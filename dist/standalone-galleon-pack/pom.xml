@@ -441,7 +441,18 @@
 
         <dependency>
             <groupId>org.jboss.galleon</groupId>
-            <artifactId>galleon-core</artifactId>
+            <artifactId>galleon-api</artifactId>
+            <exclusions>
+                <exclusion>
+                    <groupId>*</groupId>
+                    <artifactId>*</artifactId>
+                </exclusion>
+            </exclusions>
+        </dependency>
+
+        <dependency>
+            <groupId>org.jboss.galleon</groupId>
+            <artifactId>galleon-common-api</artifactId>
             <exclusions>
                 <exclusion>
                     <groupId>*</groupId>
