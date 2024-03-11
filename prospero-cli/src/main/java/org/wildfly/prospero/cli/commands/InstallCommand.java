@@ -21,8 +21,12 @@ import java.io.IOException;
 import java.net.URL;
 import java.nio.file.Path;
 import java.util.ArrayList;
+import java.util.Iterator;
 import java.util.List;
+import java.util.Locale;
 import java.util.Optional;
+
+import org.jboss.galleon.Constants;
 import org.jboss.galleon.api.config.GalleonProvisioningConfig;
 
 import org.wildfly.channel.Channel;
@@ -72,6 +76,23 @@ public class InstallCommand extends AbstractInstallCommand {
             hidden = true
     )
     List<String> shadowRepositories = new ArrayList<>();
+
+    private static final List<String> STABILITY_LEVELS = List.of(Constants.STABILITY_EXPERIMENTAL,
+            Constants.STABILITY_PREVIEW,
+            Constants.STABILITY_DEFAULT,
+            Constants.STABILITY_COMMUNITY);
+
+    private static class StabilityCandidates implements Iterable<String> {
+        @Override
+        public Iterator<String> iterator() {
+            return STABILITY_LEVELS.stream().map(String::toLowerCase).iterator();
+        }
+    }
+    @CommandLine.Option(
+            names = CliConstants.STABILITY_LEVEL,
+            completionCandidates = StabilityCandidates.class
+    )
+    String stabilityLevel;
 
 
     static class FeaturePackOrDefinition {
@@ -136,6 +157,10 @@ public class InstallCommand extends AbstractInstallCommand {
             }
         }
 
+        if (stabilityLevel != null && !STABILITY_LEVELS.contains(stabilityLevel.toLowerCase(Locale.ROOT))) {
+            throw CliMessages.MESSAGES.unknownStabilityLevel(stabilityLevel, STABILITY_LEVELS);
+        }
+
         if (featurePackOrDefinition.definition.isPresent()) {
             final Path definition = featurePackOrDefinition.definition.get().toAbsolutePath();
             checkFileExists(definition.toUri().toURL(), definition.toString());
@@ -143,7 +168,9 @@ public class InstallCommand extends AbstractInstallCommand {
 
         verifyTargetDirectoryIsEmpty(directory);
 
-        final ProvisioningDefinition provisioningDefinition = buildDefinition();
+        final ProvisioningDefinition provisioningDefinition = buildDefinition()
+                .setStabilityLevel(stabilityLevel==null?null:stabilityLevel.toLowerCase(Locale.ROOT))
+                .build();
         final MavenOptions mavenOptions = getMavenOptions();
         final GalleonProvisioningConfig provisioningConfig = provisioningDefinition.toProvisioningConfig();
         final List<Channel> channels = resolveChannels(provisioningDefinition, mavenOptions);

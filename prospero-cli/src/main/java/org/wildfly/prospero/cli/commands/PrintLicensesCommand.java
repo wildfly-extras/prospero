@@ -50,7 +50,7 @@ public class PrintLicensesCommand extends AbstractInstallCommand {
 
         final Path tempDirectory = Files.createTempDirectory("tmp-installer");
         try {
-            final ProvisioningDefinition provisioningDefinition = buildDefinition();
+            final ProvisioningDefinition provisioningDefinition = buildDefinition().build();
             final MavenOptions mavenOptions = getMavenOptions();
             final GalleonProvisioningConfig provisioningConfig = provisioningDefinition.toProvisioningConfig();
             final List<Channel> channels = resolveChannels(provisioningDefinition, mavenOptions);
