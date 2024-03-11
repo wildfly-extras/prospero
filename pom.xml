@@ -51,7 +51,7 @@
         <version.org.apache.maven>3.6.3</version.org.apache.maven>
         <version.org.codehaus.plexus-interpolation>1.27</version.org.codehaus.plexus-interpolation>
         <version.org.codehaus.plexus-utils>3.5.0</version.org.codehaus.plexus-utils>
-        <version.org.jboss.staxmapper>1.4.0.Final</version.org.jboss.staxmapper>
+        <version.org.jboss.staxmapper>1.5.0.Final</version.org.jboss.staxmapper>
         <version.org.jboss.galleon>6.0.0.Beta3</version.org.jboss.galleon>
         <version.org.eclipse.jgit>6.7.0.202309050840-r</version.org.eclipse.jgit>
         <version.com.fasterxml.jackson>2.15.2</version.com.fasterxml.jackson>
