@@ -71,6 +71,25 @@
                 </executions>
             </plugin>
             <plugin>
+                <groupId>org.codehaus.gmaven</groupId>
+                <artifactId>groovy-maven-plugin</artifactId>
+                <executions>
+                    <execution>
+                        <phase>compile</phase>
+                        <goals>
+                            <goal>execute</goal>
+                        </goals>
+                        <configuration>
+                            <classpathScope>runtime</classpathScope>
+                            <source>${project.basedir}/src/main/script/sanitize_dist_manifest.groovy</source>
+                            <properties>
+                                <manifestFile>${basedir}/target/${project.build.finalName}/.installation/manifest.yaml</manifestFile>
+                            </properties>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+            <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-assembly-plugin</artifactId>
                 <executions>
