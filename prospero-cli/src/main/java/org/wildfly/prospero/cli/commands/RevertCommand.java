@@ -22,6 +22,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 import org.apache.commons.io.FileUtils;
 import org.jboss.galleon.ProvisioningException;
@@ -29,6 +30,7 @@ import org.wildfly.channel.Repository;
 import org.wildfly.prospero.ProsperoLogger;
 import org.wildfly.prospero.actions.ApplyCandidateAction;
 import org.wildfly.prospero.actions.InstallationHistoryAction;
+import org.wildfly.prospero.api.ArtifactChange;
 import org.wildfly.prospero.api.FileConflict;
 import org.wildfly.prospero.api.MavenOptions;
 import org.wildfly.prospero.api.SavedState;
@@ -180,6 +182,9 @@ public class RevertCommand extends AbstractParentCommand {
         @CommandLine.Option(names = CliConstants.CANDIDATE_DIR, required = true)
         Path candidateDirectory;
 
+        @CommandLine.Option(names = CliConstants.YES)
+        boolean yes;
+
         public PrepareCommand(CliConsole console, ActionFactory actionFactory) {
             super(console, actionFactory);
         }
@@ -197,6 +202,18 @@ public class RevertCommand extends AbstractParentCommand {
             console.println(CliMessages.MESSAGES.buildRevertCandidateHeader(installationDirectory));
 
             InstallationHistoryAction historyAction = actionFactory.history(installationDirectory, console);
+
+            // show changes
+            final List<ArtifactChange> artifactChanges = historyAction.getChangesSinceRevision(new SavedState(revision)).getArtifactChanges()
+                    .stream()
+                    .map(ArtifactChange::reverse)
+                    .collect(Collectors.toList());
+            console.changesFound(artifactChanges);
+            if (!yes && !console.confirm(CliMessages.MESSAGES.continueWithRevert(),
+                    CliMessages.MESSAGES.applyingChanges(), CliMessages.MESSAGES.revertCancelled())) {
+                return SUCCESS;
+            }
+
             historyAction.prepareRevert(new SavedState(revision), mavenOptions, overrideRepositories, candidateDirectory.toAbsolutePath());
 
             console.println("");

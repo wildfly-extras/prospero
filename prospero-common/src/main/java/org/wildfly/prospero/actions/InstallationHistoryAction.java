@@ -53,11 +53,25 @@ public class InstallationHistoryAction {
         this.console = console;
     }
 
-    public InstallationChanges compare(SavedState savedState) throws MetadataException {
+    /**
+     * gets a list of changes related to the {@code savedState}.
+     *
+     * @param savedState
+     * @return
+     * @throws MetadataException
+     */
+    public InstallationChanges getRevisionChanges(SavedState savedState) throws MetadataException {
         ProsperoLogger.ROOT_LOGGER.historyDetails(savedState.getName(), installation);
         final InstallationMetadata installationMetadata = InstallationMetadata.loadInstallation(installation);
         verifyStateExists(savedState, installationMetadata);
-        return installationMetadata.getChangesSince(savedState);
+        return installationMetadata.getChangesIn(savedState);
+    }
+
+    public InstallationChanges getChangesSinceRevision(SavedState savedState) throws MetadataException {
+        ProsperoLogger.ROOT_LOGGER.historyDetails(savedState.getName(), installation);
+        final InstallationMetadata installationMetadata = InstallationMetadata.loadInstallation(installation);
+        verifyStateExists(savedState, installationMetadata);
+        return installationMetadata.getChangesToCurrent(savedState);
     }
 
     public List<SavedState> getRevisions() throws MetadataException {

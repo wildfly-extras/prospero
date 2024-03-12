@@ -358,7 +358,7 @@ public class InstallationHistoryActionTest extends WfCoreTestBase {
 
         final SavedState savedState = revisions.get(0);
         // make sure the test name is checked not whole state
-        final List<ArtifactChange> changes = historyAction.compare(new SavedState(savedState.getName())).getArtifactChanges();
+        final List<ArtifactChange> changes = historyAction.getRevisionChanges(new SavedState(savedState.getName())).getArtifactChanges();
 
         assertEquals(1, changes.size());
 

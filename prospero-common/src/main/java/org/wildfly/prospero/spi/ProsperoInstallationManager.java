@@ -85,7 +85,7 @@ public class ProsperoInstallationManager implements InstallationManager {
     public InstallationChanges revisionDetails(String revision) throws MetadataException {
         Objects.requireNonNull(revision);
         final InstallationHistoryAction historyAction = actionFactory.getHistoryAction();
-        final org.wildfly.prospero.api.InstallationChanges changes = historyAction.compare(new SavedState(revision));
+        final org.wildfly.prospero.api.InstallationChanges changes = historyAction.getRevisionChanges(new SavedState(revision));
 
         if (changes.isEmpty()) {
             return new InstallationChanges(Collections.emptyList(), Collections.emptyList());

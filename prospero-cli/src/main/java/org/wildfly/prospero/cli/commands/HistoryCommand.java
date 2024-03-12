@@ -58,7 +58,7 @@ public class HistoryCommand extends AbstractCommand {
                 console.println(savedState.shortDescription());
             }
         } else {
-            InstallationChanges changes = historyAction.compare(new SavedState(revision.get()));
+            InstallationChanges changes = historyAction.getRevisionChanges(new SavedState(revision.get()));
             if (changes.isEmpty()) {
                 console.println(CliMessages.MESSAGES.noChangesFound());
             } else {

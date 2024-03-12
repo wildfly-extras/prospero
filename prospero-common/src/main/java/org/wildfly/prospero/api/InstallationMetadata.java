@@ -366,11 +366,18 @@ public class InstallationMetadata implements AutoCloseable {
         }
     }
 
-    public InstallationChanges getChangesSince(SavedState savedState) throws MetadataException {
+    public InstallationChanges getChangesIn(SavedState savedState) throws MetadataException {
         return new InstallationChanges(
                 gitStorage.getArtifactChanges(savedState),
                 gitStorage.getChannelChanges(savedState),
                 gitStorage.getFeatureChanges(savedState));
+    }
+
+    public InstallationChanges getChangesToCurrent(SavedState savedState) throws MetadataException {
+        return new InstallationChanges(
+                gitStorage.getArtifactChangesSince(savedState),
+                gitStorage.getChannelChangesSince(savedState),
+                gitStorage.getFeatureChangesSince(savedState));
     }
 
     public void setManifest(ChannelManifest resolvedChannel) {
