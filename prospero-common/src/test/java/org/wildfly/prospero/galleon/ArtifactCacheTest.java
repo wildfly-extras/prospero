@@ -21,7 +21,11 @@ import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
+import org.wildfly.channel.ChannelManifest;
 import org.wildfly.channel.MavenArtifact;
+import org.wildfly.prospero.metadata.ManifestVersionRecord;
+import org.wildfly.prospero.wfchannel.MavenSessionManager;
+import org.wildfly.prospero.wfchannel.ResolvedArtifactsStore;
 
 import java.io.File;
 import java.io.IOException;
@@ -34,6 +38,8 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 public class ArtifactCacheTest {
 
@@ -150,5 +156,83 @@ public class ArtifactCacheTest {
         final Optional<File> cachedArtifact = cache.getArtifact(GROUP_ID, ARTIFACT_ID, EXTENSION, CLASSIFIER, VERSION);
 
         assertEquals(Optional.empty(), cachedArtifact);
+    }
+
+    @Test
+    public void cacheMavenManifests_ResolvedInList() throws Exception {
+        final ManifestVersionRecord record = new ManifestVersionRecord();
+        record.addManifest(new ManifestVersionRecord.MavenManifest("foo", "bar", "1.2.3", ""));
+        final MavenSessionManager msm = mock(MavenSessionManager.class);
+        final ResolvedArtifactsStore manifestVersions = mock(ResolvedArtifactsStore.class);
+        when(msm.getResolvedArtifactVersions()).thenReturn(manifestVersions);
+        final File testFile = temp.newFile("test");
+        Files.writeString(testFile.toPath(), "test file");
+        when(manifestVersions.getManifestVersion("foo", "bar")).thenReturn(
+                new MavenArtifact("foo", "bar", null, null, "1.2.3", testFile));
+
+        cache.cache(record, msm.getResolvedArtifactVersions());
+
+        // verify the "test" file exists in cache
+        final Optional<File> cachedArtifact = cache.getArtifact("foo", "bar", ChannelManifest.EXTENSION, ChannelManifest.CLASSIFIER, "1.2.3");
+        assertThat(cachedArtifact.get())
+                .hasSameBinaryContentAs(testFile);
+    }
+
+    @Test
+    public void cacheMavenManifests_NotResolvedLocally() throws Exception {
+        final ManifestVersionRecord record = new ManifestVersionRecord();
+        record.addManifest(new ManifestVersionRecord.MavenManifest("foo", "bar", "1.2.3", ""));
+        final MavenSessionManager msm = mock(MavenSessionManager.class);
+        final ResolvedArtifactsStore manifestVersions = mock(ResolvedArtifactsStore.class);
+        when(msm.getResolvedArtifactVersions()).thenReturn(manifestVersions);
+        // the artifact is not found in resolved list
+        when(manifestVersions.getManifestVersion("foo", "bar")).thenReturn(null);
+
+        cache.cache(record, msm.getResolvedArtifactVersions());
+
+        // verify the "test" file exists in cache
+        final Optional<File> cachedArtifact = cache.getArtifact("foo", "bar", ChannelManifest.EXTENSION, ChannelManifest.CLASSIFIER, "1.2.3");
+        assertThat(cachedArtifact)
+                .isEmpty();
+    }
+
+    @Test
+    public void cacheMavenManifests_ResolvedFileDoesNotExist() throws Exception {
+        final ManifestVersionRecord record = new ManifestVersionRecord();
+        record.addManifest(new ManifestVersionRecord.MavenManifest("foo", "bar", "1.2.3", ""));
+        final MavenSessionManager msm = mock(MavenSessionManager.class);
+        final ResolvedArtifactsStore manifestVersions = mock(ResolvedArtifactsStore.class);
+        when(msm.getResolvedArtifactVersions()).thenReturn(manifestVersions);
+        // the artifact is not found in resolved list
+        when(manifestVersions.getManifestVersion("foo", "bar")).thenReturn(null);
+
+        cache.cache(record, msm.getResolvedArtifactVersions());
+
+        // verify the "test" file exists in cache
+        final Optional<File> cachedArtifact = cache.getArtifact("foo", "bar", ChannelManifest.EXTENSION, ChannelManifest.CLASSIFIER, "1.2.3");
+        assertThat(cachedArtifact)
+                .isEmpty();
+    }
+
+    @Test
+    public void cacheMavenManifests_ResolvedInListWithDifferentVersion() throws Exception {
+        final ManifestVersionRecord record = new ManifestVersionRecord();
+        record.addManifest(new ManifestVersionRecord.MavenManifest("foo", "bar", "1.2.3", ""));
+        final MavenSessionManager msm = mock(MavenSessionManager.class);
+        final ResolvedArtifactsStore manifestVersions = mock(ResolvedArtifactsStore.class);
+        when(msm.getResolvedArtifactVersions()).thenReturn(manifestVersions);
+        final File testFile = temp.newFile("test-1.2.3");
+        Files.writeString(testFile.toPath(), "test file 1.2.3");
+        final File testFile2 = temp.newFile("test-1.2.4");
+        Files.writeString(testFile2.toPath(), "test file 1.2.4");
+        when(manifestVersions.getManifestVersion("foo", "bar")).thenReturn(
+                new MavenArtifact("foo", "bar", null, null, "1.2.4", testFile2));
+
+        cache.cache(record, msm.getResolvedArtifactVersions());
+
+        // verify the "test" file exists in cache
+        final Optional<File> cachedArtifact = cache.getArtifact("foo", "bar", ChannelManifest.EXTENSION, ChannelManifest.CLASSIFIER, "1.2.3");
+        assertThat(cachedArtifact)
+                .isEmpty();
     }
 }

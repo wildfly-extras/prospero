@@ -110,7 +110,7 @@ public class WfCoreTestBase {
                 .setOffline(false)
                 .build());
         final RepositorySystem system = msm.newRepositorySystem();
-        final DefaultRepositorySystemSession session = msm.newRepositorySystemSession(system, false);
+        final DefaultRepositorySystemSession session = msm.newRepositorySystemSession(system);
 
         /* mock a wildfly-core feature pack that requires a channel resolve
          * the mocked artifact lives in {@code testRepo}
@@ -141,7 +141,7 @@ public class WfCoreTestBase {
         installation = new ProvisioningAction(outputPath, mavenOptions, new CliConsole());
     }
 
-    private static Artifact deployIfMissing(RepositorySystem system, DefaultRepositorySystemSession session, String groupId, String artifactId, String classifier, String extension) throws ArtifactResolutionException, DeploymentException {
+    protected static Artifact deployIfMissing(RepositorySystem system, DefaultRepositorySystemSession session, String groupId, String artifactId, String classifier, String extension) throws ArtifactResolutionException, DeploymentException {
         final ArtifactRequest artifactRequest = new ArtifactRequest();
         Artifact updateCli = new DefaultArtifact(groupId, artifactId, classifier, extension, UPGRADE_VERSION);
         artifactRequest.setArtifact(updateCli);

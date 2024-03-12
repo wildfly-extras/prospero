@@ -32,9 +32,8 @@ import org.wildfly.prospero.api.InstallationMetadata;
 import org.wildfly.prospero.api.exceptions.MetadataException;
 import org.wildfly.prospero.api.SavedState;
 import org.wildfly.prospero.galleon.GalleonEnvironment;
-import org.wildfly.prospero.metadata.ProsperoMetadataUtils;
-import org.wildfly.prospero.metadata.ManifestVersionRecord;
 import org.wildfly.prospero.model.ProsperoConfig;
+import org.wildfly.prospero.updates.UpdateSet;
 import org.wildfly.prospero.wfchannel.MavenSessionManager;
 import org.jboss.galleon.ProvisioningException;
 
@@ -42,7 +41,6 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
-import java.util.Optional;
 
 import static org.wildfly.prospero.galleon.GalleonUtils.MAVEN_REPO_LOCAL;
 
@@ -110,7 +108,7 @@ public class InstallationHistoryAction {
                 try (GalleonEnvironment galleonEnv = GalleonEnvironment
                         .builder(targetDir, prosperoConfig.getChannels(), mavenSessionManager)
                         .setConsole(console)
-                        .setRestoreManifest(revertMetadata.getManifest())
+                        .setRestoreManifest(revertMetadata.getManifest(), revertMetadata.getManifestVersions().orElse(null))
                         .setSourceServerPath(installation)
                         .build();
                      PrepareCandidateAction prepareCandidateAction = new PrepareCandidateAction(installation,
@@ -125,33 +123,14 @@ public class InstallationHistoryAction {
                     }
 
                     prepareCandidateAction.buildCandidate(targetDir, galleonEnv,
-                            ApplyCandidateAction.Type.REVERT, provisioningConfig);
+                            ApplyCandidateAction.Type.REVERT, provisioningConfig,
+                            UpdateSet.EMPTY, (channels) -> revertMetadata.getManifestVersions());
                 }
-
-                revertCurrentVersions(targetDir, revertMetadata);
 
                 ProsperoLogger.ROOT_LOGGER.revertCandidateCompleted(targetDir);
             } finally {
                 System.clearProperty(MAVEN_REPO_LOCAL);
             }
-        }
-    }
-
-    private static void revertCurrentVersions(Path targetDir, InstallationMetadata revertMetadata) throws MetadataException {
-        try {
-            final Optional<ManifestVersionRecord> manifestHistory = revertMetadata.getManifestVersions();
-            if (manifestHistory.isPresent()) {
-                ProsperoMetadataUtils.writeVersionRecord(
-                        targetDir.resolve(ProsperoMetadataUtils.METADATA_DIR).resolve(ProsperoMetadataUtils.CURRENT_VERSION_FILE),
-                        manifestHistory.get());
-            } else {
-                Path versionsFile = targetDir.resolve(ProsperoMetadataUtils.METADATA_DIR).resolve(ProsperoMetadataUtils.CURRENT_VERSION_FILE);
-                if (Files.exists(versionsFile)) {
-                    Files.delete(versionsFile);
-                }
-            }
-        } catch (IOException e) {
-            throw ProsperoLogger.ROOT_LOGGER.unableToWriteFile(targetDir.resolve(ProsperoMetadataUtils.METADATA_DIR).resolve(ProsperoMetadataUtils.CURRENT_VERSION_FILE), e);
         }
     }
 

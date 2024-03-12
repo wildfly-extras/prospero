@@ -36,6 +36,7 @@ import org.wildfly.prospero.api.exceptions.ArtifactResolutionException;
 import org.wildfly.prospero.api.exceptions.MetadataException;
 import org.wildfly.prospero.api.exceptions.OperationException;
 import org.wildfly.prospero.api.exceptions.StreamNotFoundException;
+import org.wildfly.prospero.galleon.ArtifactCache;
 import org.wildfly.prospero.galleon.GalleonFeaturePackAnalyzer;
 import org.wildfly.prospero.galleon.GalleonEnvironment;
 import org.wildfly.prospero.galleon.GalleonUtils;
@@ -148,6 +149,8 @@ public class ProvisioningAction {
                 throw ProsperoLogger.ROOT_LOGGER.unableToDownloadFile(e);
             }
 
+            cacheManifests(manifestRecord);
+
             if (ProsperoLogger.ROOT_LOGGER.isDebugEnabled()) {
                 ProsperoLogger.ROOT_LOGGER.debug("Recording installed metadata");
             }
@@ -183,6 +186,14 @@ public class ProvisioningAction {
         }
 
         ProsperoLogger.ROOT_LOGGER.provisioningComplete(installDir);
+    }
+
+    private void cacheManifests(ManifestVersionRecord manifestRecord) {
+        try {
+            ArtifactCache.getInstance(installDir).cache(manifestRecord, mavenSessionManager.getResolvedArtifactVersions());
+        } catch (IOException e) {
+            ProsperoLogger.ROOT_LOGGER.debug("Unable to record manifests in the internal cache", e);
+        }
     }
 
     /**

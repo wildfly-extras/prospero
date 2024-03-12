@@ -51,6 +51,7 @@ public class MavenSessionManager {
     private static final String AETHER_OFFLINE_PROTOCOLS_PROPERTY = "aether.offline.protocols";
     public static final String AETHER_OFFLINE_PROTOCOLS_VALUE = "file";
     private final Path provisioningRepo;
+    private final ProsperoMavenRepositoryListener repositoryListener = new ProsperoMavenRepositoryListener();
     private boolean offline;
 
     public MavenSessionManager(MavenOptions mavenOptions) throws ProvisioningException {
@@ -106,6 +107,7 @@ public class MavenSessionManager {
         return newRepositorySystemSession(system, false);
     }
 
+    @Deprecated
     public DefaultRepositorySystemSession newRepositorySystemSession(RepositorySystem system,
                                                                      boolean resolveLocalCache) {
         DefaultRepositorySystemSession session = MavenRepositorySystemUtils.newSession();
@@ -119,6 +121,8 @@ public class MavenSessionManager {
         LocalRepository localRepo = new LocalRepository(location.toFile());
         if (resolveLocalCache) {
             copyResolvedArtifactsToProvisiongRepository(session);
+        } else {
+            session.setRepositoryListener(repositoryListener);
         }
         session.setLocalRepositoryManager(system.newLocalRepositoryManager(session, localRepo));
         session.setOffline(offline);
@@ -131,10 +135,12 @@ public class MavenSessionManager {
         // install the artifact into a temporary provisioningRepo. The provisioningRepo then is used
         // by Galleon to start thin server.
         final RepositorySystem localCacheBuilder = newRepositorySystem();
-        final DefaultRepositorySystemSession localCacheBuilderSession = newRepositorySystemSession(localCacheBuilder, false);
+        final DefaultRepositorySystemSession localCacheBuilderSession = newRepositorySystemSession(localCacheBuilder);
         session.setRepositoryListener(new AbstractRepositoryListener() {
             @Override
             public void artifactResolved(RepositoryEvent event) {
+                repositoryListener.artifactResolved(event);
+
                 if (event.getFile() == null || event.getRepository() instanceof LocalRepository) {
                     return;
                 }
@@ -160,5 +166,14 @@ public class MavenSessionManager {
 
     public boolean isOffline() {
         return offline;
+    }
+
+    /**
+     * returns a {@code ResolvedArtifactsStore} containing artifacts resolved during that maven session.
+     *
+     * @return
+     */
+    public ResolvedArtifactsStore getResolvedArtifactVersions() {
+        return repositoryListener;
     }
 }
