@@ -83,29 +83,33 @@ public class FeaturesCommand extends AbstractParentCommand {
                 return ReturnCodes.INVALID_ARGUMENTS;
             }
 
+            final boolean accepted;
             if (!skipConfirmation) {
-                console.confirm(CliMessages.MESSAGES.featuresAddPrompt(),
+                accepted = console.confirm(CliMessages.MESSAGES.featuresAddPrompt(),
                         CliMessages.MESSAGES.featuresAddPromptAccepted(),
                         CliMessages.MESSAGES.featuresAddPromptCancelled());
             } else {
                 console.println(CliMessages.MESSAGES.featuresAddPromptAccepted());
+                accepted = true;
             }
 
-            try {
-                featuresAddAction.addFeaturePackWithLayers(fpl, layers, parseConfigName(config));
-            } catch (FeaturesAddAction.LayerNotFoundException e) {
-                if (!e.getSupportedLayers().isEmpty()) {
-                    console.error(CliMessages.MESSAGES.layerNotSupported(fpl, e.getLayers(), e.getSupportedLayers()));
-                } else {
-                    console.error(CliMessages.MESSAGES.layerNotSupported(fpl));
+            if(accepted) {
+                try {
+                    featuresAddAction.addFeaturePackWithLayers(fpl, layers, parseConfigName(config));
+                } catch (FeaturesAddAction.LayerNotFoundException e) {
+                    if (!e.getSupportedLayers().isEmpty()) {
+                        console.error(CliMessages.MESSAGES.layerNotSupported(fpl, e.getLayers(), e.getSupportedLayers()));
+                    } else {
+                        console.error(CliMessages.MESSAGES.layerNotSupported(fpl));
+                    }
+                    return ReturnCodes.INVALID_ARGUMENTS;
+                } catch (FeaturesAddAction.ModelNotDefinedException e) {
+                    console.error(CliMessages.MESSAGES.modelNotSupported(fpl, e.getModel(), e.getSupportedModels()));
+                    return ReturnCodes.INVALID_ARGUMENTS;
+                } catch (FeaturesAddAction.ConfigurationNotFoundException e) {
+                    console.error(CliMessages.MESSAGES.galleonConfigNotSupported(fpl, e.getModel(), e.getName()));
+                    return ReturnCodes.INVALID_ARGUMENTS;
                 }
-                return ReturnCodes.INVALID_ARGUMENTS;
-            } catch (FeaturesAddAction.ModelNotDefinedException e) {
-                console.error(CliMessages.MESSAGES.modelNotSupported(fpl, e.getModel(), e.getSupportedModels()));
-                return ReturnCodes.INVALID_ARGUMENTS;
-            } catch (FeaturesAddAction.ConfigurationNotFoundException e) {
-                console.error(CliMessages.MESSAGES.galleonConfigNotSupported(fpl, e.getModel(), e.getName()));
-                return ReturnCodes.INVALID_ARGUMENTS;
             }
 
             final float totalTime = (System.currentTimeMillis() - startTime) / 1000f;
