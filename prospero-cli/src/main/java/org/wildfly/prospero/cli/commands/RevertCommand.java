@@ -18,12 +18,10 @@
 package org.wildfly.prospero.cli.commands;
 
 import java.io.IOException;
-import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
 import java.util.Optional;
 
-import org.apache.commons.io.FileUtils;
 import org.jboss.galleon.ProvisioningException;
 import org.wildfly.channel.Repository;
 import org.wildfly.prospero.ProsperoLogger;
@@ -31,6 +29,7 @@ import org.wildfly.prospero.actions.ApplyCandidateAction;
 import org.wildfly.prospero.actions.InstallationHistoryAction;
 import org.wildfly.prospero.api.FileConflict;
 import org.wildfly.prospero.api.MavenOptions;
+import org.wildfly.prospero.api.RepositoryUtils;
 import org.wildfly.prospero.api.SavedState;
 import org.wildfly.prospero.api.exceptions.InvalidUpdateCandidateException;
 import org.wildfly.prospero.api.exceptions.MetadataException;
@@ -40,6 +39,7 @@ import org.wildfly.prospero.cli.CliConsole;
 import org.wildfly.prospero.cli.CliMessages;
 import org.wildfly.prospero.cli.FileConflictPrinter;
 import org.wildfly.prospero.cli.RepositoryDefinition;
+import org.wildfly.prospero.api.TemporaryFilesManager;
 import picocli.CommandLine;
 
 import static org.wildfly.prospero.cli.ReturnCodes.SUCCESS;
@@ -97,15 +97,16 @@ public class RevertCommand extends AbstractParentCommand {
             final Path installationDirectory = determineInstallationDirectory(directory);
             final MavenOptions mavenOptions = parseMavenOptions();
 
-            final List<Repository> overrideRepositories = RepositoryDefinition.from(temporaryRepositories);
+            final List<Repository> repositories = RepositoryDefinition.from(temporaryRepositories);
+            try (TemporaryFilesManager temporaryFiles = TemporaryFilesManager.getInstance()) {
+                final List<Repository> overrideRepositories = RepositoryUtils.unzipArchives(repositories, temporaryFiles);
 
-            InstallationHistoryAction historyAction = actionFactory.history(installationDirectory, console);
-            Path tempDirectory = null;
-            try {
+                InstallationHistoryAction historyAction = actionFactory.history(installationDirectory, console);
+
                 console.println(CliMessages.MESSAGES.revertStart(installationDirectory, revision));
                 console.println("");
 
-                tempDirectory = Files.createTempDirectory("revert-candidate");
+                final Path tempDirectory = temporaryFiles.createTempDirectory("revert-candidate");
                 historyAction.prepareRevert(new SavedState(revision), mavenOptions, overrideRepositories, tempDirectory);
 
                 console.println("");
@@ -116,17 +117,13 @@ public class RevertCommand extends AbstractParentCommand {
                 validateRevertCandidate(installationDirectory, tempDirectory, applyCandidateAction);
 
                 applyCandidate(console, applyCandidateAction, yes);
-
-                final float totalTime = (System.currentTimeMillis() - startTime) / 1000f;
-                console.println(CliMessages.MESSAGES.operationCompleted(totalTime));
-                return SUCCESS;
             } catch (IOException e) {
                 throw ProsperoLogger.ROOT_LOGGER.unableToCreateTemporaryDirectory(e);
-            } finally {
-                if (tempDirectory != null) {
-                    FileUtils.deleteQuietly(tempDirectory.toFile());
-                }
             }
+
+            final float totalTime = (System.currentTimeMillis() - startTime) / 1000f;
+            console.println(CliMessages.MESSAGES.operationCompleted(totalTime));
+            return SUCCESS;
         }
     }
 
@@ -189,18 +186,22 @@ public class RevertCommand extends AbstractParentCommand {
             final Path installationDirectory = determineInstallationDirectory(directory);
             final MavenOptions mavenOptions = parseMavenOptions();
 
-            final List<Repository> overrideRepositories = RepositoryDefinition.from(temporaryRepositories);
+            try(TemporaryFilesManager temporaryFiles = TemporaryFilesManager.getInstance()) {
+                final List<Repository> repositories = RepositoryDefinition.from(temporaryRepositories);
+                final List<Repository> overrideRepositories = RepositoryUtils.unzipArchives(repositories, temporaryFiles);
 
-            console.println(CliMessages.MESSAGES.buildRevertCandidateHeader(installationDirectory));
+                console.println(CliMessages.MESSAGES.buildRevertCandidateHeader(installationDirectory));
 
-            InstallationHistoryAction historyAction = actionFactory.history(installationDirectory, console);
-            historyAction.prepareRevert(new SavedState(revision), mavenOptions, overrideRepositories, candidateDirectory.toAbsolutePath());
+                InstallationHistoryAction historyAction = actionFactory.history(installationDirectory, console);
+                historyAction.prepareRevert(new SavedState(revision), mavenOptions, overrideRepositories, candidateDirectory.toAbsolutePath());
+            }
 
             console.println("");
             console.println(CliMessages.MESSAGES.revertCandidateGenerated(candidateDirectory));
             final float totalTime = (System.currentTimeMillis() - startTime) / 1000f;
             console.println(CliMessages.MESSAGES.operationCompleted(totalTime));
             return SUCCESS;
+
         }
     }
 

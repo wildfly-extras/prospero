@@ -34,6 +34,7 @@ import org.wildfly.prospero.api.ArtifactUtils;
 import org.wildfly.prospero.api.KnownFeaturePacks;
 import org.wildfly.prospero.api.MavenOptions;
 import org.wildfly.prospero.api.ProvisioningDefinition;
+import org.wildfly.prospero.api.RepositoryUtils;
 import org.wildfly.prospero.api.TemporaryRepositoriesHandler;
 import org.wildfly.prospero.cli.ActionFactory;
 import org.wildfly.prospero.cli.ArgumentParsingException;
@@ -42,6 +43,7 @@ import org.wildfly.prospero.cli.CliMessages;
 import org.wildfly.prospero.cli.LicensePrinter;
 import org.wildfly.prospero.cli.RepositoryDefinition;
 import org.wildfly.prospero.cli.ReturnCodes;
+import org.wildfly.prospero.api.TemporaryFilesManager;
 import org.wildfly.prospero.cli.commands.options.FeaturePackCandidates;
 import org.wildfly.prospero.cli.printers.ChannelPrinter;
 import org.wildfly.prospero.licenses.License;
@@ -147,52 +149,56 @@ public class InstallCommand extends AbstractInstallCommand {
         final MavenOptions mavenOptions = getMavenOptions();
         final ProvisioningConfig provisioningConfig = provisioningDefinition.toProvisioningConfig();
         final List<Channel> channels = resolveChannels(provisioningDefinition, mavenOptions);
-        final List<Repository> shadowRepositories = RepositoryDefinition.from(this.shadowRepositories);
+        try (TemporaryFilesManager temporaryFiles = TemporaryFilesManager.getInstance()) {
+            List<Repository> repositories = RepositoryDefinition.from(this.shadowRepositories);
+            final List<Repository> shadowRepositories = RepositoryUtils.unzipArchives(repositories, temporaryFiles);
 
-        final ProvisioningAction provisioningAction = actionFactory.install(directory.toAbsolutePath(), mavenOptions,
-                console);
+            final ProvisioningAction provisioningAction = actionFactory.install(directory.toAbsolutePath(), mavenOptions,
+                    console);
 
-        if (featurePackOrDefinition.fpl.isPresent()) {
-            console.println(CliMessages.MESSAGES.installingFpl(featurePackOrDefinition.fpl.get()));
-        } else if (featurePackOrDefinition.profile.isPresent()) {
-            console.println(CliMessages.MESSAGES.installingProfile(featurePackOrDefinition.profile.get()));
-        } else if (featurePackOrDefinition.definition.isPresent()) {
-            console.println(CliMessages.MESSAGES.installingDefinition(featurePackOrDefinition.definition.get()));
-        }
+            if (featurePackOrDefinition.fpl.isPresent()) {
+                console.println(CliMessages.MESSAGES.installingFpl(featurePackOrDefinition.fpl.get()));
+            } else if (featurePackOrDefinition.profile.isPresent()) {
+                console.println(CliMessages.MESSAGES.installingProfile(featurePackOrDefinition.profile.get()));
+            } else if (featurePackOrDefinition.definition.isPresent()) {
+                console.println(CliMessages.MESSAGES.installingDefinition(featurePackOrDefinition.definition.get()));
+            }
 
-        final List<Channel> effectiveChannels = TemporaryRepositoriesHandler.overrideRepositories(channels, shadowRepositories);
-        console.println(CliMessages.MESSAGES.usingChannels());
-        final ChannelPrinter channelPrinter = new ChannelPrinter(console);
-        for (Channel channel : effectiveChannels) {
-            channelPrinter.print(channel);
-        }
 
-        console.println("");
+            final List<Channel> effectiveChannels = TemporaryRepositoriesHandler.overrideRepositories(channels, shadowRepositories);
+            console.println(CliMessages.MESSAGES.usingChannels());
+            final ChannelPrinter channelPrinter = new ChannelPrinter(console);
+            for (Channel channel : effectiveChannels) {
+                channelPrinter.print(channel);
+            }
 
-        final List<License> pendingLicenses = provisioningAction.getPendingLicenses(provisioningConfig,
-                effectiveChannels);
-        if (!pendingLicenses.isEmpty()) {
-            new LicensePrinter().print(pendingLicenses);
-            System.out.println();
-            if (acceptAgreements) {
-                System.out.println(CliMessages.MESSAGES.agreementSkipped(CliConstants.ACCEPT_AGREEMENTS));
+            console.println("");
+
+            final List<License> pendingLicenses = provisioningAction.getPendingLicenses(provisioningConfig,
+                    effectiveChannels);
+            if (!pendingLicenses.isEmpty()) {
+                new LicensePrinter().print(pendingLicenses);
                 System.out.println();
-            } else {
-                if (!console.confirm(CliMessages.MESSAGES.acceptAgreements(), "", CliMessages.MESSAGES.installationCancelled())) {
-                    return ReturnCodes.PROCESSING_ERROR;
+                if (acceptAgreements) {
+                    System.out.println(CliMessages.MESSAGES.agreementSkipped(CliConstants.ACCEPT_AGREEMENTS));
+                    System.out.println();
+                } else {
+                    if (!console.confirm(CliMessages.MESSAGES.acceptAgreements(), "", CliMessages.MESSAGES.installationCancelled())) {
+                        return ReturnCodes.PROCESSING_ERROR;
+                    }
                 }
             }
+
+            provisioningAction.provision(provisioningConfig, channels, shadowRepositories);
+
+            console.println("");
+            console.println(CliMessages.MESSAGES.installComplete(directory));
+
+            final float totalTime = (System.currentTimeMillis() - startTime) / 1000f;
+            console.println(CliMessages.MESSAGES.operationCompleted(totalTime));
+
+            return ReturnCodes.SUCCESS;
         }
-
-        provisioningAction.provision(provisioningConfig, channels, shadowRepositories);
-
-        console.println("");
-        console.println(CliMessages.MESSAGES.installComplete(directory));
-
-        final float totalTime = (System.currentTimeMillis() - startTime) / 1000f;
-        console.println(CliMessages.MESSAGES.operationCompleted(totalTime));
-
-        return ReturnCodes.SUCCESS;
     }
 
     private void checkFileExists(URL resourceUrl, String argValue) throws ArgumentParsingException {
