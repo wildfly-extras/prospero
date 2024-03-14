@@ -29,6 +29,7 @@ import org.wildfly.channel.InvalidChannelMetadataException;
 import org.wildfly.prospero.actions.FeaturesAddAction;
 import org.wildfly.prospero.api.exceptions.ArtifactPromoteException;
 import org.wildfly.prospero.api.exceptions.ChannelDefinitionException;
+import org.wildfly.prospero.api.exceptions.InvalidRepositoryArchiveException;
 import org.wildfly.prospero.api.exceptions.InvalidUpdateCandidateException;
 import org.wildfly.prospero.api.exceptions.MetadataException;
 import org.wildfly.prospero.api.exceptions.NoChannelException;
@@ -369,4 +370,10 @@ public interface ProsperoLogger extends BasicLogger {
 
     @Message(id = 265, value = "Unable to create temporary file")
     ProvisioningException unableToCreateTemporaryFile(@Cause Throwable t);
+
+    @Message(id = 266, value = "Unable to extract the repository archive %s.")
+    InvalidRepositoryArchiveException unableToExtractRepositoryArchive(String archiveUrl, @Cause Throwable t);
+
+    @Message(id = 267, value = "Repository archive has to contain a single root folder with a maven-repository sub-folder.")
+    InvalidRepositoryArchiveException invalidRepositoryArchive();
 }

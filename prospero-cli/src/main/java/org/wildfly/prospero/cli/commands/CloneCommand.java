@@ -18,15 +18,18 @@
 package org.wildfly.prospero.cli.commands;
 
 import org.wildfly.channel.Channel;
+import org.wildfly.channel.Repository;
 import org.wildfly.prospero.ProsperoLogger;
 import org.wildfly.prospero.api.InstallationMetadata;
 import org.wildfly.prospero.api.MavenOptions;
+import org.wildfly.prospero.api.RepositoryUtils;
 import org.wildfly.prospero.cli.ActionFactory;
 import org.wildfly.prospero.cli.ArgumentParsingException;
 import org.wildfly.prospero.cli.CliConsole;
 import org.wildfly.prospero.cli.CliMessages;
 import org.wildfly.prospero.cli.RepositoryDefinition;
 import org.wildfly.prospero.cli.ReturnCodes;
+import org.wildfly.prospero.api.TemporaryFilesManager;
 import org.wildfly.prospero.cli.commands.options.LocalRepoOptions;
 import org.wildfly.prospero.cli.printers.ChannelPrinter;
 import picocli.CommandLine;
@@ -140,15 +143,18 @@ public class CloneCommand extends AbstractCommand {
             }
             console.println("");
 
-            actionFactory
-              .restoreAction(installationDirectory, mavenOptions.build(), console)
-              .restore(inPath, RepositoryDefinition.from(remoteRepositories));
+            try (TemporaryFilesManager temporaryFiles = TemporaryFilesManager.getInstance()) {
+                List<Repository> repositories = RepositoryDefinition.from(remoteRepositories);
+                actionFactory
+                        .restoreAction(installationDirectory, mavenOptions.build(), console)
+                        .restore(inPath, RepositoryUtils.unzipArchives(repositories, temporaryFiles));
 
-            console.println("");
-            console.println(CliMessages.MESSAGES.installationMetaRestored());
-            final float totalTime = (System.currentTimeMillis() - startTime) / 1000f;
-            console.println(CliMessages.MESSAGES.operationCompleted(totalTime));
-            return ReturnCodes.SUCCESS;
+                console.println("");
+                console.println(CliMessages.MESSAGES.installationMetaRestored());
+                final float totalTime = (System.currentTimeMillis() - startTime) / 1000f;
+                console.println(CliMessages.MESSAGES.operationCompleted(totalTime));
+                return ReturnCodes.SUCCESS;
+            }
         }
     }
 }

@@ -22,11 +22,13 @@ import org.wildfly.channel.ChannelManifestCoordinate;
 import org.wildfly.channel.Repository;
 import org.wildfly.prospero.actions.MetadataAction;
 import org.wildfly.prospero.api.ArtifactUtils;
+import org.wildfly.prospero.api.RepositoryUtils;
 import org.wildfly.prospero.cli.ActionFactory;
 import org.wildfly.prospero.cli.CliConsole;
 import org.wildfly.prospero.cli.CliMessages;
 import org.wildfly.prospero.cli.RepositoryDefinition;
 import org.wildfly.prospero.cli.ReturnCodes;
+import org.wildfly.prospero.api.TemporaryFilesManager;
 import org.wildfly.prospero.cli.commands.AbstractCommand;
 import org.wildfly.prospero.cli.commands.CliConstants;
 import picocli.CommandLine;
@@ -57,17 +59,22 @@ public class ChannelAddCommand extends AbstractCommand {
     @Override
     public Integer call() throws Exception {
         Path installationDirectory = determineInstallationDirectory(directory);
-        List<Repository> repositories;
-        repositories = RepositoryDefinition.from(repositoryDefs);
 
         console.println(CliMessages.MESSAGES.subscribeChannel(installationDirectory, channelName));
 
         ChannelManifestCoordinate manifest = ArtifactUtils.manifestCoordFromString(gavUrlOrPath);
-        Channel channel = new Channel(channelName, null, null, repositories, manifest, null, null);
-        try (MetadataAction metadataAction = actionFactory.metadataActions(installationDirectory)) {
-            metadataAction.addChannel(channel);
+
+        try (TemporaryFilesManager temporaryFiles = TemporaryFilesManager.getInstance()) {
+            final List<Repository> repositories = RepositoryUtils.unzipArchives(RepositoryDefinition.from(repositoryDefs), temporaryFiles);
+
+            Channel channel = new Channel(channelName, null, null, repositories, manifest, null, null);
+            try (MetadataAction metadataAction = actionFactory.metadataActions(installationDirectory)) {
+                metadataAction.addChannel(channel);
+            }
         }
+
         console.println(CliMessages.MESSAGES.channelAdded(channelName));
         return ReturnCodes.SUCCESS;
+
     }
 }
