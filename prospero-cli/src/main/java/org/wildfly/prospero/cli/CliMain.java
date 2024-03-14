@@ -18,6 +18,10 @@
 package org.wildfly.prospero.cli;
 
 import org.jboss.logging.Logger;
+import org.jboss.logmanager.Configurator;
+import org.jboss.logmanager.Level;
+import org.jboss.logmanager.PropertyConfigurator;
+import org.jboss.logmanager.config.LogContextConfiguration;
 import org.wildfly.prospero.cli.commands.ChannelCommand;
 import org.wildfly.prospero.cli.commands.CliConstants;
 import org.wildfly.prospero.cli.commands.CloneCommand;
@@ -107,6 +111,20 @@ public class CliMain {
         commandLine.setExecutionExceptionHandler(new ExecutionExceptionHandler(console, isVerbose));
 
         commandLine.setParameterExceptionHandler(new UnknownCommandParameterExceptionHandler(rootParameterExceptionHandler, System.err));
+
+        final boolean isDebug = Arrays.stream(args).anyMatch(CliConstants.DEBUG::equals);
+        if (isDebug) {
+            Configurator c = org.jboss.logmanager.Logger.getLogger("").getAttachment(Configurator.ATTACHMENT_KEY);
+            if (c instanceof PropertyConfigurator) {
+                LogContextConfiguration lcc = ((PropertyConfigurator) c).getLogContextConfiguration();
+                lcc.getLoggerConfiguration("org.wildfly.prospero").setLevel(Level.DEBUG.getName());
+                lcc.getLoggerConfiguration("org.wildfly.prospero").addHandlerName("CONSOLE");
+                lcc.getHandlerConfiguration("CONSOLE").setLevel(Level.DEBUG.getName());
+                lcc.commit();
+            } else {
+                logger.warn("Cannot change logging level, using default.");
+            }
+        }
 
         return commandLine;
     }
