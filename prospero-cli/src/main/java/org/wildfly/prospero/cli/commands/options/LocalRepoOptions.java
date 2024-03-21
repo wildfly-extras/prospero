@@ -54,7 +54,7 @@ public class LocalRepoOptions {
         useLocalCache.ifPresent(useLocalCache -> builder.setNoLocalCache(!useLocalCache));
 
         if (noLocalCache.isPresent()) {
-            System.out.println("WARNING: " + CliConstants.NO_LOCAL_MAVEN_CACHE + " is depracated. Please use " + CliConstants.USE_LOCAL_MAVEN_CACHE + " instead.");
+            System.out.println("WARNING: " + CliConstants.NO_LOCAL_MAVEN_CACHE + " is deprecated. Please use " + CliConstants.USE_LOCAL_MAVEN_CACHE + " instead.");
             builder.setNoLocalCache(noLocalCache.get());
         }
         if (localMavenCache != null) {
