@@ -26,6 +26,7 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Optional;
 
+import org.apache.commons.lang3.StringUtils;
 import org.jboss.galleon.Constants;
 import org.jboss.galleon.api.config.GalleonProvisioningConfig;
 
@@ -79,23 +80,17 @@ public class InstallCommand extends AbstractInstallCommand {
     )
     List<String> shadowRepositories = new ArrayList<>();
 
-    private static final List<String> STABILITY_LEVELS = List.of(Constants.STABILITY_EXPERIMENTAL,
+    protected static final List<String> STABILITY_LEVELS = List.of(Constants.STABILITY_EXPERIMENTAL,
             Constants.STABILITY_PREVIEW,
             Constants.STABILITY_DEFAULT,
             Constants.STABILITY_COMMUNITY);
 
-    private static class StabilityCandidates implements Iterable<String> {
-        @Override
-        public Iterator<String> iterator() {
-            return STABILITY_LEVELS.stream().map(String::toLowerCase).iterator();
-        }
-    }
-    @CommandLine.Option(
-            names = CliConstants.STABILITY_LEVEL,
-            completionCandidates = StabilityCandidates.class
+    @CommandLine.ArgGroup(
+            headingKey = "stability_level_header",
+            exclusive = false,
+            order = 9
     )
-    String stabilityLevel;
-
+    StabilityLevels stabilityLevels = new StabilityLevels();
 
     static class FeaturePackOrDefinition {
         @CommandLine.Option(
@@ -159,9 +154,7 @@ public class InstallCommand extends AbstractInstallCommand {
             }
         }
 
-        if (stabilityLevel != null && !STABILITY_LEVELS.contains(stabilityLevel.toLowerCase(Locale.ROOT))) {
-            throw CliMessages.MESSAGES.unknownStabilityLevel(stabilityLevel, STABILITY_LEVELS);
-        }
+        stabilityLevels.verify();
 
         if (featurePackOrDefinition.definition.isPresent()) {
             final Path definition = featurePackOrDefinition.definition.get().toAbsolutePath();
@@ -171,7 +164,9 @@ public class InstallCommand extends AbstractInstallCommand {
         verifyTargetDirectoryIsEmpty(directory);
 
         final ProvisioningDefinition provisioningDefinition = buildDefinition()
-                .setStabilityLevel(stabilityLevel==null?null:stabilityLevel.toLowerCase(Locale.ROOT))
+                .setStabilityLevel(stabilityLevels.stabilityLevel==null?null:stabilityLevels.stabilityLevel.toLowerCase(Locale.ROOT))
+                .setPackageStabilityLevel(stabilityLevels.packageStabilityLevel==null?null:stabilityLevels.packageStabilityLevel.toLowerCase(Locale.ROOT))
+                .setConfigStabilityLevel(stabilityLevels.configStabilityLevel==null?null:stabilityLevels.configStabilityLevel.toLowerCase(Locale.ROOT))
                 .build();
         final MavenOptions mavenOptions = getMavenOptions();
         final GalleonProvisioningConfig provisioningConfig = provisioningDefinition.toProvisioningConfig();
@@ -243,4 +238,51 @@ public class InstallCommand extends AbstractInstallCommand {
         return KnownFeaturePacks.isWellKnownName(fpl);
     }
 
+    private static class StabilityCandidates implements Iterable<String> {
+        @Override
+        public Iterator<String> iterator() {
+            return STABILITY_LEVELS.stream().map(String::toLowerCase).iterator();
+        }
+    }
+
+    static class StabilityLevels {
+        @CommandLine.Option(
+                names = CliConstants.STABILITY_LEVEL,
+                completionCandidates = StabilityCandidates.class,
+                paramLabel = "stability-level"
+        )
+        String stabilityLevel;
+
+        @CommandLine.Option(
+                names = CliConstants.CONFIG_STABILITY_LEVEL,
+                completionCandidates = StabilityCandidates.class,
+                paramLabel = "stability-level"
+        )
+        String configStabilityLevel;
+
+        @CommandLine.Option(
+                names = CliConstants.PACKAGE_STABILITY_LEVEL,
+                completionCandidates = StabilityCandidates.class,
+                paramLabel = "stability-level"
+        )
+        String packageStabilityLevel;
+
+        public void verify() {
+            if (StringUtils.isNotEmpty(stabilityLevel) && StringUtils.isNotEmpty(configStabilityLevel)) {
+                throw CliMessages.MESSAGES.exclusiveOptions(CliConstants.STABILITY_LEVEL, CliConstants.CONFIG_STABILITY_LEVEL);
+            }
+            if (StringUtils.isNotEmpty(stabilityLevel) && StringUtils.isNotEmpty(packageStabilityLevel)) {
+                throw CliMessages.MESSAGES.exclusiveOptions(CliConstants.STABILITY_LEVEL, CliConstants.PACKAGE_STABILITY_LEVEL);
+            }
+            if (stabilityLevel != null && !STABILITY_LEVELS.contains(stabilityLevel.toLowerCase(Locale.ROOT))) {
+                throw CliMessages.MESSAGES.unknownStabilityLevel(stabilityLevel, STABILITY_LEVELS);
+            }
+            if (configStabilityLevel != null && !STABILITY_LEVELS.contains(configStabilityLevel.toLowerCase(Locale.ROOT))) {
+                throw CliMessages.MESSAGES.unknownStabilityLevel(configStabilityLevel, STABILITY_LEVELS);
+            }
+            if (packageStabilityLevel != null && !STABILITY_LEVELS.contains(packageStabilityLevel.toLowerCase(Locale.ROOT))) {
+                throw CliMessages.MESSAGES.unknownStabilityLevel(packageStabilityLevel, STABILITY_LEVELS);
+            }
+        }
+    }
 }

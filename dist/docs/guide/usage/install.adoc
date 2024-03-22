@@ -93,3 +93,18 @@ $ ./prospero.sh install \ #<2>
 <2> Installs the server using content of `/path/to/local_repo` instead of default repositories
 
 NOTE: When using a <groupId>:<artifactId> to resolve manifest from a repository, the manifest artifact has to have accompanying Maven metadata (maven-metadata.xml).
+
+#### Selecting stability level of provisioned server
+
+Some feature packs may contain experimental or preview features not intended to be made available by default. To separate those features from stable ones, feature packs may segregate the features into `stability-levels`. At the provisioning time, the user is able to change the default stability level of the feature pack by using the `--stability` flag.
+
+[source, bash]
+----
+$ ./prospero.sh install \ #<1>
+      --dir wfly-31 \
+      --profile wildfly \
+      --manifest /path/to/wildfly-manifest.yaml \
+      --stability preview
+----
+
+For more fine-grained control, the level of installed packages and configuration can be set separately using `--config-stability` and `--package-stability` flags.

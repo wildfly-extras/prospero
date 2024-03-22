@@ -18,6 +18,7 @@
 package org.wildfly.prospero.api;
 
 import org.assertj.core.groups.Tuple;
+import org.jboss.galleon.Constants;
 import org.jboss.galleon.ProvisioningException;
 import org.junit.Rule;
 import org.junit.Test;
@@ -43,6 +44,7 @@ import java.util.List;
 import javax.xml.stream.XMLStreamException;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.assertj.core.api.Assertions.entry;
 import static org.assertj.core.api.Assertions.tuple;
 import org.jboss.galleon.api.config.GalleonProvisioningConfig;
@@ -258,25 +260,81 @@ public class ProvisioningDefinitionTest {
         final ProvisioningDefinition.Builder builder = new ProvisioningDefinition.Builder()
                 .setFpl("custom:fpl")
                 .setManifest("tmp/foo.bar")
-                .setStabilityLevel("default")
+                .setStabilityLevel(Constants.STABILITY_DEFAULT)
                 .setOverrideRepositories(Arrays.asList(
                         new Repository("temp-repo-0", "http://test.repo1"),
                         new Repository("temp-repo-1", "http://test.repo2")));
 
         final ProvisioningDefinition def = builder.build();
         assertThat(def.toProvisioningConfig().getOptions())
-                .contains(entry("stability-level", "default"));
+                .contains(entry(Constants.STABILITY_LEVEL, Constants.STABILITY_DEFAULT));
     }
 
     @Test
     public void setStabilityLevelWithProfile() throws Exception {
         final ProvisioningDefinition.Builder builder = new ProvisioningDefinition.Builder()
                 .setProfile(EAP_FPL)
-                .setStabilityLevel("default");
+                .setStabilityLevel(Constants.STABILITY_DEFAULT);
 
         final ProvisioningDefinition def = builder.build();
         assertThat(def.toProvisioningConfig().getOptions())
-                .contains(entry("stability-level", "default"));
+                .contains(entry(Constants.STABILITY_LEVEL, Constants.STABILITY_DEFAULT));
+    }
+
+    @Test
+    public void stabilityLevelCannotBeSetWhenConfigStabilityLevelIsSet() throws Exception {
+        final ProvisioningDefinition.Builder builder = new ProvisioningDefinition.Builder()
+                .setProfile(EAP_FPL)
+                .setConfigStabilityLevel(Constants.STABILITY_DEFAULT)
+                .setStabilityLevel(Constants.STABILITY_DEFAULT);
+
+        assertThatThrownBy(()->builder.build())
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("Provisioning option stabilityLevel cannot be used with packageStabilityLevel or configStabilityLevel");
+    }
+
+    @Test
+    public void stabilityLevelCannotBeSetWhenPackageStabilityLevelIsSet() throws Exception {
+        final ProvisioningDefinition.Builder builder = new ProvisioningDefinition.Builder()
+                .setProfile(EAP_FPL)
+                .setPackageStabilityLevel(Constants.STABILITY_DEFAULT)
+                .setStabilityLevel(Constants.STABILITY_DEFAULT);
+
+        assertThatThrownBy(()->builder.build())
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("Provisioning option stabilityLevel cannot be used with packageStabilityLevel or configStabilityLevel");
+    }
+
+    @Test
+    public void setConfigAndPackageStabilityLevelsWithProfile() throws Exception {
+        final ProvisioningDefinition.Builder builder = new ProvisioningDefinition.Builder()
+                .setProfile(EAP_FPL)
+                .setConfigStabilityLevel(Constants.STABILITY_COMMUNITY)
+                .setPackageStabilityLevel(Constants.STABILITY_PREVIEW);
+
+        final ProvisioningDefinition def = builder.build();
+        assertThat(def.toProvisioningConfig().getOptions())
+                .contains(
+                        entry(Constants.PACKAGE_STABILITY_LEVEL, Constants.STABILITY_PREVIEW),
+                        entry(Constants.CONFIG_STABILITY_LEVEL, Constants.STABILITY_COMMUNITY));
+    }
+
+    @Test
+    public void setConfigAndPackageStabilityLevelsWithFpl() throws Exception {
+        final ProvisioningDefinition.Builder builder = new ProvisioningDefinition.Builder()
+                .setFpl("custom:fpl")
+                .setManifest("tmp/foo.bar")
+                .setConfigStabilityLevel(Constants.STABILITY_COMMUNITY)
+                .setPackageStabilityLevel(Constants.STABILITY_PREVIEW)
+                .setOverrideRepositories(Arrays.asList(
+                        new Repository("temp-repo-0", "http://test.repo1"),
+                        new Repository("temp-repo-1", "http://test.repo2")));
+
+        final ProvisioningDefinition def = builder.build();
+        assertThat(def.toProvisioningConfig().getOptions())
+                .contains(
+                        entry(Constants.PACKAGE_STABILITY_LEVEL, Constants.STABILITY_PREVIEW),
+                        entry(Constants.CONFIG_STABILITY_LEVEL, Constants.STABILITY_COMMUNITY));
     }
 
     private void verifyFeaturePackLocation(ProvisioningDefinition definition) throws ProvisioningException, XMLStreamException {
