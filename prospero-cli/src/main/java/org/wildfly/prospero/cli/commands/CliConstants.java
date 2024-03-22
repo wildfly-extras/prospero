@@ -67,6 +67,7 @@ public final class CliConstants {
     public static final String CHANNEL_MANIFEST = "--manifest";
     public static final String CHANNEL_MANIFEST_REFERENCE = "<manifest-reference>";
     public static final String CHANNEL_REFERENCE = "<channel-reference>";
+    public static final String CONFIG_STABILITY_LEVEL = "--config-stability-level";
     public static final String CUSTOMIZATION_ARCHIVE = "--archive";
     public static final String CUSTOMIZATION_REPOSITORY_URL = "--repository-url";
     public static final String DEBUG = "--debug";
@@ -79,6 +80,7 @@ public final class CliConstants {
     public static final String LAYERS = "--layers";
     public static final String LOCAL_CACHE = "--local-cache";
     public static final String OFFLINE = "--offline";
+    public static final String PACKAGE_STABILITY_LEVEL = "--package-stability-level";
     public static final String PATH = "<path>";
     public static final String PRODUCT = "--product";
     public static final String PROFILE = "--profile";
