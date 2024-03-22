@@ -35,13 +35,6 @@ public class LocalRepoOptions {
     )
     Path localMavenCache;
 
-    @Deprecated
-    @CommandLine.Option(
-            names = CliConstants.NO_LOCAL_MAVEN_CACHE,
-            order = 7
-    )
-    Optional<Boolean> noLocalCache = Optional.empty();
-
     @CommandLine.Option(
             names = CliConstants.USE_LOCAL_MAVEN_CACHE,
             order = 8
@@ -53,10 +46,6 @@ public class LocalRepoOptions {
 
         useLocalCache.ifPresent(useLocalCache -> builder.setNoLocalCache(!useLocalCache));
 
-        if (noLocalCache.isPresent()) {
-            System.out.println("WARNING: " + CliConstants.NO_LOCAL_MAVEN_CACHE + " is deprecated. Please use " + CliConstants.USE_LOCAL_MAVEN_CACHE + " instead.");
-            builder.setNoLocalCache(noLocalCache.get());
-        }
         if (localMavenCache != null) {
             if (Files.exists(this.localMavenCache) && !Files.isDirectory(this.localMavenCache)) {
                 throw CliMessages.MESSAGES.repositoryIsNotDirectory(this.localMavenCache);

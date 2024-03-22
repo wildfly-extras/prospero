@@ -84,7 +84,7 @@ public class GalleonPackInspectorTest {
     private ArtifactResult downloadFeaturePack(String coords) throws ProvisioningException, ArtifactResolutionException {
         final MavenSessionManager mavenSessionManager = new MavenSessionManager();
         final RepositorySystem repositorySystem = mavenSessionManager.newRepositorySystem();
-        final DefaultRepositorySystemSession session = mavenSessionManager.newRepositorySystemSession(repositorySystem, true);
+        final DefaultRepositorySystemSession session = mavenSessionManager.newRepositorySystemSession(repositorySystem);
 
         final ArtifactRequest request = new ArtifactRequest();
         request.setArtifact(new DefaultArtifact(coords));

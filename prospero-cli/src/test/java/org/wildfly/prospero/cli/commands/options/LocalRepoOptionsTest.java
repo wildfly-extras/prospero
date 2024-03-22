@@ -26,7 +26,6 @@ import org.wildfly.prospero.cli.ArgumentParsingException;
 
 import java.io.File;
 import java.nio.file.Path;
-import java.util.Optional;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -42,16 +41,6 @@ public class LocalRepoOptionsTest {
     public void defaultLocalPathIfNoOptionsSpecified() throws Exception {
         final MavenOptions mavenOptions = new LocalRepoOptions().toOptions().build();
         assertNull(null, mavenOptions.getLocalCache());
-        assertTrue(mavenOptions.isNoLocalCache());
-    }
-
-    @Test
-    public void emptyLocalPathIfNoLocalCacheSpecified() throws Exception {
-        final LocalRepoOptions localRepoParam = new LocalRepoOptions();
-        localRepoParam.noLocalCache = Optional.of(true);
-
-        final MavenOptions mavenOptions = localRepoParam.toOptions().build();
-        assertEquals(null, mavenOptions.getLocalCache());
         assertTrue(mavenOptions.isNoLocalCache());
     }
 

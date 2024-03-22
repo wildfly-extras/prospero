@@ -173,7 +173,6 @@ public class CloneTest extends WfCoreTestBase {
         ExecutionUtils.prosperoExecution(CliConstants.Commands.CLONE, CliConstants.Commands.RECREATE,
             CliConstants.DIR, importDir.toString(),
             CliConstants.ARG_PATH, exportPath.toString(),
-            CliConstants.NO_LOCAL_MAVEN_CACHE,
             // mockTemporaryRepo contains org.wildfly.core:${UPGRADE_VERSION}
             CliConstants.REPOSITORIES, mockTemporaryRepo(false).toString()
           )
