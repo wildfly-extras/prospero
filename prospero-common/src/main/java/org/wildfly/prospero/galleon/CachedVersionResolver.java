@@ -62,11 +62,6 @@ public class CachedVersionResolver implements MavenVersionsResolver {
     private final RepositoryListener listener;
     private final Function<ArtifactCoordinate, String> manifestVersionProvider;
 
-    @Deprecated
-    public CachedVersionResolver(MavenVersionsResolver fallbackResolver, ArtifactCache cache, RepositorySystem system, RepositorySystemSession session) {
-        this(fallbackResolver, cache, system, session, (a)->null);
-    }
-
     public CachedVersionResolver(MavenVersionsResolver fallbackResolver, ArtifactCache cache, RepositorySystem system,
                                  RepositorySystemSession session,
                                  Function<ArtifactCoordinate, String> manifestVersionProvider) {

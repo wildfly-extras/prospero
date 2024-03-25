@@ -67,7 +67,6 @@ public class UpdateWithAdditionalRepositoryTest extends CliTestBase {
         ExecutionUtils.prosperoExecution(CliConstants.Commands.UPDATE, CliConstants.Commands.PERFORM,
                         CliConstants.REPOSITORIES, temporaryRepo.toString(),
                         CliConstants.Y,
-                        CliConstants.NO_LOCAL_MAVEN_CACHE,
                         CliConstants.DIR, targetDir.getAbsolutePath())
                 .execute()
                 .assertReturnCode(ReturnCodes.SUCCESS);

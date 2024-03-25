@@ -25,16 +25,11 @@ import java.util.Objects;
 
 import org.apache.commons.io.FileUtils;
 import org.eclipse.aether.repository.LocalRepository;
-import org.jboss.logging.Logger;
 import org.apache.maven.repository.internal.MavenRepositorySystemUtils;
-import org.eclipse.aether.AbstractRepositoryListener;
 import org.eclipse.aether.DefaultRepositorySystemSession;
-import org.eclipse.aether.RepositoryEvent;
 import org.eclipse.aether.RepositorySystem;
 import org.eclipse.aether.connector.basic.BasicRepositoryConnectorFactory;
 import org.eclipse.aether.impl.DefaultServiceLocator;
-import org.eclipse.aether.installation.InstallRequest;
-import org.eclipse.aether.installation.InstallationException;
 import org.eclipse.aether.spi.connector.RepositoryConnectorFactory;
 import org.eclipse.aether.spi.connector.transport.TransporterFactory;
 import org.eclipse.aether.transport.file.FileTransporterFactory;
@@ -44,8 +39,6 @@ import org.wildfly.prospero.ProsperoLogger;
 import org.wildfly.prospero.api.MavenOptions;
 
 public class MavenSessionManager {
-
-    private static final Logger logger = Logger.getLogger(MavenSessionManager.class);
 
     public static final Path LOCAL_MAVEN_REPO = Paths.get(System.getProperty("user.home"), ".m2", "repository");
     private static final String AETHER_OFFLINE_PROTOCOLS_PROPERTY = "aether.offline.protocols";
@@ -104,56 +97,13 @@ public class MavenSessionManager {
     }
 
     public DefaultRepositorySystemSession newRepositorySystemSession(RepositorySystem system) {
-        return newRepositorySystemSession(system, false);
-    }
+        final DefaultRepositorySystemSession session = MavenRepositorySystemUtils.newSession();
 
-    @Deprecated
-    public DefaultRepositorySystemSession newRepositorySystemSession(RepositorySystem system,
-                                                                     boolean resolveLocalCache) {
-        DefaultRepositorySystemSession session = MavenRepositorySystemUtils.newSession();
-
-        Path location;
-        if (resolveLocalCache) {
-            location = LOCAL_MAVEN_REPO;
-        } else {
-            location = provisioningRepo.toAbsolutePath();
-        }
-        LocalRepository localRepo = new LocalRepository(location.toFile());
-        if (resolveLocalCache) {
-            copyResolvedArtifactsToProvisiongRepository(session);
-        } else {
-            session.setRepositoryListener(repositoryListener);
-        }
+        final LocalRepository localRepo = new LocalRepository(provisioningRepo.toAbsolutePath().toFile());
+        session.setRepositoryListener(repositoryListener);
         session.setLocalRepositoryManager(system.newLocalRepositoryManager(session, localRepo));
         session.setOffline(offline);
         return session;
-    }
-
-    private void copyResolvedArtifactsToProvisiongRepository(DefaultRepositorySystemSession session) {
-        // hack to work around Galleon provisioning again to generate examples
-        // whenever an artifact is resolved by a repository using LOCAL_MAVE_REPO,
-        // install the artifact into a temporary provisioningRepo. The provisioningRepo then is used
-        // by Galleon to start thin server.
-        final RepositorySystem localCacheBuilder = newRepositorySystem();
-        final DefaultRepositorySystemSession localCacheBuilderSession = newRepositorySystemSession(localCacheBuilder);
-        session.setRepositoryListener(new AbstractRepositoryListener() {
-            @Override
-            public void artifactResolved(RepositoryEvent event) {
-                repositoryListener.artifactResolved(event);
-
-                if (event.getFile() == null || event.getRepository() instanceof LocalRepository) {
-                    return;
-                }
-                final InstallRequest request = new InstallRequest();
-                request.addArtifact(event.getArtifact());
-                try {
-                    localCacheBuilder.install(localCacheBuilderSession, request);
-                } catch (InstallationException e) {
-                    // log and ignore
-                    logger.warn("Unable to install resolved artifact in the provisioning repository", e);
-                }
-            }
-        });
     }
 
     public Path getProvisioningRepo() {

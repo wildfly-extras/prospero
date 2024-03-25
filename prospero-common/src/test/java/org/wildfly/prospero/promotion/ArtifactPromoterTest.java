@@ -79,7 +79,7 @@ public class ArtifactPromoterTest {
                 .setNoLocalCache(true)
                 .build());
         system = sessionManager.newRepositorySystem();
-        session = sessionManager.newRepositorySystemSession(system, false);
+        session = sessionManager.newRepositorySystemSession(system);
 
         sourceRepositoryPath = temp.newFolder("source").toPath();
         targetRepositoryPath = temp.newFolder("target").toPath();

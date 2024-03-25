@@ -64,9 +64,9 @@ public abstract class AbstractMavenCommandTest extends AbstractConsoleTest {
     }
 
     @Test
-    public void useTemporaryMavenRepoIfNoLocalCacheParameterPresent() throws Exception {
+    public void useTemporaryMavenRepoIfNoCacheParamsPresent() throws Exception {
         doLocalMock();
-        int exitCode = commandLine.execute(getArgs(CliConstants.NO_LOCAL_MAVEN_CACHE));
+        int exitCode = commandLine.execute(getArgs());
 
         assertEquals(ReturnCodes.SUCCESS, exitCode);
         MavenOptions options = getCapturedMavenOptions();
@@ -74,13 +74,6 @@ public abstract class AbstractMavenCommandTest extends AbstractConsoleTest {
 
         assertNull(provisioningRepo);
         assertTrue(options.isNoLocalCache());
-    }
-
-    @Test
-    public void noLocalCacheAndLocalRepoAreMutuallyExclusive() throws Exception {
-        int exitCode = commandLine.execute(getArgs(CliConstants.LOCAL_CACHE, "test-path", CliConstants.NO_LOCAL_MAVEN_CACHE));
-
-        assertEquals(ReturnCodes.INVALID_ARGUMENTS, exitCode);
     }
 
     protected abstract MavenOptions getCapturedMavenOptions() throws Exception;
