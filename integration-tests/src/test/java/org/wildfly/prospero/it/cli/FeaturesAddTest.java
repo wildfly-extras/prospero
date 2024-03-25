@@ -57,7 +57,7 @@ public class FeaturesAddTest {
 
     @Test
     public void addFeaturePack() throws Exception {
-        final Path channelsFile = MetadataTestUtils.prepareChannel("manifests/wildfly-28.0.0.Final-manifest.yaml");
+        final Path channelsFile = MetadataTestUtils.prepareChannel("manifests/wildfly-30.0.0.Final-manifest.yaml");
         final Path modulePath = Path.of("modules", "com", "mysql", "jdbc");
 
         System.out.println("Installing wildfly");
