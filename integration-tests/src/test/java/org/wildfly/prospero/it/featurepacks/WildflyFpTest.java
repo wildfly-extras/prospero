@@ -149,7 +149,7 @@ public class WildflyFpTest {
         final RepositorySystem system = mavenSessionManager.newRepositorySystem();
         final DefaultRepositorySystemSession session = mavenSessionManager.newRepositorySystemSession(system);
 
-        final File wfManifest = new File(this.getClass().getClassLoader().getResource("manifests/wildfly-28.0.0.Final-manifest.yaml").toURI());
+        final File wfManifest = new File(this.getClass().getClassLoader().getResource("manifests/wildfly-30.0.0.Final-manifest.yaml").toURI());
 
         final DeployRequest deployRequest = new DeployRequest();
         deployRequest.setRepository(new RemoteRepository.Builder("local-repo", "default", localRepo.toUri().toString()).build());
