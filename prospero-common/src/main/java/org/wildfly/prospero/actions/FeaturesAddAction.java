@@ -107,16 +107,6 @@ public class FeaturesAddAction {
         this.featurePackTemplateManager = featurePackTemplateManager;
     }
 
-    @Deprecated
-    public void addFeaturePack(String featurePackCoord, Set<ConfigId> defaultConfigNames)
-            throws ProvisioningException, OperationException {
-        final Path candidate = createTemporaryFolder();
-
-        this.addFeaturePack(featurePackCoord, defaultConfigNames, candidate);
-
-        new ApplyCandidateAction(installDir, candidate).applyUpdate(ApplyCandidateAction.Type.FEATURE_ADD);
-    }
-
     /**
      * performs feature pack installation as a new candidate server. The added feature pack can be customized by specifying layers and configuration model name.
      * In order to install a feature pack, a server is re-provisioned and changes are applied to existing server.
@@ -171,16 +161,6 @@ public class FeaturesAddAction {
         final GalleonProvisioningConfig newConfig = buildProvisioningConfig(Collections.emptySet(), fpl, selectedConfigs);
 
         install(newConfig, candidatePath);
-    }
-
-    @Deprecated
-    public void addFeaturePackWithLayers(String featurePackCoord, Set<String> layers, ConfigId configName)
-            throws ProvisioningException, OperationException {
-        final Path candidate = createTemporaryFolder();
-
-        this.addFeaturePackWithLayers(featurePackCoord, layers, configName, candidate);
-
-        new ApplyCandidateAction(installDir, candidate).applyUpdate(ApplyCandidateAction.Type.FEATURE_ADD);
     }
 
 
@@ -311,20 +291,6 @@ public class FeaturesAddAction {
         }
 
         return true;
-    }
-
-    private static Path createTemporaryFolder() throws ProvisioningException {
-        final Path candidate;
-        try {
-            candidate = Files.createTempDirectory("prospero-candidate").toAbsolutePath();
-            if (ProsperoLogger.ROOT_LOGGER.isDebugEnabled()) {
-                ProsperoLogger.ROOT_LOGGER.temporaryCandidateFolder(candidate);
-            }
-            Runtime.getRuntime().addShutdownHook(new Thread(() -> FileUtils.deleteQuietly(candidate.toFile())));
-        } catch (IOException e) {
-            throw ProsperoLogger.ROOT_LOGGER.unableToCreateTemporaryDirectory(e);
-        }
-        return candidate;
     }
 
     private static String getSelectedConfig(ConfigId defaultConfigName, String selectedModel) {
