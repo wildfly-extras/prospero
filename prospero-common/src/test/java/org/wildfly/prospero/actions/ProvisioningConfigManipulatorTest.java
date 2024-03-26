@@ -37,7 +37,7 @@ public class ProvisioningConfigManipulatorTest {
                 .build();
 
         final GalleonFeaturePackConfig.Builder res = GalleonFeaturePackConfig.builder(FeaturePackLocation.fromString("org.test:test"));
-        ProvisioningConfigManipulator.copyFeaturePackConfig(res, origin);
+        ProvisioningConfigManipulator.copyFeaturePackConfig(origin, res);
 
         assertEquals(origin, res.build());
     }
@@ -52,7 +52,7 @@ public class ProvisioningConfigManipulatorTest {
                 .build();
 
         final GalleonFeaturePackConfig.Builder res = GalleonFeaturePackConfig.builder(FeaturePackLocation.fromString("org.test:test"));
-        ProvisioningConfigManipulator.copyFeaturePackConfig(res, origin);
+        ProvisioningConfigManipulator.copyFeaturePackConfig(origin, res);
 
         assertEquals(origin, res.build());
     }
@@ -67,7 +67,7 @@ public class ProvisioningConfigManipulatorTest {
                 .build();
 
         final GalleonFeaturePackConfig.Builder res = GalleonFeaturePackConfig.builder(FeaturePackLocation.fromString("org.test:test"));
-        ProvisioningConfigManipulator.copyFeaturePackConfig(res, origin);
+        ProvisioningConfigManipulator.copyFeaturePackConfig(origin, res);
 
         assertEquals(origin, res.build());
     }
@@ -79,7 +79,7 @@ public class ProvisioningConfigManipulatorTest {
                 .build();
 
         final GalleonFeaturePackConfig.Builder res = GalleonFeaturePackConfig.builder(FeaturePackLocation.fromString("org.test:test"));
-        ProvisioningConfigManipulator.copyFeaturePackConfig(res, origin);
+        ProvisioningConfigManipulator.copyFeaturePackConfig(origin, res);
 
         assertEquals(origin, res.build());
     }
@@ -91,7 +91,7 @@ public class ProvisioningConfigManipulatorTest {
                 .build();
 
         final GalleonFeaturePackConfig.Builder res = GalleonFeaturePackConfig.builder(FeaturePackLocation.fromString("org.test:test"));
-        ProvisioningConfigManipulator.copyFeaturePackConfig(res, origin);
+        ProvisioningConfigManipulator.copyFeaturePackConfig(origin, res);
 
         assertEquals(origin, res.build());
     }

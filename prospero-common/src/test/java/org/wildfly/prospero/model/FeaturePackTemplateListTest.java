@@ -59,8 +59,8 @@ public class FeaturePackTemplateListTest {
         assertFalse(template.isRequiresLayers());
         assertTrue(template.isSupportsCustomization());
         assertNull(template.getReplacesDependency());
+        assertNull(template.getTransitiveDependency());
         assertThat(template.getAdditionalPackages()).isEmpty();
-        assertThat(template.getTransitiveDependencies()).isEmpty();
     }
 
     @Test

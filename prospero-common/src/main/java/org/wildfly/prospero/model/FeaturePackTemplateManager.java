@@ -95,7 +95,7 @@ public class FeaturePackTemplateManager {
             final VersionRange versionRange = VersionRange.createFromVersionSpec(recipeVersion);
             return versionRange.containsVersion(new DefaultArtifactVersion(version));
         } catch (InvalidVersionSpecificationException e) {
-            throw new RuntimeException(e);
+            throw new RuntimeException("Invalid version pattern in the provisioning template file", e);
         }
     }
 
