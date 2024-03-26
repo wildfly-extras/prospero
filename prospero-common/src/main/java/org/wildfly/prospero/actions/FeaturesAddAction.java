@@ -109,6 +109,16 @@ public class FeaturesAddAction {
         this.featurePackTemplateManager = featurePackTemplateManager;
     }
 
+    @Deprecated
+    public void addFeaturePack(String featurePackCoord, Set<ConfigId> defaultConfigNames)
+            throws ProvisioningException, OperationException {
+        final Path candidate = createTemporaryFolder();
+
+        this.addFeaturePack(featurePackCoord, defaultConfigNames, candidate);
+
+        new ApplyCandidateAction(installDir, candidate).applyUpdate(ApplyCandidateAction.Type.FEATURE_ADD);
+    }
+
     /**
      * performs feature pack installation as a new candidate server. The added feature pack can be customized by specifying layers and configuration model name.
      * In order to install a feature pack, a server is re-provisioned and changes are applied to existing server.
@@ -118,7 +128,7 @@ public class FeaturesAddAction {
      *
      * @param featurePackCoord   - maven {@code groupId:artifactId} coordinates of the feature pack to install
      * @param defaultConfigNames - set of {@code ConfigId} of the default configurations to include
-     * @return - path to the generated candidate server
+     * @param candidatePath      - folder where the candidate server should be created
      * @throws ProvisioningException                - if unable to provision the server
      * @throws ModelNotDefinedException             - if requested model is not provided by the feature pack
      * @throws LayerNotFoundException               - if one of the requested layers is not provided by the feature pack
@@ -126,7 +136,7 @@ public class FeaturesAddAction {
      * @throws InvalidUpdateCandidateException      - if the folder at {@code updateDir} is not a valid update
      * @throws MetadataException                    - if unable to read or write the installation of update metadata
      */
-    public Path addFeaturePack(String featurePackCoord, Set<ConfigId> defaultConfigNames)
+    public void addFeaturePack(String featurePackCoord, Set<ConfigId> defaultConfigNames, Path candidatePath)
             throws ProvisioningException, OperationException {
         verifyFeaturePackCoord(featurePackCoord);
         Objects.requireNonNull(defaultConfigNames);
@@ -162,8 +172,19 @@ public class FeaturesAddAction {
 
         final ProvisioningConfig newConfig = buildProvisioningConfig(Collections.emptySet(), fpl, selectedConfigs);
 
-        return install(newConfig);
+        install(newConfig, candidatePath);
     }
+
+    @Deprecated
+    public void addFeaturePackWithLayers(String featurePackCoord, Set<String> layers, ConfigId configName)
+            throws ProvisioningException, OperationException {
+        final Path candidate = createTemporaryFolder();
+
+        this.addFeaturePackWithLayers(featurePackCoord, layers, configName, candidate);
+
+        new ApplyCandidateAction(installDir, candidate).applyUpdate(ApplyCandidateAction.Type.FEATURE_ADD);
+    }
+
 
     /**
      * performs feature pack installation as a new candidate server. The added feature pack can be customized by specifying layers and configuration model name.
@@ -175,7 +196,7 @@ public class FeaturesAddAction {
      * @param featurePackCoord - maven {@code groupId:artifactId} coordinates of the feature pack to install
      * @param layers           - set of layer names to be provisioned
      * @param configName       - {@code ConfigId} of the configuration file to generate if supported
-     * @return - path to the generated candidate server
+     * @param candidateFolder  - folder where the candidate server should be created
      * @throws ProvisioningException                - if unable to provision the server
      * @throws ModelNotDefinedException             - if requested model is not provided by the feature pack
      * @throws LayerNotFoundException               - if one of the requested layers is not provided by the feature pack
@@ -183,7 +204,7 @@ public class FeaturesAddAction {
      * @throws InvalidUpdateCandidateException      - if the folder at {@code updateDir} is not a valid update
      * @throws MetadataException                    - if unable to read or write the installation of update metadata
      */
-    public Path addFeaturePackWithLayers(String featurePackCoord, Set<String> layers, ConfigId configName)
+    public void addFeaturePackWithLayers(String featurePackCoord, Set<String> layers, ConfigId configName, Path candidateFolder)
             throws ProvisioningException, OperationException {
         Objects.requireNonNull(layers);
         if (layers.isEmpty() && configName != null) {
@@ -218,7 +239,7 @@ public class FeaturesAddAction {
 
         final ProvisioningConfig newConfig = buildProvisioningConfig(layers, fpl, selectedConfig==null?Collections.emptySet():Set.of(new ConfigId(selectedModel, selectedConfig)));
 
-        return install(newConfig);
+        install(newConfig, candidateFolder);
     }
 
     /**
@@ -264,57 +285,6 @@ public class FeaturesAddAction {
         }
     }
 
-    private static String getSelectedConfig(ConfigId defaultConfigName, String selectedModel) {
-        if (defaultConfigName == null || defaultConfigName.getName() == null) {
-            if (selectedModel == null) {
-                return null;
-            } else {
-                return selectedModel + ".xml";
-            }
-        } else {
-            return defaultConfigName.getName();
-        }
-    }
-
-    private static void verifyFeaturePackCoord(String featurePackCoord) {
-        if (featurePackCoord == null || featurePackCoord.isEmpty()) {
-            throw new IllegalArgumentException("The feature pack coordinate cannot be null");
-        }
-        if (featurePackCoord.split(":").length != 2) {
-            throw new IllegalArgumentException("The feature pack coordinate has to consist of <groupId>:<artifactId>");
-        }
-    }
-
-    private Path install(ProvisioningConfig newConfig) throws ProvisioningException, OperationException {
-        final Path candidate;
-        try {
-            candidate = Files.createTempDirectory("prospero-candidate").toAbsolutePath();
-            if (ProsperoLogger.ROOT_LOGGER.isDebugEnabled()) {
-                ProsperoLogger.ROOT_LOGGER.temporaryCandidateFolder(candidate);
-            }
-            Runtime.getRuntime().addShutdownHook(new Thread(() -> FileUtils.deleteQuietly(candidate.toFile())));
-        } catch (IOException e) {
-            throw ProsperoLogger.ROOT_LOGGER.unableToCreateTemporaryDirectory(e);
-        }
-
-        verifyConfigurationsAvailable(newConfig);
-
-        // make sure the previous provisioning_config is persisted
-        try (InstallationMetadata metadata = InstallationMetadata.loadInstallation(installDir)) {
-            metadata.updateProvisioningConfiguration();
-        }
-
-        try (PrepareCandidateAction prepareCandidateAction = candidateActionsFactory.newPrepareCandidateActionInstance(mavenSessionManager, prosperoConfig);
-             GalleonEnvironment galleonEnv = getGalleonEnv(candidate)) {
-
-            ProsperoLogger.ROOT_LOGGER.updateCandidateStarted(installDir);
-            prepareCandidateAction.buildCandidate(candidate, galleonEnv, ApplyCandidateAction.Type.FEATURE_ADD, newConfig);
-            ProsperoLogger.ROOT_LOGGER.updateCandidateCompleted(installDir);
-        }
-
-        return candidate;
-    }
-
     /**
      * check if a feature pack with {@code featurePackCoord} can be resolved in available channels.
      *
@@ -343,6 +313,59 @@ public class FeaturesAddAction {
         }
 
         return true;
+    }
+
+    private static Path createTemporaryFolder() throws ProvisioningException {
+        final Path candidate;
+        try {
+            candidate = Files.createTempDirectory("prospero-candidate").toAbsolutePath();
+            if (ProsperoLogger.ROOT_LOGGER.isDebugEnabled()) {
+                ProsperoLogger.ROOT_LOGGER.temporaryCandidateFolder(candidate);
+            }
+            Runtime.getRuntime().addShutdownHook(new Thread(() -> FileUtils.deleteQuietly(candidate.toFile())));
+        } catch (IOException e) {
+            throw ProsperoLogger.ROOT_LOGGER.unableToCreateTemporaryDirectory(e);
+        }
+        return candidate;
+    }
+
+    private static String getSelectedConfig(ConfigId defaultConfigName, String selectedModel) {
+        if (defaultConfigName == null || defaultConfigName.getName() == null) {
+            if (selectedModel == null) {
+                return null;
+            } else {
+                return selectedModel + ".xml";
+            }
+        } else {
+            return defaultConfigName.getName();
+        }
+    }
+
+    private static void verifyFeaturePackCoord(String featurePackCoord) {
+        if (featurePackCoord == null || featurePackCoord.isEmpty()) {
+            throw new IllegalArgumentException("The feature pack coordinate cannot be null");
+        }
+        if (featurePackCoord.split(":").length != 2) {
+            throw new IllegalArgumentException("The feature pack coordinate has to consist of <groupId>:<artifactId>");
+        }
+    }
+
+    private void install(ProvisioningConfig newConfig, Path candidate) throws ProvisioningException, OperationException {
+
+        verifyConfigurationsAvailable(newConfig);
+
+        // make sure the previous provisioning_config is persisted
+        try (InstallationMetadata metadata = InstallationMetadata.loadInstallation(installDir)) {
+            metadata.updateProvisioningConfiguration();
+        }
+
+        try (PrepareCandidateAction prepareCandidateAction = candidateActionsFactory.newPrepareCandidateActionInstance(mavenSessionManager, prosperoConfig);
+             GalleonEnvironment galleonEnv = getGalleonEnv(candidate)) {
+
+            ProsperoLogger.ROOT_LOGGER.updateCandidateStarted(installDir);
+            prepareCandidateAction.buildCandidate(candidate, galleonEnv, ApplyCandidateAction.Type.FEATURE_ADD, newConfig);
+            ProsperoLogger.ROOT_LOGGER.updateCandidateCompleted(installDir);
+        }
     }
 
     private static ArtifactCoordinate toMavenCoordinates(String featurePackCoord) {
@@ -396,38 +419,12 @@ public class FeaturesAddAction {
             }
 
             // order of feature packs matter. if the feature pack redefines an existing package, insert it in its place
-            int fpIndex = existingConfig.getFeaturePackDeps().size();
-
+            final int fpIndex;
             final FeaturePackTemplate mapping = getFeaturePackRecipe(fpl.getProducerName());
             if (mapping != null) {
-                final ProvisioningConfigManipulator provisioningConfigManipulator = new ProvisioningConfigManipulator(builder);
-                if (mapping.getReplacesDependency() != null) {
-                    if (ProsperoLogger.ROOT_LOGGER.isTraceEnabled()) {
-                        ProsperoLogger.ROOT_LOGGER.tracef("Replacing %s dependency with %s", mapping.getReplacesDependency(), fpl);
-                    }
-                    fpIndex = provisioningConfigManipulator.removeFeaturePackDefinition(mapping.getReplacesDependency());
-
-                    final FeaturePackConfig removedConfig = existingConfig.getFeaturePackDep(
-                            FeaturePackLocationParser.resolveFpl(mapping.getReplacesDependency()).getProducer());
-                    ProvisioningConfigManipulator.copyFeaturePackConfig(fpBuilder, removedConfig);
-                } else {
-                    for (String transitiveDependency : mapping.getTransitiveDependencies()) {
-                        if (ProsperoLogger.ROOT_LOGGER.isTraceEnabled()) {
-                            ProsperoLogger.ROOT_LOGGER.tracef("Marking %s as a transitive dependency", transitiveDependency);
-                        }
-
-                        fpIndex = provisioningConfigManipulator.convertToTransitiveDep(transitiveDependency, existingConfig);
-                    }
-                }
-
-                for (String additionalPackage : mapping.getAdditionalPackages()) {
-                    if (ProsperoLogger.ROOT_LOGGER.isTraceEnabled()) {
-                        ProsperoLogger.ROOT_LOGGER.tracef("Adding additional package %s to %s", additionalPackage, fpl);
-                    }
-                    if (!fpBuilder.isPackageExcluded(additionalPackage)) {
-                        fpBuilder.includePackage(additionalPackage);
-                    }
-                }
+                fpIndex = applyProvisioningTemplate(fpl, builder, mapping, existingConfig, fpBuilder);
+            } else {
+                fpIndex = existingConfig.getFeaturePackDeps().size();
             }
 
             final ProvisioningConfig newConfig = builder
@@ -452,6 +449,41 @@ public class FeaturesAddAction {
 
             return newConfig;
         }
+    }
+
+    private static int applyProvisioningTemplate(FeaturePackLocation fpl, ProvisioningConfig.Builder builder,
+                                                 FeaturePackTemplate mapping, ProvisioningConfig existingConfig,
+                                                 FeaturePackConfig.Builder fpBuilder) throws ProvisioningException {
+        final ProvisioningConfigManipulator provisioningConfigManipulator = new ProvisioningConfigManipulator(builder);
+        int fpIndex = -1;
+        if (mapping.getReplacesDependency() != null) {
+            if (ProsperoLogger.ROOT_LOGGER.isTraceEnabled()) {
+                ProsperoLogger.ROOT_LOGGER.tracef("Replacing %s dependency with %s", mapping.getReplacesDependency(), fpl);
+            }
+            fpIndex = provisioningConfigManipulator.removeFeaturePackDefinition(mapping.getReplacesDependency());
+
+            final FeaturePackConfig removedConfig = existingConfig.getFeaturePackDep(
+                    FeaturePackLocationParser.resolveFpl(mapping.getReplacesDependency()).getProducer());
+            ProvisioningConfigManipulator.copyFeaturePackConfig(fpBuilder, removedConfig);
+        } else if (mapping.getTransitiveDependency() != null) {
+            if (ProsperoLogger.ROOT_LOGGER.isTraceEnabled()) {
+                ProsperoLogger.ROOT_LOGGER.tracef("Marking %s as a transitive dependency", mapping.getTransitiveDependency());
+            }
+
+            fpIndex = provisioningConfigManipulator.convertToTransitiveDep(mapping.getTransitiveDependency(), existingConfig);
+        } else {
+            fpIndex = existingConfig.getFeaturePackDeps().size();
+        }
+
+        for (String additionalPackage : mapping.getAdditionalPackages()) {
+            if (ProsperoLogger.ROOT_LOGGER.isTraceEnabled()) {
+                ProsperoLogger.ROOT_LOGGER.tracef("Adding additional package %s to %s", additionalPackage, fpl);
+            }
+            if (!fpBuilder.isPackageExcluded(additionalPackage)) {
+                fpBuilder.includePackage(additionalPackage);
+            }
+        }
+        return fpIndex;
     }
 
     private static FeaturePackConfig.Builder buildFeaturePackConfig(FeaturePackLocation fpl,

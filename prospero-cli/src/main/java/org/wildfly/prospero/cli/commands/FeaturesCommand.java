@@ -17,7 +17,6 @@
 
 package org.wildfly.prospero.cli.commands;
 
-import org.apache.commons.io.FileUtils;
 import org.jboss.galleon.config.ConfigId;
 import org.wildfly.channel.Repository;
 import org.wildfly.prospero.actions.ApplyCandidateAction;
@@ -95,7 +94,7 @@ public class FeaturesCommand extends AbstractParentCommand {
                     if (featurePackRecipe.isRequiresLayers() && layers.isEmpty()) {
                         console.error(CliMessages.MESSAGES.featurePackRequiresLayers(fpl));
                         return ReturnCodes.INVALID_ARGUMENTS;
-                    }else if (!featurePackRecipe.isSupportsCustomization() && (!layers.isEmpty() || !(config == null || config.isEmpty()))) {
+                    } else if (!featurePackRecipe.isSupportsCustomization() && (!layers.isEmpty() || !(config == null || config.isEmpty()))) {
                         console.error(CliMessages.MESSAGES.featurePackDoesNotSupportCustomization(fpl));
                         return ReturnCodes.INVALID_ARGUMENTS;
                     }
@@ -116,25 +115,20 @@ public class FeaturesCommand extends AbstractParentCommand {
                     accepted = true;
                 }
 
-                if(accepted) {
-                    Path candidate = null;
-                    try {
+                if (accepted) {
+                    try (TemporaryFilesManager temporaryFilesManager = TemporaryFilesManager.getInstance()) {
+                        final Path candidate = temporaryFilesManager.createTempDirectory("prospero-fp-candidate");
                         final ConfigId configId = parseConfigName(config);
                         if (layers.isEmpty()) {
-                            candidate = featuresAddAction.addFeaturePack(fpl, configId == null? Collections.emptySet():Set.of(configId));
+                            featuresAddAction.addFeaturePack(fpl, configId == null? Collections.emptySet():Set.of(configId), candidate);
                         } else {
-                            candidate = featuresAddAction.addFeaturePackWithLayers(fpl, layers, configId);
+                            featuresAddAction.addFeaturePackWithLayers(fpl, layers, configId, candidate);
                         }
 
+                        // list conflicts (e.g. config files) and apply the update
                         final ApplyCandidateAction applyCandidateAction = actionFactory.applyUpdate(installationDir, candidate);
                         final List<FileConflict> conflicts = applyCandidateAction.getConflicts();
-                        if (!conflicts.isEmpty()) {
-                            FileConflictPrinter.print(conflicts, console);
-                            if (skipConfirmation || console.confirm(CliMessages.MESSAGES.continueWithUpdate(), "", CliMessages.MESSAGES.updateCancelled())) {
-                                console.println(CliMessages.MESSAGES.applyingUpdates());
-                                applyCandidateAction.applyUpdate(ApplyCandidateAction.Type.FEATURE_ADD);
-                            }
-                        } else {
+                        if (conflicts.isEmpty() || confirmConflicts(conflicts)) {
                             console.println(CliMessages.MESSAGES.applyingUpdates());
                             applyCandidateAction.applyUpdate(ApplyCandidateAction.Type.FEATURE_ADD);
                         }
@@ -151,10 +145,6 @@ public class FeaturesCommand extends AbstractParentCommand {
                     } catch (FeaturesAddAction.ConfigurationNotFoundException e) {
                         console.error(CliMessages.MESSAGES.galleonConfigNotSupported(fpl, e.getModel(), e.getName()));
                         return ReturnCodes.INVALID_ARGUMENTS;
-                    }  finally {
-                        if (candidate != null) {
-                            FileUtils.deleteQuietly(candidate.toFile());
-                        }
                     }
                 }
             }
@@ -163,6 +153,13 @@ public class FeaturesCommand extends AbstractParentCommand {
             console.println(CliMessages.MESSAGES.operationCompleted(totalTime));
 
             return ReturnCodes.SUCCESS;
+        }
+
+        private boolean confirmConflicts(List<FileConflict> conflicts) {
+            FileConflictPrinter.print(conflicts, console);
+            return skipConfirmation || console.confirm(CliMessages.MESSAGES.continueWithUpdate(),
+                    CliMessages.MESSAGES.applyingUpdates(),
+                    CliMessages.MESSAGES.updateCancelled());
         }
 
         private static ConfigId parseConfigName(String config) {

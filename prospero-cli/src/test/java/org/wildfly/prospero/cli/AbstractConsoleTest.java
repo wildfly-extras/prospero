@@ -59,6 +59,13 @@ public class AbstractConsoleTest {
         this.denyConfirm = denyConfirm;
     }
 
+    /**
+     * simpulates user rejecting a prompt. If there are multiple propmpts, {@code promptNumber} selects a prompt that
+     * should be rejected.
+     *
+     * @param denyConfirm
+     * @param promptNumber
+     */
     protected void setDenyConfirm(boolean denyConfirm, int promptNumber) {
         this.denyConfirm = denyConfirm;
         this.denyPromptNumber = promptNumber;

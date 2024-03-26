@@ -100,19 +100,19 @@ class FeaturePackTemplateList {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
         FeaturePackTemplateList that = (FeaturePackTemplateList) o;
-        return Objects.equals(recipes, that.recipes);
+        return Objects.equals(schemaVersion, that.schemaVersion) && Objects.equals(recipes, that.recipes);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(recipes);
+        return Objects.hash(schemaVersion, recipes);
     }
 
     @Override
     public String toString() {
-        return "FeaturePackRecipeBook{" +
-                "recipes=" + recipes +
+        return "FeaturePackTemplateList{" +
+                "schemaVersion='" + schemaVersion + '\'' +
+                ", recipes=" + recipes +
                 '}';
     }
-
 }

@@ -34,7 +34,7 @@ public class FeaturePackTemplate {
     private final String version;
     private final String groupId;
     private final List<String> additionalPackages;
-    private final List<String> transitiveDependencies;
+    private final String transitiveDependency;
     private final boolean supportsCustomization;
     private final boolean requiresLayers;
     private final String replacesDependency;
@@ -44,7 +44,7 @@ public class FeaturePackTemplate {
                                @JsonProperty("artifactId") String artifactId,
                                @JsonProperty("version") String version,
                                @JsonProperty("additional-packages") List<String> additionalPackages,
-                               @JsonProperty("transitive-dependencies") List<String> transitiveDependencies,
+                               @JsonProperty("transitive-dependencies") String transitiveDependency,
                                @JsonProperty("replaces-dependency") String replacesDependency,
                                @JsonProperty(value = "supports-customization") Boolean supportsCustomization,
                                @JsonProperty(value = "requires-layers") boolean requiresLayers
@@ -53,7 +53,7 @@ public class FeaturePackTemplate {
         this.artifactId = artifactId;
         this.version = version;
         this.additionalPackages = additionalPackages == null ? Collections.emptyList() : additionalPackages;
-        this.transitiveDependencies = transitiveDependencies == null ? Collections.emptyList() : transitiveDependencies;
+        this.transitiveDependency = transitiveDependency;
         this.replacesDependency = replacesDependency;
         this.supportsCustomization = supportsCustomization == null || supportsCustomization;
         this.requiresLayers = requiresLayers;
@@ -65,7 +65,7 @@ public class FeaturePackTemplate {
                 builder.artifactId,
                 builder.version,
                 builder.additionalPackages,
-                builder.transitiveDependencies,
+                builder.transitiveDependency,
                 builder.replacesDependency,
                 builder.supportsCustomization,
                 builder.requiresLayers
@@ -96,8 +96,8 @@ public class FeaturePackTemplate {
         return additionalPackages;
     }
 
-    public List<String> getTransitiveDependencies() {
-        return transitiveDependencies;
+    public String getTransitiveDependency() {
+        return transitiveDependency;
     }
 
     public String getReplacesDependency() {
@@ -108,26 +108,26 @@ public class FeaturePackTemplate {
     public boolean equals(Object o) {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
-        FeaturePackTemplate that = (FeaturePackTemplate) o;
-        return supportsCustomization == that.supportsCustomization && requiresLayers == that.requiresLayers && Objects.equals(artifactId, that.artifactId) && Objects.equals(version, that.version) && Objects.equals(groupId, that.groupId) && Objects.equals(additionalPackages, that.additionalPackages) && Objects.equals(transitiveDependencies, that.transitiveDependencies) && Objects.equals(replacesDependency, that.replacesDependency);
+        FeaturePackTemplate template = (FeaturePackTemplate) o;
+        return supportsCustomization == template.supportsCustomization && requiresLayers == template.requiresLayers && Objects.equals(artifactId, template.artifactId) && Objects.equals(version, template.version) && Objects.equals(groupId, template.groupId) && Objects.equals(additionalPackages, template.additionalPackages) && Objects.equals(transitiveDependency, template.transitiveDependency) && Objects.equals(replacesDependency, template.replacesDependency);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(artifactId, version, groupId, additionalPackages, transitiveDependencies, supportsCustomization, requiresLayers, replacesDependency);
+        return Objects.hash(artifactId, version, groupId, additionalPackages, transitiveDependency, supportsCustomization, requiresLayers, replacesDependency);
     }
 
     @Override
     public String toString() {
-        return "FeaturePackRecipeMapping{" +
+        return "FeaturePackTemplate{" +
                 "artifactId='" + artifactId + '\'' +
                 ", version='" + version + '\'' +
                 ", groupId='" + groupId + '\'' +
                 ", additionalPackages=" + additionalPackages +
-                ", transitiveDependencies=" + transitiveDependencies +
+                ", transitiveDependency='" + transitiveDependency + '\'' +
                 ", supportsCustomization=" + supportsCustomization +
                 ", requiresLayers=" + requiresLayers +
-                ", replacesDependency=" + replacesDependency +
+                ", replacesDependency='" + replacesDependency + '\'' +
                 '}';
     }
 
@@ -136,7 +136,7 @@ public class FeaturePackTemplate {
         private final String version;
         private final String groupId;
         private List<String> additionalPackages;
-        private List<String> transitiveDependencies;
+        private String transitiveDependency;
         private boolean supportsCustomization;
         private String replacesDependency;
         private boolean requiresLayers;
@@ -160,10 +160,7 @@ public class FeaturePackTemplate {
         }
 
         public Builder addTransitiveDependency(String name) {
-            if (transitiveDependencies == null) {
-                transitiveDependencies = new ArrayList<>();
-            }
-            transitiveDependencies.add(name);
+            transitiveDependency = name;
             return this;
         }
 

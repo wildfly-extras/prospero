@@ -34,23 +34,38 @@ class ProvisioningConfigManipulator {
         this.configBuilder = configBuilder;
     }
 
+    /**
+     * removes a feature pack definition with name {@code fpName}.
+     *
+     * @param fpName
+     * @return
+     * @throws ProvisioningException - when the feature pack is not defined in the builder
+     */
     int removeFeaturePackDefinition(String fpName) throws ProvisioningException {
         final FeaturePackLocation.ProducerSpec depFpl = FeaturePackLocationParser.resolveFpl(fpName).getProducer();
-        int fpIndex = configBuilder.getFeaturePackDepIndex(depFpl.getLocation());
+        final int fpIndex = configBuilder.getFeaturePackDepIndex(depFpl.getLocation());
         configBuilder.removeFeaturePackDep(depFpl.getLocation());
         return fpIndex;
     }
 
+    /**
+     * removes {@code fpName} from the {@code configBuilder} and replaces it with a transitive dependency preserving all configurations
+     *
+     * @param fpName
+     * @param config
+     * @return
+     * @throws ProvisioningException - if the feature pack is not defined in the builder or the transitive dependency cannot be added
+     */
     int convertToTransitiveDep(String fpName, ProvisioningConfig config) throws ProvisioningException {
         final FeaturePackLocation.ProducerSpec depFpl = FeaturePackLocationParser.resolveFpl(fpName).getProducer();
         final FeaturePackConfig oldConfig = config.getFeaturePackDep(depFpl);
-        int fpIndex = configBuilder.getFeaturePackDepIndex(depFpl.getLocation());
+        final int fpIndex = configBuilder.getFeaturePackDepIndex(depFpl.getLocation());
         configBuilder.removeFeaturePackDep(oldConfig.getLocation());
 
         // replace it with a transitive config
-        final FeaturePackConfig.Builder eapFpBuilder = FeaturePackConfig.transitiveBuilder(oldConfig.getLocation());
-        ProvisioningConfigManipulator.copyFeaturePackConfig(eapFpBuilder, oldConfig);
-        configBuilder.addFeaturePackDep(eapFpBuilder.build());
+        final FeaturePackConfig.Builder newFpBuilder = FeaturePackConfig.transitiveBuilder(oldConfig.getLocation());
+        ProvisioningConfigManipulator.copyFeaturePackConfig(newFpBuilder, oldConfig);
+        configBuilder.addFeaturePackDep(newFpBuilder.build());
 
         return fpIndex;
     }
@@ -58,8 +73,8 @@ class ProvisioningConfigManipulator {
     /**
      * copies settings from {@code originalConfig} to {@code configBuilder}.
      *
-     * @param configBuilder
      * @param originalConfig
+     * @param configBuilder
      * @throws ProvisioningDescriptionException
      */
     static void copyFeaturePackConfig(FeaturePackConfig.Builder configBuilder, FeaturePackConfig originalConfig) throws ProvisioningDescriptionException {

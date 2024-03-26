@@ -120,21 +120,6 @@ public class FeaturesAddTest {
                 .doesNotExist();
     }
 
-    private void installWildfly() throws Exception {
-        System.out.println("Installing wildfly");
-        final Path channelsFile = MetadataTestUtils.prepareChannel("manifests/wildfly-28.0.0.Final-manifest.yaml");
-        ExecutionUtils.prosperoExecution(CliConstants.Commands.INSTALL,
-                        CliConstants.CHANNELS, channelsFile.toString(),
-                        CliConstants.PROFILE, "wildfly",
-                        CliConstants.DIR, targetDir.getAbsolutePath())
-                .withTimeLimit(10, TimeUnit.MINUTES)
-                .execute()
-                .assertReturnCode(ReturnCodes.SUCCESS);
-
-        assertThat(targetDir.toPath().resolve(MODULE_PATH))
-                .doesNotExist();
-    }
-
     @Test
     public void datasourcesFeaturePackRequiresLayers() throws Exception {
         installWildfly();
@@ -165,7 +150,7 @@ public class FeaturesAddTest {
 
     @Test
     public void installWildflyGalleonPackOverWildflyEEGalleonPack_ReplacesWildflyGalleonPack() throws Exception {
-        System.out.println("Installing wildfly");
+        System.out.println("Installing wildfly EE");
         final Path channelsFile = MetadataTestUtils.prepareChannel("manifests/wildfly-28.0.0.Final-manifest.yaml");
         ExecutionUtils.prosperoExecution(CliConstants.Commands.INSTALL,
                         CliConstants.CHANNELS, channelsFile.toString(),
@@ -178,7 +163,7 @@ public class FeaturesAddTest {
         assertThat(targetDir.toPath().resolve(MODULE_PATH))
                 .doesNotExist();
 
-        // install the datasource FP
+        // attempt to install wildfly feature pack with some layers
         System.out.println("Installing wildfly-galleon-pack feature pack with layers shouldn't work");
         ExecutionUtils.prosperoExecution(CliConstants.Commands.FEATURE_PACKS, CliConstants.Commands.ADD,
                         CliConstants.FPL, "org.wildfly:wildfly-galleon-pack",
@@ -208,6 +193,21 @@ public class FeaturesAddTest {
                 .containsOnly(FeaturePackLocation.fromString("org.wildfly:wildfly-galleon-pack::zip@maven"));
         assertThat(provisioningConfig.getTransitiveDeps())
                 .isEmpty();
+    }
+
+    private void installWildfly() throws Exception {
+        System.out.println("Installing wildfly");
+        final Path channelsFile = MetadataTestUtils.prepareChannel("manifests/wildfly-28.0.0.Final-manifest.yaml");
+        ExecutionUtils.prosperoExecution(CliConstants.Commands.INSTALL,
+                        CliConstants.CHANNELS, channelsFile.toString(),
+                        CliConstants.PROFILE, "wildfly",
+                        CliConstants.DIR, targetDir.getAbsolutePath())
+                .withTimeLimit(10, TimeUnit.MINUTES)
+                .execute()
+                .assertReturnCode(ReturnCodes.SUCCESS);
+
+        assertThat(targetDir.toPath().resolve(MODULE_PATH))
+                .doesNotExist();
     }
 
     private Path generateDatasourcesManifest() throws IOException {
