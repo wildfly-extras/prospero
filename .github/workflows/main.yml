@@ -60,7 +60,9 @@ jobs:
       - uses: actions/upload-artifact@v2
         if: failure()
         with:
-          name: surefire-reports
+          name: pmd-reports
           path: 'target/pmd.xml'
-        
+      - name: Display report
+        if: failure()
+        run: cat target/pmd.xml
 
