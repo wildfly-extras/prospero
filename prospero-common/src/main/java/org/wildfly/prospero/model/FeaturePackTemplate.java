@@ -108,8 +108,14 @@ public class FeaturePackTemplate {
     public boolean equals(Object o) {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
+
         FeaturePackTemplate template = (FeaturePackTemplate) o;
-        return supportsCustomization == template.supportsCustomization && requiresLayers == template.requiresLayers && Objects.equals(artifactId, template.artifactId) && Objects.equals(version, template.version) && Objects.equals(groupId, template.groupId) && Objects.equals(additionalPackages, template.additionalPackages) && Objects.equals(transitiveDependency, template.transitiveDependency) && Objects.equals(replacesDependency, template.replacesDependency);
+
+        return supportsCustomization == template.supportsCustomization && requiresLayers == template.requiresLayers
+                && Objects.equals(artifactId, template.artifactId) && Objects.equals(version, template.version)
+                && Objects.equals(groupId, template.groupId) && Objects.equals(additionalPackages, template.additionalPackages)
+                && Objects.equals(transitiveDependency, template.transitiveDependency)
+                && Objects.equals(replacesDependency, template.replacesDependency);
     }
 
     @Override
