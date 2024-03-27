@@ -23,6 +23,7 @@ import org.eclipse.aether.artifact.DefaultArtifact;
 import org.eclipse.aether.deployment.DeployRequest;
 import org.eclipse.aether.repository.RemoteRepository;
 import org.junit.Before;
+import org.junit.BeforeClass;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
@@ -65,6 +66,9 @@ import static org.junit.Assert.assertTrue;
 public class WildflyFpTest {
 
     protected static final String PROSPERO_MANIFEST_LOCATION = "manifests/prospero-manifest.yaml";
+    private static String testChannelGroupId;
+    private static String testChannelArtifactId;
+    private static String testRepoUrls;
     @Rule
     public TemporaryFolder tempDir = new TemporaryFolder();
 
@@ -73,6 +77,16 @@ public class WildflyFpTest {
     private Path localRepo;
 
     private XPath xpath = XPathFactory.newInstance().newXPath();
+
+    @BeforeClass
+    public static void setUpClass() throws Exception {
+        // read the settings from pom properties
+        final Properties properties = new Properties();
+        properties.load(WildflyFpTest.class.getClassLoader().getResourceAsStream("properties-from-pom.properties"));
+        testChannelGroupId = properties.getProperty("prospero.test.base.channel.groupId");
+        testChannelArtifactId = properties.getProperty("prospero.test.base.channel.artifactId");
+        testRepoUrls = properties.getProperty("prospero.test.base.repositories");
+    }
 
     @Before
     public void setUp() throws Exception {
@@ -119,16 +133,10 @@ public class WildflyFpTest {
     }
 
     private void prepareWflyAndProsperoChannels(Path channelsFile) throws IOException {
-        // read the settings from pom properties
-        final Properties properties = new Properties();
-        properties.load(this.getClass().getClassLoader().getResourceAsStream("properties-from-pom.properties"));
-        final String groupId = properties.getProperty("prospero.test.base.channel.groupId");
-        final String artifactId = properties.getProperty("prospero.test.base.channel.artifactId");
-        final String testRepoUrls = properties.getProperty("prospero.test.base.repositories");
 
         // create channels
         Channel.Builder cb1 = new Channel.Builder()
-                .setManifestCoordinate(new ChannelManifestCoordinate(groupId, artifactId))
+                .setManifestCoordinate(new ChannelManifestCoordinate(testChannelGroupId, testChannelArtifactId))
                 .addRepository("local-repo", localRepo.toUri().toString());
         Channel.Builder cb2 = new Channel.Builder()
                 .setManifestUrl(this.getClass().getClassLoader().getResource(PROSPERO_MANIFEST_LOCATION));
@@ -153,7 +161,7 @@ public class WildflyFpTest {
 
         final DeployRequest deployRequest = new DeployRequest();
         deployRequest.setRepository(new RemoteRepository.Builder("local-repo", "default", localRepo.toUri().toString()).build());
-        deployRequest.addArtifact(new DefaultArtifact("org.wildfly.channels", "wildfly-28-test",
+        deployRequest.addArtifact(new DefaultArtifact(testChannelGroupId, testChannelArtifactId,
                 "manifest", "yaml", "1.0.0.Final", null, wfManifest));
         system.deploy(session, deployRequest);
     }
