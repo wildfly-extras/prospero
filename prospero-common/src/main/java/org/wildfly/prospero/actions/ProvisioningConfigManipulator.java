@@ -37,8 +37,8 @@ class ProvisioningConfigManipulator {
     /**
      * removes a feature pack definition with name {@code fpName}.
      *
-     * @param fpName
-     * @return
+     * @param fpName    - the identifier (groupId:artifactId) of the feature pack to be replaced
+     * @return      - the position in the provisioning configuration that the removed feature pack was at
      * @throws ProvisioningException - when the feature pack is not defined in the builder
      */
     int removeFeaturePackDefinition(String fpName) throws ProvisioningException {
@@ -51,14 +51,14 @@ class ProvisioningConfigManipulator {
     /**
      * removes {@code fpName} from the {@code configBuilder} and replaces it with a transitive dependency preserving all configurations
      *
-     * @param fpName
-     * @param config
-     * @return
+     * @param fpName            - the identifier (groupId:artifactId) of the feature pack to be replaced
+     * @param originalConfig    - the provisioning configuration used to create the builder
+     * @return      - the position in the provisioning configuration that the removed feature pack was at
      * @throws ProvisioningException - if the feature pack is not defined in the builder or the transitive dependency cannot be added
      */
-    int convertToTransitiveDep(String fpName, GalleonProvisioningConfig config) throws ProvisioningException {
+    int convertToTransitiveDep(String fpName, GalleonProvisioningConfig originalConfig) throws ProvisioningException {
         final FeaturePackLocation.ProducerSpec depFpl = FeaturePackLocationParser.resolveFpl(fpName).getProducer();
-        final GalleonFeaturePackConfig oldConfig = config.getFeaturePackDep(depFpl);
+        final GalleonFeaturePackConfig oldConfig = originalConfig.getFeaturePackDep(depFpl);
         final int fpIndex = configBuilder.getFeaturePackDepIndex(depFpl.getLocation());
         configBuilder.removeFeaturePackDep(oldConfig.getLocation());
 
@@ -73,9 +73,9 @@ class ProvisioningConfigManipulator {
     /**
      * copies settings from {@code originalConfig} to {@code configBuilder}.
      *
-     * @param originalConfig
-     * @param configBuilder
-     * @throws ProvisioningDescriptionException
+     * @param originalConfig    -   the source feature pack configuration that will be copied over
+     * @param configBuilder     -   a builder that the {@code originalConfig} configuration will be copied over
+     * @throws ProvisioningDescriptionException - if the builder configuration conflicts with the source configuration
      */
     static void copyFeaturePackConfig(GalleonFeaturePackConfig originalConfig, GalleonFeaturePackConfig.Builder configBuilder) throws ProvisioningDescriptionException {
         if (originalConfig.getInheritPackages() != null) {

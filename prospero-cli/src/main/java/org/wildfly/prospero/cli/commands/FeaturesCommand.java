@@ -38,6 +38,7 @@ import java.nio.file.Path;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Optional;
 import java.util.Set;
 
 import static org.wildfly.prospero.cli.commands.CliConstants.Commands.FEATURE_PACKS_ALIAS;
@@ -56,10 +57,11 @@ public class FeaturesCommand extends AbstractParentCommand {
 
 
         @CommandLine.Option(names = CliConstants.LAYERS, split = ",", required = false)
-        private Set<String> layers = new HashSet<>();
+        private final Set<String> layers = new HashSet<>();
 
+        @SuppressWarnings("OptionalUsedAsFieldOrParameterType")
         @CommandLine.Option(names = CliConstants.TARGET_CONFIG)
-        private String config;
+        private Optional<String> config = Optional.empty();
 
         @CommandLine.Option(names = {CliConstants.Y, CliConstants.YES})
         boolean skipConfirmation;
@@ -94,7 +96,7 @@ public class FeaturesCommand extends AbstractParentCommand {
                     if (featurePackRecipe.isRequiresLayers() && layers.isEmpty()) {
                         console.error(CliMessages.MESSAGES.featurePackRequiresLayers(fpl));
                         return ReturnCodes.INVALID_ARGUMENTS;
-                    } else if (!featurePackRecipe.isSupportsCustomization() && (!layers.isEmpty() || !(config == null || config.isEmpty()))) {
+                    } else if (!featurePackRecipe.isSupportsCustomization() && (!layers.isEmpty() || config.isPresent())) {
                         console.error(CliMessages.MESSAGES.featurePackDoesNotSupportCustomization(fpl));
                         return ReturnCodes.INVALID_ARGUMENTS;
                     }
@@ -118,9 +120,9 @@ public class FeaturesCommand extends AbstractParentCommand {
                 if (accepted) {
                     try (TemporaryFilesManager temporaryFilesManager = TemporaryFilesManager.getInstance()) {
                         final Path candidate = temporaryFilesManager.createTempDirectory("prospero-fp-candidate");
-                        final ConfigId configId = parseConfigName(config);
+                        final ConfigId configId = parseConfigName(config.orElse(null));
                         if (layers.isEmpty()) {
-                            featuresAddAction.addFeaturePack(fpl, configId == null? Collections.emptySet():Set.of(configId), candidate);
+                            featuresAddAction.addFeaturePack(fpl, configId == null ? Collections.emptySet() : Set.of(configId), candidate);
                         } else {
                             featuresAddAction.addFeaturePackWithLayers(fpl, layers, configId, candidate);
                         }
@@ -128,7 +130,7 @@ public class FeaturesCommand extends AbstractParentCommand {
                         // list conflicts (e.g. config files) and apply the update
                         final ApplyCandidateAction applyCandidateAction = actionFactory.applyUpdate(installationDir, candidate);
                         final List<FileConflict> conflicts = applyCandidateAction.getConflicts();
-                        if (conflicts.isEmpty() || confirmConflicts(conflicts)) {
+                        if (confirmConflicts(conflicts)) {
                             console.println(CliMessages.MESSAGES.applyingUpdates());
                             applyCandidateAction.applyUpdate(ApplyCandidateAction.Type.FEATURE_ADD);
                         }
@@ -156,6 +158,10 @@ public class FeaturesCommand extends AbstractParentCommand {
         }
 
         private boolean confirmConflicts(List<FileConflict> conflicts) {
+            if (conflicts.isEmpty()) {
+                return true;
+            }
+
             FileConflictPrinter.print(conflicts, console);
             return skipConfirmation || console.confirm(CliMessages.MESSAGES.continueWithUpdate(),
                     CliMessages.MESSAGES.applyingUpdates(),
