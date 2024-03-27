@@ -1,11 +1,10 @@
 ---
 schemaVersion: 2.0.0
-name: "${prospero.dist.name}"
 resolve-if-no-stream: none
 manifest:
   maven:
-    groupId: "${prospero.channel.manifest.groupId}"
-    artifactId: "${prospero.channel.manifest.artifactId}"
+    groupId: "org.wildfly.prospero"
+    artifactId: "prospero-standalone-galleon-pack"
 repositories:
-  - id: "${prospero.repo.id}"
-    url: "${prospero.repo.url}"
+  - id: "central"
+    url: "https://repo1.maven.org/maven2/"
