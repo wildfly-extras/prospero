@@ -60,7 +60,7 @@ public class AbstractConsoleTest {
     }
 
     /**
-     * simpulates user rejecting a prompt. If there are multiple propmpts, {@code promptNumber} selects a prompt that
+     * simulates user rejecting a prompt. If there are multiple propmpts, {@code promptNumber} selects a prompt that
      * should be rejected.
      *
      * @param denyConfirm

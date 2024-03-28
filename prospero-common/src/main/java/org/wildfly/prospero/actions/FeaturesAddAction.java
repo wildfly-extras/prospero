@@ -255,9 +255,15 @@ public class FeaturesAddAction {
             throw ProsperoLogger.ROOT_LOGGER.unableToCreateTemporaryDirectory(e);
         } finally {
             if (galleonEnv != null) {
+                if (ProsperoLogger.ROOT_LOGGER.isDebugEnabled()) {
+                    ProsperoLogger.ROOT_LOGGER.debug("Closing galleon env");
+                }
                 galleonEnv.close();
             }
             if (tempDirectory != null) {
+                if (ProsperoLogger.ROOT_LOGGER.isDebugEnabled()) {
+                    ProsperoLogger.ROOT_LOGGER.debug("Removing temporary folder: " + tempDirectory);
+                }
                 FileUtils.deleteQuietly(tempDirectory.toFile());
             }
         }
