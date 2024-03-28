@@ -29,23 +29,29 @@ import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.junit.MockitoJUnitRunner;
 import org.wildfly.channel.ArtifactCoordinate;
+import org.wildfly.prospero.actions.ApplyCandidateAction;
 import org.wildfly.prospero.actions.FeaturesAddAction;
+import org.wildfly.prospero.api.FileConflict;
 import org.wildfly.prospero.api.MavenOptions;
 import org.wildfly.prospero.api.exceptions.ArtifactResolutionException;
 import org.wildfly.prospero.cli.ActionFactory;
 import org.wildfly.prospero.cli.CliMessages;
 import org.wildfly.prospero.cli.ReturnCodes;
+import org.wildfly.prospero.model.FeaturePackTemplate;
 import org.wildfly.prospero.test.MetadataTestUtils;
 
 import java.nio.file.Path;
 import java.util.Collections;
+import java.util.List;
 import java.util.Set;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNull;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doThrow;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static org.wildfly.common.Assert.assertTrue;
@@ -57,6 +63,8 @@ public class FeaturesCommandTest extends AbstractMavenCommandTest {
     private ActionFactory actionFactory;
     @Mock
     private FeaturesAddAction featuresAddAction;
+    @Mock
+    private ApplyCandidateAction applyUpdateAction;
 
     @Captor
     private ArgumentCaptor<MavenOptions> mavenOptions;
@@ -77,6 +85,7 @@ public class FeaturesCommandTest extends AbstractMavenCommandTest {
         installationDir = tempFolder.newFolder().toPath();
 
         when(actionFactory.featuresAddAction(any(), any(), any(), any())).thenReturn(featuresAddAction);
+        when(actionFactory.applyUpdate(any(), any())).thenReturn(applyUpdateAction);
         MetadataTestUtils.createInstallationMetadata(installationDir);
         MetadataTestUtils.createGalleonProvisionedState(installationDir, A_PROSPERO_FP);
 
@@ -98,7 +107,7 @@ public class FeaturesCommandTest extends AbstractMavenCommandTest {
         int exitCode = commandLine.execute(CliConstants.Commands.FEATURE_PACKS, CliConstants.Commands.ADD, CliConstants.DIR, "test");
         assertEquals(ReturnCodes.INVALID_ARGUMENTS, exitCode);
         assertThat(getErrorOutput())
-                .contains(String.format("Missing required options: '%s=%s'", CliConstants.FPL, CliConstants.FEATURE_PACK_REFERENCE));
+                .contains(String.format("Missing required option: '%s=%s'", CliConstants.FPL, CliConstants.FEATURE_PACK_REFERENCE));
     }
 
     @Test
@@ -110,7 +119,7 @@ public class FeaturesCommandTest extends AbstractMavenCommandTest {
         assertEquals(ReturnCodes.SUCCESS, exitCode);
 
         final ArgumentCaptor<String> fplCaptor = ArgumentCaptor.forClass(String.class);
-        verify(featuresAddAction).addFeaturePackWithLayers(fplCaptor.capture(), any(), configNameCaptor.capture());
+        verify(featuresAddAction).addFeaturePackWithLayers(fplCaptor.capture(), any(), configNameCaptor.capture(), any());
 
         assertEquals(fplCaptor.getValue(), "test:test");
         assertNull(configNameCaptor.getValue());
@@ -126,7 +135,7 @@ public class FeaturesCommandTest extends AbstractMavenCommandTest {
 
         final ArgumentCaptor<Set<String>> layersCaptor = ArgumentCaptor.forClass(Set.class);
         verify(featuresAddAction).addFeaturePackWithLayers(any(), layersCaptor.capture(),
-                any());
+                any(), any());
 
         assertEquals(Set.of("layer1", "layer2"), layersCaptor.getValue());
     }
@@ -141,7 +150,7 @@ public class FeaturesCommandTest extends AbstractMavenCommandTest {
         assertEquals(ReturnCodes.SUCCESS, exitCode);
 
         verify(featuresAddAction).addFeaturePackWithLayers(any(), any(),
-                configNameCaptor.capture());
+                configNameCaptor.capture(), any());
 
         assertThat(configNameCaptor.getValue())
                 .isEqualTo(new ConfigId("test", null));
@@ -157,7 +166,8 @@ public class FeaturesCommandTest extends AbstractMavenCommandTest {
         assertEquals(ReturnCodes.SUCCESS, exitCode);
 
         final ArgumentCaptor<Set<String>> layersCaptor = ArgumentCaptor.forClass(Set.class);
-        verify(featuresAddAction).addFeaturePackWithLayers(any(), layersCaptor.capture(), configNameCaptor.capture());
+        verify(featuresAddAction).addFeaturePackWithLayers(any(), layersCaptor.capture(),
+                configNameCaptor.capture(), any());
 
         assertEquals(Set.of("layer1"), layersCaptor.getValue());
         assertEquals(new ConfigId("model", "config"), configNameCaptor.getValue());
@@ -221,7 +231,8 @@ public class FeaturesCommandTest extends AbstractMavenCommandTest {
     @Test
     public void nonExistingLayersShowsError() throws Exception {
         doThrow(new FeaturesAddAction.LayerNotFoundException("foo", Set.of("idontexist"), Set.of("layer1", "layer2")))
-                .when(featuresAddAction).addFeaturePackWithLayers("org.test:test", Set.of("idontexist"), null);
+                .when(featuresAddAction).addFeaturePackWithLayers(eq("org.test:test"), eq(Set.of("idontexist")),
+                        eq(null), any());
         int exitCode = commandLine.execute(CliConstants.Commands.FEATURE_PACKS, CliConstants.Commands.ADD,
                 CliConstants.DIR, installationDir.toString(),
                 CliConstants.LAYERS, "idontexist",
@@ -235,7 +246,8 @@ public class FeaturesCommandTest extends AbstractMavenCommandTest {
     @Test
     public void nonExistingLayersShowsErrorNoAvailableLayers() throws Exception {
         doThrow(new FeaturesAddAction.LayerNotFoundException("foo", Set.of("idontexist"), Collections.emptySet()))
-                .when(featuresAddAction).addFeaturePackWithLayers("org.test:test", Set.of("idontexist"), null);
+                .when(featuresAddAction).addFeaturePackWithLayers(eq("org.test:test"), eq(Set.of("idontexist")),
+                        eq(null), any());
         int exitCode = commandLine.execute(CliConstants.Commands.FEATURE_PACKS, CliConstants.Commands.ADD,
                 CliConstants.DIR, installationDir.toString(),
                 CliConstants.LAYERS, "idontexist",
@@ -250,8 +262,8 @@ public class FeaturesCommandTest extends AbstractMavenCommandTest {
     @Test
     public void nonExistingModelShowsError() throws Exception {
         doThrow(new FeaturesAddAction.ModelNotDefinedException("test", "idontexist", Set.of("model1", "model2")))
-                .when(featuresAddAction).addFeaturePackWithLayers("org.test:test",
-                        Set.of("layer1"), new ConfigId("idontexist", "test"));
+                .when(featuresAddAction).addFeaturePackWithLayers(eq("org.test:test"),
+                        eq(Set.of("layer1")), eq(new ConfigId("idontexist", "test")), any());
         int exitCode = commandLine.execute(CliConstants.Commands.FEATURE_PACKS, CliConstants.Commands.ADD,
                 CliConstants.DIR, installationDir.toString(),
                 CliConstants.LAYERS, "layer1",
@@ -266,8 +278,8 @@ public class FeaturesCommandTest extends AbstractMavenCommandTest {
     @Test
     public void nonExistingConfigurationShowsError() throws Exception {
         doThrow(new FeaturesAddAction.ConfigurationNotFoundException("test", new ConfigId("test", "idontexist")))
-                .when(featuresAddAction).addFeaturePackWithLayers("org.test:test",
-                        Set.of("layer1"), new ConfigId("test", "idontexist"));
+                .when(featuresAddAction).addFeaturePackWithLayers(eq("org.test:test"),
+                        eq(Set.of("layer1")), eq(new ConfigId("test", "idontexist")), any());
         int exitCode = commandLine.execute(CliConstants.Commands.FEATURE_PACKS, CliConstants.Commands.ADD,
                 CliConstants.DIR, installationDir.toString(),
                 CliConstants.LAYERS, "layer1",
@@ -279,14 +291,86 @@ public class FeaturesCommandTest extends AbstractMavenCommandTest {
     }
 
     @Test
-    public void configRequiresLayer() throws Exception {
+    public void noLayersTriggersNoLayersBuild() throws Exception {
+        int exitCode = commandLine.execute(CliConstants.Commands.FEATURE_PACKS, CliConstants.Commands.ADD,
+                CliConstants.DIR, installationDir.toString(),
+                CliConstants.FPL, "test:test",
+                CliConstants.TARGET_CONFIG, "model/config");
+        assertEquals(ReturnCodes.SUCCESS, exitCode);
+
+        verify(featuresAddAction).addFeaturePack(eq("test:test"), eq(Set.of(new ConfigId("model", "config"))), any());
+    }
+
+    @Test
+    public void showErrorIfFeaturePackRequiresLayersAndNoneGiven() throws Exception {
+        when(featuresAddAction.getFeaturePackRecipe("org.test:test"))
+                .thenReturn(new FeaturePackTemplate.Builder("org.test", "test", "1.0.0")
+                        .setRequiresLayers(true)
+                        .build());
         int exitCode = commandLine.execute(CliConstants.Commands.FEATURE_PACKS, CliConstants.Commands.ADD,
                 CliConstants.DIR, installationDir.toString(),
                 CliConstants.TARGET_CONFIG, "test/idontexist",
                 CliConstants.FPL, "org.test:test");
         assertEquals(ReturnCodes.INVALID_ARGUMENTS, exitCode);
         assertThat(getErrorOutput())
-                .contains("Missing required option: '--layers");
+                .contains(CliMessages.MESSAGES.featurePackRequiresLayers("org.test:test"));
+    }
+
+    @Test
+    public void showErrorIfFeaturePackDoesntSupportCustomizationButLayersGiven() throws Exception {
+        when(featuresAddAction.getFeaturePackRecipe("org.test:test"))
+                .thenReturn(new FeaturePackTemplate.Builder("org.test", "test", "1.0.0")
+                        .setSupportsCustomization(false)
+                        .build());
+        int exitCode = commandLine.execute(CliConstants.Commands.FEATURE_PACKS, CliConstants.Commands.ADD,
+                CliConstants.DIR, installationDir.toString(),
+                CliConstants.TARGET_CONFIG, "test/idontexist",
+                CliConstants.FPL, "org.test:test");
+        assertEquals(ReturnCodes.INVALID_ARGUMENTS, exitCode);
+        assertThat(getErrorOutput())
+                .contains(CliMessages.MESSAGES.featurePackDoesNotSupportCustomization("org.test:test"));
+    }
+
+    @Test
+    public void promptUserIfConflictsDetected() throws Exception {
+        when(applyUpdateAction.getConflicts())
+                .thenReturn(List.of(
+                        FileConflict.userModified("path/to/file").updateModified().userPreserved())
+                );
+        commandLine.execute(CliConstants.Commands.FEATURE_PACKS, CliConstants.Commands.ADD,
+                CliConstants.DIR, installationDir.toString(),
+                CliConstants.TARGET_CONFIG, "test/idontexist",
+                CliConstants.FPL, "org.test:test");
+
+        assertEquals("The user should be prompted to continue twice.", 2, askedConfirmation);
+        verify(applyUpdateAction).applyUpdate(ApplyCandidateAction.Type.FEATURE_ADD);
+    }
+
+    @Test
+    public void rejectChangesIfConflictsAreNotAccepted() throws Exception {
+        when(applyUpdateAction.getConflicts())
+                .thenReturn(List.of(
+                        FileConflict.userModified("path/to/file").updateModified().userPreserved())
+                );
+        // reject 2nd prompt which should show user the conflicts
+        this.setDenyConfirm(true, 2);
+        commandLine.execute(CliConstants.Commands.FEATURE_PACKS, CliConstants.Commands.ADD,
+                CliConstants.DIR, installationDir.toString(),
+                CliConstants.TARGET_CONFIG, "test/idontexist",
+                CliConstants.FPL, "org.test:test");
+
+        verify(applyUpdateAction, never()).applyUpdate(ApplyCandidateAction.Type.FEATURE_ADD);
+    }
+
+    @Test
+    public void applyChangesWithoutPromptWhenNoConflictsFound() throws Exception {
+        commandLine.execute(CliConstants.Commands.FEATURE_PACKS, CliConstants.Commands.ADD,
+                CliConstants.DIR, installationDir.toString(),
+                CliConstants.TARGET_CONFIG, "test/idontexist",
+                CliConstants.FPL, "org.test:test");
+
+        assertEquals("The user should be prompted to continue only once to confirm installation.", 1, askedConfirmation);
+        verify(applyUpdateAction).applyUpdate(ApplyCandidateAction.Type.FEATURE_ADD);
     }
 
     @Override
