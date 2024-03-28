@@ -284,7 +284,7 @@ public class FeaturesAddAction {
             }
             if (tempDirectory != null) {
                 if (ProsperoLogger.ROOT_LOGGER.isDebugEnabled()) {
-                    ProsperoLogger.ROOT_LOGGER.debug("Removing temporary folder: " + tempDirectory);
+                    ProsperoLogger.ROOT_LOGGER.debugf("Removing temporary folder: %s", tempDirectory);
                 }
                 FileUtils.deleteQuietly(tempDirectory.toFile());
             }
