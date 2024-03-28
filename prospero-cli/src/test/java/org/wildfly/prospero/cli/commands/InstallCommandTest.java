@@ -290,6 +290,90 @@ public class InstallCommandTest extends AbstractMavenCommandTest {
                 .contains(entry(Constants.STABILITY_LEVEL, "default"));
     }
 
+    @Test
+    public void configStabilityLevelCantBeUsedWithStabilityLevel() throws Exception {
+        final File channelsFile = temporaryFolder.newFile();
+        Channel channel = createChannel("test", "test", "http://test.org", "org.test");
+        MetadataTestUtils.writeChannels(channelsFile.toPath(), List.of(channel));
+
+        int exitCode = commandLine.execute(CliConstants.Commands.INSTALL, CliConstants.DIR, "test",
+                CliConstants.FPL, "org.wildfly:wildfly-ee-galleon-pack",
+                CliConstants.CHANNELS, channelsFile.getAbsolutePath(),
+                CliConstants.STABILITY_LEVEL, "default",
+                CliConstants.CONFIG_STABILITY_LEVEL, "default");
+        assertEquals(ReturnCodes.INVALID_ARGUMENTS, exitCode);
+        assertThat(getErrorOutput()).contains(CliMessages.MESSAGES.exclusiveOptions(CliConstants.STABILITY_LEVEL, CliConstants.CONFIG_STABILITY_LEVEL).getMessage());
+    }
+
+    @Test
+    public void packageStabilityLevelCantBeUsedWithStabilityLevel() throws Exception {
+        final File channelsFile = temporaryFolder.newFile();
+        Channel channel = createChannel("test", "test", "http://test.org", "org.test");
+        MetadataTestUtils.writeChannels(channelsFile.toPath(), List.of(channel));
+
+        int exitCode = commandLine.execute(CliConstants.Commands.INSTALL, CliConstants.DIR, "test",
+                CliConstants.FPL, "org.wildfly:wildfly-ee-galleon-pack",
+                CliConstants.CHANNELS, channelsFile.getAbsolutePath(),
+                CliConstants.STABILITY_LEVEL, "default",
+                CliConstants.PACKAGE_STABILITY_LEVEL, "default");
+        assertEquals(ReturnCodes.INVALID_ARGUMENTS, exitCode);
+        assertThat(getErrorOutput())
+                .contains(CliMessages.MESSAGES.exclusiveOptions(CliConstants.STABILITY_LEVEL, CliConstants.PACKAGE_STABILITY_LEVEL).getMessage());
+    }
+
+    @Test
+    public void packageStabilityLevelCanBeUsedTogetherWithConfigStabilityLevel() throws Exception {
+        final File channelsFile = temporaryFolder.newFile();
+        Channel channel = createChannel("test", "test", "http://test.org", "org.test");
+        MetadataTestUtils.writeChannels(channelsFile.toPath(), List.of(channel));
+
+        int exitCode = commandLine.execute(CliConstants.Commands.INSTALL, CliConstants.DIR, "test",
+                CliConstants.FPL, "org.wildfly:wildfly-ee-galleon-pack",
+                CliConstants.CHANNELS, channelsFile.getAbsolutePath(),
+                CliConstants.CONFIG_STABILITY_LEVEL, "community",
+                CliConstants.PACKAGE_STABILITY_LEVEL, "experimental");
+        assertEquals(ReturnCodes.SUCCESS, exitCode);
+        Mockito.verify(provisionAction).provision(configCaptor.capture(), any(), any());
+        assertThat(configCaptor.getValue().getOptions())
+                .contains(entry(Constants.PACKAGE_STABILITY_LEVEL, "experimental"),
+                        entry(Constants.CONFIG_STABILITY_LEVEL, "community"));
+    }
+
+    @Test
+    public void invalidStabilityLevelCausesAnError() throws Exception {
+        final File channelsFile = temporaryFolder.newFile();
+        Channel channel = createChannel("test", "test", "http://test.org", "org.test");
+        MetadataTestUtils.writeChannels(channelsFile.toPath(), List.of(channel));
+
+        int exitCode = commandLine.execute(CliConstants.Commands.INSTALL, CliConstants.DIR, "test",
+                CliConstants.FPL, "org.wildfly:wildfly-ee-galleon-pack",
+                CliConstants.CHANNELS, channelsFile.getAbsolutePath(),
+                CliConstants.STABILITY_LEVEL, "idontexist");
+        assertEquals(ReturnCodes.INVALID_ARGUMENTS, exitCode);
+        assertThat(getErrorOutput())
+                .contains(CliMessages.MESSAGES.unknownStabilityLevel("idontexist", InstallCommand.STABILITY_LEVELS).getMessage());
+
+        systemErrRule.clearLog();
+
+        exitCode = commandLine.execute(CliConstants.Commands.INSTALL, CliConstants.DIR, "test",
+                CliConstants.FPL, "org.wildfly:wildfly-ee-galleon-pack",
+                CliConstants.CHANNELS, channelsFile.getAbsolutePath(),
+                CliConstants.CONFIG_STABILITY_LEVEL, "idontexist");
+        assertEquals(ReturnCodes.INVALID_ARGUMENTS, exitCode);
+        assertThat(getErrorOutput())
+                .contains(CliMessages.MESSAGES.unknownStabilityLevel("idontexist", InstallCommand.STABILITY_LEVELS).getMessage());
+
+        systemErrRule.clearLog();
+
+        exitCode = commandLine.execute(CliConstants.Commands.INSTALL, CliConstants.DIR, "test",
+                CliConstants.FPL, "org.wildfly:wildfly-ee-galleon-pack",
+                CliConstants.CHANNELS, channelsFile.getAbsolutePath(),
+                CliConstants.PACKAGE_STABILITY_LEVEL, "idontexist");
+        assertEquals(ReturnCodes.INVALID_ARGUMENTS, exitCode);
+        assertThat(getErrorOutput())
+                .contains(CliMessages.MESSAGES.unknownStabilityLevel("idontexist", InstallCommand.STABILITY_LEVELS).getMessage());
+    }
+
     @Override
     protected MavenOptions getCapturedMavenOptions() throws Exception {
         Mockito.verify(actionFactory).install(any(), mavenOptions.capture(), any());

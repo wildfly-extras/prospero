@@ -32,6 +32,7 @@ import java.util.stream.Collectors;
 import javax.xml.stream.XMLStreamException;
 
 import org.apache.commons.io.IOUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.eclipse.aether.repository.RemoteRepository;
 import org.jboss.galleon.Constants;
 import org.jboss.galleon.ProvisioningException;
@@ -89,12 +90,20 @@ public class ProvisioningDefinition {
     private final URI definition;
 
     private final String stabilityLevel;
+    private final String configStabilityLevel;
+    private final String packageStabilityLevel;
 
     private ProvisioningDefinition(Builder builder) throws NoChannelException {
         this.overrideRepositories.addAll(builder.overrideRepositories);
         this.channelCoordinates.addAll(builder.channelCoordinates);
 
         this.stabilityLevel = builder.stabilityLevel;
+        this.configStabilityLevel = builder.configStabilityLevel;
+        this.packageStabilityLevel = builder.packageStabilityLevel;
+        if (StringUtils.isNotEmpty(stabilityLevel) &&
+                (StringUtils.isNotEmpty(packageStabilityLevel) || StringUtils.isNotEmpty(configStabilityLevel))) {
+            throw new IllegalArgumentException("Provisioning option stabilityLevel cannot be used with packageStabilityLevel or configStabilityLevel");
+        }
 
         if (builder.profile.isPresent()) {
 
@@ -156,18 +165,29 @@ public class ProvisioningDefinition {
             if (stabilityLevel != null) {
                 builder.addOption(Constants.STABILITY_LEVEL, stabilityLevel);
             }
+            if (configStabilityLevel != null) {
+                builder.addOption(Constants.CONFIG_STABILITY_LEVEL, configStabilityLevel);
+            }
+            if (packageStabilityLevel != null) {
+                builder.addOption(Constants.PACKAGE_STABILITY_LEVEL, packageStabilityLevel);
+            }
             return builder.build();
 
         } else if (definition != null) {
             try {
                 final GalleonProvisioningConfig config = GalleonUtils.loadProvisioningConfig(definition);
-                if (stabilityLevel == null) {
-                    return config;
-                } else {
-                    return GalleonProvisioningConfig.builder(config)
-                            .addOption(Constants.STABILITY_LEVEL, stabilityLevel)
-                            .build();
+                final GalleonProvisioningConfig.Builder builder = GalleonProvisioningConfig.builder(config);
+                if (StringUtils.isNotEmpty(stabilityLevel)) {
+                    builder.addOption(Constants.STABILITY_LEVEL, stabilityLevel);
                 }
+                if (StringUtils.isNotEmpty(configStabilityLevel)) {
+                    builder.addOption(Constants.CONFIG_STABILITY_LEVEL, configStabilityLevel);
+                }
+                if (StringUtils.isNotEmpty(packageStabilityLevel)) {
+                    builder.addOption(Constants.PACKAGE_STABILITY_LEVEL, packageStabilityLevel);
+                }
+
+                return builder.build();
             } catch (XMLStreamException e) {
                 throw ProsperoLogger.ROOT_LOGGER.unableToParseConfigurationUri(definition, e);
             }
@@ -261,6 +281,8 @@ public class ProvisioningDefinition {
         private List<ChannelCoordinate> channelCoordinates = Collections.emptyList();
         private Optional<String> profile = Optional.empty();
         private String stabilityLevel;
+        private String packageStabilityLevel;
+        private String configStabilityLevel;
 
         public ProvisioningDefinition build() throws MetadataException, NoChannelException {
             return new ProvisioningDefinition(this);
@@ -308,6 +330,16 @@ public class ProvisioningDefinition {
 
         public Builder setStabilityLevel(String stabilityLevel) {
             this.stabilityLevel = stabilityLevel;
+            return this;
+        }
+
+        public Builder setPackageStabilityLevel(String packageStabilityLevel) {
+            this.packageStabilityLevel = packageStabilityLevel;
+            return this;
+        }
+
+        public Builder setConfigStabilityLevel(String configStabilityLevel) {
+            this.configStabilityLevel = configStabilityLevel;
             return this;
         }
     }
