@@ -129,8 +129,7 @@ public class FeaturesCommand extends AbstractParentCommand {
 
                         // list conflicts (e.g. config files) and apply the update
                         final ApplyCandidateAction applyCandidateAction = actionFactory.applyUpdate(installationDir, candidate);
-                        final List<FileConflict> conflicts = applyCandidateAction.getConflicts();
-                        if (confirmConflicts(conflicts)) {
+                        if (confirmConflicts(applyCandidateAction.getConflicts())) {
                             console.println(CliMessages.MESSAGES.applyingUpdates());
                             applyCandidateAction.applyUpdate(ApplyCandidateAction.Type.FEATURE_ADD);
                         }
