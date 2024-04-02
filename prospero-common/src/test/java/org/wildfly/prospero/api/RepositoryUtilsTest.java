@@ -65,6 +65,30 @@ public class RepositoryUtilsTest {
     }
 
     @Test
+    public void dontUnpackNonZipLocalFileUrl() throws Exception {
+        final File notZipFile = new File("fake.zip");
+
+        final String url = "file:" + Path.of(".").normalize().toAbsolutePath().relativize(notZipFile.toPath().toAbsolutePath())
+                .toString()
+                .replace(File.separatorChar, '/');
+        final List<Repository> repositories = applyOverride(List.of(repo("temp-0", url)));
+
+        assertEquals(url, repositories.get(0).getUrl());
+    }
+
+    @Test
+    public void dontUnpackLocalFolderUrl() throws Exception {
+        final File notZipFile = new File("fake");
+
+        final String url = "file:" + Path.of(".").normalize().toAbsolutePath().relativize(notZipFile.toPath().toAbsolutePath())
+                .toString()
+                .replace(File.separatorChar, '/');
+        final List<Repository> repositories = applyOverride(List.of(repo("temp-0", url)));
+
+        assertEquals(url, repositories.get(0).getUrl());
+    }
+
+    @Test
     public void downloadAndUnzipRemoteArchive() throws Exception {
         final Path webRoot = temp.newFolder("web-root").toPath();
         Files.move(createRepository(webRoot), webRoot.resolve("test.zip"));
@@ -142,6 +166,13 @@ public class RepositoryUtilsTest {
         Files.delete(zipFile);
         ZipUtils.zip(repoRoot, zipFile);
         return zipFile;
+    }
+
+    private String toLocalUri(String fileName) throws IOException {
+        final File notZipFile = temp.newFile(fileName);
+
+        final String url = "file:" +Path.of(".").normalize().toAbsolutePath().relativize(notZipFile.toPath());
+        return url;
     }
 
     private static Repository repo(String id, String url) {
