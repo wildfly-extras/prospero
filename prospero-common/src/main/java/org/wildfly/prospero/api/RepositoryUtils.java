@@ -142,10 +142,20 @@ public class RepositoryUtils {
     private static boolean isLocalZipFile(Repository repository) {
         try {
             final URI uri = URI.create(repository.getUrl());
-            if (!uri.getPath().endsWith(".zip") || !"file".equals(uri.getScheme())) {
+            if (!"file".equals(uri.getScheme()) || !repository.getUrl().endsWith(".zip")) {
                 return false;
             }
-            final Path path = Path.of(uri);
+            final Path path;
+            if (uri.isOpaque()) {
+                path = Path.of(uri.toURL().getPath());
+            } else {
+                path = Path.of(uri);
+            }
+
+            if (!Files.exists(path)) {
+                return false;
+            }
+
             // try to open the archive
             FileSystems.newFileSystem(path, (ClassLoader) null).close();
             return true;
