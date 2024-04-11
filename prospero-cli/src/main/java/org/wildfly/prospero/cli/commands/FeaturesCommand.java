@@ -28,9 +28,11 @@ import org.wildfly.prospero.cli.ActionFactory;
 import org.wildfly.prospero.cli.CliConsole;
 import org.wildfly.prospero.cli.CliMessages;
 import org.wildfly.prospero.cli.FileConflictPrinter;
+import org.wildfly.prospero.cli.LicensePrinter;
 import org.wildfly.prospero.cli.RepositoryDefinition;
 import org.wildfly.prospero.cli.ReturnCodes;
 import org.wildfly.prospero.api.TemporaryFilesManager;
+import org.wildfly.prospero.licenses.License;
 import org.wildfly.prospero.model.FeaturePackTemplate;
 import picocli.CommandLine;
 
@@ -66,6 +68,9 @@ public class FeaturesCommand extends AbstractParentCommand {
         @CommandLine.Option(names = {CliConstants.Y, CliConstants.YES})
         boolean skipConfirmation;
 
+        @CommandLine.Option(names = CliConstants.ACCEPT_AGREEMENTS)
+        boolean acceptAgreements;
+
         public AddCommand(CliConsole console, ActionFactory actionFactory) {
             super(console, actionFactory);
         }
@@ -89,6 +94,21 @@ public class FeaturesCommand extends AbstractParentCommand {
                 console.println(CliMessages.MESSAGES.featuresAddHeader(fpl, installationDir));
 
                 final FeaturesAddAction featuresAddAction = actionFactory.featuresAddAction(installationDir, mavenOptions, repositories, console);
+
+                final List<License> pendingLicenses = featuresAddAction.getRequiredLicenses(fpl);
+
+                if (!pendingLicenses.isEmpty()) {
+                    console.println(System.lineSeparator() + CliMessages.MESSAGES.featurePackRequiresLicense(fpl) + System.lineSeparator());
+                    new LicensePrinter().print(pendingLicenses);
+
+                    if (acceptAgreements) {
+                        console.println(CliMessages.MESSAGES.agreementSkipped(CliConstants.ACCEPT_AGREEMENTS) + System.lineSeparator());
+                    } else {
+                        if (!console.confirm(CliMessages.MESSAGES.acceptAgreements() + " ", "", CliMessages.MESSAGES.installationCancelled())) {
+                            return ReturnCodes.PROCESSING_ERROR;
+                        }
+                    }
+                }
 
                 final FeaturePackTemplate featurePackRecipe = featuresAddAction.getFeaturePackRecipe(fpl);
 

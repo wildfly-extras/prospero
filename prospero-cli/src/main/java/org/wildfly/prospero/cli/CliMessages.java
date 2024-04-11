@@ -608,5 +608,7 @@ public interface CliMessages {
         return format(bundle.getString("prospero.features.add.validation.customization_not_supported"), featurePackName,
                 String.join(",", List.of(CliConstants.LAYERS, CliConstants.TARGET_CONFIG)));
     }
-
+    default String featurePackRequiresLicense(String featurePackName) {
+        return format(bundle.getString("prospero.features.add.required_licences"), featurePackName);
+    }
 }

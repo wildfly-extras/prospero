@@ -69,6 +69,7 @@ import org.jboss.galleon.util.PathsUtils;
 import org.wildfly.prospero.galleon.ArtifactCache;
 import org.wildfly.prospero.galleon.GalleonEnvironment;
 import org.wildfly.prospero.installation.git.GitStorage;
+import org.wildfly.prospero.licenses.LicenseManager;
 import org.wildfly.prospero.metadata.ProsperoMetadataUtils;
 import org.wildfly.prospero.updates.MarkerFile;
 import org.wildfly.prospero.updates.UpdateSet;
@@ -346,8 +347,17 @@ public class ApplyCandidateAction {
             ProsperoMetadataUtils.recordProvisioningDefinition(installationDir);
             writeProsperoMetadata(operation);
             updateInstallationCache();
+            updateAcceptedLicences();
         } catch (IOException ex) {
             throw new ProvisioningException(ex);
+        }
+    }
+
+    private void updateAcceptedLicences() throws MetadataException {
+        try {
+            new LicenseManager().copyIfExists(updateDir, installationDir);
+        } catch (IOException e) {
+            throw ProsperoLogger.ROOT_LOGGER.unableToWriteFile(installationDir.resolve(LicenseManager.LICENSES_FOLDER), e);
         }
     }
 
