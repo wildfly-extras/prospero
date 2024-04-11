@@ -306,4 +306,15 @@ public class WfCoreTestBase {
         system.deploy(session, deployRequest);
         Files.delete(copied);
     }
+
+    protected static void emptyLocalCache() {
+        final File[] files = localCachePath.toFile().listFiles();
+        if (files == null) {
+            return;
+        }
+
+        for (File file : files) {
+            FileUtils.deleteQuietly(file);
+        }
+    }
 }
