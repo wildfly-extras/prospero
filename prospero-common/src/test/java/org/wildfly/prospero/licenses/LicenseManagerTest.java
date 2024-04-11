@@ -96,12 +96,12 @@ public class LicenseManagerTest {
                 .exists()
                 .hasContent(LICENSE_TWO.getText());
         assertThat(readProperties(licensesPath.resolve(LICENSE_AGREEMENT_FILENAME)))
-                .containsEntry("username", System.getProperty("user.name"))
                 .containsEntry("license.0.name", "name")
                 .containsEntry("license.1.name", "name2")
                 .containsEntry("license.0.file", "name.txt")
                 .containsEntry("license.1.file", "name2.txt")
-                .containsKey("timestamp");
+                .containsKey("license.0.timestamp")
+                .containsKey("license.1.timestamp");
     }
 
     @Test
@@ -120,6 +120,27 @@ public class LicenseManagerTest {
         System.out.println(serverPath);
         assertThat(licensesFolder(serverPath).resolve("test-name.txt"))
                 .exists();
+    }
+
+    @Test
+    public void addsAcceptedLicenses() throws Exception {
+        new LicenseManager().recordAgreements(List.of(LICENSE_ONE), serverPath);
+        new LicenseManager().recordAgreements(List.of(LICENSE_TWO), serverPath);
+
+        final Path licensesPath = licensesFolder(serverPath);
+        assertThat(licensesPath.resolve("name.txt"))
+                .exists()
+                .hasContent(LICENSE_ONE.getText());
+        assertThat(licensesPath.resolve("name2.txt"))
+                .exists()
+                .hasContent(LICENSE_TWO.getText());
+        assertThat(readProperties(licensesPath.resolve(LICENSE_AGREEMENT_FILENAME)))
+                .containsEntry("license.0.name", "name")
+                .containsEntry("license.1.name", "name2")
+                .containsEntry("license.0.file", "name.txt")
+                .containsEntry("license.1.file", "name2.txt")
+                .containsKey("license.0.timestamp")
+                .containsKey("license.1.timestamp");
     }
 
     private static Properties readProperties(Path resolve) throws IOException {

@@ -41,6 +41,8 @@ import org.wildfly.prospero.api.exceptions.MetadataException;
 import org.wildfly.prospero.api.exceptions.OperationException;
 import org.wildfly.prospero.galleon.FeaturePackLocationParser;
 import org.wildfly.prospero.galleon.GalleonEnvironment;
+import org.wildfly.prospero.licenses.License;
+import org.wildfly.prospero.licenses.LicenseManager;
 import org.wildfly.prospero.model.FeaturePackTemplateManager;
 import org.wildfly.prospero.model.FeaturePackTemplate;
 import org.wildfly.prospero.model.ProsperoConfig;
@@ -82,6 +84,7 @@ public class FeaturesAddAction {
     private final Console console;
     private final CandidateActionsFactory candidateActionsFactory;
     private final FeaturePackTemplateManager featurePackTemplateManager;
+    private LicenseManager licenseManager;
 
     public FeaturesAddAction(MavenOptions mavenOptions, Path installDir, List<Repository> repositories, Console console) throws MetadataException, ProvisioningException {
         this(mavenOptions, installDir, repositories, console,
@@ -105,6 +108,8 @@ public class FeaturesAddAction {
         this.candidateActionsFactory = candidateActionsFactory;
 
         this.featurePackTemplateManager = featurePackTemplateManager;
+
+        this.licenseManager = new LicenseManager();
     }
 
     @Deprecated
@@ -170,7 +175,7 @@ public class FeaturesAddAction {
 
         final GalleonProvisioningConfig newConfig = buildProvisioningConfig(Collections.emptySet(), fpl, selectedConfigs);
 
-        install(newConfig, candidatePath);
+        install(featurePackCoord, newConfig, candidatePath);
     }
 
     @Deprecated
@@ -237,7 +242,7 @@ public class FeaturesAddAction {
 
         final GalleonProvisioningConfig newConfig = buildProvisioningConfig(layers, fpl, selectedConfig==null?Collections.emptySet():Set.of(new ConfigId(selectedModel, selectedConfig)));
 
-        install(newConfig, candidateFolder);
+        install(featurePackCoord, newConfig, candidateFolder);
     }
 
     /**
@@ -333,6 +338,10 @@ public class FeaturesAddAction {
         return candidate;
     }
 
+    public List<License> getRequiredLicenses(String featurePackCoord) {
+        return licenseManager.getLicenses(Set.of(featurePackCoord));
+    }
+
     private static String getSelectedConfig(ConfigId defaultConfigName, String selectedModel) {
         if (defaultConfigName == null || defaultConfigName.getName() == null) {
             if (selectedModel == null) {
@@ -354,7 +363,8 @@ public class FeaturesAddAction {
         }
     }
 
-    private void install(GalleonProvisioningConfig newConfig, Path candidate) throws ProvisioningException, OperationException {
+    private void install(String featurePackCoord, GalleonProvisioningConfig newConfig, Path candidate) throws ProvisioningException, OperationException {
+        final List<License> pendingLicenses = getRequiredLicenses(featurePackCoord);
 
         verifyConfigurationsAvailable(newConfig);
 
@@ -369,6 +379,14 @@ public class FeaturesAddAction {
             ProsperoLogger.ROOT_LOGGER.updateCandidateStarted(installDir);
             prepareCandidateAction.buildCandidate(candidate, galleonEnv, ApplyCandidateAction.Type.FEATURE_ADD, newConfig);
             ProsperoLogger.ROOT_LOGGER.updateCandidateCompleted(installDir);
+        }
+
+        if (!pendingLicenses.isEmpty()) {
+            try {
+                licenseManager.recordAgreements(pendingLicenses, candidate);
+            } catch (IOException e) {
+                throw ProsperoLogger.ROOT_LOGGER.unableToWriteFile(candidate.resolve(LicenseManager.LICENSES_FOLDER), e);
+            }
         }
     }
 
