@@ -18,7 +18,6 @@
 package org.wildfly.prospero.galleon;
 
 import org.apache.commons.io.FileUtils;
-import org.apache.commons.lang3.StringUtils;
 import org.eclipse.aether.DefaultRepositorySystemSession;
 import org.eclipse.aether.RepositorySystem;
 import org.jboss.galleon.ProvisioningException;
@@ -118,8 +117,7 @@ public class GalleonEnvironment implements AutoCloseable {
             // they have to be in the maven cache for later version resolution
             final ManifestVersionRecord manifestVersions = new ManifestVersionRecord("1.0.0",
                     builder.restoredManifestVersions, Collections.emptyList(), Collections.emptyList());
-            storeOriginalChannelManifestAsResolved(builder, factory);
-            populateMavenCacheWithManifests(manifestVersions.getMavenManifests(), channelSession);
+            storeOriginalChannelManifestAsResolved(builder, factory, manifestVersions.getMavenManifests());
         }
 
         if (builder.artifactDirectResolve) {
@@ -153,10 +151,30 @@ public class GalleonEnvironment implements AutoCloseable {
         provisioning.setProgressCallback(TRACK_JB_ARTIFACTS_RESOLVE, callback);
     }
 
-    private static void storeOriginalChannelManifestAsResolved(Builder builder, MavenVersionsResolver.Factory factory) {
-        try {
-            // attempt to resolve the manifests we're reverting to. Doing so will record the manifest in the ResolvedArtifactsStore
-            new ChannelSession(builder.channels, factory).close();
+    private static void storeOriginalChannelManifestAsResolved(Builder builder, MavenVersionsResolver.Factory factory,
+                                                               List<ManifestVersionRecord.MavenManifest> mavenManifests) {
+
+        // attempt to resolve the manifests we're reverting to. Doing so will record the manifest in the ResolvedArtifactsStore
+        try (ChannelSession tempSession = new ChannelSession(builder.channels, factory)) {
+            for (ManifestVersionRecord.MavenManifest mavenManifest : mavenManifests) {
+                try {
+                    if (LOG.isTraceEnabled()) {
+                        LOG.tracef("Trying to resolve %s.", mavenManifest);
+                    }
+                    // don't use the GalleonEnvironment#channelSession - we don't want to inject those into recorded manifest, just local maven cache
+                    tempSession.resolveDirectMavenArtifact(
+                            mavenManifest.getGroupId(),
+                            mavenManifest.getArtifactId(),
+                            ChannelManifest.EXTENSION,
+                            ChannelManifest.CLASSIFIER,
+                            mavenManifest.getVersion()
+                    );
+                } catch (ArtifactTransferException e) {
+                    // catch the error here so we can ignore it
+                    ProsperoLogger.ROOT_LOGGER.debugf(e, "Unable to resolve manifest %s:%s:%s for maven cache",
+                            mavenManifest.getGroupId(), mavenManifest.getArtifactId(), mavenManifest.getVersion());
+                }
+            }
         } catch (ArtifactTransferException e) {
             // ignore; we just won't cache this manifest later
             LOG.debug("Unable to resolve restored manifest", e);
@@ -241,38 +259,6 @@ public class GalleonEnvironment implements AutoCloseable {
             FileUtils.deleteQuietly(restoreManifestPath.toFile());
         }
         provisioning.close();
-    }
-
-    /*
-     * Attempts to populate current's {@code channelSession} maven cache with the maven manifest artifacts.
-     * Used when the provisioning is by-passing the manifest resolution (e.g. during revert when it's using old
-     * provisioned manifest)
-     */
-    static void populateMavenCacheWithManifests(List<ManifestVersionRecord.MavenManifest> mavenManifests, ChannelSession channelSession) {
-        Objects.requireNonNull(mavenManifests);
-        Objects.requireNonNull(channelSession);
-
-        if (LOG.isDebugEnabled()) {
-            LOG.debugf("Resolving manifests %s to prepopulate maven cache.", StringUtils.join(mavenManifests, ","));
-        }
-
-        for (ManifestVersionRecord.MavenManifest mavenManifest : mavenManifests) {
-            try {
-                if (LOG.isTraceEnabled()) {
-                    LOG.tracef("Trying to resolve %s.", mavenManifest);
-                }
-                channelSession.resolveDirectMavenArtifact(
-                        mavenManifest.getGroupId(),
-                        mavenManifest.getArtifactId(),
-                        ChannelManifest.EXTENSION,
-                        ChannelManifest.CLASSIFIER,
-                        mavenManifest.getVersion()
-                );
-            } catch (ArtifactTransferException e) {
-                ProsperoLogger.ROOT_LOGGER.debugf(e, "Unable to resolve manifest %s:%s:%s for maven cache",
-                        mavenManifest.getGroupId(), mavenManifest.getArtifactId(), mavenManifest.getVersion());
-            }
-        }
     }
 
     public static Builder builder(Path installDir, List<Channel> channels, MavenSessionManager mavenSessionManager, boolean useDefaultCore) {
