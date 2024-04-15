@@ -213,7 +213,42 @@ public class CacheManifestTest extends WfCoreTestBase {
     }
 
     @Test
+    public void revertWithOriginalManifestNotChanging() throws Exception {
+        installBaseServer();
+
+        // update server with the base manifest read from cache
+        addSecondChannel();
+        performUpdate();
+
+        // verify both manifests are in the cache
+        assertThat(outputPath.resolve(ArtifactCache.CACHE_FOLDER).resolve("wf-core-base-1.0.0-manifest.yaml"))
+                .exists();
+        assertThat(outputPath.resolve(ArtifactCache.CACHE_FOLDER).resolve("wf-core-second-1.0.0-manifest.yaml"))
+                .exists()
+                .hasContent(ChannelManifestMapper.toYaml(secondManifest));
+        assertThat(outputPath.resolve(ArtifactCache.CACHE_FOLDER).resolve("artifacts.txt"))
+                .content()
+                .contains("org.test.channels:wf-core-base:yaml:manifest:1.0.0")
+                .contains("org.test.channels:wf-core-second:yaml:manifest:1.0.0");
+
+        // revert to base
+        final InstallationHistoryAction historyAction = new InstallationHistoryAction(outputPath, new CliConsole());
+        final List<SavedState> revisions = historyAction.getRevisions();
+        final SavedState savedState = revisions.get(revisions.size() - 1);
+        historyAction.rollback(savedState, mavenOptions, Collections.emptyList());
+
+        // verify the base manifest is available and at 1.0.0 version
+        assertThat(outputPath.resolve(ArtifactCache.CACHE_FOLDER).resolve("wf-core-base-1.0.0-manifest.yaml"))
+                .exists()
+                .hasSameTextualContentAs(baseManifest.toPath());
+        assertThat(outputPath.resolve(ArtifactCache.CACHE_FOLDER).resolve("artifacts.txt"))
+                .content()
+                .contains("org.test.channels:wf-core-base:yaml:manifest:1.0.0");
+    }
+
+    @Test
     public void revertWithOriginalManifestNotAvailable() throws Exception {
+        emptyLocalCache();
         installBaseServer();
 
         // update server with the base manifest read from cache
@@ -271,6 +306,7 @@ public class CacheManifestTest extends WfCoreTestBase {
     @Test
     public void updateWithManifestNotInCacheAndNotAvailableFails() throws Exception {
         // install server
+        emptyLocalCache();
         installBaseServer();
 
         // remove the manifest from repository and cache

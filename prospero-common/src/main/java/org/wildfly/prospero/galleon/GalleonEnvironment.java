@@ -118,6 +118,7 @@ public class GalleonEnvironment implements AutoCloseable {
             // they have to be in the maven cache for later version resolution
             final ManifestVersionRecord manifestVersions = new ManifestVersionRecord("1.0.0",
                     builder.restoredManifestVersions, Collections.emptyList(), Collections.emptyList());
+            storeOriginalChannelManifestAsResolved(builder, factory);
             populateMavenCacheWithManifests(manifestVersions.getMavenManifests(), channelSession);
         }
 
@@ -150,6 +151,16 @@ public class GalleonEnvironment implements AutoCloseable {
         final DownloadsCallbackAdapter callback = new DownloadsCallbackAdapter(console.orElse(null));
         session.setTransferListener(callback);
         provisioning.setProgressCallback(TRACK_JB_ARTIFACTS_RESOLVE, callback);
+    }
+
+    private static void storeOriginalChannelManifestAsResolved(Builder builder, MavenVersionsResolver.Factory factory) {
+        try {
+            // attempt to resolve the manifests we're reverting to. Doing so will record the manifest in the ResolvedArtifactsStore
+            new ChannelSession(builder.channels, factory).close();
+        } catch (ArtifactTransferException e) {
+            // ignore; we just won't cache this manifest later
+            LOG.debug("Unable to resolve restored manifest", e);
+        }
     }
 
     private List<Channel> replaceManifestWithRestoreManifests(Builder builder, Optional<ChannelManifest> restoreManifest) throws ProvisioningException {

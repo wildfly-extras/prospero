@@ -165,6 +165,9 @@ public class GalleonEnvironmentTest {
                 .build();
         final ChannelManifest restoreManifest = new ChannelManifest("restore manifest", null, null, Collections.emptyList());
 
+        // pretend the channel manifests cannot be resolved - we'll fall back to the reverted state either way
+        when(system.resolveArtifact(any(), any())).thenThrow(new ArtifactResolutionException(Collections.emptyList()));
+
         final URL manifestUrl;
         try (GalleonEnvironment env = GalleonEnvironment.builder(temp.newFolder().toPath(), List.of(c1, c2), msm, true)
                 .setRestoreManifest(restoreManifest)
