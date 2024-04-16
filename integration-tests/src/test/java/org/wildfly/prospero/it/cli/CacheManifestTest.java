@@ -46,6 +46,7 @@ import org.wildfly.prospero.cli.CliConsole;
 import org.wildfly.prospero.galleon.ArtifactCache;
 import org.wildfly.prospero.it.commonapi.WfCoreTestBase;
 import org.wildfly.prospero.it.utils.TestRepositoryUtils;
+import org.wildfly.prospero.metadata.ProsperoMetadataUtils;
 import org.wildfly.prospero.test.MetadataTestUtils;
 
 import java.io.File;
@@ -210,6 +211,9 @@ public class CacheManifestTest extends WfCoreTestBase {
         assertThat(outputPath.resolve(ArtifactCache.CACHE_FOLDER).resolve("artifacts.txt"))
                 .content()
                 .contains("org.test.channels:wf-core-base:yaml:manifest:1.0.0");
+        assertThat(outputPath.resolve(ProsperoMetadataUtils.METADATA_DIR).resolve(ProsperoMetadataUtils.MANIFEST_FILE_NAME))
+                .content()
+                .doesNotContain("wf-core-base");
     }
 
     @Test
