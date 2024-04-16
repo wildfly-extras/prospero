@@ -35,12 +35,19 @@ public class AbstractConsoleTest {
 
     private boolean denyConfirm = false;
     protected int askedConfirmation = 0;
+    private int denyPromptNumber = -1;
 
     @Before
     public void setUp() throws Exception {
         CliConsole console = new CliConsole() {
             @Override
             public boolean confirm(String prompt, String accepted, String cancelled) {
+                askedConfirmation++;
+                return !(denyConfirm && (denyPromptNumber == -1 || denyPromptNumber == askedConfirmation));
+            }
+
+            @Override
+            public boolean confirmUpdates() {
                 askedConfirmation++;
                 return !denyConfirm;
             }
@@ -50,6 +57,18 @@ public class AbstractConsoleTest {
 
     protected void setDenyConfirm(boolean denyConfirm) {
         this.denyConfirm = denyConfirm;
+    }
+
+    /**
+     * simulates user rejecting a prompt. If there are multiple propmpts, {@code promptNumber} selects a prompt that
+     * should be rejected.
+     *
+     * @param denyConfirm
+     * @param promptNumber
+     */
+    protected void setDenyConfirm(boolean denyConfirm, int promptNumber) {
+        this.denyConfirm = denyConfirm;
+        this.denyPromptNumber = promptNumber;
     }
 
     protected int getAskedConfirmation() {

@@ -18,6 +18,8 @@
 package org.wildfly.prospero.it;
 
 import java.io.File;
+import java.io.IOException;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Arrays;
@@ -104,6 +106,10 @@ public class ExecutionUtils {
         }
     }
 
+    private static String getCommandOutput() throws IOException {
+        return Files.readString(Path.of("target/test-out.log"));
+    }
+
 
     /**
      * Prospero execution results.
@@ -116,10 +122,17 @@ public class ExecutionUtils {
             this.process = process;
         }
 
-        public void assertReturnCode(int expectedReturnCode) {
+        public ExecutionResult assertReturnCode(int expectedReturnCode) throws IOException {
             assertThat(process.exitValue())
-                    .overridingErrorMessage(new ProcessErrorStreamReader(process))
+                    .overridingErrorMessage(getCommandOutput())
                     .isEqualTo(expectedReturnCode);
+            return this;
+        }
+
+        public ExecutionResult assertErrorContains(String text) throws IOException {
+            final String output = getCommandOutput();
+            assertThat(output).contains(text);
+            return this;
         }
     }
 }
