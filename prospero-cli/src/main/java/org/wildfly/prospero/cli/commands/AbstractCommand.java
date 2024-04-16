@@ -17,7 +17,6 @@
 
 package org.wildfly.prospero.cli.commands;
 
-import java.io.File;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -68,23 +67,25 @@ public abstract class AbstractCommand implements Callable<Integer> {
 
     protected static Path determineInstallationDirectory(Optional<Path> directoryOption) throws ArgumentParsingException {
         Path installationDirectory = directoryOption.orElse(currentDir()).toAbsolutePath();
-        verifyDirectoryContainsInstallation(installationDirectory);
+
+        // Iterate through parent directories until a valid installation directory is found
+        while (!verifyDirectoryContainsInstallation(installationDirectory)) {
+            installationDirectory = installationDirectory.getParent();
+            if (installationDirectory == null) {
+                throw CliMessages.MESSAGES.invalidInstallationDirMaybeUseDirOption(installationDirectory);
+            }
+        }
         return installationDirectory;
     }
 
-    static void verifyDirectoryContainsInstallation(Path path) throws ArgumentParsingException {
-        File dotGalleonDir = path.resolve(InstallationMetadata.GALLEON_INSTALLATION_DIR).toFile();
-        File channelsFile = path.resolve(ProsperoMetadataUtils.METADATA_DIR)
-                .resolve(ProsperoMetadataUtils.INSTALLER_CHANNELS_FILE_NAME).toFile();
-        if (!dotGalleonDir.isDirectory() || !channelsFile.isFile()) {
-            if (currentDir().equals(path)) {
-                // if the path is the current directory, user may have forgotten to specify the --dir option
-                //   -> suggest to use --dir
-                throw CliMessages.MESSAGES.invalidInstallationDirMaybeUseDirOption(path);
-            } else {
-                throw CliMessages.MESSAGES.invalidInstallationDir(path);
-            }
-        }
+    static boolean verifyDirectoryContainsInstallation(Path path) {
+        Path dotGalleonDir = path.resolve(InstallationMetadata.GALLEON_INSTALLATION_DIR);
+        Path channelsFile = path.resolve(ProsperoMetadataUtils.METADATA_DIR)
+                .resolve(ProsperoMetadataUtils.INSTALLER_CHANNELS_FILE_NAME);
+        // Check if the directory contains the necessary subfolders and files
+        boolean isValid = Files.isDirectory(dotGalleonDir) && Files.isRegularFile(channelsFile);
+
+        return isValid;
     }
 
     static Path currentDir() {
