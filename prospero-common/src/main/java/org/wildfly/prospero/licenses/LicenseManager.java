@@ -20,11 +20,13 @@ package org.wildfly.prospero.licenses;
 import org.jboss.logging.Logger;
 import org.wildfly.prospero.metadata.ProsperoMetadataUtils;
 
+import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.net.URL;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.StandardCopyOption;
 import java.nio.file.StandardOpenOption;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
@@ -32,6 +34,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.Properties;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -115,7 +118,6 @@ public class LicenseManager {
         if (logger.isDebugEnabled()) {
             logger.debugf("Saving %d license agreements.", licenses.size());
         }
-        final String username = System.getProperty("user.name");
         final LocalDateTime timestamp = LocalDateTime.now();
 
         final Path licenseFolder = targetServer.resolve(ProsperoMetadataUtils.METADATA_DIR).resolve(LICENSES_FOLDER);
@@ -126,16 +128,31 @@ public class LicenseManager {
             Files.createDirectory(licenseFolder);
         }
         final Path licenseAcceptFile = licenseFolder.resolve(LICENSE_AGREEMENT_FILENAME);
+        final Properties licenseApproveProperties = new Properties();
+        if (Files.exists(licenseAcceptFile)) {
+            try (FileInputStream inStream = new FileInputStream(licenseAcceptFile.toFile())) {
+                licenseApproveProperties.load(inStream);
+            }
+        }
+        final Optional<Integer> first = licenseApproveProperties.keySet().stream()
+                .map(Object::toString)
+                .filter(s -> s.startsWith("license.") && s.endsWith(".name"))
+                .map(s -> s.replace("license.", "").replace(".name", ""))
+                .map(Integer::parseInt)
+                .max(Integer::compareTo)
+                .map(i->i+1); // add one to get the next starting index
+
         try (FileOutputStream fos = new FileOutputStream(licenseAcceptFile.toFile())) {
-            final Properties licenseApproveProperties = new Properties();
-            licenseApproveProperties.setProperty("username", username);
-            licenseApproveProperties.setProperty("timestamp", timestamp.toString());
-            for (int i = 0; i < licenses.size(); i++) {
-                final License license = licenses.get(i);
+
+            int nextLicenseIndex = first.orElse(0);
+            for (License license : licenses) {
                 saveLicenseText(license, licenseFolder);
 
-                licenseApproveProperties.setProperty("license." + i + ".name", license.getName());
-                licenseApproveProperties.setProperty("license." + i + ".file", toFileName(license));
+                licenseApproveProperties.setProperty("license." + nextLicenseIndex + ".name", license.getName());
+                licenseApproveProperties.setProperty("license." + nextLicenseIndex + ".file", toFileName(license));
+                licenseApproveProperties.setProperty("license." + nextLicenseIndex + ".timestamp", timestamp.toString());
+
+                nextLicenseIndex++;
             }
 
             if (logger.isTraceEnabled()) {
@@ -143,6 +160,20 @@ public class LicenseManager {
             }
             licenseApproveProperties.store(fos, "Agreements accepted during installation");
         }
+    }
+
+    public void copyIfExists(Path sourceServer, Path targetServer) throws IOException {
+        final Path sourceLicenses = sourceServer.resolve(ProsperoMetadataUtils.METADATA_DIR).resolve(LicenseManager.LICENSES_FOLDER).resolve(LicenseManager.LICENSE_AGREEMENT_FILENAME);
+        final Path targetLicenses = targetServer.resolve(ProsperoMetadataUtils.METADATA_DIR).resolve(LicenseManager.LICENSES_FOLDER).resolve(LicenseManager.LICENSE_AGREEMENT_FILENAME);
+        if (!Files.exists(sourceLicenses)) {
+            return;
+        }
+
+        if (!Files.exists(targetLicenses.getParent())) {
+            Files.createDirectory(targetLicenses.getParent());
+        }
+
+        Files.copy(sourceLicenses, targetLicenses, StandardCopyOption.REPLACE_EXISTING);
     }
 
     private static URL getLicensesFile() {

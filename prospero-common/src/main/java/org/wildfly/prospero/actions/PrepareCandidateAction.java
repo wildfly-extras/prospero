@@ -34,6 +34,7 @@ import org.wildfly.prospero.galleon.ArtifactCache;
 import org.wildfly.prospero.galleon.GalleonEnvironment;
 import org.wildfly.prospero.galleon.GalleonFeaturePackAnalyzer;
 import org.wildfly.prospero.galleon.GalleonUtils;
+import org.wildfly.prospero.licenses.LicenseManager;
 import org.wildfly.prospero.metadata.ManifestVersionRecord;
 import org.wildfly.prospero.metadata.ProsperoMetadataUtils;
 import org.wildfly.prospero.model.ProsperoConfig;
@@ -60,10 +61,12 @@ class PrepareCandidateAction implements AutoCloseable {
     private final InstallationMetadata metadata;
     private final ProsperoConfig prosperoConfig;
     private final MavenSessionManager mavenSessionManager;
+    private final Path installDir;
 
     PrepareCandidateAction(Path installDir, MavenSessionManager mavenSessionManager, ProsperoConfig prosperoConfig)
             throws OperationException {
         this.metadata = InstallationMetadata.loadInstallation(installDir);
+        this.installDir = installDir;
         this.prosperoConfig = prosperoConfig;
         this.mavenSessionManager = mavenSessionManager;
     }
@@ -153,6 +156,12 @@ class PrepareCandidateAction implements AutoCloseable {
             galleonFeaturePackAnalyzer.cacheGalleonArtifacts(targetDir, provisioningConfig);
         } catch (Exception e) {
             throw new RuntimeException(e);
+        }
+
+        try {
+            new LicenseManager().copyIfExists(installDir, targetDir);
+        } catch (IOException e) {
+            throw ProsperoLogger.ROOT_LOGGER.unableToWriteFile(installDir.resolve(LicenseManager.LICENSES_FOLDER), e);
         }
     }
 

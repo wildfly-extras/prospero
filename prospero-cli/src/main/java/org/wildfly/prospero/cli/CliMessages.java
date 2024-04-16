@@ -638,4 +638,14 @@ public interface CliMessages {
         return new IllegalArgumentException(format(bundle.getString("prospero.install.unknown_stability_level"),
                 stabilityLevel, String.join(",", supportedStabilityLevels)));
     }
+    default String featurePackRequiresLayers(String featurePackName) {
+        return format(bundle.getString("prospero.features.add.validation.layers_required"), featurePackName, CliConstants.LAYERS);
+    }
+    default String featurePackDoesNotSupportCustomization(String featurePackName) {
+        return format(bundle.getString("prospero.features.add.validation.customization_not_supported"), featurePackName,
+                String.join(",", List.of(CliConstants.LAYERS, CliConstants.TARGET_CONFIG)));
+    }
+    default String featurePackRequiresLicense(String featurePackName) {
+        return format(bundle.getString("prospero.features.add.required_licences"), featurePackName);
+    }
 }
