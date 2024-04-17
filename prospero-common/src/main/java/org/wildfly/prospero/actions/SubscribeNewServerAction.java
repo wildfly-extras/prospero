@@ -54,11 +54,12 @@ public class SubscribeNewServerAction {
 
   public GenerateResult generateServerMetadata(List<Channel> channels, FeaturePackLocation loc) throws IOException, ProvisioningException, OperationException {
     Path tempDir = Files.createTempDirectory("tmp-prov-");
-    boolean manifestCoordDefined = channels.stream().anyMatch(c -> c.getManifestCoordinate() != null);
+
     tempDir.toFile().deleteOnExit();
     try (GalleonEnvironment galleonEnv = GalleonEnvironment
       .builder(tempDir, channels, mavenSessionManager, false)
-      .setArtifactDirectResolve(!manifestCoordDefined)
+      // forces the feature pack artifact to be downloaded directly and not go through channel version resolution
+      .setArtifactDirectResolve(true)
       .setConsole(console)
       .build()) {
 
@@ -72,6 +73,8 @@ public class SubscribeNewServerAction {
         throw new ArtifactResolutionException(ProsperoLogger.ROOT_LOGGER.unableToResolve(), e, e.getUnresolvedArtifacts(),
                 e.getAttemptedRepositories(), mavenSessionManager.isOffline());
       }
+
+      boolean manifestCoordDefined = channels.stream().anyMatch(c -> c.getManifestCoordinate() != null);
       return new GenerateResult(tempDir, channels, galleonEnv.getChannelSession().getRecordedChannel(), manifestCoordDefined);
     }
   }
