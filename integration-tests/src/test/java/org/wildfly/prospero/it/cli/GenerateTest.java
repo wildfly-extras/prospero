@@ -19,7 +19,6 @@ package org.wildfly.prospero.it.cli;
 
 import org.eclipse.aether.DefaultRepositorySystemSession;
 import org.eclipse.aether.RepositorySystem;
-import org.eclipse.aether.artifact.Artifact;
 import org.eclipse.aether.artifact.DefaultArtifact;
 import org.eclipse.aether.resolution.ArtifactRequest;
 import org.eclipse.aether.resolution.ArtifactResolutionException;
@@ -30,8 +29,8 @@ import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
 import org.wildfly.channel.ChannelManifest;
-import org.wildfly.channel.ChannelManifestMapper;
 import org.wildfly.channel.Stream;
+import org.wildfly.channel.version.VersionMatcher;
 import org.wildfly.prospero.api.KnownFeaturePacks;
 import org.wildfly.prospero.cli.ReturnCodes;
 import org.wildfly.prospero.cli.commands.CliConstants;
@@ -45,16 +44,15 @@ import org.wildfly.prospero.wfchannel.MavenSessionManager;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
-import java.net.MalformedURLException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
 import java.util.ArrayList;
-import java.util.List;
 import java.util.concurrent.TimeUnit;
-import java.util.stream.Collectors;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
+
+import static org.junit.Assert.assertTrue;
 
 public class GenerateTest {
 
@@ -90,35 +88,12 @@ public class GenerateTest {
         // check the metadata existence
         Path manifestPath = ProsperoMetadataUtils.manifestPath(serverDir);
         Path configurationPath = ProsperoMetadataUtils.configurationPath(serverDir);
-        Assert.assertTrue(Files.exists(manifestPath));
+        assertTrue(Files.exists(manifestPath));
         ChannelManifest manifest = ManifestYamlSupport.parse(manifestPath.toFile());
-        Assert.assertTrue(manifest.getStreams().contains(new Stream("org.wildfly.core", "wildfly-server", "20.0.1.Final")));
-        Assert.assertTrue(Files.exists(configurationPath));
+        assertTrue(manifest.getStreams().contains(new Stream("org.wildfly.core", "wildfly-server", "20.0.1.Final")));
+        assertTrue(Files.exists(configurationPath));
         ProsperoConfig prosperoConfig = ProsperoConfig.readConfig(serverDir.resolve(ProsperoMetadataUtils.METADATA_DIR));
-        Assert.assertTrue(prosperoConfig.getChannels().size() > 0);
-        Path manifestPathCopy = serverDir.resolve(ProsperoMetadataUtils.METADATA_DIR).resolve("manifest-" + PRODUCT + "-" + VERSION + ".yaml");
-        Assert.assertTrue(Files.exists(manifestPathCopy));
-        Assert.assertTrue(prosperoConfig.getChannels().stream()
-          .anyMatch(c -> {
-              try {
-                  return c.getManifestCoordinate() != null && c.getManifestCoordinate().getUrl() != null &&
-                    c.getManifestCoordinate().getUrl().equals(manifestPathCopy.toUri().toURL());
-              } catch (MalformedURLException e) {
-                  throw new RuntimeException(e);
-              }
-          }));
-
-        // update stream in metadata, test with upgrade vertx-core from 4.3.4 to 4.3.6
-        final Artifact upgrade = new DefaultArtifact("io.vertx", "vertx-core", "jar", "4.3.6");
-        final List<Stream> updatedStreams = manifest.getStreams().stream()
-          .map(s -> {
-              if (s.getGroupId().equals(upgrade.getGroupId()) && s.getArtifactId().equals(upgrade.getArtifactId())) {
-                  return new Stream(upgrade.getGroupId(), upgrade.getArtifactId(), upgrade.getVersion());
-              } else {
-                  return s;
-              }
-          }).collect(Collectors.toList());
-        Files.writeString(manifestPathCopy, ChannelManifestMapper.toYaml(new ChannelManifest(manifest.getName(), manifest.getId(), manifest.getDescription(), updatedStreams)));
+        Assert.assertFalse(prosperoConfig.getChannels().isEmpty());
 
         // run upgrade
         ExecutionUtils.prosperoExecution(CliConstants.Commands.UPDATE, CliConstants.Commands.PERFORM,
@@ -129,7 +104,9 @@ public class GenerateTest {
 
         // check the vertx-core stream in manifest
         manifest = ManifestYamlSupport.parse(manifestPath.toFile());
-        Assert.assertTrue(manifest.getStreams().contains(new Stream("io.vertx", "vertx-core", "4.3.6")));
+        assertTrue(VersionMatcher.COMPARATOR.compare("20.0.1.Final", manifest.getStreams().stream()
+                .filter(s->s.getGroupId().equals("org.wildfly.core") && s.getArtifactId().equals("wildfly-server"))
+                .map(Stream::getVersion).findFirst().get()) < 0);
     }
 
     private void downloadAndUnzipServer() throws ProvisioningException, ArtifactResolutionException, IOException {

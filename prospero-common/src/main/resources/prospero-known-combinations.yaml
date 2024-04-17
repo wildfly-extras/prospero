@@ -11,4 +11,7 @@
           url: "https://repository.jboss.org/nexus/content/groups/public/"
         - id: "mrrc"
           url: "https://maven.repository.redhat.com/ga/"
-      manifest: null
+      manifest:
+        maven:
+          groupId: "org.wildfly.channels"
+          artifactId: "wildfly"
