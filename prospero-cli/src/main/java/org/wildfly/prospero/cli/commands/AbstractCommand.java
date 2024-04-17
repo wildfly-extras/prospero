@@ -68,13 +68,22 @@ public abstract class AbstractCommand implements Callable<Integer> {
     protected static Path determineInstallationDirectory(Optional<Path> directoryOption) throws ArgumentParsingException {
         Path installationDirectory = directoryOption.orElse(currentDir()).toAbsolutePath();
 
-        // Iterate through parent directories until a valid installation directory is found
-        while (!verifyDirectoryContainsInstallation(installationDirectory)) {
-            installationDirectory = installationDirectory.getParent();
-            if (installationDirectory == null) {
-                throw CliMessages.MESSAGES.invalidInstallationDirMaybeUseDirOption(installationDirectory);
+        // Check if the directory option was provided
+        if (directoryOption.isPresent()) {
+            // If --dir is present, verify the provided directory
+            if (!verifyDirectoryContainsInstallation(installationDirectory)) {
+                throw CliMessages.MESSAGES.invalidInstallationDir(installationDirectory);
+            }
+        } else {
+            // If --dir is not present, iterate through parent directories until a valid installation directory is found
+            while (!verifyDirectoryContainsInstallation(installationDirectory)) {
+                installationDirectory = installationDirectory.getParent();
+                if (installationDirectory == null) {
+                    throw CliMessages.MESSAGES.invalidInstallationDirMaybeUseDirOption(currentDir().toAbsolutePath());
+                }
             }
         }
+
         return installationDirectory;
     }
 
@@ -82,10 +91,8 @@ public abstract class AbstractCommand implements Callable<Integer> {
         Path dotGalleonDir = path.resolve(InstallationMetadata.GALLEON_INSTALLATION_DIR);
         Path channelsFile = path.resolve(ProsperoMetadataUtils.METADATA_DIR)
                 .resolve(ProsperoMetadataUtils.INSTALLER_CHANNELS_FILE_NAME);
-        // Check if the directory contains the necessary subfolders and files
-        boolean isValid = Files.isDirectory(dotGalleonDir) && Files.isRegularFile(channelsFile);
 
-        return isValid;
+        return Files.isDirectory(dotGalleonDir) && Files.isRegularFile(channelsFile);
     }
 
     static Path currentDir() {
