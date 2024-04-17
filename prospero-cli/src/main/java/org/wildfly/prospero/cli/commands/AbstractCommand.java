@@ -66,7 +66,11 @@ public abstract class AbstractCommand implements Callable<Integer> {
     }
 
     protected static Path determineInstallationDirectory(Optional<Path> directoryOption) throws ArgumentParsingException {
-        Path installationDirectory = directoryOption.orElse(currentDir()).toAbsolutePath();
+        return determineInstallationDirectory(directoryOption, currentDir());
+    }
+
+    static Path determineInstallationDirectory(Optional<Path> directoryOption, Path currentDir) throws ArgumentParsingException {
+        Path installationDirectory = directoryOption.orElse(currentDir).toAbsolutePath();
 
         // Check if the directory option was provided
         if (directoryOption.isPresent()) {
