@@ -17,7 +17,6 @@
 
 package org.wildfly.prospero.cli.commands;
 
-import java.io.File;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -67,24 +66,37 @@ public abstract class AbstractCommand implements Callable<Integer> {
     }
 
     protected static Path determineInstallationDirectory(Optional<Path> directoryOption) throws ArgumentParsingException {
-        Path installationDirectory = directoryOption.orElse(currentDir()).toAbsolutePath();
-        verifyDirectoryContainsInstallation(installationDirectory);
+        return determineInstallationDirectory(directoryOption, currentDir());
+    }
+
+    static Path determineInstallationDirectory(Optional<Path> directoryOption, Path currentDir) throws ArgumentParsingException {
+        Path installationDirectory = directoryOption.orElse(currentDir).toAbsolutePath();
+
+        // Check if the directory option was provided
+        if (directoryOption.isPresent()) {
+            // If --dir is present, verify the provided directory
+            if (!verifyDirectoryContainsInstallation(installationDirectory)) {
+                throw CliMessages.MESSAGES.invalidInstallationDir(installationDirectory);
+            }
+        } else {
+            // If --dir is not present, iterate through parent directories until a valid installation directory is found
+            while (!verifyDirectoryContainsInstallation(installationDirectory)) {
+                installationDirectory = installationDirectory.getParent();
+                if (installationDirectory == null) {
+                    throw CliMessages.MESSAGES.invalidInstallationDirMaybeUseDirOption(currentDir().toAbsolutePath());
+                }
+            }
+        }
+
         return installationDirectory;
     }
 
-    static void verifyDirectoryContainsInstallation(Path path) throws ArgumentParsingException {
-        File dotGalleonDir = path.resolve(InstallationMetadata.GALLEON_INSTALLATION_DIR).toFile();
-        File channelsFile = path.resolve(ProsperoMetadataUtils.METADATA_DIR)
-                .resolve(ProsperoMetadataUtils.INSTALLER_CHANNELS_FILE_NAME).toFile();
-        if (!dotGalleonDir.isDirectory() || !channelsFile.isFile()) {
-            if (currentDir().equals(path)) {
-                // if the path is the current directory, user may have forgotten to specify the --dir option
-                //   -> suggest to use --dir
-                throw CliMessages.MESSAGES.invalidInstallationDirMaybeUseDirOption(path);
-            } else {
-                throw CliMessages.MESSAGES.invalidInstallationDir(path);
-            }
-        }
+    static boolean verifyDirectoryContainsInstallation(Path path) {
+        Path dotGalleonDir = path.resolve(InstallationMetadata.GALLEON_INSTALLATION_DIR);
+        Path channelsFile = path.resolve(ProsperoMetadataUtils.METADATA_DIR)
+                .resolve(ProsperoMetadataUtils.INSTALLER_CHANNELS_FILE_NAME);
+
+        return Files.isDirectory(dotGalleonDir) && Files.isRegularFile(channelsFile);
     }
 
     static Path currentDir() {
