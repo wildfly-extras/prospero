@@ -236,7 +236,9 @@ public class UpdateCommand extends AbstractParentCommand {
 
             final Path installationDir = determineInstallationDirectory(directory);
 
-            verifyDirectoryContainsInstallation(candidateDir);
+            if(!verifyDirectoryContainsInstallation(candidateDir)){
+                throw CliMessages.MESSAGES.invalidInstallationDir(candidateDir);
+            }
 
             console.println(CliMessages.MESSAGES.updateHeader(installationDir));
 
