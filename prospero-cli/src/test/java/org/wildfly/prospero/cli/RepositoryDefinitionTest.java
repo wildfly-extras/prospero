@@ -34,11 +34,13 @@ import static org.wildfly.prospero.cli.RepositoryDefinition.from;
 
 public class RepositoryDefinitionTest {
 
-    private String tempRepoURL;
+    private String tempRepoUrlNoHostForm;
+    private String tempRepoUrlEmptyHostForm;
 
     @Before
     public void setUp() throws Exception {
-        tempRepoURL = Path.of(".").normalize().toAbsolutePath().toUri().toString().replace("///","/");
+        tempRepoUrlEmptyHostForm = Path.of(".").normalize().toAbsolutePath().toUri().toString();
+        tempRepoUrlNoHostForm = tempRepoUrlEmptyHostForm.replace("///","/");
     }
 
     @Test
@@ -89,25 +91,39 @@ public class RepositoryDefinitionTest {
 
     @Test
     public void throwsErrorIfFormatIsIncorrectForFileURLorPathDoesNotExist() throws Exception {
-        assertThrows(ArgumentParsingException.class, ()->from(List.of("::"+tempRepoURL)));
+        assertThrows(ArgumentParsingException.class, ()->from(List.of("::"+ tempRepoUrlNoHostForm)));
 
         assertThrows(ArgumentParsingException.class, ()->from(List.of("repo-1::")));
 
-        assertThrows(ArgumentParsingException.class, ()->from(List.of("repo-1:::"+tempRepoURL)));
+        assertThrows(ArgumentParsingException.class, ()->from(List.of("repo-1:::"+ tempRepoUrlNoHostForm)));
 
-        assertThrows(ArgumentParsingException.class, ()->from(List.of("foo::bar::"+tempRepoURL)));
+        assertThrows(ArgumentParsingException.class, ()->from(List.of("foo::bar::"+ tempRepoUrlNoHostForm)));
     }
 
     @Test
     public void testCorrectRelativeOrAbsolutePathForFileURL() throws Exception {
-        Repository repository = new Repository("temp-repo-0", tempRepoURL);
+        Repository repository = new Repository("temp-repo-0", tempRepoUrlEmptyHostForm);
         List<Repository> actualList = from(List.of("file:../prospero-cli"));
+
+        assertNotNull(actualList);
+        assertEquals(1, actualList.size());
+        assertThat(actualList)
+                .contains(repository);
+
+        actualList = from(List.of("temp-repo-0::file:../prospero-cli"));
+
+        assertNotNull(actualList);
+        assertEquals(1, actualList.size());
+        assertThat(actualList)
+                .contains(repository);
+
+        actualList = from(List.of(("file:/"+(System.getProperty("user.dir").replaceAll("\\\\","/"))).replace("//","/")));
 
         assertNotNull(actualList);
         assertEquals(1, actualList.size());
         assertTrue(actualList.contains(repository));
 
-        actualList = from(List.of(("file:/"+(System.getProperty("user.dir").replaceAll("\\\\","/"))).replace("//","/")));
+        actualList = from(List.of(("temp-repo-0::file:/"+(System.getProperty("user.dir").replaceAll("\\\\","/"))).replace("//","/")));
 
         assertNotNull(actualList);
         assertEquals(1, actualList.size());
@@ -119,13 +135,31 @@ public class RepositoryDefinitionTest {
         assertEquals(1, actualList.size());
         assertTrue(actualList.contains(repository));
 
+        actualList = from(List.of(("temp-repo-0::file:///"+(System.getProperty("user.dir").replaceAll("\\\\","/"))).replace("////","///")));
+
+        assertNotNull(actualList);
+        assertEquals(1, actualList.size());
+        assertTrue(actualList.contains(repository));
+
         actualList = from(List.of(System.getProperty("user.dir")));
 
         assertNotNull(actualList);
         assertEquals(1, actualList.size());
         assertTrue(actualList.contains(repository));
 
+        actualList = from(List.of("temp-repo-0::" + System.getProperty("user.dir")));
+
+        assertNotNull(actualList);
+        assertEquals(1, actualList.size());
+        assertTrue(actualList.contains(repository));
+
         actualList = from(List.of(".."+File.separator+"prospero-cli"));
+
+        assertNotNull(actualList);
+        assertEquals(1, actualList.size());
+        assertTrue(actualList.contains(repository));
+
+        actualList = from(List.of("temp-repo-0::.."+File.separator+"prospero-cli"));
 
         assertNotNull(actualList);
         assertEquals(1, actualList.size());
