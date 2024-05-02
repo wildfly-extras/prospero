@@ -20,10 +20,10 @@ package org.wildfly.prospero.it.cli;
 import java.io.File;
 import java.net.URL;
 import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 
+import org.apache.commons.io.FileUtils;
 import org.junit.Before;
 import org.junit.Test;
 import org.wildfly.prospero.cli.ReturnCodes;
@@ -69,14 +69,21 @@ public class InstallTest extends CliTestBase {
 
         final URL temporaryRepo = mockTemporaryRepo(true);
 
-        Path relativePath = Paths.get(System.getProperty("user.dir")).relativize(Path.of(temporaryRepo.toURI()));
+        final Path currentDirectory = Path.of(".").toAbsolutePath().normalize();
+        final Path testRepository = currentDirectory.resolve("test-repository");
+        final Path relativePath = currentDirectory.relativize(testRepository);
+        try {
+            FileUtils.copyDirectory(Path.of(temporaryRepo.toURI()).toFile(), testRepository.toFile());
 
-        ExecutionUtils.prosperoExecution(CliConstants.Commands.UPDATE, CliConstants.Commands.PERFORM,
-                        CliConstants.REPOSITORIES, relativePath.toString(),
-                        CliConstants.Y,
-                        CliConstants.VERBOSE,
-                        CliConstants.DIR, targetDir.getAbsolutePath())
-                .execute()
-                .assertReturnCode(ReturnCodes.SUCCESS);
+            ExecutionUtils.prosperoExecution(CliConstants.Commands.UPDATE, CliConstants.Commands.PERFORM,
+                            CliConstants.REPOSITORIES, relativePath.toString(),
+                            CliConstants.Y,
+                            CliConstants.VERBOSE,
+                            CliConstants.DIR, targetDir.getAbsolutePath())
+                    .execute()
+                    .assertReturnCode(ReturnCodes.SUCCESS);
+        } finally {
+            FileUtils.deleteQuietly(testRepository.toFile());
+        }
     }
 }

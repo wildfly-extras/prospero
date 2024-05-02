@@ -20,11 +20,12 @@ package org.wildfly.prospero.cli;
 import org.jboss.logging.Logger;
 import org.wildfly.channel.Repository;
 
-import java.io.File;
 import java.net.MalformedURLException;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URL;
+import java.nio.file.Files;
+import java.nio.file.InvalidPathException;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
@@ -34,30 +35,48 @@ public class RepositoryDefinition {
     private static final Logger logger = Logger.getLogger(RepositoryDefinition.class.getName());
 
     public static List<Repository> from(List<String> repos) throws ArgumentParsingException {
-        ArrayList<Repository> repositories = new ArrayList<>(repos.size());
+        final ArrayList<Repository> repositories = new ArrayList<>(repos.size());
         for (int i = 0; i < repos.size(); i++) {
-            String repoInfo = repos.get(i);
-            if(repoInfo.contains("::")) {
-                final String[] parts = repoInfo.split("::");
-                if (parts.length != 2 || parts[0].isEmpty() || parts[1].isEmpty() || !isValidUrl(parts[1])) {
-                    throw CliMessages.MESSAGES.invalidRepositoryDefinition(repoInfo);
-                }
-                repositories.add(new Repository(parts[0], parts[1]));
-            } else {
-                if (!(repoInfo.startsWith("http://") || repoInfo.startsWith("https://"))  && !repoInfo.isEmpty()) {
-                    try {
-                        repoInfo = getAbsoluteFileURI(repoInfo).toString();
-                    } catch (URISyntaxException e) {
-                        logger.warn("An error occurred while processing URI");
+            final String repoInfo = repos.get(i);
+            final String repoId;
+            final String repoUri;
+
+            try {
+                if (repoInfo.contains("::")) {
+                    final String[] parts = repoInfo.split("::");
+                    if (parts.length != 2 || parts[0].isEmpty() || parts[1].isEmpty()) {
+                        throw CliMessages.MESSAGES.invalidRepositoryDefinition(repoInfo);
                     }
+                    repoId = parts[0];
+                    repoUri = parseRepositoryLocation(parts[1]);
+                } else {
+                    repoId = "temp-repo-" + i;
+                    repoUri = parseRepositoryLocation(repoInfo);
                 }
-                if (!isValidUrl(repoInfo)){
-                    throw CliMessages.MESSAGES.invalidRepositoryDefinition(repoInfo);
-                }
-                repositories.add(new Repository("temp-repo-" + i, repoInfo));
+                repositories.add(new Repository(repoId, repoUri));
+            } catch (URISyntaxException e) {
+                logger.error("Unable to parse repository uri + " + repoInfo, e);
+                throw CliMessages.MESSAGES.invalidRepositoryDefinition(repoInfo);
             }
+
         }
         return repositories;
+    }
+
+    private static String parseRepositoryLocation(String repoLocation) throws URISyntaxException, ArgumentParsingException {
+        if (!isRemoteUrl(repoLocation) && !repoLocation.isEmpty()) {
+            // the repoLocation contains either a file URI or a path
+            // we need to convert it to a valid file IR
+            repoLocation = getAbsoluteFileURI(repoLocation).toString();
+        }
+        if (!isValidUrl(repoLocation)){
+            throw CliMessages.MESSAGES.invalidRepositoryDefinition(repoLocation);
+        }
+        return repoLocation;
+    }
+
+    private static boolean isRemoteUrl(String repoInfo) {
+        return repoInfo.startsWith("http://") || repoInfo.startsWith("https://");
     }
 
     private static boolean isValidUrl(String text) {
@@ -70,24 +89,33 @@ public class RepositoryDefinition {
     }
 
     public static URI getAbsoluteFileURI(String repoInfo) throws ArgumentParsingException, URISyntaxException {
-        File file = new File(getPath(repoInfo));
-        if (file.exists()) {
-            return file.toURI();
+        final Path repoPath = getPath(repoInfo).toAbsolutePath().normalize();
+        if (Files.exists(repoPath)) {
+            return repoPath.toUri();
         } else {
             throw CliMessages.MESSAGES.invalidFilePath(repoInfo);
         }
     }
 
-    public static String getPath(String repoInfo) throws URISyntaxException {
+    public static Path getPath(String repoInfo) throws URISyntaxException, ArgumentParsingException {
         if (repoInfo.startsWith("file:")) {
-            URI inputUri = new URI(repoInfo);
-            if (inputUri.getScheme().equals("file") &&
-                    !inputUri.getSchemeSpecificPart().startsWith("/")) {
-                return Path.of(inputUri.getSchemeSpecificPart()).toAbsolutePath().normalize().toString();
+            final URI inputUri = new URI(repoInfo);
+            if (containsAbsolutePath(inputUri)) {
+                return Path.of(inputUri);
+            } else {
+                return Path.of(inputUri.getSchemeSpecificPart());
             }
-            return Path.of(inputUri).normalize().toFile().getAbsolutePath();
         } else {
-            return Path.of(repoInfo).toAbsolutePath().normalize().toString();
+            try {
+                return Path.of(repoInfo);
+            } catch (InvalidPathException e) {
+                throw CliMessages.MESSAGES.invalidFilePath(repoInfo);
+            }
         }
+    }
+
+    private static boolean containsAbsolutePath(URI inputUri) {
+        // absolute paths in URI (even on Windows) has to start with slash. If not we treat it as a relative path
+        return inputUri.getSchemeSpecificPart().startsWith("/");
     }
 }

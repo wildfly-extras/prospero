@@ -238,7 +238,7 @@ public class InstallCommandTest extends AbstractMavenCommandTest {
         Path channelsFile = temporaryFolder.newFile().toPath();
 
         File installDir = temporaryFolder.newFolder();
-        String testURL = installDir.toURI().toString();
+        String testURL = installDir.toPath().toUri().toString();
 
         MetadataTestUtils.prepareChannel(channelsFile, List.of(new URL("file:some-manifest.yaml")));
 
@@ -260,7 +260,7 @@ public class InstallCommandTest extends AbstractMavenCommandTest {
         Path channelsFile = temporaryFolder.newFile().toPath();
 
         File installDir = temporaryFolder.newFolder();
-        String testURL = installDir.toURI().toString();
+        String testURL = installDir.toPath().toUri().toString();
 
         MetadataTestUtils.prepareChannel(channelsFile, List.of(new URL("file:some-manifest.yaml")));
 

@@ -414,8 +414,8 @@ public interface CliMessages {
         return new ArgumentParsingException(format(bundle.getString("prospero.general.validation.repo_format"), repoKey));
     }
 
-    default ArgumentParsingException invalidFilePath(String repoKey) {
-        return new ArgumentParsingException(format(bundle.getString("prospero.general.validation.file_path.not_exists"), repoKey));
+    default ArgumentParsingException invalidFilePath(String invalidPath) {
+        return new ArgumentParsingException(format(bundle.getString("prospero.general.validation.file_path.not_exists"), invalidPath));
     }
 
     default IllegalArgumentException updateCandidateStateNotMatched(Path targetDir, Path updateDir) {
