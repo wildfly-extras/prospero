@@ -25,6 +25,7 @@ import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URL;
 import java.nio.file.Files;
+import java.nio.file.InvalidPathException;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
@@ -40,35 +41,38 @@ public class RepositoryDefinition {
             final String repoId;
             final String repoUri;
 
-            if(repoInfo.contains("::")) {
-                final String[] parts = repoInfo.split("::");
-                if (parts.length != 2 || parts[0].isEmpty() || parts[1].isEmpty()) {
-                    throw CliMessages.MESSAGES.invalidRepositoryDefinition(repoInfo);
+            try {
+                if (repoInfo.contains("::")) {
+                    final String[] parts = repoInfo.split("::");
+                    if (parts.length != 2 || parts[0].isEmpty() || parts[1].isEmpty()) {
+                        throw CliMessages.MESSAGES.invalidRepositoryDefinition(repoInfo);
+                    }
+                    repoId = parts[0];
+                    repoUri = parseRepositoryLocation(parts[1]);
+                } else {
+                    repoId = "temp-repo-" + i;
+                    repoUri = parseRepositoryLocation(repoInfo);
                 }
-                repoId = parts[0];
-                repoUri = parseRepositoryUri(parts[1]);
-            } else {
-                repoId = "temp-repo-" + i;
-                repoUri = parseRepositoryUri(repoInfo);
+                repositories.add(new Repository(repoId, repoUri));
+            } catch (URISyntaxException e) {
+                logger.error("Unable to parse repository uri + " + repoInfo, e);
+                throw CliMessages.MESSAGES.invalidRepositoryDefinition(repoInfo);
             }
 
-            repositories.add(new Repository(repoId, repoUri));
         }
         return repositories;
     }
 
-    private static String parseRepositoryUri(String repoInfo) throws ArgumentParsingException {
-        if (!isRemoteUrl(repoInfo) && !repoInfo.isEmpty()) {
-            try {
-                repoInfo = getAbsoluteFileURI(repoInfo).toString();
-            } catch (URISyntaxException e) {
-                logger.warn("An error occurred while processing URI", e);
-            }
+    private static String parseRepositoryLocation(String repoLocation) throws URISyntaxException, ArgumentParsingException {
+        if (!isRemoteUrl(repoLocation) && !repoLocation.isEmpty()) {
+            // the repoLocation contains either a file URI or a path
+            // we need to convert it to a valid file IR
+            repoLocation = getAbsoluteFileURI(repoLocation).toString();
         }
-        if (!isValidUrl(repoInfo)){
-            throw CliMessages.MESSAGES.invalidRepositoryDefinition(repoInfo);
+        if (!isValidUrl(repoLocation)){
+            throw CliMessages.MESSAGES.invalidRepositoryDefinition(repoLocation);
         }
-        return repoInfo;
+        return repoLocation;
     }
 
     private static boolean isRemoteUrl(String repoInfo) {
@@ -85,7 +89,7 @@ public class RepositoryDefinition {
     }
 
     public static URI getAbsoluteFileURI(String repoInfo) throws ArgumentParsingException, URISyntaxException {
-        Path repoPath = getPath(repoInfo);
+        final Path repoPath = getPath(repoInfo).toAbsolutePath().normalize();
         if (Files.exists(repoPath)) {
             return repoPath.toUri();
         } else {
@@ -93,13 +97,25 @@ public class RepositoryDefinition {
         }
     }
 
-    public static Path getPath(String repoInfo) throws URISyntaxException {
+    public static Path getPath(String repoInfo) throws URISyntaxException, ArgumentParsingException {
         if (repoInfo.startsWith("file:")) {
             final URI inputUri = new URI(repoInfo);
-            final String uriPath = inputUri.getSchemeSpecificPart();
-            return Path.of(uriPath).toAbsolutePath().normalize();
+            if (containsAbsolutePath(inputUri)) {
+                return Path.of(inputUri);
+            } else {
+                return Path.of(inputUri.getSchemeSpecificPart());
+            }
         } else {
-            return Path.of(repoInfo).toAbsolutePath().normalize();
+            try {
+                return Path.of(repoInfo);
+            } catch (InvalidPathException e) {
+                throw CliMessages.MESSAGES.invalidFilePath(repoInfo);
+            }
         }
+    }
+
+    private static boolean containsAbsolutePath(URI inputUri) {
+        // absolute paths in URI (even on Windows) has to start with slash. If not we treat it as a relative path
+        return inputUri.getSchemeSpecificPart().startsWith("/");
     }
 }
