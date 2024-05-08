@@ -65,19 +65,18 @@ public class GalleonFeaturePackAnalyzer {
         final Path tempInstallationPath = Files.createTempDirectory("temp");
         final Set<String> fps = new HashSet<>();
 
-        GalleonEnvironment galleonEnv = null;
-        try {
-            galleonEnv = galleonEnvWithFpMapper(tempInstallationPath, installedDir, fps, provisioningConfig);
-            final Provisioning pm = galleonEnv.getProvisioning();
-            final Set<String> pluginGavs = pm.getOrderedFeaturePackPluginLocations(provisioningConfig);
+        try (GalleonEnvironment galleonEnv = galleonEnvWithFpMapper(tempInstallationPath, installedDir, fps, provisioningConfig)) {
             final ArtifactCache artifactCache = ArtifactCache.getInstance(installedDir);
-            for (String pluginGav : pluginGavs) {
-                final String[] pluginLoc = pluginGav.split(":");
-                final MavenArtifact jar = galleonEnv.getChannelSession().resolveMavenArtifact(pluginLoc[0], pluginLoc[1], "jar", null, null);
-                artifactCache.cache(jar);
+            try (Provisioning pm = galleonEnv.getProvisioning()) {
+                final Set<String> pluginGavs = pm.getOrderedFeaturePackPluginLocations(provisioningConfig);
+                for (String pluginGav : pluginGavs) {
+                    final String[] pluginLoc = pluginGav.split(":");
+                    final MavenArtifact jar = galleonEnv.getChannelSession().resolveMavenArtifact(pluginLoc[0], pluginLoc[1], "jar", null, null);
+                    artifactCache.cache(jar);
+                }
             }
 
-            for (String fp : fps) {
+            for (String fp : getFeaturePacks(installedDir, provisioningConfig)) {
                 // resolve the artifact
                 final String[] fpLoc = fp.split(":");
                 final MavenArtifact mavenArtifact = galleonEnv.getChannelSession().resolveMavenArtifact(fpLoc[0], fpLoc[1], "zip", null, null);
@@ -97,9 +96,6 @@ public class GalleonFeaturePackAnalyzer {
 
             updateHashes(installedDir);
         } finally {
-            if (galleonEnv != null) {
-                galleonEnv.close();
-            }
             FileUtils.deleteQuietly(tempInstallationPath.toFile());
         }
     }
@@ -120,17 +116,20 @@ public class GalleonFeaturePackAnalyzer {
     /**
      * lists maven coordinates (groupId:artifactId) of FeaturePacks included in the {@code provisioningConfig}. Includes transitive dependencies.
      *
+     * @param installedDir - path to the installation. Used to access the cache
      * @param provisioningConfig - provisioning config to analyze
      * @return
      * @throws IOException
      * @throws ProvisioningException
      * @throws OperationException
      */
-    public Set<String> getFeaturePacks(GalleonProvisioningConfig provisioningConfig) throws IOException, ProvisioningException, OperationException {
+    public Set<String> getFeaturePacks(Path installedDir, GalleonProvisioningConfig provisioningConfig) throws IOException, ProvisioningException, OperationException {
         // no data will be actually written out, but we need a path to init the Galleon
         final Path tempInstallationPath = Files.createTempDirectory("temp");
         final Set<String> fps = new HashSet<>();
-        try (GalleonEnvironment galleonEnv = galleonEnvWithFpMapper(tempInstallationPath, tempInstallationPath, fps, provisioningConfig)) {
+        try (GalleonEnvironment galleonEnv = galleonEnvWithFpMapper(tempInstallationPath, installedDir, fps, provisioningConfig);
+             Provisioning provisioning = galleonEnv.getProvisioning()) {
+            provisioning.getProvisioningRuntime(provisioningConfig).close();
             return fps;
         } finally {
             FileUtils.deleteQuietly(tempInstallationPath.toFile());
@@ -142,8 +141,8 @@ public class GalleonFeaturePackAnalyzer {
                 .builder(tempInstallationPath, channels, mavenSessionManager, false)
                 .setConsole(null)
                 .setSourceServerPath(sourcePath)
-                .setResolvedFpTracker(fps::add)
                 .setProvisioningConfig(provisioningConfig)
+                .setResolvedFpTracker(fps::add)
                 .build();
         return galleonEnv;
     }
