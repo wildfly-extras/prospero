@@ -687,4 +687,16 @@ public interface CliMessages {
         return bundle.getString("prospero.install.list.profile");
     }
 
+    default ArgumentParsingException invalidArgument() {
+        return new ArgumentParsingException(format(bundle.getString("prospero.channels.error.arguments.incorrect")));
+    }
+    default RuntimeException sizeOfChannel() {
+        return new RuntimeException(bundle.getString("prospero.channels.error.morethanonechannel.found"));
+    }
+    default ArgumentParsingException fileNotExists(String errorMessage){
+        return new ArgumentParsingException(errorMessage+" "+bundle.getString("prosper.file.not.present"));
+    }
+    default ArgumentParsingException invalidManifest(String errorMessage){
+        return new ArgumentParsingException(errorMessage);
+    }
 }

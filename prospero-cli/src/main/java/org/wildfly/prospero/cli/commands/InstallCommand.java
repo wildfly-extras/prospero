@@ -47,12 +47,13 @@ import org.wildfly.prospero.api.ProvisioningDefinition;
 import org.wildfly.prospero.api.RepositoryUtils;
 import org.wildfly.prospero.api.TemporaryRepositoriesHandler;
 import org.wildfly.prospero.cli.ActionFactory;
-import org.wildfly.prospero.cli.ArgumentParsingException;
 import org.wildfly.prospero.cli.CliConsole;
 import org.wildfly.prospero.cli.CliMessages;
 import org.wildfly.prospero.cli.LicensePrinter;
-import org.wildfly.prospero.cli.RepositoryDefinition;
 import org.wildfly.prospero.cli.ReturnCodes;
+import org.wildfly.prospero.cli.ChannelUtils;
+import org.wildfly.prospero.cli.RepositoryDefinition;
+import org.wildfly.prospero.cli.ArgumentParsingException;
 import org.wildfly.prospero.api.TemporaryFilesManager;
 import org.wildfly.prospero.cli.commands.options.InstallationProfilesCandidates;
 import org.wildfly.prospero.cli.printers.ChannelPrinter;
@@ -198,7 +199,7 @@ public class InstallCommand extends AbstractInstallCommand {
                 .build();
         final MavenOptions mavenOptions = getMavenOptions();
         final GalleonProvisioningConfig provisioningConfig = provisioningDefinition.toProvisioningConfig();
-        final List<Channel> channels = resolveChannels(provisioningDefinition, mavenOptions);
+        final List<Channel> channels = ChannelUtils.resolveChannels(provisioningDefinition, mavenOptions);
         try (TemporaryFilesManager temporaryFiles = TemporaryFilesManager.getInstance()) {
             List<Repository> repositories = RepositoryDefinition.from(this.shadowRepositories);
             final List<Repository> shadowRepositories = RepositoryUtils.unzipArchives(repositories, temporaryFiles);

@@ -27,6 +27,8 @@ import org.wildfly.prospero.cli.CliConsole;
 import org.wildfly.prospero.cli.CliMessages;
 import org.wildfly.prospero.cli.LicensePrinter;
 import org.wildfly.prospero.cli.ReturnCodes;
+import org.wildfly.prospero.cli.ChannelUtils;
+
 import org.wildfly.prospero.licenses.License;
 import picocli.CommandLine;
 
@@ -53,7 +55,7 @@ public class PrintLicensesCommand extends AbstractInstallCommand {
             final ProvisioningDefinition provisioningDefinition = buildDefinition().build();
             final MavenOptions mavenOptions = getMavenOptions();
             final GalleonProvisioningConfig provisioningConfig = provisioningDefinition.toProvisioningConfig();
-            final List<Channel> channels = resolveChannels(provisioningDefinition, mavenOptions);
+            final List<Channel> channels = ChannelUtils.resolveChannels(provisioningDefinition, mavenOptions);
 
             final ProvisioningAction provisioningAction = actionFactory.install(tempDirectory.toAbsolutePath(),
                     mavenOptions, console);
