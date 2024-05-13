@@ -61,7 +61,7 @@ public class MavenSessionManager {
                 throw ProsperoLogger.ROOT_LOGGER.unableToCreateCache(e);
             }
         } else if (!mavenOptions.overridesLocalCache()) {
-            this.provisioningRepo = MavenSessionManager.LOCAL_MAVEN_REPO;
+            this.provisioningRepo = LOCAL_MAVEN_REPO;
         } else {
             this.provisioningRepo = mavenOptions.getLocalCache().toAbsolutePath();
         }

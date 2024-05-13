@@ -201,7 +201,7 @@ public class InstallationMetadata implements AutoCloseable {
             }
         }
 
-        return InstallationMetadata.loadInstallation(tempDirectory);
+        return loadInstallation(tempDirectory);
     }
 
     protected InstallationMetadata(Path base, ChannelManifest manifest, ProsperoConfig prosperoConfig,
@@ -212,7 +212,7 @@ public class InstallationMetadata implements AutoCloseable {
         this.manifestFile = ProsperoMetadataUtils.manifestPath(base);
         this.channelsFile = ProsperoMetadataUtils.configurationPath(base);
         this.readmeFile = base.resolve(ProsperoMetadataUtils.METADATA_DIR).resolve(ProsperoMetadataUtils.README_FILE_NAME);
-        this.provisioningFile = base.resolve(GALLEON_INSTALLATION_DIR).resolve(InstallationMetadata.PROVISIONING_FILE_NAME);
+        this.provisioningFile = base.resolve(GALLEON_INSTALLATION_DIR).resolve(PROVISIONING_FILE_NAME);
         this.provisioningConfig = provisioningConfig;
 
         this.manifest = manifest;
@@ -357,7 +357,7 @@ public class InstallationMetadata implements AutoCloseable {
             revert = gitStorage.revert(savedState);
 
             // re-parse metadata
-            return InstallationMetadata.loadInstallation(revert);
+            return loadInstallation(revert);
         } finally {
             gitStorage.reset();
             if (revert != null && Files.exists(revert)) {

@@ -73,14 +73,14 @@ public class GalleonUtils {
             substitutedProperties.putAll(substituteProvisioningProperties(localRepository));
 
             final Map<String, String> options = new HashMap<>();
-            options.put(GalleonUtils.JBOSS_FORK_EMBEDDED_PROPERTY, GalleonUtils.JBOSS_FORK_EMBEDDED_VALUE);
-            options.put(GalleonUtils.JBOSS_BULK_RESOLVE_PROPERTY, GalleonUtils.JBOSS_BULK_RESOLVE_VALUE);
-            options.put(GalleonUtils.PRINT_ONLY_CONFLICTS_PROPERTY, GalleonUtils.PRINT_ONLY_CONFLICTS_VALUE);
-            options.put(GalleonUtils.STORE_INPUT_PROVISIONING_CONFIG_PROPERTY, GalleonUtils.STORE_INPUT_PROVISIONING_CONFIG_VALUE);
-            options.put(GalleonUtils.STORE_PROVISIONED_ARTIFACTS, GalleonUtils.STORE_PROVISIONED_ARTIFACTS_VALUE);
+            options.put(JBOSS_FORK_EMBEDDED_PROPERTY, JBOSS_FORK_EMBEDDED_VALUE);
+            options.put(JBOSS_BULK_RESOLVE_PROPERTY, JBOSS_BULK_RESOLVE_VALUE);
+            options.put(PRINT_ONLY_CONFLICTS_PROPERTY, PRINT_ONLY_CONFLICTS_VALUE);
+            options.put(STORE_INPUT_PROVISIONING_CONFIG_PROPERTY, STORE_INPUT_PROVISIONING_CONFIG_VALUE);
+            options.put(STORE_PROVISIONED_ARTIFACTS, STORE_PROVISIONED_ARTIFACTS_VALUE);
             String resetSysProp = System.getProperty(OPTION_RESET_EMBEDDED_SYSTEM_PROPERTIES, "");
             if (!resetSysProp.equals("-")) {
-                options.put(GalleonUtils.OPTION_RESET_EMBEDDED_SYSTEM_PROPERTIES, resetSysProp);
+                options.put(OPTION_RESET_EMBEDDED_SYSTEM_PROPERTIES, resetSysProp);
             }
             if (logger.isTraceEnabled()) {
                 logger.trace("Executing galleon");
@@ -234,7 +234,7 @@ public class GalleonUtils {
     public static GalleonProvisioningConfig loadProvisioningConfig(URI uri) throws ProvisioningException, XMLStreamException {
         if (CLASSPATH_SCHEME.equals(uri.getScheme())) {
             InputStream is = GalleonUtils.class.getClassLoader().getResourceAsStream(uri.getSchemeSpecificPart());
-            return GalleonUtils.loadProvisioningConfig(is);
+            return loadProvisioningConfig(is);
         } else if (FILE_SCHEME.equals(uri.getScheme())) {
             try (Provisioning p = new GalleonBuilder().newProvisioningBuilder().build()) {
                 return p.loadProvisioningConfig(Path.of(uri));
