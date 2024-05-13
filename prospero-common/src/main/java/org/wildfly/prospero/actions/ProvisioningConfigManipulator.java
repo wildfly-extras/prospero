@@ -64,7 +64,7 @@ class ProvisioningConfigManipulator {
 
         // replace it with a transitive config
         final FeaturePackConfig.Builder newFpBuilder = FeaturePackConfig.transitiveBuilder(oldConfig.getLocation());
-        ProvisioningConfigManipulator.copyFeaturePackConfig(newFpBuilder, oldConfig);
+        copyFeaturePackConfig(newFpBuilder, oldConfig);
         configBuilder.addFeaturePackDep(newFpBuilder.build());
 
         return fpIndex;

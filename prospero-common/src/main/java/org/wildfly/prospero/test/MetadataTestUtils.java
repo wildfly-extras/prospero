@@ -96,7 +96,7 @@ public final class MetadataTestUtils {
             builder.addRepository("test-" + i, repositories.get(i));
         }
 
-        MetadataTestUtils.writeChannels(metadataDir.resolve(ProsperoMetadataUtils.INSTALLER_CHANNELS_FILE_NAME),
+        writeChannels(metadataDir.resolve(ProsperoMetadataUtils.INSTALLER_CHANNELS_FILE_NAME),
                 List.of(builder.build()));
     }
 

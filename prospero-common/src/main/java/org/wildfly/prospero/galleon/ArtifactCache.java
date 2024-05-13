@@ -238,14 +238,14 @@ public class ArtifactCache {
     }
 
     private void init() throws IOException {
-        Path artifactLog = cacheDir.resolve(ArtifactCache.CACHE_FILENAME);
+        Path artifactLog = cacheDir.resolve(CACHE_FILENAME);
 
         if (Files.exists(artifactLog)) {
             int row = 0;
             final List<String> lines = Files.readAllLines(artifactLog);
             try {
                 for ( ; row < lines.size(); row++) {
-                    final String[] splitLine = lines.get(row).split(ArtifactCache.CACHE_LINE_SEPARATOR);
+                    final String[] splitLine = lines.get(row).split(CACHE_LINE_SEPARATOR);
                     if (splitLine.length < 3) {
                         throw new IOException("Not enough segments, expected format is <GAV>::<hash>::<path>");
                     }
