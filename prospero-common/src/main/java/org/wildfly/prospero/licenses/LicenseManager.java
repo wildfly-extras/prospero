@@ -163,8 +163,8 @@ public class LicenseManager {
     }
 
     public void copyIfExists(Path sourceServer, Path targetServer) throws IOException {
-        final Path sourceLicenses = sourceServer.resolve(ProsperoMetadataUtils.METADATA_DIR).resolve(LicenseManager.LICENSES_FOLDER).resolve(LicenseManager.LICENSE_AGREEMENT_FILENAME);
-        final Path targetLicenses = targetServer.resolve(ProsperoMetadataUtils.METADATA_DIR).resolve(LicenseManager.LICENSES_FOLDER).resolve(LicenseManager.LICENSE_AGREEMENT_FILENAME);
+        final Path sourceLicenses = sourceServer.resolve(ProsperoMetadataUtils.METADATA_DIR).resolve(LICENSES_FOLDER).resolve(LICENSE_AGREEMENT_FILENAME);
+        final Path targetLicenses = targetServer.resolve(ProsperoMetadataUtils.METADATA_DIR).resolve(LICENSES_FOLDER).resolve(LICENSE_AGREEMENT_FILENAME);
         if (!Files.exists(sourceLicenses)) {
             return;
         }

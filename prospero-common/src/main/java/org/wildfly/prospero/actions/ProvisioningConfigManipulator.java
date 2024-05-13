@@ -64,7 +64,7 @@ class ProvisioningConfigManipulator {
 
         // replace it with a transitive config
         final GalleonFeaturePackConfig.Builder newFpBuilder = GalleonFeaturePackConfig.transitiveBuilder(oldConfig.getLocation());
-        ProvisioningConfigManipulator.copyFeaturePackConfig(oldConfig, newFpBuilder);
+        copyFeaturePackConfig(oldConfig, newFpBuilder);
         configBuilder.addFeaturePackDep(newFpBuilder.build());
 
         return fpIndex;

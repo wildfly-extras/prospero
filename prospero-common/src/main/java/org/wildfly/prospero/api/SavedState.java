@@ -36,7 +36,7 @@ public class SavedState {
         UNKNOWN;
 
         public static Type fromText(String text) {
-            for (Type value : Type.values()) {
+            for (Type value : values()) {
                 if (value.name().equals(text)) {
                     return value;
                 }
