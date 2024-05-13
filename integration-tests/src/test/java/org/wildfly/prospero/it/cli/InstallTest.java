@@ -18,29 +18,29 @@
 package org.wildfly.prospero.it.cli;
 
 import java.io.File;
-import java.io.IOException;
+import java.net.URL;
 import java.nio.file.Path;
+import java.util.List;
 import java.util.concurrent.TimeUnit;
 
+import org.apache.commons.io.FileUtils;
 import org.junit.Before;
-import org.junit.Rule;
 import org.junit.Test;
-import org.junit.rules.TemporaryFolder;
 import org.wildfly.prospero.cli.ReturnCodes;
 import org.wildfly.prospero.cli.commands.CliConstants;
 import org.wildfly.prospero.it.ExecutionUtils;
 import org.wildfly.prospero.test.MetadataTestUtils;
 
-public class InstallTest {
+import static org.wildfly.prospero.test.MetadataTestUtils.upgradeStreamInManifest;
 
-    @Rule
-    public TemporaryFolder tempDir = new TemporaryFolder();
+public class InstallTest extends CliTestBase {
 
     private File targetDir;
 
     @Before
-    public void setUp() throws IOException {
-        targetDir = tempDir.newFolder();
+    public void setUp() throws Exception {
+        super.setUp();
+        targetDir = temp.newFolder();
     }
 
     @Test
@@ -54,5 +54,36 @@ public class InstallTest {
                 .withTimeLimit(10, TimeUnit.MINUTES)
                 .execute()
                 .assertReturnCode(ReturnCodes.SUCCESS);
+    }
+
+    @Test
+    public void testInstallWithLocalRepositories() throws Exception {
+        final Path manifestPath = temp.newFile().toPath();
+        final Path provisionConfig = temp.newFile().toPath();
+        MetadataTestUtils.copyManifest("manifests/wfcore-base.yaml", manifestPath);
+        MetadataTestUtils.prepareChannel(provisionConfig, List.of(manifestPath.toUri().toURL()));
+
+        install(provisionConfig, targetDir.toPath());
+
+        upgradeStreamInManifest(manifestPath, resolvedUpgradeArtifact);
+
+        final URL temporaryRepo = mockTemporaryRepo(true);
+
+        final Path currentDirectory = Path.of(".").toAbsolutePath().normalize();
+        final Path testRepository = currentDirectory.resolve("test-repository");
+        final Path relativePath = currentDirectory.relativize(testRepository);
+        try {
+            FileUtils.copyDirectory(Path.of(temporaryRepo.toURI()).toFile(), testRepository.toFile());
+
+            ExecutionUtils.prosperoExecution(CliConstants.Commands.UPDATE, CliConstants.Commands.PERFORM,
+                            CliConstants.REPOSITORIES, relativePath.toString(),
+                            CliConstants.Y,
+                            CliConstants.VERBOSE,
+                            CliConstants.DIR, targetDir.getAbsolutePath())
+                    .execute()
+                    .assertReturnCode(ReturnCodes.SUCCESS);
+        } finally {
+            FileUtils.deleteQuietly(testRepository.toFile());
+        }
     }
 }

@@ -25,7 +25,6 @@ import org.wildfly.channel.maven.VersionResolverFactory;
 import org.wildfly.prospero.api.MavenOptions;
 import org.wildfly.prospero.api.ProvisioningDefinition;
 import org.wildfly.prospero.api.exceptions.ChannelDefinitionException;
-import org.wildfly.prospero.api.exceptions.MetadataException;
 import org.wildfly.prospero.api.exceptions.NoChannelException;
 import org.wildfly.prospero.cli.ActionFactory;
 import org.wildfly.prospero.cli.ArgumentParsingException;
@@ -100,7 +99,7 @@ public abstract class AbstractInstallCommand extends AbstractCommand {
         return mavenOptions.build();
     }
 
-    protected ProvisioningDefinition.Builder buildDefinition() throws MetadataException, NoChannelException, ArgumentParsingException {
+    protected ProvisioningDefinition.Builder buildDefinition() throws ArgumentParsingException {
         return ProvisioningDefinition.builder()
                 .setFpl(featurePackOrDefinition.fpl.orElse(null))
                 .setProfile(featurePackOrDefinition.profile.orElse(null))
