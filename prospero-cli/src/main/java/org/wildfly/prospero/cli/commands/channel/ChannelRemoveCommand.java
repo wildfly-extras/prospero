@@ -33,7 +33,9 @@ import java.util.Optional;
 @CommandLine.Command(name = CliConstants.Commands.REMOVE)
 public class ChannelRemoveCommand extends AbstractCommand {
 
-    @CommandLine.Option(names=CliConstants.CHANNEL_NAME)
+    @CommandLine.Option(
+            names=CliConstants.CHANNEL_NAME,
+            required = true)
     String channelName;
 
     @CommandLine.Option(names = CliConstants.DIR)

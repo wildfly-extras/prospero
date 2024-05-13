@@ -271,6 +271,13 @@ public class ChannelCommandTest extends AbstractConsoleTest {
         Assert.assertEquals(ReturnCodes.INVALID_ARGUMENTS, exitCode);
     }
 
+    @Test
+    public void testRemoveEmptyChannel() {
+        int exitCode = commandLine.execute(CliConstants.Commands.CHANNEL, CliConstants.Commands.REMOVE,
+                CliConstants.DIR, dir.toString());
+        Assert.assertEquals(ReturnCodes.INVALID_ARGUMENTS, exitCode);
+    }
+
     private static Channel createChannel(String name, ChannelManifestCoordinate coord) throws MalformedURLException {
         return new Channel(name, "", null,
                 List.of(new Repository("test", "http://test.org")),
