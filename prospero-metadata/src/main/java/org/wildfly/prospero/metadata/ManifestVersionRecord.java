@@ -227,7 +227,7 @@ public class ManifestVersionRecord {
 
     public static Optional<ManifestVersionRecord> read(Path versionsFile) throws IOException {
         if (Files.exists(versionsFile)) {
-            return Optional.of(ManifestVersionRecord.fromYaml(Files.readString(versionsFile)));
+            return Optional.of(fromYaml(Files.readString(versionsFile)));
         } else {
             return Optional.empty();
         }
