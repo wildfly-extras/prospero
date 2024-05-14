@@ -30,6 +30,9 @@
         <prospero.test.base.channel.groupId>org.wildfly.channels</prospero.test.base.channel.groupId>
         <prospero.test.base.channel.artifactId>wildfly-28-test</prospero.test.base.channel.artifactId>
         <prospero.test.base.repositories>https://repo1.maven.org/maven2/,https://repository.jboss.org/nexus/content/groups/public/</prospero.test.base.repositories>
+        <prospero.test.datasources-feature-pack.groupId>org.wildfly</prospero.test.datasources-feature-pack.groupId>
+        <prospero.test.datasources-feature-pack.artifactId>wildfly-datasources-galleon-pack</prospero.test.datasources-feature-pack.artifactId>
+        <prospero.test.server.profile>wildfly</prospero.test.server.profile>
         <prospero.repo.id>central</prospero.repo.id>
         <prospero.repo.url>https://repo1.maven.org/maven2/</prospero.repo.url>
         <prospero.channel.resolution.mode>NOT_REQUIRED</prospero.channel.resolution.mode>
