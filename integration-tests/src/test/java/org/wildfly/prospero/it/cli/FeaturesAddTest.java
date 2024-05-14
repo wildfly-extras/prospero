@@ -22,6 +22,7 @@ import org.jboss.galleon.config.FeaturePackConfig;
 import org.jboss.galleon.config.ProvisioningConfig;
 import org.jboss.galleon.universe.FeaturePackLocation;
 import org.jboss.galleon.xml.ProvisioningXmlParser;
+import org.junit.Assume;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
@@ -41,37 +42,45 @@ import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.ArrayList;
 import java.util.List;
+import java.util.Properties;
 import java.util.concurrent.TimeUnit;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
 public class FeaturesAddTest {
-
-    protected static final String DATASOURCE_GALLEON_FPL = "org.wildfly:wildfly-datasources-galleon-pack";
     protected static final String DATASOURCES_FP_VERSION = "4.0.0.Final";
-    protected static final String MYSQL_CONNECTOR_VERSION = "8.0.32";
-    protected static final Path MODULE_PATH = Path.of("modules", "com", "mysql", "jdbc");
     @Rule
     public TemporaryFolder tempDir = new TemporaryFolder();
 
     private File targetDir;
+    private String profileName;
+    private String datasourceGalleonFp;
+    private static final String DS_GROUP_ID = "org.postgresql";
+    private static final String DS_ARTIFACT_ID = "postgresql";
+    protected static final String DS_VERSION = "42.7.3";
+    protected static final Path MODULE_PATH = Path.of("modules", DS_GROUP_ID.replace('.', '/'), "jdbc");
+
 
     @Before
     public void setUp() throws IOException {
         targetDir = tempDir.newFolder("wildfly");
+
+        final Properties properties = new Properties();
+        properties.load(this.getClass().getClassLoader().getResourceAsStream("properties-from-pom.properties"));
+        datasourceGalleonFp = String.format("%s:%s",
+                properties.getProperty("prospero.test.datasources-feature-pack.groupId"),
+                properties.getProperty("prospero.test.datasources-feature-pack.artifactId"));
+
+        profileName = properties.getProperty("prospero.test.server.profile");
     }
 
     @Test
     public void addFeaturePack() throws Exception {
         installWildfly();
 
-        final ChannelManifest manifest = new ChannelManifest(null, null, null, List.of(
-                new Stream("org.wildfly", "wildfly-datasources-galleon-pack", DATASOURCES_FP_VERSION),
-                new Stream("com.mysql", "mysql-connector-j", MYSQL_CONNECTOR_VERSION))
-        );
-        final Path manifestPath = tempDir.newFile("datasources-manifest.yaml").toPath();
-        Files.writeString(manifestPath, ChannelManifestMapper.toYaml(manifest));
+        final Path manifestPath = generateDatasourcesManifest();
 
         System.out.println("Adding datasources channel");
         ExecutionUtils.prosperoExecution(CliConstants.Commands.CHANNEL, CliConstants.Commands.ADD,
@@ -86,8 +95,9 @@ public class FeaturesAddTest {
         // install the datasource FP
         System.out.println("Installing datasources feature pack");
         ExecutionUtils.prosperoExecution(CliConstants.Commands.FEATURE_PACKS, CliConstants.Commands.ADD,
-                        CliConstants.FPL, DATASOURCE_GALLEON_FPL,
-                        CliConstants.LAYERS, "datasources-web-server,mysql-datasource",
+                        CliConstants.FPL, datasourceGalleonFp,
+                        CliConstants.LAYERS, "datasources-web-server,postgresql-datasource",
+                        CliConstants.ACCEPT_AGREEMENTS,
                         CliConstants.YES,
                         CliConstants.DIR, targetDir.getAbsolutePath())
                 .withTimeLimit(10, TimeUnit.MINUTES)
@@ -99,7 +109,7 @@ public class FeaturesAddTest {
                 .exists()
                 .isDirectory();
 
-        assertThat(targetDir.toPath().resolve(MODULE_PATH).resolve("main").resolve("mysql-connector-j-8.0.32.jar"))
+        assertThat(targetDir.toPath().resolve(MODULE_PATH).resolve("main").resolve(String.format("%s-%s.jar", DS_ARTIFACT_ID, DS_VERSION)))
                 .exists()
                 .isNotEmptyFile();
 
@@ -139,17 +149,19 @@ public class FeaturesAddTest {
         // install the datasource FP
         System.out.println("Installing datasources feature pack");
         ExecutionUtils.prosperoExecution(CliConstants.Commands.FEATURE_PACKS, CliConstants.Commands.ADD,
-                        CliConstants.FPL, DATASOURCE_GALLEON_FPL,
+                        CliConstants.FPL, datasourceGalleonFp,
                         CliConstants.YES,
+                        CliConstants.ACCEPT_AGREEMENTS,
                         CliConstants.DIR, targetDir.getAbsolutePath())
                 .withTimeLimit(10, TimeUnit.MINUTES)
                 .execute()
                 .assertReturnCode(ReturnCodes.INVALID_ARGUMENTS)
-                .assertErrorContains(CliMessages.MESSAGES.featurePackRequiresLayers(DATASOURCE_GALLEON_FPL));
+                .assertErrorContains(CliMessages.MESSAGES.featurePackRequiresLayers(datasourceGalleonFp));
     }
 
     @Test
     public void installWildflyGalleonPackOverWildflyEEGalleonPack_ReplacesWildflyGalleonPack() throws Exception {
+        Assume.assumeTrue(profileName.equals("wildfly"));
         System.out.println("Installing wildfly EE");
         final Path channelsFile = MetadataTestUtils.prepareChannel("manifests/wildfly-28.0.0.Final-manifest.yaml");
         ExecutionUtils.prosperoExecution(CliConstants.Commands.INSTALL,
@@ -198,10 +210,16 @@ public class FeaturesAddTest {
     private void installWildfly() throws Exception {
         System.out.println("Installing wildfly");
         final Path channelsFile = MetadataTestUtils.prepareChannel("manifests/wildfly-28.0.0.Final-manifest.yaml");
-        ExecutionUtils.prosperoExecution(CliConstants.Commands.INSTALL,
-                        CliConstants.CHANNELS, channelsFile.toString(),
-                        CliConstants.PROFILE, "wildfly",
-                        CliConstants.DIR, targetDir.getAbsolutePath())
+        final List<String> args = new ArrayList<>(List.of(
+                CliConstants.Commands.INSTALL,
+                CliConstants.PROFILE, profileName,
+                CliConstants.DIR, targetDir.getAbsolutePath()));
+
+        if (profileName.equals("wildfly")) {
+            args.add(CliConstants.CHANNELS);
+            args.add(channelsFile.toString());
+        }
+        ExecutionUtils.prosperoExecution(args.toArray(new String[]{}))
                 .withTimeLimit(10, TimeUnit.MINUTES)
                 .execute()
                 .assertReturnCode(ReturnCodes.SUCCESS);
@@ -213,7 +231,7 @@ public class FeaturesAddTest {
     private Path generateDatasourcesManifest() throws IOException {
         final ChannelManifest manifest = new ChannelManifest(null, null, null, List.of(
                 new Stream("org.wildfly", "wildfly-datasources-galleon-pack", DATASOURCES_FP_VERSION),
-                new Stream("com.mysql", "mysql-connector-j", MYSQL_CONNECTOR_VERSION))
+                new Stream(DS_GROUP_ID, DS_ARTIFACT_ID, DS_VERSION))
         );
         final Path manifestPath = tempDir.newFile("datasources-manifest.yaml").toPath();
         Files.writeString(manifestPath, ChannelManifestMapper.toYaml(manifest));

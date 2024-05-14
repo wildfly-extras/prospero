@@ -99,7 +99,8 @@ public class WildflyFpTest {
                 .execute()
                 .assertReturnCode(ReturnCodes.SUCCESS);
 
-        final Path installedProspero = targetDir.resolve("bin").resolve(ExecutionUtils.isWindows()?"prospero.bat":"prospero.sh");
+        final Path installedProspero = targetDir.resolve("bin")
+                .resolve(ExecutionUtils.isWindows()?DistributionInfo.DIST_NAME + ".bat":DistributionInfo.DIST_NAME + ".sh");
         assertTrue(Files.exists(installedProspero));
 
         ExecutionUtils.prosperoExecution(CliConstants.Commands.UPDATE, CliConstants.Commands.LIST,
