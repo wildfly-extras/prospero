@@ -213,6 +213,7 @@ public class FeaturesAddTest {
         final Path channelsFile = MetadataTestUtils.prepareChannel("manifests/wildfly-30.0.0.Final-manifest.yaml");
         final List<String> args = new ArrayList<>(List.of(
                 CliConstants.Commands.INSTALL,
+                CliConstants.ACCEPT_AGREEMENTS,
                 CliConstants.PROFILE, profileName,
                 CliConstants.DIR, targetDir.getAbsolutePath()));
 
