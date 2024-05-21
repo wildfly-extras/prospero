@@ -164,7 +164,7 @@ public class CliConsole implements Console {
                 final String channelName = artifactUpdate.getChannelName().map(name -> "[" + name + "]")
                         .orElse("");
 
-                printf("  %s%-50s    %-20s ==>  %-20s   %-20s%n", artifactUpdate.isDowngrade()?"[*]":"", artifactName, oldVersion.orElse("[]"),
+                printf("  %s%-50s    %-20s ==>  %-20s   %-20s%n", artifactUpdate.isDowngrade()?"@|fg(yellow) [*]|@":"", artifactName, oldVersion.orElse("[]"),
                         newVersion.orElse("[]"), channelName);
             }
 
