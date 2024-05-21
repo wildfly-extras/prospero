@@ -99,7 +99,7 @@ public class FeaturesCommand extends AbstractParentCommand {
 
                 if (!pendingLicenses.isEmpty()) {
                     console.println(System.lineSeparator() + CliMessages.MESSAGES.featurePackRequiresLicense(fpl) + System.lineSeparator());
-                    new LicensePrinter().print(pendingLicenses);
+                    new LicensePrinter(console).print(pendingLicenses);
 
                     if (acceptAgreements) {
                         console.println(CliMessages.MESSAGES.agreementSkipped(CliConstants.ACCEPT_AGREEMENTS) + System.lineSeparator());

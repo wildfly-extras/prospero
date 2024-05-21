@@ -62,7 +62,7 @@ public class HistoryCommand extends AbstractCommand {
             if (changes.isEmpty()) {
                 console.println(CliMessages.MESSAGES.noChangesFound());
             } else {
-                final DiffPrinter diffPrinter = new DiffPrinter("  ");
+                final DiffPrinter diffPrinter = new DiffPrinter(console, "  ");
                 boolean needsLineBreak = false;
                 if (!changes.getArtifactChanges().isEmpty()) {
                     console.println(CliMessages.MESSAGES.diffUpdates()+ ":");

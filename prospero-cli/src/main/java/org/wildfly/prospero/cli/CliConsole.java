@@ -28,6 +28,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.wildfly.prospero.api.Console;
 import org.wildfly.prospero.api.ProvisioningProgressEvent;
 import org.wildfly.prospero.api.ArtifactChange;
+import picocli.CommandLine;
 
 import static org.jboss.galleon.Constants.TRACK_CONFIGS;
 import static org.jboss.galleon.Constants.TRACK_LAYOUT_BUILD;
@@ -153,9 +154,9 @@ public class CliConsole implements Console {
 
     public void updatesFound(List<ArtifactChange> artifactUpdates) {
         if (artifactUpdates.isEmpty()) {
-            getStdOut().println(CliMessages.MESSAGES.noUpdatesFound());
+            println(CliMessages.MESSAGES.noUpdatesFound());
         } else {
-            getStdOut().println(CliMessages.MESSAGES.updatesFound());
+            println(CliMessages.MESSAGES.updatesFound());
             for (ArtifactChange artifactUpdate : artifactUpdates) {
                 final Optional<String> newVersion = artifactUpdate.getNewVersion();
                 final Optional<String> oldVersion = artifactUpdate.getOldVersion();
@@ -163,12 +164,12 @@ public class CliConsole implements Console {
                 final String channelName = artifactUpdate.getChannelName().map(name -> "[" + name + "]")
                         .orElse("");
 
-                getStdOut().printf("  %s%-50s    %-20s ==>  %-20s   %-20s%n", artifactUpdate.isDowngrade()?"[*]":"", artifactName, oldVersion.orElse("[]"),
+                printf("  %s%-50s    %-20s ==>  %-20s   %-20s%n", artifactUpdate.isDowngrade()?"@|fg(yellow) [*]|@":"", artifactName, oldVersion.orElse("[]"),
                         newVersion.orElse("[]"), channelName);
             }
 
             if (artifactUpdates.stream().anyMatch(ArtifactChange::isDowngrade)) {
-                getStdOut().printf(CliMessages.MESSAGES.possibleDowngrade());
+                printf(CliMessages.MESSAGES.possibleDowngrade());
             }
         }
     }
@@ -246,7 +247,21 @@ public class CliConsole implements Console {
 
     @Override
     public void println(String text) {
-        getStdOut().println(text);
+        if (text == null) {
+            getStdOut().println();
+        } else {
+            final CommandLine.Help.Ansi.Text formatted = CommandLine.Help.Ansi.AUTO.new Text(text);
+            getStdOut().println(formatted.toString());
+        }
+    }
+
+    public void printf(String text, String... args) {
+        if (text == null) {
+            getStdOut().println();
+        } else {
+            final String formatted = String.format(text, (String[]) args);
+            getStdOut().print(CommandLine.Help.Ansi.AUTO.new Text(formatted));
+        }
     }
 
 }

@@ -25,9 +25,11 @@ import org.wildfly.prospero.api.FeatureChange;
 public class DiffPrinter {
 
     private final String initialTab;
+    private final CliConsole console;
 
-    public DiffPrinter(String initialTab) {
+    public DiffPrinter(CliConsole console, String initialTab) {
         this.initialTab = initialTab;
+        this.console = console;
     }
 
     public void print(Diff diff) {
@@ -35,7 +37,7 @@ public class DiffPrinter {
     }
 
     private void print(Diff diff, String tab, boolean nested) {
-        System.out.print(tab);
+        console.printf(tab);
 
 
         if (diff.getChildren().isEmpty()) {
@@ -53,13 +55,13 @@ public class DiffPrinter {
         }
     }
 
-    private static void print(Diff diff, boolean nested, String text, String... args) {
+    private void print(Diff diff, boolean nested, String text, String... args) {
         if (!nested) {
             text = String.format("[%s] ", getStatus(diff)) + String.format(text, (String[]) args);
         } else {
             text = String.format(text, (String[]) args);
         }
-        System.out.print(text);
+        console.printf(text);
     }
 
     private static String getStatus(Diff diff) {
