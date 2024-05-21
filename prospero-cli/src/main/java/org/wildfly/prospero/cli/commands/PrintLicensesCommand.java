@@ -60,13 +60,13 @@ public class PrintLicensesCommand extends AbstractInstallCommand {
 
             final List<License> pendingLicenses = provisioningAction.getPendingLicenses(provisioningConfig, channels);
             if (!pendingLicenses.isEmpty()) {
-                System.out.println();
-                System.out.println(CliMessages.MESSAGES.listAgreementsHeader());
-                System.out.println();
-                new LicensePrinter().print(pendingLicenses);
+                console.println("");
+                console.println(CliMessages.MESSAGES.listAgreementsHeader());
+                console.println("");
+                new LicensePrinter(console).print(pendingLicenses);
             } else {
-                System.out.println();
-                System.out.println(CliMessages.MESSAGES.noAgreementsNeeded());
+                console.println("");
+                console.println(CliMessages.MESSAGES.noAgreementsNeeded());
             }
             return ReturnCodes.SUCCESS;
         } finally {

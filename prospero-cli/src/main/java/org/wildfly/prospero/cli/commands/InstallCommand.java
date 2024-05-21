@@ -199,11 +199,11 @@ public class InstallCommand extends AbstractInstallCommand {
             final List<License> pendingLicenses = provisioningAction.getPendingLicenses(provisioningConfig,
                     effectiveChannels);
             if (!pendingLicenses.isEmpty()) {
-                new LicensePrinter().print(pendingLicenses);
-                System.out.println();
+                new LicensePrinter(console).print(pendingLicenses);
+                console.println("");
                 if (acceptAgreements) {
-                    System.out.println(CliMessages.MESSAGES.agreementSkipped(CliConstants.ACCEPT_AGREEMENTS));
-                    System.out.println();
+                    console.println(CliMessages.MESSAGES.agreementSkipped(CliConstants.ACCEPT_AGREEMENTS));
+                    console.println("");
                 } else {
                     if (!console.confirm(CliMessages.MESSAGES.acceptAgreements(), "", CliMessages.MESSAGES.installationCancelled())) {
                         return ReturnCodes.PROCESSING_ERROR;
