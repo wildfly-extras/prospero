@@ -162,7 +162,7 @@ public class CliConsole implements Console {
                 final Optional<String> oldVersion = artifactUpdate.getOldVersion();
                 final String artifactName = artifactUpdate.getArtifactName();
 
-                printf("  %s%-50s    %-20s ==>  %-20s%n", artifactUpdate.isDowngrade()?"[*]":"", artifactName, oldVersion.orElse("[]"),
+                printf("  %s%-50s    %-20s ==>  %-20s%n", artifactUpdate.isDowngrade()?"@|fg(yellow) [*]|@":"", artifactName, oldVersion.orElse("[]"),
                         newVersion.orElse("[]"));
             }
 
