@@ -24,26 +24,32 @@ import java.util.List;
 
 public class LicensePrinter {
 
+    private final CliConsole console;
+
+    public LicensePrinter(CliConsole console) {
+        this.console = console;
+    }
+
     public void print(List<License> pendingLicenses) {
         if (!pendingLicenses.isEmpty()) {
             boolean first = true;
             for (License pendingLicense : pendingLicenses) {
                 if (!first) {
-                    System.out.println();
+                    console.println("");
                 }
                 first = false;
 
-                System.out.println("===============");
-                System.out.println(pendingLicense.getTitle());
-                System.out.println("===============");
+                console.println("===============");
+                console.println(pendingLicense.getTitle());
+                console.println("===============");
                 final String text = pendingLicense.getText();
                 final String[] lines = text.split("\n");
                 for (String line : lines) {
-                    System.out.println("  " + WordUtils.wrap(line, 118, System.lineSeparator() + "  ", true));
+                    console.println("  " + WordUtils.wrap(line, 118, System.lineSeparator() + "  ", true));
                 }
-                System.out.println("===============");
+                console.println("===============");
             }
-            System.out.println();
+            console.println("");
         }
     }
 }
