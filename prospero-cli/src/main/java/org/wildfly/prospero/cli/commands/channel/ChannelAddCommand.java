@@ -22,10 +22,13 @@ import org.wildfly.channel.ChannelManifestCoordinate;
 import org.wildfly.channel.ChannelMapper;
 import org.wildfly.channel.Repository;
 import org.wildfly.channel.InvalidChannelMetadataException;
+import org.wildfly.prospero.ProsperoLogger;
 import org.wildfly.prospero.actions.MetadataAction;
 import org.wildfly.prospero.api.ArtifactUtils;
 import org.wildfly.prospero.api.RepositoryUtils;
 import org.wildfly.prospero.api.TemporaryFilesManager;
+import org.wildfly.prospero.api.exceptions.OperationException;
+import org.wildfly.prospero.cli.ArgumentParsingException;
 import org.wildfly.prospero.cli.CliConsole;
 import org.wildfly.prospero.cli.ActionFactory;
 import org.wildfly.prospero.cli.CliMessages;
@@ -35,8 +38,8 @@ import org.wildfly.prospero.cli.commands.AbstractCommand;
 import org.wildfly.prospero.cli.commands.CliConstants;
 import picocli.CommandLine;
 
+import java.io.IOException;
 import java.nio.file.Files;
-import java.nio.file.NoSuchFileException;
 import java.nio.file.Path;
 import java.util.List;
 import java.util.Optional;
@@ -48,17 +51,17 @@ public class ChannelAddCommand extends AbstractCommand {
     private String channelName;
 
     @CommandLine.ArgGroup(exclusive = true, multiplicity = "1")
-    ChannelParamsGroup channelOptions;
+    private ChannelParamsGroup channelOptions;
 
     @CommandLine.Option(names = CliConstants.DIR)
     private Optional<Path> directory;
 
     static class ChannelParamsGroup {
+        @CommandLine.Option(names = CliConstants.CHANNEL)
+        private Path channelLocation;
         @CommandLine.ArgGroup(exclusive = false, multiplicity = "1")
         private ChannelGroup channelGroup;
 
-        @CommandLine.Option(names = CliConstants.CHANNEL)
-        private Path channelLocation;
     }
 
     static class ChannelGroup {
@@ -75,41 +78,45 @@ public class ChannelAddCommand extends AbstractCommand {
 
     @Override
     public Integer call() throws Exception {
-        Path installationDirectory = determineInstallationDirectory(directory);
-        List<Channel> channels = null;
+        final Path installationDirectory = determineInstallationDirectory(directory);
+        final Channel channel;
         if (channelOptions.channelLocation != null) {
-            try{
-                channels = ChannelMapper.fromString(Files.readString(Path.of(channelOptions.channelLocation.toString())));
-            }catch (InvalidChannelMetadataException e){
-                    throw CliMessages.MESSAGES.invalidManifest(e.getMessage());
-            }catch (NoSuchFileException e){
-                throw CliMessages.MESSAGES.fileNotExists(e.getMessage());
-            }
-
-            Channel channel = channels.get(0);
-            channels.set(0, new Channel(channelName, channel.getDescription(), channel.getVendor(), channel.getRepositories(), channel.getManifestCoordinate(), channel.getBlocklistCoordinate(), channel.getNoStreamStrategy()));
-            if (channels.size() > 1) {
-                throw new RuntimeException(CliMessages.MESSAGES.sizeOfChannel());
-            }
-        } else if (!(channelOptions.channelGroup.manifestLocation.isEmpty() || channelOptions.channelGroup.repositoryDefs.isEmpty())) {
-            console.println(CliMessages.MESSAGES.subscribeChannel(installationDirectory, channelName));
-
-            ChannelManifestCoordinate manifest = ArtifactUtils.manifestCoordFromString(channelOptions.channelGroup.manifestLocation);
+            channel = readChannelFromDefinition();
+        } else {
+            final ChannelManifestCoordinate manifest = ArtifactUtils.manifestCoordFromString(channelOptions.channelGroup.manifestLocation);
             try (TemporaryFilesManager temporaryFiles = TemporaryFilesManager.getInstance()) {
                 final List<Repository> repositories = RepositoryUtils.unzipArchives(RepositoryDefinition.from(channelOptions.channelGroup.repositoryDefs), temporaryFiles);
-                channels = List.of(new Channel(channelName, null, null, repositories, manifest, null, null));
-
+                channel = new Channel(channelName, null, null, repositories, manifest, null, null);
             }
-        } else {
-            throw new RuntimeException(CliMessages.MESSAGES.invalidArgument());
         }
+
+        console.println(CliMessages.MESSAGES.subscribeChannel(installationDirectory, channelName));
         try (MetadataAction metadataAction = actionFactory.metadataActions(installationDirectory)) {
-            Channel channel = channels.get(0);
-                metadataAction.addChannel(channel);
+            metadataAction.addChannel(channel);
 
         }
         console.println(CliMessages.MESSAGES.channelAdded(channelName));
         return ReturnCodes.SUCCESS;
 
+    }
+
+    private Channel readChannelFromDefinition() throws OperationException, ArgumentParsingException {
+        final Path channelFile = channelOptions.channelLocation.toAbsolutePath();
+        try {
+            final List<Channel> channels = ChannelMapper.fromString(Files.readString(channelFile));
+            final Channel channel = channels.get(0);
+
+            if (channels.size() > 1) {
+                throw CliMessages.MESSAGES.sizeOfChannel(channelFile);
+            }
+
+            return new Channel(channelName, channel.getDescription(), channel.getVendor(), channel.getRepositories(),
+                    channel.getManifestCoordinate(), channel.getBlocklistCoordinate(), channel.getNoStreamStrategy());
+        } catch (InvalidChannelMetadataException e) {
+            // keep the error in sync with other operations (e.g. InstallCommand)
+            throw ProsperoLogger.ROOT_LOGGER.invalidChannel(e);
+        } catch (IOException e) {
+            throw CliMessages.MESSAGES.missingRequiresResource(channelFile.toString(), e);
+        }
     }
 }

@@ -25,6 +25,6 @@ public class ChannelDefinitionException extends OperationException {
     }
 
     public String getValidationMessages() {
-        return String.join("\n", ((InvalidChannelMetadataException)getCause()).getValidationMessages());
+        return String.join("\n", ((InvalidChannelMetadataException) getCause()).getValidationMessages());
     }
 }

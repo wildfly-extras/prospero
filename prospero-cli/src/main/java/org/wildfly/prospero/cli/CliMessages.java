@@ -20,6 +20,7 @@ package org.wildfly.prospero.cli;
 import org.apache.commons.lang3.StringUtils;
 import org.jboss.galleon.Constants;
 import org.wildfly.prospero.actions.ApplyCandidateAction;
+import org.wildfly.prospero.api.exceptions.OperationException;
 import org.wildfly.prospero.cli.commands.CliConstants;
 import org.wildfly.prospero.metadata.ProsperoMetadataUtils;
 import picocli.CommandLine;
@@ -533,8 +534,8 @@ public interface CliMessages {
         return bundle.getString("prospero.export.done");
     }
 
-    default ArgumentParsingException missingRequiresResource(String resource) {
-        return new ArgumentParsingException(format(bundle.getString("prospero.general.error.missing_file"), resource));
+    default ArgumentParsingException missingRequiresResource(String resource, Exception cause) {
+        return new ArgumentParsingException(format(bundle.getString("prospero.general.error.missing_file"), resource), cause);
     }
 
     default String parsingError(String path) {
@@ -687,16 +688,7 @@ public interface CliMessages {
         return bundle.getString("prospero.install.list.profile");
     }
 
-    default ArgumentParsingException invalidArgument() {
-        return new ArgumentParsingException(format(bundle.getString("prospero.channels.error.arguments.incorrect")));
-    }
-    default RuntimeException sizeOfChannel() {
-        return new RuntimeException(bundle.getString("prospero.channels.error.morethanonechannel.found"));
-    }
-    default ArgumentParsingException fileNotExists(String errorMessage){
-        return new ArgumentParsingException(errorMessage+" "+bundle.getString("prosper.file.not.present"));
-    }
-    default ArgumentParsingException invalidManifest(String errorMessage){
-        return new ArgumentParsingException(errorMessage);
+    default OperationException sizeOfChannel(Path channelFile) {
+        return new OperationException(format(bundle.getString("prospero.channels.error.morethanonechannel.found"), channelFile));
     }
 }

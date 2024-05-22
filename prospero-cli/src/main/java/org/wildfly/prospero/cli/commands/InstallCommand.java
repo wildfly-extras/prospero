@@ -258,7 +258,7 @@ public class InstallCommand extends AbstractInstallCommand {
                 // open stream to check if the resource exists
                 resourceUrl.openStream().close();
             } catch (IOException e) {
-                throw CliMessages.MESSAGES.missingRequiresResource(argValue);
+                throw CliMessages.MESSAGES.missingRequiresResource(argValue, e);
             }
         }
     }
