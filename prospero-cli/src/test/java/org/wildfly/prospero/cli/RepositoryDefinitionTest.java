@@ -18,19 +18,30 @@
 package org.wildfly.prospero.cli;
 
 import org.apache.commons.lang3.StringUtils;
+import org.junit.Before;
 import org.junit.Test;
 import org.wildfly.channel.Repository;
 
+import java.io.File;
+import java.nio.file.Path;
 import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertThrows;
+import static org.junit.Assert.*;
 import static org.wildfly.prospero.cli.RepositoryDefinition.from;
 
 public class RepositoryDefinitionTest {
+
+    private String tempRepoUrlNoHostForm;
+    private String tempRepoUrlEmptyHostForm;
+
+    @Before
+    public void setUp() throws Exception {
+        tempRepoUrlEmptyHostForm = Path.of(".").normalize().toAbsolutePath().toUri().toString();
+        tempRepoUrlNoHostForm = tempRepoUrlEmptyHostForm.replace("///","/");
+    }
 
     @Test
     public void generatesRepositoryIdsIfNotProvided() throws Exception {
@@ -75,5 +86,83 @@ public class RepositoryDefinitionTest {
         assertThrows(ArgumentParsingException.class, ()->from(List.of("foo::bar::http://test1.te")));
 
         assertThrows(ArgumentParsingException.class, ()->from(List.of("imnoturl")));
+
+    }
+
+    @Test
+    public void throwsErrorIfFormatIsIncorrectForFileURLorPathDoesNotExist() throws Exception {
+        assertThrows(ArgumentParsingException.class, ()->from(List.of("::"+ tempRepoUrlNoHostForm)));
+
+        assertThrows(ArgumentParsingException.class, ()->from(List.of("repo-1::")));
+
+        assertThrows(ArgumentParsingException.class, ()->from(List.of("repo-1:::"+ tempRepoUrlNoHostForm)));
+
+        assertThrows(ArgumentParsingException.class, ()->from(List.of("foo::bar::"+ tempRepoUrlNoHostForm)));
+    }
+
+    @Test
+    public void testCorrectRelativeOrAbsolutePathForFileURL() throws Exception {
+        Repository repository = new Repository("temp-repo-0", tempRepoUrlEmptyHostForm);
+        List<Repository> actualList = from(List.of("file:../prospero-cli"));
+
+        assertNotNull(actualList);
+        assertEquals(1, actualList.size());
+        assertThat(actualList)
+                .contains(repository);
+
+        actualList = from(List.of("temp-repo-0::file:../prospero-cli"));
+
+        assertNotNull(actualList);
+        assertEquals(1, actualList.size());
+        assertThat(actualList)
+                .contains(repository);
+
+        actualList = from(List.of(("file:/"+(System.getProperty("user.dir").replaceAll("\\\\","/"))).replace("//","/")));
+
+        assertNotNull(actualList);
+        assertEquals(1, actualList.size());
+        assertTrue(actualList.contains(repository));
+
+        actualList = from(List.of(("temp-repo-0::file:/"+(System.getProperty("user.dir").replaceAll("\\\\","/"))).replace("//","/")));
+
+        assertNotNull(actualList);
+        assertEquals(1, actualList.size());
+        assertTrue(actualList.contains(repository));
+
+        actualList = from(List.of(("file:///"+(System.getProperty("user.dir").replaceAll("\\\\","/"))).replace("////","///")));
+
+        assertNotNull(actualList);
+        assertEquals(1, actualList.size());
+        assertTrue(actualList.contains(repository));
+
+        actualList = from(List.of(("temp-repo-0::file:///"+(System.getProperty("user.dir").replaceAll("\\\\","/"))).replace("////","///")));
+
+        assertNotNull(actualList);
+        assertEquals(1, actualList.size());
+        assertTrue(actualList.contains(repository));
+
+        actualList = from(List.of(System.getProperty("user.dir")));
+
+        assertNotNull(actualList);
+        assertEquals(1, actualList.size());
+        assertTrue(actualList.contains(repository));
+
+        actualList = from(List.of("temp-repo-0::" + System.getProperty("user.dir")));
+
+        assertNotNull(actualList);
+        assertEquals(1, actualList.size());
+        assertTrue(actualList.contains(repository));
+
+        actualList = from(List.of(".."+File.separator+"prospero-cli"));
+
+        assertNotNull(actualList);
+        assertEquals(1, actualList.size());
+        assertTrue(actualList.contains(repository));
+
+        actualList = from(List.of("temp-repo-0::.."+File.separator+"prospero-cli"));
+
+        assertNotNull(actualList);
+        assertEquals(1, actualList.size());
+        assertTrue(actualList.contains(repository));
     }
 }
