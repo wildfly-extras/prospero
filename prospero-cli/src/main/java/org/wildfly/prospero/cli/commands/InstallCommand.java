@@ -25,11 +25,16 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Locale;
 import java.util.Optional;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 import org.apache.commons.lang3.StringUtils;
 import org.jboss.galleon.Constants;
+import org.jboss.galleon.ProvisioningException;
+import org.jboss.galleon.api.config.GalleonFeaturePackConfig;
 import org.jboss.galleon.api.config.GalleonProvisioningConfig;
 
+import org.jboss.galleon.universe.FeaturePackLocation;
 import org.wildfly.channel.Channel;
 import org.wildfly.channel.ChannelManifestCoordinate;
 import org.wildfly.channel.Repository;
@@ -48,11 +53,15 @@ import org.wildfly.prospero.cli.CliMessages;
 import org.wildfly.prospero.cli.LicensePrinter;
 import org.wildfly.prospero.cli.RepositoryDefinition;
 import org.wildfly.prospero.cli.ReturnCodes;
+import org.wildfly.prospero.cli.StringCaptureConsole;
 import org.wildfly.prospero.api.TemporaryFilesManager;
 import org.wildfly.prospero.cli.commands.options.FeaturePackCandidates;
 import org.wildfly.prospero.cli.printers.ChannelPrinter;
+import org.wildfly.prospero.galleon.GalleonUtils;
 import org.wildfly.prospero.licenses.License;
+import org.wildfly.prospero.model.KnownFeaturePack;
 import picocli.CommandLine;
+
 
 @CommandLine.Command(
         name = CliConstants.Commands.INSTALL,
@@ -60,9 +69,12 @@ import picocli.CommandLine;
 )
 public class InstallCommand extends AbstractInstallCommand {
 
+    @CommandLine.Spec
+    CommandLine.Model.CommandSpec spec;
+
     @CommandLine.Option(
             names = CliConstants.DIR,
-            required = true,
+            required = false,
             order = 2
     )
     Path directory;
@@ -117,6 +129,13 @@ public class InstallCommand extends AbstractInstallCommand {
                 order = 3
         )
         Optional<Path> definition;
+
+        @CommandLine.Option(
+                names = CliConstants.LIST_PROFILES,
+                order = 4
+        )
+        boolean listProfiles;
+
     }
 
     public InstallCommand(CliConsole console, ActionFactory actionFactory) {
@@ -126,6 +145,14 @@ public class InstallCommand extends AbstractInstallCommand {
     @Override
     public Integer call() throws Exception {
         final long startTime = System.currentTimeMillis();
+
+        if (featurePackOrDefinition.listProfiles) {
+            getListOfProfiles();
+            return ReturnCodes.SUCCESS;
+        }
+        if (directory == null) {
+            throw CliMessages.MESSAGES.missingRequiredParameter(spec.commandLine(),CliConstants.DIR);
+        }
 
         // following is checked by picocli, adding this to avoid IDE warnings
         assert featurePackOrDefinition.definition.isPresent() || featurePackOrDefinition.fpl.isPresent() || featurePackOrDefinition.profile.isPresent();
@@ -162,7 +189,6 @@ public class InstallCommand extends AbstractInstallCommand {
         }
 
         verifyTargetDirectoryIsEmpty(directory);
-
         final ProvisioningDefinition provisioningDefinition = buildDefinition()
                 .setStabilityLevel(stabilityLevels.stabilityLevel==null?null:stabilityLevels.stabilityLevel.toLowerCase(Locale.ROOT))
                 .setPackageStabilityLevel(stabilityLevels.packageStabilityLevel==null?null:stabilityLevels.packageStabilityLevel.toLowerCase(Locale.ROOT))
@@ -285,4 +311,49 @@ public class InstallCommand extends AbstractInstallCommand {
             }
         }
     }
+
+    private void getListOfProfiles() throws Exception {
+        console.println(CliMessages.MESSAGES.availableProfiles() + "\n");
+        Set<String> featurePackNames = KnownFeaturePacks.getNames();
+        StringCaptureConsole captureConsole = new StringCaptureConsole();
+        final ChannelPrinter channelPrinter = new ChannelPrinter(captureConsole);
+        for (String profile : featurePackNames){
+            console.println("----------");
+            console.println(CliMessages.MESSAGES.getProfile() +profile+ "\n"+"   "+CliMessages.MESSAGES.subscribedChannels());
+            for(Channel channel: getChannels(featurePackNames)){
+                channelPrinter.print(channel);
+                for (String line: captureConsole.getLines(6)) {
+                    console.println(line); //reprint with the normal console, adding some spaces before each line
+                }
+            }
+            console.println("   "+CliMessages.MESSAGES.includedFeaturePacks());
+            for(String featurePacks: featurePackNames){
+                List<FeaturePackLocation> loc = getFpl(KnownFeaturePacks.getByName(featurePacks));
+                for (FeaturePackLocation featurePackLocation: loc) {
+                    console.println("       " + featurePackLocation.toString());
+                }
+            }
+
+        }
+    }
+
+    private List<Channel> getChannels(Set<String> featurePackNames) throws Exception {
+        final List<Channel> channels = new ArrayList<>();
+        for (String channelNames : featurePackNames) {
+            KnownFeaturePack knownFeaturePack = KnownFeaturePacks.getByName(channelNames);
+            channels.addAll(knownFeaturePack.getChannels());
+        }
+        return channels;
+    }
+
+    private List<FeaturePackLocation> getFpl(KnownFeaturePack knownFeaturePack) throws Exception {
+        GalleonProvisioningConfig config = GalleonUtils.loadProvisioningConfig(knownFeaturePack.getGalleonConfiguration());
+        if (config.getFeaturePackDeps().isEmpty()) {
+            throw new ProvisioningException("At least one feature pack location must be specified in the provisioning configuration");
+        }
+        return config.getFeaturePackDeps().stream()
+                .map(GalleonFeaturePackConfig::getLocation)
+                .collect(Collectors.toList());
+    }
+
 }
