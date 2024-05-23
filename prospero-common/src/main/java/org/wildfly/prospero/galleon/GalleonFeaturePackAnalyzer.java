@@ -127,9 +127,9 @@ public class GalleonFeaturePackAnalyzer {
         // no data will be actually written out, but we need a path to init the Galleon
         final Path tempInstallationPath = Files.createTempDirectory("temp");
         final Set<String> fps = new HashSet<>();
-        try (GalleonEnvironment galleonEnv = galleonEnvWithFpMapper(tempInstallationPath, installedDir, fps, provisioningConfig);
-             Provisioning provisioning = galleonEnv.getProvisioning()) {
-            provisioning.getProvisioningRuntime(provisioningConfig).close();
+        try (GalleonEnvironment galleonEnv = galleonEnvWithFpMapper(tempInstallationPath, installedDir, fps, provisioningConfig)) {
+            // calling this for a side effect of resolving feature pack artifacts
+            galleonEnv.getProvisioning().getProvisioningRuntime(provisioningConfig).close();
             return fps;
         } finally {
             FileUtils.deleteQuietly(tempInstallationPath.toFile());
