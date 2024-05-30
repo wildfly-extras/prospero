@@ -28,25 +28,26 @@ import org.junit.Test;
 import org.wildfly.channel.MavenCoordinate;
 import org.wildfly.channel.Repository;
 import org.wildfly.prospero.galleon.GalleonUtils;
-import org.wildfly.prospero.model.KnownFeaturePack;
+import org.wildfly.prospero.model.InstallationProfile;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import org.jboss.galleon.api.config.GalleonProvisioningConfig;
 
-public class KnownFeaturePacksTest {
+public class InstallationProfilesManagerTest {
 
-    @Test public void testFpFromGalleonConfig() throws ProvisioningException, XMLStreamException, URISyntaxException {
-        KnownFeaturePack knownFeaturePack = KnownFeaturePacks.getByName("known-fpl");
+    @Test
+    public void testFpFromGalleonConfig() throws ProvisioningException, XMLStreamException, URISyntaxException {
+        InstallationProfile installationProfile = InstallationProfilesManager.getByName("known-fpl");
 
-        assertThat(knownFeaturePack).isNotNull();
-        assertThat(knownFeaturePack.getGalleonConfiguration()).isEqualTo(
+        assertThat(installationProfile).isNotNull();
+        assertThat(installationProfile.getGalleonConfiguration()).isEqualTo(
                 new URI("classpath:galleon-provisioning.xml"));
-        assertThat(knownFeaturePack.getChannels().get(0)).satisfies(channel -> {
+        assertThat(installationProfile.getChannels().get(0)).satisfies(channel -> {
             assertThat(channel.getManifestCoordinate().getMaven()).isEqualTo(new MavenCoordinate("test", "one", null));
             assertThat(channel.getRepositories()).containsOnly(new Repository("central", "https://repo1.maven.org/maven2/"));
         });
 
-        GalleonProvisioningConfig galleonConfig = GalleonUtils.loadProvisioningConfig(knownFeaturePack.getGalleonConfiguration());
+        GalleonProvisioningConfig galleonConfig = GalleonUtils.loadProvisioningConfig(installationProfile.getGalleonConfiguration());
         assertThat(galleonConfig.getOptions()).containsOnly(Map.entry("jboss-bulk-resolve-artifacts", "true"));
         assertThat(galleonConfig.getFeaturePackDeps().iterator().next()).satisfies(fp -> {
             assertThat(fp.getLocation().toString()).isEqualTo("org.wildfly.core:wildfly-core-galleon-pack:zip");
