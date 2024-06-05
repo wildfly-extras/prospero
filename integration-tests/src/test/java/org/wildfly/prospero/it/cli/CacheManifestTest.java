@@ -383,6 +383,7 @@ public class CacheManifestTest extends WfCoreTestBase {
         return new ChannelManifest(
                 sourceManifest.getSchemaVersion(),
                 sourceManifest.getId(),
+                sourceManifest.getName(),
                 sourceManifest.getDescription(),
                 sourceManifest.getManifestRequirements(),
                 streams);

@@ -76,7 +76,9 @@ public class ProsperoInstallationManager implements InstallationManager {
         final List<HistoryResult> results = new ArrayList<>();
 
         for (SavedState savedState : revisions) {
-            results.add(new HistoryResult(savedState.getName(), savedState.getTimestamp(), savedState.getType().toString(), savedState.getMsg()));
+            results.add(new HistoryResult(savedState.getName(), savedState.getTimestamp(), savedState.getType().toString(),
+                    savedState.getMsg(),
+                    map(savedState.getManifestVersions(), ProsperoInstallationManager::mapManifestVersion)));
         }
         return results;
     }
@@ -313,6 +315,10 @@ public class ProsperoInstallationManager implements InstallationManager {
             default:
                 return new ChannelChange(oldChannel, newChannel, ChannelChange.Status.MODIFIED);
         }
+    }
+
+    private static ManifestVersion mapManifestVersion(SavedState.Version version) {
+        return new ManifestVersion(version.getIdentifier(), version.getLogicalVersion(), version.getPhysicalVersion(), ManifestVersion.Type.MAVEN);
     }
 
     ActionFactory getActionFactory() {

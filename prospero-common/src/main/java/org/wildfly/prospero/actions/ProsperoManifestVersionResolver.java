@@ -69,7 +69,7 @@ class ProsperoManifestVersionResolver {
         final ManifestVersionRecord record = new ManifestVersionRecord();
         final ArrayList<Channel> fallbackChannels = new ArrayList<>();
         for (Channel channel : channels) {
-            if (channel.getManifestCoordinate().getMaven() != null && channel.getManifestCoordinate().getMaven().getVersion() == null) {
+            if (channel.getManifestCoordinate() != null && channel.getManifestCoordinate().getMaven() != null && channel.getManifestCoordinate().getMaven().getVersion() == null) {
                 final MavenCoordinate manifestCoord = channel.getManifestCoordinate().getMaven();
                 if (LOG.isDebugEnabled()) {
                     LOG.debugf("Trying to lookup manifest %s", manifestCoord);
@@ -84,7 +84,7 @@ class ProsperoManifestVersionResolver {
                     if (LOG.isDebugEnabled()) {
                         LOG.debugf("Manifest %s resolved in currently resolve artifacts, recording.", manifestCoord);
                     }
-                    final String description = ChannelManifestMapper.from(version.getFile().toURI().toURL()).getDescription();
+                    final String description = ChannelManifestMapper.from(version.getFile().toURI().toURL()).getName();
                     record.addManifest(new ManifestVersionRecord.MavenManifest(
                             manifestCoord.getGroupId(),
                             manifestCoord.getArtifactId(),
