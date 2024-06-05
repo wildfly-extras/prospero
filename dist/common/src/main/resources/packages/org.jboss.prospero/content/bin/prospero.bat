@@ -252,3 +252,4 @@ if %errorlevel% equ 10 (
 if "x%NOPAUSE%" == "x" pause
 
 :END_NO_PAUSE
+exit /b %errorlevel%
