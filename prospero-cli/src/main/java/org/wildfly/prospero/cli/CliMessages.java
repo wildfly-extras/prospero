@@ -22,6 +22,7 @@ import org.jboss.galleon.Constants;
 import org.wildfly.prospero.actions.ApplyCandidateAction;
 import org.wildfly.prospero.cli.commands.CliConstants;
 import org.wildfly.prospero.metadata.ProsperoMetadataUtils;
+import picocli.CommandLine;
 
 import java.io.File;
 import java.nio.file.Path;
@@ -115,15 +116,15 @@ public interface CliMessages {
     }
 
     default String continueWithUpdate() {
-        return bundle.getString("prospero.updates.prompt")  + " ";
+        return bundle.getString("prospero.updates.prompt") + " ";
     }
 
     default String continueWithRevert() {
-        return bundle.getString("prospero.revert.prompt")  + " ";
+        return bundle.getString("prospero.revert.prompt") + " ";
     }
 
     default String continueWithBuildUpdate() {
-        return bundle.getString("prospero.updates.build.prompt")  + " ";
+        return bundle.getString("prospero.updates.build.prompt") + " ";
     }
 
     default String updateCancelled() {
@@ -368,9 +369,11 @@ public interface CliMessages {
     default String missing() {
         return bundle.getString("prospero.general.error.resolve.missing");
     }
+
     default String checksumFailed() {
         return bundle.getString("prospero.general.error.resolve.checksum_failed");
     }
+
     default String offline() {
         return bundle.getString("prospero.general.error.resolve.offline");
     }
@@ -611,12 +614,15 @@ public interface CliMessages {
     default String productAndVersionNotNull() {
         return bundle.getString("prospero.update.subscribe.product.version.required");
     }
+
     default String unknownProduct(String product) {
         return format(bundle.getString("prospero.update.subscribe.unknown.product"), product);
     }
+
     default String writeManifest(Path manifestPath) {
         return format(bundle.getString("prospero.update.subscribe.write.manifest"), manifestPath);
     }
+
     default String writeChannelsConfiguration(Path channelsPath) {
         return format(bundle.getString("prospero.update.subscribe.write.channels"), channelsPath);
     }
@@ -624,12 +630,15 @@ public interface CliMessages {
     default String conflictsWhenGenerating(String diff) {
         return format(bundle.getString("prospero.update.subscribe.conflict.prompt"), diff);
     }
+
     default String continueGenerating() {
         return bundle.getString("prospero.update.subscribe.conflict.prompt.continue");
     }
+
     default String quitGenerating() {
         return bundle.getString("prospero.update.subscribe.conflict.prompt.cancel");
     }
+
     default String metadataExistsAlready(Path path, String distName) {
         return format(bundle.getString("prospero.update.subscribe.meta.exists"), path, distName);
     }
@@ -638,18 +647,44 @@ public interface CliMessages {
         return bundle.getString("prospero.channels.versions.header");
     }
 
-    default  IllegalArgumentException unknownStabilityLevel(String stabilityLevel, List<String> supportedStabilityLevels) {
+    default IllegalArgumentException unknownStabilityLevel(String stabilityLevel, List<String> supportedStabilityLevels) {
         return new IllegalArgumentException(format(bundle.getString("prospero.install.unknown_stability_level"),
                 stabilityLevel, String.join(",", supportedStabilityLevels)));
     }
+
     default String featurePackRequiresLayers(String featurePackName) {
         return format(bundle.getString("prospero.features.add.validation.layers_required"), featurePackName, CliConstants.LAYERS);
     }
+
     default String featurePackDoesNotSupportCustomization(String featurePackName) {
         return format(bundle.getString("prospero.features.add.validation.customization_not_supported"), featurePackName,
                 String.join(",", List.of(CliConstants.LAYERS, CliConstants.TARGET_CONFIG)));
     }
+
     default String featurePackRequiresLicense(String featurePackName) {
         return format(bundle.getString("prospero.features.add.required_licences"), featurePackName);
     }
+
+    default CommandLine.ParameterException missingRequiredParameter(CommandLine spec, String param) {
+        return new CommandLine.ParameterException(spec, format(bundle.getString("prospero.general.error.missing.parameter"), param));
+    }
+
+    default String availableProfiles() {
+        return bundle.getString("prospero.install.list.profile.header");
+    }
+    default String noAvailableProfiles() {
+        return bundle.getString("prospero.install.list.profile.no_profiles.header");
+    }
+
+    default String subscribedChannels() {
+        return bundle.getString("prospero.install.list.profile.subscribe.channels");
+    }
+    default String includedFeaturePacks() {
+        return bundle.getString("prospero.install.list.profile.featurePacks");
+    }
+
+    default String getProfile() {
+        return bundle.getString("prospero.install.list.profile");
+    }
+
 }

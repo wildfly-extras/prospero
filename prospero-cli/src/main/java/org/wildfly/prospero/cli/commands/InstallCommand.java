@@ -25,11 +25,16 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Locale;
 import java.util.Optional;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 import org.apache.commons.lang3.StringUtils;
 import org.jboss.galleon.Constants;
+import org.jboss.galleon.ProvisioningException;
+import org.jboss.galleon.api.config.GalleonFeaturePackConfig;
 import org.jboss.galleon.api.config.GalleonProvisioningConfig;
 
+import org.jboss.galleon.universe.FeaturePackLocation;
 import org.wildfly.channel.Channel;
 import org.wildfly.channel.ChannelManifestCoordinate;
 import org.wildfly.channel.Repository;
@@ -51,8 +56,13 @@ import org.wildfly.prospero.cli.ReturnCodes;
 import org.wildfly.prospero.api.TemporaryFilesManager;
 import org.wildfly.prospero.cli.commands.options.FeaturePackCandidates;
 import org.wildfly.prospero.cli.printers.ChannelPrinter;
+import org.wildfly.prospero.galleon.GalleonUtils;
 import org.wildfly.prospero.licenses.License;
+import org.wildfly.prospero.model.KnownFeaturePack;
 import picocli.CommandLine;
+
+import javax.xml.stream.XMLStreamException;
+
 
 @CommandLine.Command(
         name = CliConstants.Commands.INSTALL,
@@ -60,9 +70,14 @@ import picocli.CommandLine;
 )
 public class InstallCommand extends AbstractInstallCommand {
 
+    protected static final int PROFILES_INDENT = 4;
+    protected static final String PROFILE_SUBHEADERS_INDENT = "  ";
+    @CommandLine.Spec
+    CommandLine.Model.CommandSpec spec;
+
     @CommandLine.Option(
             names = CliConstants.DIR,
-            required = true,
+            required = false,
             order = 2
     )
     Path directory;
@@ -117,6 +132,13 @@ public class InstallCommand extends AbstractInstallCommand {
                 order = 3
         )
         Optional<Path> definition;
+
+        @CommandLine.Option(
+                names = CliConstants.LIST_PROFILES,
+                order = 4
+        )
+        boolean listProfiles;
+
     }
 
     public InstallCommand(CliConsole console, ActionFactory actionFactory) {
@@ -126,6 +148,13 @@ public class InstallCommand extends AbstractInstallCommand {
     @Override
     public Integer call() throws Exception {
         final long startTime = System.currentTimeMillis();
+
+        if (featurePackOrDefinition.listProfiles) {
+            return displayListOfProfiles();
+        }
+        if (directory == null) {
+            throw CliMessages.MESSAGES.missingRequiredParameter(spec.commandLine(), CliConstants.DIR);
+        }
 
         // following is checked by picocli, adding this to avoid IDE warnings
         assert featurePackOrDefinition.definition.isPresent() || featurePackOrDefinition.fpl.isPresent() || featurePackOrDefinition.profile.isPresent();
@@ -162,7 +191,6 @@ public class InstallCommand extends AbstractInstallCommand {
         }
 
         verifyTargetDirectoryIsEmpty(directory);
-
         final ProvisioningDefinition provisioningDefinition = buildDefinition()
                 .setStabilityLevel(stabilityLevels.stabilityLevel==null?null:stabilityLevels.stabilityLevel.toLowerCase(Locale.ROOT))
                 .setPackageStabilityLevel(stabilityLevels.packageStabilityLevel==null?null:stabilityLevels.packageStabilityLevel.toLowerCase(Locale.ROOT))
@@ -285,4 +313,49 @@ public class InstallCommand extends AbstractInstallCommand {
             }
         }
     }
+
+    private int displayListOfProfiles() throws ProvisioningException {
+        final Set<String> profiles = KnownFeaturePacks.getNames();
+        if (profiles.isEmpty()) {
+            console.println(CliMessages.MESSAGES.noAvailableProfiles() + "\n");
+        } else {
+            console.println(CliMessages.MESSAGES.availableProfiles() + "\n");
+        }
+
+        final ChannelPrinter channelPrinter = new ChannelPrinter(console, PROFILES_INDENT);
+        for (String profileName : profiles){
+            console.println("----------");
+            console.println(CliMessages.MESSAGES.getProfile() + profileName);
+
+            final KnownFeaturePack profile = KnownFeaturePacks.getByName(profileName);
+
+            console.println(PROFILE_SUBHEADERS_INDENT + CliMessages.MESSAGES.subscribedChannels());
+            for(Channel channel: profile.getChannels()){
+                channelPrinter.print(channel);
+            }
+
+            console.println(PROFILE_SUBHEADERS_INDENT + CliMessages.MESSAGES.includedFeaturePacks());
+            for (FeaturePackLocation featurePackLocation: getFeaturePacks(profile)) {
+                console.println(" ".repeat(PROFILES_INDENT) + featurePackLocation.toString());
+            }
+        }
+
+        return ReturnCodes.SUCCESS;
+    }
+
+    private List<FeaturePackLocation> getFeaturePacks(KnownFeaturePack profile) throws ProvisioningException {
+        try {
+            final GalleonProvisioningConfig config = GalleonUtils.loadProvisioningConfig(profile.getGalleonConfiguration());
+            if (config.getFeaturePackDeps().isEmpty()) {
+                throw new ProvisioningException("At least one feature pack location must be specified in the provisioning configuration");
+            }
+
+            return config.getFeaturePackDeps().stream()
+                    .map(GalleonFeaturePackConfig::getLocation)
+                    .collect(Collectors.toList());
+        } catch (XMLStreamException e) {
+            throw new ProvisioningException("Unable to parse provisioning configuration", e);
+        }
+    }
+
 }

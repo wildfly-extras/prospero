@@ -51,7 +51,6 @@ import org.wildfly.prospero.cli.ActionFactory;
 import org.wildfly.prospero.cli.CliMessages;
 import org.wildfly.prospero.cli.ReturnCodes;
 import org.wildfly.prospero.test.MetadataTestUtils;
-
 import org.jboss.galleon.api.GalleonBuilder;
 import org.jboss.galleon.api.Provisioning;
 import org.jboss.galleon.api.config.GalleonProvisioningConfig;
@@ -99,10 +98,33 @@ public class InstallCommandTest extends AbstractMavenCommandTest {
 
     @Test
     public void errorIfTargetPathIsNotPresent() {
-        int exitCode = commandLine.execute(CliConstants.Commands.INSTALL);
+        int exitCode = commandLine.execute(CliConstants.Commands.INSTALL,
+                CliConstants.FPL, "foo:bar");
         Assert.assertEquals(ReturnCodes.INVALID_ARGUMENTS, exitCode);
-        assertTrue(getErrorOutput().contains(String.format("Missing required option: '%s=<directory>'",
-                CliConstants.DIR)));
+        assertThat(getErrorOutput())
+                .contains(CliMessages.MESSAGES.missingRequiredParameter(commandLine, CliConstants.DIR).getMessage());
+    }
+
+    @Test
+    public void errorIfOperationIsNotPresent(){
+        int exitCode = commandLine.execute(CliConstants.Commands.INSTALL,
+                CliConstants.DIR, "test");
+        assertEquals(ReturnCodes.INVALID_ARGUMENTS, exitCode);
+        assertThat(getErrorOutput())
+                .contains(String.format("Missing required argument (specify one of these): (%s=%s | %s=%s | %s=%s | %s)",
+                    CliConstants.PROFILE, CliConstants.PROFILE_REFERENCE, CliConstants.FPL, CliConstants.FEATURE_PACK_REFERENCE,
+                        CliConstants.DEFINITION, CliConstants.PATH, CliConstants.LIST_PROFILES));
+    }
+
+    @Test
+    public void listProfilesExcludesOtherOptions() {
+        int exitCode = commandLine.execute(CliConstants.Commands.INSTALL,
+                CliConstants.FPL, "foo:bar",
+                CliConstants.LIST_PROFILES);
+        Assert.assertEquals(ReturnCodes.INVALID_ARGUMENTS, exitCode);
+        assertThat(getErrorOutput())
+                .contains(String.format("Error: %s=%s, %s are mutually exclusive (specify only one)",
+                    CliConstants.FPL, CliConstants.FEATURE_PACK_REFERENCE, CliConstants.LIST_PROFILES));
     }
 
     @Test
@@ -110,8 +132,8 @@ public class InstallCommandTest extends AbstractMavenCommandTest {
         int exitCode = commandLine.execute(CliConstants.Commands.INSTALL, CliConstants.DIR, "test");
         assertEquals(ReturnCodes.INVALID_ARGUMENTS, exitCode);
         assertTrue(getErrorOutput().contains(String.format(
-                "Missing required argument (specify one of these): (%s=%s | %s=%s | %s=%s)",
-                CliConstants.PROFILE, CliConstants.PROFILE_REFERENCE, CliConstants.FPL, CliConstants.FEATURE_PACK_REFERENCE, CliConstants.DEFINITION, CliConstants.PATH)));
+                "Missing required argument (specify one of these): (%s=%s | %s=%s | %s=%s | %s)",
+                CliConstants.PROFILE, CliConstants.PROFILE_REFERENCE, CliConstants.FPL, CliConstants.FEATURE_PACK_REFERENCE, CliConstants.DEFINITION, CliConstants.PATH, CliConstants.LIST_PROFILES)));
     }
 
     @Test
@@ -380,6 +402,19 @@ public class InstallCommandTest extends AbstractMavenCommandTest {
         assertEquals(ReturnCodes.INVALID_ARGUMENTS, exitCode);
         assertThat(getErrorOutput())
                 .contains(CliMessages.MESSAGES.unknownStabilityLevel("idontexist", InstallCommand.STABILITY_LEVELS).getMessage());
+    }
+
+    @Test
+    public void testListProfiles() throws Exception {
+        int exitCode = commandLine.execute(CliConstants.Commands.INSTALL, CliConstants.LIST_PROFILES);
+        assertEquals(ReturnCodes.SUCCESS, exitCode);
+        assertThat(getStandardOutput()).contains("known-fpl","org.wildfly.channels:wildfly-core:26.1.0","id: central",
+                "url: https://repo1.maven.org/maven2/",
+                "url: https://repo1.maven.org/maven2/",
+                "https://repository.jboss.org/nexus/content/groups/public/",
+                "org.wildfly.core:wildfly-core-galleon-pack:zip");
+
+
     }
 
     @Override
