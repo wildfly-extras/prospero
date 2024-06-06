@@ -672,6 +672,9 @@ public interface CliMessages {
     default String availableProfiles() {
         return bundle.getString("prospero.install.list.profile.header");
     }
+    default String noAvailableProfiles() {
+        return bundle.getString("prospero.install.list.profile.no_profiles.header");
+    }
 
     default String subscribedChannels() {
         return bundle.getString("prospero.install.list.profile.subscribe.channels");
@@ -683,4 +686,5 @@ public interface CliMessages {
     default String getProfile() {
         return bundle.getString("prospero.install.list.profile");
     }
+
 }

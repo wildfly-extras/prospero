@@ -53,7 +53,6 @@ import org.wildfly.prospero.cli.CliMessages;
 import org.wildfly.prospero.cli.LicensePrinter;
 import org.wildfly.prospero.cli.RepositoryDefinition;
 import org.wildfly.prospero.cli.ReturnCodes;
-import org.wildfly.prospero.cli.StringCaptureConsole;
 import org.wildfly.prospero.api.TemporaryFilesManager;
 import org.wildfly.prospero.cli.commands.options.FeaturePackCandidates;
 import org.wildfly.prospero.cli.printers.ChannelPrinter;
@@ -62,6 +61,8 @@ import org.wildfly.prospero.licenses.License;
 import org.wildfly.prospero.model.KnownFeaturePack;
 import picocli.CommandLine;
 
+import javax.xml.stream.XMLStreamException;
+
 
 @CommandLine.Command(
         name = CliConstants.Commands.INSTALL,
@@ -69,6 +70,8 @@ import picocli.CommandLine;
 )
 public class InstallCommand extends AbstractInstallCommand {
 
+    protected static final int PROFILES_INDENT = 4;
+    protected static final String PROFILE_SUBHEADERS_INDENT = "  ";
     @CommandLine.Spec
     CommandLine.Model.CommandSpec spec;
 
@@ -147,11 +150,10 @@ public class InstallCommand extends AbstractInstallCommand {
         final long startTime = System.currentTimeMillis();
 
         if (featurePackOrDefinition.listProfiles) {
-            getListOfProfiles();
-            return ReturnCodes.SUCCESS;
+            return displayListOfProfiles();
         }
         if (directory == null) {
-            throw CliMessages.MESSAGES.missingRequiredParameter(spec.commandLine(),CliConstants.DIR);
+            throw CliMessages.MESSAGES.missingRequiredParameter(spec.commandLine(), CliConstants.DIR);
         }
 
         // following is checked by picocli, adding this to avoid IDE warnings
@@ -312,48 +314,48 @@ public class InstallCommand extends AbstractInstallCommand {
         }
     }
 
-    private void getListOfProfiles() throws Exception {
-        console.println(CliMessages.MESSAGES.availableProfiles() + "\n");
-        Set<String> featurePackNames = KnownFeaturePacks.getNames();
-        StringCaptureConsole captureConsole = new StringCaptureConsole();
-        final ChannelPrinter channelPrinter = new ChannelPrinter(captureConsole);
-        for (String profile : featurePackNames){
+    private int displayListOfProfiles() throws ProvisioningException {
+        final Set<String> profiles = KnownFeaturePacks.getNames();
+        if (profiles.isEmpty()) {
+            console.println(CliMessages.MESSAGES.noAvailableProfiles() + "\n");
+        } else {
+            console.println(CliMessages.MESSAGES.availableProfiles() + "\n");
+        }
+
+        final ChannelPrinter channelPrinter = new ChannelPrinter(console, PROFILES_INDENT);
+        for (String profileName : profiles){
             console.println("----------");
-            console.println(CliMessages.MESSAGES.getProfile() +profile+ "\n"+"   "+CliMessages.MESSAGES.subscribedChannels());
-            for(Channel channel: getChannels(featurePackNames)){
+            console.println(CliMessages.MESSAGES.getProfile() + profileName);
+
+            final KnownFeaturePack profile = KnownFeaturePacks.getByName(profileName);
+
+            console.println(PROFILE_SUBHEADERS_INDENT + CliMessages.MESSAGES.subscribedChannels());
+            for(Channel channel: profile.getChannels()){
                 channelPrinter.print(channel);
-                for (String line: captureConsole.getLines(6)) {
-                    console.println(line); //reprint with the normal console, adding some spaces before each line
-                }
-            }
-            console.println("   "+CliMessages.MESSAGES.includedFeaturePacks());
-            for(String featurePacks: featurePackNames){
-                List<FeaturePackLocation> loc = getFpl(KnownFeaturePacks.getByName(featurePacks));
-                for (FeaturePackLocation featurePackLocation: loc) {
-                    console.println("       " + featurePackLocation.toString());
-                }
             }
 
+            console.println(PROFILE_SUBHEADERS_INDENT + CliMessages.MESSAGES.includedFeaturePacks());
+            for (FeaturePackLocation featurePackLocation: getFeaturePacks(profile)) {
+                console.println(" ".repeat(PROFILES_INDENT) + featurePackLocation.toString());
+            }
         }
+
+        return ReturnCodes.SUCCESS;
     }
 
-    private List<Channel> getChannels(Set<String> featurePackNames) throws Exception {
-        final List<Channel> channels = new ArrayList<>();
-        for (String channelNames : featurePackNames) {
-            KnownFeaturePack knownFeaturePack = KnownFeaturePacks.getByName(channelNames);
-            channels.addAll(knownFeaturePack.getChannels());
-        }
-        return channels;
-    }
+    private List<FeaturePackLocation> getFeaturePacks(KnownFeaturePack profile) throws ProvisioningException {
+        try {
+            final GalleonProvisioningConfig config = GalleonUtils.loadProvisioningConfig(profile.getGalleonConfiguration());
+            if (config.getFeaturePackDeps().isEmpty()) {
+                throw new ProvisioningException("At least one feature pack location must be specified in the provisioning configuration");
+            }
 
-    private List<FeaturePackLocation> getFpl(KnownFeaturePack knownFeaturePack) throws Exception {
-        GalleonProvisioningConfig config = GalleonUtils.loadProvisioningConfig(knownFeaturePack.getGalleonConfiguration());
-        if (config.getFeaturePackDeps().isEmpty()) {
-            throw new ProvisioningException("At least one feature pack location must be specified in the provisioning configuration");
+            return config.getFeaturePackDeps().stream()
+                    .map(GalleonFeaturePackConfig::getLocation)
+                    .collect(Collectors.toList());
+        } catch (XMLStreamException e) {
+            throw new ProvisioningException("Unable to parse provisioning configuration", e);
         }
-        return config.getFeaturePackDeps().stream()
-                .map(GalleonFeaturePackConfig::getLocation)
-                .collect(Collectors.toList());
     }
 
 }

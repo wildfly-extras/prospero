@@ -100,10 +100,6 @@
             <artifactId>system-rules</artifactId>
             <scope>test</scope>
         </dependency>
-        <dependency>
-            <groupId>info.picocli</groupId>
-            <artifactId>picocli</artifactId>
-        </dependency>
     </dependencies>
 
     <build>
