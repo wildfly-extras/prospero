@@ -52,7 +52,7 @@ import org.wildfly.prospero.api.exceptions.MetadataException;
 import org.wildfly.prospero.api.exceptions.NoChannelException;
 import org.wildfly.prospero.galleon.FeaturePackLocationParser;
 import org.wildfly.prospero.galleon.GalleonUtils;
-import org.wildfly.prospero.model.KnownFeaturePack;
+import org.wildfly.prospero.model.InstallationProfile;
 
 public class ProvisioningDefinition {
 
@@ -107,18 +107,18 @@ public class ProvisioningDefinition {
 
         if (builder.profile.isPresent()) {
 
-            if (!KnownFeaturePacks.isWellKnownName(builder.profile.get())) { // if known FP name
-                throw ProsperoLogger.ROOT_LOGGER.unknownInstallationProfile(builder.profile.get(), String.join(",", KnownFeaturePacks.getNames()));
+            if (!InstallationProfilesManager.isWellKnownName(builder.profile.get())) { // if known FP name
+                throw ProsperoLogger.ROOT_LOGGER.unknownInstallationProfile(builder.profile.get(), String.join(",", InstallationProfilesManager.getNames()));
             }
-            KnownFeaturePack featurePackInfo = KnownFeaturePacks.getByName(builder.profile.get());
+            InstallationProfile installationProfile = InstallationProfilesManager.getByName(builder.profile.get());
             this.fpl = null;
-            this.definition = featurePackInfo.getGalleonConfiguration();
+            this.definition = installationProfile.getGalleonConfiguration();
             if (this.channelCoordinates.isEmpty()) { // no channels provided by user
                 if (builder.manifest.isPresent()) { // if manifest given, use it to create a channel
-                    List<Repository> repositories = extractRepositoriesFromChannels(featurePackInfo.getChannels());
+                    List<Repository> repositories = extractRepositoriesFromChannels(installationProfile.getChannels());
                     this.channels = List.of(composeChannelFromManifest(builder.manifest.get(), repositories));
-                } else if (!featurePackInfo.getChannels().isEmpty()) { // if no manifest given, use channels from known FP
-                    this.channels = featurePackInfo.getChannels();
+                } else if (!installationProfile.getChannels().isEmpty()) { // if no manifest given, use channels from known FP
+                    this.channels = installationProfile.getChannels();
                 } else {
                     throw ProsperoLogger.ROOT_LOGGER.fplDefinitionDoesntContainChannel(builder.profile.get());
                 }
@@ -127,7 +127,7 @@ public class ProvisioningDefinition {
             this.fpl = builder.fpl.orElse(null);
             this.definition = builder.definitionFile.orElse(null);
             if (this.channelCoordinates.isEmpty() && builder.manifest.isEmpty()) {
-                throw ProsperoLogger.ROOT_LOGGER.predefinedFplOrChannelRequired(String.join(", ", KnownFeaturePacks.getNames()));
+                throw ProsperoLogger.ROOT_LOGGER.predefinedFplOrChannelRequired(String.join(", ", InstallationProfilesManager.getNames()));
             } else if (builder.manifest.isPresent()) { // if manifest given, use it to create a channel
                 if (overrideRepositories.isEmpty()) {
                     throw ProsperoLogger.ROOT_LOGGER.repositoriesMustBeSetWithManifest();

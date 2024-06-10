@@ -41,7 +41,7 @@ import org.wildfly.channel.Repository;
 import org.wildfly.channel.maven.ChannelCoordinate;
 import org.wildfly.prospero.actions.ProvisioningAction;
 import org.wildfly.prospero.api.ArtifactUtils;
-import org.wildfly.prospero.api.KnownFeaturePacks;
+import org.wildfly.prospero.api.InstallationProfilesManager;
 import org.wildfly.prospero.api.MavenOptions;
 import org.wildfly.prospero.api.ProvisioningDefinition;
 import org.wildfly.prospero.api.RepositoryUtils;
@@ -54,11 +54,11 @@ import org.wildfly.prospero.cli.LicensePrinter;
 import org.wildfly.prospero.cli.RepositoryDefinition;
 import org.wildfly.prospero.cli.ReturnCodes;
 import org.wildfly.prospero.api.TemporaryFilesManager;
-import org.wildfly.prospero.cli.commands.options.FeaturePackCandidates;
+import org.wildfly.prospero.cli.commands.options.InstallationProfilesCandidates;
 import org.wildfly.prospero.cli.printers.ChannelPrinter;
 import org.wildfly.prospero.galleon.GalleonUtils;
 import org.wildfly.prospero.licenses.License;
-import org.wildfly.prospero.model.KnownFeaturePack;
+import org.wildfly.prospero.model.InstallationProfile;
 import picocli.CommandLine;
 
 import javax.xml.stream.XMLStreamException;
@@ -111,7 +111,7 @@ public class InstallCommand extends AbstractInstallCommand {
         @CommandLine.Option(
                 names = CliConstants.PROFILE,
                 paramLabel = CliConstants.PROFILE_REFERENCE,
-                completionCandidates = FeaturePackCandidates.class,
+                completionCandidates = InstallationProfilesCandidates.class,
                 required = true,
                 order = 1
         )
@@ -160,11 +160,11 @@ public class InstallCommand extends AbstractInstallCommand {
         assert featurePackOrDefinition.definition.isPresent() || featurePackOrDefinition.fpl.isPresent() || featurePackOrDefinition.profile.isPresent();
 
         if (featurePackOrDefinition.profile.isEmpty() && channelCoordinates.isEmpty() && manifestCoordinate.isEmpty()) {
-            throw CliMessages.MESSAGES.channelsMandatoryWhenCustomFpl(String.join(",", KnownFeaturePacks.getNames()));
+            throw CliMessages.MESSAGES.channelsMandatoryWhenCustomFpl(String.join(",", InstallationProfilesManager.getNames()));
         }
 
         if (featurePackOrDefinition.profile.isPresent() && !isStandardFpl(featurePackOrDefinition.profile.get())) {
-            throw CliMessages.MESSAGES.unknownInstallationProfile(featurePackOrDefinition.profile.get(), String.join(",", KnownFeaturePacks.getNames()));
+            throw CliMessages.MESSAGES.unknownInstallationProfile(featurePackOrDefinition.profile.get(), String.join(",", InstallationProfilesManager.getNames()));
         }
 
         if (!channelCoordinates.isEmpty() && manifestCoordinate.isPresent()) {
@@ -263,7 +263,7 @@ public class InstallCommand extends AbstractInstallCommand {
     }
 
     private boolean isStandardFpl(String fpl) {
-        return KnownFeaturePacks.isWellKnownName(fpl);
+        return InstallationProfilesManager.isWellKnownName(fpl);
     }
 
     private static class StabilityCandidates implements Iterable<String> {
@@ -315,7 +315,7 @@ public class InstallCommand extends AbstractInstallCommand {
     }
 
     private int displayListOfProfiles() throws ProvisioningException {
-        final Set<String> profiles = KnownFeaturePacks.getNames();
+        final Set<String> profiles = InstallationProfilesManager.getNames();
         if (profiles.isEmpty()) {
             console.println(CliMessages.MESSAGES.noAvailableProfiles() + "\n");
         } else {
@@ -327,7 +327,7 @@ public class InstallCommand extends AbstractInstallCommand {
             console.println("----------");
             console.println(CliMessages.MESSAGES.getProfile() + profileName);
 
-            final KnownFeaturePack profile = KnownFeaturePacks.getByName(profileName);
+            final InstallationProfile profile = InstallationProfilesManager.getByName(profileName);
 
             console.println(PROFILE_SUBHEADERS_INDENT + CliMessages.MESSAGES.subscribedChannels());
             for(Channel channel: profile.getChannels()){
@@ -343,7 +343,7 @@ public class InstallCommand extends AbstractInstallCommand {
         return ReturnCodes.SUCCESS;
     }
 
-    private List<FeaturePackLocation> getFeaturePacks(KnownFeaturePack profile) throws ProvisioningException {
+    private List<FeaturePackLocation> getFeaturePacks(InstallationProfile profile) throws ProvisioningException {
         try {
             final GalleonProvisioningConfig config = GalleonUtils.loadProvisioningConfig(profile.getGalleonConfiguration());
             if (config.getFeaturePackDeps().isEmpty()) {

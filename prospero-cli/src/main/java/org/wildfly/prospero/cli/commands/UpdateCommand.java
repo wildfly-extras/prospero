@@ -45,7 +45,7 @@ import org.wildfly.prospero.actions.SubscribeNewServerAction;
 import org.wildfly.prospero.actions.UpdateAction;
 import org.wildfly.prospero.api.FileConflict;
 import org.wildfly.prospero.api.InstallationMetadata;
-import org.wildfly.prospero.api.KnownFeaturePacks;
+import org.wildfly.prospero.api.InstallationProfilesManager;
 import org.wildfly.prospero.api.MavenOptions;
 import org.wildfly.prospero.api.RepositoryUtils;
 import org.wildfly.prospero.api.exceptions.OperationException;
@@ -61,7 +61,7 @@ import org.wildfly.prospero.api.TemporaryFilesManager;
 import org.wildfly.prospero.galleon.FeaturePackLocationParser;
 import org.wildfly.prospero.galleon.GalleonUtils;
 import org.wildfly.prospero.metadata.ProsperoMetadataUtils;
-import org.wildfly.prospero.model.KnownFeaturePack;
+import org.wildfly.prospero.model.InstallationProfile;
 import org.wildfly.prospero.updates.UpdateSet;
 import picocli.CommandLine;
 
@@ -334,13 +334,13 @@ public class UpdateCommand extends AbstractParentCommand {
                 console.println(CliMessages.MESSAGES.productAndVersionNotNull());
                 return ReturnCodes.INVALID_ARGUMENTS;
             }
-            KnownFeaturePack knownFeaturePack = KnownFeaturePacks.getByName(product);
-            if (knownFeaturePack == null) {
+            InstallationProfile installationProfile = InstallationProfilesManager.getByName(product);
+            if (installationProfile == null) {
                 console.println(CliMessages.MESSAGES.unknownProduct(product));
                 return ReturnCodes.INVALID_ARGUMENTS;
             }
-            List<Channel> channels = knownFeaturePack.getChannels();
-            FeaturePackLocation loc = getFpl(knownFeaturePack, version);
+            List<Channel> channels = installationProfile.getChannels();
+            FeaturePackLocation loc = getFpl(installationProfile, version);
             log.debugf("Will generate FeaturePackLocation %s.", loc.toString());
 
             SubscribeNewServerAction subscribeNewServerAction = actionFactory.subscribeNewServerAction(parseMavenOptions(), console);
@@ -407,7 +407,7 @@ public class UpdateCommand extends AbstractParentCommand {
             return diff.hasAddedEntries() || diff.hasModifiedEntries() || diff.hasRemovedEntries();
         }
 
-        private FeaturePackLocation getFpl(KnownFeaturePack knownFeaturePack, String version) throws XMLStreamException, ProvisioningException {
+        private FeaturePackLocation getFpl(InstallationProfile knownFeaturePack, String version) throws XMLStreamException, ProvisioningException {
             GalleonProvisioningConfig config = GalleonUtils.loadProvisioningConfig(knownFeaturePack.getGalleonConfiguration());
             if (config.getFeaturePackDeps().isEmpty()) {
                 throw new ProvisioningException("At least one feature pack location must be specified in the provisioning configuration");

@@ -30,31 +30,28 @@ import java.net.URI;
 import java.net.URL;
 import java.util.List;
 
-/**
- * @deprecated use {@link InstallationProfile} instead
- */
-public class KnownFeaturePack {
+public class InstallationProfile {
     private final String name;
     private final List<Channel> channels;
     private final URI galleonConfiguration;
 
     @JsonCreator
-    public KnownFeaturePack(@JsonProperty(value = "name") String name,
-                            @JsonProperty(value = "channels") List<Channel> channels,
-                            @JsonProperty(value = "galleonConfiguration") URI galleonConfiguration) {
+    public InstallationProfile(@JsonProperty(value = "name") String name,
+                               @JsonProperty(value = "channels") List<Channel> channels,
+                               @JsonProperty(value = "galleonConfiguration") URI galleonConfiguration) {
         this.name = name;
         this.channels = channels;
         this.galleonConfiguration = galleonConfiguration;
     }
 
-    public static void write(List<KnownFeaturePack> packs, File configFile) throws IOException {
+    public static void write(List<InstallationProfile> packs, File configFile) throws IOException {
         new ObjectMapper(new YAMLFactory()).writeValue(configFile, packs);
     }
 
-    public static List<KnownFeaturePack> readConfig(URL url) throws IOException {
+    public static List<InstallationProfile> readConfig(URL url) throws IOException {
         final YAMLFactory yamlFactory = new YAMLFactory();
         final ObjectMapper objectMapper = new ObjectMapper(yamlFactory);
-        return objectMapper.readValue(url, new TypeReference<List<KnownFeaturePack>>(){});
+        return objectMapper.readValue(url, new TypeReference<List<InstallationProfile>>(){});
     }
 
     public String getName() {
@@ -71,7 +68,7 @@ public class KnownFeaturePack {
 
     @Override
     public String toString() {
-        return "KnownFeaturePack{" +
+        return "InstallationProfile{" +
                 "name='" + name + '\'' +
                 ", channels=" + channels +
                 ", galleonConfiguration=" + galleonConfiguration +

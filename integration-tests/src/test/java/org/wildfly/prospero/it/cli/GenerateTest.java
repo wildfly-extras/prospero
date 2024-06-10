@@ -31,12 +31,12 @@ import org.junit.rules.TemporaryFolder;
 import org.wildfly.channel.ChannelManifest;
 import org.wildfly.channel.Stream;
 import org.wildfly.channel.version.VersionMatcher;
-import org.wildfly.prospero.api.KnownFeaturePacks;
+import org.wildfly.prospero.api.InstallationProfilesManager;
 import org.wildfly.prospero.cli.ReturnCodes;
 import org.wildfly.prospero.cli.commands.CliConstants;
 import org.wildfly.prospero.it.ExecutionUtils;
 import org.wildfly.prospero.metadata.ProsperoMetadataUtils;
-import org.wildfly.prospero.model.KnownFeaturePack;
+import org.wildfly.prospero.model.InstallationProfile;
 import org.wildfly.prospero.model.ManifestYamlSupport;
 import org.wildfly.prospero.model.ProsperoConfig;
 import org.wildfly.prospero.wfchannel.MavenSessionManager;
@@ -110,7 +110,7 @@ public class GenerateTest {
     }
 
     private void downloadAndUnzipServer() throws ProvisioningException, ArtifactResolutionException, IOException {
-        KnownFeaturePack knownFeaturePack = KnownFeaturePacks.getByName(PRODUCT);
+        InstallationProfile knownFeaturePack = InstallationProfilesManager.getByName(PRODUCT);
         ProsperoConfig prosperoConfig = new ProsperoConfig(knownFeaturePack.getChannels());
         final MavenSessionManager mavenSessionManager = new MavenSessionManager();
         final RepositorySystem system = mavenSessionManager.newRepositorySystem();

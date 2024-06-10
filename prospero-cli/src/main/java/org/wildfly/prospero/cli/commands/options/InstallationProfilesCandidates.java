@@ -23,14 +23,11 @@ import org.wildfly.prospero.api.InstallationProfilesManager;
 import java.util.Iterator;
 import java.util.Set;
 
-/**
- * @deprecated use {@link InstallationProfilesCandidates} instead
- */
-public class FeaturePackCandidates implements Iterable<String> {
+public class InstallationProfilesCandidates implements Iterable<String> {
 
     private final Set<String> names;
 
-    public FeaturePackCandidates() {
+    public InstallationProfilesCandidates() {
         names = InstallationProfilesManager.getNames();
     }
 
