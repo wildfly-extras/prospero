@@ -4,7 +4,7 @@
 
 Prospero delegates provisioning server to Galleon. When Galleon attempts to resolve components needed by the server, instead of using versions provided by the feature packs, Prospero intercepts that request and uses Wildfly Channels to find the correct version of the component and resolve it from the channels repositories.
 
-image::overview.png[]
+image::../images/overview.png[]
 
 Every time a server is provisioned, it will receive the latest available components.
 

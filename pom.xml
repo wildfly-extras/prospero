@@ -116,6 +116,13 @@
             </dependency>
             <dependency>
                 <groupId>org.wildfly.prospero</groupId>
+                <artifactId>prospero-docs</artifactId>
+                <classifier>docs</classifier>
+                <type>tar.gz</type>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.wildfly.prospero</groupId>
                 <artifactId>prospero-metadata</artifactId>
                 <version>${version.org.wildfly.prospero.prospero-metadata}</version>
             </dependency>
