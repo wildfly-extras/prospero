@@ -17,11 +17,15 @@
 
 package org.wildfly.prospero.cli.commands;
 
+import java.io.File;
 import java.net.MalformedURLException;
 import java.net.URL;
+import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.Arrays;
 import java.util.List;
+import java.util.stream.Collectors;
 
 import org.assertj.core.groups.Tuple;
 import org.junit.Assert;
@@ -276,6 +280,76 @@ public class ChannelCommandTest extends AbstractConsoleTest {
         int exitCode = commandLine.execute(CliConstants.Commands.CHANNEL, CliConstants.Commands.REMOVE,
                 CliConstants.DIR, dir.toString());
         Assert.assertEquals(ReturnCodes.INVALID_ARGUMENTS, exitCode);
+    }
+    @Test
+    public void testChannelAdd_WithValidChannelDefinition() throws Exception {
+        final Path path = MetadataTestUtils.prepareChannel("manifest.yaml");
+        int exitCode = commandLine.execute(CliConstants.Commands.CHANNEL, CliConstants.Commands.ADD,
+                CliConstants.DIR, dir.toString(),
+                CliConstants.CHANNEL_NAME, "channel-0",
+                CliConstants.CHANNEL, path.toString());
+        Assert.assertEquals(ReturnCodes.SUCCESS, exitCode);
+
+        try (InstallationMetadata installationMetadata = InstallationMetadata.loadInstallation(dir)) {
+            final List<Channel> registeredChannels = installationMetadata.getProsperoConfig().getChannels();
+            final Channel addedChannel = registeredChannels.get(3);
+            Assert.assertEquals(addedChannel.getName(), "channel-0");
+            assertThat(addedChannel.getRepositories().stream()
+                    .map(r -> Tuple.tuple(r.getId(), r.getUrl()))
+                    .collect(Collectors.toList())) // Convert the Stream to a List
+                    .containsExactly(
+                            Tuple.tuple("maven-central", "https://repo1.maven.org/maven2/"),
+                            Tuple.tuple("nexus", "https://repository.jboss.org/nexus/content/groups/public"),
+                            Tuple.tuple("maven-redhat-ga", "https://maven.repository.redhat.com/ga"));
+        }
+    }
+
+    @Test
+    public void testChannelAdd_ChannelLocationIsExclusiveWithManifestParameter() throws Exception {
+        final Path path = MetadataTestUtils.prepareChannel("manifest.yaml");
+        final int exitCode = commandLine.execute(CliConstants.Commands.CHANNEL, CliConstants.Commands.ADD,
+                CliConstants.DIR, dir.toString(),
+                CliConstants.CHANNEL_NAME, "channel-0",
+                CliConstants.CHANNEL, path.toString(),
+                CliConstants.CHANNEL_MANIFEST, "org.test:test",
+                CliConstants.REPOSITORIES, "test_repo::http://test.te");
+        Assert.assertEquals(ReturnCodes.INVALID_ARGUMENTS, exitCode);
+        assertThat(getErrorOutput())
+                .contains("mutually exclusive")
+                .contains(CliConstants.CHANNEL, CliConstants.REPOSITORIES, CliConstants.CHANNEL_MANIFEST);
+    }
+
+    @Test
+    public void testChannelAdd_ChannelLocationChannelDefinitionFileDoesNotExist() throws Exception {
+        final Path nonExistingFilePath = Paths.get("non-existing-file.yaml").toAbsolutePath();
+        final int exitCode = commandLine.execute(CliConstants.Commands.CHANNEL, CliConstants.Commands.ADD,
+                CliConstants.DIR, dir.toString(),
+                CliConstants.CHANNEL_NAME, "channel-1",
+                CliConstants.CHANNEL, nonExistingFilePath.toString());
+        Assert.assertEquals(ReturnCodes.INVALID_ARGUMENTS, exitCode);
+        assertThat(getErrorOutput())
+                .contains(CliMessages.MESSAGES.missingRequiresResource(nonExistingFilePath.toString(), new Exception()).getMessage());
+    }
+
+    @Test
+    public void testChannelAdd_ChannelLocationChannelDefinitionIsInvalid() throws Exception {
+        final File invalidChannelFile = tempDir.newFile("InvalidChannelFile.yaml");
+        final List<String> yamlContent = List.of(
+                "channels:",
+                "  - name: invalid-channel",
+                "    description: This is an invalid channel for testing purposes.",
+                "    repositories:",
+                "      - id: test-repo",
+                "        url: http://invalid-url.org/repo"
+        );
+        Files.write(invalidChannelFile.toPath(), yamlContent);
+        final int exitCode = commandLine.execute(CliConstants.Commands.CHANNEL, CliConstants.Commands.ADD,
+                CliConstants.DIR, dir.toString(),
+                CliConstants.CHANNEL_NAME, "channel-2",
+                CliConstants.CHANNEL, invalidChannelFile.getAbsolutePath());
+        Assert.assertEquals(ReturnCodes.PROCESSING_ERROR, exitCode);
+        assertThat(getErrorOutput())
+                .contains("Invalid channel definition");
     }
 
     private static Channel createChannel(String name, ChannelManifestCoordinate coord) throws MalformedURLException {
