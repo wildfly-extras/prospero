@@ -32,8 +32,11 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Set;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
+import org.apache.commons.io.FileUtils;
 import org.eclipse.aether.artifact.Artifact;
 import org.jboss.galleon.Constants;
 import org.jboss.galleon.BaseErrors;
@@ -60,6 +63,7 @@ import static org.jboss.galleon.diff.FsDiff.MODIFIED;
 import static org.jboss.galleon.diff.FsDiff.REMOVED;
 import static org.jboss.galleon.diff.FsDiff.formatMessage;
 import static org.wildfly.prospero.metadata.ProsperoMetadataUtils.CURRENT_VERSION_FILE;
+import static org.wildfly.prospero.metadata.ProsperoMetadataUtils.METADATA_DIR;
 
 import org.jboss.galleon.diff.FsEntry;
 import org.jboss.galleon.layout.SystemPaths;
@@ -135,7 +139,12 @@ public class ApplyCandidateAction {
 
     /**
      * Applies changes from prepare update at {@code updateDir} to {@code installationDir}. The update candidate has to
-     * contain a marker file {@code .installation/.update.txt} with revision matching current installation's revision.
+     * contain a marker file {@code .installation/.update.txt}.
+     * <p>
+     * If the Operation is a Revert, the content of the installation dir is compared with the content of the updated dir
+     * to verify there are changes where revert to. This content check is done using .galleon/hashes files and
+     * ./installation/installer-channels.yaml file.
+     * <p>
      * Any update files from {@code updateDir} are copied to {@code installationDir}. If any of the updates
      * (apart from {@code system-paths}) conflict with user changes, the user changes are preserved and the updated file
      * is added with {@code'.glnew'} suffix.
@@ -147,7 +156,14 @@ public class ApplyCandidateAction {
      * @throws MetadataException - if unable to read or write the installation of update metadata
      */
     public List<FileConflict> applyUpdate(Type operation) throws ProvisioningException, OperationException {
-        if (ValidationResult.OK != verifyCandidate(operation)) {
+        ValidationResult validationResult = verifyCandidate(operation);
+        if (operation == Type.REVERT && ValidationResult.NO_CHANGES == validationResult) {
+            final InvalidUpdateCandidateException ex = ProsperoLogger.ROOT_LOGGER.noChangesAvailable(updateDir, installationDir);
+            ProsperoLogger.ROOT_LOGGER.warn("", ex);
+            throw ex;
+        }
+
+        if (ValidationResult.OK != validationResult) {
             final InvalidUpdateCandidateException ex = ProsperoLogger.ROOT_LOGGER.invalidUpdateCandidate(updateDir, installationDir);
             ProsperoLogger.ROOT_LOGGER.warn("", ex);
             throw ex;
@@ -188,17 +204,16 @@ public class ApplyCandidateAction {
     }
 
     public enum ValidationResult {
-        OK, NOT_CANDIDATE, STALE, WRONG_TYPE;
+        OK, NOT_CANDIDATE, STALE, WRONG_TYPE, NO_CHANGES;
     }
 
     /**
      * checks that the candidate is an update of a current state of installation
      *
-     * @return true if the candidate can be applied to installation
-     * @throws InvalidUpdateCandidateException - if the candidate has no marker file
+     * @return ValidationResult that represents the result of the verification
      * @throws MetadataException - if the metadata of candidate or installation cannot be read
      */
-    public ValidationResult verifyCandidate(Type operation) throws InvalidUpdateCandidateException, MetadataException {
+    public ValidationResult verifyCandidate(Type operation) throws MetadataException {
         final Path updateMarkerPath = updateDir.resolve(MarkerFile.UPDATE_MARKER_FILE);
         if (!Files.exists(updateMarkerPath)) {
             if (ProsperoLogger.ROOT_LOGGER.isDebugEnabled()) {
@@ -206,9 +221,10 @@ public class ApplyCandidateAction {
             }
             return ValidationResult.NOT_CANDIDATE;
         }
-        try {
-            final MarkerFile marker = MarkerFile.read(updateDir);
 
+        final MarkerFile marker;
+        try {
+            marker = MarkerFile.read(updateDir);
             final String hash = marker.getState();
             try(InstallationMetadata metadata = InstallationMetadata.loadInstallation(installationDir)) {
                 if (!metadata.getRevisions().get(0).getName().equals(hash)) {
@@ -218,19 +234,36 @@ public class ApplyCandidateAction {
                     return ValidationResult.STALE;
                 }
             }
-
-            if (marker.getOperation() != operation) {
-                if (ProsperoLogger.ROOT_LOGGER.isDebugEnabled()) {
-                    ProsperoLogger.ROOT_LOGGER.debugf("The candidate server has been prepared for different operation [%s].", marker.getOperation().getText());
-                }
-                return ValidationResult.WRONG_TYPE;
-            }
         } catch (IOException e) {
             if (ProsperoLogger.ROOT_LOGGER.isDebugEnabled()) {
                 ProsperoLogger.ROOT_LOGGER.debugf("Unable to read marker file [%s].", updateDir);
             }
             throw ProsperoLogger.ROOT_LOGGER.unableToReadFile(updateMarkerPath, e);
         }
+
+        if (marker.getOperation() != operation) {
+            if (ProsperoLogger.ROOT_LOGGER.isDebugEnabled()) {
+                ProsperoLogger.ROOT_LOGGER.debugf("The candidate server has been prepared for different operation [%s].", marker.getOperation().getText());
+            }
+            return ValidationResult.WRONG_TYPE;
+        }
+
+        try {
+            if (operation == Type.REVERT && compareContent(installationDir, updateDir)) {
+                if (ProsperoLogger.ROOT_LOGGER.isDebugEnabled()) {
+                    ProsperoLogger.ROOT_LOGGER.debugf(
+                            "There are no changes to apply to the installation [%s] from the candidate installation [%s].",
+                            installationDir, updateDir);
+                }
+                return ValidationResult.NO_CHANGES;
+            }
+        } catch (IOException e) {
+            if (ProsperoLogger.ROOT_LOGGER.isDebugEnabled()) {
+                ProsperoLogger.ROOT_LOGGER.debugf("IO Error comparing [%s] and [%s] hashes content.", installationDir, updateDir);
+            }
+            throw ProsperoLogger.ROOT_LOGGER.unableToCompareHashDirs(installationDir, updateDir, e);
+        }
+
         return ValidationResult.OK;
     }
 
@@ -311,7 +344,7 @@ public class ApplyCandidateAction {
 
     private CandidateProperties readCandidateProperties() {
         final Path candidatePropertiesPath = updateDir
-                .resolve(ProsperoMetadataUtils.METADATA_DIR).resolve(CANDIDATE_CHANNEL_NAME_LIST);
+                .resolve(METADATA_DIR).resolve(CANDIDATE_CHANNEL_NAME_LIST);
         if (Files.exists(candidatePropertiesPath)) {
             try {
                 return CandidatePropertiesParser.read(candidatePropertiesPath);
@@ -379,17 +412,17 @@ public class ApplyCandidateAction {
     }
 
     private void copyCurrentVersions() throws IOException {
-        Path sourceVersions = updateDir.resolve(ProsperoMetadataUtils.METADATA_DIR).resolve(CURRENT_VERSION_FILE);
+        Path sourceVersions = updateDir.resolve(METADATA_DIR).resolve(CURRENT_VERSION_FILE);
         if (Files.exists(sourceVersions)) {
-            Files.copy(sourceVersions, installationDir.resolve(ProsperoMetadataUtils.METADATA_DIR).resolve(CURRENT_VERSION_FILE), StandardCopyOption.REPLACE_EXISTING);
+            Files.copy(sourceVersions, installationDir.resolve(METADATA_DIR).resolve(CURRENT_VERSION_FILE), StandardCopyOption.REPLACE_EXISTING);
         }
     }
 
     private void writeProsperoMetadata(Type operation) throws MetadataException, IOException {
-        Path updateMetadataDir = updateDir.resolve(ProsperoMetadataUtils.METADATA_DIR);
+        Path updateMetadataDir = updateDir.resolve(METADATA_DIR);
         Path updateManifest = updateMetadataDir.resolve(ProsperoMetadataUtils.MANIFEST_FILE_NAME);
 
-        Path installationMetadataDir = installationDir.resolve(ProsperoMetadataUtils.METADATA_DIR);
+        Path installationMetadataDir = installationDir.resolve(METADATA_DIR);
         Path installationManifest = installationMetadataDir.resolve(ProsperoMetadataUtils.MANIFEST_FILE_NAME);
         IoUtils.copy(updateManifest, installationManifest);
 
@@ -460,7 +493,7 @@ public class ApplyCandidateAction {
             for (FsEntry added : fsDiff.getAddedEntries()) {
                 Path p = Paths.get(added.getRelativePath());
                 // Ignore .installation owned by prospero
-                if (p.getNameCount() > 0 && p.getName(0).toString().equals(ProsperoMetadataUtils.METADATA_DIR)) {
+                if (p.getNameCount() > 0 && p.getName(0).toString().equals(METADATA_DIR)) {
                     continue;
                 }
                 addFsEntry(updateDir, added, systemPaths, conflictList);
@@ -581,9 +614,9 @@ public class ApplyCandidateAction {
 
         // Handles files added/removed/modified in the update.
         Path skipUpdateGalleon = PathsUtils.getProvisionedStateDir(updateDir);
-        Path skipUpdateInstallation = updateDir.resolve(ProsperoMetadataUtils.METADATA_DIR);
+        Path skipUpdateInstallation = updateDir.resolve(METADATA_DIR);
         Path skipInstallationGalleon = PathsUtils.getProvisionedStateDir(installationDir);
-        Path skipInstallationInstallation = installationDir.resolve(ProsperoMetadataUtils.METADATA_DIR);
+        Path skipInstallationInstallation = installationDir.resolve(METADATA_DIR);
 
         // Copy the new/modified files that the update brings that are not in the installation and not removed/modified by the user.
         Files.walkFileTree(updateDir, new SimpleFileVisitor<Path>() {
@@ -743,5 +776,47 @@ public class ApplyCandidateAction {
         } catch (IOException e) {
             throw new ProvisioningException("Failed to persist " + target.getParent().resolve(target.getFileName() + Constants.DOT_GLOLD), e);
         }
+    }
+
+    private static boolean compareContent(Path installationDir, Path updateDir) throws IOException {
+        Path instGalleonHashPath = PathsUtils.getProvisionedStateDir(installationDir).resolve(Constants.HASHES);
+        Path updateGalleonHashPath = PathsUtils.getProvisionedStateDir(updateDir).resolve(Constants.HASHES);
+
+        Set<Path> instDirsPaths;
+        try (Stream<Path> instDirs = Files.walk(instGalleonHashPath)) {
+            instDirsPaths = instDirs.map(instGalleonHashPath::relativize).collect(Collectors.toUnmodifiableSet());
+        }
+
+        Set<Path> updateDirsPaths;
+        try (Stream<Path> instDirs = Files.walk(updateGalleonHashPath)) {
+            updateDirsPaths = instDirs.map(updateGalleonHashPath::relativize).collect(Collectors.toUnmodifiableSet());
+        }
+
+        if (instDirsPaths.size() != updateDirsPaths.size() || !instDirsPaths.containsAll(updateDirsPaths)) {
+            return false;
+        }
+
+        for (Path path : instDirsPaths) {
+            Path sourcePath = instGalleonHashPath.resolve(path);
+            if (Files.isRegularFile(sourcePath)) {
+                Path targetPath = updateGalleonHashPath.resolve(path);
+                if (!FileUtils.contentEquals(sourcePath.toFile(), targetPath.toFile())) {
+                    return false;
+                }
+            }
+        }
+        Path instConfPath = ProsperoMetadataUtils.configurationPath(installationDir);
+        Path updatePath = ProsperoMetadataUtils.configurationPath(updateDir);
+
+        if (!Files.exists(instConfPath) && Files.exists(updatePath)
+                || Files.exists(instConfPath) && !Files.exists(updatePath)) {
+            return false;
+        }
+
+        if (Files.exists(instConfPath) && Files.exists(updatePath)) {
+            return FileUtils.contentEquals(instConfPath.toFile(), updatePath.toFile());
+        }
+
+        return true;
     }
 }

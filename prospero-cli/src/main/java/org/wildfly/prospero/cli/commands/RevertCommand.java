@@ -53,11 +53,12 @@ import static org.wildfly.prospero.cli.ReturnCodes.SUCCESS;
 public class RevertCommand extends AbstractParentCommand {
 
     private static int applyCandidate(CliConsole console, ApplyCandidateAction applyCandidateAction, boolean yes) throws OperationException, ProvisioningException {
-        console.changesFound(applyCandidateAction.findUpdates().getArtifactUpdates());
+        List<ArtifactChange> artifactUpdates = applyCandidateAction.findUpdates().getArtifactUpdates();
+        console.printArtifactChanges(artifactUpdates);
         final List<FileConflict> conflicts = applyCandidateAction.getConflicts();
         FileConflictPrinter.print(conflicts, console);
 
-        if (!yes && !console.confirm(CliMessages.MESSAGES.continueWithRevert(),
+        if (!yes && !artifactUpdates.isEmpty() && !console.confirm(CliMessages.MESSAGES.continueWithRevert(),
                 CliMessages.MESSAGES.applyingChanges(), CliMessages.MESSAGES.revertCancelled())) {
             return SUCCESS;
         }
@@ -77,6 +78,8 @@ public class RevertCommand extends AbstractParentCommand {
             throw CliMessages.MESSAGES.updateCandidateWrongType(installationDirectory, ApplyCandidateAction.Type.REVERT);
         } else if (ApplyCandidateAction.ValidationResult.NOT_CANDIDATE == result) {
             throw CliMessages.MESSAGES.notCandidate(updateDirectory.toAbsolutePath());
+        } else if (ApplyCandidateAction.ValidationResult.NO_CHANGES == result) {
+            throw CliMessages.MESSAGES.noChanges(installationDirectory, updateDirectory.toAbsolutePath());
         }
     }
 
@@ -207,8 +210,8 @@ public class RevertCommand extends AbstractParentCommand {
                         .stream()
                         .map(ArtifactChange::reverse)
                         .collect(Collectors.toList());
-                console.changesFound(artifactChanges);
-                if (!yes && !console.confirm(CliMessages.MESSAGES.continueWithRevert(),
+                console.printArtifactChanges(artifactChanges);
+                if (!yes && !artifactChanges.isEmpty() && !console.confirm(CliMessages.MESSAGES.continueWithRevert(),
                         CliMessages.MESSAGES.applyingChanges(), CliMessages.MESSAGES.revertCancelled())) {
                     return SUCCESS;
                 }
