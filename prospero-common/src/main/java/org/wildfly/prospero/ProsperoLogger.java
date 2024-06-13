@@ -39,6 +39,7 @@ import java.io.IOException;
 import java.net.URI;
 import java.net.URL;
 import java.nio.file.Path;
+import java.util.List;
 
 @MessageLogger(projectCode = "PRSP")
 public interface ProsperoLogger extends BasicLogger {
@@ -233,8 +234,8 @@ public interface ProsperoLogger extends BasicLogger {
     @Message(id = 221, value = "Unable to write file at [%s]")
     MetadataException unableToWriteFile(Path path, @Cause Exception e);
 
-    @Message(id = 222, value = "Path `%s` does not contain a server installation provisioned by prospero.")
-    IllegalArgumentException invalidInstallationDir(Path path);
+    @Message(id = 222, value = "Path `%s` does not contain a server installation provisioned by prospero. Missing required files: %s")
+    IllegalArgumentException invalidInstallationDir(Path path, List<Path> missingFolders);
 
     @Message(id = 223, value = "Unable to access history store at [%s]")
     MetadataException unableToAccessHistoryStorage(Path path, @Cause Exception e);
