@@ -40,10 +40,10 @@
             <configuration>
               <sourceDirectory>${basedir}/guide</sourceDirectory>
               <sourceDocumentName>index.adoc</sourceDocumentName>
-              <imagesDir>images</imagesDir>
               <backend>html</backend>
               <doctype>book</doctype>
               <attributes>
+                <imagesDir>images</imagesDir>
                 <version>${project.version}</version>
                 <ec2-pub-ip-dash>${ec2-pub-ip-dash}</ec2-pub-ip-dash>
                 <ec2-pub-ip>${ec2-pub-ip}</ec2-pub-ip>
