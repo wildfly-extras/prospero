@@ -22,6 +22,7 @@ import org.jboss.galleon.ProvisioningException;
 import org.junit.Assert;
 import org.wildfly.channel.Channel;
 import org.wildfly.channel.Repository;
+import org.wildfly.prospero.actions.MetadataAction;
 import org.wildfly.prospero.api.exceptions.MetadataException;
 import org.wildfly.prospero.galleon.ArtifactCache;
 import org.wildfly.prospero.metadata.ManifestVersionRecord;
@@ -132,6 +133,25 @@ public class InstallationHistoryActionTest extends WfCoreTestBase {
         assertThat(historyAction.getRevisions())
                 .map(SavedState::getType)
                 .contains(SavedState.Type.ROLLBACK, SavedState.Type.UPDATE, SavedState.Type.INSTALL);
+    }
+
+    @Test
+    public void rollbackToTipIsNotAllowed() throws Exception {
+        channelsFile = MetadataTestUtils.prepareChannel(CHANNEL_BASE_CORE_19);
+
+        final ProvisioningDefinition provisioningDefinition = defaultWfCoreDefinition()
+                .setChannelCoordinates(channelsFile.toString())
+                .build();
+        installation.provision(provisioningDefinition.toProvisioningConfig(),
+                provisioningDefinition.resolveChannels(CHANNELS_RESOLVER_FACTORY));
+
+        final InstallationHistoryAction historyAction = new InstallationHistoryAction(outputPath, new AcceptingConsole());
+        final List<SavedState> revisions = historyAction.getRevisions();
+
+        final SavedState savedState = revisions.get(0);
+        assertThatThrownBy(() -> historyAction.rollback(savedState, mavenOptions, Collections.emptyList()))
+                .isInstanceOf(MetadataException.class)
+                .message().contains("Reverting to the same state is not a valid operation");
     }
 
     @Test
@@ -440,9 +460,17 @@ public class InstallationHistoryActionTest extends WfCoreTestBase {
 
         ArtifactCache.cleanInstancesCache();
 
+        // create a fake commit so that the artifacts are not changed.
+        // this way we can revert to a state before it relaying ONLY on cached artifacts
+        new MetadataAction(outputPath).addChannel(new Channel.Builder()
+                .setName("test-channel")
+                .addRepository("test-repo", "https://foo.bar")
+                .setManifestUrl(new URL("http://test.te"))
+                .build());
+
         final InstallationHistoryAction historyAction = new InstallationHistoryAction(outputPath, new AcceptingConsole());
         final List<SavedState> revisions = historyAction.getRevisions();
-        final SavedState savedState = revisions.get(0);
+        final SavedState savedState = revisions.get(1);
 
         // perform the rollback using only internal cache. Offline mode disables other repositories
         final URL temporaryRepo = mockTemporaryRepo(false);
