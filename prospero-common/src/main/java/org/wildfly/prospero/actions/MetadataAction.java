@@ -36,6 +36,7 @@ public class MetadataAction implements AutoCloseable {
     private final InstallationMetadata installationMetadata;
 
     public MetadataAction(Path installation) throws MetadataException {
+        installation = InstallFolderUtils.toRealPath(installation);
         this.installationMetadata = InstallationMetadata.loadInstallation(installation);
     }
 

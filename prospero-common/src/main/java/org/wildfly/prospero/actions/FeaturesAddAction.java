@@ -97,9 +97,10 @@ public class FeaturesAddAction {
                       List<Repository> repositories, Console console, CandidateActionsFactory candidateActionsFactory,
                       FeaturePackTemplateManager featurePackTemplateManager)
             throws MetadataException, ProvisioningException {
-        this.installDir = installDir;
+        this.installDir = InstallFolderUtils.toRealPath(installDir);
+
         this.console = console;
-        this.metadata = InstallationMetadata.loadInstallation(installDir);
+        this.metadata = InstallationMetadata.loadInstallation(this.installDir);
         this.prosperoConfig = addTemporaryRepositories(repositories);
 
         final MavenOptions mergedOptions = prosperoConfig.getMavenOptions().merge(mavenOptions);
@@ -133,6 +134,8 @@ public class FeaturesAddAction {
             throws ProvisioningException, OperationException {
         verifyFeaturePackCoord(featurePackCoord);
         Objects.requireNonNull(defaultConfigNames);
+
+        candidatePath = InstallFolderUtils.toRealPath(candidatePath);
 
         FeaturePackLocation fpl = FeaturePackLocationParser.resolveFpl(featurePackCoord);
 

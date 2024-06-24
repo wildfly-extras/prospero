@@ -386,4 +386,7 @@ public interface ProsperoLogger extends BasicLogger {
 
     @Message(id = 270, value = "Unable to compare the hash content between the installation %s and candidate installation %s.")
     MetadataException unableToCompareHashDirs(Path installationDir, Path updateDir, @Cause Exception e);
+
+    @Message(id = 271, value = "Unable to evaluate symbolic link %s.")
+    RuntimeException unableToEvaluateSymbolicLink(Path symlink, @Cause IOException e);
 }
