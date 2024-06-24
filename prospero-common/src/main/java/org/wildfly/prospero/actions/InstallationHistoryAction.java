@@ -50,7 +50,7 @@ public class InstallationHistoryAction {
     private final Console console;
 
     public InstallationHistoryAction(Path installation, Console console) {
-        this.installation = installation;
+        this.installation = InstallFolderUtils.toRealPath(installation);
         this.console = console;
     }
 
@@ -95,6 +95,8 @@ public class InstallationHistoryAction {
         } else {
             InstallFolderUtils.verifyIsWritable(targetDir);
         }
+
+        targetDir = InstallFolderUtils.toRealPath(targetDir);
 
         try (InstallationMetadata metadata = InstallationMetadata.loadInstallation(installation)) {
             ProsperoLogger.ROOT_LOGGER.revertCandidateStarted(installation);

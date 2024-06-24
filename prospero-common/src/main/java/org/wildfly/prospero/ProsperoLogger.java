@@ -364,4 +364,7 @@ public interface ProsperoLogger extends BasicLogger {
 
     @Message(id = 267, value = "Repository archive has to contain a single root folder with a maven-repository sub-folder.")
     InvalidRepositoryArchiveException invalidRepositoryArchive();
+
+    @Message(id = 271, value = "Unable to evaluate symbolic link %s.")
+    RuntimeException unableToEvaluateSymbolicLink(Path symlink, @Cause IOException e);
 }
