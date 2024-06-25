@@ -13,6 +13,12 @@
     <packaging>jar</packaging>
 
     <dependencies>
+
+        <dependency>
+            <groupId>com.google.cloud.tools</groupId>
+            <artifactId>jib-core</artifactId>
+            <version>0.27.1</version>
+        </dependency>
         <dependency>
             <groupId>com.fasterxml.jackson.dataformat</groupId>
             <artifactId>jackson-dataformat-yaml</artifactId>
