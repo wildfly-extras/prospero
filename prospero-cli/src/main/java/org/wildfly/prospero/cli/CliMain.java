@@ -22,6 +22,7 @@ import org.jboss.logmanager.Configurator;
 import org.jboss.logmanager.Level;
 import org.jboss.logmanager.PropertyConfigurator;
 import org.jboss.logmanager.config.LogContextConfiguration;
+import org.wildfly.prospero.cli.commands.BuildImageCommand;
 import org.wildfly.prospero.cli.commands.ChannelCommand;
 import org.wildfly.prospero.cli.commands.CliConstants;
 import org.wildfly.prospero.cli.commands.CloneCommand;
@@ -85,6 +86,8 @@ public class CliMain {
         revertCommand.addSubCommands(commandLine);
         commandLine.addSubcommand(new ChannelCommand(console, actionFactory));
         commandLine.addSubcommand(new CompletionCommand());
+
+        commandLine.addSubcommand(new BuildImageCommand(console, actionFactory));
 
         CommandLine channelCmd = commandLine.getSubcommands().get(CliConstants.Commands.CHANNEL);
         channelCmd.addSubcommand(new ChannelAddCommand(console, actionFactory));
