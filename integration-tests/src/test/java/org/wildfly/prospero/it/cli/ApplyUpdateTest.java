@@ -137,6 +137,49 @@ public class ApplyUpdateTest extends CliTestBase  {
         assertEquals(WfCoreTestBase.UPGRADE_VERSION, wildflyCliStream.get().getVersion());
     }
 
+    @Test
+    public void generateUpdateAndApplyIntoSymbolicLink() throws Exception {
+        final Path manifestPath = temp.newFile().toPath();
+        final Path provisionConfig = temp.newFile().toPath();
+        final Path updatePath = tempDir.newFolder("update-candidate").toPath();
+        MetadataTestUtils.copyManifest("manifests/wfcore-base.yaml", manifestPath);
+        MetadataTestUtils.prepareChannel(provisionConfig, List.of(manifestPath.toUri().toURL()), defaultRemoteRepositories());
+
+        final Path targetLink = Files.createSymbolicLink(temp.newFolder().toPath().resolve("target-link"), targetDir.toPath());
+        final Path candidateLink = Files.createSymbolicLink(temp.newFolder().toPath().resolve("update-candidate-link"), updatePath);
+
+        install(provisionConfig, targetLink);
+
+        upgradeStreamInManifest(manifestPath, resolvedUpgradeArtifact);
+
+        final URL temporaryRepo = mockTemporaryRepo(true);
+
+        // generate update-candidate
+        ExecutionUtils.prosperoExecution(CliConstants.Commands.UPDATE, CliConstants.Commands.PREPARE,
+                        CliConstants.REPOSITORIES, temporaryRepo.toString(),
+                        CliConstants.CANDIDATE_DIR, candidateLink.toAbsolutePath().toString(),
+                        CliConstants.Y,
+                        CliConstants.DIR, targetDir.getAbsolutePath())
+                .execute()
+                .assertReturnCode(ReturnCodes.SUCCESS);
+
+        // verify the original server has not been modified
+        Optional<Stream> wildflyCliStream = getInstalledArtifact(resolvedUpgradeArtifact.getArtifactId(), targetDir.toPath());
+        assertEquals(WfCoreTestBase.BASE_VERSION, wildflyCliStream.get().getVersion());
+
+        // apply update-candidate
+        ExecutionUtils.prosperoExecution(CliConstants.Commands.UPDATE, CliConstants.Commands.APPLY,
+                        CliConstants.CANDIDATE_DIR, candidateLink.toAbsolutePath().toString(),
+                        CliConstants.Y,
+                        CliConstants.DIR, targetDir.getAbsolutePath())
+                .execute()
+                .assertReturnCode(ReturnCodes.SUCCESS);
+
+        // verify the original server has been modified
+        wildflyCliStream = getInstalledArtifact(resolvedUpgradeArtifact.getArtifactId(), targetDir.toPath());
+        assertEquals(WfCoreTestBase.UPGRADE_VERSION, wildflyCliStream.get().getVersion());
+    }
+
     private Path createRepositoryArchive(URL temporaryRepo) throws URISyntaxException, IOException {
         final Path repoPath = Path.of(temporaryRepo.toURI());
         final Path root = tempDir.newFolder("repo-root").toPath();

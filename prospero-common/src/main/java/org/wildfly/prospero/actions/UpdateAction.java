@@ -55,8 +55,8 @@ public class UpdateAction implements AutoCloseable {
 
     public UpdateAction(Path installDir, MavenOptions mavenOptions, Console console, List<Repository> overrideRepositories)
             throws OperationException, ProvisioningException {
-        this.metadata = InstallationMetadata.loadInstallation(installDir);
-        this.installDir = installDir;
+        this.installDir = InstallFolderUtils.toRealPath(installDir);
+        this.metadata = InstallationMetadata.loadInstallation(this.installDir);
         this.console = console;
         this.prosperoConfig = addTemporaryRepositories(overrideRepositories);
         this.mavenOptions = prosperoConfig.getMavenOptions().merge(mavenOptions);
@@ -110,6 +110,8 @@ public class UpdateAction implements AutoCloseable {
         } else {
             InstallFolderUtils.verifyIsWritable(targetDir);
         }
+
+        targetDir = InstallFolderUtils.toRealPath(targetDir);
 
         final UpdateSet updateSet = findUpdates();
         if (updateSet.isEmpty()) {

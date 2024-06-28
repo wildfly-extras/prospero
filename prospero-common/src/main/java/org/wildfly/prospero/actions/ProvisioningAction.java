@@ -73,7 +73,7 @@ public class ProvisioningAction {
     private final MavenOptions mvnOptions;
 
     public ProvisioningAction(Path installDir, MavenOptions mvnOptions, Console console) throws ProvisioningException {
-        this.installDir = installDir;
+        this.installDir = InstallFolderUtils.toRealPath(installDir);
         this.console = console;
         this.mvnOptions = mvnOptions;
         this.mavenSessionManager = new MavenSessionManager(mvnOptions);

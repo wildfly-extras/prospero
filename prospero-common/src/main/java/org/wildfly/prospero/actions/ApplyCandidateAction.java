@@ -125,7 +125,8 @@ public class ApplyCandidateAction {
     public ApplyCandidateAction(Path installationDir, Path updateDir)
             throws ProvisioningException, OperationException {
         this.updateDir = updateDir;
-        this.installationDir = installationDir;
+        this.installationDir = InstallFolderUtils.toRealPath(installationDir);
+        updateDir = InstallFolderUtils.toRealPath(updateDir);
 
         try {
             this.systemPaths = SystemPaths.load(updateDir);

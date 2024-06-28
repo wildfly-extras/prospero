@@ -30,7 +30,7 @@ public class InstallationExportAction {
     private final Path installationDir;
 
     public InstallationExportAction(Path installationDir) {
-        this.installationDir = installationDir;
+        this.installationDir = InstallFolderUtils.toRealPath(installationDir);
     }
 
     public static void main(String[] args) throws Exception {
@@ -44,6 +44,8 @@ public class InstallationExportAction {
         if (!installationDir.toFile().exists()) {
             throw ProsperoLogger.ROOT_LOGGER.installationDirDoesNotExist(installationDir);
         }
+
+        exportPath = InstallFolderUtils.toRealPath(exportPath);
 
         try (InstallationMetadata metadataBundle = InstallationMetadata.loadInstallation(installationDir)) {
 
