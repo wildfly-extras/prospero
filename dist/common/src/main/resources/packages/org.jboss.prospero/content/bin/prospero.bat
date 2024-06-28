@@ -71,7 +71,6 @@ if not %DEBUG_ARG% == "" (
 
 :MAIN
 rem $Id$
-)
 
 pushd "%DIRNAME%.."
 set "RESOLVED_PROSPERO_HOME=%CD%"
@@ -192,7 +191,7 @@ rem Use a copy of jboss-modules to avoid locking issues when jboss-modules is up
     set "TMP_JBOSS_MODULES=%PROSPERO_HOME%\jboss-modules~%RANDOM%.tmp"
     rem loop while we find a non-existing filename
     if exist "%TMP_JBOSS_MODULES%" goto :COPY_JBOSS_MODULES
-    cp "%RUNJAR%" "%TMP_JBOSS_MODULES%"
+    copy "%RUNJAR%" "%TMP_JBOSS_MODULES%"
 
 rem If the -Djava.security.manager is found, enable the -secmgr and include a bogus security manager for JBoss Modules to replace
 echo(!JAVA_OPTS! | findstr /r /c:"-Djava.security.manager" > nul && (
@@ -260,5 +259,5 @@ if "x%NOPAUSE%" == "x" pause
 
 :END_NO_PAUSE
 set EXIT_LEVEL="%errorlevel%"
-if exist "%TMP_JBOSS_MODULES%" rm -rf "%TMP_JBOSS_MODULES%"
+if exist "%TMP_JBOSS_MODULES%" del /Q "%TMP_JBOSS_MODULES%"
 exit /b %EXIT_LEVEL%
