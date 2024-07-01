@@ -48,6 +48,7 @@ import org.wildfly.prospero.api.FileConflict;
 import org.wildfly.prospero.api.InstallationMetadata;
 import org.wildfly.prospero.api.MavenOptions;
 import org.wildfly.prospero.api.SavedState;
+import org.wildfly.prospero.api.TemporaryFilesManager;
 import org.wildfly.prospero.api.exceptions.InvalidUpdateCandidateException;
 import org.wildfly.prospero.api.exceptions.MetadataException;
 import org.wildfly.prospero.api.exceptions.OperationException;
@@ -175,31 +176,46 @@ public class ApplyCandidateAction {
             throw ex;
         }
 
-        FsDiff diffs = findChanges();
-        try {
-            ProsperoLogger.ROOT_LOGGER.applyingCandidate(operation.text.toLowerCase(Locale.ROOT), updateDir);
-            ProsperoLogger.ROOT_LOGGER.candidateChanges(
-                    findUpdates().getArtifactUpdates().stream().map(ArtifactChange::prettyPrint).collect(Collectors.joining("; "))
+        final FsDiff diffs = findChanges();
+        try (TemporaryFilesManager temp = TemporaryFilesManager.getInstance()) {
+            ApplyStageBackup backup = null;
+            try {
+                backup = new ApplyStageBackup(installationDir, temp.createTempDirectory("prospero-apply-backup"));
+                ProsperoLogger.ROOT_LOGGER.applyingCandidate(operation.text.toLowerCase(Locale.ROOT), updateDir);
+                ProsperoLogger.ROOT_LOGGER.candidateChanges(
+                        findUpdates().getArtifactUpdates().stream().map(ArtifactChange::prettyPrint).collect(Collectors.joining("; "))
+                );
+
+                final List<FileConflict> conflicts = doApplyUpdate(diffs, backup);
+
+                if (conflicts.isEmpty()) {
+                    ProsperoLogger.ROOT_LOGGER.noCandidateConflicts();
+                } else {
+                    ProsperoLogger.ROOT_LOGGER.candidateConflicts(
+                            conflicts.stream().map(FileConflict::prettyPrint).collect(Collectors.joining("; "))
                     );
+                    for (FileConflict conflict : conflicts) {
+                        ProsperoLogger.ROOT_LOGGER.info(conflict.prettyPrint());
+                    }
+                }
 
-            final List<FileConflict> conflicts = doApplyUpdate(diffs);
-
-            if (conflicts.isEmpty()) {
-                ProsperoLogger.ROOT_LOGGER.noCandidateConflicts();
-            } else {
-                ProsperoLogger.ROOT_LOGGER.candidateConflicts(
-                        conflicts.stream().map(FileConflict::prettyPrint).collect(Collectors.joining("; "))
-                        );
-                for (FileConflict conflict : conflicts) {
-                    ProsperoLogger.ROOT_LOGGER.info(conflict.prettyPrint());
+                updateMetadata(operation, backup);
+                ProsperoLogger.ROOT_LOGGER.candidateApplied(operation.text, installationDir);
+                return conflicts;
+            } catch (IOException ex) {
+                try {
+                    if (backup != null) {
+                        backup.restore();
+                    }
+                } catch (IOException e) {
+                    throw new ProvisioningException("Unable to restore the server from a backup.", e);
+                }
+                throw new ProvisioningException("Unable to apply the candidate changes.", ex);
+            } finally {
+                if (backup != null) {
+                    backup.close();
                 }
             }
-
-            updateMetadata(operation);
-            ProsperoLogger.ROOT_LOGGER.candidateApplied(operation.text, installationDir);
-            return conflicts;
-        } catch (IOException ex) {
-            throw new ProvisioningException(ex);
         }
     }
 
@@ -386,21 +402,21 @@ public class ApplyCandidateAction {
 
     }
 
-    private void updateMetadata(Type operation) throws ProvisioningException, MetadataException {
-        try {
-            copyCurrentVersions();
-            Path installationGalleonPath = PathsUtils.getProvisionedStateDir(installationDir);
-            Path updateGalleonPath = PathsUtils.getProvisionedStateDir(updateDir);
-            IoUtils.recursiveDelete(installationGalleonPath);
-            IoUtils.copy(updateGalleonPath, installationGalleonPath, true);
-            // after the galleon data is copied, persist a copy of provisioning.xml and record it
-            ProsperoMetadataUtils.recordProvisioningDefinition(installationDir);
-            writeProsperoMetadata(operation);
-            updateInstallationCache();
-            updateAcceptedLicences();
-        } catch (IOException ex) {
-            throw new ProvisioningException(ex);
-        }
+    private void updateMetadata(Type operation, ApplyStageBackup backup) throws IOException, MetadataException {
+        // add all files in .installation folder to the backup set
+        backup.record(installationDir.resolve(METADATA_DIR));
+        copyCurrentVersions();
+        Path installationGalleonPath = PathsUtils.getProvisionedStateDir(installationDir);
+        Path updateGalleonPath = PathsUtils.getProvisionedStateDir(updateDir);
+        // add all files in .galleon folder to the backup set
+        backup.record(installationGalleonPath);
+        IoUtils.recursiveDelete(installationGalleonPath);
+        IoUtils.copy(updateGalleonPath, installationGalleonPath, true);
+        // after the galleon data is copied, persist a copy of provisioning.xml and record it
+        ProsperoMetadataUtils.recordProvisioningDefinition(installationDir);
+        writeProsperoMetadata(operation);
+        updateInstallationCache();
+        updateAcceptedLicences();
     }
 
     private void updateAcceptedLicences() throws MetadataException {
@@ -459,7 +475,7 @@ public class ApplyCandidateAction {
         }
     }
 
-    private List<FileConflict> handleRemovedFiles(FsDiff fsDiff) throws IOException {
+    private List<FileConflict> handleRemovedFiles(FsDiff fsDiff, ApplyStageBackup backup) throws IOException {
         final List<FileConflict> conflictList = new ArrayList<>();
         if (fsDiff.hasRemovedEntries()) {
             for (FsEntry removed : fsDiff.getRemovedEntries()) {
@@ -473,8 +489,12 @@ public class ApplyCandidateAction {
                         if (ProsperoLogger.ROOT_LOGGER.isDebugEnabled()) {
                             ProsperoLogger.ROOT_LOGGER.debug(formatMessage(FORCED, removed.getRelativePath(), HAS_CHANGED_IN_THE_UPDATED_VERSION));
                         }
-                        Files.createDirectories(installationDir.resolve(removed.getRelativePath()).getParent());
-                        IoUtils.copy(target, installationDir.resolve(removed.getRelativePath()));
+                        if (backup != null) {
+                            backup.record(installationDir.resolve(removed.getRelativePath()).getParent());
+                            backup.record(installationDir.resolve(removed.getRelativePath()));
+                            Files.createDirectories(installationDir.resolve(removed.getRelativePath()).getParent());
+                            IoUtils.copy(target, installationDir.resolve(removed.getRelativePath()));
+                        }
                     }
                 } else {
                     if (ProsperoLogger.ROOT_LOGGER.isDebugEnabled()) {
@@ -487,7 +507,7 @@ public class ApplyCandidateAction {
         return conflictList;
     }
 
-    private List<FileConflict> handleAddedFiles(FsDiff fsDiff) throws IOException, ProvisioningException {
+    private List<FileConflict> handleAddedFiles(FsDiff fsDiff, ApplyStageBackup backup) throws IOException, ProvisioningException {
         final List<FileConflict> conflictList = new ArrayList<>();
         if (fsDiff.hasAddedEntries()) {
             for (FsEntry added : fsDiff.getAddedEntries()) {
@@ -496,13 +516,14 @@ public class ApplyCandidateAction {
                 if (p.getNameCount() > 0 && p.getName(0).toString().equals(METADATA_DIR)) {
                     continue;
                 }
-                addFsEntry(updateDir, added, systemPaths, conflictList);
+                addFsEntry(updateDir, added, systemPaths, conflictList, backup);
             }
         }
         return conflictList;
     }
 
-    private void addFsEntry(Path updateDir, FsEntry added, SystemPaths systemPaths, List<FileConflict> conflictList)
+    private void addFsEntry(Path updateDir, FsEntry added, SystemPaths systemPaths,
+                            List<FileConflict> conflictList, ApplyStageBackup backup)
             throws ProvisioningException {
         final Path target = updateDir.resolve(added.getRelativePath());
         if (ProsperoLogger.ROOT_LOGGER.isDebugEnabled()) {
@@ -511,7 +532,7 @@ public class ApplyCandidateAction {
         if (Files.exists(target)) {
             if (added.isDir()) {
                 for (FsEntry child : added.getChildren()) {
-                    addFsEntry(updateDir, child, systemPaths, conflictList);
+                    addFsEntry(updateDir, child, systemPaths, conflictList, backup);
                 }
                 return;
             }
@@ -532,19 +553,19 @@ public class ApplyCandidateAction {
                         ProsperoLogger.ROOT_LOGGER.debug(formatMessage(FORCED, added.getRelativePath(), CONFLICTS_WITH_THE_UPDATED_VERSION));
                     }
                     conflictList.add(FileConflict.userAdded(added.getRelativePath()).updateAdded().overwritten());
-                    glold(installationDir.resolve(added.getRelativePath()), target);
+                    glold(installationDir.resolve(added.getRelativePath()), target, backup);
                 } else {
                     if (ProsperoLogger.ROOT_LOGGER.isDebugEnabled()) {
                         ProsperoLogger.ROOT_LOGGER.debug(formatMessage(CONFLICT, added.getRelativePath(), CONFLICTS_WITH_THE_UPDATED_VERSION));
                     }
                     conflictList.add(FileConflict.userAdded(added.getRelativePath()).updateAdded().userPreserved());
-                    glnew(target, installationDir.resolve(added.getRelativePath()));
+                    glnew(target, installationDir.resolve(added.getRelativePath()), backup);
                 }
             }
         }
     }
 
-    private List<FileConflict> handleModifiedFiles(FsDiff fsDiff) throws IOException, ProvisioningException {
+    private List<FileConflict> handleModifiedFiles(FsDiff fsDiff, ApplyStageBackup backup) throws IOException, ProvisioningException {
         final List<FileConflict> conflictList = new ArrayList<>();
         if (fsDiff.hasModifiedEntries()) {
             for (FsEntry[] modified : fsDiff.getModifiedEntries()) {
@@ -574,13 +595,13 @@ public class ApplyCandidateAction {
                                     ProsperoLogger.ROOT_LOGGER.debug(formatMessage(FORCED, installation.getRelativePath(), HAS_CHANGED_IN_THE_UPDATED_VERSION));
                                 }
                                 conflictList.add(FileConflict.userModified(installation.getRelativePath()).updateModified().overwritten());
-                                glold(installation.getPath(), file);
+                                glold(installation.getPath(), file, backup);
                             } else {
                                 if (ProsperoLogger.ROOT_LOGGER.isDebugEnabled()) {
                                     ProsperoLogger.ROOT_LOGGER.debug(formatMessage(CONFLICT, installation.getRelativePath(), HAS_CHANGED_IN_THE_UPDATED_VERSION));
                                 }
                                 conflictList.add(FileConflict.userModified(installation.getRelativePath()).updateModified().userPreserved());
-                                glnew(file, installationFile);
+                                glnew(file, installationFile, backup);
                             }
                         }
                     }
@@ -599,18 +620,18 @@ public class ApplyCandidateAction {
     private List<FileConflict> compareServers(FsDiff fsDiff) throws IOException, ProvisioningException {
         List<FileConflict> conflicts = new ArrayList<>();
         // Handles user added/removed/modified files
-        conflicts.addAll(handleRemovedFiles(fsDiff));
-        conflicts.addAll(handleAddedFiles(fsDiff));
-        conflicts.addAll(handleModifiedFiles(fsDiff));
+        conflicts.addAll(handleRemovedFiles(fsDiff, null));
+        conflicts.addAll(handleAddedFiles(fsDiff, null));
+        conflicts.addAll(handleModifiedFiles(fsDiff, null));
         return Collections.unmodifiableList(conflicts);
     }
 
-    private List<FileConflict> doApplyUpdate(FsDiff fsDiff) throws IOException, ProvisioningException {
+    private List<FileConflict> doApplyUpdate(FsDiff fsDiff, ApplyStageBackup backup) throws IOException, ProvisioningException {
         List<FileConflict> conflicts = new ArrayList<>();
         // Handles user added/removed/modified files
-        conflicts.addAll(handleRemovedFiles(fsDiff));
-        conflicts.addAll(handleAddedFiles(fsDiff));
-        conflicts.addAll(handleModifiedFiles(fsDiff));
+        conflicts.addAll(handleRemovedFiles(fsDiff, backup));
+        conflicts.addAll(handleAddedFiles(fsDiff, backup));
+        conflicts.addAll(handleModifiedFiles(fsDiff, backup));
 
         // Handles files added/removed/modified in the update.
         Path skipUpdateGalleon = PathsUtils.getProvisionedStateDir(updateDir);
@@ -635,6 +656,7 @@ public class ApplyCandidateAction {
                         if (ProsperoLogger.ROOT_LOGGER.isDebugEnabled()) {
                             ProsperoLogger.ROOT_LOGGER.debug("Copying updated file " + relative + " to the installation");
                         }
+                        backup.record(installationFile);
                         IoUtils.copy(file, installationFile);
                     }
                 }
@@ -682,6 +704,7 @@ public class ApplyCandidateAction {
                     if (ProsperoLogger.ROOT_LOGGER.isDebugEnabled()) {
                         ProsperoLogger.ROOT_LOGGER.debug("Deleting the file " + relative + " that doesn't exist in the update");
                     }
+                    backup.record(file);
                     IoUtils.recursiveDelete(file);
                 }
                 return FileVisitResult.CONTINUE;
@@ -724,6 +747,7 @@ public class ApplyCandidateAction {
                         if (ProsperoLogger.ROOT_LOGGER.isDebugEnabled()) {
                             ProsperoLogger.ROOT_LOGGER.debug("Deleting the directory " + relative + " that doesn't exist in the update");
                         }
+                        backup.record(dir);
                         IoUtils.recursiveDelete(dir);
                         return FileVisitResult.SKIP_SUBTREE;
                     }
@@ -761,20 +785,29 @@ public class ApplyCandidateAction {
 
 
 
-    private static void glnew(final Path updateFile, Path installationFile) throws ProvisioningException {
+    private static void glnew(final Path updateFile, Path installationFile, ApplyStageBackup backup) throws ProvisioningException {
+        final Path glnewFile = installationFile.getParent().resolve(installationFile.getFileName() + Constants.DOT_GLNEW);
         try {
-            IoUtils.copy(updateFile, installationFile.getParent().resolve(installationFile.getFileName() + Constants.DOT_GLNEW));
+            if (backup != null) {
+                backup.record(glnewFile);
+                IoUtils.copy(updateFile, glnewFile);
+            }
         } catch (IOException e) {
-            throw new ProvisioningException("Failed to persist " + installationFile.getParent().resolve(installationFile.getFileName() + Constants.DOT_GLNEW), e);
+            throw new ProvisioningException("Failed to persist " + glnewFile, e);
         }
     }
 
-    private static void glold(Path installationFile, final Path target) throws ProvisioningException {
+    private static void glold(Path installationFile, final Path target, ApplyStageBackup backup) throws ProvisioningException {
+        final Path gloldFile = installationFile.getParent().resolve(installationFile.getFileName() + Constants.DOT_GLOLD);
         try {
-            IoUtils.copy(installationFile, installationFile.getParent().resolve(installationFile.getFileName() + Constants.DOT_GLOLD));
-            IoUtils.copy(target, installationFile);
+            if (backup != null) {
+                backup.record(gloldFile);
+                IoUtils.copy(installationFile, gloldFile);
+                backup.record(installationFile);
+                IoUtils.copy(target, installationFile);
+            }
         } catch (IOException e) {
-            throw new ProvisioningException("Failed to persist " + target.getParent().resolve(target.getFileName() + Constants.DOT_GLOLD), e);
+            throw new ProvisioningException("Failed to persist " + gloldFile, e);
         }
     }
 
