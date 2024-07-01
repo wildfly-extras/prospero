@@ -49,7 +49,7 @@ public class InstallationRestoreAction {
     private final MavenSessionManager mavenSessionManager;
 
     public InstallationRestoreAction(Path installDir, MavenOptions mavenOptions, Console console) throws ProvisioningException {
-        this.installDir = installDir;
+        this.installDir = InstallFolderUtils.toRealPath(installDir);
         this.mavenSessionManager = new MavenSessionManager(mavenOptions);
         this.console = console;
     }

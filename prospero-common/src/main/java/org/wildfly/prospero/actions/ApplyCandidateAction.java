@@ -115,11 +115,11 @@ public class ApplyCandidateAction {
 
     public ApplyCandidateAction(Path installationDir, Path updateDir)
             throws ProvisioningException, OperationException {
-        this.updateDir = updateDir;
-        this.installationDir = installationDir;
+        this.updateDir = InstallFolderUtils.toRealPath(updateDir);
+        this.installationDir = InstallFolderUtils.toRealPath(installationDir);
 
         try {
-            this.systemPaths = SystemPaths.load(updateDir);
+            this.systemPaths = SystemPaths.load(this.updateDir);
         } catch (IOException ex) {
             throw new ProvisioningException(ex);
         }
