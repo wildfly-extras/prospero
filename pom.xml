@@ -26,7 +26,6 @@
         <prospero.target.server>Wildfly</prospero.target.server>
         <prospero.base.feature-pack.groupId>org.wildfly</prospero.base.feature-pack.groupId>
         <prospero.base.feature-pack.artifactId>wildfly-ee-galleon-pack</prospero.base.feature-pack.artifactId>
-        <prospero.base.feature-pack.version>32.0.0.Beta1</prospero.base.feature-pack.version>
         <prospero.test.base.channel.groupId>org.wildfly.channels</prospero.test.base.channel.groupId>
         <prospero.test.base.channel.artifactId>wildfly-30-test</prospero.test.base.channel.artifactId>
         <prospero.test.base.repositories>https://repo1.maven.org/maven2/,https://repository.jboss.org/nexus/content/groups/public/</prospero.test.base.repositories>
