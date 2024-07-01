@@ -71,7 +71,6 @@ if not %DEBUG_ARG% == "" (
 
 :MAIN
 rem $Id$
-)
 
 pushd "%DIRNAME%.."
 set "RESOLVED_PROSPERO_HOME=%CD%"
@@ -187,6 +186,13 @@ if exist "%PROSPERO_HOME%\jboss-modules.jar" (
   goto END
 )
 
+rem Use a copy of jboss-modules to avoid locking issues when jboss-modules is updated
+:COPY_JBOSS_MODULES
+    set "TMP_JBOSS_MODULES=%PROSPERO_HOME%\jboss-modules~%RANDOM%.tmp"
+    rem loop while we find a non-existing filename
+    if exist "%TMP_JBOSS_MODULES%" goto :COPY_JBOSS_MODULES
+    copy "%RUNJAR%" "%TMP_JBOSS_MODULES%"
+
 rem If the -Djava.security.manager is found, enable the -secmgr and include a bogus security manager for JBoss Modules to replace
 echo(!JAVA_OPTS! | findstr /r /c:"-Djava.security.manager" > nul && (
     echo ERROR: The use of -Djava.security.manager has been removed. Please use the -secmgr command line argument or SECMGR=true environment variable.
@@ -228,14 +234,14 @@ setlocal EnableDelayedExpansion
 rem Add -client to the JVM options, if supported (32 bit VM), and not overridden
 echo "!MODULE_OPTS!" | findstr /I \-javaagent: > nul
 if not errorlevel == 1 (
-    set AGENT_PARAM=-javaagent:"!PROSPERO_HOME!\jboss-modules.jar"
+    set AGENT_PARAM=-javaagent:"!TMP_JBOSS_MODULES!"
     set "JAVA_OPTS=!AGENT_PARAM! !JAVA_OPTS!"
 )
 setlocal DisableDelayedExpansion
 
 :RESTART
   "%JAVA%" %JAVA_OPTS% ^
-      -jar "%PROSPERO_HOME%\jboss-modules.jar" ^
+      -jar "%TMP_JBOSS_MODULES%" ^
       %MODULE_OPTS% ^
       -mp "%JBOSS_MODULEPATH%" ^
       org.jboss.prospero ^
@@ -252,3 +258,6 @@ if %errorlevel% equ 10 (
 if "x%NOPAUSE%" == "x" pause
 
 :END_NO_PAUSE
+set EXIT_LEVEL="%errorlevel%"
+if exist "%TMP_JBOSS_MODULES%" del /Q "%TMP_JBOSS_MODULES%"
+exit /b %EXIT_LEVEL%

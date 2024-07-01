@@ -301,7 +301,7 @@ Function Get-Java-Arguments {
 
     $PROG_ARGS += "-jar"
 
-    $PROG_ARGS += "$PROSPERO_HOME\jboss-modules.jar"
+    $PROG_ARGS += "$TMP_JBOSS_MODULES"
 
     $PROG_ARGS += "-mp"
 
@@ -319,11 +319,28 @@ Function Get-Java-Arguments {
 
 }
 
+function Get-RandomFilename {
+    [IO.Path]::GetFileNameWithoutExtension([System.IO.Path]::GetRandomFileName() )
+}
+
 $JAVA_OPTS = Get-Java-Opts
+
+# Use a copy of jboss-modules to avoid locking issues when jboss-modules is updated
+$TMP_JBOSS_MODULES = "$PROSPERO_HOME\jboss-modules-$(Get-RandomFilename).jar"
+while(Test-Path "$TMP_JBOSS_MODULES"){
+    Write-Host "regenerating $TMP_JBOSS_MODULES"
+    $TMP_JBOSS_MODULES = "jboss-modules-$(Get-RandomFilename).jar"
+}
+Copy-Item "$PROSPERO_HOME\jboss-modules.jar" $TMP_JBOSS_MODULES
 
 # Sample JPDA settings for remote socket debugging
 # $JAVA_OPTS+= "-agentlib:jdwp=transport=dt_socket,address=8787,server=y,suspend=n"
+try
+{
+    $PROG_ARGS = Get-Java-Arguments -entryModule "org.jboss.prospero" -serverOpts $SERVER_OPTS
 
-$PROG_ARGS = Get-Java-Arguments -entryModule "org.jboss.prospero" -serverOpts $SERVER_OPTS
+    & $JAVA $PROG_ARGS
+} finally {
+    Remove-Item $TMP_JBOSS_MODULES
+}
 
-& $JAVA $PROG_ARGS
