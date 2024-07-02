@@ -1,5 +1,7 @@
 package org.wildfly.prospero.actions;
 
+import org.apache.commons.io.FileUtils;
+import org.assertj.core.api.Assertions;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Rule;
@@ -21,13 +23,13 @@ public class ApplyStageBackupTest {
 
     private ApplyStageBackup backup;
     private Path server;
-    private Path backupPath;
+    private Path backupFolder;
 
     @Before
     public void setUp() throws Exception {
         server = temp.newFolder().toPath();
-        backupPath = temp.newFolder("backup").toPath();
-        backup = new ApplyStageBackup(server, backupPath);
+        backupFolder = server.resolve(ApplyStageBackup.BACKUP_FOLDER);
+        backup = new ApplyStageBackup(server);
     }
 
     @After
@@ -38,6 +40,7 @@ public class ApplyStageBackupTest {
     @Test
     public void restoreWithEmptyList() throws Exception {
         backup.restore();
+        backup.close(); // close to get rid of backup folder
 
         assertThat(server)
                 .isEmptyDirectory();
@@ -45,13 +48,13 @@ public class ApplyStageBackupTest {
 
     @Test
     public void closeRemovesBackupFolder() throws Exception {
-        final Path testFile = createFile("test.txt");
+        createFile("test.txt");
 
-        backup.record(testFile);
+        backup.recordAll();
 
         backup.close();
 
-        assertThat(backupPath)
+        assertThat(backupFolder)
                 .doesNotExist();
     }
 
@@ -59,7 +62,7 @@ public class ApplyStageBackupTest {
     public void restoreRemovedFile() throws Exception {
         final Path testFile = createFile("test.txt");
 
-        backup.record(testFile);
+        backup.recordAll();
         Files.delete(testFile);
         backup.restore();
 
@@ -71,12 +74,19 @@ public class ApplyStageBackupTest {
     public void restoreChangedFile() throws Exception {
         final Path testFile = createFile("test.txt");
 
-        backup.record(testFile);
-        Files.writeString(testFile, "changed text");
+        backup.recordAll();
+        writeFile(testFile);
         backup.restore();
 
         assertThat(testFile)
                 .hasContent("test text");
+    }
+
+    private static void writeFile(Path testFile) throws IOException {
+        if (Files.exists(testFile)) {
+            Files.delete(testFile);
+        }
+        Files.writeString(testFile, "changed text");
     }
 
     @Test
@@ -84,7 +94,7 @@ public class ApplyStageBackupTest {
         final Path testFile = createFile("test.txt");
         final FileTime lastModifiedTime = Files.getLastModifiedTime(testFile);
 
-        backup.record(testFile);
+        backup.recordAll();
         Thread.sleep(200);
         backup.restore();
 
@@ -96,7 +106,7 @@ public class ApplyStageBackupTest {
     public void restoreFileInDirectory() throws Exception {
         final Path testFile = createFile("test/test.txt");
 
-        backup.record(testFile);
+        backup.recordAll();
         Files.delete(testFile);
         backup.restore();
 
@@ -108,7 +118,7 @@ public class ApplyStageBackupTest {
     public void restoreFileInDeletedDirectory() throws Exception {
         final Path testFile = createFile("test/test.txt");
 
-        backup.record(testFile);
+        backup.recordAll();
         Files.delete(testFile);
         Files.delete(testFile.getParent());
         backup.restore();
@@ -121,22 +131,9 @@ public class ApplyStageBackupTest {
     public void recordAllFilesInDirectory() throws Exception {
         final Path testFile = createFile("test/test.txt");
 
-        backup.record(testFile.getParent());
+        backup.recordAll();
         Files.delete(testFile);
         Files.delete(testFile.getParent());
-        backup.restore();
-
-        assertThat(testFile)
-                .hasContent("test text");
-    }
-
-    @Test
-    public void recordChangedFileTwice() throws Exception {
-        final Path testFile = createFile("test.txt");
-
-        backup.record(testFile);
-        backup.record(testFile);
-        Files.writeString(testFile, "changed text");
         backup.restore();
 
         assertThat(testFile)
@@ -147,8 +144,8 @@ public class ApplyStageBackupTest {
     public void removeAddedFile() throws Exception {
         final Path testFile = server.resolve("test.txt");
 
-        backup.record(testFile);
-        Files.writeString(testFile, "changed text");
+        backup.recordAll();
+        writeFile(testFile);
         backup.restore();
 
         assertThat(testFile)
@@ -160,9 +157,9 @@ public class ApplyStageBackupTest {
         final Path existingFile = createFile("test/existing.txt");
         final Path testFile = server.resolve("test/test.txt");
 
-        backup.record(testFile);
+        backup.recordAll();
         Files.createDirectories(testFile.getParent());
-        Files.writeString(testFile, "changed text");
+        writeFile(testFile);
         backup.restore();
 
         assertThat(testFile)
@@ -177,9 +174,9 @@ public class ApplyStageBackupTest {
     public void preserveExistingFilesInDirectoryWithAddedFile() throws Exception {
         final Path testFile = server.resolve("test/test.txt");
 
-        backup.record(testFile);
+        backup.recordAll();
         Files.createDirectories(testFile.getParent());
-        Files.writeString(testFile, "changed text");
+        writeFile(testFile);
         backup.restore();
 
         assertThat(testFile)
@@ -193,8 +190,8 @@ public class ApplyStageBackupTest {
         final Path testFile = server.resolve("test/test.txt");
         Files.createDirectories(testFile.getParent());
 
-        backup.record(testFile.getParent());
-        Files.writeString(testFile, "changed text");
+        backup.recordAll();
+        writeFile(testFile);
         backup.restore();
 
         assertThat(testFile)
@@ -208,9 +205,9 @@ public class ApplyStageBackupTest {
         final Path testFile = server.resolve("test/foo/test.txt");
         Files.createDirectories(server.resolve("test"));
 
-        backup.record(server.resolve("test"));
+        backup.recordAll();
         Files.createDirectories(server.resolve("test/foo"));
-        Files.writeString(testFile, "changed text");
+        writeFile(testFile);
         backup.restore();
 
         assertThat(testFile)
@@ -226,14 +223,49 @@ public class ApplyStageBackupTest {
         final Path testFile = server.resolve("test/test.txt");
         final Path existing = createFile("test/existing.txt");
 
-        backup.record(testFile);
-        Files.writeString(testFile, "changed text");
+        backup.recordAll();
+        writeFile(testFile);
         backup.restore();
 
         assertThat(existing)
                 .hasContent("test text");
         assertThat(testFile)
                 .doesNotExist();
+    }
+
+    @Test
+    public void cleanBackupFolderAfterInit() throws Exception {
+        final Path existingFile = backupFolder.resolve("pre-existing.file");
+        Files.writeString(existingFile, "test");
+        backup = new ApplyStageBackup(server);
+
+        assertThat(existingFile)
+                .doesNotExist();
+    }
+
+    @Test
+    public void createNonExistingBackupFolder() throws Exception {
+        backup.close();
+        if (Files.exists(backupFolder)) {
+            FileUtils.forceDelete(backupFolder.toFile());
+        }
+        backup = new ApplyStageBackup(server);
+
+        assertThat(backupFolder)
+                .exists();
+    }
+
+    @Test
+    public void throwsExceptionIfBackupFolderIsFile() throws Exception {
+        backup.close();
+        if (Files.exists(backupFolder)) {
+            FileUtils.forceDelete(backupFolder.toFile());
+        }
+        Files.writeString(backupFolder, "foo");
+         Assertions.assertThatThrownBy(()->new ApplyStageBackup(server))
+                 .isInstanceOf(RuntimeException.class)
+                 .hasMessageContaining("Unable to create backup");
+
     }
 
     private Path createFile(String path) throws IOException {

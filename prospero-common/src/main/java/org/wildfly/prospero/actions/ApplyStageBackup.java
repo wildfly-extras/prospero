@@ -4,41 +4,107 @@ import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.IOUtils;
 import org.wildfly.prospero.ProsperoLogger;
 
+import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
+import java.io.UnsupportedEncodingException;
 import java.nio.file.FileVisitResult;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.SimpleFileVisitor;
 import java.nio.file.StandardCopyOption;
 import java.nio.file.attribute.BasicFileAttributes;
-import java.util.HashSet;
-import java.util.Set;
 
 /**
  * A temporary record of all files modified, removed or added during applying a candidate server.
  */
 class ApplyStageBackup implements AutoCloseable {
 
+    protected static final String BACKUP_FOLDER = ".update.old";
     private final Path backupRoot;
     private final Path serverRoot;
-    private final Set<Path> addedFiles = new HashSet<>();
-    // list of folders where the content is fully backed up
-    private final Set<Path> backupRootDirs = new HashSet<>();
 
     /**
      * create a record for server at {@code serverRoot}. The recorded files will be stored in {@tempRoot}
      *
      * @param serverRoot - root folder of the server that will be updated
-     * @param tempRoot - directory to record changed files in
      */
-    public ApplyStageBackup(Path serverRoot, Path tempRoot) {
-        if (ProsperoLogger.ROOT_LOGGER.isDebugEnabled()) {
-            ProsperoLogger.ROOT_LOGGER.debug("Creating backup record in " + tempRoot);
-        }
+    public ApplyStageBackup(Path serverRoot) throws IOException {
 
         this.serverRoot = serverRoot;
-        this.backupRoot = tempRoot;
+        this.backupRoot = serverRoot.resolve(BACKUP_FOLDER);
+
+        if (ProsperoLogger.ROOT_LOGGER.isDebugEnabled()) {
+            ProsperoLogger.ROOT_LOGGER.debug("Creating backup record in " + backupRoot);
+        }
+
+        if (!Files.exists(backupRoot)) {
+            if (ProsperoLogger.ROOT_LOGGER.isTraceEnabled()) {
+                ProsperoLogger.ROOT_LOGGER.trace("Creating backup directory in " + backupRoot);
+            }
+
+            Files.createDirectories(backupRoot);
+        } else if (!Files.isDirectory(backupRoot) || !Files.isWritable(backupRoot)) {
+            throw new RuntimeException(String.format(
+                    "Unable to create backup in %s. It is not a directory or is not writable.",
+                    backupRoot
+            ));
+        }
+
+        final File[] files = backupRoot.toFile().listFiles();
+        if (files != null) {
+            for (File file : files) {
+                if (ProsperoLogger.ROOT_LOGGER.isTraceEnabled()) {
+                    ProsperoLogger.ROOT_LOGGER.trace("Removing existing backup files: " + file);
+                }
+
+                FileUtils.forceDelete(file);
+            }
+        }
+    }
+
+    /**
+     * add all the files in the server to cache
+     *
+     * @throws IOException - if unable to backup the files
+     */
+    public void recordAll() {
+        try {
+            Files.walkFileTree(serverRoot, new SimpleFileVisitor<>() {
+                @Override
+                public FileVisitResult preVisitDirectory(Path dir, BasicFileAttributes attrs) throws IOException {
+                    if (dir.equals(backupRoot)) {
+                        return FileVisitResult.SKIP_SUBTREE;
+                    } else {
+                        final Path relative = serverRoot.relativize(dir);
+                        Files.createDirectories(backupRoot.resolve(relative));
+                        return FileVisitResult.CONTINUE;
+                    }
+                }
+
+                @Override
+                public FileVisitResult visitFile(Path file, BasicFileAttributes attrs) throws IOException {
+                    final Path relative = serverRoot.relativize(file);
+                    if (relative.startsWith(Path.of(".installation", ".git"))) {
+                        // when using hardlinks, we need to remove the file and copy the new one in it's place otherwise both would be changed.
+                        // the git folder is manipulated by jgit and we can't control how it operates on the files
+                        // therefore we need to copy the files upfront rather than hardlinking them
+                        Files.copy(file, backupRoot.resolve(relative));
+                    } else {
+                        // we try to use hardlinks instead of copy to save disk space
+                        // fallback on copy if Filesystem doesn't support hardlinks
+                        try {
+                            Files.createLink(backupRoot.resolve(relative), file);
+                        } catch (UnsupportedEncodingException e) {
+                            Files.copy(file, backupRoot.resolve(relative));
+                        }
+                    }
+                    return FileVisitResult.CONTINUE;
+                }
+            });
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
     }
 
     /**
@@ -46,27 +112,7 @@ class ApplyStageBackup implements AutoCloseable {
      */
     @Override
     public void close() {
-        addedFiles.clear();
-        backupRootDirs.clear();
         FileUtils.deleteQuietly(backupRoot.toFile());
-    }
-
-    /**
-     * add the {@code file} to the backup cache. If {@code file} is a directory, all of its children (recursive) are
-     * added to the backup as well.
-     *
-     * If the {@code file} does not exist in the {@code serverRoot} at the time this method
-     * is called it is assumed that on revert it should be removed.
-     *
-     * @param file - the file or directory to be backed up
-     * @throws IOException - if unable to backup the file
-     */
-    public void record(Path file) throws IOException {
-        if (Files.exists(file)) {
-            recordChanged(file);
-        } else {
-            recordAdded(file);
-        }
     }
 
     /**
@@ -79,59 +125,15 @@ class ApplyStageBackup implements AutoCloseable {
             ProsperoLogger.ROOT_LOGGER.debug("Restoring server from the backup.");
         }
 
+        if (!Files.exists(backupRoot)) {
+            throw new RuntimeException("Backup root doesn't exist.");
+        }
+
         // copy backed-up files back into the server
         Files.walkFileTree(backupRoot, restoreModifiedFiles());
 
         // remove all files added to recorded folders that were not handled by addedFiles
-        for (Path root : backupRootDirs) {
-            Files.walkFileTree(root, deleteNewFiles());
-        }
-
-        // remove explicitly added files
-        removeRemainingAddedFiles();
-    }
-
-    private void recordChanged(Path file) throws IOException {
-        if (ProsperoLogger.ROOT_LOGGER.isTraceEnabled()) {
-            ProsperoLogger.ROOT_LOGGER.trace("Recording existing file " + file + " for backup.");
-        }
-
-        final Path relativePath = serverRoot.relativize(file);
-
-        final Path parentDir = relativePath.getParent();
-        if (parentDir != null && !Files.exists(backupRoot.resolve(parentDir))) {
-            Files.createDirectories(backupRoot.resolve(parentDir));
-        }
-
-        if (Files.isDirectory(file)) {
-            if (ProsperoLogger.ROOT_LOGGER.isTraceEnabled()) {
-                ProsperoLogger.ROOT_LOGGER.trace("Setting folder " + file + " as backup root.");
-            }
-
-            backupRootDirs.add(file);
-            FileUtils.copyDirectory(file.toFile(), backupRoot.resolve(relativePath).toFile());
-        } else {
-            Files.copy(file, backupRoot.resolve(relativePath), StandardCopyOption.REPLACE_EXISTING);
-        }
-    }
-
-    private void recordAdded(Path addedFile) {
-        if (ProsperoLogger.ROOT_LOGGER.isTraceEnabled()) {
-            ProsperoLogger.ROOT_LOGGER.trace("Recording new file " + addedFile + " for backup.");
-        }
-
-        if (addedFile.equals(serverRoot)) {
-            // we're done don't recurse anymore
-            return;
-        }
-
-        if (Files.exists(addedFile.getParent())) {
-            addedFiles.add(addedFile);
-        } else {
-            // we need to add parent folders to make sure that folders that were created are removed
-            recordAdded(addedFile.getParent());
-            addedFiles.add(addedFile);
-        }
+        Files.walkFileTree(serverRoot, deleteNewFiles());
     }
 
     private SimpleFileVisitor<Path> deleteNewFiles() {
@@ -161,25 +163,16 @@ class ApplyStageBackup implements AutoCloseable {
                 }
                 return FileVisitResult.CONTINUE;
             }
-        };
-    }
 
-    private void removeRemainingAddedFiles() throws IOException {
-        for (Path addedFile : addedFiles) {
-            if (Files.isDirectory(addedFile)) {
-                if (ProsperoLogger.ROOT_LOGGER.isTraceEnabled()) {
-                    ProsperoLogger.ROOT_LOGGER.trace("Removing added directory " + addedFile);
+            @Override
+            public FileVisitResult preVisitDirectory(Path dir, BasicFileAttributes attrs) throws IOException {
+                if (dir.equals(backupRoot)) {
+                    return FileVisitResult.SKIP_SUBTREE;
+                } else {
+                    return FileVisitResult.CONTINUE;
                 }
-
-                FileUtils.deleteDirectory(addedFile.toFile());
-            } else {
-                if (ProsperoLogger.ROOT_LOGGER.isTraceEnabled()) {
-                    ProsperoLogger.ROOT_LOGGER.trace("Removing added file " + addedFile);
-                }
-
-                Files.deleteIfExists(addedFile);
             }
-        }
+        };
     }
 
     private SimpleFileVisitor<Path> restoreModifiedFiles() {
