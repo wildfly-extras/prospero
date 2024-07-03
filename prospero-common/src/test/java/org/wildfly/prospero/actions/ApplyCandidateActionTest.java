@@ -534,6 +534,45 @@ public class ApplyCandidateActionTest {
                                 new DefaultArtifact("org.test", "foo", null, "1.0.1")));
     }
 
+    @Test
+    public void testFindConflictsInSystemPaths() throws Exception {
+        final DirState expectedState = dirBuilder
+                .addFile("prod1/p1.txt", "user prod1/p1")
+                .addFile("prod1/p3.txt", "user prod1/p3")
+                .build();
+
+        // build test packages
+        creator.newFeaturePack(FeaturePackLocation.fromString(FPL_100).getFPID())
+                .addSystemPaths("prod1")
+                .newPackage("p1", true)
+                .writeContent("prod1/p1.txt", "p1 1.0.0") // modified by the user
+                .writeContent("prod1/p2.txt", "p2 1.0.0") // removed by user and restored in update
+                .getFeaturePack();
+        creator.newFeaturePack(FeaturePackLocation.fromString(FPL_101).getFPID())
+                .addSystemPaths("prod1")
+                .newPackage("p1", true)
+                .writeContent("prod1/p1.txt", "p1 1.0.1")
+                .writeContent("prod1/p2.txt", "p2 1.0.1")
+                .getFeaturePack();
+        creator.install();
+
+        // install base and update. perform apply-update
+        install(installationPath, FPL_100);
+        writeContent("prod1/p1.txt", "user prod1/p1");
+        Files.delete(installationPath.resolve("prod1/p2.txt"));
+        writeContent("prod1/p3.txt", "user prod1/p3");
+        prepareUpdate(updatePath, installationPath, FPL_101);
+        final List<FileConflict> conflicts = new ApplyCandidateAction(installationPath, updatePath).getConflicts();
+
+        // verify
+        expectedState.assertState(installationPath);
+        FileConflict.userAdded("prod1/p3.txt").updateAdded().userPreserved();
+        assertThat(conflicts).containsExactlyInAnyOrder(
+                FileConflict.userModified("prod1/p1.txt").updateModified().overwritten(),
+                FileConflict.userRemoved("prod1/p2.txt").updateModified().overwritten()
+        );
+    }
+
     private void createSimpleFeaturePacks() throws ProvisioningException {
         creator.newFeaturePack(FeaturePackLocation.fromString(FPL_100).getFPID())
                 .newPackage("p1", true)
