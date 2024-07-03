@@ -25,10 +25,12 @@ import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
 import org.junit.runner.RunWith;
 import org.mockito.Mock;
+import org.mockito.Mockito;
 import org.mockito.junit.MockitoJUnitRunner;
 import org.wildfly.prospero.actions.ApplyCandidateAction;
 import org.wildfly.prospero.api.Console;
 import org.wildfly.prospero.actions.InstallationHistoryAction;
+import org.wildfly.prospero.api.FileConflict;
 import org.wildfly.prospero.api.SavedState;
 import org.wildfly.prospero.api.exceptions.OperationException;
 import org.wildfly.prospero.cli.AbstractConsoleTest;
@@ -40,9 +42,13 @@ import org.wildfly.prospero.updates.UpdateSet;
 
 import java.nio.file.Path;
 import java.util.Collections;
+import java.util.List;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -115,6 +121,35 @@ public class RevertApplyCommandTest extends AbstractConsoleTest {
         int exitCode = commandLine.execute(CliConstants.Commands.REVERT, CliConstants.Commands.APPLY,
                 CliConstants.DIR, installationDir.toString(),
                 CliConstants.CANDIDATE_DIR, updateDir.toString());
+
+        assertEquals(ReturnCodes.SUCCESS, exitCode);
+        verify(applyCandidateAction).applyUpdate(ApplyCandidateAction.Type.REVERT);
+    }
+
+    @Test
+    public void noConflictArgumentFailsCommand_WhenConflictsAreFound() throws Exception {
+        when(applyCandidateAction.getConflicts()).thenReturn(List.of(mock(FileConflict.class)));
+
+        int exitCode = commandLine.execute(CliConstants.Commands.REVERT, CliConstants.Commands.APPLY,
+                CliConstants.DIR, installationDir.toString(),
+                CliConstants.CANDIDATE_DIR, updateDir.toString(),
+                CliConstants.NO_CONFLICTS_ONLY);
+
+        assertEquals(ReturnCodes.PROCESSING_ERROR, exitCode);
+        assertThat(getErrorOutput())
+                .contains(CliMessages.MESSAGES.cancelledByConfilcts().getMessage());
+
+        verify(applyCandidateAction, Mockito.never()).applyUpdate(any());
+    }
+
+    @Test
+    public void noConflictArgumentHasNoEffect_WhenNoConflictsAreFound() throws Exception {
+        when(applyCandidateAction.getConflicts()).thenReturn(Collections.emptyList());
+
+        int exitCode = commandLine.execute(CliConstants.Commands.REVERT, CliConstants.Commands.APPLY,
+                CliConstants.DIR, installationDir.toString(),
+                CliConstants.CANDIDATE_DIR, updateDir.toString(),
+                CliConstants.NO_CONFLICTS_ONLY);
 
         assertEquals(ReturnCodes.SUCCESS, exitCode);
         verify(applyCandidateAction).applyUpdate(ApplyCandidateAction.Type.REVERT);

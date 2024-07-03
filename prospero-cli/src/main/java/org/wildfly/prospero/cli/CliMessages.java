@@ -695,4 +695,10 @@ public interface CliMessages {
     default OperationException sizeOfChannel(Path channelFile) {
         return new OperationException(format(bundle.getString("prospero.channels.error.morethanonechannel.found"), channelFile));
     }
+
+    default OperationException cancelledByConfilcts() {
+        return new OperationException(format(
+                bundle.getString("prospero.updates.apply.candidate.cancel_conflicts"),
+                CliConstants.NO_CONFLICTS_ONLY));
+    }
 }

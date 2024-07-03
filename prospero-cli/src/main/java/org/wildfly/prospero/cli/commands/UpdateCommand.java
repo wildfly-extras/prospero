@@ -89,6 +89,9 @@ public class UpdateCommand extends AbstractParentCommand {
         @CommandLine.Option(names = {CliConstants.Y, CliConstants.YES})
         boolean yes;
 
+        @CommandLine.Option(names = {CliConstants.NO_CONFLICTS_ONLY})
+        boolean noConflictsOnly;
+
         public PerformCommand(CliConsole console, ActionFactory actionFactory) {
             super(console, actionFactory);
         }
@@ -119,7 +122,7 @@ public class UpdateCommand extends AbstractParentCommand {
                 console.println(CliMessages.MESSAGES.updateHeader(installationDir));
 
                 try (UpdateAction updateAction = actionFactory.update(installationDir, mavenOptions, console, repositories)) {
-                    performUpdate(updateAction, yes, console, installationDir);
+                    performUpdate(updateAction, yes, console, installationDir, noConflictsOnly);
                 }
             }
 
@@ -129,7 +132,7 @@ public class UpdateCommand extends AbstractParentCommand {
             return ReturnCodes.SUCCESS;
         }
 
-        private boolean performUpdate(UpdateAction updateAction, boolean yes, CliConsole console, Path installDir) throws OperationException, ProvisioningException {
+        private boolean performUpdate(UpdateAction updateAction, boolean yes, CliConsole console, Path installDir, boolean noConflictsOnly) throws OperationException, ProvisioningException {
             Path targetDir = null;
             try {
                 targetDir = Files.createTempDirectory("update-candidate");
@@ -141,6 +144,11 @@ public class UpdateCommand extends AbstractParentCommand {
                     final List<FileConflict> conflicts = applyCandidateAction.getConflicts();
                     if (!conflicts.isEmpty()) {
                         FileConflictPrinter.print(conflicts, console);
+
+                        if (noConflictsOnly) {
+                            throw CliMessages.MESSAGES.cancelledByConfilcts();
+                        }
+
                         if (!yes && !console.confirm(CliMessages.MESSAGES.continueWithUpdate(), "", CliMessages.MESSAGES.updateCancelled())) {
                             return false;
                         }
@@ -226,6 +234,9 @@ public class UpdateCommand extends AbstractParentCommand {
         @CommandLine.Option(names = {CliConstants.Y, CliConstants.YES})
         boolean yes;
 
+        @CommandLine.Option(names = {CliConstants.NO_CONFLICTS_ONLY})
+        boolean noConflictsOnly;
+
         public ApplyCommand(CliConsole console, ActionFactory actionFactory) {
             super(console, actionFactory);
         }
@@ -256,6 +267,10 @@ public class UpdateCommand extends AbstractParentCommand {
             console.updatesFound(applyCandidateAction.findUpdates().getArtifactUpdates());
             final List<FileConflict> conflicts = applyCandidateAction.getConflicts();
             FileConflictPrinter.print(conflicts, console);
+
+            if (noConflictsOnly && !conflicts.isEmpty()) {
+                throw CliMessages.MESSAGES.cancelledByConfilcts();
+            }
 
             // there always should be updates, so confirm update
             if (!yes && !console.confirm(CliMessages.MESSAGES.continueWithUpdate(), CliMessages.MESSAGES.applyingUpdates(), CliMessages.MESSAGES.updateCancelled())) {
