@@ -39,6 +39,7 @@ import org.wildfly.channel.Repository;
 import org.wildfly.prospero.actions.ApplyCandidateAction;
 import org.wildfly.prospero.actions.UpdateAction;
 import org.wildfly.prospero.api.ArtifactChange;
+import org.wildfly.prospero.api.FileConflict;
 import org.wildfly.prospero.api.MavenOptions;
 import org.wildfly.prospero.cli.ActionFactory;
 import org.wildfly.prospero.cli.CliMessages;
@@ -51,7 +52,9 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 @RunWith(MockitoJUnitRunner.class)
@@ -301,6 +304,37 @@ public class UpdateCommandTest extends AbstractMavenCommandTest {
                 .map(Repository::getUrl)
                 .containsExactly("http://foo", "http://bar");
 
+    }
+
+    @Test
+    public void noConflictArgumentFailsCommand_WhenConflictsAreFound() throws Exception {
+        when(updateAction.findUpdates()).thenReturn(new UpdateSet(List.of(change("1.0.0", "1.0.1"))));
+        when(updateAction.buildUpdate(any())).thenReturn(true);
+        when(applyCandidateAction.getConflicts()).thenReturn(List.of(mock(FileConflict.class)));
+
+        int exitCode = commandLine.execute(CliConstants.Commands.UPDATE, CliConstants.Commands.PERFORM,
+                CliConstants.DIR, installationDir.toString(),
+                CliConstants.NO_CONFLICTS_ONLY);
+
+        assertEquals(ReturnCodes.PROCESSING_ERROR, exitCode);
+        assertThat(getErrorOutput())
+                .contains(CliMessages.MESSAGES.cancelledByConfilcts().getMessage());
+
+        verify(applyCandidateAction, Mockito.never()).applyUpdate(any());
+    }
+
+    @Test
+    public void noConflictArgumentHasNoEffect_WhenNoConflictsAreFound() throws Exception {
+        when(updateAction.findUpdates()).thenReturn(new UpdateSet(List.of(change("1.0.0", "1.0.1"))));
+        when(updateAction.buildUpdate(any())).thenReturn(true);
+        when(applyCandidateAction.getConflicts()).thenReturn(Collections.emptyList());
+
+        int exitCode = commandLine.execute(CliConstants.Commands.UPDATE, CliConstants.Commands.PERFORM,
+                CliConstants.DIR, installationDir.toString(),
+                CliConstants.NO_CONFLICTS_ONLY);
+
+        assertEquals(ReturnCodes.SUCCESS, exitCode);
+        verify(applyCandidateAction).applyUpdate(ApplyCandidateAction.Type.UPDATE);
     }
 
     private ArtifactChange change(String oldVersion, String newVersion) {
