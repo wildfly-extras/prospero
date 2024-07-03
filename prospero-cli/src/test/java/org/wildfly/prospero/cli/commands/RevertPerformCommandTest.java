@@ -31,11 +31,13 @@ import org.junit.runner.RunWith;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Captor;
 import org.mockito.Mock;
+import org.mockito.Mockito;
 import org.mockito.junit.MockitoJUnitRunner;
 import org.wildfly.channel.Repository;
 import org.wildfly.prospero.actions.ApplyCandidateAction;
 import org.wildfly.prospero.api.Console;
 import org.wildfly.prospero.actions.InstallationHistoryAction;
+import org.wildfly.prospero.api.FileConflict;
 import org.wildfly.prospero.api.MavenOptions;
 import org.wildfly.prospero.api.SavedState;
 import org.wildfly.prospero.api.exceptions.OperationException;
@@ -50,6 +52,7 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -152,6 +155,35 @@ public class RevertPerformCommandTest extends AbstractMavenCommandTest {
         assertThat(repositories.getValue())
                 .map(Repository::getUrl)
                 .containsExactly("http://temp.repo.te");
+    }
+
+    @Test
+    public void noConflictArgumentFailsCommand_WhenConflictsAreFound() throws Exception {
+        when(applyCandidateAction.getConflicts()).thenReturn(List.of(mock(FileConflict.class)));
+
+        int exitCode = commandLine.execute(CliConstants.Commands.REVERT, CliConstants.Commands.PERFORM,
+                CliConstants.DIR, installationDir.toString(),
+                CliConstants.REVISION, "abcd",
+                CliConstants.NO_CONFLICTS_ONLY);
+
+        assertEquals(ReturnCodes.PROCESSING_ERROR, exitCode);
+        assertThat(getErrorOutput())
+                .contains(CliMessages.MESSAGES.cancelledByConfilcts().getMessage());
+
+        verify(applyCandidateAction, Mockito.never()).applyUpdate(any());
+    }
+
+    @Test
+    public void noConflictArgumentHasNoEffect_WhenNoConflictsAreFound() throws Exception {
+        when(applyCandidateAction.getConflicts()).thenReturn(Collections.emptyList());
+
+        int exitCode = commandLine.execute(CliConstants.Commands.REVERT, CliConstants.Commands.PERFORM,
+                CliConstants.DIR, installationDir.toString(),
+                CliConstants.REVISION, "abcd",
+                CliConstants.NO_CONFLICTS_ONLY);
+
+        assertEquals(ReturnCodes.SUCCESS, exitCode);
+        verify(applyCandidateAction).applyUpdate(ApplyCandidateAction.Type.REVERT);
     }
 
     @Override
