@@ -423,8 +423,6 @@ public class ApplyCandidateAction {
                         if (ProsperoLogger.ROOT_LOGGER.isDebugEnabled()) {
                             ProsperoLogger.ROOT_LOGGER.debug(formatMessage(FORCED, removed.getRelativePath(), HAS_CHANGED_IN_THE_UPDATED_VERSION));
                         }
-                        Files.createDirectories(installationDir.resolve(removed.getRelativePath()).getParent());
-                        IoUtils.copy(target, installationDir.resolve(removed.getRelativePath()));
                     }
                 } else {
                     if (ProsperoLogger.ROOT_LOGGER.isDebugEnabled()) {
@@ -482,13 +480,11 @@ public class ApplyCandidateAction {
                         ProsperoLogger.ROOT_LOGGER.debug(formatMessage(FORCED, added.getRelativePath(), CONFLICTS_WITH_THE_UPDATED_VERSION));
                     }
                     conflictList.add(FileConflict.userAdded(added.getRelativePath()).updateAdded().overwritten());
-                    glold(installationDir.resolve(added.getRelativePath()), target);
                 } else {
                     if (ProsperoLogger.ROOT_LOGGER.isDebugEnabled()) {
                         ProsperoLogger.ROOT_LOGGER.debug(formatMessage(CONFLICT, added.getRelativePath(), CONFLICTS_WITH_THE_UPDATED_VERSION));
                     }
                     conflictList.add(FileConflict.userAdded(added.getRelativePath()).updateAdded().userPreserved());
-                    glnew(target, installationDir.resolve(added.getRelativePath()));
                 }
             }
         }
@@ -511,7 +507,6 @@ public class ApplyCandidateAction {
                     } catch (IOException e) {
                         throw new ProvisioningException(Errors.hashCalculation(file), e);
                     }
-                    Path installationFile = installationDir.resolve(modified[1].getRelativePath());
                     // Case where the modified file is equal to the hash of the update. Do nothing
                     if (Arrays.equals(installation.getHash(), updateHash)) {
                         if (ProsperoLogger.ROOT_LOGGER.isDebugEnabled()) {
@@ -524,13 +519,11 @@ public class ApplyCandidateAction {
                                     ProsperoLogger.ROOT_LOGGER.debug(formatMessage(FORCED, installation.getRelativePath(), HAS_CHANGED_IN_THE_UPDATED_VERSION));
                                 }
                                 conflictList.add(FileConflict.userModified(installation.getRelativePath()).updateModified().overwritten());
-                                glold(installation.getPath(), file);
                             } else {
                                 if (ProsperoLogger.ROOT_LOGGER.isDebugEnabled()) {
                                     ProsperoLogger.ROOT_LOGGER.debug(formatMessage(CONFLICT, installation.getRelativePath(), HAS_CHANGED_IN_THE_UPDATED_VERSION));
                                 }
                                 conflictList.add(FileConflict.userModified(installation.getRelativePath()).updateModified().userPreserved());
-                                glnew(file, installationFile);
                             }
                         }
                     }
@@ -561,6 +554,8 @@ public class ApplyCandidateAction {
         conflicts.addAll(handleRemovedFiles(fsDiff));
         conflicts.addAll(handleAddedFiles(fsDiff));
         conflicts.addAll(handleModifiedFiles(fsDiff));
+
+        resolveFileConflicts(conflicts);
 
         // Handles files added/removed/modified in the update.
         Path skipUpdateGalleon = PathsUtils.getProvisionedStateDir(updateDir);
@@ -682,6 +677,43 @@ public class ApplyCandidateAction {
             }
         });
         return Collections.unmodifiableList(conflicts);
+    }
+
+    private void resolveFileConflicts(List<FileConflict> conflicts) throws IOException, ProvisioningException {
+        // apply conflict resolution
+        for (FileConflict conflict : conflicts) {
+            final Path target = updateDir.resolve(conflict.getRelativePath());
+            final Path current = installationDir.resolve(conflict.getRelativePath());
+            if (conflict.getUserChange() == FileConflict.Change.REMOVED && conflict.getResolution() == FileConflict.Resolution.UPDATE) {
+                if (ProsperoLogger.ROOT_LOGGER.isTraceEnabled()) {
+                    ProsperoLogger.ROOT_LOGGER.trace("Resolving file conflict: restoring files removed by the user: " + conflict);
+                }
+                Files.createDirectories(current.getParent());
+                IoUtils.copy(target, current);
+            } else if (conflict.getUpdateChange() == FileConflict.Change.ADDED && conflict.getResolution() == FileConflict.Resolution.UPDATE) {
+                if (ProsperoLogger.ROOT_LOGGER.isTraceEnabled()) {
+                    ProsperoLogger.ROOT_LOGGER.trace("Resolving file conflict: backing up user changes and applying update changes: " + conflict);
+                }
+                glold(current, target);
+            } else if (conflict.getUpdateChange() == FileConflict.Change.ADDED && conflict.getResolution() == FileConflict.Resolution.USER) {
+                if (ProsperoLogger.ROOT_LOGGER.isTraceEnabled()) {
+                    ProsperoLogger.ROOT_LOGGER.trace("Resolving file conflict: preserving user changes and backing up update changes: " + conflict);
+                }
+                glnew(target, current);
+            } else if (conflict.getUpdateChange() == FileConflict.Change.MODIFIED && conflict.getResolution() == FileConflict.Resolution.UPDATE) {
+                if (ProsperoLogger.ROOT_LOGGER.isTraceEnabled()) {
+                    ProsperoLogger.ROOT_LOGGER.trace("Resolving file conflict: backing up user changes and applying update changes: " + conflict);
+                }
+                glold(current, target);
+            } else if (conflict.getUpdateChange() == FileConflict.Change.MODIFIED && conflict.getResolution() == FileConflict.Resolution.USER) {
+                if (ProsperoLogger.ROOT_LOGGER.isTraceEnabled()) {
+                    ProsperoLogger.ROOT_LOGGER.trace("Resolving file conflict: preserving user changes and backing up update changes: " + conflict);
+                }
+                glnew(target, current);
+            } else {
+                ProsperoLogger.ROOT_LOGGER.debug("Unknown conflict type: " + conflict);
+            }
+        }
     }
 
     private static boolean isEmpty(Path dir) {

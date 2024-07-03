@@ -25,6 +25,7 @@ import org.jboss.galleon.creator.FeaturePackCreator;
 import org.jboss.galleon.repo.RepositoryArtifactResolver;
 import org.jboss.galleon.universe.FeaturePackLocation;
 import org.jboss.galleon.universe.maven.repo.SimplisticMavenRepoManager;
+import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
@@ -463,6 +464,58 @@ public class ApplyCandidateActionTest {
                 .contains(newFpl);
         assertThat(Files.readString(installationPath.resolve(METADATA_DIR).resolve(ProsperoMetadataUtils.PROVISIONING_RECORD_XML)))
                 .contains(newFpl);
+    }
+
+    @Test
+    public void verifyRemoveCandidate() throws Exception {
+        createSimpleFeaturePacks();
+        final ApplyCandidateAction applyCandidateAction = new ApplyCandidateAction(installationPath, updatePath);
+
+        install(installationPath, FPL_100);
+        prepareUpdate(updatePath, installationPath, FPL_101);
+
+        applyCandidateAction.removeCandidate(updatePath.toFile());
+
+        Assert.assertFalse(Files.exists(updatePath));
+    }
+
+    @Test
+    public void testFindConflictsInSystemPaths() throws Exception {
+        final DirState expectedState = dirBuilder
+                .addFile("prod1/p1.txt", "user prod1/p1")
+                .addFile("prod1/p3.txt", "user prod1/p3")
+                .build();
+
+        // build test packages
+        creator.newFeaturePack(FeaturePackLocation.fromString(FPL_100).getFPID())
+                .addSystemPaths("prod1")
+                .newPackage("p1", true)
+                .writeContent("prod1/p1.txt", "p1 1.0.0") // modified by the user
+                .writeContent("prod1/p2.txt", "p2 1.0.0") // removed by user and restored in update
+                .getFeaturePack();
+        creator.newFeaturePack(FeaturePackLocation.fromString(FPL_101).getFPID())
+                .addSystemPaths("prod1")
+                .newPackage("p1", true)
+                .writeContent("prod1/p1.txt", "p1 1.0.1")
+                .writeContent("prod1/p2.txt", "p2 1.0.1")
+                .getFeaturePack();
+        creator.install();
+
+        // install base and update. perform apply-update
+        install(installationPath, FPL_100);
+        writeContent("prod1/p1.txt", "user prod1/p1");
+        Files.delete(installationPath.resolve("prod1/p2.txt"));
+        writeContent("prod1/p3.txt", "user prod1/p3");
+        prepareUpdate(updatePath, installationPath, FPL_101);
+        final List<FileConflict> conflicts = new ApplyCandidateAction(installationPath, updatePath).getConflicts();
+
+        // verify
+        expectedState.assertState(installationPath);
+        FileConflict.userAdded("prod1/p3.txt").updateAdded().userPreserved();
+        assertThat(conflicts).containsExactlyInAnyOrder(
+                FileConflict.userModified("prod1/p1.txt").updateModified().overwritten(),
+                FileConflict.userRemoved("prod1/p2.txt").updateModified().overwritten()
+        );
     }
 
     private void createSimpleFeaturePacks() throws ProvisioningException {
