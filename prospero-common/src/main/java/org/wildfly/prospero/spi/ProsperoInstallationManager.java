@@ -76,7 +76,8 @@ public class ProsperoInstallationManager implements InstallationManager {
         final List<HistoryResult> results = new ArrayList<>();
 
         for (SavedState savedState : revisions) {
-            results.add(new HistoryResult(savedState.getName(), savedState.getTimestamp(), savedState.getType().toString(), savedState.getMsg()));
+            results.add(new HistoryResult(savedState.getName(), savedState.getTimestamp(), savedState.getType().toString(),
+                    savedState.getMsg(), Collections.emptyList()));
         }
         return results;
     }
@@ -197,24 +198,34 @@ public class ProsperoInstallationManager implements InstallationManager {
 
     @Override
     public String generateApplyUpdateCommand(Path scriptHome, Path candidatePath, OsShell shell) throws OperationNotAvailableException {
-        final Optional<CliProvider> cliProviderLoader = ServiceLoader.load(CliProvider.class).findFirst();
-        if (cliProviderLoader.isEmpty()) {
-            throw new OperationNotAvailableException("Installation manager does not support CLI operations.");
-        }
-
-        final CliProvider cliProvider = cliProviderLoader.get();
-        return escape(scriptHome.resolve(cliProvider.getScriptName(shell))) + " " + cliProvider.getApplyUpdateCommand(installationDir, candidatePath);
+        return generateApplyUpdateCommand(scriptHome, candidatePath, shell, false);
     }
 
     @Override
     public String generateApplyRevertCommand(Path scriptHome, Path candidatePath, OsShell shell) throws OperationNotAvailableException {
+        return generateApplyUpdateCommand(scriptHome, candidatePath, shell, false);
+    }
+
+    @Override
+    public String generateApplyUpdateCommand(Path scriptHome, Path candidatePath, OsShell shell, boolean noConflictsOnly) throws OperationNotAvailableException {
         final Optional<CliProvider> cliProviderLoader = ServiceLoader.load(CliProvider.class).findFirst();
         if (cliProviderLoader.isEmpty()) {
             throw new OperationNotAvailableException("Installation manager does not support CLI operations.");
         }
 
         final CliProvider cliProvider = cliProviderLoader.get();
-        return escape(scriptHome.resolve(cliProvider.getScriptName(shell))) + " " + cliProvider.getApplyRevertCommand(installationDir, candidatePath);
+        return escape(scriptHome.resolve(cliProvider.getScriptName(shell))) + " " + cliProvider.getApplyUpdateCommand(installationDir, candidatePath, false);
+    }
+
+    @Override
+    public String generateApplyRevertCommand(Path scriptHome, Path candidatePath, OsShell shell, boolean noConflictsOnly) throws OperationNotAvailableException {
+        final Optional<CliProvider> cliProviderLoader = ServiceLoader.load(CliProvider.class).findFirst();
+        if (cliProviderLoader.isEmpty()) {
+            throw new OperationNotAvailableException("Installation manager does not support CLI operations.");
+        }
+
+        final CliProvider cliProvider = cliProviderLoader.get();
+        return escape(scriptHome.resolve(cliProvider.getScriptName(shell))) + " " + cliProvider.getApplyRevertCommand(installationDir, candidatePath, noConflictsOnly);
     }
 
     @Override

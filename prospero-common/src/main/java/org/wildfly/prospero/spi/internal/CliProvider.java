@@ -37,16 +37,18 @@ public interface CliProvider {
      *
      * @param installationPath
      * @param candidatePath
+     * @param noConflictsOnly - whether to append the no-conflicts-only flag
      * @return
      */
-    String getApplyUpdateCommand(Path installationPath, Path candidatePath);
+    String getApplyUpdateCommand(Path installationPath, Path candidatePath, boolean noConflictsOnly);
 
     /**
      * generates command used to apply a revert candidate in {@code candidatePath} into {@code installationPath}
      *
      * @param installationPath
      * @param candidatePath
+     * @param noConflictsOnly - whether to append the no-conflicts-only flag
      * @return
      */
-    String getApplyRevertCommand(Path installationPath, Path candidatePath);
+    String getApplyRevertCommand(Path installationPath, Path candidatePath, boolean noConflictsOnly);
 }
