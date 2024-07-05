@@ -603,7 +603,7 @@
                 <enabled>true</enabled>
                 <updatePolicy>never</updatePolicy>
             </snapshots>
-            <id>jboss-public-repository</id>
+            <id>jboss-public-repository-group</id>
             <name>JBoss Public Repository</name>
             <url>https://repository.jboss.org/nexus/content/groups/public/</url>
             <layout>default</layout>
@@ -619,7 +619,7 @@
                 <enabled>true</enabled>
                 <updatePolicy>never</updatePolicy>
             </snapshots>
-            <id>jboss-public-repository</id>
+            <id>jboss-public-repository-group</id>
             <name>JBoss Public Repository</name>
             <url>https://repository.jboss.org/nexus/content/groups/public/</url>
             <layout>default</layout>
