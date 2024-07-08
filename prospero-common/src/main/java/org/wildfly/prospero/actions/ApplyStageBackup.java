@@ -7,7 +7,6 @@ import org.wildfly.prospero.ProsperoLogger;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
-import java.io.UnsupportedEncodingException;
 import java.nio.file.FileVisitResult;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -23,15 +22,17 @@ class ApplyStageBackup implements AutoCloseable {
     protected static final String BACKUP_FOLDER = ".update.old";
     private final Path backupRoot;
     private final Path serverRoot;
+    private final Path candidateRoot;
 
     /**
      * create a record for server at {@code serverRoot}. The recorded files will be stored in {@tempRoot}
      *
      * @param serverRoot - root folder of the server that will be updated
      */
-    public ApplyStageBackup(Path serverRoot) throws IOException {
+    ApplyStageBackup(Path serverRoot, Path candidateRoot) throws IOException {
 
         this.serverRoot = serverRoot;
+        this.candidateRoot = candidateRoot;
         this.backupRoot = serverRoot.resolve(BACKUP_FOLDER);
 
         if (ProsperoLogger.ROOT_LOGGER.isDebugEnabled()) {
@@ -68,43 +69,51 @@ class ApplyStageBackup implements AutoCloseable {
      *
      * @throws IOException - if unable to backup the files
      */
-    public void recordAll() {
-        try {
-            Files.walkFileTree(serverRoot, new SimpleFileVisitor<>() {
-                @Override
-                public FileVisitResult preVisitDirectory(Path dir, BasicFileAttributes attrs) throws IOException {
-                    if (dir.equals(backupRoot)) {
-                        return FileVisitResult.SKIP_SUBTREE;
-                    } else {
-                        final Path relative = serverRoot.relativize(dir);
-                        Files.createDirectories(backupRoot.resolve(relative));
-                        return FileVisitResult.CONTINUE;
-                    }
-                }
+    public void recordAll() throws IOException {
+        Files.walkFileTree(serverRoot, new SimpleFileVisitor<>() {
 
-                @Override
-                public FileVisitResult visitFile(Path file, BasicFileAttributes attrs) throws IOException {
-                    final Path relative = serverRoot.relativize(file);
-                    if (relative.startsWith(Path.of(".installation", ".git"))) {
-                        // when using hardlinks, we need to remove the file and copy the new one in it's place otherwise both would be changed.
-                        // the git folder is manipulated by jgit and we can't control how it operates on the files
-                        // therefore we need to copy the files upfront rather than hardlinking them
-                        Files.copy(file, backupRoot.resolve(relative));
-                    } else {
-                        // we try to use hardlinks instead of copy to save disk space
-                        // fallback on copy if Filesystem doesn't support hardlinks
-                        try {
-                            Files.createLink(backupRoot.resolve(relative), file);
-                        } catch (UnsupportedEncodingException e) {
-                            Files.copy(file, backupRoot.resolve(relative));
-                        }
-                    }
+            @Override
+            public FileVisitResult visitFileFailed(Path file, IOException exc) throws IOException {
+                // if the file in the installation is not readable AND it does not exist in the candidate
+                // we assume it is user controlled file and we ignore it
+                return ignoreUserManagedFiles(file, exc);
+            }
+
+            @Override
+            public FileVisitResult preVisitDirectory(Path dir, BasicFileAttributes attrs) throws IOException {
+
+                if (dir.equals(backupRoot)) {
+                    return FileVisitResult.SKIP_SUBTREE;
+                } else {
+                    final Path relative = serverRoot.relativize(dir);
+                    Files.createDirectories(backupRoot.resolve(relative));
                     return FileVisitResult.CONTINUE;
                 }
-            });
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        }
+            }
+
+            @Override
+            public FileVisitResult visitFile(Path file, BasicFileAttributes attrs) throws IOException {
+                if (isUserProtectedFile(file)) {
+                    return FileVisitResult.SKIP_SUBTREE;
+                }
+                final Path relative = serverRoot.relativize(file);
+                if (relative.startsWith(Path.of(".installation", ".git"))) {
+                    // when using hardlinks, we need to remove the file and copy the new one in it's place otherwise both would be changed.
+                    // the git folder is manipulated by jgit and we can't control how it operates on the files
+                    // therefore we need to copy the files upfront rather than hardlinking them
+                    Files.copy(file, backupRoot.resolve(relative));
+                } else {
+                    // we try to use hardlinks instead of copy to save disk space
+                    // fallback on copy if Filesystem doesn't support hardlinks
+                    try {
+                        Files.createLink(backupRoot.resolve(relative), file);
+                    } catch (UnsupportedOperationException e) {
+                        Files.copy(file, backupRoot.resolve(relative));
+                    }
+                }
+                return FileVisitResult.CONTINUE;
+            }
+        });
     }
 
     /**
@@ -138,8 +147,17 @@ class ApplyStageBackup implements AutoCloseable {
 
     private SimpleFileVisitor<Path> deleteNewFiles() {
         return new SimpleFileVisitor<>() {
+
+            @Override
+            public FileVisitResult visitFileFailed(Path file, IOException exc) throws IOException {
+                return ignoreUserManagedFiles(file, exc);
+            }
+
             @Override
             public FileVisitResult visitFile(Path file, BasicFileAttributes attrs) throws IOException {
+                if (isUserProtectedFile(file)) {
+                    return FileVisitResult.SKIP_SUBTREE;
+                }
                 final Path relativePath = serverRoot.relativize(file);
                 if (!Files.exists(backupRoot.resolve(relativePath))) {
                     if (ProsperoLogger.ROOT_LOGGER.isTraceEnabled()) {
@@ -173,6 +191,21 @@ class ApplyStageBackup implements AutoCloseable {
                 }
             }
         };
+    }
+
+    private FileVisitResult ignoreUserManagedFiles(Path file, IOException exc) throws IOException {
+        // if the file in the installation is not readable AND it does not exist in the candidate
+        // we assume it is user controlled file and we ignore it
+        if (isUserProtectedFile(file)) {
+            return FileVisitResult.SKIP_SUBTREE;
+        }
+        throw exc;
+    }
+
+    private boolean isUserProtectedFile(Path file) {
+        final Path relative = serverRoot.relativize(file);
+        final Path candidatePath = candidateRoot.resolve(relative);
+        return !Files.isReadable(file) && !Files.exists(candidatePath);
     }
 
     private SimpleFileVisitor<Path> restoreModifiedFiles() {

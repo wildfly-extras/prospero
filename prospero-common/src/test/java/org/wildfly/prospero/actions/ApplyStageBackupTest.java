@@ -3,12 +3,14 @@ package org.wildfly.prospero.actions;
 import org.apache.commons.io.FileUtils;
 import org.assertj.core.api.Assertions;
 import org.junit.After;
+import org.junit.Assume;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
 
 import java.io.IOException;
+import java.nio.file.AccessDeniedException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.attribute.FileTime;
@@ -23,13 +25,15 @@ public class ApplyStageBackupTest {
 
     private ApplyStageBackup backup;
     private Path server;
+    private Path candidate;
     private Path backupFolder;
 
     @Before
     public void setUp() throws Exception {
         server = temp.newFolder().toPath();
+        candidate = temp.newFolder().toPath();
         backupFolder = server.resolve(ApplyStageBackup.BACKUP_FOLDER);
-        backup = new ApplyStageBackup(server);
+        backup = new ApplyStageBackup(server, candidate);
     }
 
     @After
@@ -237,7 +241,7 @@ public class ApplyStageBackupTest {
     public void cleanBackupFolderAfterInit() throws Exception {
         final Path existingFile = backupFolder.resolve("pre-existing.file");
         Files.writeString(existingFile, "test");
-        backup = new ApplyStageBackup(server);
+        backup = new ApplyStageBackup(server, candidate);
 
         assertThat(existingFile)
                 .doesNotExist();
@@ -249,7 +253,7 @@ public class ApplyStageBackupTest {
         if (Files.exists(backupFolder)) {
             FileUtils.forceDelete(backupFolder.toFile());
         }
-        backup = new ApplyStageBackup(server);
+        backup = new ApplyStageBackup(server, candidate);
 
         assertThat(backupFolder)
                 .exists();
@@ -262,10 +266,59 @@ public class ApplyStageBackupTest {
             FileUtils.forceDelete(backupFolder.toFile());
         }
         Files.writeString(backupFolder, "foo");
-         Assertions.assertThatThrownBy(()->new ApplyStageBackup(server))
+         Assertions.assertThatThrownBy(()->new ApplyStageBackup(server, candidate))
                  .isInstanceOf(RuntimeException.class)
                  .hasMessageContaining("Unable to create backup");
 
+    }
+
+    @Test
+    public void ignoreNonReadableUserFiles() throws Exception {
+        final Path testFile = server.resolve("test.txt");
+        final Path testDir = server.resolve("test");
+        Files.createDirectories(testDir);
+        writeFile(testFile);
+
+        try {
+            Assume.assumeTrue("Skipping test because OS doesn't support setting folders un-readable", testFile.toFile().setReadable(false));
+            Assume.assumeTrue("Skipping test because OS doesn't support setting folders un-readable", testDir.toFile().setReadable(false));
+
+            backup.recordAll();
+            backup.restore();
+
+            assertThat(testFile)
+                    .exists();
+            assertThat(testDir)
+                    .exists();
+        } finally {
+            testFile.toFile().setReadable(true);
+            testDir.toFile().setReadable(true);
+        }
+    }
+
+    @Test
+    public void throwExceptionOnNonReadableServerFiles() throws Exception {
+        final Path testFile = server.resolve("test");
+        final Path candidateFile = candidate.resolve("test");
+        Files.createDirectories(testFile);
+        Files.createDirectories(candidateFile);
+
+        try {
+            Assume.assumeTrue("Skipping test because OS doesn't support setting folders un-readable", testFile.toFile().setReadable(false));
+
+        Assertions.assertThatThrownBy(()->backup.recordAll())
+                        .isInstanceOf(AccessDeniedException.class)
+                        .hasMessageContaining(testFile.toString());
+
+        Assertions.assertThatThrownBy(()->backup.restore())
+                .isInstanceOf(AccessDeniedException.class)
+                .hasMessageContaining(testFile.toString());
+
+        assertThat(testFile)
+                .exists();
+        } finally {
+            testFile.toFile().setReadable(true);
+        }
     }
 
     private Path createFile(String path) throws IOException {
