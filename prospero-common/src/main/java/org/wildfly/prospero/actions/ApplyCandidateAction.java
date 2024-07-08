@@ -65,7 +65,6 @@ import static org.jboss.galleon.diff.FsDiff.MODIFIED;
 import static org.jboss.galleon.diff.FsDiff.REMOVED;
 import static org.jboss.galleon.diff.FsDiff.formatMessage;
 import static org.wildfly.prospero.metadata.ProsperoMetadataUtils.CURRENT_VERSION_FILE;
-import static org.wildfly.prospero.metadata.ProsperoMetadataUtils.INSTALLER_CHANNELS_FILE_NAME;
 import static org.wildfly.prospero.metadata.ProsperoMetadataUtils.MANIFEST_FILE_NAME;
 import static org.wildfly.prospero.metadata.ProsperoMetadataUtils.METADATA_DIR;
 
@@ -177,7 +176,7 @@ public class ApplyCandidateAction {
         final FsDiff diffs = findChanges();
         ApplyStageBackup backup = null;
         try {
-            backup = new ApplyStageBackup(installationDir);
+            backup = new ApplyStageBackup(installationDir, updateDir);
             backup.recordAll();
 
             ProsperoLogger.ROOT_LOGGER.debug("Update backup generated in " + installationDir.resolve(ApplyStageBackup.BACKUP_FOLDER));
