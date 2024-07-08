@@ -516,6 +516,7 @@ public class ApplyCandidateActionTest {
 
         // install base and update. perform apply-update
         install(installationPath, FPL_100);
+
         writeContent("prod1/p1.txt", "user prod1/p1");
         Files.delete(installationPath.resolve("prod1/p2.txt"));
         writeContent("prod1/p3.txt", "user prod1/p3");
@@ -529,6 +530,44 @@ public class ApplyCandidateActionTest {
                 FileConflict.userModified("prod1/p1.txt").updateModified().overwritten(),
                 FileConflict.userRemoved("prod1/p2.txt").updateModified().overwritten()
         );
+    }
+
+    @Test
+    public void ignoreAddedNonReadableFolders() throws Exception {
+        final DirState expectedState = dirBuilder
+                .addFile("prod1/p1.txt", "p1 1.0.1")
+                .addFile("prod1/p2.txt", "p2 1.0.1")
+                .addFile("test/test.txt", "test")
+                .build();
+
+        // build test packages
+        creator.newFeaturePack(FeaturePackLocation.fromString(FPL_100).getFPID())
+                .addSystemPaths("prod1")
+                .newPackage("p1", true)
+                .writeContent("prod1/p1.txt", "p1 1.0.0") // modified by the user
+                .writeContent("prod1/p2.txt", "p2 1.0.0") // removed by user and restored in update
+                .getFeaturePack();
+        creator.newFeaturePack(FeaturePackLocation.fromString(FPL_101).getFPID())
+                .addSystemPaths("prod1")
+                .newPackage("p1", true)
+                .writeContent("prod1/p1.txt", "p1 1.0.1")
+                .writeContent("prod1/p2.txt", "p2 1.0.1")
+                .getFeaturePack();
+        creator.install();
+
+        // install base and update. perform apply-update
+        install(installationPath, FPL_100);
+        Files.createDirectories(installationPath.resolve("test"));
+        Files.writeString(installationPath.resolve("test").resolve("test.txt"), "test");
+        installationPath.resolve("test").toFile().setReadable(false);
+
+        prepareUpdate(updatePath, installationPath, FPL_101);
+        new ApplyCandidateAction(installationPath, updatePath)
+                .applyUpdate(ApplyCandidateAction.Type.UPDATE);
+
+        // verify
+        installationPath.resolve("test").toFile().setReadable(true);
+        expectedState.assertState(installationPath);
     }
 
     private void createSimpleFeaturePacks() throws ProvisioningException {
