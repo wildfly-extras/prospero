@@ -18,6 +18,7 @@
 package org.wildfly.prospero.cli;
 
 import org.apache.commons.lang3.StringUtils;
+import org.assertj.core.api.Assertions;
 import org.junit.Before;
 import org.junit.Test;
 import org.wildfly.channel.Repository;
@@ -164,5 +165,21 @@ public class RepositoryDefinitionTest {
         assertNotNull(actualList);
         assertEquals(1, actualList.size());
         assertTrue(actualList.contains(repository));
+    }
+
+    @Test
+    public void testNonExistingFile() throws Exception {
+        Assertions.assertThatThrownBy(() -> from(List.of("idontexist")))
+                .hasMessageContaining(String.format(
+                        "The provided path [%s] doesn't exist or is not accessible. The local repository has to an existing, readable folder.",
+                        Path.of("idontexist").toAbsolutePath()));
+    }
+
+    @Test
+    public void testNonExistingFileUri() throws Exception {
+        Assertions.assertThatThrownBy(() -> from(List.of("file:idontexist")))
+                .hasMessageContaining(String.format(
+                        "The provided path [%s] doesn't exist or is not accessible. The local repository has to an existing, readable folder.",
+                        Path.of("idontexist").toAbsolutePath()));
     }
 }
