@@ -223,6 +223,21 @@ public class ApplyUpdateCommandTest extends AbstractConsoleTest {
         verify(applyCandidateAction).applyUpdate(ApplyCandidateAction.Type.UPDATE);
     }
 
+    @Test
+    public void dryRun_DoesntCallApplyAction() throws Exception {
+        final Path updatePath = mockInstallation("update");
+        final Path targetPath = mockInstallation("target");
+        when(applyCandidateAction.getConflicts()).thenReturn(Collections.emptyList());
+
+        int exitCode = commandLine.execute(CliConstants.Commands.UPDATE, CliConstants.Commands.APPLY,
+                CliConstants.CANDIDATE_DIR, updatePath.toString(),
+                CliConstants.DIR, targetPath.toString(),
+                CliConstants.DRY_RUN);
+
+        assertEquals(ReturnCodes.SUCCESS, exitCode);
+        verify(applyCandidateAction, Mockito.never()).applyUpdate(any());
+    }
+
     private Path mockInstallation(String target) throws IOException, MetadataException, XMLStreamException {
         final Path targetPath = temp.newFolder(target).toPath();
         MetadataTestUtils.createInstallationMetadata(targetPath).close();

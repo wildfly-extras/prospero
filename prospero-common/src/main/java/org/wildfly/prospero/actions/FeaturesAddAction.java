@@ -753,9 +753,9 @@ public class FeaturesAddAction {
         }
 
         @Override
-        public ApplyCandidateAction newApplyCandidateActionInstance(Path candidateDir)
+        public ApplyCandidateAction newApplyCandidateActionInstance(Path candidatePath)
                 throws ProvisioningException, OperationException {
-            return new ApplyCandidateAction(installDir, candidateDir);
+            return new ApplyCandidateAction(installDir, candidatePath);
         }
     }
 }

@@ -237,6 +237,9 @@ public class UpdateCommand extends AbstractParentCommand {
         @CommandLine.Option(names = {CliConstants.NO_CONFLICTS_ONLY})
         boolean noConflictsOnly;
 
+        @CommandLine.Option(names = {CliConstants.DRY_RUN})
+        boolean dryRun;
+
         public ApplyCommand(CliConsole console, ActionFactory actionFactory) {
             super(console, actionFactory);
         }
@@ -267,6 +270,10 @@ public class UpdateCommand extends AbstractParentCommand {
             console.updatesFound(applyCandidateAction.findUpdates().getArtifactUpdates());
             final List<FileConflict> conflicts = applyCandidateAction.getConflicts();
             FileConflictPrinter.print(conflicts, console);
+
+            if (dryRun) {
+                return ReturnCodes.SUCCESS;
+            }
 
             if (noConflictsOnly && !conflicts.isEmpty()) {
                 throw CliMessages.MESSAGES.cancelledByConfilcts();
