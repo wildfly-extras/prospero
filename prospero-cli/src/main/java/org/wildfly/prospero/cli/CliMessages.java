@@ -19,6 +19,7 @@ package org.wildfly.prospero.cli;
 
 import org.apache.commons.lang3.StringUtils;
 import org.jboss.galleon.Constants;
+import org.jboss.logging.annotations.Cause;
 import org.wildfly.prospero.actions.ApplyCandidateAction;
 import org.wildfly.prospero.cli.commands.CliConstants;
 import org.wildfly.prospero.metadata.ProsperoMetadataUtils;
@@ -414,8 +415,12 @@ public interface CliMessages {
         return new ArgumentParsingException(format(bundle.getString("prospero.general.validation.repo_format"), repoKey));
     }
 
-    default ArgumentParsingException invalidFilePath(String invalidPath) {
-        return new ArgumentParsingException(format(bundle.getString("prospero.general.validation.file_path.not_exists"), invalidPath));
+    default ArgumentParsingException invalidFilePath(String invalidPath, @Cause Exception cause) {
+        return new ArgumentParsingException(format(bundle.getString("prospero.general.validation.file_path.invalid"), invalidPath), cause);
+    }
+
+    default ArgumentParsingException nonExistingFilePath(Path nonExistingPath) {
+        return new ArgumentParsingException(format(bundle.getString("prospero.general.validation.file_path.not_exists"), nonExistingPath));
     }
 
     default IllegalArgumentException updateCandidateStateNotMatched(Path targetDir, Path updateDir) {
