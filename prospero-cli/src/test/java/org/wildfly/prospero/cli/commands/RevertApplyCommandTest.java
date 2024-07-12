@@ -154,4 +154,17 @@ public class RevertApplyCommandTest extends AbstractConsoleTest {
         assertEquals(ReturnCodes.SUCCESS, exitCode);
         verify(applyCandidateAction).applyUpdate(ApplyCandidateAction.Type.REVERT);
     }
+
+    @Test
+    public void dryRun_DoesntCallApplyAction() throws Exception {
+        when(applyCandidateAction.getConflicts()).thenReturn(Collections.emptyList());
+
+        int exitCode = commandLine.execute(CliConstants.Commands.REVERT, CliConstants.Commands.APPLY,
+                CliConstants.CANDIDATE_DIR, updateDir.toString(),
+                CliConstants.DIR, installationDir.toString(),
+                CliConstants.DRY_RUN);
+
+        assertEquals(ReturnCodes.SUCCESS, exitCode);
+        verify(applyCandidateAction, Mockito.never()).applyUpdate(any());
+    }
 }
