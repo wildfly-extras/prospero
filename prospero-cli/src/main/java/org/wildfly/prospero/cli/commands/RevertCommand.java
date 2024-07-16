@@ -27,6 +27,7 @@ import org.wildfly.channel.Repository;
 import org.wildfly.prospero.ProsperoLogger;
 import org.wildfly.prospero.actions.ApplyCandidateAction;
 import org.wildfly.prospero.actions.InstallationHistoryAction;
+import org.wildfly.prospero.api.ArtifactChange;
 import org.wildfly.prospero.api.FileConflict;
 import org.wildfly.prospero.api.MavenOptions;
 import org.wildfly.prospero.api.RepositoryUtils;
@@ -51,11 +52,12 @@ import static org.wildfly.prospero.cli.ReturnCodes.SUCCESS;
 public class RevertCommand extends AbstractParentCommand {
 
     private static int applyCandidate(CliConsole console, ApplyCandidateAction applyCandidateAction, boolean yes) throws OperationException, ProvisioningException {
-        console.changesFound(applyCandidateAction.findUpdates().getArtifactUpdates());
+        List<ArtifactChange> artifactUpdates = applyCandidateAction.findUpdates().getArtifactUpdates();
+        console.printArtifactChanges(artifactUpdates);
         final List<FileConflict> conflicts = applyCandidateAction.getConflicts();
         FileConflictPrinter.print(conflicts, console);
 
-        if (!yes && !console.confirm(CliMessages.MESSAGES.continueWithRevert(),
+        if (!yes && !artifactUpdates.isEmpty() && !console.confirm(CliMessages.MESSAGES.continueWithRevert(),
                 CliMessages.MESSAGES.applyingChanges(), CliMessages.MESSAGES.revertCancelled())) {
             return SUCCESS;
         }
@@ -75,6 +77,8 @@ public class RevertCommand extends AbstractParentCommand {
             throw CliMessages.MESSAGES.updateCandidateWrongType(installationDirectory, ApplyCandidateAction.Type.REVERT);
         } else if (ApplyCandidateAction.ValidationResult.NOT_CANDIDATE == result) {
             throw CliMessages.MESSAGES.notCandidate(updateDirectory.toAbsolutePath());
+        } else if (ApplyCandidateAction.ValidationResult.NO_CHANGES == result) {
+            throw CliMessages.MESSAGES.noChanges(installationDirectory, updateDirectory.toAbsolutePath());
         }
     }
 

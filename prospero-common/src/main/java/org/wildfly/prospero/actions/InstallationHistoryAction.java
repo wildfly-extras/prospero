@@ -41,6 +41,7 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
+import java.util.Optional;
 
 import static org.wildfly.prospero.galleon.GalleonUtils.MAVEN_REPO_LOCAL;
 
@@ -102,6 +103,7 @@ public class InstallationHistoryAction {
             ProsperoLogger.ROOT_LOGGER.revertCandidateStarted(installation);
 
             verifyStateExists(savedState, metadata);
+            verifyStateIsNotTip(savedState, metadata);
 
             MavenSessionManager mavenSessionManager = new MavenSessionManager(mavenOptions);
             try (InstallationMetadata revertMetadata = metadata.getSavedState(savedState)) {
@@ -139,6 +141,13 @@ public class InstallationHistoryAction {
     private static void verifyStateExists(SavedState savedState, InstallationMetadata metadata) throws MetadataException {
         if (metadata.getRevisions().stream().noneMatch(s->s.getName().equals(savedState.getName()))) {
             throw ProsperoLogger.ROOT_LOGGER.savedStateNotFound(savedState.getName());
+        }
+    }
+
+    private static void verifyStateIsNotTip(SavedState savedState, InstallationMetadata metadata) throws MetadataException {
+        Optional<SavedState> first = metadata.getRevisions().stream().findFirst();
+        if (first.isPresent() && first.get().getName().equals(savedState.getName())) {
+            throw ProsperoLogger.ROOT_LOGGER.cannotRevertToTip(savedState.getName());
         }
     }
 }

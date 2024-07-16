@@ -365,6 +365,15 @@ public interface ProsperoLogger extends BasicLogger {
     @Message(id = 267, value = "Repository archive has to contain a single root folder with a maven-repository sub-folder.")
     InvalidRepositoryArchiveException invalidRepositoryArchive();
 
+    @Message(id = 268, value = "The revision %s is the state of the current installation. Reverting to the same state is not a valid operation.")
+    MetadataException cannotRevertToTip(String name);
+
+    @Message(id = 269, value = "There are no changes to apply to the installation %s from the candidate installation %s.")
+    InvalidUpdateCandidateException noChangesAvailable(Path installationDir, Path candidateDir);
+
+    @Message(id = 270, value = "Unable to compare the hash content between the installation %s and candidate installation %s.")
+    MetadataException unableToCompareHashDirs(Path installationDir, Path updateDir, @Cause Exception e);
+
     @Message(id = 271, value = "Unable to evaluate symbolic link %s.")
     RuntimeException unableToEvaluateSymbolicLink(Path symlink, @Cause IOException e);
 }

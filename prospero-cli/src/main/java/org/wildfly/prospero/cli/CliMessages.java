@@ -430,6 +430,10 @@ public interface CliMessages {
         return new IllegalArgumentException(format(bundle.getString("prospero.updates.apply.validation.candidate.not_candidate"), updateDir));
     }
 
+    default IllegalArgumentException noChanges(Path targetDir, Path updateDir) {
+        return new IllegalArgumentException(format(bundle.getString("prospero.revert.apply.validation.candidate.no_changes"), targetDir, updateDir));
+    }
+
     default IllegalArgumentException nonEmptyTargetFolder(Path installationDir) {
         return new IllegalArgumentException(
                 format(bundle.getString("prospero.updates.build.validation.dir.not_empty"), installationDir));
