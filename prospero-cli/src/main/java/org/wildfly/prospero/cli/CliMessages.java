@@ -212,7 +212,7 @@ public interface CliMessages {
     }
 
     default String requiredMetadata() {
-        return format(bundle.getString("prospero.update.invalid.path.details"),
+        return format(bundle.getString("prospero.update.invalid.path.details_list"),
                 List.of(ProsperoMetadataUtils.METADATA_DIR + File.separator + ProsperoMetadataUtils.INSTALLER_CHANNELS_FILE_NAME,
                         ProsperoMetadataUtils.METADATA_DIR + File.separator + ProsperoMetadataUtils.MANIFEST_FILE_NAME,
                         Constants.PROVISIONED_STATE_DIR + File.separator + Constants.PROVISIONING_XML));

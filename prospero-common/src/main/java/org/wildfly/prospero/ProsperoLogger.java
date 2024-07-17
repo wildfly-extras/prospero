@@ -234,8 +234,15 @@ public interface ProsperoLogger extends BasicLogger {
     @Message(id = 221, value = "Unable to write file at [%s]")
     MetadataException unableToWriteFile(Path path, @Cause Exception e);
 
-    @Message(id = 222, value = "Path `%s` does not contain a server installation provisioned by prospero. Missing required files: %s")
-    IllegalArgumentException invalidInstallationDir(Path path, List<Path> missingFolders);
+    @Message(id = 222, value = "Path `%s` does not contain a server installation provisioned by prospero.")
+    IllegalArgumentException invalidInstallationDir(Path path);
+
+    // hack to keep the translations unchanged - instead of adding a parameter to the text, (which would break the translations),
+    // we add an untranslated text at the end. Note - this is only needed in 1.1.x and is removed in upstream
+    default IllegalArgumentException invalidInstallationDir(Path path, List<Path> missingFolders) {
+        final IllegalArgumentException ex = invalidInstallationDir(path);
+        return new IllegalArgumentException(ex.getMessage() + String.format(" Missing required files: %s.", missingFolders));
+    }
 
     @Message(id = 223, value = "Unable to access history store at [%s]")
     MetadataException unableToAccessHistoryStorage(Path path, @Cause Exception e);
