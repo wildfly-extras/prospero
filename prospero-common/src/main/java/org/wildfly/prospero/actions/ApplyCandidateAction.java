@@ -49,6 +49,7 @@ import org.wildfly.prospero.api.FileConflict;
 import org.wildfly.prospero.api.InstallationMetadata;
 import org.wildfly.prospero.api.MavenOptions;
 import org.wildfly.prospero.api.SavedState;
+import org.wildfly.prospero.api.exceptions.ApplyCandidateException;
 import org.wildfly.prospero.api.exceptions.InvalidUpdateCandidateException;
 import org.wildfly.prospero.api.exceptions.MetadataException;
 import org.wildfly.prospero.api.exceptions.OperationException;
@@ -206,16 +207,20 @@ public class ApplyCandidateAction {
             backup.close();
             return conflicts;
         } catch (IOException ex) {
+            boolean backupRestored = false;
             try {
                 if (backup != null) {
                     backup.restore();
                     // remove close the backup if the restore was successful. If there were any errors, we want to keep the backup untouched.
                     backup.close();
+                    backupRestored = true;
                 }
             } catch (IOException e) {
                 ProsperoLogger.ROOT_LOGGER.error("Unable to restore the server from a backup, preserving the backup.", e);
             }
-            throw new ProvisioningException("Unable to apply the candidate changes.", ex);
+            final String msg = ex.getLocalizedMessage() == null ? ex.getMessage() : ex.getLocalizedMessage();
+            throw new ApplyCandidateException(ProsperoLogger.ROOT_LOGGER.failedToApplyCandidate(msg),
+                    backupRestored, installationDir.resolve(ApplyStageBackup.BACKUP_FOLDER), ex);
         }
     }
 
