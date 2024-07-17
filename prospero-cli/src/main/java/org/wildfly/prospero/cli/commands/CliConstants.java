@@ -101,4 +101,7 @@ public final class CliConstants {
     public static final String VV = "-vv";
     public static final String Y = "-y";
     public static final String YES = "--yes";
+    public static final String NO_CONFLICTS_ONLY = "--no-conflicts-only";
+    public static final String DRY_RUN = "--dry-run";
+
 }

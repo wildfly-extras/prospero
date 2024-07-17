@@ -26,6 +26,7 @@ import org.jboss.logging.annotations.LogMessage;
 import org.jboss.logging.annotations.Message;
 import org.jboss.logging.annotations.MessageLogger;
 import org.wildfly.channel.InvalidChannelMetadataException;
+import org.wildfly.prospero.actions.ApplyCandidateAction;
 import org.wildfly.prospero.actions.FeaturesAddAction;
 import org.wildfly.prospero.api.exceptions.ArtifactPromoteException;
 import org.wildfly.prospero.api.exceptions.ChannelDefinitionException;
@@ -389,4 +390,15 @@ public interface ProsperoLogger extends BasicLogger {
 
     @Message(id = 271, value = "Unable to evaluate symbolic link %s.")
     RuntimeException unableToEvaluateSymbolicLink(Path symlink, @Cause IOException e);
+
+    @Message(id = 272, value = "The server [%s] has been modified after the candidate has been created [%s].")
+    InvalidUpdateCandidateException staleCandidate(Path originalServer, Path candiadate);
+
+    @Message(id = 273, value = "The folder [%s] doesn't contain a server candidate.")
+    InvalidUpdateCandidateException notCandidate(Path candidateServer);
+
+    @Message(id = 274, value = "The candidate at [%s] was not prepared for %s operation.")
+    InvalidUpdateCandidateException wrongCandidateOperation(Path candidateServer, ApplyCandidateAction.Type operationType);
+
+
 }

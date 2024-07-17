@@ -26,8 +26,11 @@ import org.mockito.junit.MockitoJUnitRunner;
 import org.wildfly.channel.Channel;
 import org.wildfly.channel.ChannelManifestCoordinate;
 import org.wildfly.channel.Repository;
+import org.wildfly.installationmanager.CandidateType;
+import org.wildfly.installationmanager.FileConflict;
 import org.wildfly.installationmanager.InstallationChanges;
 import org.wildfly.installationmanager.MavenOptions;
+import org.wildfly.prospero.actions.ApplyCandidateAction;
 import org.wildfly.prospero.actions.InstallationHistoryAction;
 import org.wildfly.prospero.actions.UpdateAction;
 import org.wildfly.prospero.api.ChannelChange;
@@ -35,9 +38,12 @@ import org.wildfly.prospero.api.SavedState;
 import org.wildfly.prospero.updates.UpdateSet;
 
 import java.nio.file.Path;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNull;
@@ -65,6 +71,9 @@ public class ProsperoInstallationManagerTest {
 
     @Mock
     private InstallationHistoryAction historyAction;
+
+    @Mock
+    private ApplyCandidateAction applyCandidateAction;
 
     @Rule
     public TemporaryFolder temp = new TemporaryFolder();
@@ -244,5 +253,38 @@ public class ProsperoInstallationManagerTest {
         assertFalse(mavenOptions.isOffline());
         assertTrue(mavenOptions.isNoLocalCache());
         assertNull(mavenOptions.getLocalCache());
+    }
+
+    @Test
+    public void testCheckUpdatesMapsConflicts() throws Exception {
+        final ProsperoInstallationManager mgr = new ProsperoInstallationManager(actionFactory);
+
+        when(actionFactory.getApplyCandidateAction(any())).thenReturn(applyCandidateAction);
+        when(applyCandidateAction.verifyCandidate(any())).thenReturn(ApplyCandidateAction.ValidationResult.OK);
+        when(applyCandidateAction.getConflicts()).thenReturn(List.of(
+                org.wildfly.prospero.api.FileConflict.userModified("foo/bar").updateModified().userPreserved(),
+                org.wildfly.prospero.api.FileConflict.userModified("system/file_a").updateModified().overwritten(),
+                org.wildfly.prospero.api.FileConflict.userAdded("system/file_b").updateAdded().overwritten()
+        ));
+
+        final Collection<FileConflict> conflicts = mgr.verifyCandidate(Path.of("candidate"), CandidateType.UPDATE);
+        assertThat(conflicts)
+                .contains(
+                        new FileConflict(Path.of("foo/bar"), FileConflict.Status.MODIFIED, FileConflict.Status.MODIFIED, false),
+                        new FileConflict(Path.of("system/file_a"), FileConflict.Status.MODIFIED, FileConflict.Status.MODIFIED, true),
+                        new FileConflict(Path.of("system/file_b"), FileConflict.Status.ADDED, FileConflict.Status.ADDED, true)
+                );
+    }
+
+    @Test
+    public void testCheckUpdatesThrowsVerificationExceptions() throws Exception {
+        final ProsperoInstallationManager mgr = new ProsperoInstallationManager(actionFactory);
+
+        when(actionFactory.getApplyCandidateAction(any())).thenReturn(applyCandidateAction);
+        when(applyCandidateAction.verifyCandidate(any())).thenReturn(ApplyCandidateAction.ValidationResult.STALE);
+
+        assertThatThrownBy(() -> mgr.verifyCandidate(Path.of("candidate"), CandidateType.UPDATE))
+                .hasMessageContaining("has been modified after the candidate has been created");
+
     }
 }
