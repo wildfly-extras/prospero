@@ -389,4 +389,7 @@ public interface ProsperoLogger extends BasicLogger {
 
     @Message(id = 271, value = "Unable to evaluate symbolic link %s.")
     RuntimeException unableToEvaluateSymbolicLink(Path symlink, @Cause IOException e);
+
+    @Message(id = 272, value = "Failed to apply the candidate changes due to: %s")
+    String failedToApplyCandidate(String reason);
 }
