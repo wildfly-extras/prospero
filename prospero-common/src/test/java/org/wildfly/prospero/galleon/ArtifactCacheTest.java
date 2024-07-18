@@ -235,4 +235,17 @@ public class ArtifactCacheTest {
         assertThat(cachedArtifact)
                 .isEmpty();
     }
+
+    @Test
+    public void cacheRecordsArtifactsInAlphabeticOrder() throws Exception {
+        cache.cache(otherArtifact);
+        cache.cache(anArtifact);
+
+        final List<String> line = Files.readAllLines(installationDir.resolve(ArtifactCache.CACHE_FOLDER).resolve(ArtifactCache.CACHE_FILENAME));
+        assertEquals(2, line.size());
+        assertThat(line.get(0))
+                .contains(GROUP_ID + ":" + ARTIFACT_ID);
+        assertThat(line.get(1))
+                .contains(otherArtifact.getGroupId() + ":" + ARTIFACT_ID);
+    }
 }
