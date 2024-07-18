@@ -18,6 +18,7 @@ package org.wildfly.prospero.actions;
 
 import java.io.File;
 import java.io.IOException;
+import java.nio.file.AccessDeniedException;
 import java.nio.file.FileVisitResult;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -694,6 +695,9 @@ public class ApplyCandidateAction {
                 if (dir.equals(skipInstallationGalleon) || dir.equals(skipInstallationInstallation)) {
                     return FileVisitResult.SKIP_SUBTREE;
                 }
+                if (!Files.isReadable(dir)) {
+                    return FileVisitResult.SKIP_SUBTREE;
+                }
                 if (!dir.equals(installationDir)) {
                     Path relative = installationDir.relativize(dir);
                     Path target = updateDir.resolve(relative);
@@ -724,6 +728,21 @@ public class ApplyCandidateAction {
                     }
                 }
                 return FileVisitResult.CONTINUE;
+            }
+
+            @Override
+            public FileVisitResult visitFileFailed(Path file, IOException exc) throws IOException {
+                if (exc instanceof AccessDeniedException) {
+                    Path relative = installationDir.relativize(file);
+                    Path target = updateDir.resolve(relative);
+                    // TODO: check it's not in the Galleon hashes
+                    if (Files.exists(target)) {
+                        throw exc;
+                    }
+                    return FileVisitResult.SKIP_SUBTREE;
+                } else {
+                    throw exc;
+                }
             }
         });
         return Collections.unmodifiableList(conflicts);
