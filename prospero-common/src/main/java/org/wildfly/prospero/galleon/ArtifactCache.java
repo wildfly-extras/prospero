@@ -41,6 +41,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.TreeMap;
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 
@@ -65,8 +66,8 @@ public class ArtifactCache {
     private final Path cacheDir;
     private final Path installationDir;
 
-    private final Map<String, Path> paths = new HashMap<>();
-    private final Map<String, String> hashes = new HashMap<>();
+    private final Map<String, Path> paths = new TreeMap<>();
+    private final Map<String, String> hashes = new TreeMap<>();
     private ReadWriteLock lock = new ReentrantReadWriteLock();
 
     private static final HashMap<Path, ArtifactCache> instances = new HashMap<>();
@@ -137,6 +138,7 @@ public class ArtifactCache {
 
     /**
      * records file in the cache descriptor. The recorded path is relative to {@code installationDir}
+     *
      * @param artifact - artifact to be recorded
      * @param pathToArtifact - location in the installation where the artifact can be found
      * @throws IOException
@@ -145,23 +147,36 @@ public class ArtifactCache {
         try {
             lock.writeLock().lock();
 
-            final String cacheFileKey = getCacheFileKey(artifact);
-
             final Path cacheList = cacheDir.resolve(CACHE_FILENAME);
 
-            if (paths.containsKey(asKey(artifact.getGroupId(), artifact.getArtifactId(), artifact.getExtension(), artifact.getClassifier(), artifact.getVersion()))) {
-                removeArtifactFromCacheList(cacheFileKey, cacheList);
+            final String hash = HashUtils.hashFile(artifact.getFile().toPath());
+
+            // make sure the latest version of the cache list is read
+            init();
+
+            // add the file to the paths/hashes
+            paths.put(
+                    asKey(artifact.getGroupId(), artifact.getArtifactId(), artifact.getExtension(), artifact.getClassifier(), artifact.getVersion()),
+                    pathToArtifact
+            );
+            hashes.put(
+                    asKey(artifact.getGroupId(), artifact.getArtifactId(), artifact.getExtension(), artifact.getClassifier(), artifact.getVersion()),
+                    hash
+            );
+
+            if (Files.exists(cacheList)) {
+                Files.delete(cacheList);
             }
 
-            final String hash = HashUtils.hashFile(artifact.getFile().toPath());
-            final Path relativePath = installationDir.relativize(pathToArtifact);
-            final String recordedPath = relativePath.toString().replace(File.separatorChar, '/');
-            Files.writeString(cacheList,
-                    cacheFileKey + CACHE_LINE_SEPARATOR + hash + CACHE_LINE_SEPARATOR +
-                            recordedPath + "\n", StandardOpenOption.APPEND, StandardOpenOption.CREATE);
-
-            invalidate();
-            init();
+            // write all the paths/hashes to make sure they are in alphabetic order
+            try (BufferedWriter writer = Files.newBufferedWriter(cacheList, StandardCharsets.UTF_8, StandardOpenOption.CREATE_NEW)) {
+                for (String key: paths.keySet()) {
+                    final Path relativePath = installationDir.relativize(paths.get(key));
+                    final String recordedPath = relativePath.toString().replace(File.separatorChar, '/');
+                    String cacheLine = key + CACHE_LINE_SEPARATOR + hashes.get(key) + CACHE_LINE_SEPARATOR + recordedPath + "\n";
+                    writer.write(cacheLine);
+                }
+            }
         } finally {
             lock.writeLock().unlock();
         }
@@ -214,29 +229,6 @@ public class ArtifactCache {
         }
     }
 
-    private static String getCacheFileKey(MavenArtifact artifact) {
-        final org.jboss.galleon.universe.maven.MavenArtifact galleonArtifact = new org.jboss.galleon.universe.maven.MavenArtifact();
-        galleonArtifact.setGroupId(artifact.getGroupId());
-        galleonArtifact.setArtifactId(artifact.getArtifactId());
-        galleonArtifact.setClassifier(artifact.getClassifier());
-        galleonArtifact.setExtension(artifact.getExtension());
-        galleonArtifact.setVersion(artifact.getVersion());
-        return galleonArtifact.getCoordsAsString();
-    }
-
-    private static void removeArtifactFromCacheList(String cacheKey, Path cacheList) throws IOException {
-        final List<String> cacheLines = Files.readAllLines(cacheList);
-        Files.delete(cacheList);
-
-        try (BufferedWriter writer = Files.newBufferedWriter(cacheList, StandardCharsets.UTF_8, StandardOpenOption.CREATE_NEW)) {
-            for (String cacheLine : cacheLines) {
-                if (!cacheLine.split(CACHE_LINE_SEPARATOR)[0].equals(cacheKey)) {
-                    writer.write(cacheLine + System.lineSeparator());
-                }
-            }
-        }
-    }
-
     private void init() throws IOException {
         Path artifactLog = cacheDir.resolve(CACHE_FILENAME);
 
@@ -261,11 +253,6 @@ public class ArtifactCache {
                 throw ProsperoLogger.ROOT_LOGGER.unableToReadArtifactCache(row + 1, lines.get(row), e);
             }
         }
-    }
-
-    private void invalidate() {
-        paths.clear();
-        hashes.clear();
     }
 
     private static String asKey(String groupId, String artifactId, String extension, String classifier, String version) {
