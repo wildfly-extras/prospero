@@ -19,17 +19,25 @@
 
 package org.wildfly.prospero.spi;
 
+import org.jboss.galleon.Constants;
 import org.wildfly.installationmanager.MavenOptions;
 import org.wildfly.installationmanager.spi.InstallationManager;
 import org.wildfly.installationmanager.spi.InstallationManagerFactory;
 import org.wildfly.prospero.ProsperoLogger;
-import org.wildfly.prospero.api.InstallationMetadata;
 import org.wildfly.prospero.metadata.ProsperoMetadataUtils;
 
-import java.io.File;
 import java.nio.file.Path;
+import java.util.List;
+import java.util.stream.Collectors;
 
 public class ProsperoInstallationManagerFactory implements InstallationManagerFactory {
+
+    protected static final List<Path> REQUIRED_FILES = List.of(
+            Path.of(Constants.PROVISIONED_STATE_DIR, Constants.PROVISIONING_XML),
+            Path.of(ProsperoMetadataUtils.METADATA_DIR, ProsperoMetadataUtils.INSTALLER_CHANNELS_FILE_NAME),
+            Path.of(ProsperoMetadataUtils.METADATA_DIR, ProsperoMetadataUtils.MANIFEST_FILE_NAME)
+    );
+
     @Override
     public InstallationManager create(Path installationDir, MavenOptions mavenOptions) throws Exception {
         verifyInstallationDirectory(installationDir);
@@ -42,11 +50,13 @@ public class ProsperoInstallationManagerFactory implements InstallationManagerFa
     }
 
     private void verifyInstallationDirectory(Path path) {
-        File dotGalleonDir = path.resolve(InstallationMetadata.GALLEON_INSTALLATION_DIR).toFile();
-        File channelsFile = path.resolve(ProsperoMetadataUtils.METADATA_DIR)
-                .resolve(ProsperoMetadataUtils.INSTALLER_CHANNELS_FILE_NAME).toFile();
-        if (!dotGalleonDir.isDirectory() || !channelsFile.isFile()) {
-            throw ProsperoLogger.ROOT_LOGGER.invalidInstallationDir(path);
+        final List<Path> missingPaths = REQUIRED_FILES.stream()
+                .map(path::resolve)
+                .filter(p->!p.toFile().isFile()).
+                collect(Collectors.toList());
+
+        if (!missingPaths.isEmpty()) {
+            throw ProsperoLogger.ROOT_LOGGER.invalidInstallationDir(path, missingPaths);
         }
     }
 }
