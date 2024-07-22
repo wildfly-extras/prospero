@@ -700,4 +700,12 @@ public interface CliMessages {
     default OperationException sizeOfChannel(Path channelFile) {
         return new OperationException(format(bundle.getString("prospero.channels.error.morethanonechannel.found"), channelFile));
     }
+
+    default String candidateApplyRollbackSuccess() {
+        return bundle.getString("prospero.candidate.apply.error.rolled_back.desc");
+    }
+
+    default String candidateApplyRollbackFailure(Path backup) {
+        return format(bundle.getString("prospero.candidate.apply.error.rollback_error.desc"), backup);
+    }
 }
