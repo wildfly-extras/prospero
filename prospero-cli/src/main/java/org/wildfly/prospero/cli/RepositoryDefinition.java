@@ -93,7 +93,7 @@ public class RepositoryDefinition {
         if (Files.exists(repoPath)) {
             return repoPath.toUri();
         } else {
-            throw CliMessages.MESSAGES.invalidFilePath(repoInfo);
+            throw CliMessages.MESSAGES.nonExistingFilePath(repoPath);
         }
     }
 
@@ -109,7 +109,7 @@ public class RepositoryDefinition {
             try {
                 return Path.of(repoInfo);
             } catch (InvalidPathException e) {
-                throw CliMessages.MESSAGES.invalidFilePath(repoInfo);
+                throw CliMessages.MESSAGES.invalidFilePath(repoInfo, e);
             }
         }
     }
