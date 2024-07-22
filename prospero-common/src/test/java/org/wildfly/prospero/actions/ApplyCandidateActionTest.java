@@ -390,6 +390,19 @@ public class ApplyCandidateActionTest {
     }
 
     @Test
+    public void verifyCandidateNoChanges() throws Exception {
+        createSimpleFeaturePacks();
+
+        install(installationPath, FPL_100);
+        prepareRevert(updatePath, installationPath, FPL_100);
+
+        final ApplyCandidateAction.ValidationResult validationResult = new ApplyCandidateAction(installationPath, updatePath)
+                .verifyCandidate(ApplyCandidateAction.Type.REVERT);
+
+        assertEquals(ApplyCandidateAction.ValidationResult.NO_CHANGES, validationResult);
+    }
+
+    @Test
     public void verifyCandidateValidMarker() throws Exception {
         createSimpleFeaturePacks();
         final ApplyCandidateAction applyCandidateAction = new ApplyCandidateAction(installationPath, updatePath);
@@ -544,6 +557,16 @@ public class ApplyCandidateActionTest {
         try (final GitStorage gitStorage = new GitStorage(basePath)) {
             final String revHash = gitStorage.getRevisions().get(0).getName();
             new MarkerFile(revHash, ApplyCandidateAction.Type.UPDATE).write(updatePath);
+        }
+    }
+
+    private void prepareRevert(Path updatePath, Path basePath, String fpl) throws Exception {
+        install(updatePath, fpl);
+
+        // create update marker file
+        try (final GitStorage gitStorage = new GitStorage(basePath)) {
+            final String revHash = gitStorage.getRevisions().get(0).getName();
+            new MarkerFile(revHash, ApplyCandidateAction.Type.REVERT).write(updatePath);
         }
     }
 

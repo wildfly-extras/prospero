@@ -172,10 +172,8 @@ public class CliConsole implements Console {
         }
     }
 
-    public void changesFound(List<ArtifactChange> artifactUpdates) {
-        if (artifactUpdates.isEmpty()) {
-            getStdOut().println(CliMessages.MESSAGES.noChangesFound());
-        } else {
+    public void printArtifactChanges(List<ArtifactChange> artifactUpdates) {
+        if (!artifactUpdates.isEmpty()) {
             getStdOut().println(CliMessages.MESSAGES.changesFound());
             for (ArtifactChange artifactUpdate : artifactUpdates) {
                 final Optional<String> newVersion = artifactUpdate.getNewVersion();
