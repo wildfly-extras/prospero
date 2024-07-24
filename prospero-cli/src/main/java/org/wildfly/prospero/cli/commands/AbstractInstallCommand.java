@@ -28,6 +28,7 @@ import picocli.CommandLine;
 
 import java.nio.file.Path;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 
@@ -52,9 +53,10 @@ public abstract class AbstractInstallCommand extends AbstractCommand {
     @CommandLine.Option(
             names = CliConstants.CHANNEL_MANIFEST,
             paramLabel = CliConstants.CHANNEL_MANIFEST_REFERENCE,
+            split = ",",
             order = 3
     )
-    Optional<String> manifestCoordinate;
+    List<String> manifestCoordinates = Collections.emptyList();
 
     @CommandLine.Option(
             names = CliConstants.REPOSITORIES,
@@ -87,7 +89,7 @@ public abstract class AbstractInstallCommand extends AbstractCommand {
         return ProvisioningDefinition.builder()
                 .setFpl(featurePackOrDefinition.fpl.orElse(null))
                 .setProfile(featurePackOrDefinition.profile.orElse(null))
-                .setManifest(manifestCoordinate.orElse(null))
+                .setManifests(manifestCoordinates)
                 .setChannelCoordinates(channelCoordinates)
                 .setOverrideRepositories(RepositoryDefinition.from(remoteRepositories))
                 .setDefinitionFile(featurePackOrDefinition.definition.map(Path::toUri).orElse(null));
