@@ -19,6 +19,7 @@ package org.wildfly.prospero.actions;
 
 import org.jboss.logging.Logger;
 import org.wildfly.channel.Channel;
+import org.wildfly.channel.ChannelManifest;
 import org.wildfly.channel.ChannelManifestMapper;
 import org.wildfly.channel.MavenArtifact;
 import org.wildfly.channel.MavenCoordinate;
@@ -84,7 +85,13 @@ class ProsperoManifestVersionResolver {
                     if (LOG.isDebugEnabled()) {
                         LOG.debugf("Manifest %s resolved in currently resolve artifacts, recording.", manifestCoord);
                     }
-                    final String description = ChannelManifestMapper.from(version.getFile().toURI().toURL()).getName();
+                    final ChannelManifest manifest = ChannelManifestMapper.from(version.getFile().toURI().toURL());
+                    final String description;
+                    if (manifest.getSchemaVersion().equals(ChannelManifestMapper.SCHEMA_VERSION_1_0_0)) {
+                        description = manifest.getName();
+                    } else {
+                        description = manifest.getLogicalVersion();
+                    }
                     record.addManifest(new ManifestVersionRecord.MavenManifest(
                             manifestCoord.getGroupId(),
                             manifestCoord.getArtifactId(),
