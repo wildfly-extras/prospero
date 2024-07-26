@@ -27,9 +27,12 @@ import java.nio.file.Files;
 import java.nio.file.InvalidPathException;
 import java.nio.file.Path;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
 public class RepositoryDefinition {
+
+    private static final List<String> ALLOWED_SCHEMAS = Arrays.asList("file", "http", "https");
 
     public static List<Repository> from(List<String> repos) throws ArgumentParsingException {
         final ArrayList<Repository> repositories = new ArrayList<>(repos.size());
@@ -62,8 +65,12 @@ public class RepositoryDefinition {
         URI uri;
         try {
             uri = new URI(location);
-            if (("file".equals(uri.getScheme()) || StringUtils.isBlank(uri.getScheme()))
-                    && StringUtils.isBlank(uri.getHost())) {
+
+            if ("file".equals(uri.getScheme()) || StringUtils.isBlank(uri.getScheme())) {
+                if (StringUtils.isNotBlank(uri.getHost())) {
+                    throw CliMessages.MESSAGES.unsupportedRemoteScheme(location);
+                }
+
                 // A "file:" URI with an empty host is assumed to be a local filesystem URL. An empty scheme would mean
                 // a URI that is just a path without any "proto:" part, which is still assumed a local path.
                 // A "file:" URI with a non-empty host would signify a remote URL, in which case we don't process it
@@ -83,6 +90,11 @@ public class RepositoryDefinition {
             // Resulting URI must be convertible to URL.
             //noinspection ResultOfMethodCallIgnored
             uri.toURL();
+
+            // Check it is supported scheme.
+            if (StringUtils.isNotBlank(uri.getScheme()) && !ALLOWED_SCHEMAS.contains(uri.getScheme())) {
+                throw CliMessages.MESSAGES.unsupportedScheme(location);
+            }
         } catch (URISyntaxException | MalformedURLException e) {
             try {
                 // If the location is not a valid URI / URL, try to handle it as a path.

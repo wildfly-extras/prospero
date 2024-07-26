@@ -31,6 +31,7 @@ import java.util.Set;
 import java.util.stream.Collectors;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatExceptionOfType;
 import static org.junit.Assert.*;
 import static org.wildfly.prospero.cli.RepositoryDefinition.from;
 
@@ -191,26 +192,34 @@ public class RepositoryDefinitionTest {
         assertThat(RepositoryDefinition.parseRepositoryLocation("file:" + cwdPath, true)) // file:/home/...
                 .isEqualTo("file:" + cwdPath);
 
-        assertThat(RepositoryDefinition.parseRepositoryLocation("file://host/some/path", true))
-                .isEqualTo("file://host/some/path");
+        assertThatExceptionOfType(ArgumentParsingException.class)
+                .isThrownBy(() -> {
+                    RepositoryDefinition.parseRepositoryLocation("file://host/some/path", true);
+                });
 
         assertThat(RepositoryDefinition.parseRepositoryLocation("file:../prospero-cli", true))
                 .isEqualTo("file:" + cwdPath);
 
-        try {
-            RepositoryDefinition.parseRepositoryLocation("file://../prospero-cli", true); // This is interpreted as local absolute path "/../path".
-            fail("This path should fail because it doesn't exist.");
-        } catch (ArgumentParsingException e) {
-            // pass
-        }
+        assertThatExceptionOfType(ArgumentParsingException.class)
+                .isThrownBy(() -> {
+                    RepositoryDefinition.parseRepositoryLocation("file://../prospero-cli", true); // This is interpreted as local absolute path "/../path".                });
+                });
 
         // On Linux following is interpreted as relative path, on Windows it's an absolute path
         if (SystemUtils.IS_OS_WINDOWS) {
             assertThat(RepositoryDefinition.parseRepositoryLocation("a:foo/bar", false)) // interpreted as local relative path
                     .isEqualTo("file:/A:/foo/bar");
+            assertThatExceptionOfType(ArgumentParsingException.class)
+                    .isThrownBy(() -> {
+                        RepositoryDefinition.parseRepositoryLocation("a:foo/bar", true); // This is interpreted as local absolute path "/../path".                });
+                    });
         } else {
             assertThat(RepositoryDefinition.parseRepositoryLocation("a:foo/bar", false)) // interpreted as local relative path
                     .isEqualTo("file:" + cwdPath + "a:foo/bar");
+            assertThatExceptionOfType(ArgumentParsingException.class)
+                    .isThrownBy(() -> {
+                        RepositoryDefinition.parseRepositoryLocation("a:foo/bar", true); // This is interpreted as local absolute path "/../path".                });
+                    });
         }
     }
 
@@ -224,8 +233,10 @@ public class RepositoryDefinitionTest {
         assertThat(RepositoryDefinition.parseRepositoryLocation("file:///c:/some/path", false))
                 .isEqualTo("file:/c:/some/path");
 
-        assertThat(RepositoryDefinition.parseRepositoryLocation("file://host/c:/some/path", false))
-                .isEqualTo("file://host/c:/some/path");
+        assertThatExceptionOfType(ArgumentParsingException.class)
+                .isThrownBy(() -> {
+                    RepositoryDefinition.parseRepositoryLocation("file://host/c:/some/path", false);
+                });
 
         // On Linux following is interpreted as relative path, on Windows it's an absolute path
         if (SystemUtils.IS_OS_WINDOWS) {
