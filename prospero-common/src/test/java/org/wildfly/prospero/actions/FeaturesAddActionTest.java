@@ -35,6 +35,7 @@ import org.junit.rules.TemporaryFolder;
 import org.junit.runner.RunWith;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
+import org.mockito.Mockito;
 import org.mockito.junit.MockitoJUnitRunner;
 import org.wildfly.channel.Channel;
 import org.wildfly.channel.ChannelManifest;
@@ -46,6 +47,8 @@ import org.wildfly.prospero.api.exceptions.ArtifactResolutionException;
 import org.wildfly.prospero.api.exceptions.MetadataException;
 import org.wildfly.prospero.api.exceptions.OperationException;
 import org.wildfly.prospero.galleon.FeaturePackLocationParser;
+import org.wildfly.prospero.licenses.License;
+import org.wildfly.prospero.licenses.LicenseManager;
 import org.wildfly.prospero.model.FeaturePackTemplateManager;
 import org.wildfly.prospero.model.FeaturePackTemplate;
 import org.wildfly.prospero.model.ProsperoConfig;
@@ -53,6 +56,7 @@ import org.wildfly.prospero.test.MetadataTestUtils;
 import org.wildfly.prospero.utils.MavenUtils;
 import org.wildfly.prospero.wfchannel.MavenSessionManager;
 
+import java.io.FileInputStream;
 import java.io.IOException;
 import java.net.URL;
 import java.nio.charset.StandardCharsets;
@@ -60,6 +64,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Collections;
 import java.util.List;
+import java.util.Properties;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -101,6 +106,8 @@ public class FeaturesAddActionTest {
     private FeaturesAddAction.CandidateActionsFactory candidateActionsFactory;
     @Mock
     private FeaturePackTemplateManager featurePackTemplateManager;
+    @Mock
+    private LicenseManager licenseManager;
 
     @Before
     public void setUp() throws Exception {
@@ -984,6 +991,53 @@ public class FeaturesAddActionTest {
                 .contains("additional.package");
     }
 
+    @Test
+    public void testAddLicenses() throws Exception {
+        // install base feature pack
+        final FeaturePackCreator creator = FeaturePackCreator.getInstance().addArtifactResolver(repo);
+        creator.newFeaturePack(FeaturePackLocation.fromString("org.test:base-pack:1.0.0:zip").getFPID())
+                .getCreator()
+                .newFeaturePack(FeaturePackLocation.fromString("org.test:added-pack:1.0.0:zip").getFPID())
+                .addDependency(FeaturePackLocation.fromString("org.test:base-pack:1.0.0"))
+        ;
+        deployFeaturePacks(creator);
+        // install
+        installFeaturePack(installDir, "org.test:base-pack:1.0.0:zip");
+
+        final Path licenses = installDir.resolve(METADATA_DIR).resolve(LicenseManager.LICENSES_FOLDER);
+        Files.createDirectories(licenses);
+
+        // create licenses - base-license is accepted in the original server and added-license is accepted during
+        // addition of a feature pack
+        final License addedLicense = new License("added-license", "org.test:added-pack", "Added License", "Added license text");
+        final License baseLicense = new License("base-license", "org.test:base-pack", "Base license", "Base license text");
+        when(licenseManager.getLicenses(any())).thenReturn(List.of(addedLicense));
+        // use real method to actually write out the content of licenses - this way we can check that both old and new licenses are saved
+        Mockito.doCallRealMethod().when(licenseManager).recordAgreements(any(), any());
+        licenseManager.recordAgreements(List.of(baseLicense), installDir);
+
+        getFeaturesAddAction().addFeaturePack("org.test:added-pack", NO_DEFAULT_CONFIGS, candidatePath);
+
+        verify(prepareCandidateAction).buildCandidate(any(), any(), eq(ApplyCandidateAction.Type.FEATURE_ADD),
+                any());
+
+
+        // verify candidate has licenses from both base server and newly added ones
+        final Properties properties = new Properties();
+        final Path licensesDir = candidatePath.resolve(METADATA_DIR).resolve(LicenseManager.LICENSES_FOLDER);
+        properties.load(new FileInputStream(licensesDir.resolve("license_accepted.properties").toFile()));
+        assertThat(properties.stringPropertyNames())
+                .contains("license.0.name", "license.1.name");
+        assertThat(properties.getProperty("license.0.name"))
+                .isEqualTo("base-license");
+        assertThat(properties.getProperty("license.1.name"))
+                .isEqualTo("added-license");
+        assertThat(licensesDir.resolve("base-license.txt"))
+                .hasContent("Base license text");
+        assertThat(licensesDir.resolve("added-license.txt"))
+                .hasContent("Added license text");
+    }
+
     private static GalleonFeaturePackConfig getFeaturePackConfig(GalleonProvisioningConfig config, String fpl) {
         return config.getFeaturePackDeps().stream().filter(f -> f.getLocation().toString().equals(fpl)).findFirst().get();
     }
@@ -1012,7 +1066,7 @@ public class FeaturesAddActionTest {
 
         final FeaturesAddAction featuresAddAction = new FeaturesAddAction(MavenOptions.OFFLINE_NO_CACHE, installDir,
                 List.of(new Repository("test", repositoryUrl.toExternalForm())), null,
-                candidateActionsFactory, featurePackTemplateManager);
+                candidateActionsFactory, featurePackTemplateManager, licenseManager);
         return featuresAddAction;
     }
 
