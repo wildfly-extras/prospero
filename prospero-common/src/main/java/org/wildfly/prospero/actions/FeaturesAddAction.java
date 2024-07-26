@@ -17,6 +17,8 @@
 
 package org.wildfly.prospero.actions;
 
+import static org.wildfly.prospero.licenses.LicenseManager.LICENSES_FOLDER;
+
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.jboss.galleon.ProvisioningDescriptionException;
@@ -53,6 +55,7 @@ import org.wildfly.prospero.galleon.GalleonEnvironment;
 import org.wildfly.prospero.galleon.GalleonUtils;
 import org.wildfly.prospero.licenses.License;
 import org.wildfly.prospero.licenses.LicenseManager;
+import org.wildfly.prospero.metadata.ProsperoMetadataUtils;
 import org.wildfly.prospero.model.FeaturePackTemplateManager;
 import org.wildfly.prospero.model.FeaturePackTemplate;
 import org.wildfly.prospero.model.ProsperoConfig;
@@ -91,13 +94,13 @@ public class FeaturesAddAction {
     public FeaturesAddAction(MavenOptions mavenOptions, Path installDir, List<Repository> repositories, Console console) throws MetadataException, ProvisioningException {
         this(mavenOptions, installDir, repositories, console,
                 new DefaultCandidateActionsFactory(installDir),
-                new FeaturePackTemplateManager());
+                new FeaturePackTemplateManager(), new LicenseManager());
     }
 
     // used for testing
     FeaturesAddAction(MavenOptions mavenOptions, Path installDir,
                       List<Repository> repositories, Console console, CandidateActionsFactory candidateActionsFactory,
-                      FeaturePackTemplateManager featurePackTemplateManager)
+                      FeaturePackTemplateManager featurePackTemplateManager, LicenseManager licenseManager)
             throws MetadataException, ProvisioningException {
         this.installDir = InstallFolderUtils.toRealPath(installDir);
 
@@ -112,7 +115,7 @@ public class FeaturesAddAction {
 
         this.featurePackTemplateManager = featurePackTemplateManager;
 
-        this.licenseManager = new LicenseManager();
+        this.licenseManager = licenseManager;
     }
 
     @Deprecated
@@ -386,12 +389,18 @@ public class FeaturesAddAction {
             ProsperoLogger.ROOT_LOGGER.updateCandidateCompleted(installDir);
         }
 
-        if (!pendingLicenses.isEmpty()) {
-            try {
-                licenseManager.recordAgreements(pendingLicenses, candidate);
-            } catch (IOException e) {
-                throw ProsperoLogger.ROOT_LOGGER.unableToWriteFile(candidate.resolve(LicenseManager.LICENSES_FOLDER), e);
+        try {
+            // copy licenses from the original server to the candidate to preserve accepted licenses record
+            final Path existingLicenses = installDir.resolve(ProsperoMetadataUtils.METADATA_DIR).resolve(LICENSES_FOLDER);
+            if (Files.exists(existingLicenses)) {
+                FileUtils.copyDirectory(existingLicenses.toFile(), candidate.resolve(ProsperoMetadataUtils.METADATA_DIR).resolve(LICENSES_FOLDER).toFile());
             }
+            if (!pendingLicenses.isEmpty()) {
+                // accept additional licenses appending to the record
+                licenseManager.recordAgreements(pendingLicenses, candidate);
+            }
+        } catch (IOException e) {
+            throw ProsperoLogger.ROOT_LOGGER.unableToWriteFile(candidate.resolve(LICENSES_FOLDER), e);
         }
     }
 
