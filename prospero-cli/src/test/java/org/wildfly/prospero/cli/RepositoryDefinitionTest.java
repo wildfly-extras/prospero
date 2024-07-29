@@ -18,6 +18,7 @@
 package org.wildfly.prospero.cli;
 
 import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.SystemUtils;
 import org.assertj.core.api.Assertions;
 import org.junit.Before;
 import org.junit.Test;
@@ -30,6 +31,7 @@ import java.util.Set;
 import java.util.stream.Collectors;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatExceptionOfType;
 import static org.junit.Assert.*;
 import static org.wildfly.prospero.cli.RepositoryDefinition.from;
 
@@ -77,7 +79,7 @@ public class RepositoryDefinitionTest {
     }
 
     @Test
-    public void throwsErrorIfFormatIsIncorrect() throws Exception {
+    public void throwsErrorIfFormatIsIncorrect() {
         assertThrows(ArgumentParsingException.class, ()->from(List.of("::http://test1.te")));
 
         assertThrows(ArgumentParsingException.class, ()->from(List.of("repo-1::")));
@@ -85,9 +87,6 @@ public class RepositoryDefinitionTest {
         assertThrows(ArgumentParsingException.class, ()->from(List.of("repo-1:::http://test1.te")));
 
         assertThrows(ArgumentParsingException.class, ()->from(List.of("foo::bar::http://test1.te")));
-
-        assertThrows(ArgumentParsingException.class, ()->from(List.of("imnoturl")));
-
     }
 
     @Test
@@ -103,7 +102,7 @@ public class RepositoryDefinitionTest {
 
     @Test
     public void testCorrectRelativeOrAbsolutePathForFileURL() throws Exception {
-        Repository repository = new Repository("temp-repo-0", tempRepoUrlEmptyHostForm);
+        Repository repository = new Repository("temp-repo-0", tempRepoUrlNoHostForm);
         List<Repository> actualList = from(List.of("file:../prospero-cli"));
 
         assertNotNull(actualList);
@@ -182,4 +181,71 @@ public class RepositoryDefinitionTest {
                         "The provided path [%s] doesn't exist or is not accessible. The local repository has to an existing, readable folder.",
                         Path.of("idontexist").toAbsolutePath()));
     }
+
+    @Test
+    public void testNormalization() throws Exception {
+        String cwdPath = Path.of(System.getProperty("user.dir")).toUri().getPath();
+
+        assertThat(RepositoryDefinition.parseRepositoryLocation("file://" + cwdPath, true)) // file:///home/...
+                .isEqualTo("file:" + cwdPath);
+
+        assertThat(RepositoryDefinition.parseRepositoryLocation("file:" + cwdPath, true)) // file:/home/...
+                .isEqualTo("file:" + cwdPath);
+
+        assertThatExceptionOfType(ArgumentParsingException.class)
+                .isThrownBy(() -> {
+                    RepositoryDefinition.parseRepositoryLocation("file://host/some/path", true);
+                });
+
+        assertThat(RepositoryDefinition.parseRepositoryLocation("file:../prospero-cli", true))
+                .isEqualTo("file:" + cwdPath);
+
+        assertThatExceptionOfType(ArgumentParsingException.class)
+                .isThrownBy(() -> {
+                    RepositoryDefinition.parseRepositoryLocation("file://../prospero-cli", true); // This is interpreted as local absolute path "/../path".                });
+                });
+
+        // On Linux following is interpreted as relative path, on Windows it's an absolute path
+        if (SystemUtils.IS_OS_WINDOWS) {
+            assertThat(RepositoryDefinition.parseRepositoryLocation("a:foo/bar", false)) // interpreted as local relative path
+                    .isEqualTo("file:/A:/foo/bar");
+            assertThatExceptionOfType(ArgumentParsingException.class)
+                    .isThrownBy(() -> {
+                        RepositoryDefinition.parseRepositoryLocation("a:foo/bar", true); // This is interpreted as local absolute path "/../path".                });
+                    });
+        } else {
+            assertThat(RepositoryDefinition.parseRepositoryLocation("a:foo/bar", false)) // interpreted as local relative path
+                    .isEqualTo("file:" + cwdPath + "a:foo/bar");
+            assertThatExceptionOfType(ArgumentParsingException.class)
+                    .isThrownBy(() -> {
+                        RepositoryDefinition.parseRepositoryLocation("a:foo/bar", true); // This is interpreted as local absolute path "/../path".                });
+                    });
+        }
+    }
+
+    @Test
+    public void testNormalizationWindowsPaths() throws Exception {
+        String cwdPath = Path.of(System.getProperty("user.dir")).toUri().getPath();
+
+        assertThat(RepositoryDefinition.parseRepositoryLocation("file:/c:/some/path", false))
+                .isEqualTo("file:/c:/some/path");
+
+        assertThat(RepositoryDefinition.parseRepositoryLocation("file:///c:/some/path", false))
+                .isEqualTo("file:/c:/some/path");
+
+        assertThatExceptionOfType(ArgumentParsingException.class)
+                .isThrownBy(() -> {
+                    RepositoryDefinition.parseRepositoryLocation("file://host/c:/some/path", false);
+                });
+
+        // On Linux following is interpreted as relative path, on Windows it's an absolute path
+        if (SystemUtils.IS_OS_WINDOWS) {
+            assertThat(RepositoryDefinition.parseRepositoryLocation("c:/foo/bar", false))
+                    .isEqualTo("file:/c:/foo/bar");
+        } else {
+            assertThat(RepositoryDefinition.parseRepositoryLocation("c:/foo/bar", false))
+                    .isEqualTo("file:" + cwdPath + "c:/foo/bar");
+        }
+    }
+
 }

@@ -433,6 +433,14 @@ public interface CliMessages {
         return new ArgumentParsingException(format(bundle.getString("prospero.general.validation.file_path.not_exists"), nonExistingPath));
     }
 
+    default ArgumentParsingException unsupportedRemoteScheme(String url) {
+        return new ArgumentParsingException(format(bundle.getString("prospero.general.validation.url.unsupported_remote_scheme"), url));
+    }
+
+    default ArgumentParsingException unsupportedScheme(String url) {
+        return new ArgumentParsingException(format(bundle.getString("prospero.general.validation.url.unsupported_scheme"), url));
+    }
+
     default IllegalArgumentException updateCandidateStateNotMatched(Path targetDir, Path updateDir) {
         return new IllegalArgumentException(format(bundle.getString("prospero.updates.apply.validation.candidate.outdated"), targetDir, updateDir));
     }
