@@ -47,3 +47,9 @@ During "*apply changes*" phase of updates, any processes using server's resource
 To reduce server downtime, the update operation can be performed in two steps - `prepare` and `apply`. In the first step, a candidate update server is provisioned in a new directory. The second step, compares the changes between the candidate and the base server and applies them to the base server.
 
 If the update is split into separate steps, the `prepare` step can be performed while the server is running. See <<Working with update candidates>> for details.
+
+#### Update backup
+
+The only time changes to the server are applied is during the `apply` phase of the update. To avoid leaving the server in a corrupted state, before any changes are written out, the current state of the server is preserved in an `<SERVER_ROOT>/.update.old` folder.
+
+Should an error occur during the operation, Prospero will attempt to restore the state from the backup. If that is not possible, or the update process was either canceled or crashed, the backup folder will be preserved and manual restore can be performed.
