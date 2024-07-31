@@ -36,6 +36,7 @@
     <artifact name="${com.fasterxml.jackson.core:jackson-core}"/>
     <artifact name="${com.fasterxml.jackson.core:jackson-annotations}"/>
     <artifact name="${com.fasterxml.jackson.core:jackson-databind}"/>
+    <artifact name="${com.fasterxml.jackson.dataformat:jackson-dataformat-yaml}"/>
     <artifact name="${org.yaml:snakeyaml}"/>
     <artifact name="${org.jboss:staxmapper}"/>
     <artifact name="${org.slf4j:slf4j-api}"/>
