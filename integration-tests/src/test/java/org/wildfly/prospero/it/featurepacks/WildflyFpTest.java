@@ -17,13 +17,7 @@
 
 package org.wildfly.prospero.it.featurepacks;
 
-import org.eclipse.aether.DefaultRepositorySystemSession;
-import org.eclipse.aether.RepositorySystem;
-import org.eclipse.aether.artifact.DefaultArtifact;
-import org.eclipse.aether.deployment.DeployRequest;
-import org.eclipse.aether.repository.RemoteRepository;
 import org.junit.Before;
-import org.junit.BeforeClass;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
@@ -35,12 +29,11 @@ import org.wildfly.channel.ChannelManifestCoordinate;
 import org.wildfly.channel.ChannelManifestMapper;
 import org.wildfly.channel.ChannelMapper;
 import org.wildfly.channel.Stream;
-import org.wildfly.prospero.api.MavenOptions;
 import org.wildfly.prospero.cli.DistributionInfo;
 import org.wildfly.prospero.cli.ReturnCodes;
 import org.wildfly.prospero.cli.commands.CliConstants;
 import org.wildfly.prospero.it.ExecutionUtils;
-import org.wildfly.prospero.wfchannel.MavenSessionManager;
+import org.wildfly.prospero.it.utils.TestProperties;
 import org.xml.sax.SAXException;
 
 import javax.xml.XMLConstants;
@@ -56,7 +49,6 @@ import java.net.URL;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.Properties;
 import java.util.concurrent.TimeUnit;
 
 import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
@@ -66,33 +58,16 @@ import static org.junit.Assert.assertTrue;
 public class WildflyFpTest {
 
     protected static final String PROSPERO_MANIFEST_LOCATION = "manifests/prospero-manifest.yaml";
-    private static String testChannelGroupId;
-    private static String testChannelArtifactId;
-    private static String testRepoUrls;
     @Rule
     public TemporaryFolder tempDir = new TemporaryFolder();
 
     private Path targetDir;
 
-    private Path localRepo;
-
     private XPath xpath = XPathFactory.newInstance().newXPath();
-
-    @BeforeClass
-    public static void setUpClass() throws Exception {
-        // read the settings from pom properties
-        final Properties properties = new Properties();
-        properties.load(WildflyFpTest.class.getClassLoader().getResourceAsStream("properties-from-pom.properties"));
-        testChannelGroupId = properties.getProperty("prospero.test.base.channel.groupId");
-        testChannelArtifactId = properties.getProperty("prospero.test.base.channel.artifactId");
-        testRepoUrls = properties.getProperty("prospero.test.base.repositories");
-    }
 
     @Before
     public void setUp() throws Exception {
         targetDir = tempDir.newFolder().toPath();
-        localRepo = tempDir.newFolder().toPath();
-        deployWildflyManifest();
     }
 
     @Test
@@ -137,34 +112,19 @@ public class WildflyFpTest {
 
         // create channels
         Channel.Builder cb1 = new Channel.Builder()
-                .setManifestCoordinate(new ChannelManifestCoordinate(testChannelGroupId, testChannelArtifactId))
-                .addRepository("local-repo", localRepo.toUri().toString());
+                .setManifestCoordinate(new ChannelManifestCoordinate(TestProperties.WF_CHANNEL_GROUP_ID,
+                        TestProperties.WF_CHANNEL_ARTIFACT_ID, TestProperties.WF_CHANNEL_VERSION));
         Channel.Builder cb2 = new Channel.Builder()
                 .setManifestUrl(this.getClass().getClassLoader().getResource(PROSPERO_MANIFEST_LOCATION));
 
-        final String[] urls = testRepoUrls.split(",");
-        for (int i = 0; i < urls.length; i++) {
-            String url = urls[i];
+        for (int i = 0; i < TestProperties.TEST_REPO_URLS.size(); i++) {
+            String url = TestProperties.TEST_REPO_URLS.get(i);
             cb1.addRepository("test-repo-" + i, url);
             cb2.addRepository("test-repo-" + i, url);
         }
 
         // export to channelsFile
         Files.writeString(channelsFile, ChannelMapper.toYaml(cb1.build(), cb2.build()));
-    }
-
-    private void deployWildflyManifest() throws Exception {
-        final MavenSessionManager mavenSessionManager = new MavenSessionManager(MavenOptions.OFFLINE_NO_CACHE);
-        final RepositorySystem system = mavenSessionManager.newRepositorySystem();
-        final DefaultRepositorySystemSession session = mavenSessionManager.newRepositorySystemSession(system);
-
-        final File wfManifest = new File(this.getClass().getClassLoader().getResource("manifests/wildfly-30.0.0.Final-manifest.yaml").toURI());
-
-        final DeployRequest deployRequest = new DeployRequest();
-        deployRequest.setRepository(new RemoteRepository.Builder("local-repo", "default", localRepo.toUri().toString()).build());
-        deployRequest.addArtifact(new DefaultArtifact(testChannelGroupId, testChannelArtifactId,
-                "manifest", "yaml", "1.0.0.Final", null, wfManifest));
-        system.deploy(session, deployRequest);
     }
 
     private Document readDocument(File xmlFile) {
