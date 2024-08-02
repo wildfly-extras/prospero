@@ -27,8 +27,11 @@ import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
+import org.wildfly.channel.Channel;
 import org.wildfly.channel.ChannelManifest;
+import org.wildfly.channel.ChannelManifestCoordinate;
 import org.wildfly.channel.ChannelManifestMapper;
+import org.wildfly.channel.Repository;
 import org.wildfly.channel.Stream;
 import org.wildfly.prospero.actions.InstallationHistoryAction;
 import org.wildfly.prospero.api.SavedState;
@@ -36,6 +39,7 @@ import org.wildfly.prospero.cli.CliMessages;
 import org.wildfly.prospero.cli.ReturnCodes;
 import org.wildfly.prospero.cli.commands.CliConstants;
 import org.wildfly.prospero.it.ExecutionUtils;
+import org.wildfly.prospero.it.utils.TestProperties;
 import org.wildfly.prospero.test.MetadataTestUtils;
 
 import java.io.File;
@@ -46,6 +50,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Properties;
 import java.util.concurrent.TimeUnit;
+import java.util.stream.Collectors;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -61,6 +66,7 @@ public class FeaturesAddTest {
     private static final String DS_ARTIFACT_ID = "postgresql";
     protected static final String DS_VERSION = "42.7.3";
     protected static final Path MODULE_PATH = Path.of("modules", DS_GROUP_ID.replace('.', '/'), "jdbc");
+    private Path wfChannelsFile;
 
 
     @Before
@@ -74,6 +80,16 @@ public class FeaturesAddTest {
                 properties.getProperty("prospero.test.datasources-feature-pack.artifactId"));
 
         profileName = properties.getProperty("prospero.test.server.profile");
+
+        wfChannelsFile = tempDir.newFile("wf-channel.yaml").toPath();
+        final List<Repository> repositories = MetadataTestUtils.defaultRemoteRepositories().stream()
+                .map(r->new Repository(r.getId(), r.getUrl())).collect(Collectors.toList());
+
+        final Channel wfChannel = new Channel("test-channel", "", null, repositories,
+                new ChannelManifestCoordinate(TestProperties.WF_CHANNEL_GROUP_ID, TestProperties.WF_CHANNEL_ARTIFACT_ID,
+                        TestProperties.WF_CHANNEL_VERSION),
+                null, Channel.NoStreamStrategy.NONE);
+        MetadataTestUtils.writeChannels(wfChannelsFile, List.of(wfChannel));
     }
 
     @Test
@@ -164,9 +180,9 @@ public class FeaturesAddTest {
     public void installWildflyGalleonPackOverWildflyEEGalleonPack_ReplacesWildflyGalleonPack() throws Exception {
         Assume.assumeTrue(profileName.equals("wildfly"));
         System.out.println("Installing wildfly EE");
-        final Path channelsFile = MetadataTestUtils.prepareChannel("manifests/wildfly-30.0.0.Final-manifest.yaml");
+
         ExecutionUtils.prosperoExecution(CliConstants.Commands.INSTALL,
-                        CliConstants.CHANNELS, channelsFile.toString(),
+                        CliConstants.CHANNELS, wfChannelsFile.toString(),
                         CliConstants.FPL, "org.wildfly:wildfly-ee-galleon-pack",
                         CliConstants.DIR, targetDir.getAbsolutePath())
                 .withTimeLimit(10, TimeUnit.MINUTES)
@@ -210,7 +226,6 @@ public class FeaturesAddTest {
 
     private void installWildfly() throws Exception {
         System.out.println("Installing wildfly");
-        final Path channelsFile = MetadataTestUtils.prepareChannel("manifests/wildfly-30.0.0.Final-manifest.yaml");
         final List<String> args = new ArrayList<>(List.of(
                 CliConstants.Commands.INSTALL,
                 CliConstants.ACCEPT_AGREEMENTS,
@@ -219,7 +234,7 @@ public class FeaturesAddTest {
 
         if (profileName.equals("wildfly")) {
             args.add(CliConstants.CHANNELS);
-            args.add(channelsFile.toString());
+            args.add(wfChannelsFile.toString());
         }
         ExecutionUtils.prosperoExecution(args.toArray(new String[]{}))
                 .withTimeLimit(10, TimeUnit.MINUTES)

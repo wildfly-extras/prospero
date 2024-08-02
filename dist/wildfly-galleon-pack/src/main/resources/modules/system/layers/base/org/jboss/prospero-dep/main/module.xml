@@ -34,6 +34,7 @@
       <module name="com.fasterxml.jackson.core.jackson-core" export="true"/>
       <module name="com.fasterxml.jackson.core.jackson-annotations" export="true"/>
       <module name="com.fasterxml.jackson.core.jackson-databind" export="true"/>
+      <module name="com.fasterxml.jackson.dataformat.jackson-dataformat-yaml" export="true"/>
       <module name="javax.inject.api" export="true"/>
       <module name="org.jboss.logging" export="true"/>
       <module name="org.jboss.logmanager" export="true" services="export"/>
