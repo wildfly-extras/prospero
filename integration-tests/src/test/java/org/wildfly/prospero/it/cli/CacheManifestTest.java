@@ -102,7 +102,7 @@ public class CacheManifestTest extends WfCoreTestBase {
         ));
 
         // create and deploy second manifest
-        secondManifest = new ChannelManifest(null, null, null, null,
+        secondManifest = new ChannelManifest(null, null, null, null, null,
                 List.of(new Stream("org.wildfly.core", "wildfly-controller", UPGRADE_VERSION)));
         repositoryUtils.deployArtifact(new DefaultArtifact(
                 "org.test.channels",
@@ -383,6 +383,7 @@ public class CacheManifestTest extends WfCoreTestBase {
         return new ChannelManifest(
                 sourceManifest.getSchemaVersion(),
                 sourceManifest.getId(),
+                sourceManifest.getName(),
                 sourceManifest.getDescription(),
                 sourceManifest.getManifestRequirements(),
                 streams);

@@ -19,6 +19,7 @@ package org.wildfly.prospero.actions;
 
 import org.jboss.logging.Logger;
 import org.wildfly.channel.Channel;
+import org.wildfly.channel.ChannelManifest;
 import org.wildfly.channel.ChannelManifestMapper;
 import org.wildfly.channel.MavenArtifact;
 import org.wildfly.channel.MavenCoordinate;
@@ -69,7 +70,7 @@ class ProsperoManifestVersionResolver {
         final ManifestVersionRecord record = new ManifestVersionRecord();
         final ArrayList<Channel> fallbackChannels = new ArrayList<>();
         for (Channel channel : channels) {
-            if (channel.getManifestCoordinate().getMaven() != null && channel.getManifestCoordinate().getMaven().getVersion() == null) {
+            if (channel.getManifestCoordinate() != null && channel.getManifestCoordinate().getMaven() != null && channel.getManifestCoordinate().getMaven().getVersion() == null) {
                 final MavenCoordinate manifestCoord = channel.getManifestCoordinate().getMaven();
                 if (LOG.isDebugEnabled()) {
                     LOG.debugf("Trying to lookup manifest %s", manifestCoord);
@@ -84,7 +85,13 @@ class ProsperoManifestVersionResolver {
                     if (LOG.isDebugEnabled()) {
                         LOG.debugf("Manifest %s resolved in currently resolve artifacts, recording.", manifestCoord);
                     }
-                    final String description = ChannelManifestMapper.from(version.getFile().toURI().toURL()).getDescription();
+                    final ChannelManifest manifest = ChannelManifestMapper.from(version.getFile().toURI().toURL());
+                    final String description;
+                    if (manifest.getSchemaVersion().equals(ChannelManifestMapper.SCHEMA_VERSION_1_0_0)) {
+                        description = manifest.getName();
+                    } else {
+                        description = manifest.getLogicalVersion();
+                    }
                     record.addManifest(new ManifestVersionRecord.MavenManifest(
                             manifestCoord.getGroupId(),
                             manifestCoord.getArtifactId(),
