@@ -115,8 +115,10 @@ public class CliMain {
             if (c instanceof PropertyConfigurator) {
                 LogContextConfiguration lcc = ((PropertyConfigurator) c).getLogContextConfiguration();
                 lcc.getLoggerConfiguration("org.wildfly.prospero").setLevel(Level.DEBUG.getName());
-                lcc.getLoggerConfiguration("org.wildfly.prospero").addHandlerName("CONSOLE");
                 lcc.getHandlerConfiguration("CONSOLE").setLevel(Level.DEBUG.getName());
+                if (!lcc.getLoggerConfiguration("").getHandlerNames().contains("CONSOLE")) {
+                    lcc.getLoggerConfiguration("").addHandlerName("CONSOLE");
+                }
                 lcc.commit();
             } else {
                 logger.warn("Cannot change logging level, using default.");
