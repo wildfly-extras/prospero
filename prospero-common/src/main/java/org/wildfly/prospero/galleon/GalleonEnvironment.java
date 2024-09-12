@@ -48,6 +48,7 @@ import org.wildfly.prospero.signatures.KeystoreManager;
 import org.wildfly.prospero.signatures.PGPLocalKeystore;
 import org.wildfly.prospero.wfchannel.MavenSessionManager;
 
+import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.net.MalformedURLException;
@@ -87,18 +88,20 @@ public class GalleonEnvironment implements AutoCloseable {
 
     private boolean resetGalleonLineEndings = true;
     private PGPLocalKeystore localGpgKeystore;
+    private TemporaryManifestSignature temporaryManifestSignature;
 
     private GalleonEnvironment(Builder builder) throws ProvisioningException, MetadataException, ChannelDefinitionException,
             UnresolvedChannelMetadataException {
         Optional<Console> console = Optional.ofNullable(builder.console);
         Optional<ChannelManifest> restoreManifest = Optional.ofNullable(builder.manifest);
 
+        final Path sourceServerPath = builder.sourceServerPath == null? builder.installDir:builder.sourceServerPath;
 
         if (restoreManifest.isPresent()) {
             if (LOG.isDebugEnabled()) {
                 LOG.debug("Replacing channel manifests with restore manifest");
             }
-            channels = replaceManifestWithRestoreManifests(builder, restoreManifest);
+            channels = replaceManifestWithRestoreManifests(builder, restoreManifest, sourceServerPath);
         } else {
             channels = builder.channels;
         }
@@ -109,17 +112,14 @@ public class GalleonEnvironment implements AutoCloseable {
             substitutedChannels.add(substitutor.substitute(channel));
         }
 
-        // if console is null, we're rejecting all new certs!!
-
-        final Path sourceServerPath = builder.sourceServerPath == null? builder.installDir:builder.sourceServerPath;
-
         LOG.debug("Using keystore location: " + buildKeystoreLocation(builder, sourceServerPath));
         localGpgKeystore = KeystoreManager.keystoreFor(buildKeystoreLocation(builder, sourceServerPath));
 
         final RepositorySystem system = builder.mavenSessionManager.newRepositorySystem();
         final DefaultRepositorySystemSession session = builder.mavenSessionManager.newRepositorySystemSession(system);
 
-        final GpgSignatureValidator signatureValidator = new GpgSignatureValidator(new ConfirmingKeystoreAdapter(localGpgKeystore, chooseCertificateAcceptor(console)));
+        final GpgSignatureValidator signatureValidator = new GpgSignatureValidator(new ConfirmingKeystoreAdapter(localGpgKeystore,
+                chooseCertificateAcceptor(console)));
 
         MavenVersionsResolver.Factory factory;
         try {
@@ -172,6 +172,7 @@ public class GalleonEnvironment implements AutoCloseable {
     }
 
     private static Function<String, Boolean> chooseCertificateAcceptor(Optional<Console> console) {
+        // if console is null, we're rejecting all new certs
         final Function<String, Boolean> acceptor;
         if (console.isPresent()) {
             acceptor = console.get()::acceptPublicKey;
@@ -221,7 +222,8 @@ public class GalleonEnvironment implements AutoCloseable {
         }
     }
 
-    private List<Channel> replaceManifestWithRestoreManifests(Builder builder, Optional<ChannelManifest> restoreManifest) throws ProvisioningException {
+    private List<Channel> replaceManifestWithRestoreManifests(Builder builder, Optional<ChannelManifest> restoreManifest,
+                                                              Path sourceServerPath) throws ProvisioningException {
         ChannelManifestCoordinate manifestCoord;
         try {
             restoreManifestPath = Files.createTempFile("prospero-restore-manifest", "yaml");
@@ -231,6 +233,13 @@ public class GalleonEnvironment implements AutoCloseable {
             }
             Files.writeString(restoreManifestPath, ChannelManifestMapper.toYaml(restoreManifest.get()));
             manifestCoord = new ChannelManifestCoordinate(restoreManifestPath.toUri().toURL());
+
+            /**
+             * if the channel is using signatures, we need to generate a signature for the manifest to validate it later on
+             */
+            if (builder.channels.stream().anyMatch(Channel::isGpgCheck)) {
+                selfSignRestoreManifest(sourceServerPath, builder.keyringLocation);
+            }
         } catch (IOException e) {
             throw ProsperoLogger.ROOT_LOGGER.unableToCreateTemporaryFile(e);
         }
@@ -248,6 +257,17 @@ public class GalleonEnvironment implements AutoCloseable {
                         c.getGpgUrls()))
                 .collect(Collectors.toList());
         return channels;
+    }
+
+    private void selfSignRestoreManifest(Path sourceServerPath, Path keyringLocation) {
+        try {
+            final Path keystoreLocation = keyringLocation != null ? keyringLocation : sourceServerPath.resolve(ProsperoMetadataUtils.METADATA_DIR).resolve("keyring.gpg");
+            temporaryManifestSignature = new TemporaryManifestSignature(keystoreLocation);
+            final File signature = restoreManifestPath.getParent().resolve(restoreManifestPath.getFileName().toString() + ".asc").toFile();
+            temporaryManifestSignature.sign(restoreManifestPath.toFile(), signature);
+        } catch (Exception e){
+            throw new RuntimeException("Unable to generate self-signing revert certificate: " + e.getMessage(), e);
+        }
     }
 
     private ChannelSession initChannelSession(DefaultRepositorySystemSession session, MavenVersionsResolver.Factory factory) throws UnresolvedChannelMetadataException, ChannelDefinitionException {
@@ -299,6 +319,9 @@ public class GalleonEnvironment implements AutoCloseable {
         }
         if (restoreManifestPath != null) {
             FileUtils.deleteQuietly(restoreManifestPath.toFile());
+        }
+        if (temporaryManifestSignature != null) {
+            temporaryManifestSignature.close();
         }
         if (localGpgKeystore != null) {
             localGpgKeystore.close();
