@@ -17,7 +17,11 @@
 
 package org.wildfly.prospero.galleon;
 
+import org.bouncycastle.bcpg.ArmoredOutputStream;
+import org.bouncycastle.openpgp.PGPException;
+import org.bouncycastle.openpgp.PGPPublicKeyRing;
 import org.eclipse.aether.DefaultRepositorySystemSession;
+import org.eclipse.aether.artifact.Artifact;
 import org.eclipse.aether.artifact.DefaultArtifact;
 import org.eclipse.aether.internal.impl.DefaultRepositorySystem;
 import org.eclipse.aether.resolution.ArtifactRequest;
@@ -31,15 +35,23 @@ import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.junit.MockitoJUnitRunner;
 import org.mockito.stubbing.Answer;
+import org.pgpainless.PGPainless;
 import org.wildfly.channel.Channel;
 import org.wildfly.channel.ChannelManifest;
 import org.wildfly.channel.ChannelManifestCoordinate;
 import org.wildfly.channel.ChannelManifestMapper;
+import org.wildfly.channel.spi.SignatureResult;
+import org.wildfly.channel.spi.SignatureValidator;
+import org.wildfly.prospero.api.Console;
+import org.wildfly.prospero.api.ProvisioningProgressEvent;
 import org.wildfly.prospero.api.exceptions.ChannelDefinitionException;
 import org.wildfly.prospero.metadata.ManifestVersionRecord;
 import org.wildfly.prospero.wfchannel.MavenSessionManager;
 
 import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
+import java.io.IOException;
 import java.net.URL;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -47,10 +59,13 @@ import java.util.Collections;
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.argThat;
 import static org.mockito.Mockito.atLeast;
+import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
@@ -187,4 +202,101 @@ public class GalleonEnvironmentTest {
                 .doesNotExist();
     }
 
+    @Test
+    public void channelSessionDoesntAcceptNewCertsIfNoConsolePresent() throws Exception {
+        when(msm.newRepositorySystemSession(any())).thenReturn(session);
+        when(msm.newRepositorySystem()).thenReturn(system);
+
+        final File keystore = temp.newFile("keystore.gpg");
+        try (TemporaryManifestSignature temporaryManifestSignature = new TemporaryManifestSignature(keystore.toPath())) {
+            final Artifact manifestArtifact = mock(Artifact.class);
+            final Artifact signatureArtifact = mock(Artifact.class);
+            mockSignedArtifactResolution(manifestArtifact, signatureArtifact, temporaryManifestSignature);
+
+            final File publicCertFile = temp.newFile("public_cert.crt");
+
+            exportPublicKey(keystore, publicCertFile);
+
+            final Channel c1 = new Channel.Builder()
+                    .setManifestCoordinate("group", "artifactOne", "1.0.0")
+                    .setGpgCheck(true)
+                    .addGpgUrl(publicCertFile.toURI().toString())
+                    .build();
+
+            final GalleonEnvironment.Builder envBuilder = GalleonEnvironment.builder(temp.newFolder().toPath(), List.of(c1), msm, true)
+                    .setKeyringLocation(temp.newFile("test.crt").toPath());
+
+            assertThatThrownBy(() -> envBuilder.build())
+                    .isInstanceOf(SignatureValidator.SignatureException.class)
+                    .matches((e) -> ((SignatureValidator.SignatureException) e).getSignatureResult().getResult() == SignatureResult.Result.NO_MATCHING_CERT);
+        }
+    }
+
+    @Test
+    public void channelSessionAcceptNewCertsIfConsoleIsProvided() throws Exception {
+        when(msm.newRepositorySystemSession(any())).thenReturn(session);
+        when(msm.newRepositorySystem()).thenReturn(system);
+
+        final File keystore = temp.newFile("keystore.gpg");
+        try (TemporaryManifestSignature temporaryManifestSignature = new TemporaryManifestSignature(keystore.toPath())) {
+            final Artifact manifestArtifact = mock(Artifact.class);
+            final Artifact signatureArtifact = mock(Artifact.class);
+            mockSignedArtifactResolution(manifestArtifact, signatureArtifact, temporaryManifestSignature);
+
+            final File publicCertFile = temp.newFile("public_cert.crt");
+
+            exportPublicKey(keystore, publicCertFile);
+
+            final Channel c1 = new Channel.Builder()
+                    .setManifestCoordinate("group", "artifactOne", "1.0.0")
+                    .setGpgCheck(true)
+                    .addGpgUrl(publicCertFile.toURI().toString())
+                    .build();
+
+            final GalleonEnvironment.Builder envBuilder = GalleonEnvironment.builder(temp.newFolder().toPath(), List.of(c1), msm, true)
+                    .setConsole(new TestConsole())
+                    .setKeyringLocation(temp.newFile("test.crt").toPath());
+
+            try (GalleonEnvironment env = envBuilder.build()) {
+                assertNotNull(env);
+            }
+        }
+    }
+
+    private void mockSignedArtifactResolution(Artifact manifestArtifact, Artifact signatureArtifact, TemporaryManifestSignature temporaryManifestSignature) throws IOException, PGPException, ArtifactResolutionException {
+        final File manifestFile = temp.newFile("test.yaml");
+        final File signatureFile = temp.newFile("test.yaml.asc");
+        Files.writeString(manifestFile.toPath(), ChannelManifestMapper.toYaml(new ChannelManifest("", "", "", Collections.emptyList())));
+        when(manifestArtifact.getFile()).thenReturn(manifestFile);
+        when(signatureArtifact.getFile()).thenReturn(signatureFile);
+        temporaryManifestSignature.sign(manifestFile, signatureFile);
+        when(system.resolveArtifact(any(), any())).thenReturn(
+                new ArtifactResult(mock(ArtifactRequest.class)).setArtifact(manifestArtifact),
+                new ArtifactResult(mock(ArtifactRequest.class)).setArtifact(signatureArtifact)
+        );
+    }
+
+    private static void exportPublicKey(File keystore, File publicCertFile) throws IOException {
+        final PGPPublicKeyRing keyRing = PGPainless.readKeyRing().publicKeyRingCollection(new FileInputStream(keystore)).getKeyRings().next();
+        try (ArmoredOutputStream outStream = new ArmoredOutputStream(new FileOutputStream(publicCertFile))) {
+            keyRing.getPublicKey().encode(outStream);
+        }
+    }
+
+    private static class TestConsole implements Console {
+        @Override
+        public void progressUpdate(ProvisioningProgressEvent update) {
+
+        }
+
+        @Override
+        public void println(String text) {
+
+        }
+
+        @Override
+        public boolean acceptPublicKey(String key) {
+            return true;
+        }
+    }
 }

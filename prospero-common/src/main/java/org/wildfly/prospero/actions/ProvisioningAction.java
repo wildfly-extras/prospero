@@ -17,6 +17,7 @@
 
 package org.wildfly.prospero.actions;
 
+import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.eclipse.aether.DefaultRepositorySystemSession;
 import org.eclipse.aether.RepositorySystem;
@@ -27,6 +28,7 @@ import org.wildfly.channel.Channel;
 import org.wildfly.channel.ChannelManifest;
 import org.wildfly.channel.Repository;
 import org.wildfly.channel.UnresolvedMavenArtifactException;
+import org.wildfly.channel.gpg.GpgSignatureValidator;
 import org.wildfly.prospero.ProsperoLogger;
 import org.wildfly.prospero.api.Console;
 import org.wildfly.prospero.api.InstallationMetadata;
@@ -61,6 +63,9 @@ import org.wildfly.prospero.metadata.ManifestVersionRecord;
 import org.wildfly.prospero.metadata.ManifestVersionResolver;
 import org.wildfly.prospero.metadata.ProsperoMetadataUtils;
 import org.wildfly.prospero.model.ProsperoConfig;
+import org.wildfly.prospero.signatures.ConfirmingKeystoreAdapter;
+import org.wildfly.prospero.signatures.KeystoreManager;
+import org.wildfly.prospero.signatures.PGPLocalKeystore;
 import org.wildfly.prospero.wfchannel.MavenSessionManager;
 import org.jboss.galleon.ProvisioningException;
 import org.jboss.galleon.api.config.GalleonProvisioningConfig;
@@ -73,6 +78,7 @@ public class ProvisioningAction {
     private final Console console;
     private final LicenseManager licenseManager;
     private final MavenOptions mvnOptions;
+    private Path tempKeyringPath;
 
     public ProvisioningAction(Path installDir, MavenOptions mvnOptions, Console console) throws ProvisioningException {
         this.installDir = InstallFolderUtils.toRealPath(installDir);
@@ -121,10 +127,14 @@ public class ProvisioningAction {
 
         channels = TemporaryRepositoriesHandler.overrideRepositories(channels, overwriteRepositories);
 
+        // When we provision the server, we don't have any keyring. We need to create a temporary keyring so that the
+        // installation folder remains empty, but we can still accept certificates.
+        // After the server is installer, we will move the keystore into the server and remove temporary keystore
         try (GalleonEnvironment galleonEnv = GalleonEnvironment
                 .builder(installDir, channels, mavenSessionManager, false)
                 .setConsole(console)
                 .setProvisioningConfig(provisioningConfig)
+                .setKeyringLocation(getKeyringPath())
                 .build()) {
 
             try {
@@ -139,8 +149,18 @@ public class ProvisioningAction {
                         e.getAttemptedRepositories(), mavenSessionManager.isOffline());
             }
 
-            final ManifestVersionRecord manifestRecord;
             try {
+                // move the temporary keyring file into the correct location
+                Files.copy(tempKeyringPath, installDir.resolve(ProsperoMetadataUtils.METADATA_DIR).resolve("keyring.gpg"));
+                FileUtils.deleteQuietly(tempKeyringPath.toFile());
+                tempKeyringPath = null;
+            } catch (IOException e) {
+                throw new RuntimeException(e);
+            }
+
+            final ManifestVersionRecord manifestRecord;
+            try (PGPLocalKeystore keystore = KeystoreManager.keystoreFor(
+                    installDir.resolve(ProsperoMetadataUtils.METADATA_DIR).resolve("keyring.gpg"))){
                 if (ProsperoLogger.ROOT_LOGGER.isDebugEnabled()) {
                     ProsperoLogger.ROOT_LOGGER.debug("Resolving installed manifest versions");
                 }
@@ -190,6 +210,17 @@ public class ProvisioningAction {
         ProsperoLogger.ROOT_LOGGER.provisioningComplete(installDir);
     }
 
+    private Path getKeyringPath() throws ProvisioningException {
+        if (tempKeyringPath == null) {
+            try {
+                tempKeyringPath = Files.createTempFile("keystore", "gpg");
+            } catch (IOException e) {
+                throw ProsperoLogger.ROOT_LOGGER.unableToCreateTemporaryFile(e);
+            }
+        }
+        return tempKeyringPath;
+    }
+
     private void cacheManifests(ManifestVersionRecord manifestRecord) {
         try {
             final RepositorySystem system = mavenSessionManager.newRepositorySystem();
@@ -208,7 +239,7 @@ public class ProvisioningAction {
      * @param channels - list of channels used to resolve the Feature Packs
      * @return - list of {@code License}, or empty list if no licenses were required
      */
-    public List<License> getPendingLicenses(GalleonProvisioningConfig provisioningConfig, List<Channel> channels) throws OperationException {
+    public List<License> getPendingLicenses(GalleonProvisioningConfig provisioningConfig, List<Channel> channels) throws OperationException, ProvisioningException {
         Objects.requireNonNull(provisioningConfig);
         Objects.requireNonNull(channels);
 
@@ -216,7 +247,7 @@ public class ProvisioningAction {
         return getPendingLicenses(provisioningConfig, exporter);
     }
 
-    private List<License> getPendingLicenses(GalleonProvisioningConfig provisioningConfig, GalleonFeaturePackAnalyzer exporter) throws OperationException {
+    private List<License> getPendingLicenses(GalleonProvisioningConfig provisioningConfig, GalleonFeaturePackAnalyzer exporter) throws OperationException, ProvisioningException {
         try {
             final Set<String> featurePacks = exporter.getFeaturePacks(installDir, provisioningConfig);
             return licenseManager.getLicenses(featurePacks);
@@ -234,7 +265,7 @@ public class ProvisioningAction {
                 // org.wildfly.channel.UnresolvedMavenArtifactException
                 throw new ArtifactResolutionException(e.getMessage(), e);
             }
-        } catch (IOException | ProvisioningException e) {
+        } catch (IOException e) {
             throw new RuntimeException(e);
         }
     }

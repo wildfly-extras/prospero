@@ -26,6 +26,19 @@ import java.util.Objects;
 
 public class TemporaryRepositoriesHandler {
 
+    /**
+     * Prepares the channels in {@code originalChannels} to use temporary repositories in {@code repositories}.
+     *
+     * Resulting repositories have the following changes:
+     * <ul>
+     *     <li>previously configured repositories replaced with {@code repositories}</li>
+     *     <li>disabled GPG checks</li>
+     * </ul>
+     *
+     * @param originalChannels
+     * @param repositories
+     * @return
+     */
     public static List<Channel> overrideRepositories(List<Channel> originalChannels, List<Repository> repositories) {
         Objects.requireNonNull(originalChannels);
         Objects.requireNonNull(repositories);
@@ -39,6 +52,7 @@ public class TemporaryRepositoriesHandler {
         for (Channel oc : originalChannels) {
             final Channel c = new Channel.Builder(oc)
                     .setRepositories(repositories)
+                    .setGpgCheck(false)
                     .build();
             mergedChannels.add(c);
         }

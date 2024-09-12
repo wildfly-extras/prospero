@@ -20,12 +20,18 @@ package org.wildfly.prospero.test;
 import java.io.IOException;
 import java.net.URI;
 import java.net.URL;
+import java.nio.file.FileVisitResult;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.SimpleFileVisitor;
+import java.nio.file.attribute.BasicFileAttributes;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 
+import org.apache.commons.io.FileUtils;
+import org.bouncycastle.openpgp.PGPException;
+import org.bouncycastle.openpgp.PGPSecretKeyRing;
 import org.eclipse.aether.DefaultRepositorySystemSession;
 import org.eclipse.aether.RepositorySystem;
 import org.eclipse.aether.artifact.Artifact;
@@ -112,6 +118,44 @@ public class TestLocalRepository {
      */
     public void resolveAndDeploy(Artifact artifact) throws ArtifactResolutionException, DeploymentException {
         deploy(resolveUpstream(artifact));
+    }
+
+    /**
+     * signs all unsigned artifacts in the repository
+     *
+     * @param privateKey
+     * @throws IOException
+     */
+    public void signAllArtifacts(PGPSecretKeyRing privateKey) throws IOException {
+        Files.walkFileTree(root, new SimpleFileVisitor<>() {
+            @Override
+            public FileVisitResult visitFile(Path file, BasicFileAttributes attrs) throws IOException {
+                final String fileName = file.getFileName().toString();
+                final Path signatureFile = file.getParent().resolve(file.getFileName().toString() + ".asc");
+                if (!Files.exists(signatureFile) && (fileName.endsWith(".jar") || fileName.endsWith(".zip") || fileName.endsWith(".yaml"))) {
+                    try {
+                        CertificateUtils.signFile(file, signatureFile.toFile(), privateKey);
+                    } catch (PGPException e) {
+                        throw new RuntimeException(e);
+                    }
+                }
+                return FileVisitResult.CONTINUE;
+            }
+        });
+    }
+
+    /**
+     * Removes a detached signature (if it is present) from an artifact.
+     *
+     * @param groupId
+     * @param artifactId
+     * @param version
+     * @throws IOException
+     */
+    public void removeSignature(String groupId, String artifactId, String version) throws IOException {
+        final Path artifactDir = root.resolve(groupId.replace('.', '/')).resolve(artifactId).resolve(version);
+
+        Files.list(artifactDir).filter(p->p.getFileName().toString().endsWith(".asc")).forEach(path -> FileUtils.deleteQuietly(path.toFile()));
     }
 
     /**
