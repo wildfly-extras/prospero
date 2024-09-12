@@ -247,9 +247,9 @@ public class ProvisioningAction {
         final AtomicInteger channelCounter = new AtomicInteger(0);
         return newChannels.stream().map(c->{
             if (StringUtils.isEmpty(c.getName())) {
-                return new Channel(c.getSchemaVersion(), CHANNEL_NAME_PREFIX + channelCounter.getAndIncrement(), c.getDescription(),
-                        c.getVendor(), c.getRepositories(),
-                        c.getManifestCoordinate(), c.getBlocklistCoordinate(), c.getNoStreamStrategy());
+                return new Channel.Builder(c)
+                        .setName(CHANNEL_NAME_PREFIX + channelCounter.getAndIncrement())
+                        .build();
             } else {
                 return c;
             }

@@ -33,9 +33,9 @@ import org.eclipse.aether.resolution.VersionRangeResult;
 import org.eclipse.aether.version.Version;
 import org.jboss.logging.Logger;
 import org.wildfly.channel.ArtifactCoordinate;
+import org.wildfly.channel.Channel;
 import org.wildfly.channel.ChannelManifest;
 import org.wildfly.channel.ChannelManifestMapper;
-import org.wildfly.channel.Repository;
 import org.wildfly.channel.Stream;
 import org.wildfly.channel.maven.ChannelCoordinate;
 import org.wildfly.channel.maven.VersionResolverFactory;
@@ -147,7 +147,10 @@ public class ArtifactPromoter {
             log.debugf("Found existing customization channel with version %s", version.get());
 
             try(VersionResolverFactory versionResolverFactory = new VersionResolverFactory(system, session)) {
-                final MavenVersionsResolver resolver = versionResolverFactory.create(Arrays.asList(new Repository(targetRepository.getId(), targetRepository.getUrl())));
+                final MavenVersionsResolver resolver = versionResolverFactory.create(
+                        new Channel.Builder()
+                                .addRepository(targetRepository.getId(), targetRepository.getUrl())
+                                .build());
 
                 final File file = resolver.resolveArtifact(coordinate.getGroupId(), coordinate.getArtifactId(),
                         ChannelManifest.EXTENSION, ChannelManifest.CLASSIFIER, version.get());
