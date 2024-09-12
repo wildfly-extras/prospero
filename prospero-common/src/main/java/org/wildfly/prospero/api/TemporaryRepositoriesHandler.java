@@ -37,8 +37,9 @@ public class TemporaryRepositoriesHandler {
         ArrayList<Channel> mergedChannels = new ArrayList<>(originalChannels.size());
 
         for (Channel oc : originalChannels) {
-            final Channel c = new Channel(oc.getSchemaVersion(), oc.getName(), oc.getDescription(), oc.getVendor(),
-                    repositories, oc.getManifestCoordinate(), oc.getBlocklistCoordinate(), oc.getNoStreamStrategy());
+            final Channel c = new Channel.Builder(oc)
+                    .setRepositories(repositories)
+                    .build();
             mergedChannels.add(c);
         }
 
