@@ -70,6 +70,19 @@ public class TemporaryRepositoriesHandlerTest {
         assertRepositoryUrlContainsExactly(channels, "http://temp.te", "http://temp.te");
     }
 
+    @Test
+    public void gpgCheckIsDisabled() {
+        final Channel channel = new Channel.Builder()
+                .setName("test-channel")
+                .setGpgCheck(true)
+                .build();
+
+        final List<Channel> result = applyOverride(List.of(channel), List.of(repo("temp-0", "http://temp.te")));
+        assertThat(result)
+                .map(Channel::isGpgCheck)
+                .containsExactly(false);
+    }
+
     private static void assertRepositoryIdContainsExactly(List<Channel> channels, String... ids) {
         assertThat(channels)
                 .flatMap(Channel::getRepositories)

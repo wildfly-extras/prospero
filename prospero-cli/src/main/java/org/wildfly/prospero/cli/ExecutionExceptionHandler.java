@@ -23,6 +23,8 @@ import org.jboss.galleon.ProvisioningException;
 import org.wildfly.channel.ArtifactCoordinate;
 import org.wildfly.channel.ChannelMetadataCoordinate;
 import org.wildfly.channel.Repository;
+import org.wildfly.channel.spi.ArtifactIdentifier;
+import org.wildfly.channel.spi.SignatureValidator;
 import org.wildfly.prospero.api.ArtifactUtils;
 import org.wildfly.prospero.api.exceptions.ApplyCandidateException;
 import org.wildfly.prospero.api.exceptions.ArtifactResolutionException;
@@ -122,6 +124,9 @@ public class ExecutionExceptionHandler implements CommandLine.IExecutionExceptio
         } else if (ex instanceof ProvisioningException) {
             handleProvisioningException((ProvisioningException)ex);
             returnCode = ReturnCodes.PROCESSING_ERROR;
+        } else if (ex instanceof SignatureValidator.SignatureException) {
+            handleSignatureValidationException((SignatureValidator.SignatureException) ex);
+            returnCode = ReturnCodes.PROCESSING_ERROR;
         }
 
 
@@ -142,8 +147,10 @@ public class ExecutionExceptionHandler implements CommandLine.IExecutionExceptio
         console.error("\n");
         final String message = ex.getMessage();
 
-        // the error coming from Galleon is not translated, so try to figure out what went wrong and show translated message
-        if (message.startsWith("Failed to parse")) {
+        if (ex.getCause() instanceof SignatureValidator.SignatureException) {
+            handleSignatureValidationException((SignatureValidator.SignatureException) ex.getCause());
+        } else if (message.startsWith("Failed to parse")) {
+            // the error coming from Galleon is not translated, so try to figure out what went wrong and show translated message
             String path = message.substring("Failed to parse".length()+1).trim();
             console.error(CliMessages.MESSAGES.parsingError(path));
             if (ex.getCause() instanceof XMLStreamException) {
@@ -151,6 +158,31 @@ public class ExecutionExceptionHandler implements CommandLine.IExecutionExceptio
             }
         } else {
             console.error(CliMessages.MESSAGES.errorHeader(ex.getLocalizedMessage()));
+        }
+    }
+
+    private void handleSignatureValidationException(SignatureValidator.SignatureException ex) {
+        final ArtifactIdentifier artifact = ex.getSignatureResult().getResource();
+        switch (ex.getSignatureResult().getResult()) {
+            case NO_SIGNATURE:
+                console.error(String.format("Unable to find a required signature for artifact %s", artifact.getDescription()));
+                break;
+            case NO_MATCHING_CERT:
+                console.error(String.format("Unable to find a trusted certificate for key ID %s used to sign %s", ex.getSignatureResult().getKeyId(),
+                        artifact.getDescription()));
+                console.error("If you wish to proceed, please review your trusted certificates.");
+                break;
+            case INVALID:
+                console.error(String.format("The signature for artifact %s is invalid. The artifact might be corrupted or tampered with.",
+                        artifact.getDescription()));
+                break;
+            case REVOKED:
+                console.error(String.format("The key used to sign the artifact %s has been revoked with a message:%n  %s.",
+                        artifact.getDescription(), ex.getSignatureResult().getMessage()));
+                break;
+            default:
+                console.error(CliMessages.MESSAGES.errorHeader(ex.getCause().getLocalizedMessage()));
+                break;
         }
     }
 
