@@ -37,7 +37,7 @@ jobs:
           cache: maven
       - name: Build and test
         run: mvn clean install -DallTests -Pdist
-      - uses: actions/upload-artifact@v2
+      - uses: actions/upload-artifact@v4
         if: failure()
         with:
           name: surefire-reports
@@ -57,7 +57,7 @@ jobs:
           cache: maven
       - name: Build and test
         run: mvn pmd:aggregate-pmd-check -DskipTests
-      - uses: actions/upload-artifact@v2
+      - uses: actions/upload-artifact@v4
         if: failure()
         with:
           name: pmd-reports
