@@ -17,6 +17,7 @@
 
 package org.wildfly.prospero.actions;
 
+import org.apache.commons.io.FileUtils;
 import org.wildfly.channel.Channel;
 import org.wildfly.channel.ChannelManifest;
 import org.wildfly.channel.Repository;
@@ -31,11 +32,13 @@ import org.wildfly.prospero.galleon.GalleonEnvironment;
 import org.wildfly.prospero.api.InstallationMetadata;
 import org.wildfly.prospero.api.exceptions.MetadataException;
 import org.wildfly.prospero.galleon.GalleonUtils;
+import org.wildfly.prospero.metadata.ProsperoMetadataUtils;
 import org.wildfly.prospero.model.ProsperoConfig;
 import org.wildfly.prospero.wfchannel.MavenSessionManager;
 import org.jboss.galleon.ProvisioningException;
 
 import java.io.IOException;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
@@ -66,19 +69,34 @@ public class InstallationRestoreAction {
                 prosperoConfig.getChannels().clear();
                 prosperoConfig.getChannels().addAll(TemporaryRepositoriesHandler.overrideRepositories(originalChannels, remoteRepositories));
             }
+
+            // if the channels require GPG checks, we need to create a temporary keystore, because we cannot write in
+            // the installation directory before it is provisioned
+            Path tempKeyringPath = null;
+            try {
+                tempKeyringPath = Files.createTempFile("keyring", "gpg");
+            } catch (IOException e) {
+                throw ProsperoLogger.ROOT_LOGGER.unableToCreateTemporaryFile(e);
+            }
             try (GalleonEnvironment galleonEnv = GalleonEnvironment
                     .builder(installDir, prosperoConfig.getChannels(), mavenSessionManager, false)
                     .setConsole(console)
                     .setRestoreManifest(metadataBundle.getManifest())
+                    .setKeyringLocation(tempKeyringPath)
                     .build()) {
 
                 GalleonUtils.executeGalleon(options -> galleonEnv.getProvisioning().provision(metadataBundle.getGalleonProvisioningConfig(), options),
                         mavenSessionManager.getProvisioningRepo().toAbsolutePath());
 
+                FileUtils.copyFile(tempKeyringPath.toFile(), installDir.resolve(ProsperoMetadataUtils.METADATA_DIR).resolve("keyring.gpg").toFile());
                 writeProsperoMetadata(galleonEnv.getChannelSession().getRecordedChannel(), originalChannels);
             } catch (UnresolvedMavenArtifactException e) {
                 throw new ArtifactResolutionException(ProsperoLogger.ROOT_LOGGER.unableToResolve(), e, e.getUnresolvedArtifacts(),
                         e.getAttemptedRepositories(), mavenSessionManager.isOffline());
+            } finally {
+                if (tempKeyringPath != null) {
+                    FileUtils.deleteQuietly(tempKeyringPath.toFile());
+                }
             }
         }
     }
