@@ -28,6 +28,7 @@
     <dependencies>
       <module name="org.apache.commons.io" export="true"/>
       <module name="org.apache.commons.codec" export="true"/>
+      <module name="org.bouncycastle.bcpg" export="true"/>
       <module name="com.googlecode.javaewah" export="true"/>
       <module name="org.apache.commons.lang3" export="true"/>
       <module name="org.apache.httpcomponents.core" export="true"/>
