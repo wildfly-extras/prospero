@@ -52,4 +52,9 @@ public class AcceptingConsole extends CliConsole {
     public boolean confirmBuildUpdates() {
         return true;
     }
+
+    @Override
+    public boolean acceptPublicKey(String key) {
+        return true;
+    }
 }

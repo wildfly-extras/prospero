@@ -33,4 +33,6 @@ public interface Console {
      * @param text
      */
     void println(String text);
+
+    boolean acceptPublicKey(String key);
 }
