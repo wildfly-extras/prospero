@@ -36,6 +36,7 @@ public final class CliConstants {
 
         public static final String ADD = "add";
         public static final String APPLY = "apply";
+        public static final String CERTIFICATE = "certificate";
         public static final String CHANNEL = "channel";
         public static final String CLONE = "clone";
         public static final String CUSTOMIZATION_INIT_CHANNEL = "init";
@@ -61,6 +62,7 @@ public final class CliConstants {
     public static final String ACCEPT_AGREEMENTS = "--accept-license-agreements";
     public static final String ARG_PATH = "--path";
     public static final String CANDIDATE_DIR = "--candidate-dir";
+    public static final String CERTIFICATE_FILE = "--certificate-file";
     public static final String CHANNEL = "--channel";
     public static final String CHANNEL_NAME = "--channel-name";
     public static final String CHANNELS = "--channels";
@@ -75,8 +77,10 @@ public final class CliConstants {
     public static final String DIR = "--dir";
     public static final String FEATURE_PACK_REFERENCE = "<feature-pack-reference>";
     public static final String FPL = "--fpl";
+    public static final String GPG_CHECK = "--gpg-check";
     public static final String H = "-h";
     public static final String HELP = "--help";
+    public static final String KEY_ID= "--key-id";
     public static final String LAYERS = "--layers";
     public static final String LIST_PROFILES = "--list-profiles";
     public static final String LOCAL_CACHE = "--local-cache";
@@ -90,6 +94,7 @@ public final class CliConstants {
     public static final String REPO_URL = "<repo-url>";
     public static final String REPOSITORIES = "--repositories";
     public static final String REVISION = "--revision";
+    public static final String REVOKE_CERTIFICATE = "--revoke-certificate";
     public static final String SELF = "--self";
     public static final String SHADE_REPOSITORIES = "--shade-repositories";
     public static final String STABILITY_LEVEL = "--stability-level";

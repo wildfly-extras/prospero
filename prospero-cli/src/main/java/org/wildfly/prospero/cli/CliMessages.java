@@ -716,4 +716,88 @@ public interface CliMessages {
     default String candidateApplyRollbackFailure(Path backup) {
         return format(bundle.getString("prospero.candidate.apply.error.rollback_error.desc"), backup);
     }
+
+    default String certificateImportHeader() {
+        return bundle.getString("prospero.certificate.import.header");
+    }
+
+    default String certificateImportConfirmation() {
+        return bundle.getString("prospero.certificate.import.confirm_prompt");
+    }
+
+    default String certificateImportConfirmed(String keyId) {
+        return format(bundle.getString("prospero.certificate.import.confirmed"), keyId);
+    }
+
+    default String certificateImportCancelled(String keyId) {
+        return format(bundle.getString("prospero.certificate.import.cancelled"), keyId);
+    }
+
+    default ArgumentParsingException certificateNonExistingFilePath(Path certFile) {
+        return new ArgumentParsingException(format(bundle.getString("prospero.certificate.import.cert_file_doesnt_exist"), certFile));
+    }
+
+    default String noPublicKeysHeader() {
+        return bundle.getString("prospero.certificate.list.no_keys");
+    }
+
+    default String publicKeysListHeader() {
+        return bundle.getString("prospero.certificate.list.header");
+    }
+
+    default String publicKeyIdLabel() {
+        return bundle.getString("prospero.certificate.keyId.label");
+    }
+
+    default String publicKeyFingerprintLabel() {
+        return bundle.getString("prospero.certificate.fingerprint.label");
+    }
+
+    default String publicKeyTrustStatusLabel() {
+        return bundle.getString("prospero.certificate.trust_status.label");
+    }
+
+    default String publicKeyUserIdsLabel() {
+        return bundle.getString("prospero.certificate.user_ids.label");
+    }
+
+    default String publicKeyCreateTimeLabel() {
+        return bundle.getString("prospero.certificate.created_time.label");
+    }
+
+    default String publicKeyExpiresTimeLabel() {
+        return bundle.getString("prospero.certificate.expires_time.label");
+    }
+
+    default String noSuchCertificate(String keyID) {
+        return format(bundle.getString("prospero.certificate.remove.no_such_key"), keyID);
+    }
+
+    default String certificateRemoveHeader(String keyID) {
+        return format(bundle.getString("prospero.certificate.remove.removing_key.header"), keyID);
+    }
+
+    default String certificateRemovePrompt() {
+        return bundle.getString("prospero.certificate.remove.removing_key.prompt");
+    }
+
+    default String certificateRemoveAbort() {
+        return bundle.getString("prospero.certificate.remove.removing_key.aborted");
+    }
+
+    default String certificateRemoved(String keyID) {
+        return format(bundle.getString("prospero.certificate.remove.success"), keyID);
+    }
+
+    default String certificateRevokeHeader(String keyID) {
+        return format(bundle.getString("prospero.certificate.revoke.header"), keyID);
+    }
+
+    default String certificateRevokePrompt() {
+        return bundle.getString("prospero.certificate.revoke.prompt");
+    }
+
+    default String certificateRevoked() {
+        return bundle.getString("prospero.certificate.revoke.success");
+    }
 }
