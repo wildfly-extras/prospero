@@ -130,7 +130,7 @@ public class InstallationHistoryAction {
                         .setSourceServerPath(installation)
                         .build();
                      PrepareCandidateAction prepareCandidateAction = new PrepareCandidateAction(installation,
-                             mavenSessionManager, revertMetadata.getProsperoConfig())) {
+                             mavenSessionManager, revertMetadata.getProsperoConfig(), console)) {
 
                     System.setProperty(MAVEN_REPO_LOCAL, mavenSessionManager.getProvisioningRepo().toAbsolutePath().toString());
 

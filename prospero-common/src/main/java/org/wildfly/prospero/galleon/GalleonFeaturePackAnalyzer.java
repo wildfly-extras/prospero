@@ -25,6 +25,7 @@ import org.jboss.logging.Logger;
 import org.wildfly.channel.Channel;
 import org.wildfly.channel.MavenArtifact;
 import org.wildfly.channel.UnresolvedMavenArtifactException;
+import org.wildfly.prospero.api.Console;
 import org.wildfly.prospero.api.exceptions.OperationException;
 import org.wildfly.prospero.wfchannel.MavenSessionManager;
 
@@ -44,39 +45,32 @@ public class GalleonFeaturePackAnalyzer {
 
     private final List<Channel> channels;
     private final MavenSessionManager mavenSessionManager;
+    private final Console console;
+    private final Path keystore;
 
-    public GalleonFeaturePackAnalyzer(List<Channel> channels, MavenSessionManager mavenSessionManager) {
+    public GalleonFeaturePackAnalyzer(List<Channel> channels, MavenSessionManager mavenSessionManager, Console console, Path keystore) {
         this.channels = channels;
         this.mavenSessionManager = mavenSessionManager;
+        this.console = console;
+        this.keystore = keystore;
     }
 
-    /**
-     * Analyzes provisioning information found in {@code installedDir} and caches {@code FeaturePack} and Galleon plugin
-     * artifacts.
-     *
-     * This complements caching done in <a href="https://github.com/wildfly/galleon-plugins/blob/main/galleon-plugins/src/main/java/org/wildfly/galleon/plugin/ArtifactRecorder.java">Wildfly Galleon Plugin</a>},
-     * as Galleon plugin is not able to access FeaturePack information. The discovered artifacts are cached using {@link ArtifactCache}.
-     *
-     * @param installedDir - path to the installation. Used to access the cache
-     * @param provisioningConfig - Galleon configuration to analyze
-     */
-    public void cacheGalleonArtifacts(Path installedDir, GalleonProvisioningConfig provisioningConfig) throws Exception {
+    public void cacheGalleonArtifacts(Path installedDir, Path sourceDir, GalleonProvisioningConfig provisioningConfig) throws Exception {
         // no data will be actually written out, but we need a path to init the Galleon
         final Path tempInstallationPath = Files.createTempDirectory("temp");
         final Set<String> fps = new HashSet<>();
 
-        try (GalleonEnvironment galleonEnv = galleonEnvWithFpMapper(tempInstallationPath, installedDir, fps, provisioningConfig)) {
+        try (GalleonEnvironment galleonEnv = galleonEnvWithFpMapper(tempInstallationPath, sourceDir, fps, provisioningConfig)) {
             final ArtifactCache artifactCache = ArtifactCache.getInstance(installedDir);
-            try (Provisioning pm = galleonEnv.getProvisioning()) {
-                final Set<String> pluginGavs = pm.getOrderedFeaturePackPluginLocations(provisioningConfig);
-                for (String pluginGav : pluginGavs) {
-                    final String[] pluginLoc = pluginGav.split(":");
-                    final MavenArtifact jar = galleonEnv.getChannelSession().resolveMavenArtifact(pluginLoc[0], pluginLoc[1], "jar", null, null);
-                    artifactCache.cache(jar);
-                }
+            final Provisioning pm = galleonEnv.getProvisioning();
+            final Set<String> pluginGavs = pm.getOrderedFeaturePackPluginLocations(provisioningConfig);
+            for (String pluginGav : pluginGavs) {
+                final String[] pluginLoc = pluginGav.split(":");
+                final MavenArtifact jar = galleonEnv.getChannelSession().resolveMavenArtifact(pluginLoc[0], pluginLoc[1], "jar", null, null);
+                artifactCache.cache(jar);
             }
 
-            for (String fp : getFeaturePacks(installedDir, provisioningConfig)) {
+            for (String fp : getFeaturePacks(sourceDir, provisioningConfig)) {
                 // resolve the artifact
                 final String[] fpLoc = fp.split(":");
                 final MavenArtifact mavenArtifact = galleonEnv.getChannelSession().resolveMavenArtifact(fpLoc[0], fpLoc[1], "zip", null, null);
@@ -139,10 +133,11 @@ public class GalleonFeaturePackAnalyzer {
     private GalleonEnvironment galleonEnvWithFpMapper(Path tempInstallationPath, Path sourcePath, Set<String> fps, GalleonProvisioningConfig provisioningConfig) throws ProvisioningException, OperationException {
         final GalleonEnvironment galleonEnv = GalleonEnvironment
                 .builder(tempInstallationPath, channels, mavenSessionManager, false)
-                .setConsole(null)
+                .setConsole(console)
                 .setSourceServerPath(sourcePath)
                 .setProvisioningConfig(provisioningConfig)
                 .setResolvedFpTracker(fps::add)
+                .setKeyringLocation(keystore)
                 .build();
         return galleonEnv;
     }

@@ -22,6 +22,7 @@ import org.wildfly.channel.Channel;
 import org.wildfly.channel.ChannelManifestMapper;
 import org.wildfly.channel.MavenArtifact;
 import org.wildfly.channel.MavenCoordinate;
+import org.wildfly.channel.spi.SignatureValidator;
 import org.wildfly.prospero.metadata.ManifestVersionRecord;
 import org.wildfly.prospero.metadata.ManifestVersionResolver;
 import org.wildfly.prospero.wfchannel.MavenSessionManager;
@@ -45,11 +46,12 @@ class ProsperoManifestVersionResolver {
 
     private final Supplier<ManifestVersionResolver> manifestVersionResolver;
 
-    ProsperoManifestVersionResolver(MavenSessionManager mavenSessionManager) {
+    ProsperoManifestVersionResolver(MavenSessionManager mavenSessionManager, SignatureValidator signatureValidator) {
         this.manifestVersions = mavenSessionManager.getResolvedArtifactVersions();
         this.manifestVersionResolver = () -> new ManifestVersionResolver(
                 mavenSessionManager.getProvisioningRepo(),
-                mavenSessionManager.newRepositorySystem());
+                mavenSessionManager.newRepositorySystem(),
+                signatureValidator);
     }
 
     ProsperoManifestVersionResolver(ResolvedArtifactsStore manifestVersions, ManifestVersionResolver manifestVersionResolver) {
