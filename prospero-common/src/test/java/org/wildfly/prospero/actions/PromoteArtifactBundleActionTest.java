@@ -78,5 +78,10 @@ public class PromoteArtifactBundleActionTest {
         public void println(String text) {
 
         }
+
+        @Override
+        public boolean acceptPublicKey(String key) {
+            return false;
+        }
     }
 }

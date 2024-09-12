@@ -17,6 +17,7 @@
 
 package org.wildfly.prospero.cli;
 
+import java.io.IOException;
 import java.io.InputStream;
 import java.io.PrintStream;
 import java.util.HashMap;
@@ -268,4 +269,25 @@ public class CliConsole implements Console {
         }
     }
 
+    @Override
+    public boolean acceptPublicKey(String key) {
+        System.out.println();
+        System.out.println("Installing an artifact signed with untrusted key: ");
+        System.out.println("  " + key);
+        System.out.println("Do you want to trust this key y/N ");
+        try {
+            while (true) {
+                final char read = (char) System.in.read();
+                if (read == 'y' || read == 'Y') {
+                    return true;
+                } else if (read == 'n' || read == 'N') {
+                    return false;
+                } else {
+                    System.out.println("Do you want to trust this key y/N ");
+                }
+            }
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+    }
 }
