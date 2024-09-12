@@ -25,14 +25,20 @@ import org.jboss.logging.annotations.Cause;
 import org.jboss.logging.annotations.LogMessage;
 import org.jboss.logging.annotations.Message;
 import org.jboss.logging.annotations.MessageLogger;
+import org.jboss.logging.annotations.Param;
+import org.jboss.logging.annotations.Pos;
+import org.wildfly.prospero.signatures.KeystoreWriteException;
+import org.wildfly.prospero.signatures.DuplicatedCertificateException;
 import org.wildfly.channel.InvalidChannelMetadataException;
 import org.wildfly.prospero.actions.FeaturesAddAction;
 import org.wildfly.prospero.api.exceptions.ArtifactPromoteException;
 import org.wildfly.prospero.api.exceptions.ChannelDefinitionException;
+import org.wildfly.prospero.signatures.InvalidCertificateException;
 import org.wildfly.prospero.api.exceptions.InvalidRepositoryArchiveException;
 import org.wildfly.prospero.api.exceptions.InvalidUpdateCandidateException;
 import org.wildfly.prospero.api.exceptions.MetadataException;
 import org.wildfly.prospero.api.exceptions.NoChannelException;
+import org.wildfly.prospero.signatures.NoSuchCertificateException;
 import org.wildfly.prospero.api.exceptions.ProvisioningRuntimeException;
 
 import java.io.IOException;
@@ -392,4 +398,19 @@ public interface ProsperoLogger extends BasicLogger {
 
     @Message(id = 272, value = "Failed to apply the candidate changes due to: %s")
     String failedToApplyCandidate(String reason);
+
+    @Message(id = 273, value = "The certificate at %s is invalid - %s")
+    InvalidCertificateException invalidCertificate(String certLocation, String message, @Cause Exception e);
+
+    @Message(id = 274, value = "Unable to persist changes to local keystore %s - %s")
+    KeystoreWriteException unableToWriteKeystore(Path location, String message, @Cause Exception e);
+
+    @Message(id = 275, value = "Unable to import a certificate - certificate %s already exists in the keystore.")
+    DuplicatedCertificateException certificateAlreadyExists(@Param @Pos(1) String keyID);
+
+    @Message(id = 276, value = "The key %s was not found in the keyring.")
+    NoSuchCertificateException noSuchCertificate(String keyId);
+
+    @Message(id = 277, value = "Unable to parse a keystore [%s]: %s")
+    MetadataException unableToReadKeyring(Path keyringPath, String localizedMessage, @Cause Exception e);
 }
