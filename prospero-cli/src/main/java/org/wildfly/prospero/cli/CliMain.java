@@ -33,6 +33,7 @@ import org.wildfly.prospero.cli.commands.MainCommand;
 import org.wildfly.prospero.cli.commands.PrintLicensesCommand;
 import org.wildfly.prospero.cli.commands.RevertCommand;
 import org.wildfly.prospero.cli.commands.UpdateCommand;
+import org.wildfly.prospero.cli.commands.certificate.CertificatesCommand;
 import org.wildfly.prospero.cli.commands.channel.ChannelAddCommand;
 import org.wildfly.prospero.cli.commands.channel.ChannelInitializeCommand;
 import org.wildfly.prospero.cli.commands.channel.ChannelPromoteCommand;
@@ -101,6 +102,10 @@ public class CliMain {
         final FeaturesCommand featuresCommand = new FeaturesCommand(console, actionFactory);
         commandLine.addSubcommand(featuresCommand);
         featuresCommand.addSubCommands(commandLine);
+
+        final CertificatesCommand certsCommand = new CertificatesCommand(console, actionFactory);
+        commandLine.addSubcommand(certsCommand);
+        certsCommand.addSubCommands(commandLine);
 
         commandLine.setUsageHelpAutoWidth(true);
         final boolean isVerbose = Arrays.stream(args).anyMatch(s -> s.equals(CliConstants.VV) || s.equals(CliConstants.VERBOSE));

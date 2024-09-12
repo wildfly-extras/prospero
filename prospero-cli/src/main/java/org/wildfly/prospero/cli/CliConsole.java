@@ -208,9 +208,11 @@ public class CliConsole implements Console {
         while (true) {
             String resp = sc.nextLine();
             if (resp.equalsIgnoreCase(CliMessages.MESSAGES.noShortcut()) || resp.isBlank()) {
+                emptyLine();
                 println(cancelled);
                 return false;
             } else if (resp.equalsIgnoreCase(CliMessages.MESSAGES.yesShortcut())) {
+                emptyLine();
                 println(accepted);
                 return true;
             } else {
@@ -241,6 +243,10 @@ public class CliConsole implements Console {
 
     public void error(String message, String... args) {
         getErrOut().println(String.format(message, (Object[]) args));
+    }
+
+    public void emptyLine() {
+        println("");
     }
 
     @Override
