@@ -91,7 +91,7 @@ public class FeaturesAddAction {
 
     public FeaturesAddAction(MavenOptions mavenOptions, Path installDir, List<Repository> repositories, Console console) throws MetadataException, ProvisioningException {
         this(mavenOptions, installDir, repositories, console,
-                new DefaultCandidateActionsFactory(installDir),
+                new DefaultCandidateActionsFactory(installDir, console),
                 new FeaturePackTemplateManager(), new LicenseManager());
     }
 
@@ -741,15 +741,17 @@ public class FeaturesAddAction {
     private static class DefaultCandidateActionsFactory implements CandidateActionsFactory {
 
         private final Path installDir;
+        private final Console console;
 
-        public DefaultCandidateActionsFactory(Path installDir) {
+        public DefaultCandidateActionsFactory(Path installDir, Console console) {
             this.installDir = installDir;
+            this.console = console;
         }
 
         @Override
         public PrepareCandidateAction newPrepareCandidateActionInstance(
                 MavenSessionManager mavenSessionManager, ProsperoConfig prosperoConfig) throws OperationException {
-            return new PrepareCandidateAction(installDir, mavenSessionManager, prosperoConfig);
+            return new PrepareCandidateAction(installDir, mavenSessionManager, prosperoConfig, console);
         }
 
         @Override

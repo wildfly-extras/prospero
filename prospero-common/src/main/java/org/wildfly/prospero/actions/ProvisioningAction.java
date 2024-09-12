@@ -187,7 +187,8 @@ public class ProvisioningAction {
 
 
         try {
-            final GalleonFeaturePackAnalyzer galleonFeaturePackAnalyzer = new GalleonFeaturePackAnalyzer(channels, mavenSessionManager);
+            final GalleonFeaturePackAnalyzer galleonFeaturePackAnalyzer = new GalleonFeaturePackAnalyzer(channels, mavenSessionManager,
+                    console, installDir.resolve(ProsperoMetadataUtils.METADATA_DIR).resolve("keyring.gpg"));
 
             if (ProsperoLogger.ROOT_LOGGER.isDebugEnabled()) {
                 ProsperoLogger.ROOT_LOGGER.debug("Recording accepted licenses");
@@ -202,7 +203,7 @@ public class ProvisioningAction {
             if (ProsperoLogger.ROOT_LOGGER.isDebugEnabled()) {
                 ProsperoLogger.ROOT_LOGGER.debug("Updating galleon cache");
             }
-            galleonFeaturePackAnalyzer.cacheGalleonArtifacts(installDir, provisioningConfig);
+            galleonFeaturePackAnalyzer.cacheGalleonArtifacts(installDir, installDir, provisioningConfig);
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
@@ -243,7 +244,8 @@ public class ProvisioningAction {
         Objects.requireNonNull(provisioningConfig);
         Objects.requireNonNull(channels);
 
-        final GalleonFeaturePackAnalyzer exporter = new GalleonFeaturePackAnalyzer(channels, mavenSessionManager);
+        final GalleonFeaturePackAnalyzer exporter = new GalleonFeaturePackAnalyzer(channels, mavenSessionManager,
+                console, getKeyringPath());
         return getPendingLicenses(provisioningConfig, exporter);
     }
 

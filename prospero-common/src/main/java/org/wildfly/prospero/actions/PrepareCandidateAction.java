@@ -25,8 +25,10 @@ import org.jboss.logging.Logger;
 import org.wildfly.channel.Channel;
 import org.wildfly.channel.ChannelManifest;
 import org.wildfly.channel.UnresolvedMavenArtifactException;
+import org.wildfly.channel.gpg.GpgSignatureValidator;
 import org.wildfly.prospero.ProsperoLogger;
 import org.wildfly.prospero.api.ArtifactChange;
+import org.wildfly.prospero.api.Console;
 import org.wildfly.prospero.api.InstallationMetadata;
 import org.wildfly.prospero.api.SavedState;
 import org.wildfly.prospero.api.exceptions.ArtifactResolutionException;
@@ -41,6 +43,9 @@ import org.wildfly.prospero.metadata.ManifestVersionRecord;
 import org.wildfly.prospero.metadata.ManifestVersionResolver;
 import org.wildfly.prospero.metadata.ProsperoMetadataUtils;
 import org.wildfly.prospero.model.ProsperoConfig;
+import org.wildfly.prospero.signatures.ConfirmingKeystoreAdapter;
+import org.wildfly.prospero.signatures.KeystoreManager;
+import org.wildfly.prospero.signatures.PGPLocalKeystore;
 import org.wildfly.prospero.updates.CandidateProperties;
 import org.wildfly.prospero.updates.CandidatePropertiesParser;
 import org.wildfly.prospero.updates.MarkerFile;
@@ -66,13 +71,16 @@ class PrepareCandidateAction implements AutoCloseable {
     private final ProsperoConfig prosperoConfig;
     private final MavenSessionManager mavenSessionManager;
     private final Path installDir;
+    private final Console console;
 
-    PrepareCandidateAction(Path installDir, MavenSessionManager mavenSessionManager, ProsperoConfig prosperoConfig)
+    PrepareCandidateAction(Path installDir, MavenSessionManager mavenSessionManager, ProsperoConfig prosperoConfig,
+                           Console console)
             throws OperationException {
         this.metadata = InstallationMetadata.loadInstallation(installDir);
         this.installDir = installDir;
         this.prosperoConfig = prosperoConfig;
         this.mavenSessionManager = mavenSessionManager;
+        this.console = console;
     }
 
     boolean buildCandidate(Path targetDir, GalleonEnvironment galleonEnv, ApplyCandidateAction.Type operation,
@@ -156,8 +164,9 @@ class PrepareCandidateAction implements AutoCloseable {
                 manifestRecord);
 
         try {
-            final GalleonFeaturePackAnalyzer galleonFeaturePackAnalyzer = new GalleonFeaturePackAnalyzer(galleonEnv.getChannels(), mavenSessionManager);
-            galleonFeaturePackAnalyzer.cacheGalleonArtifacts(targetDir, provisioningConfig);
+            final GalleonFeaturePackAnalyzer galleonFeaturePackAnalyzer = new GalleonFeaturePackAnalyzer(galleonEnv.getChannels(), mavenSessionManager, console,
+                    installDir.resolve(ProsperoMetadataUtils.METADATA_DIR).resolve("keyring.gpg"));
+            galleonFeaturePackAnalyzer.cacheGalleonArtifacts(targetDir, installDir,  provisioningConfig);
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
