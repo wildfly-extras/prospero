@@ -65,7 +65,7 @@ public class ProsperoManifestVersionResolverTest {
     public void setUp() throws Exception {
         manifestFile = temp.newFile("test");
         Files.writeString(manifestFile.toPath(), ChannelManifestMapper.toYaml(
-                new ChannelManifest("test", "test", "desc", null)));
+                new ChannelManifest("test-name", "test-id", "test-version", "desc", null, null)));
 
         // when the fallback resolver is called return an empty record to make the test pass
         when(manifestVersionResolver.getCurrentVersions(any())).thenReturn(new ManifestVersionRecord());
@@ -86,7 +86,7 @@ public class ProsperoManifestVersionResolverTest {
                 .containsOnly(A_VERSION);
         assertThat(currentVersions.getMavenManifests())
                 .map(ManifestVersionRecord.MavenManifest::getDescription)
-                .containsOnly("desc");
+                .containsOnly("test-version");
     }
 
     @Test
