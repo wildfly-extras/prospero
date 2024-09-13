@@ -17,6 +17,7 @@
 
 package org.wildfly.prospero.licenses;
 
+import org.apache.commons.io.FileUtils;
 import org.jboss.logging.Logger;
 import org.wildfly.prospero.metadata.ProsperoMetadataUtils;
 
@@ -26,7 +27,6 @@ import java.io.IOException;
 import java.net.URL;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.StandardCopyOption;
 import java.nio.file.StandardOpenOption;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
@@ -35,7 +35,6 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Objects;
 import java.util.Optional;
-import java.util.Properties;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -128,7 +127,7 @@ public class LicenseManager {
             Files.createDirectory(licenseFolder);
         }
         final Path licenseAcceptFile = licenseFolder.resolve(LICENSE_AGREEMENT_FILENAME);
-        final Properties licenseApproveProperties = new Properties();
+        final SortedProperties licenseApproveProperties = new SortedProperties();
         if (Files.exists(licenseAcceptFile)) {
             try (FileInputStream inStream = new FileInputStream(licenseAcceptFile.toFile())) {
                 licenseApproveProperties.load(inStream);
@@ -163,17 +162,14 @@ public class LicenseManager {
     }
 
     public void copyIfExists(Path sourceServer, Path targetServer) throws IOException {
-        final Path sourceLicenses = sourceServer.resolve(ProsperoMetadataUtils.METADATA_DIR).resolve(LICENSES_FOLDER).resolve(LICENSE_AGREEMENT_FILENAME);
-        final Path targetLicenses = targetServer.resolve(ProsperoMetadataUtils.METADATA_DIR).resolve(LICENSES_FOLDER).resolve(LICENSE_AGREEMENT_FILENAME);
-        if (!Files.exists(sourceLicenses)) {
+
+        final Path licencesDir = Path.of(ProsperoMetadataUtils.METADATA_DIR, LICENSES_FOLDER);
+        if (!Files.exists(sourceServer.resolve(licencesDir))) {
             return;
         }
 
-        if (!Files.exists(targetLicenses.getParent())) {
-            Files.createDirectory(targetLicenses.getParent());
-        }
-
-        Files.copy(sourceLicenses, targetLicenses, StandardCopyOption.REPLACE_EXISTING);
+        // copy all licenses files
+        FileUtils.copyDirectory(sourceServer.resolve(licencesDir).toFile(), targetServer.resolve(licencesDir).toFile());
     }
 
     private static URL getLicensesFile() {
