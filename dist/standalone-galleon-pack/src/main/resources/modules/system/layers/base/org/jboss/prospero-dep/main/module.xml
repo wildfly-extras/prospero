@@ -29,6 +29,9 @@
     <artifact name="${commons-io:commons-io}"/>
     <artifact name="${commons-codec:commons-codec}"/>
     <artifact name="${org.apache.commons:commons-lang3}"/>
+    <artifact name="${org.bouncycastle:bcpg-jdk18on}"/>
+    <artifact name="${org.bouncycastle:bcprov-jdk18on}"/>
+    <artifact name="${org.bouncycastle:bcutil-jdk18on}"/>
     <artifact name="${org.wildfly.common:wildfly-common}"/>
     <artifact name="${org.wildfly.installation-manager:installation-manager-api}"/>
     <artifact name="${org.apache.httpcomponents:httpclient}"/>

@@ -20,7 +20,7 @@ package org.wildfly.prospero.galleon;
 import org.eclipse.aether.DefaultRepositorySystemSession;
 import org.eclipse.aether.RepositorySystem;
 import org.wildfly.channel.ArtifactCoordinate;
-import org.wildfly.channel.Repository;
+import org.wildfly.channel.Channel;
 import org.wildfly.channel.maven.VersionResolverFactory;
 import org.wildfly.channel.spi.MavenVersionsResolver;
 import org.wildfly.prospero.metadata.ManifestVersionRecord;
@@ -28,7 +28,6 @@ import org.wildfly.prospero.metadata.ProsperoMetadataUtils;
 
 import java.io.IOException;
 import java.nio.file.Path;
-import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
 
@@ -49,8 +48,8 @@ public class CachedVersionResolverFactory implements MavenVersionsResolver.Facto
     }
 
     @Override
-    public MavenVersionsResolver create(Collection<Repository> repositories) {
-        return new CachedVersionResolver(factory.create(repositories), artifactCache, system, session,
+    public MavenVersionsResolver create(Channel channel) {
+        return new CachedVersionResolver(factory.create(channel), artifactCache, system, session,
                 (a)->getCurrentManifestVersion(a, installDir.resolve(ProsperoMetadataUtils.METADATA_DIR).resolve(ProsperoMetadataUtils.CURRENT_VERSION_FILE)));
     }
 

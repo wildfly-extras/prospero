@@ -120,7 +120,7 @@ public class UpdateAction implements AutoCloseable {
         }
 
         ProsperoLogger.ROOT_LOGGER.updateCandidateStarted(installDir);
-        try (PrepareCandidateAction prepareCandidateAction = new PrepareCandidateAction(installDir, mavenSessionManager, prosperoConfig);
+        try (PrepareCandidateAction prepareCandidateAction = new PrepareCandidateAction(installDir, mavenSessionManager, prosperoConfig, console);
              GalleonEnvironment galleonEnv = getGalleonEnv(targetDir)) {
             try (Provisioning p = new GalleonBuilder().newProvisioningBuilder(PathsUtils.getProvisioningXml(installDir)).build()) {
                 final GalleonProvisioningConfig provisioningConfig = p.loadProvisioningConfig(PathsUtils.getProvisioningXml(installDir));

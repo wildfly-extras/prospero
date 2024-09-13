@@ -53,6 +53,9 @@ public class ChannelAddCommand extends AbstractCommand {
     @CommandLine.ArgGroup(exclusive = true, multiplicity = "1")
     private ChannelParamsGroup channelOptions;
 
+    @CommandLine.Option(names = CliConstants.GPG_CHECK, required = false)
+    private boolean gpgCheck;
+
     @CommandLine.Option(names = CliConstants.DIR)
     private Optional<Path> directory;
 
@@ -86,7 +89,13 @@ public class ChannelAddCommand extends AbstractCommand {
             final ChannelManifestCoordinate manifest = ArtifactUtils.manifestCoordFromString(channelOptions.channelGroup.manifestLocation);
             try (TemporaryFilesManager temporaryFiles = TemporaryFilesManager.getInstance()) {
                 final List<Repository> repositories = RepositoryUtils.unzipArchives(RepositoryDefinition.from(channelOptions.channelGroup.repositoryDefs), temporaryFiles);
-                channel = new Channel(channelName, null, null, repositories, manifest, null, null);
+                final Channel.Builder builder = new Channel.Builder()
+                        .setName(channelName)
+                        .setManifestCoordinate(manifest)
+                        .setGpgCheck(gpgCheck);
+
+                repositories.forEach(r -> builder.addRepository(r.getId(), r.getUrl()));
+                channel = builder.build();
             }
         }
 

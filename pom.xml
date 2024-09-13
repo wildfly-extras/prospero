@@ -52,6 +52,7 @@
         <version.org.apache.maven.plugins.dependency>3.8.0</version.org.apache.maven.plugins.dependency>
         <version.org.apache.maven.resolver>1.9.21</version.org.apache.maven.resolver>
         <version.org.apache.maven>3.6.3</version.org.apache.maven>
+        <version.org.bouncycastle>1.76</version.org.bouncycastle>
         <version.org.codehaus.gmaven.groovy-maven-plugin>2.1.1</version.org.codehaus.gmaven.groovy-maven-plugin>
         <version.org.codehaus.plexus-interpolation>1.27</version.org.codehaus.plexus-interpolation>
         <version.org.codehaus.plexus-utils>3.5.0</version.org.codehaus.plexus-utils>
@@ -65,16 +66,17 @@
         <version.org.jboss.modules>2.1.5.Final</version.org.jboss.modules>
         <version.org.jboss.xnio>3.8.16.Final</version.org.jboss.xnio>
         <version.org.wildfly.common>1.7.0.Final</version.org.wildfly.common>
+        <version.org.pgpainless>1.6.1</version.org.pgpainless>
         <version.org.wildfly.galleon-plugins>7.1.2.Final</version.org.wildfly.galleon-plugins>
         <version.org.wildfly.installation-manager>1.0.3.Final</version.org.wildfly.installation-manager>
         <version.org.wildfly.maven.plugins.licenses-plugin>2.4.1.Final</version.org.wildfly.maven.plugins.licenses-plugin>
-        <version.org.wildfly.prospero.prospero-metadata>1.2.1.Final</version.org.wildfly.prospero.prospero-metadata>
+        <version.org.wildfly.prospero.prospero-metadata>1.2.2.Final-SNAPSHOT</version.org.wildfly.prospero.prospero-metadata>
         <version.org.mockito>5.13.0</version.org.mockito>
         <version.org.slf4j>2.0.7</version.org.slf4j>
         <version.org.yaml.snakeyaml>2.2</version.org.yaml.snakeyaml>
         <version.junit>4.13.2</version.junit>
         <version.maven-shade-plugin>3.6.0</version.maven-shade-plugin>
-        <version.org.wildfly.channel>1.1.0.Final</version.org.wildfly.channel>
+        <version.org.wildfly.channel>1.1.1.Final-SNAPSHOT</version.org.wildfly.channel>
         <version.maven-compiler-plugin>3.10.1</version.maven-compiler-plugin>
         <version.org.wildfly.galleon-pack>33.0.1.Final</version.org.wildfly.galleon-pack>
         <version.info.picocli>4.7.6</version.info.picocli>
@@ -92,6 +94,26 @@
 
     <dependencyManagement>
         <dependencies>
+            <dependency>
+                <groupId>org.wildfly.channel</groupId>
+                <artifactId>gpg-validator</artifactId>
+                <version>${version.org.wildfly.channel}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.bouncycastle</groupId>
+                <artifactId>bcpg-jdk18on</artifactId>
+                <version>${version.org.bouncycastle}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.bouncycastle</groupId>
+                <artifactId>bcprov-jdk18on</artifactId>
+                <version>${version.org.bouncycastle}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.bouncycastle</groupId>
+                <artifactId>bcutil-jdk18on</artifactId>
+                <version>${version.org.bouncycastle}</version>
+            </dependency>
             <dependency>
                <groupId>org.wildfly.channel</groupId>
                <artifactId>channel-parent</artifactId>
@@ -448,6 +470,18 @@
                 <groupId>org.jboss.xnio</groupId>
                 <artifactId>xnio-nio</artifactId>
                 <version>${version.org.jboss.xnio}</version>
+                <scope>test</scope>
+            </dependency>
+            <dependency>
+                <groupId>org.pgpainless</groupId>
+                <artifactId>pgpainless-core</artifactId>
+                <version>${version.org.pgpainless}</version>
+                <scope>test</scope>
+            </dependency>
+            <dependency>
+                <groupId>org.pgpainless</groupId>
+                <artifactId>pgpainless-sop</artifactId>
+                <version>${version.org.pgpainless}</version>
                 <scope>test</scope>
             </dependency>
         </dependencies>

@@ -23,6 +23,7 @@ import java.util.List;
 import org.jboss.galleon.ProvisioningException;
 import org.wildfly.channel.Repository;
 import org.wildfly.prospero.actions.ApplyCandidateAction;
+import org.wildfly.prospero.actions.CertificateAction;
 import org.wildfly.prospero.actions.FeaturesAddAction;
 import org.wildfly.prospero.actions.SubscribeNewServerAction;
 import org.wildfly.prospero.api.Console;
@@ -84,5 +85,9 @@ public class ActionFactory {
 
     public SubscribeNewServerAction subscribeNewServerAction(MavenOptions mvnOptions, Console console) throws ProvisioningException {
         return new SubscribeNewServerAction(mvnOptions, console);
+    }
+
+    public CertificateAction certificateAction(Path installationDir) throws MetadataException {
+        return new CertificateAction(installationDir);
     }
 }

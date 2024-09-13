@@ -33,9 +33,9 @@ import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
 import org.wildfly.channel.ArtifactTransferException;
+import org.wildfly.channel.Channel;
 import org.wildfly.channel.ChannelManifest;
 import org.wildfly.channel.ChannelManifestMapper;
-import org.wildfly.channel.Repository;
 import org.wildfly.channel.Stream;
 import org.wildfly.channel.UnresolvedMavenArtifactException;
 import org.wildfly.channel.maven.ChannelCoordinate;
@@ -258,7 +258,9 @@ public class ArtifactPromoterTest {
     }
 
     private ChannelManifest getManifest(ChannelCoordinate channelGa) throws IOException {
-        final MavenVersionsResolver resolver = new VersionResolverFactory(system, session).create(Arrays.asList(new Repository(targetRepository.getId(), targetRepository.getUrl())));
+        final MavenVersionsResolver resolver = new VersionResolverFactory(system, session).create(new Channel.Builder()
+                .addRepository(targetRepository.getId(), targetRepository.getUrl())
+                .build());
 
         final Set<String> allVersions = resolver.getAllVersions(channelGa.getGroupId(), channelGa.getArtifactId(),
                 ChannelManifest.EXTENSION, ChannelManifest.CLASSIFIER);

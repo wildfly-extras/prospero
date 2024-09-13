@@ -14,6 +14,10 @@
 
     <dependencies>
         <dependency>
+            <groupId>org.wildfly.channel</groupId>
+            <artifactId>gpg-validator</artifactId>
+        </dependency>
+        <dependency>
             <groupId>org.wildfly.installation-manager</groupId>
             <artifactId>installation-manager-api</artifactId>
         </dependency>
@@ -127,6 +131,17 @@
             <artifactId>assertj-core</artifactId>
             <scope>test</scope>
         </dependency>
+        <dependency>
+            <groupId>org.pgpainless</groupId>
+            <artifactId>pgpainless-core</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.pgpainless</groupId>
+            <artifactId>pgpainless-sop</artifactId>
+            <scope>test</scope>
+        </dependency>
+
     </dependencies>
 
 </project>
