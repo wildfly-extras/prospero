@@ -24,6 +24,7 @@ import org.wildfly.channel.ArtifactCoordinate;
 import org.wildfly.channel.ChannelMetadataCoordinate;
 import org.wildfly.channel.Repository;
 import org.wildfly.prospero.api.ArtifactUtils;
+import org.wildfly.prospero.api.exceptions.ApplyCandidateException;
 import org.wildfly.prospero.api.exceptions.ArtifactResolutionException;
 import org.wildfly.prospero.api.exceptions.ChannelDefinitionException;
 import org.wildfly.prospero.api.exceptions.MetadataException;
@@ -104,6 +105,16 @@ public class ExecutionExceptionHandler implements CommandLine.IExecutionExceptio
                 if (ex.getCause() != null && (ex.getCause() instanceof MarkedYAMLException || ex.getCause() instanceof JsonMappingException)) {
                     console.error(ex.getCause().getLocalizedMessage());
                 }
+            } else if (ex instanceof ApplyCandidateException) {
+                ApplyCandidateException ace = (ApplyCandidateException) ex;
+                console.error(System.lineSeparator() + ace.getMessage());
+
+                if (ace.isRollbackSuccessful()) {
+                    console.error(System.lineSeparator() + CliMessages.MESSAGES.candidateApplyRollbackSuccess());
+                } else {
+                    console.error(System.lineSeparator() + CliMessages.MESSAGES.candidateApplyRollbackFailure(ace.getBackupPath()));
+                }
+
             } else {
                 console.error(CliMessages.MESSAGES.errorHeader(ex.getLocalizedMessage()));
             }

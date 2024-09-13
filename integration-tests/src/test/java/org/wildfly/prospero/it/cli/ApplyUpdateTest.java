@@ -28,23 +28,31 @@ import org.wildfly.prospero.cli.ReturnCodes;
 import org.wildfly.prospero.cli.commands.CliConstants;
 import org.wildfly.prospero.it.ExecutionUtils;
 import org.wildfly.prospero.it.commonapi.WfCoreTestBase;
+import org.wildfly.prospero.it.utils.DirectoryComparator;
 import org.wildfly.prospero.test.MetadataTestUtils;
 
 import java.io.File;
 import java.io.IOException;
 import java.net.URISyntaxException;
 import java.net.URL;
+import java.nio.channels.FileChannel;
+import java.nio.channels.FileLock;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.StandardOpenOption;
 import java.util.List;
 import java.util.Optional;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
+import static org.wildfly.prospero.it.ExecutionUtils.isWindows;
 import static org.wildfly.prospero.test.MetadataTestUtils.upgradeStreamInManifest;
 
 @SuppressWarnings("OptionalGetWithoutIsPresent")
 public class ApplyUpdateTest extends CliTestBase  {
 
+    private static FileLock lock;
+    private static FileChannel fileChannel;
     @Rule
     public TemporaryFolder tempDir = new TemporaryFolder();
 
@@ -170,7 +178,7 @@ public class ApplyUpdateTest extends CliTestBase  {
         // apply update-candidate
         ExecutionUtils.prosperoExecution(CliConstants.Commands.UPDATE, CliConstants.Commands.APPLY,
                         CliConstants.CANDIDATE_DIR, candidateLink.toAbsolutePath().toString(),
-                        CliConstants.Y,
+                        CliConstants.Y, CliConstants.VERBOSE,
                         CliConstants.DIR, targetDir.getAbsolutePath())
                 .execute()
                 .assertReturnCode(ReturnCodes.SUCCESS);
@@ -179,6 +187,83 @@ public class ApplyUpdateTest extends CliTestBase  {
         wildflyCliStream = getInstalledArtifact(resolvedUpgradeArtifact.getArtifactId(), targetDir.toPath());
         assertEquals(WfCoreTestBase.UPGRADE_VERSION, wildflyCliStream.get().getVersion());
     }
+
+    @Test
+    public void failedApplyCandidate_ShouldRevertAllFileChanges() throws Exception {
+        final Path manifestPath = temp.newFile().toPath();
+        final Path provisionConfig = temp.newFile().toPath();
+        final Path updatePath = tempDir.newFolder("update-candidate").toPath();
+        MetadataTestUtils.copyManifest("manifests/wfcore-base.yaml", manifestPath);
+        MetadataTestUtils.prepareChannel(provisionConfig, List.of(manifestPath.toUri().toURL()), defaultRemoteRepositories());
+
+        install(provisionConfig, targetDir.toPath());
+
+        upgradeStreamInManifest(manifestPath, resolvedUpgradeArtifact);
+
+        final URL temporaryRepo = mockTemporaryRepo(true);
+
+        // generate update-candidate
+        ExecutionUtils.prosperoExecution(CliConstants.Commands.UPDATE, CliConstants.Commands.PREPARE,
+                        CliConstants.REPOSITORIES, temporaryRepo.toString(),
+                        CliConstants.CANDIDATE_DIR, updatePath.toAbsolutePath().toString(),
+                        CliConstants.Y,
+                        CliConstants.DIR, targetDir.getAbsolutePath())
+                .execute()
+                .assertReturnCode(ReturnCodes.SUCCESS);
+
+        // verify the original server has not been modified
+        Optional<Stream> wildflyCliStream = getInstalledArtifact(resolvedUpgradeArtifact.getArtifactId(), targetDir.toPath());
+        assertEquals(WfCoreTestBase.BASE_VERSION, wildflyCliStream.get().getVersion());
+
+
+        final File originalServer = temp.newFolder("server-copy");
+        FileUtils.copyDirectory(targetDir,originalServer);
+        final Path protectedPath = targetDir.toPath().resolve(".installation");
+        try {
+            // lock a resource that would be modified to force the apply to fail
+            lockPath(protectedPath, false);
+
+            // apply update-candidate
+            ExecutionUtils.prosperoExecution(CliConstants.Commands.UPDATE, CliConstants.Commands.APPLY,
+                            CliConstants.CANDIDATE_DIR, updatePath.toAbsolutePath().toString(),
+                            CliConstants.Y, CliConstants.VERBOSE,
+                            CliConstants.DIR, targetDir.getAbsolutePath())
+                    .execute()
+                    .assertReturnCode(ReturnCodes.PROCESSING_ERROR);
+        } finally {
+            lockPath(protectedPath, true);
+        }
+
+        DirectoryComparator.assertNoChanges(originalServer.toPath(), targetDir.toPath());
+    }
+
+    private static void lockPath(Path protectedPath, boolean writable) {
+        if (isWindows()) {
+            // On Windows setting permissions on directories isn't supported and setting read-only on file doesn't prevent it from being overwritten
+            // We can lock the file though, which will prevent it from being replaced
+            if (!writable) {
+                try {
+                    fileChannel = FileChannel.open(protectedPath.resolve("manifest.yaml"), StandardOpenOption.WRITE);
+                    lock = fileChannel.lock();
+                } catch (IOException e) {
+                    throw new RuntimeException(e);
+                }
+            } else {
+                try {
+                    lock.release();
+                    fileChannel.close();
+                    lock = null;
+                    fileChannel = null;
+                } catch (IOException e) {
+                    throw new RuntimeException(e);
+                }
+            }
+        } else {
+            // On Linux for a change setting a file to be read-only doesn't prevent it from being overwritten
+            assertTrue("Unable to set the read-only file permissions", protectedPath.toFile().setWritable(writable));
+        }
+    }
+
 
     private Path createRepositoryArchive(URL temporaryRepo) throws URISyntaxException, IOException {
         final Path repoPath = Path.of(temporaryRepo.toURI());

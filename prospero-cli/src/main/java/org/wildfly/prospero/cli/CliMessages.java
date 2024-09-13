@@ -626,4 +626,12 @@ public interface CliMessages {
     default String featurePackRequiresLicense(String featurePackName) {
         return format(bundle.getString("prospero.features.add.required_licences"), featurePackName);
     }
+
+    default String candidateApplyRollbackSuccess() {
+        return bundle.getString("prospero.candidate.apply.error.rolled_back.desc");
+    }
+
+    default String candidateApplyRollbackFailure(Path backup) {
+        return format(bundle.getString("prospero.candidate.apply.error.rollback_error.desc"), backup);
+    }
 }
