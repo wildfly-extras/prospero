@@ -13,6 +13,7 @@ import java.nio.file.SimpleFileVisitor;
 import java.nio.file.attribute.BasicFileAttributes;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Set;
 
 import static org.junit.Assert.fail;
 
@@ -20,23 +21,23 @@ public class DirectoryComparator {
     private static final BinaryDiff BINARY_DIFF = new BinaryDiff();
 
     private static class FileChange {
+
         final Path expected;
         final Path actual;
-
         public FileChange(Path expected, Path actual) {
             this.expected = expected;
             this.actual = actual;
         }
-    }
 
-    public static void assertNoChanges(Path originalServer, Path targetDir) throws IOException {
+    }
+    public static void assertNoChanges(Path originalServer, Path targetDir, Path... exceptions)  throws IOException {
         final List<FileChange> changes = new ArrayList<>();
 
         // get a list of files present only in the expected server or ones present in both but with different content
-        Files.walkFileTree(originalServer, listAddedAndModifiedFiles(originalServer, targetDir, changes));
+        Files.walkFileTree(originalServer, listAddedAndModifiedFiles(originalServer, targetDir, changes, Set.of(exceptions)));
 
         // get a list of files present only in the actual server
-        Files.walkFileTree(targetDir, listRemovedFiles(originalServer, targetDir, changes));
+        Files.walkFileTree(targetDir, listRemovedFiles(originalServer, targetDir, changes, Set.of(exceptions)));
 
         if (!changes.isEmpty()) {
             fail(describeChanges(originalServer, targetDir, changes));
@@ -68,11 +69,14 @@ public class DirectoryComparator {
         return sb.toString();
     }
 
-    private static SimpleFileVisitor<Path> listRemovedFiles(Path originalServer, Path targetDir, List<FileChange> changes) {
+    private static SimpleFileVisitor<Path> listRemovedFiles(Path originalServer, Path targetDir, List<FileChange> changes, Set<Path> exceptions) {
         return new SimpleFileVisitor<>() {
             @Override
             public FileVisitResult visitFile(Path file, BasicFileAttributes attrs) throws IOException {
                 final Path relative = targetDir.relativize(file);
+                if (exceptions.contains(relative)) {
+                    return FileVisitResult.CONTINUE;
+                }
                 final Path expectedFile = originalServer.resolve(relative);
                 if (!Files.exists(expectedFile)) {
                     changes.add(new FileChange(null, file));
@@ -89,14 +93,27 @@ public class DirectoryComparator {
                 }
                 return FileVisitResult.CONTINUE;
             }
+
+            @Override
+            public FileVisitResult preVisitDirectory(Path dir, BasicFileAttributes attrs) throws IOException {
+                final Path relative = targetDir.relativize(dir);
+                if (exceptions.contains(relative)) {
+                    return FileVisitResult.SKIP_SUBTREE;
+                } else {
+                    return FileVisitResult.CONTINUE;
+                }
+            }
         };
     }
 
-    private static SimpleFileVisitor<Path> listAddedAndModifiedFiles(Path originalServer, Path targetDir, List<FileChange> changes) {
+    private static SimpleFileVisitor<Path> listAddedAndModifiedFiles(Path originalServer, Path targetDir, List<FileChange> changes, Set<Path> exceptions) {
         return new SimpleFileVisitor<>() {
             @Override
             public FileVisitResult visitFile(Path file, BasicFileAttributes attrs) throws IOException {
                 final Path relative = originalServer.relativize(file);
+                if (exceptions.contains(relative)) {
+                    return FileVisitResult.CONTINUE;
+                }
                 final Path actualFile = targetDir.resolve(relative);
                 if (!Files.exists(actualFile)) {
                     changes.add(new FileChange(file, null));
@@ -114,6 +131,16 @@ public class DirectoryComparator {
                     changes.add(new FileChange(dir, null));
                 }
                 return FileVisitResult.CONTINUE;
+            }
+
+            @Override
+            public FileVisitResult preVisitDirectory(Path dir, BasicFileAttributes attrs) throws IOException {
+                final Path relative = originalServer.relativize(dir);
+                if (exceptions.contains(relative)) {
+                    return FileVisitResult.SKIP_SUBTREE;
+                } else {
+                    return FileVisitResult.CONTINUE;
+                }
             }
         };
     }
