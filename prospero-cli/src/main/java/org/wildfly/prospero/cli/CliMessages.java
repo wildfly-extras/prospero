@@ -722,4 +722,8 @@ public interface CliMessages {
                 bundle.getString("prospero.updates.apply.candidate.cancel_conflicts"),
                 CliConstants.NO_CONFLICTS_ONLY));
     }
+
+    default String downgradeDetected(){
+        return bundle.getString("prospero.perform.update.downgrade.detected");
+    }
 }

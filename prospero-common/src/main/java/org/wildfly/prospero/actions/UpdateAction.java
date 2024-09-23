@@ -22,9 +22,13 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Collections;
 import java.util.List;
+import java.util.stream.Collectors;
 
 import org.apache.commons.io.FileUtils;
+import org.eclipse.aether.artifact.Artifact;
+import org.eclipse.aether.artifact.DefaultArtifact;
 import org.jboss.galleon.util.PathsUtils;
+import org.wildfly.channel.ChannelSession;
 import org.wildfly.channel.Channel;
 import org.wildfly.channel.Repository;
 import org.wildfly.prospero.ProsperoLogger;
@@ -170,5 +174,19 @@ public class UpdateAction implements AutoCloseable {
         final List<Channel> channels = TemporaryRepositoriesHandler.overrideRepositories(prosperoConfig.getChannels(), repositories);
 
         return new ProsperoConfig(channels, prosperoConfig.getMavenOptions());
+    }
+
+    public List<Artifact> findCurrentChannelSessionManifests() throws ProvisioningException, OperationException {
+        try (GalleonEnvironment galleonEnv = getGalleonEnv(installDir);
+             ChannelSession channelSession = galleonEnv.getChannelSession()) {
+
+            return channelSession.getRuntimeChannels().stream()
+                    .map(runtimeChannel -> runtimeChannel.getChannelDefinition().getManifestCoordinate())
+                    .map(coordinate -> new DefaultArtifact(coordinate.getGroupId(), coordinate.getArtifactId(), coordinate.getExtension(), coordinate.getVersion()))
+                    .collect(Collectors.toList());
+        }
+    }
+    public InstallationMetadata getInstallationMetadata() {
+        return metadata;
     }
 }
