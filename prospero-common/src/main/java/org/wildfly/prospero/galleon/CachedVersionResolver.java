@@ -17,9 +17,6 @@
 
 package org.wildfly.prospero.galleon;
 
-import org.eclipse.aether.AbstractRepositoryListener;
-import org.eclipse.aether.RepositoryEvent;
-import org.eclipse.aether.RepositoryListener;
 import org.eclipse.aether.RepositorySystem;
 import org.eclipse.aether.RepositorySystemSession;
 import org.eclipse.aether.artifact.DefaultArtifact;
@@ -28,6 +25,7 @@ import org.eclipse.aether.installation.InstallationException;
 import org.jboss.logging.Logger;
 import org.wildfly.channel.ArtifactCoordinate;
 import org.wildfly.channel.ArtifactTransferException;
+import org.wildfly.channel.ChannelManifest;
 import org.wildfly.channel.ChannelMetadataCoordinate;
 import org.wildfly.channel.UnresolvedMavenArtifactException;
 import org.wildfly.channel.spi.MavenVersionsResolver;
@@ -51,15 +49,12 @@ import java.util.stream.Collectors;
  */
 public class CachedVersionResolver implements MavenVersionsResolver {
     private static final Logger LOG = Logger.getLogger(CachedVersionResolver.class.getName());
-
-    private static final RepositoryListener NOOP_REPOSITORY_LISTENER = new AbstractRepositoryListener(){};
     private final MavenVersionsResolver fallbackResolver;
     private final RepositorySystem system;
     private final RepositorySystemSession session;
     private final ArtifactCache artifactCache;
 
     private final Logger log = Logger.getLogger(CachedVersionResolver.class);
-    private final RepositoryListener listener;
     private final Function<ArtifactCoordinate, String> manifestVersionProvider;
 
     public CachedVersionResolver(MavenVersionsResolver fallbackResolver, ArtifactCache cache, RepositorySystem system,
@@ -70,12 +65,30 @@ public class CachedVersionResolver implements MavenVersionsResolver {
         this.session = session;
         this.artifactCache = cache;
         this.manifestVersionProvider = manifestVersionProvider;
-        this.listener = session.getRepositoryListener() != null ? session.getRepositoryListener() : NOOP_REPOSITORY_LISTENER;
     }
 
     @Override
     public Set<String> getAllVersions(String groupId, String artifactId, String extension, String classifier) {
-        return fallbackResolver.getAllVersions(groupId, artifactId, extension, classifier);
+        final Set<String> allVersions = fallbackResolver.getAllVersions(groupId, artifactId, extension, classifier);
+
+        if (!allVersions.isEmpty()) {
+            return allVersions;
+        } else {
+            if (ChannelManifest.EXTENSION.equals(extension) && ChannelManifest.CLASSIFIER.equals(classifier)) {
+
+                ArtifactCoordinate a = new ArtifactCoordinate(groupId, artifactId, extension, classifier, "");
+                // get version from manifest_versions to verify this is the latest version
+                final String version = manifestVersionProvider.apply(a);
+                if (LOG.isDebugEnabled()) {
+                    LOG.debugf("Last used version for manifest %s is %s.", a, version);
+                }
+
+                if (version != null) {
+                    return Set.of(version);
+                }
+            }
+            return allVersions;
+        }
     }
 
     @Override
@@ -158,17 +171,23 @@ public class CachedVersionResolver implements MavenVersionsResolver {
                         LOG.debugf("Found cached manifest for %s.", a);
                     }
                     log.warnf("Unable to resolve manifest for channel %s, no updates will be resolved for this channel.", a);
-                    this.listener.artifactResolved(new RepositoryEvent.Builder(session, RepositoryEvent.EventType.ARTIFACT_RESOLVED)
-                            .setArtifact(new DefaultArtifact(
-                                    a.getGroupId(),
-                                    a.getArtifactId(),
-                                    a.getClassifier(),
-                                    a.getExtension(),
-                                    version,
-                                    null,
-                                    artifact.get()
-                            ))
-                            .build());
+                    installArtifactLocally(a.getGroupId(),
+                            a.getArtifactId(),
+                            a.getExtension(),
+                            a.getClassifier(),
+                            version,
+                            artifact.get());
+//                    this.listener.artifactResolved(new RepositoryEvent.Builder(session, RepositoryEvent.EventType.ARTIFACT_RESOLVED)
+//                            .setArtifact(new DefaultArtifact(
+//                                    a.getGroupId(),
+//                                    a.getArtifactId(),
+//                                    a.getClassifier(),
+//                                    a.getExtension(),
+//                                    version,
+//                                    null,
+//                                    artifact.get()
+//                            ))
+//                            .build());
                     try {
                         // maintain order as in manifestCoords
                         for (int i = 0; i < manifestCoords.size(); i++) {
