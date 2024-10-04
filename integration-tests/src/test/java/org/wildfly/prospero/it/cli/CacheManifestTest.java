@@ -321,7 +321,7 @@ public class CacheManifestTest extends WfCoreTestBase {
         assertThatThrownBy(()->performUpdate())
                 .isInstanceOf(UnresolvedChannelMetadataException.class)
                 .hasFieldOrPropertyWithValue("missingArtifacts",
-                        Set.of(new ChannelMetadataCoordinate("org.test.channels", "wf-core-base", "",
+                        Set.of(new ChannelMetadataCoordinate("org.test.channels", "wf-core-base", "1.0.0",
                                 ChannelManifest.CLASSIFIER, ChannelManifest.EXTENSION)));
     }
 

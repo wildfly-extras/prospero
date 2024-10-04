@@ -44,7 +44,6 @@ public class MavenSessionManager {
     private static final String AETHER_OFFLINE_PROTOCOLS_PROPERTY = "aether.offline.protocols";
     public static final String AETHER_OFFLINE_PROTOCOLS_VALUE = "file";
     private final Path provisioningRepo;
-    private final ProsperoMavenRepositoryListener repositoryListener = new ProsperoMavenRepositoryListener();
     private boolean offline;
 
     public MavenSessionManager(MavenOptions mavenOptions) throws ProvisioningException {
@@ -100,7 +99,6 @@ public class MavenSessionManager {
         final DefaultRepositorySystemSession session = MavenRepositorySystemUtils.newSession();
 
         final LocalRepository localRepo = new LocalRepository(provisioningRepo.toAbsolutePath().toFile());
-        session.setRepositoryListener(repositoryListener);
         session.setLocalRepositoryManager(system.newLocalRepositoryManager(session, localRepo));
         session.setOffline(offline);
         return session;
@@ -116,14 +114,5 @@ public class MavenSessionManager {
 
     public boolean isOffline() {
         return offline;
-    }
-
-    /**
-     * returns a {@code ResolvedArtifactsStore} containing artifacts resolved during that maven session.
-     *
-     * @return
-     */
-    public ResolvedArtifactsStore getResolvedArtifactVersions() {
-        return repositoryListener;
     }
 }
