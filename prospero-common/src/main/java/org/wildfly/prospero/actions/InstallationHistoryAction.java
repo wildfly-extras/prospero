@@ -142,7 +142,7 @@ public class InstallationHistoryAction {
 
                     prepareCandidateAction.buildCandidate(targetDir, galleonEnv,
                             ApplyCandidateAction.Type.REVERT, provisioningConfig,
-                            UpdateSet.EMPTY, (channels) -> revertMetadata.getManifestVersions());
+                            UpdateSet.EMPTY, revertMetadata::getManifestVersions);
                 }
 
                 ProsperoLogger.ROOT_LOGGER.revertCandidateCompleted(targetDir);

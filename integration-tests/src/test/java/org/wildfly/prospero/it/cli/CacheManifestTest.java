@@ -102,8 +102,10 @@ public class CacheManifestTest extends WfCoreTestBase {
         ));
 
         // create and deploy second manifest
-        secondManifest = new ChannelManifest(null, null, null, null,
-                List.of(new Stream("org.wildfly.core", "wildfly-controller", UPGRADE_VERSION)));
+        secondManifest = new ChannelManifest.Builder()
+                .setSchemaVersion("1.0.0")
+                .addStreams(new Stream("org.wildfly.core", "wildfly-controller", UPGRADE_VERSION))
+                .build();
         repositoryUtils.deployArtifact(new DefaultArtifact(
                 "org.test.channels",
                 "wf-core-second",
@@ -321,7 +323,7 @@ public class CacheManifestTest extends WfCoreTestBase {
         assertThatThrownBy(()->performUpdate())
                 .isInstanceOf(UnresolvedChannelMetadataException.class)
                 .hasFieldOrPropertyWithValue("missingArtifacts",
-                        Set.of(new ChannelMetadataCoordinate("org.test.channels", "wf-core-base", "",
+                        Set.of(new ChannelMetadataCoordinate("org.test.channels", "wf-core-base", "1.0.0",
                                 ChannelManifest.CLASSIFIER, ChannelManifest.EXTENSION)));
     }
 
@@ -383,6 +385,7 @@ public class CacheManifestTest extends WfCoreTestBase {
         return new ChannelManifest(
                 sourceManifest.getSchemaVersion(),
                 sourceManifest.getId(),
+                sourceManifest.getLogicalVersion(),
                 sourceManifest.getDescription(),
                 sourceManifest.getManifestRequirements(),
                 streams);

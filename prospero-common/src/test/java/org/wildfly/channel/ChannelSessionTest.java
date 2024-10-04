@@ -53,6 +53,7 @@ public class ChannelSessionTest {
             Assert.assertTrue(e.getCause() instanceof FileNotFoundException);
             Assert.assertEquals("file:idontexist.yaml" ,e.getValidationMessages().get(0));
         } catch (Exception e) {
+            e.printStackTrace();
             Assert.fail("Expecting " + InvalidChannelMetadataException.class + " but " + e.getClass() + " was thrown");
         }
     }

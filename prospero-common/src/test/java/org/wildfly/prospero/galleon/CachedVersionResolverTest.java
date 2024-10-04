@@ -94,7 +94,6 @@ public class CachedVersionResolverTest {
 
     @Before
     public void setUp() throws Exception {
-        when(session.getRepositoryListener()).thenReturn(repositoryListener);
         resolver = new CachedVersionResolver(mockResolver, artifactCache, system, session, manifestVersionProvider);
     }
 
@@ -237,7 +236,6 @@ public class CachedVersionResolverTest {
 
         assertThat(resolver.resolveChannelMetadata(List.of(new ChannelMetadataCoordinate("org.test", "manifest-one", ChannelManifest.CLASSIFIER, ChannelManifest.EXTENSION))))
                 .containsExactly(testFile.toURI().toURL());
-        verify(repositoryListener).artifactResolved(any());
     }
 
     @Test
@@ -260,7 +258,6 @@ public class CachedVersionResolverTest {
                 new ChannelMetadataCoordinate("org.test", "manifest-one", ChannelManifest.CLASSIFIER, ChannelManifest.EXTENSION),
                 new ChannelMetadataCoordinate("org.test", "manifest-two", ChannelManifest.CLASSIFIER, ChannelManifest.EXTENSION))))
                 .containsExactly(testFileOne.toURI().toURL(), testFileTwo.toURI().toURL());
-        verify(repositoryListener, times(2)).artifactResolved(any());
     }
 
     @Test
@@ -288,7 +285,5 @@ public class CachedVersionResolverTest {
                 new ChannelManifestCoordinate("org.test", "manifest-one"),
                 new ChannelManifestCoordinate("org.test", "manifest-two"))))
                 .containsExactly(testFileOne.toURI().toURL(), testFileTwo.toURI().toURL());
-        // only called on the cached artifact
-        verify(repositoryListener).artifactResolved(any());
     }
 }
