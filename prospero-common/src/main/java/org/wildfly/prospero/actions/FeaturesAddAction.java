@@ -615,34 +615,36 @@ public class FeaturesAddAction {
                 .addFeaturePackDep(GalleonFeaturePackConfig.builder(fpl).build())
                 .build();
 
-        final MavenRepoManager repositoryManager = GalleonEnvironment
-                .builder(installDir, prosperoConfig.getChannels(), mavenSessionManager, false).build()
-                .getRepositoryManager();
-        final Map<String, Set<String>> layersMap = new HashMap<>();
-        try (Provisioning p = new GalleonBuilder().addArtifactResolver(repositoryManager).newProvisioningBuilder(config).build()) {
-            try (GalleonProvisioningLayout layout = p.newProvisioningLayout(config)) {
-                for (GalleonFeaturePackLayout fp : layout.getOrderedFeaturePacks()) {
-                    final Set<ConfigId> configIds;
-                    try {
-                        configIds = fp.loadLayers();
-                    } catch (IOException e) {
-                        // this should not happen as the code IOException is not actually thrown by loadLayers
-                        throw new RuntimeException(e);
-                    }
-                    for (ConfigId layer : configIds) {
-                        final String model = layer.getModel();
-                        Set<String> names = layersMap.get(model);
-                        if (names == null) {
-                            names = new HashSet<>();
-                            layersMap.put(model, names);
+        try (GalleonEnvironment env = GalleonEnvironment.builder(installDir, prosperoConfig.getChannels(), mavenSessionManager, false)
+                     .setConsole(console)
+                     .build()) {
+            final MavenRepoManager repositoryManager = env.getRepositoryManager();
+            final Map<String, Set<String>> layersMap = new HashMap<>();
+            try (Provisioning p = new GalleonBuilder().addArtifactResolver(repositoryManager).newProvisioningBuilder(config).build()) {
+                try (GalleonProvisioningLayout layout = p.newProvisioningLayout(config)) {
+                    for (GalleonFeaturePackLayout fp : layout.getOrderedFeaturePacks()) {
+                        final Set<ConfigId> configIds;
+                        try {
+                            configIds = fp.loadLayers();
+                        } catch (IOException e) {
+                            // this should not happen as the code IOException is not actually thrown by loadLayers
+                            throw new RuntimeException(e);
                         }
-                        names.add(layer.getName());
+                        for (ConfigId layer : configIds) {
+                            final String model = layer.getModel();
+                            Set<String> names = layersMap.get(model);
+                            if (names == null) {
+                                names = new HashSet<>();
+                                layersMap.put(model, names);
+                            }
+                            names.add(layer.getName());
+                        }
                     }
                 }
             }
+            return layersMap;
         }
 
-        return layersMap;
     }
 
     private ProsperoConfig addTemporaryRepositories(List<Repository> repositories) {
