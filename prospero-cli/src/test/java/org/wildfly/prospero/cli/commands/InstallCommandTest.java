@@ -60,6 +60,7 @@ import static org.assertj.core.api.Assertions.entry;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.when;
 
 @RunWith(MockitoJUnitRunner.class)
@@ -93,7 +94,7 @@ public class InstallCommandTest extends AbstractMavenCommandTest {
     @Before
     public void setUp() throws Exception {
         super.setUp();
-        when(actionFactory.install(any(), any(), any())).thenReturn(provisionAction);
+        when(actionFactory.install(any(), any(), any(), any())).thenReturn(provisionAction);
     }
 
     @Test
@@ -446,9 +447,63 @@ public class InstallCommandTest extends AbstractMavenCommandTest {
                 );
     }
 
+    @Test
+    public void setGpgIsPassedToAction() throws Exception {
+        int exitCode = commandLine.execute(CliConstants.Commands.INSTALL, CliConstants.DIR, "test",
+                CliConstants.FPL, "org.wildfly:wildfly-ee-galleon-pack",
+                CliConstants.CHANNEL_MANIFEST, "test:test-manifest",
+                CliConstants.REPOSITORIES, "test::http://test.te",
+                CliConstants.GPG_CHECK);
+        assertEquals(ReturnCodes.SUCCESS, exitCode);
+        Mockito.verify(provisionAction).provision(any(), channelCaptor.capture(), any());
+        assertThat(channelCaptor.getValue())
+                .map(Channel::isGpgCheck)
+                .containsOnly(true);
+    }
+
+    @Test
+    public void keystoreToBeUsedIsPassedToAction() throws Exception {
+        final File keystoreFile = temporaryFolder.newFile("keystore.gpg");
+        int exitCode = commandLine.execute(CliConstants.Commands.INSTALL, CliConstants.DIR, "test",
+                CliConstants.FPL, "org.wildfly:wildfly-ee-galleon-pack",
+                CliConstants.CHANNEL_MANIFEST, "test:test-manifest",
+                CliConstants.REPOSITORIES, "test::http://test.te",
+                CliConstants.GPG_KEYSTORE, keystoreFile.getAbsolutePath());
+        assertEquals(ReturnCodes.SUCCESS, exitCode);
+        Mockito.verify(actionFactory).install(any(), any(), eq(keystoreFile.toPath()), any());
+    }
+
+    @Test
+    public void validateKeystoreExists() throws Exception {
+        final Path keystoreFile = temporaryFolder.getRoot().toPath().resolve("idontexist.gpg");
+        int exitCode = commandLine.execute(CliConstants.Commands.INSTALL, CliConstants.DIR, "test",
+                CliConstants.FPL, "org.wildfly:wildfly-ee-galleon-pack",
+                CliConstants.CHANNEL_MANIFEST, "test:test-manifest",
+                CliConstants.REPOSITORIES, "test::http://test.te",
+                CliConstants.GPG_KEYSTORE, keystoreFile.toString());
+        assertEquals(ReturnCodes.INVALID_ARGUMENTS, exitCode);
+        assertThat(getErrorOutput())
+                .contains(CliMessages.MESSAGES.certificateNonExistingFilePath(keystoreFile).getMessage());
+    }
+
+    @Test
+    public void validateKeystoreIsAValidKeystore() throws Exception {
+        final Path keystoreFile = temporaryFolder.newFile("keystore.gpg").toPath();
+        Files.writeString(keystoreFile, "some rubbish");
+
+        int exitCode = commandLine.execute(CliConstants.Commands.INSTALL, CliConstants.DIR, "test",
+                CliConstants.FPL, "org.wildfly:wildfly-ee-galleon-pack",
+                CliConstants.CHANNEL_MANIFEST, "test:test-manifest",
+                CliConstants.REPOSITORIES, "test::http://test.te",
+                CliConstants.GPG_KEYSTORE, keystoreFile.toString());
+        assertEquals(ReturnCodes.INVALID_ARGUMENTS, exitCode);
+        assertThat(getErrorOutput())
+                .contains(CliMessages.MESSAGES.unableToReadKeyring(keystoreFile, new Exception("")).getMessage());
+    }
+
     @Override
     protected MavenOptions getCapturedMavenOptions() throws Exception {
-        Mockito.verify(actionFactory).install(any(), mavenOptions.capture(), any());
+        Mockito.verify(actionFactory).install(any(), mavenOptions.capture(), any(), any());
         return mavenOptions.getValue();
     }
 

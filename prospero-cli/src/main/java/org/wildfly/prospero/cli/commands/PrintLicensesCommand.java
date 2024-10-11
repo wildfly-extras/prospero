@@ -57,20 +57,21 @@ public class PrintLicensesCommand extends AbstractInstallCommand {
             final GalleonProvisioningConfig provisioningConfig = provisioningDefinition.toProvisioningConfig();
             final List<Channel> channels = ChannelUtils.resolveChannels(provisioningDefinition, mavenOptions);
 
-            final ProvisioningAction provisioningAction = actionFactory.install(tempDirectory.toAbsolutePath(),
-                    mavenOptions, console);
+            try (ProvisioningAction provisioningAction = actionFactory.install(tempDirectory.toAbsolutePath(),
+                    mavenOptions, null, console)) {
 
-            final List<License> pendingLicenses = provisioningAction.getPendingLicenses(provisioningConfig, channels);
-            if (!pendingLicenses.isEmpty()) {
-                console.println("");
-                console.println(CliMessages.MESSAGES.listAgreementsHeader());
-                console.println("");
-                new LicensePrinter(console).print(pendingLicenses);
-            } else {
-                console.println("");
-                console.println(CliMessages.MESSAGES.noAgreementsNeeded());
+                final List<License> pendingLicenses = provisioningAction.getPendingLicenses(provisioningConfig, channels);
+                if (!pendingLicenses.isEmpty()) {
+                    console.println("");
+                    console.println(CliMessages.MESSAGES.listAgreementsHeader());
+                    console.println("");
+                    new LicensePrinter(console).print(pendingLicenses);
+                } else {
+                    console.println("");
+                    console.println(CliMessages.MESSAGES.noAgreementsNeeded());
+                }
+                return ReturnCodes.SUCCESS;
             }
-            return ReturnCodes.SUCCESS;
         } finally {
             FileUtils.deleteQuietly(tempDirectory.toFile());
         }

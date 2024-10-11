@@ -337,6 +337,43 @@ public class ProvisioningDefinitionTest {
                         entry(Constants.CONFIG_STABILITY_LEVEL, Constants.STABILITY_COMMUNITY));
     }
 
+    @Test
+    public void keepsGpgCheckIfNotSetInBuilderFromProfile() throws Exception {
+        final ProvisioningDefinition definition = new ProvisioningDefinition.Builder()
+                .setProfile("with-gpg-check")
+                .build();
+
+        assertThat(definition.resolveChannels(null))
+                .map(Channel::isGpgCheck)
+                .containsOnly(true);
+    }
+
+    @Test
+    public void disableGpgCheckFromProfile() throws Exception {
+        final ProvisioningDefinition definition = new ProvisioningDefinition.Builder()
+                .setProfile("with-gpg-check")
+                .setRequireGpgCheck(false)
+                .build();
+
+        assertThat(definition.resolveChannels(null))
+                .map(Channel::isGpgCheck)
+                .containsOnly(false);
+    }
+
+    @Test
+    public void enableGpgCheckForFpl() throws Exception {
+        final ProvisioningDefinition definition = new ProvisioningDefinition.Builder()
+                .setFpl("one:two")
+                .setManifest("manifest")
+                .setOverrideRepositories(List.of(new Repository("test", "test")))
+                .setRequireGpgCheck(true)
+                .build();
+
+        assertThat(definition.resolveChannels(null))
+                .map(Channel::isGpgCheck)
+                .containsOnly(true);
+    }
+
     private void verifyFeaturePackLocation(ProvisioningDefinition definition) throws ProvisioningException, XMLStreamException {
         assertNull(definition.getFpl());
         GalleonProvisioningConfig galleonConfig = GalleonUtils.loadProvisioningConfig(definition.getDefinition());
