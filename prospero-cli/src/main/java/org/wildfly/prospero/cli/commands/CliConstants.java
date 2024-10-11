@@ -78,6 +78,7 @@ public final class CliConstants {
     public static final String FEATURE_PACK_REFERENCE = "<feature-pack-reference>";
     public static final String FPL = "--fpl";
     public static final String GPG_CHECK = "--gpg-check";
+    public static final String GPG_KEYSTORE = "--gpg-keystore";
     public static final String H = "-h";
     public static final String HELP = "--help";
     public static final String KEY_ID= "--key-id";

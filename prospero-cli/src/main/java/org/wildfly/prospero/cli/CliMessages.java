@@ -806,4 +806,8 @@ public interface CliMessages {
     default String certificateRevoked() {
         return bundle.getString("prospero.certificate.revoke.success");
     }
+
+    default ArgumentParsingException unableToReadKeyring(Path keyring, Exception cause) {
+        return new ArgumentParsingException(String.format("Unable to parse GPG keyring at %s: %s", keyring, cause.getMessage()), cause);
+    }
 }

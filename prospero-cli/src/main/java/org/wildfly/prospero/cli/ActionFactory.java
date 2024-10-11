@@ -40,8 +40,8 @@ import org.wildfly.prospero.api.exceptions.MetadataException;
 
 public class ActionFactory {
 
-    public ProvisioningAction install(Path targetPath, MavenOptions mavenOptions, Console console) throws ProvisioningException {
-        return new ProvisioningAction(targetPath, mavenOptions, console);
+    public ProvisioningAction install(Path targetPath, MavenOptions mavenOptions, Path keystorePath, Console console) throws ProvisioningException {
+        return new ProvisioningAction(targetPath, mavenOptions, keystorePath, console);
     }
 
     // Option for BETA update support

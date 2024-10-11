@@ -19,6 +19,7 @@ package org.wildfly.prospero.cli.commands;
 
 import java.io.IOException;
 import java.net.URL;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Iterator;
@@ -60,6 +61,7 @@ import org.wildfly.prospero.cli.printers.ChannelPrinter;
 import org.wildfly.prospero.galleon.GalleonUtils;
 import org.wildfly.prospero.licenses.License;
 import org.wildfly.prospero.model.InstallationProfile;
+import org.wildfly.prospero.signatures.KeystoreManager;
 import picocli.CommandLine;
 
 import javax.xml.stream.XMLStreamException;
@@ -95,6 +97,16 @@ public class InstallCommand extends AbstractInstallCommand {
             hidden = true
     )
     List<String> shadowRepositories = new ArrayList<>();
+
+    @CommandLine.Option(
+            names = CliConstants.GPG_CHECK
+    )
+    Optional<Boolean> requireGpgCheck;
+
+    @CommandLine.Option(
+            names = CliConstants.GPG_KEYSTORE
+    )
+    Path gpgKeystore;
 
     protected static final List<String> STABILITY_LEVELS = List.of(Constants.STABILITY_EXPERIMENTAL,
             Constants.STABILITY_PREVIEW,
@@ -186,6 +198,17 @@ public class InstallCommand extends AbstractInstallCommand {
             }
         }
 
+        if (gpgKeystore != null) {
+            if (!Files.exists(gpgKeystore)) {
+                throw CliMessages.MESSAGES.certificateNonExistingFilePath(gpgKeystore);
+            }
+            try {
+                KeystoreManager.keystoreFor(gpgKeystore).close();
+            } catch (Exception e) {
+                throw CliMessages.MESSAGES.unableToReadKeyring(gpgKeystore, e);
+            }
+        }
+
         stabilityLevels.verify();
 
         if (featurePackOrDefinition.definition.isPresent()) {
@@ -198,6 +221,7 @@ public class InstallCommand extends AbstractInstallCommand {
                 .setStabilityLevel(stabilityLevels.stabilityLevel==null?null:stabilityLevels.stabilityLevel.toLowerCase(Locale.ROOT))
                 .setPackageStabilityLevel(stabilityLevels.packageStabilityLevel==null?null:stabilityLevels.packageStabilityLevel.toLowerCase(Locale.ROOT))
                 .setConfigStabilityLevel(stabilityLevels.configStabilityLevel==null?null:stabilityLevels.configStabilityLevel.toLowerCase(Locale.ROOT))
+                .setRequireGpgCheck(requireGpgCheck.orElse(null))
                 .build();
         final MavenOptions mavenOptions = getMavenOptions();
         final GalleonProvisioningConfig provisioningConfig = provisioningDefinition.toProvisioningConfig();
@@ -206,51 +230,52 @@ public class InstallCommand extends AbstractInstallCommand {
             List<Repository> repositories = RepositoryDefinition.from(this.shadowRepositories);
             final List<Repository> shadowRepositories = RepositoryUtils.unzipArchives(repositories, temporaryFiles);
 
-            final ProvisioningAction provisioningAction = actionFactory.install(directory.toAbsolutePath(), mavenOptions,
-                    console);
+            try (ProvisioningAction provisioningAction = actionFactory.install(directory.toAbsolutePath(), mavenOptions,
+                    gpgKeystore, console)) {
 
-            if (featurePackOrDefinition.fpl.isPresent()) {
-                console.println(CliMessages.MESSAGES.installingFpl(featurePackOrDefinition.fpl.get()));
-            } else if (featurePackOrDefinition.profile.isPresent()) {
-                console.println(CliMessages.MESSAGES.installingProfile(featurePackOrDefinition.profile.get()));
-            } else if (featurePackOrDefinition.definition.isPresent()) {
-                console.println(CliMessages.MESSAGES.installingDefinition(featurePackOrDefinition.definition.get()));
-            }
+                if (featurePackOrDefinition.fpl.isPresent()) {
+                    console.println(CliMessages.MESSAGES.installingFpl(featurePackOrDefinition.fpl.get()));
+                } else if (featurePackOrDefinition.profile.isPresent()) {
+                    console.println(CliMessages.MESSAGES.installingProfile(featurePackOrDefinition.profile.get()));
+                } else if (featurePackOrDefinition.definition.isPresent()) {
+                    console.println(CliMessages.MESSAGES.installingDefinition(featurePackOrDefinition.definition.get()));
+                }
 
 
-            final List<Channel> effectiveChannels = TemporaryRepositoriesHandler.overrideRepositories(channels, shadowRepositories);
-            console.println(CliMessages.MESSAGES.usingChannels());
-            final ChannelPrinter channelPrinter = new ChannelPrinter(console);
-            for (Channel channel : effectiveChannels) {
-                channelPrinter.print(channel);
-            }
+                final List<Channel> effectiveChannels = TemporaryRepositoriesHandler.overrideRepositories(channels, shadowRepositories);
+                console.println(CliMessages.MESSAGES.usingChannels());
+                final ChannelPrinter channelPrinter = new ChannelPrinter(console);
+                for (Channel channel : effectiveChannels) {
+                    channelPrinter.print(channel);
+                }
 
-            console.println("");
-
-            final List<License> pendingLicenses = provisioningAction.getPendingLicenses(provisioningConfig,
-                    effectiveChannels);
-            if (!pendingLicenses.isEmpty()) {
-                new LicensePrinter(console).print(pendingLicenses);
                 console.println("");
-                if (acceptAgreements) {
-                    console.println(CliMessages.MESSAGES.agreementSkipped(CliConstants.ACCEPT_AGREEMENTS));
+
+                final List<License> pendingLicenses = provisioningAction.getPendingLicenses(provisioningConfig,
+                        effectiveChannels);
+                if (!pendingLicenses.isEmpty()) {
+                    new LicensePrinter(console).print(pendingLicenses);
                     console.println("");
-                } else {
-                    if (!console.confirm(CliMessages.MESSAGES.acceptAgreements(), "", CliMessages.MESSAGES.installationCancelled())) {
-                        return ReturnCodes.PROCESSING_ERROR;
+                    if (acceptAgreements) {
+                        console.println(CliMessages.MESSAGES.agreementSkipped(CliConstants.ACCEPT_AGREEMENTS));
+                        console.println("");
+                    } else {
+                        if (!console.confirm(CliMessages.MESSAGES.acceptAgreements(), "", CliMessages.MESSAGES.installationCancelled())) {
+                            return ReturnCodes.PROCESSING_ERROR;
+                        }
                     }
                 }
+
+                provisioningAction.provision(provisioningConfig, channels, shadowRepositories);
+
+                console.println("");
+                console.println(CliMessages.MESSAGES.installComplete(directory));
+
+                final float totalTime = (System.currentTimeMillis() - startTime) / 1000f;
+                console.println(CliMessages.MESSAGES.operationCompleted(totalTime));
+
+                return ReturnCodes.SUCCESS;
             }
-
-            provisioningAction.provision(provisioningConfig, channels, shadowRepositories);
-
-            console.println("");
-            console.println(CliMessages.MESSAGES.installComplete(directory));
-
-            final float totalTime = (System.currentTimeMillis() - startTime) / 1000f;
-            console.println(CliMessages.MESSAGES.operationCompleted(totalTime));
-
-            return ReturnCodes.SUCCESS;
         }
     }
 

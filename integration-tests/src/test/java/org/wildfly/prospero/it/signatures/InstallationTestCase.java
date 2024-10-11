@@ -22,12 +22,15 @@ import static org.wildfly.prospero.test.CertificateUtils.result;
 
 import java.io.File;
 import java.net.URL;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
 
 import org.assertj.core.api.Assertions;
 import org.bouncycastle.openpgp.PGPSecretKeyRing;
 import org.eclipse.aether.artifact.DefaultArtifact;
+import org.jboss.galleon.api.config.GalleonProvisioningConfig;
+import org.jboss.galleon.universe.FeaturePackLocation;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
@@ -37,8 +40,12 @@ import org.wildfly.channel.ChannelManifest;
 import org.wildfly.channel.Stream;
 import org.wildfly.channel.spi.SignatureResult;
 import org.wildfly.channel.spi.SignatureValidator;
+import org.wildfly.prospero.actions.ProvisioningAction;
+import org.wildfly.prospero.api.MavenOptions;
 import org.wildfly.prospero.it.AcceptingConsole;
 import org.wildfly.prospero.metadata.ProsperoMetadataUtils;
+import org.wildfly.prospero.signatures.KeystoreManager;
+import org.wildfly.prospero.signatures.PGPLocalKeystore;
 import org.wildfly.prospero.test.BuildProperties;
 import org.wildfly.prospero.test.CertificateUtils;
 import org.wildfly.prospero.test.TestInstallation;
@@ -46,7 +53,6 @@ import org.wildfly.prospero.test.TestLocalRepository;
 
 public class InstallationTestCase {
 
-    // TODO: missing use case - install using custom keyring
     @Rule
     public TemporaryFolder temp = new TemporaryFolder();
     private TestLocalRepository testLocalRepository;
@@ -171,6 +177,45 @@ public class InstallationTestCase {
         testInstallation.verifyModuleJar("commons-io", "commons-io", commonsIoVersion);
         testInstallation.verifyInstallationMetadataPresent();
         CertificateUtils.assertKeystoreIsEmpty(serverPath.resolve(ProsperoMetadataUtils.METADATA_DIR).resolve("keyring.gpg"));
+    }
+
+    @Test
+    public void installUsingCustomKeystore_AcceptsKnownCerts() throws Exception {
+        // prepare a keyring with imported certificate
+        final Path keyring = temp.newFile("keystore.gpg").toPath();
+        Files.delete(keyring);
+        try (PGPLocalKeystore pgpLocalKeystore = KeystoreManager.keystoreFor(keyring);) {
+            pgpLocalKeystore.importCertificate(List.of(pgpValidKeys.getPublicKey()));
+        }
+
+        // create a channel that requires the GPG checks but has no certificate URLs information
+        final Channel testChannel = new Channel.Builder()
+                .setName("test-channel")
+                .setGpgCheck(true)
+                .addRepository("local-repo", testLocalRepository.getUri().toString())
+                .setManifestCoordinate("org.test", "test-channel", "1.0.0")
+                .build();
+
+        // create a console that will reject any new signatures
+        final AcceptingConsole rejectingConsole = new AcceptingConsole() {
+            @Override
+            public boolean acceptPublicKey(String key) {
+                return false;
+            }
+        };
+
+        // finally, provision the server using keyring created at the beginning
+        try (ProvisioningAction action = new ProvisioningAction(serverPath, MavenOptions.OFFLINE_NO_CACHE, keyring, rejectingConsole)) {
+            action.provision(GalleonProvisioningConfig.builder()
+                        .addFeaturePackDep(FeaturePackLocation.fromString("org.test:pack-one:1.0.0"))
+                        .build(), List.of(testChannel));
+
+        }
+
+        // and verify we did install the server
+        testInstallation.verifyModuleJar("commons-io", "commons-io", "2.16.1");
+        testInstallation.verifyInstallationMetadataPresent();
+        CertificateUtils.assertKeystoreContains(serverPath.resolve(ProsperoMetadataUtils.METADATA_DIR).resolve("keyring.gpg"), pgpValidKeys.getPublicKey().getKeyID());
     }
 
     private void prepareRequiredArtifacts(TestLocalRepository localRepository) throws Exception {

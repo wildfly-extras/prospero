@@ -28,6 +28,7 @@ import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import javax.xml.stream.XMLStreamException;
 
@@ -93,6 +94,8 @@ public class ProvisioningDefinition {
     private final String configStabilityLevel;
     private final String packageStabilityLevel;
 
+    private final Boolean requireGpgCheck;
+
     private ProvisioningDefinition(Builder builder) throws NoChannelException {
         this.overrideRepositories.addAll(builder.overrideRepositories);
         this.channelCoordinates.addAll(builder.channelCoordinates);
@@ -100,6 +103,8 @@ public class ProvisioningDefinition {
         this.stabilityLevel = builder.stabilityLevel;
         this.configStabilityLevel = builder.configStabilityLevel;
         this.packageStabilityLevel = builder.packageStabilityLevel;
+        this.requireGpgCheck = builder.requireGpgCheck;
+
         if (StringUtils.isNotEmpty(stabilityLevel) &&
                 (StringUtils.isNotEmpty(packageStabilityLevel) || StringUtils.isNotEmpty(configStabilityLevel))) {
             throw new IllegalArgumentException("Provisioning option stabilityLevel cannot be used with packageStabilityLevel or configStabilityLevel");
@@ -222,6 +227,17 @@ public class ProvisioningDefinition {
 
             channels = TemporaryRepositoriesHandler.overrideRepositories(channels, overrideRepositories);
 
+            Stream<Channel.Builder> builderStream = channels.stream()
+                    .map(Channel.Builder::new);
+
+            if (requireGpgCheck != null) {
+                builderStream = builderStream
+                        .map(b -> b.setGpgCheck(requireGpgCheck));
+            }
+
+            channels = builderStream.map(Channel.Builder::build)
+                    .collect(Collectors.toList());
+
             validateResolvedChannels(channels);
             return channels;
         } catch (InvalidChannelMetadataException e) {
@@ -283,6 +299,7 @@ public class ProvisioningDefinition {
         private String stabilityLevel;
         private String packageStabilityLevel;
         private String configStabilityLevel;
+        private Boolean requireGpgCheck;
 
         public ProvisioningDefinition build() throws MetadataException, NoChannelException {
             return new ProvisioningDefinition(this);
@@ -347,6 +364,11 @@ public class ProvisioningDefinition {
 
         public Builder setConfigStabilityLevel(String configStabilityLevel) {
             this.configStabilityLevel = configStabilityLevel;
+            return this;
+        }
+
+        public Builder setRequireGpgCheck(Boolean requireGpgCheck) {
+            this.requireGpgCheck = requireGpgCheck;
             return this;
         }
     }

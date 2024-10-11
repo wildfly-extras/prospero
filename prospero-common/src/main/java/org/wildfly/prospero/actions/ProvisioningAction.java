@@ -70,7 +70,7 @@ import org.wildfly.prospero.wfchannel.MavenSessionManager;
 import org.jboss.galleon.ProvisioningException;
 import org.jboss.galleon.api.config.GalleonProvisioningConfig;
 
-public class ProvisioningAction {
+public class ProvisioningAction implements AutoCloseable {
 
     private static final String CHANNEL_NAME_PREFIX = "channel-";
     private final MavenSessionManager mavenSessionManager;
@@ -78,14 +78,28 @@ public class ProvisioningAction {
     private final Console console;
     private final LicenseManager licenseManager;
     private final MavenOptions mvnOptions;
-    private Path tempKeyringPath;
+    private final Path keyringPath;
+    private final boolean deleteKeyringOnExit;
 
-    public ProvisioningAction(Path installDir, MavenOptions mvnOptions, Console console) throws ProvisioningException {
+    public ProvisioningAction(Path installDir, MavenOptions mvnOptions, Console console)
+            throws ProvisioningException {
+        this(installDir, mvnOptions, null, console);
+    }
+
+    public ProvisioningAction(Path installDir, MavenOptions mvnOptions, Path keystorePath, Console console)
+            throws ProvisioningException {
         this.installDir = InstallFolderUtils.toRealPath(installDir);
         this.console = console;
         this.mvnOptions = mvnOptions;
         this.mavenSessionManager = new MavenSessionManager(mvnOptions);
         this.licenseManager = new LicenseManager();
+        // if the keystorePath is empty, we need to generate a temporary file and delete it on exit
+        this.deleteKeyringOnExit = keystorePath == null;
+        try {
+            this.keyringPath = keystorePath == null ? Files.createTempFile("keystore", "gpg") : keystorePath;
+        } catch (IOException e) {
+            throw new ProvisioningException(e);
+        }
 
         verifyInstallDir(installDir);
     }
@@ -134,7 +148,7 @@ public class ProvisioningAction {
                 .builder(installDir, channels, mavenSessionManager, false)
                 .setConsole(console)
                 .setProvisioningConfig(provisioningConfig)
-                .setKeyringLocation(getKeyringPath())
+                .setKeyringLocation(keyringPath)
                 .build()) {
 
             try {
@@ -151,9 +165,7 @@ public class ProvisioningAction {
 
             try {
                 // move the temporary keyring file into the correct location
-                Files.copy(tempKeyringPath, installDir.resolve(ProsperoMetadataUtils.METADATA_DIR).resolve("keyring.gpg"));
-                FileUtils.deleteQuietly(tempKeyringPath.toFile());
-                tempKeyringPath = null;
+                Files.copy(keyringPath, installDir.resolve(ProsperoMetadataUtils.METADATA_DIR).resolve("keyring.gpg"));
             } catch (IOException e) {
                 throw new RuntimeException(e);
             }
@@ -211,17 +223,6 @@ public class ProvisioningAction {
         ProsperoLogger.ROOT_LOGGER.provisioningComplete(installDir);
     }
 
-    private Path getKeyringPath() throws ProvisioningException {
-        if (tempKeyringPath == null) {
-            try {
-                tempKeyringPath = Files.createTempFile("keystore", "gpg");
-            } catch (IOException e) {
-                throw ProsperoLogger.ROOT_LOGGER.unableToCreateTemporaryFile(e);
-            }
-        }
-        return tempKeyringPath;
-    }
-
     private void cacheManifests(ManifestVersionRecord manifestRecord) {
         try {
             final RepositorySystem system = mavenSessionManager.newRepositorySystem();
@@ -240,12 +241,13 @@ public class ProvisioningAction {
      * @param channels - list of channels used to resolve the Feature Packs
      * @return - list of {@code License}, or empty list if no licenses were required
      */
-    public List<License> getPendingLicenses(GalleonProvisioningConfig provisioningConfig, List<Channel> channels) throws OperationException, ProvisioningException {
+    public List<License> getPendingLicenses(GalleonProvisioningConfig provisioningConfig, List<Channel> channels)
+            throws OperationException, ProvisioningException {
         Objects.requireNonNull(provisioningConfig);
         Objects.requireNonNull(channels);
 
         final GalleonFeaturePackAnalyzer exporter = new GalleonFeaturePackAnalyzer(channels, mavenSessionManager,
-                console, getKeyringPath());
+                console, keyringPath);
         return getPendingLicenses(provisioningConfig, exporter);
     }
 
@@ -316,5 +318,12 @@ public class ProvisioningAction {
                 .collect(Collectors.toSet());
 
         return new ArtifactResolutionException(ProsperoLogger.ROOT_LOGGER.unableToResolve(), e, missingArtifacts, repositories, mavenSessionManager.isOffline());
+    }
+
+    @Override
+    public void close() {
+        if (deleteKeyringOnExit && keyringPath != null && Files.exists(keyringPath)) {
+            FileUtils.deleteQuietly(keyringPath.toFile());
+        }
     }
 }
