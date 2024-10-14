@@ -65,7 +65,7 @@
         <version.org.jboss.modules>2.1.5.Final</version.org.jboss.modules>
         <version.org.jboss.xnio>3.8.16.Final</version.org.jboss.xnio>
         <version.org.wildfly.common>1.7.0.Final</version.org.wildfly.common>
-        <version.org.wildfly.galleon-plugins>7.1.2.Final</version.org.wildfly.galleon-plugins>
+        <version.org.wildfly.galleon-plugins>7.2.0.Final</version.org.wildfly.galleon-plugins>
         <version.org.wildfly.installation-manager>1.0.3.Final</version.org.wildfly.installation-manager>
         <version.org.wildfly.maven.plugins.licenses-plugin>2.4.1.Final</version.org.wildfly.maven.plugins.licenses-plugin>
         <version.org.wildfly.prospero.prospero-metadata>1.2.1.Final</version.org.wildfly.prospero.prospero-metadata>
