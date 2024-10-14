@@ -17,10 +17,13 @@
 
 package org.wildfly.prospero.spi;
 
+import org.assertj.core.api.Assertions;
+import org.bouncycastle.openpgp.PGPSecretKeyRing;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
 import org.junit.runner.RunWith;
+import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.junit.MockitoJUnitRunner;
 import org.wildfly.channel.Channel;
@@ -30,17 +33,29 @@ import org.wildfly.installationmanager.CandidateType;
 import org.wildfly.installationmanager.FileConflict;
 import org.wildfly.installationmanager.InstallationChanges;
 import org.wildfly.installationmanager.MavenOptions;
+import org.wildfly.installationmanager.TrustCertificate;
 import org.wildfly.prospero.actions.ApplyCandidateAction;
+import org.wildfly.prospero.actions.CertificateAction;
 import org.wildfly.prospero.actions.InstallationHistoryAction;
 import org.wildfly.prospero.actions.UpdateAction;
 import org.wildfly.prospero.api.ChannelChange;
 import org.wildfly.prospero.api.SavedState;
+import org.wildfly.prospero.signatures.InvalidCertificateException;
+import org.wildfly.prospero.signatures.PGPKeyId;
+import org.wildfly.prospero.signatures.PGPPublicKey;
+import org.wildfly.prospero.signatures.PGPPublicKeyInfo;
 import org.wildfly.prospero.updates.UpdateSet;
+import org.wildfly.prospero.utils.TestSignatureUtils;
 
+import java.io.File;
+import java.io.FileInputStream;
+import java.nio.file.Files;
 import java.nio.file.Path;
+import java.time.LocalDateTime;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
+import java.util.Locale;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -74,6 +89,9 @@ public class ProsperoInstallationManagerTest {
 
     @Mock
     private ApplyCandidateAction applyCandidateAction;
+
+    @Mock
+    private CertificateAction certificateAction;
 
     @Rule
     public TemporaryFolder temp = new TemporaryFolder();
@@ -285,6 +303,76 @@ public class ProsperoInstallationManagerTest {
 
         assertThatThrownBy(() -> mgr.verifyCandidate(Path.of("candidate"), CandidateType.UPDATE))
                 .hasMessageContaining("has been modified after the candidate has been created");
+    }
 
+    @Test
+    public void parseValidCertificate_ReturnsCertificateData() throws Exception {
+        final ProsperoInstallationManager mgr = new ProsperoInstallationManager(actionFactory);
+        final PGPSecretKeyRing pgpSecretKeys = TestSignatureUtils.generateSecretKey("test", "test");
+        final File testCert = temp.newFile("test.crt");
+        TestSignatureUtils.exportPublicKeys(pgpSecretKeys, testCert);
+
+        final TrustCertificate trustCertificate = mgr.parseCertificate(new FileInputStream(testCert));
+
+        assertEquals(Long.toHexString(pgpSecretKeys.getPublicKey().getKeyID()).toUpperCase(Locale.ROOT),
+                trustCertificate.getKeyID());
+    }
+
+    @Test
+    public void parseInvalidCertificate_ThrowsError() throws Exception {
+        final ProsperoInstallationManager mgr = new ProsperoInstallationManager(actionFactory);
+        final File testCert = temp.newFile("test.crt");
+        Files.writeString(testCert.toPath(), "not a real certificate");
+
+        Assertions.assertThatThrownBy(() -> mgr.parseCertificate(new FileInputStream(testCert)))
+                .isInstanceOf(InvalidCertificateException.class);
+    }
+
+    @Test
+    public void acceptTrustedCertificates_createsNewKey() throws Exception {
+        final ProsperoInstallationManager mgr = new ProsperoInstallationManager(actionFactory);
+        final PGPSecretKeyRing pgpSecretKeys = TestSignatureUtils.generateSecretKey("test", "test");
+        final File testCert = temp.newFile("test.crt");
+        TestSignatureUtils.exportPublicKeys(pgpSecretKeys, testCert);
+        when(actionFactory.getCertificateAction()).thenReturn(certificateAction);
+
+        mgr.acceptTrustedCertificates(new FileInputStream(testCert));
+
+        final ArgumentCaptor<PGPPublicKey> captor = ArgumentCaptor.forClass(PGPPublicKey.class);
+        verify(certificateAction).importCertificate(captor.capture());
+
+        assertEquals(pgpSecretKeys.getPublicKey().getKeyID(),
+                captor.getValue().getPublicKeyRing().getPublicKey().getKeyID());
+    }
+
+    @Test
+    public void revokeTrustedCertificates_removesKey() throws Exception {
+        final ProsperoInstallationManager mgr = new ProsperoInstallationManager(actionFactory);
+        final PGPSecretKeyRing pgpSecretKeys = TestSignatureUtils.generateSecretKey("test", "test");
+        when(actionFactory.getCertificateAction()).thenReturn(certificateAction);
+
+        mgr.revokeTrustedCertificate(Long.toHexString(pgpSecretKeys.getPublicKey().getKeyID()).toUpperCase(Locale.ROOT));
+
+        final ArgumentCaptor<PGPKeyId> captor = ArgumentCaptor.forClass(PGPKeyId.class);
+        verify(certificateAction).removeCertificate(captor.capture());
+
+        assertEquals(pgpSecretKeys.getPublicKey().getKeyID(),
+                captor.getValue().getKeyID());
+    }
+
+    @Test
+    public void listTrustedCertificates_listsCertificates() throws Exception {
+        final ProsperoInstallationManager mgr = new ProsperoInstallationManager(actionFactory);
+        final PGPSecretKeyRing pgpSecretKeys = TestSignatureUtils.generateSecretKey("test", "test");
+        when(actionFactory.getCertificateAction()).thenReturn(certificateAction);
+        final PGPKeyId keyID = new PGPKeyId(1L);
+        when(certificateAction.listCertificates()).thenReturn(List.of(
+                new PGPPublicKeyInfo(keyID, PGPPublicKeyInfo.Status.TRUSTED, "abcd1234", List.of("test certificate"), LocalDateTime.now(), null)
+        ));
+
+        final Collection<TrustCertificate> trustCertificates = mgr.listTrustedCertificates();
+
+        assertThat(trustCertificates)
+                .containsExactly(new TrustCertificate(keyID.getHexKeyID(), "abcd1234", "test certificate", "TRUSTED"));
     }
 }

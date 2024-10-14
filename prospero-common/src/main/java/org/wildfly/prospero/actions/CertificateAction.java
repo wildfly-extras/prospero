@@ -127,7 +127,7 @@ public class CertificateAction implements AutoCloseable {
     }
 
     @Override
-    public void close() throws Exception {
+    public void close() {
         localGpgKeystore.close();
     }
 }

@@ -4,6 +4,8 @@ import org.jboss.galleon.ProvisioningException;
 import org.jboss.logging.Logger;
 import org.wildfly.channel.ChannelManifestCoordinate;
 import org.wildfly.channel.MavenCoordinate;
+import org.wildfly.channel.spi.SignatureResult;
+import org.wildfly.channel.spi.SignatureValidator;
 import org.wildfly.installationmanager.ArtifactChange;
 import org.wildfly.installationmanager.CandidateType;
 import org.wildfly.installationmanager.Channel;
@@ -13,12 +15,15 @@ import org.wildfly.installationmanager.HistoryResult;
 import org.wildfly.installationmanager.InstallationChanges;
 import org.wildfly.installationmanager.ManifestVersion;
 import org.wildfly.installationmanager.MavenOptions;
+import org.wildfly.installationmanager.MissingSignatureException;
 import org.wildfly.installationmanager.OperationNotAvailableException;
 import org.wildfly.installationmanager.Repository;
+import org.wildfly.installationmanager.TrustCertificate;
 import org.wildfly.installationmanager.spi.InstallationManager;
 import org.wildfly.installationmanager.spi.OsShell;
 import org.wildfly.prospero.ProsperoLogger;
 import org.wildfly.prospero.actions.ApplyCandidateAction;
+import org.wildfly.prospero.actions.CertificateAction;
 import org.wildfly.prospero.actions.InstallationExportAction;
 import org.wildfly.prospero.actions.InstallationHistoryAction;
 import org.wildfly.prospero.actions.MetadataAction;
@@ -27,12 +32,17 @@ import org.wildfly.prospero.api.MavenOptions.Builder;
 import org.wildfly.prospero.api.exceptions.InvalidUpdateCandidateException;
 import org.wildfly.prospero.galleon.GalleonCallbackAdapter;
 import org.wildfly.prospero.metadata.ManifestVersionRecord;
+import org.wildfly.prospero.signatures.PGPKeyId;
+import org.wildfly.prospero.signatures.PGPPublicKey;
+import org.wildfly.prospero.signatures.PGPPublicKeyInfo;
 import org.wildfly.prospero.spi.internal.CliProvider;
 import org.wildfly.prospero.api.SavedState;
 import org.wildfly.prospero.api.exceptions.MetadataException;
 import org.wildfly.prospero.api.exceptions.OperationException;
 import org.wildfly.prospero.updates.UpdateSet;
 
+import java.io.InputStream;
+import java.net.URL;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.time.LocalDateTime;
@@ -40,11 +50,13 @@ import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.ServiceLoader;
+import java.util.Set;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -55,6 +67,7 @@ public class ProsperoInstallationManager implements InstallationManager {
 
     private final ActionFactory actionFactory;
     private Path installationDir;
+    private MavenOptions mavenOptions;
 
     public ProsperoInstallationManager(Path installationDir, MavenOptions mavenOptions) throws Exception {
         final Builder options = org.wildfly.prospero.api.MavenOptions.builder()
@@ -65,6 +78,7 @@ public class ProsperoInstallationManager implements InstallationManager {
         }
         actionFactory = new ActionFactory(installationDir, options.build());
         this.installationDir = installationDir;
+        this.mavenOptions = mavenOptions;
     }
 
     // Used for tests to mock up action creation
@@ -118,7 +132,15 @@ public class ProsperoInstallationManager implements InstallationManager {
     @Override
     public boolean prepareUpdate(Path targetDir, List<Repository> repositories) throws Exception {
         try (UpdateAction prepareUpdateAction = actionFactory.getUpdateAction(map(repositories, ProsperoInstallationManager::mapRepository))) {
-            return prepareUpdateAction.buildUpdate(targetDir);
+            try {
+                return prepareUpdateAction.buildUpdate(targetDir);
+            } catch (SignatureValidator.SignatureException e) {
+                if (e.getSignatureResult().getResult() == SignatureResult.Result.NO_MATCHING_CERT) {
+                    throw new MissingSignatureException(e.getMessage(), e, e.getMissingSignature());
+                } else {
+                    throw e;
+                }
+            }
         }
     }
 
@@ -158,6 +180,35 @@ public class ProsperoInstallationManager implements InstallationManager {
         return map(applyCandidateAction.getConflicts(), ProsperoInstallationManager::mapFileConflict);
     }
 
+    @Override
+    public void acceptTrustedCertificates(InputStream certificate) throws Exception {
+        Objects.requireNonNull(certificate);
+        try (CertificateAction certificateAction = actionFactory.getCertificateAction()) {
+            certificateAction.importCertificate(new PGPPublicKey("Imported cert", certificate));
+        }
+    }
+
+    @Override
+    public void revokeTrustedCertificate(String keyID) throws Exception {
+        try (CertificateAction certificateAction = actionFactory.getCertificateAction()) {
+            certificateAction.removeCertificate(new PGPKeyId(keyID));
+        }
+    }
+
+    @Override
+    public Collection<TrustCertificate> listTrustedCertificates() throws Exception {
+        try (CertificateAction certificateAction = actionFactory.getCertificateAction()) {
+            return certificateAction.listCertificates().stream()
+                    .map(ProsperoInstallationManager::mapCertificate)
+                    .collect(Collectors.toList());
+        }
+    }
+
+    @Override
+    public TrustCertificate parseCertificate(InputStream is) throws Exception {
+        return mapCertificate(PGPPublicKeyInfo.parse(is, "Imported cert"));
+    }
+
     private static FileConflict mapFileConflict(org.wildfly.prospero.api.FileConflict fileConflict) {
         return new FileConflict(Path.of(fileConflict.getRelativePath()), map(fileConflict.getUserChange()), map(fileConflict.getUpdateChange()), fileConflict.getResolution() == org.wildfly.prospero.api.FileConflict.Resolution.UPDATE);
     }
@@ -184,6 +235,12 @@ public class ProsperoInstallationManager implements InstallationManager {
             return updates.getArtifactUpdates().stream()
                     .map(ProsperoInstallationManager::mapArtifactChange)
                     .collect(Collectors.toList());
+        } catch (SignatureValidator.SignatureException e) {
+            if (e.getSignatureResult().getResult() == SignatureResult.Result.NO_MATCHING_CERT) {
+                throw new MissingSignatureException(e.getMessage(), e, e.getMissingSignature());
+            } else {
+                throw e;
+            }
         }
     }
 
@@ -301,6 +358,43 @@ public class ProsperoInstallationManager implements InstallationManager {
         }
     }
 
+    @Override
+    public Collection<InputStream> downloadRequiredCertificates() throws Exception {
+        ArrayList<InputStream> missingCerts = new ArrayList<>();
+        try (MetadataAction metadataAction = actionFactory.getMetadataAction();
+             // TODO: replace with actionFactory
+             CertificateAction certificateAction = new CertificateAction(installationDir)) {
+            final List<String> urls = metadataAction.getChannels().stream()
+                    .map(org.wildfly.channel.Channel::getGpgUrls)
+                    .flatMap(List::stream)
+                    .collect(Collectors.toList());
+
+            int counter = 0;
+            final Set<PGPKeyId> discoveredKeys = new HashSet<>();
+            for (String urlText : urls) {
+                if (this.mavenOptions.isOffline() && !(urlText.startsWith("file") || urlText.startsWith("classpath"))) {
+                    // ignore remote certificates if we're offline
+                    continue;
+                }
+                // resolve cert URLs
+                final URL url = new URL(urlText);
+                // parse cert files
+                final TrustCertificate tc = parseCertificate(url.openStream());
+                final PGPKeyId keyId = new PGPKeyId(tc.getKeyID());
+                // check keyIDs of the certs vs. trusted certs
+                if (!discoveredKeys.contains(keyId) && certificateAction.listCertificates().stream()
+                        .noneMatch(c->c.getKeyID().equals(keyId))) {
+                    // if any are missing, return them
+                    missingCerts.add(url.openStream());
+
+                    discoveredKeys.add(keyId);
+                }
+            }
+
+        }
+        return missingCerts;
+    }
+
     private String escape(Path absolutePath) {
         return "\"" + absolutePath.toString() + "\"";
     }
@@ -385,6 +479,13 @@ public class ProsperoInstallationManager implements InstallationManager {
         }
     }
 
+    private static TrustCertificate mapCertificate(PGPPublicKeyInfo keyInfo) {
+        return new TrustCertificate(keyInfo.getKeyID().getHexKeyID(),
+                keyInfo.getFingerprint(),
+                String.join("; ", keyInfo.getIdentity()),
+                keyInfo.getStatus().toString());
+    }
+
     ActionFactory getActionFactory() {
         return actionFactory;
     }
@@ -421,6 +522,10 @@ public class ProsperoInstallationManager implements InstallationManager {
 
         org.wildfly.prospero.api.MavenOptions getMavenOptions() {
             return mavenOptions;
+        }
+
+        public CertificateAction getCertificateAction() throws MetadataException {
+            return new CertificateAction(server);
         }
     }
 }

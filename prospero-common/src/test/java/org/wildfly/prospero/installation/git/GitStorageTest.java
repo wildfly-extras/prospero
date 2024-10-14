@@ -156,7 +156,8 @@ public class GitStorageTest {
     public void initialRecordStoresConfigState() throws Exception {
         final GitStorage gitStorage = new GitStorage(base.getParent());
         ProsperoMetadataUtils.writeManifest(base.resolve(ProsperoMetadataUtils.MANIFEST_FILE_NAME), manifest);
-        generateProsperoConfig(List.of(new Channel("", "", null, null, null, null, null)));
+        generateProsperoConfig(List.of(
+                new Channel.Builder().build()));
 
         gitStorage.record();
 

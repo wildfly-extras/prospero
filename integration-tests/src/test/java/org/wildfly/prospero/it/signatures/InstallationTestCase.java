@@ -53,6 +53,8 @@ import org.wildfly.prospero.test.TestLocalRepository;
 
 public class InstallationTestCase {
 
+    protected static final String COMMONS_IO_VERSION = BuildProperties.getProperty("version.commons-io");
+    protected static final String GALLEON_PLUGINS_VERSION = BuildProperties.getProperty("version.org.wildfly.galleon-plugins");
     @Rule
     public TemporaryFolder temp = new TemporaryFolder();
     private TestLocalRepository testLocalRepository;
@@ -72,7 +74,7 @@ public class InstallationTestCase {
         testInstallation = new TestInstallation(serverPath);
 
         testLocalRepository.deploy(TestInstallation.fpBuilder("org.test:pack-one:1.0.0")
-                .addModule("commons-io", "commons-io", "2.16.1")
+                .addModule("commons-io", "commons-io", COMMONS_IO_VERSION)
                 .build());
         pgpValidKeys = CertificateUtils.generatePrivateKey();
         certFile = CertificateUtils.exportPublicCertificate(pgpValidKeys, temp.newFile("public.crt"));
@@ -91,7 +93,7 @@ public class InstallationTestCase {
 
         testInstallation.install("org.test:pack-one:1.0.0", List.of(testChannel));
 
-        testInstallation.verifyModuleJar("commons-io", "commons-io", "2.16.1");
+        testInstallation.verifyModuleJar("commons-io", "commons-io", COMMONS_IO_VERSION);
         testInstallation.verifyInstallationMetadataPresent();
         CertificateUtils.assertKeystoreContains(serverPath.resolve(ProsperoMetadataUtils.METADATA_DIR).resolve("keyring.gpg"), pgpValidKeys.getPublicKey().getKeyID());
     }
@@ -213,25 +215,23 @@ public class InstallationTestCase {
         }
 
         // and verify we did install the server
-        testInstallation.verifyModuleJar("commons-io", "commons-io", "2.16.1");
+        testInstallation.verifyModuleJar("commons-io", "commons-io", COMMONS_IO_VERSION);
         testInstallation.verifyInstallationMetadataPresent();
         CertificateUtils.assertKeystoreContains(serverPath.resolve(ProsperoMetadataUtils.METADATA_DIR).resolve("keyring.gpg"), pgpValidKeys.getPublicKey().getKeyID());
     }
 
     private void prepareRequiredArtifacts(TestLocalRepository localRepository) throws Exception {
-        final String galleonPluginsVersion = BuildProperties.getProperty("version.org.wildfly.galleon-plugins");
-        final String commonsIoVersion = BuildProperties.getProperty("version.commons-io");
 
-        localRepository.resolveAndDeploy(new DefaultArtifact("org.wildfly.galleon-plugins", "wildfly-galleon-plugins", "jar", galleonPluginsVersion));
-        localRepository.resolveAndDeploy(new DefaultArtifact("org.wildfly.galleon-plugins", "wildfly-config-gen", "jar", galleonPluginsVersion));
-        localRepository.resolveAndDeploy(new DefaultArtifact("commons-io", "commons-io", "jar", commonsIoVersion));
+        localRepository.resolveAndDeploy(new DefaultArtifact("org.wildfly.galleon-plugins", "wildfly-galleon-plugins", "jar", GALLEON_PLUGINS_VERSION));
+        localRepository.resolveAndDeploy(new DefaultArtifact("org.wildfly.galleon-plugins", "wildfly-config-gen", "jar", GALLEON_PLUGINS_VERSION));
+        localRepository.resolveAndDeploy(new DefaultArtifact("commons-io", "commons-io", "jar", COMMONS_IO_VERSION));
 
         localRepository.deploy(
                 new DefaultArtifact("org.test", "test-channel", "manifest", "yaml","1.0.0"),
                 new ChannelManifest("test-manifest", null, null, List.of(
-                        new Stream("org.wildfly.galleon-plugins", "wildfly-config-gen", galleonPluginsVersion),
-                        new Stream("org.wildfly.galleon-plugins", "wildfly-galleon-plugins", galleonPluginsVersion),
-                        new Stream("commons-io", "commons-io", commonsIoVersion),
+                        new Stream("org.wildfly.galleon-plugins", "wildfly-config-gen", GALLEON_PLUGINS_VERSION),
+                        new Stream("org.wildfly.galleon-plugins", "wildfly-galleon-plugins", GALLEON_PLUGINS_VERSION),
+                        new Stream("commons-io", "commons-io", COMMONS_IO_VERSION),
                         new Stream("org.test", "pack-one", "1.0.0")
                 )));
     }

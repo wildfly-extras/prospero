@@ -20,6 +20,7 @@ package org.wildfly.prospero.signatures;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.util.ArrayList;
@@ -50,11 +51,19 @@ public class PGPPublicKeyInfo {
      * @throws InvalidCertificateException - if the certificate cannot be parsed
      */
     public static PGPPublicKeyInfo parse(File file) throws InvalidCertificateException {
+        final String certName = file.getAbsolutePath();
+        try {
+            return parse(new FileInputStream(file), certName);
+        } catch (IOException e) {
+            throw ProsperoLogger.ROOT_LOGGER.invalidCertificate(certName, e.getLocalizedMessage(), e);
+        }
+    }
+    public static PGPPublicKeyInfo parse(InputStream is, String certName) throws InvalidCertificateException {
         final PGPPublicKeyRing pgpPublicKeys;
         try {
-            pgpPublicKeys = new PGPPublicKeyRing(new ArmoredInputStream(new FileInputStream(file)), new JcaKeyFingerprintCalculator());
+            pgpPublicKeys = new PGPPublicKeyRing(new ArmoredInputStream(is), new JcaKeyFingerprintCalculator());
         } catch (IOException e) {
-            throw ProsperoLogger.ROOT_LOGGER.invalidCertificate(file.getAbsolutePath(), e.getLocalizedMessage(), e);
+            throw ProsperoLogger.ROOT_LOGGER.invalidCertificate(certName, e.getLocalizedMessage(), e);
         }
         final PGPPublicKey key = pgpPublicKeys.getPublicKey();
         final Iterator<String> userIDs = key.getUserIDs();
