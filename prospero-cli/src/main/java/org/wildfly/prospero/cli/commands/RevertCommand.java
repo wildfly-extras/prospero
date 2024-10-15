@@ -52,11 +52,21 @@ import static org.wildfly.prospero.cli.ReturnCodes.SUCCESS;
 )
 public class RevertCommand extends AbstractParentCommand {
 
-    private static int applyCandidate(CliConsole console, ApplyCandidateAction applyCandidateAction, boolean yes) throws OperationException, ProvisioningException {
+    private static int applyCandidate(CliConsole console, ApplyCandidateAction applyCandidateAction,
+                                      boolean yes, boolean noConflictsOnly, boolean dryRun)
+            throws OperationException, ProvisioningException {
         List<ArtifactChange> artifactUpdates = applyCandidateAction.findUpdates().getArtifactUpdates();
         console.printArtifactChanges(artifactUpdates);
         final List<FileConflict> conflicts = applyCandidateAction.getConflicts();
         FileConflictPrinter.print(conflicts, console);
+
+        if (dryRun) {
+            return SUCCESS;
+        }
+
+        if (noConflictsOnly && !conflicts.isEmpty()) {
+            throw CliMessages.MESSAGES.cancelledByConfilcts();
+        }
 
         if (!yes && !artifactUpdates.isEmpty() && !console.confirm(CliMessages.MESSAGES.continueWithRevert(),
                 CliMessages.MESSAGES.applyingChanges(), CliMessages.MESSAGES.revertCancelled())) {
@@ -92,6 +102,9 @@ public class RevertCommand extends AbstractParentCommand {
         @CommandLine.Option(names = {CliConstants.Y, CliConstants.YES})
         boolean yes;
 
+        @CommandLine.Option(names = {CliConstants.NO_CONFLICTS_ONLY})
+        boolean noConflictsOnly;
+
         public PerformCommand(CliConsole console, ActionFactory actionFactory) {
             super(console, actionFactory);
         }
@@ -121,7 +134,7 @@ public class RevertCommand extends AbstractParentCommand {
 
                 validateRevertCandidate(installationDirectory, tempDirectory, applyCandidateAction);
 
-                applyCandidate(console, applyCandidateAction, yes);
+                applyCandidate(console, applyCandidateAction, yes, noConflictsOnly, false);
             } catch (IOException e) {
                 throw ProsperoLogger.ROOT_LOGGER.unableToCreateTemporaryDirectory(e);
             }
@@ -147,6 +160,12 @@ public class RevertCommand extends AbstractParentCommand {
         @CommandLine.Option(names = {CliConstants.Y, CliConstants.YES})
         boolean yes;
 
+        @CommandLine.Option(names = {CliConstants.NO_CONFLICTS_ONLY})
+        boolean noConflictsOnly;
+
+        @CommandLine.Option(names = {CliConstants.DRY_RUN})
+        boolean dryRun;
+
         public ApplyCommand(CliConsole console, ActionFactory actionFactory) {
             super(console, actionFactory);
         }
@@ -162,7 +181,7 @@ public class RevertCommand extends AbstractParentCommand {
             console.println(CliMessages.MESSAGES.revertStart(installationDirectory, applyCandidateAction.getCandidateRevision().getName()));
             console.println("");
 
-            applyCandidate(console, applyCandidateAction, yes);
+            applyCandidate(console, applyCandidateAction, yes, noConflictsOnly, dryRun);
             if(remove) {
                 applyCandidateAction.removeCandidate(candidateDirectory.toFile());
             }

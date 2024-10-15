@@ -5,8 +5,10 @@ import org.jboss.logging.Logger;
 import org.wildfly.channel.ChannelManifestCoordinate;
 import org.wildfly.channel.MavenCoordinate;
 import org.wildfly.installationmanager.ArtifactChange;
+import org.wildfly.installationmanager.CandidateType;
 import org.wildfly.installationmanager.Channel;
 import org.wildfly.installationmanager.ChannelChange;
+import org.wildfly.installationmanager.FileConflict;
 import org.wildfly.installationmanager.HistoryResult;
 import org.wildfly.installationmanager.InstallationChanges;
 import org.wildfly.installationmanager.ManifestVersion;
@@ -16,11 +18,13 @@ import org.wildfly.installationmanager.Repository;
 import org.wildfly.installationmanager.spi.InstallationManager;
 import org.wildfly.installationmanager.spi.OsShell;
 import org.wildfly.prospero.ProsperoLogger;
+import org.wildfly.prospero.actions.ApplyCandidateAction;
 import org.wildfly.prospero.actions.InstallationExportAction;
 import org.wildfly.prospero.actions.InstallationHistoryAction;
 import org.wildfly.prospero.actions.MetadataAction;
 import org.wildfly.prospero.actions.UpdateAction;
 import org.wildfly.prospero.api.MavenOptions.Builder;
+import org.wildfly.prospero.api.exceptions.InvalidUpdateCandidateException;
 import org.wildfly.prospero.galleon.GalleonCallbackAdapter;
 import org.wildfly.prospero.metadata.ManifestVersionRecord;
 import org.wildfly.prospero.spi.internal.CliProvider;
@@ -76,7 +80,8 @@ public class ProsperoInstallationManager implements InstallationManager {
         final List<HistoryResult> results = new ArrayList<>();
 
         for (SavedState savedState : revisions) {
-            results.add(new HistoryResult(savedState.getName(), savedState.getTimestamp(), savedState.getType().toString(), savedState.getMsg()));
+            results.add(new HistoryResult(savedState.getName(), savedState.getTimestamp(), savedState.getType().toString(),
+                    savedState.getMsg(), Collections.emptyList()));
         }
         return results;
     }
@@ -114,6 +119,61 @@ public class ProsperoInstallationManager implements InstallationManager {
     public boolean prepareUpdate(Path targetDir, List<Repository> repositories) throws Exception {
         try (UpdateAction prepareUpdateAction = actionFactory.getUpdateAction(map(repositories, ProsperoInstallationManager::mapRepository))) {
             return prepareUpdateAction.buildUpdate(targetDir);
+        }
+    }
+
+    @Override
+    public Collection<FileConflict> verifyCandidate(Path candidatePath, CandidateType candidateType) throws Exception {
+        final ApplyCandidateAction applyCandidateAction = actionFactory.getApplyCandidateAction(candidatePath);
+        final ApplyCandidateAction.Type operation;
+        switch (candidateType) {
+            case UPDATE:
+                operation = ApplyCandidateAction.Type.UPDATE;
+                break;
+            case REVERT:
+                operation = ApplyCandidateAction.Type.REVERT;
+                break;
+            default:
+                throw new IllegalArgumentException("Unsupported candidate type: " + candidateType);
+        }
+
+        final ApplyCandidateAction.ValidationResult validationResult = applyCandidateAction.verifyCandidate(operation);
+        switch (validationResult) {
+            case OK:
+                // we're good, continue
+                break;
+            case STALE:
+                throw ProsperoLogger.ROOT_LOGGER.staleCandidate(installationDir, candidatePath);
+            case NO_CHANGES:
+                throw ProsperoLogger.ROOT_LOGGER.noChangesAvailable(installationDir, candidatePath);
+            case NOT_CANDIDATE:
+                throw ProsperoLogger.ROOT_LOGGER.notCandidate(candidatePath);
+            case WRONG_TYPE:
+                throw ProsperoLogger.ROOT_LOGGER.wrongCandidateOperation(candidatePath, operation);
+            default:
+                // unexpected validation type - include the error in the description
+                throw new InvalidUpdateCandidateException(String.format("The candidate server %s is invalid - %s.", candidatePath, validationResult));
+        }
+
+        return map(applyCandidateAction.getConflicts(), ProsperoInstallationManager::mapFileConflict);
+    }
+
+    private static FileConflict mapFileConflict(org.wildfly.prospero.api.FileConflict fileConflict) {
+        return new FileConflict(Path.of(fileConflict.getRelativePath()), map(fileConflict.getUserChange()), map(fileConflict.getUpdateChange()), fileConflict.getResolution() == org.wildfly.prospero.api.FileConflict.Resolution.UPDATE);
+    }
+
+    private static FileConflict.Status map(org.wildfly.prospero.api.FileConflict.Change change) {
+        switch (change) {
+            case MODIFIED:
+                return FileConflict.Status.MODIFIED;
+            case ADDED:
+                return FileConflict.Status.ADDED;
+            case REMOVED:
+                return FileConflict.Status.REMOVED;
+            case NONE:
+                return FileConflict.Status.NONE;
+            default:
+                throw new IllegalArgumentException("Unknown file conflict change: " + change);
         }
     }
 
@@ -197,24 +257,34 @@ public class ProsperoInstallationManager implements InstallationManager {
 
     @Override
     public String generateApplyUpdateCommand(Path scriptHome, Path candidatePath, OsShell shell) throws OperationNotAvailableException {
-        final Optional<CliProvider> cliProviderLoader = ServiceLoader.load(CliProvider.class).findFirst();
-        if (cliProviderLoader.isEmpty()) {
-            throw new OperationNotAvailableException("Installation manager does not support CLI operations.");
-        }
-
-        final CliProvider cliProvider = cliProviderLoader.get();
-        return escape(scriptHome.resolve(cliProvider.getScriptName(shell))) + " " + cliProvider.getApplyUpdateCommand(installationDir, candidatePath);
+        return generateApplyUpdateCommand(scriptHome, candidatePath, shell, false);
     }
 
     @Override
     public String generateApplyRevertCommand(Path scriptHome, Path candidatePath, OsShell shell) throws OperationNotAvailableException {
+        return generateApplyUpdateCommand(scriptHome, candidatePath, shell, false);
+    }
+
+    @Override
+    public String generateApplyUpdateCommand(Path scriptHome, Path candidatePath, OsShell shell, boolean noConflictsOnly) throws OperationNotAvailableException {
         final Optional<CliProvider> cliProviderLoader = ServiceLoader.load(CliProvider.class).findFirst();
         if (cliProviderLoader.isEmpty()) {
             throw new OperationNotAvailableException("Installation manager does not support CLI operations.");
         }
 
         final CliProvider cliProvider = cliProviderLoader.get();
-        return escape(scriptHome.resolve(cliProvider.getScriptName(shell))) + " " + cliProvider.getApplyRevertCommand(installationDir, candidatePath);
+        return escape(scriptHome.resolve(cliProvider.getScriptName(shell))) + " " + cliProvider.getApplyUpdateCommand(installationDir, candidatePath, false);
+    }
+
+    @Override
+    public String generateApplyRevertCommand(Path scriptHome, Path candidatePath, OsShell shell, boolean noConflictsOnly) throws OperationNotAvailableException {
+        final Optional<CliProvider> cliProviderLoader = ServiceLoader.load(CliProvider.class).findFirst();
+        if (cliProviderLoader.isEmpty()) {
+            throw new OperationNotAvailableException("Installation manager does not support CLI operations.");
+        }
+
+        final CliProvider cliProvider = cliProviderLoader.get();
+        return escape(scriptHome.resolve(cliProvider.getScriptName(shell))) + " " + cliProvider.getApplyRevertCommand(installationDir, candidatePath, noConflictsOnly);
     }
 
     @Override
@@ -343,6 +413,10 @@ public class ProsperoInstallationManager implements InstallationManager {
 
         protected InstallationExportAction getInstallationExportAction() {
             return new InstallationExportAction(server);
+        }
+
+        protected ApplyCandidateAction getApplyCandidateAction(Path candidateDir) throws ProvisioningException, OperationException {
+            return new ApplyCandidateAction(server, candidateDir);
         }
 
         org.wildfly.prospero.api.MavenOptions getMavenOptions() {

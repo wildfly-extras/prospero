@@ -716,4 +716,10 @@ public interface CliMessages {
     default String candidateApplyRollbackFailure(Path backup) {
         return format(bundle.getString("prospero.candidate.apply.error.rollback_error.desc"), backup);
     }
+
+    default OperationException cancelledByConfilcts() {
+        return new OperationException(format(
+                bundle.getString("prospero.updates.apply.candidate.cancel_conflicts"),
+                CliConstants.NO_CONFLICTS_ONLY));
+    }
 }
