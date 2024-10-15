@@ -18,6 +18,8 @@
 package org.wildfly.prospero.actions;
 
 import org.apache.commons.lang3.StringUtils;
+import org.eclipse.aether.DefaultRepositorySystemSession;
+import org.eclipse.aether.RepositorySystem;
 import org.eclipse.aether.resolution.ArtifactResult;
 import org.jboss.galleon.universe.maven.MavenUniverseException;
 import org.wildfly.channel.ArtifactCoordinate;
@@ -143,8 +145,7 @@ public class ProvisioningAction {
                     ProsperoLogger.ROOT_LOGGER.debug("Resolving installed manifest versions");
                 }
 
-                manifestRecord = new ManifestVersionResolver(mavenSessionManager.getProvisioningRepo(), mavenSessionManager.newRepositorySystem())
-                        .getCurrentVersions(channels);
+                manifestRecord = ManifestVersionResolver.getCurrentVersions(galleonEnv.getChannelSession());
             } catch (IOException e) {
                 throw ProsperoLogger.ROOT_LOGGER.unableToDownloadFile(e);
             }
@@ -191,7 +192,10 @@ public class ProvisioningAction {
 
     private void cacheManifests(ManifestVersionRecord manifestRecord) {
         try {
-            ArtifactCache.getInstance(installDir).cache(manifestRecord, mavenSessionManager.getResolvedArtifactVersions());
+            final RepositorySystem system = mavenSessionManager.newRepositorySystem();
+            final DefaultRepositorySystemSession session = mavenSessionManager.newRepositorySystemSession(system);
+
+            ArtifactCache.getInstance(installDir).cache(manifestRecord, session.getLocalRepositoryManager());
         } catch (IOException e) {
             ProsperoLogger.ROOT_LOGGER.debug("Unable to record manifests in the internal cache", e);
         }

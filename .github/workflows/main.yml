@@ -40,7 +40,7 @@ jobs:
       - uses: actions/upload-artifact@v4
         if: failure()
         with:
-          name: surefire-reports
+          name: surefire-reports-${{ matrix.os }}-${{ matrix.jdk }}
           path: '**/surefire-reports/*.txt'
   pmd:
     name: ubuntu-latest-pmd

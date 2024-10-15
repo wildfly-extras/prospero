@@ -17,6 +17,8 @@
 
 package org.wildfly.prospero.galleon;
 
+import org.eclipse.aether.artifact.DefaultArtifact;
+import org.eclipse.aether.repository.LocalRepositoryManager;
 import org.jboss.galleon.universe.maven.MavenUniverseException;
 import org.jboss.galleon.util.HashUtils;
 import org.jboss.galleon.util.IoUtils;
@@ -26,7 +28,6 @@ import org.wildfly.channel.MavenArtifact;
 import org.wildfly.prospero.ProsperoLogger;
 import org.wildfly.prospero.metadata.ManifestVersionRecord;
 import org.wildfly.prospero.metadata.ProsperoMetadataUtils;
-import org.wildfly.prospero.wfchannel.ResolvedArtifactsStore;
 
 import java.io.BufferedWriter;
 import java.io.File;
@@ -200,15 +201,15 @@ public class ArtifactCache {
      * NOTE: only manifests identified by maven coordinates are cached.
      *
      * @param manifestRecord - record containing all manifest used in installation.
-     * @param resolvedArtifacts - artifacts resolved during provisioning.
+     * @param localRepositoryManager - Maven manager for the local repository.
      * @throws IOException
      */
-    public void cache(ManifestVersionRecord manifestRecord, ResolvedArtifactsStore resolvedArtifacts) throws IOException {
+    public void cache(ManifestVersionRecord manifestRecord, LocalRepositoryManager localRepositoryManager) throws IOException {
         Objects.requireNonNull(manifestRecord);
-        Objects.requireNonNull(resolvedArtifacts);
+        Objects.requireNonNull(localRepositoryManager);
 
         for (ManifestVersionRecord.MavenManifest manifest : manifestRecord.getMavenManifests()) {
-            final MavenArtifact record = resolvedArtifacts.getManifestVersion(manifest.getGroupId(), manifest.getArtifactId());
+            final MavenArtifact record = mapToFile(manifestRecord, localRepositoryManager, manifest.getGroupId(), manifest.getArtifactId());
             if (record != null && record.getVersion().equals(manifest.getVersion())) {
                 if (LOG.isDebugEnabled()) {
                     LOG.debugf("Adding manifest %s to the cache", record);
@@ -216,17 +217,23 @@ public class ArtifactCache {
                 final File cachedManifest = record.getFile();
 
                 if (cachedManifest.exists()) {
-                    cache(new MavenArtifact(
-                            manifest.getGroupId(),
-                            manifest.getArtifactId(),
-                            ChannelManifest.EXTENSION,
-                            ChannelManifest.CLASSIFIER,
-                            manifest.getVersion(),
-                            cachedManifest
-                    ));
+                    cache(record);
                 }
             }
         }
+    }
+
+    private MavenArtifact mapToFile(ManifestVersionRecord manifestRecord, LocalRepositoryManager localRepositoryManager,
+                                    String groupId, String artifactId) {
+        final Optional<String> version = manifestRecord.getMavenManifests().stream()
+                .filter(m -> m.getGroupId().equals(groupId) && m.getArtifactId().equals(artifactId))
+                .map(ManifestVersionRecord.MavenManifest::getVersion)
+                .findFirst();
+        return version
+                .map(v -> localRepositoryManager.getPathForLocalArtifact(new DefaultArtifact(groupId, artifactId, ChannelManifest.CLASSIFIER, ChannelManifest.EXTENSION, v)))
+                .map(p -> localRepositoryManager.getRepository().getBasedir().toPath().resolve(p).toFile())
+                .map(f -> new MavenArtifact(groupId, artifactId, ChannelManifest.EXTENSION, ChannelManifest.CLASSIFIER, version.get(), f))
+                .orElse(null);
     }
 
     private void init() throws IOException {
