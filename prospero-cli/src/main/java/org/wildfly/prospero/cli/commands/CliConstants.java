@@ -75,6 +75,7 @@ public final class CliConstants {
     public static final String DIR = "--dir";
     public static final String FEATURE_PACK_REFERENCE = "<feature-pack-reference>";
     public static final String FPL = "--fpl";
+    public static final String FULL = "--full";
     public static final String H = "-h";
     public static final String HELP = "--help";
     public static final String LAYERS = "--layers";

@@ -22,12 +22,12 @@ import java.util.List;
 import java.util.Optional;
 
 import org.wildfly.channel.Channel;
+import org.wildfly.channel.ChannelMapper;
 import org.wildfly.prospero.actions.MetadataAction;
 import org.wildfly.prospero.cli.ActionFactory;
 import org.wildfly.prospero.cli.CliConsole;
 import org.wildfly.prospero.cli.CliMessages;
 import org.wildfly.prospero.cli.ReturnCodes;
-import org.wildfly.prospero.cli.printers.ChannelPrinter;
 import org.wildfly.prospero.metadata.ManifestVersionRecord;
 import picocli.CommandLine;
 
@@ -53,6 +53,9 @@ public class ChannelCommand extends AbstractCommand {
         @CommandLine.Option(names = CliConstants.DIR)
         Optional<Path> directory;
 
+        @CommandLine.Option(names = CliConstants.FULL)
+        boolean fullList;
+
         public ChannelListCommand(CliConsole console, ActionFactory actionFactory) {
             super(console, actionFactory);
         }
@@ -68,11 +71,13 @@ public class ChannelCommand extends AbstractCommand {
                 channels = metadataAction.getChannels();
             }
 
-            final ChannelPrinter channelPrinter = new ChannelPrinter(console);
-            console.println("-------");
             for (Channel channel : channels) {
-                channelPrinter.print(channel);
-                console.println("-------");
+                if (fullList) {
+                    console.println(ChannelMapper.toYaml(channels));
+                } else {
+                    console.println(channel.getName() + " " + channel.getManifestCoordinate().getGroupId() + ":" + channel.getManifestCoordinate().getArtifactId() + ":" +
+                            channel.getManifestCoordinate().getVersion() + "\n");
+                }
             }
 
             return ReturnCodes.SUCCESS;
