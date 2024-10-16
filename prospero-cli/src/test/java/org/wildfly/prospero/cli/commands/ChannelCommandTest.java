@@ -18,6 +18,7 @@
 package org.wildfly.prospero.cli.commands;
 
 import java.io.File;
+import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.nio.file.Files;
@@ -34,10 +35,11 @@ import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
 import org.wildfly.channel.Channel;
-import org.wildfly.channel.ChannelManifest;
 import org.wildfly.channel.ChannelManifestCoordinate;
 import org.wildfly.channel.MavenCoordinate;
 import org.wildfly.channel.Repository;
+import org.wildfly.channel.ChannelManifest;
+import org.wildfly.channel.ChannelMapper;
 import org.wildfly.prospero.api.InstallationMetadata;
 import org.wildfly.prospero.api.exceptions.MetadataException;
 import org.wildfly.prospero.cli.AbstractConsoleTest;
@@ -191,8 +193,27 @@ public class ChannelCommandTest extends AbstractConsoleTest {
         int exitCode = commandLine.execute(CliConstants.Commands.CHANNEL, CliConstants.Commands.LIST,
                 CliConstants.DIR, dir.toString());
         Assert.assertEquals(ReturnCodes.SUCCESS, exitCode);
-        Assert.assertEquals(3, getStandardOutput().lines().filter(l->l.contains("manifest")).count());
+        assertThat(getStandardOutput().lines()
+                .filter(line -> line.matches(".*\\S+ \\S+:\\S+(?::\\S+)?")))
+                .containsExactlyInAnyOrder(
+                        "test1 g:a",
+                        "test2 g:a:v",
+                        "test3 file:/a:b"
+                );
     }
+
+    @Test
+    public void testFullList() throws MetadataException, IOException {
+        // Execute the command
+        int exitCode = commandLine.execute(CliConstants.Commands.CHANNEL, CliConstants.Commands.LIST, CliConstants.FULL,
+                CliConstants.DIR, dir.toString());
+        InstallationMetadata installationMetadata = InstallationMetadata.loadInstallation(dir);
+
+        Assert.assertEquals(ReturnCodes.SUCCESS, exitCode);
+        assertThat(getStandardOutput()).contains(ChannelMapper.toYaml(installationMetadata.getProsperoConfig().getChannels()));
+
+    }
+
 
     @Test
     public void testAddDuplicate() {
