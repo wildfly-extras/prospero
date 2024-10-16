@@ -191,7 +191,33 @@ public class ChannelCommandTest extends AbstractConsoleTest {
         int exitCode = commandLine.execute(CliConstants.Commands.CHANNEL, CliConstants.Commands.LIST,
                 CliConstants.DIR, dir.toString());
         Assert.assertEquals(ReturnCodes.SUCCESS, exitCode);
-        Assert.assertEquals(3, getStandardOutput().lines().filter(l->l.contains("manifest")).count());
+        Assert.assertEquals(3, getStandardOutput().lines()
+                .filter(line -> line.matches(".*\\S+ \\S+:\\S+:\\S+"))  // Check if the line contains a name and manifest details
+                .count());
+    }
+
+    @Test
+    public void testFullList() {
+        int exitCode = commandLine.execute(CliConstants.Commands.CHANNEL, CliConstants.Commands.LIST, CliConstants.FULL,
+                CliConstants.DIR, dir.toString());
+        Assert.assertEquals(ReturnCodes.SUCCESS, exitCode);
+        String output = getStandardOutput();
+        Assert.assertTrue("Expected 'schemaVersion' in the output",
+                output.contains("schemaVersion"));
+        Assert.assertTrue("Expected 'name' in the output",
+                output.contains("name"));
+        Assert.assertTrue("Expected 'repositories' in the output",
+                output.contains("repositories"));
+        Assert.assertTrue("Expected 'manifest' in the output",
+                output.contains("manifest"));
+        Assert.assertTrue("Expected 'maven' in the output",
+                output.contains("maven"));
+        Assert.assertTrue("Expected 'groupId' in the output",
+                output.contains("groupId"));
+        Assert.assertTrue("Expected 'artifactId' in the output",
+                output.contains("artifactId"));
+        Assert.assertTrue("Expected 'version' in the output",
+                output.contains("version"));
     }
 
     @Test
