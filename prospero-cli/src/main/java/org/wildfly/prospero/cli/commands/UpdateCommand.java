@@ -29,6 +29,7 @@ import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
 import org.apache.commons.io.FileUtils;
+import org.eclipse.aether.artifact.Artifact;
 import org.jboss.galleon.ProvisioningException;
 import org.jboss.galleon.diff.FsDiff;
 import org.jboss.galleon.diff.FsEntry;
@@ -39,6 +40,7 @@ import org.wildfly.channel.Channel;
 import org.wildfly.channel.ChannelManifest;
 import org.wildfly.channel.ChannelManifestCoordinate;
 import org.wildfly.channel.Repository;
+import org.wildfly.channel.version.VersionMatcher;
 import org.wildfly.prospero.ProsperoLogger;
 import org.wildfly.prospero.actions.ApplyCandidateAction;
 import org.wildfly.prospero.actions.SubscribeNewServerAction;
@@ -60,6 +62,7 @@ import org.wildfly.prospero.cli.ReturnCodes;
 import org.wildfly.prospero.api.TemporaryFilesManager;
 import org.wildfly.prospero.galleon.FeaturePackLocationParser;
 import org.wildfly.prospero.galleon.GalleonUtils;
+import org.wildfly.prospero.metadata.ManifestVersionRecord;
 import org.wildfly.prospero.metadata.ProsperoMetadataUtils;
 import org.wildfly.prospero.model.InstallationProfile;
 import org.wildfly.prospero.updates.UpdateSet;
@@ -120,7 +123,6 @@ public class UpdateCommand extends AbstractParentCommand {
                 log.tracef("Perform full update");
 
                 console.println(CliMessages.MESSAGES.updateHeader(installationDir));
-
                 try (UpdateAction updateAction = actionFactory.update(installationDir, mavenOptions, console, repositories)) {
                     performUpdate(updateAction, yes, console, installationDir, noConflictsOnly);
                 }
@@ -136,6 +138,17 @@ public class UpdateCommand extends AbstractParentCommand {
             Path targetDir = null;
             try {
                 targetDir = Files.createTempDirectory("update-candidate");
+                try (InstallationMetadata installationMetadata = updateAction.getInstallationMetadata()) {
+                    if (installationMetadata.getManifestVersions().isPresent()) {
+                        List<ManifestVersionRecord.MavenManifest> mavenManifests = installationMetadata.getManifestVersions().get().getMavenManifests();
+                        final List<Artifact> manifestUpdates = updateAction.findCurrentChannelSessionManifests();
+                        if (!isManifestDowngraded(mavenManifests, manifestUpdates)) {
+                            console.println(CliMessages.MESSAGES.downgradeDetected());
+                            return false; // Terminate the method if a downgrade is detected
+                        }
+                    }
+                }
+
                 if (buildUpdate(updateAction, targetDir, yes, console, () -> console.confirmUpdates())) {
                     console.println("");
                     console.buildUpdatesComplete();
@@ -444,17 +457,17 @@ public class UpdateCommand extends AbstractParentCommand {
     public UpdateCommand(CliConsole console, ActionFactory actionFactory) {
         super(console, actionFactory, CliConstants.Commands.UPDATE,
                 List.of(
-                    new UpdateCommand.PrepareCommand(console, actionFactory),
-                    new UpdateCommand.ApplyCommand(console, actionFactory),
-                    new UpdateCommand.PerformCommand(console, actionFactory),
-                    new UpdateCommand.ListCommand(console, actionFactory),
+                    new PrepareCommand(console, actionFactory),
+                    new ApplyCommand(console, actionFactory),
+                    new PerformCommand(console, actionFactory),
+                    new ListCommand(console, actionFactory),
                     new SubscribeCommand(console, actionFactory))
         );
+
     }
 
     private static boolean buildUpdate(UpdateAction updateAction, Path updateDirectory, boolean yes, CliConsole console, Supplier<Boolean> confirmation) throws OperationException, ProvisioningException {
         final UpdateSet updateSet = updateAction.findUpdates();
-
         console.updatesFound(updateSet.getArtifactUpdates());
         if (updateSet.isEmpty()) {
             return false;
@@ -493,4 +506,37 @@ public class UpdateCommand extends AbstractParentCommand {
         return Paths.get(modulePath).toAbsolutePath().getParent();
     }
 
+
+    public static boolean isManifestDowngraded(List<ManifestVersionRecord.MavenManifest> mavenManifests, List<Artifact> manifestUpdates ) {
+
+        for (ManifestVersionRecord.MavenManifest installedManifest : mavenManifests) {
+            Artifact updateArtifact = null;
+
+            // Find the corresponding update artifact for the installedManifest
+            for (Artifact manifestUpdate : manifestUpdates) {
+                if (manifestUpdate.getGroupId().equals(installedManifest.getGroupId()) &&
+                        manifestUpdate.getArtifactId().equals(installedManifest.getArtifactId())) {
+                    updateArtifact = manifestUpdate;
+                    break;
+                }
+            }
+
+            if (updateArtifact != null) {
+                // Compare versions
+                String installedVersion = installedManifest.getVersion();
+                String availableVersion = updateArtifact.getVersion();
+                if (VersionMatcher.COMPARATOR.compare(installedVersion, availableVersion) < 0) {
+                    log.debugf("Upgrade available for %s:%s: %s -> %s",
+                            installedManifest.getGroupId(), installedManifest.getArtifactId(), installedVersion, availableVersion);
+                    return true;
+                } else if (VersionMatcher.COMPARATOR.compare(installedVersion, availableVersion) > 0) {
+                    log.debugf("Downgrade detected for " + installedManifest.getArtifactId() + ": " + installedVersion + " -> " + availableVersion);
+                    return false;
+                } else {
+                    System.out.println(installedManifest.getArtifactId() + " is up to date.");
+                }
+            }
+        }
+        return true;
+    }
 }

@@ -40,6 +40,7 @@ import org.wildfly.prospero.actions.ApplyCandidateAction;
 import org.wildfly.prospero.actions.UpdateAction;
 import org.wildfly.prospero.api.ArtifactChange;
 import org.wildfly.prospero.api.FileConflict;
+import org.wildfly.prospero.api.InstallationMetadata;
 import org.wildfly.prospero.api.MavenOptions;
 import org.wildfly.prospero.cli.ActionFactory;
 import org.wildfly.prospero.cli.CliMessages;
@@ -98,6 +99,7 @@ public class UpdateCommandTest extends AbstractMavenCommandTest {
 
         MetadataTestUtils.createInstallationMetadata(installationDir);
         MetadataTestUtils.createGalleonProvisionedState(installationDir, A_PROSPERO_FP);
+        when(updateAction.getInstallationMetadata()).thenReturn(InstallationMetadata.loadInstallation(installationDir));
     }
 
     @After
