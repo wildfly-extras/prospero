@@ -20,14 +20,17 @@ package org.wildfly.prospero.cli.commands;
 import java.nio.file.Path;
 import java.util.List;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 import org.wildfly.channel.Channel;
+import org.wildfly.channel.ChannelManifestCoordinate;
+import org.wildfly.channel.ChannelMapper;
+import org.wildfly.channel.Repository;
 import org.wildfly.prospero.actions.MetadataAction;
 import org.wildfly.prospero.cli.ActionFactory;
 import org.wildfly.prospero.cli.CliConsole;
 import org.wildfly.prospero.cli.CliMessages;
 import org.wildfly.prospero.cli.ReturnCodes;
-import org.wildfly.prospero.cli.printers.ChannelPrinter;
 import org.wildfly.prospero.metadata.ManifestVersionRecord;
 import picocli.CommandLine;
 
@@ -53,6 +56,9 @@ public class ChannelCommand extends AbstractCommand {
         @CommandLine.Option(names = CliConstants.DIR)
         Optional<Path> directory;
 
+        @CommandLine.Option(names = CliConstants.FULL)
+        boolean fullList;
+
         public ChannelListCommand(CliConsole console, ActionFactory actionFactory) {
             super(console, actionFactory);
         }
@@ -68,12 +74,36 @@ public class ChannelCommand extends AbstractCommand {
                 channels = metadataAction.getChannels();
             }
 
-            final ChannelPrinter channelPrinter = new ChannelPrinter(console);
-            console.println("-------");
             for (Channel channel : channels) {
-                channelPrinter.print(channel);
-                console.println("-------");
-            }
+                if (fullList) {
+                    console.println(ChannelMapper.toYaml(channels));
+                } else {
+                        ChannelManifestCoordinate coordinate = channel.getManifestCoordinate();
+                        if (coordinate != null) {
+                            // Full Maven GAV
+                            if (coordinate.getVersion() != null && !coordinate.getVersion().isEmpty()) {
+                                console.println(channel.getName() + " " + coordinate.getGroupId() + ":" + coordinate.getArtifactId() + ":" + coordinate.getVersion() + "\n");
+                            }
+                            // GA only (no version)
+                            else if (coordinate.getGroupId() != null && coordinate.getArtifactId() != null) {
+                                console.println(channel.getName() + " " + coordinate.getGroupId() + ":" + coordinate.getArtifactId() + "\n");
+                            }
+                            // Manifest URL
+                            else if (coordinate.getUrl() != null){
+                                console.println(channel.getName() + " " + coordinate.getUrl() + "\n");
+                            }
+                        } else {
+                            // No manifest coordinate, print no-stream-strategy and repository ids
+                            console.println(String.format("%s %s@%s",
+                                    channel.getName(),
+                                    channel.getNoStreamStrategy(),
+                                    String.join(",", channel.getRepositories().stream()
+                                            .map(Repository::getId)
+                                            .collect(Collectors.toList()))
+                            ));
+                        }
+                    }
+                }
 
             return ReturnCodes.SUCCESS;
         }
