@@ -35,3 +35,9 @@ jobs:
           mvn -B release:perform -Pdist,jboss-release -s maven-settings.xml
           git push
           git push --tags
+      - name: Create GH release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: dist/build/target/prospero-${{steps.metadata.outputs.current-version}}.zip
+          tag_name: ${{steps.metadata.outputs.current-version}}
+          prerelease: contains(${{steps.metadata.outputs.current-version}}, "Beta")
