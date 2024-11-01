@@ -25,11 +25,13 @@ jobs:
       - name: maven release ${{steps.metadata.outputs.current-version}}
         run: |
           java -version
+          gpg --quiet --batch --yes --decrypt --passphrase="${{ secrets.SECRET_PASSPHRASE }}" --output maven-settings.xml .github/release/maven-settings.xml.gpg
           git config --global user.name "WildFly Prospero CI"
           git config --global user.email "wildfly-dev@lists.jboss.org"
           git checkout -b release
-          mvn -B release:prepare -Pdist,jboss-release -DreleaseVersion=${{steps.metadata.outputs.current-version}} -DdevelopmentVersion=${{steps.metadata.outputs.next-version}}
+          mvn -B release:prepare -Pdist,jboss-release -DreleaseVersion=${{steps.metadata.outputs.current-version}} -DdevelopmentVersion=${{steps.metadata.outputs.next-version}} -s maven-settings.xml
           git checkout ${{github.base_ref}}
           git rebase release
+          mvn -B release:perform -Pdist,jboss-release -s maven-settings.xml
           git push
           git push --tags
