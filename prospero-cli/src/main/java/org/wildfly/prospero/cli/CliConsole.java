@@ -25,6 +25,7 @@ import java.util.Optional;
 import java.util.Scanner;
 
 import org.apache.commons.lang3.StringUtils;
+import org.wildfly.prospero.api.ChannelVersionChange;
 import org.wildfly.prospero.api.Console;
 import org.wildfly.prospero.api.ProvisioningProgressEvent;
 import org.wildfly.prospero.api.ArtifactChange;
@@ -170,6 +171,18 @@ public class CliConsole implements Console {
 
             if (artifactUpdates.stream().anyMatch(ArtifactChange::isDowngrade)) {
                 printf(CliMessages.MESSAGES.possibleDowngrade());
+            }
+        }
+    }
+
+    public void manifestUpdate(List<ChannelVersionChange> manifestChanges) {
+        if (manifestChanges.isEmpty()) {
+            println(CliMessages.MESSAGES.unableToChannelVersions());
+        } else {
+            println("");
+            println(CliMessages.MESSAGES.updatededChannelVersionsHeader());
+            for (ChannelVersionChange change : manifestChanges) {
+                println(change.shortDescription());
             }
         }
     }
