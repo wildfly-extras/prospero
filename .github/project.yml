@@ -4,3 +4,5 @@ name: WildFly Prospero
 release:
   current-version: 1.4.0.Beta1
   next-version: 1.4.0.Beta2-SNAPSHOT
+
+
