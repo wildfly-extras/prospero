@@ -565,6 +565,8 @@
                     <tagNameFormat>@{project.version}</tagNameFormat>
                     <!-- install is needed to make Galleon happy -->
                     <preparationGoals>clean install</preparationGoals>
+                    <localCheckout>true</localCheckout>
+                    <remoteTagging>false</remoteTagging>
                 </configuration>
             </plugin>
         </plugins>
