@@ -26,7 +26,9 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
@@ -69,13 +71,17 @@ public class TestInstallation {
     }
 
     public void verifyModuleJar(String groupId, String artifactId, String version) {
-        final Path moduleRoot = serverRoot.resolve("modules").resolve(groupId.replace('.', '/') + "/" + artifactId + "/main");
+        final Path moduleRoot = getModulePath(groupId, artifactId);
 
         assertThat(moduleRoot.resolve("module.xml"))
                 .exists()
                 .content().contains(artifactId + "-" + version + ".jar");
         assertThat(moduleRoot.resolve(artifactId + "-" + version + ".jar"))
                 .exists();
+    }
+
+    public Path getModulePath(String groupId, String artifactId) {
+        return serverRoot.resolve("modules").resolve(groupId.replace('.', '/') + "/" + artifactId + "/main");
     }
 
     /**
@@ -208,6 +214,7 @@ public class TestInstallation {
      */
     public static class Builder {
         private List<Artifact> modules = new ArrayList<>();
+        private Map<String, String> files = new HashMap<>();
         private final String name;
 
         private Builder(String name) {
@@ -220,6 +227,11 @@ public class TestInstallation {
 
         public TestInstallation.Builder addModule(String groupId, String artifactId, String version) {
             modules.add(new DefaultArtifact(groupId, artifactId, "jar", version));
+            return this;
+        }
+
+        public Builder addFile(String file, String content) {
+            files.put(file, content);
             return this;
         }
 
@@ -252,7 +264,9 @@ public class TestInstallation {
                         module.getGroupId(), module.getArtifactId(), module.getVersion()));
             }
 
-
+            for (String path : files.keySet()) {
+                packageBuilder.writeContent(path, files.get(path));
+            }
 
             featurePackBuilder
                     .writeResources("wildfly/artifact-versions.properties",

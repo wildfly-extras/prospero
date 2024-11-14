@@ -29,6 +29,7 @@ import org.wildfly.prospero.ProsperoLogger;
 import org.wildfly.prospero.api.ArtifactChange;
 import org.wildfly.prospero.api.Console;
 import org.wildfly.prospero.api.InstallationMetadata;
+import org.wildfly.prospero.api.ProvisioningProgressEvent;
 import org.wildfly.prospero.api.SavedState;
 import org.wildfly.prospero.api.exceptions.ArtifactResolutionException;
 import org.wildfly.prospero.api.exceptions.MetadataException;
@@ -160,8 +161,12 @@ class PrepareCandidateAction implements AutoCloseable {
                 manifestRecord);
 
         try {
-            final GalleonFeaturePackAnalyzer galleonFeaturePackAnalyzer = new GalleonFeaturePackAnalyzer(galleonEnv.getChannels(), mavenSessionManager, console,
-                    installDir.resolve(ProsperoMetadataUtils.METADATA_DIR).resolve("keyring.gpg"));
+            final GalleonFeaturePackAnalyzer galleonFeaturePackAnalyzer = new GalleonFeaturePackAnalyzer(
+                    galleonEnv.getChannels(),
+                    mavenSessionManager,
+                    new NoProgressConsole(),
+                    installDir.resolve(ProsperoMetadataUtils.METADATA_DIR).resolve("keyring.gpg")
+            );
             galleonFeaturePackAnalyzer.cacheGalleonArtifacts(targetDir, installDir,  provisioningConfig);
         } catch (Exception e) {
             throw new RuntimeException(e);
@@ -222,6 +227,24 @@ class PrepareCandidateAction implements AutoCloseable {
             ProsperoLogger.ROOT_LOGGER.channelNamesWrittenToFile(candidateFile.toFile().getAbsolutePath());
         } catch (IOException e) {
             ProsperoLogger.ROOT_LOGGER.unableToWriteChannelNamesToFile(candidateFile.toFile().getAbsolutePath(),e);
+        }
+    }
+
+    private class NoProgressConsole implements Console {
+
+        @Override
+        public void progressUpdate(ProvisioningProgressEvent update) {
+            // ignore the progress updates - we're not actually provisioning the server now
+        }
+
+        @Override
+        public void println(String text) {
+            console.println(text);
+        }
+
+        @Override
+        public boolean acceptPublicKey(String key) {
+            return console.acceptPublicKey(key);
         }
     }
 }

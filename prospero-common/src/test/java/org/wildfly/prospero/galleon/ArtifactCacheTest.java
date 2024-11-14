@@ -17,6 +17,7 @@
 
 package org.wildfly.prospero.galleon;
 
+import org.jboss.galleon.util.HashUtils;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
@@ -163,5 +164,29 @@ public class ArtifactCacheTest {
                 .contains(GROUP_ID + ":" + ARTIFACT_ID);
         assertThat(line.get(1))
                 .contains(otherArtifact.getGroupId() + ":" + ARTIFACT_ID);
+    }
+
+    @Test
+    public void listCacheEntryWithEmptyArtifact() throws Exception {
+        assertThat(cache.listArtifacts())
+                .isEmpty();
+    }
+
+    @Test
+    public void listCacheEntryWithSingleArtifact() throws Exception {
+        cache.cache(anArtifact);
+
+        final Optional<File> artifact = cache.getArtifact(
+                anArtifact.getGroupId(),
+                anArtifact.getArtifactId(),
+                anArtifact.getExtension(),
+                anArtifact.getClassifier(),
+                anArtifact.getVersion()
+        );
+        final String hash = HashUtils.hashFile(artifact.get().toPath());
+
+        assertThat(cache.listArtifacts())
+                .containsExactly(new ArtifactCache.CachedArtifact(anArtifact.getGroupId(), anArtifact.getArtifactId(),
+                        anArtifact.getExtension(), anArtifact.getClassifier(), anArtifact.getVersion(), hash, artifact.get().toPath()));
     }
 }

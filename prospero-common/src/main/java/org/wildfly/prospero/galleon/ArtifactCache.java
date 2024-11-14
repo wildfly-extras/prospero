@@ -37,11 +37,13 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.StandardOpenOption;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.Set;
 import java.util.TreeMap;
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
@@ -275,5 +277,111 @@ public class ArtifactCache {
             buf.append(':').append(classifier);
         }
         return buf.append(':').append(version).toString();
+    }
+
+    public List<CachedArtifact> listArtifacts() {
+        final List<CachedArtifact> cacheEntries = new ArrayList<>();
+
+        final Set<String> artifactKeys = paths.keySet();
+        for (String artifactKey : artifactKeys) {
+            final Path artifactPath = paths.get(artifactKey);
+            final String artifactHash = hashes.get(artifactKey);
+
+            final String[] gav = artifactKey.split(":");
+            final String groupId = gav[0];
+            final String artifactId = gav[1];
+            final String extension = gav[2];
+            final String classifier;
+            final String version;
+            if (gav.length == 5) {
+                classifier = gav[3];
+                version = gav[4];
+            } else {
+                classifier = null;
+                version = gav[3];
+            }
+
+
+            cacheEntries.add(new CachedArtifact(groupId, artifactId, extension, classifier, version, artifactHash, artifactPath));
+        }
+        return cacheEntries;
+    }
+
+    public static class CachedArtifact {
+        private final String groupId;
+        private final String artifactId;
+        private final String version;
+        private final String classifier;
+        private final String extension;
+        private final Path path;
+        private final String hash;
+
+        CachedArtifact(String groupId, String artifactId, String extension, String classifier, String version, String hash, Path path) {
+            this.groupId = groupId;
+            this.artifactId = artifactId;
+            this.extension = extension;
+            this.classifier = classifier;
+            this.version = version;
+            this.hash = hash;
+            this.path = path;
+        }
+
+        public String getGav() {
+            return ArtifactCache.asKey(groupId, artifactId, extension, classifier, version);
+        }
+
+        public Path getPath() {
+            return path;
+        }
+
+        public String getHash() {
+            return hash;
+        }
+
+        public String getGroupId() {
+            return groupId;
+        }
+
+        public String getArtifactId() {
+            return artifactId;
+        }
+
+        public String getVersion() {
+            return version;
+        }
+
+        public String getExtension() {
+            return extension;
+        }
+
+        public String getClassifier() {
+            return classifier;
+        }
+
+        @Override
+        public String toString() {
+            return "CachedArtifact{" +
+                    "groupId='" + groupId + '\'' +
+                    ", artifactId='" + artifactId + '\'' +
+                    ", version='" + version + '\'' +
+                    ", classifier='" + classifier + '\'' +
+                    ", extension='" + extension + '\'' +
+                    ", path=" + path +
+                    ", hash='" + hash + '\'' +
+                    '}';
+        }
+
+        @Override
+        public boolean equals(Object o) {
+            if (this == o) return true;
+            if (o == null || getClass() != o.getClass()) return false;
+            CachedArtifact that = (CachedArtifact) o;
+            return Objects.equals(groupId, that.groupId) && Objects.equals(artifactId, that.artifactId) && Objects.equals(version, that.version) && Objects.equals(classifier, that.classifier) && Objects.equals(extension, that.extension) && Objects.equals(path, that.path) && Objects.equals(hash, that.hash);
+        }
+
+        @Override
+        public int hashCode() {
+            return Objects.hash(groupId, artifactId, version, classifier, extension, path, hash);
+        }
     }
 }

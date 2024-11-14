@@ -19,6 +19,10 @@ package org.wildfly.prospero.actions;
 
 import org.bouncycastle.openpgp.PGPPublicKeyRing;
 import org.bouncycastle.openpgp.PGPSignature;
+import org.jboss.galleon.ProvisioningException;
+import org.wildfly.prospero.api.MavenOptions;
+import org.wildfly.prospero.api.ProvisioningProgressEvent;
+import org.wildfly.prospero.api.exceptions.OperationException;
 import org.wildfly.prospero.signatures.InvalidCertificateException;
 import org.wildfly.prospero.signatures.KeystoreWriteException;
 import org.wildfly.prospero.signatures.DuplicatedCertificateException;
@@ -32,6 +36,7 @@ import org.wildfly.prospero.signatures.NoSuchCertificateException;
 import org.wildfly.prospero.metadata.ProsperoMetadataUtils;
 import org.wildfly.prospero.signatures.KeystoreManager;
 import org.wildfly.prospero.signatures.PGPLocalKeystore;
+import org.wildfly.prospero.wfchannel.MavenSessionManager;
 
 import java.nio.file.Path;
 import java.util.ArrayList;
@@ -45,10 +50,13 @@ import java.util.Optional;
  */
 public class CertificateAction implements AutoCloseable {
     private final PGPLocalKeystore localGpgKeystore;
+    private final Path installationDir;
 
     public CertificateAction(Path installationDir) throws MetadataException {
         final Path keyringPath = installationDir.resolve(ProsperoMetadataUtils.METADATA_DIR).resolve("keyring.gpg");
         localGpgKeystore = KeystoreManager.keystoreFor(keyringPath);
+
+        this.installationDir = installationDir;
     }
 
     /**
@@ -118,6 +126,20 @@ public class CertificateAction implements AutoCloseable {
         return pgpPublicKey.orElse(null);
     }
 
+    /**
+     * verify that all the components installed in the server are signed with one of the trusted certificates.
+     *
+     * @param console
+     * @param mavenOptions
+     * @return
+     * @throws ProvisioningException
+     * @throws OperationException
+     */
+    public VerificationResult verifyServerOrigin(VerificationListener console, MavenOptions mavenOptions) throws ProvisioningException, OperationException {
+        return new VerifyServerOriginAction(installationDir, new MavenSessionManager(mavenOptions), console)
+                .verify();
+    }
+
     private <T> List<T> asList(Iterator<T> publicKeys) {
         final ArrayList<T> res = new ArrayList<>();
         while (publicKeys.hasNext()) {
@@ -129,5 +151,15 @@ public class CertificateAction implements AutoCloseable {
     @Override
     public void close() {
         localGpgKeystore.close();
+    }
+
+    public interface VerificationListener {
+        void progressUpdate(ProvisioningProgressEvent update);
+        void provisionReferenceServerStarted();
+        void provisionReferenceServerFinished();
+        void validatingComponentsStarted();
+        void validatingComponentsFinished();
+        void checkingModifiedFilesStarted();
+        void checkingModifiedFilesFinished();
     }
 }

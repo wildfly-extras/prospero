@@ -810,4 +810,36 @@ public interface CliMessages {
     default ArgumentParsingException unableToReadKeyring(Path keyring, Exception cause) {
         return new ArgumentParsingException(String.format("Unable to parse GPG keyring at %s: %s", keyring, cause.getMessage()), cause);
     }
+
+    default String trustedCertificatesListHeader() {
+        return bundle.getString("prospero.verify-server.trusted_certificates.header");
+    }
+
+    default String verifiedComponentsOnly() {
+        return bundle.getString("prospero.verify-server.trusted_components_only.header");
+    }
+
+    default String unverifiedComponentsListHeader() {
+        return bundle.getString("prospero.verify-server.unverified_components.header");
+    }
+
+    default String modifiedFilesListHeader() {
+        return bundle.getString("prospero.verify-server.modified_files.header");
+    }
+
+    default String componentSignatureNotFound() {
+        return bundle.getString("prospero.verify-server.error.signature_not_found");
+    }
+
+    default String componentPublicKeyNotFound(String keyId) {
+        return String.format(bundle.getString("prospero.verify-server.error.untrusted_public_key"), keyId);
+    }
+
+    default String componentInvalidLocalFile() {
+        return bundle.getString("prospero.verify-server.error.invalid_local_file");
+    }
+
+    default String componentUnknownError(String error) {
+        return String.format(bundle.getString("prospero.verify-server.error.unknown_error"), error);
+    }
 }

@@ -31,6 +31,8 @@ public final class CliConstants {
      */
     public static final class Commands {
 
+        public static final String VALIDATE_SERVER = "validate-server";
+
         private Commands() {
         }
 

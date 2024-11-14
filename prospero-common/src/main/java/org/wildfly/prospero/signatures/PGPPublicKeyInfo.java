@@ -82,6 +82,23 @@ public class PGPPublicKeyInfo {
         return new PGPPublicKeyInfo(keyID, status, fingerprint, identity, issueDate, expiryDate);
     }
 
+    public static PGPPublicKeyInfo parse(PGPPublicKey key) {
+        final Iterator<String> userIDs = key.getUserIDs();
+        final ArrayList<String> tmpUserIds = new ArrayList<>();
+        while (userIDs.hasNext()) {
+            tmpUserIds.add(userIDs.next());
+        }
+
+        PGPKeyId keyID = new PGPKeyId(key.getKeyID());
+        String fingerprint = Hex.toHexString(key.getFingerprint()).toUpperCase(Locale.ROOT);
+        List<String> identity = Collections.unmodifiableList(tmpUserIds);
+        Status status = key.hasRevocation() ? PGPPublicKeyInfo.Status.REVOKED : PGPPublicKeyInfo.Status.TRUSTED;
+        LocalDateTime issueDate = key.getCreationTime().toInstant().atZone(ZoneId.systemDefault()).toLocalDateTime();
+        LocalDateTime expiryDate = key.getValidSeconds() == 0?null:issueDate.plusSeconds(key.getValidSeconds());
+
+        return new PGPPublicKeyInfo(keyID, status, fingerprint, identity, issueDate, expiryDate);
+    }
+
     private final PGPKeyId keyID;
 
     public enum Status {TRUSTED, EXPIRED, REVOKED}
