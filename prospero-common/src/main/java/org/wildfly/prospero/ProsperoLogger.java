@@ -34,6 +34,7 @@ import org.wildfly.prospero.api.exceptions.InvalidRepositoryArchiveException;
 import org.wildfly.prospero.api.exceptions.InvalidUpdateCandidateException;
 import org.wildfly.prospero.api.exceptions.MetadataException;
 import org.wildfly.prospero.api.exceptions.NoChannelException;
+import org.wildfly.prospero.api.exceptions.OperationException;
 import org.wildfly.prospero.api.exceptions.ProvisioningRuntimeException;
 
 import java.io.IOException;
@@ -403,4 +404,6 @@ public interface ProsperoLogger extends BasicLogger {
     @Message(id = 275, value = "The candidate at [%s] was not prepared for %s operation.")
     InvalidUpdateCandidateException wrongCandidateOperation(Path candidateServer, ApplyCandidateAction.Type operationType);
 
+    @Message(id = 276, value = "Unable to perform the update. The resolved update is older than the current version of the server: [%s]")
+    OperationException manifestDowngrade(String downgradeDescription);
 }

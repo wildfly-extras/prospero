@@ -36,9 +36,11 @@ import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.junit.MockitoJUnitRunner;
 import org.wildfly.channel.Repository;
+import org.wildfly.prospero.ProsperoLogger;
 import org.wildfly.prospero.actions.ApplyCandidateAction;
 import org.wildfly.prospero.actions.UpdateAction;
 import org.wildfly.prospero.api.ArtifactChange;
+import org.wildfly.prospero.api.ChannelVersionChange;
 import org.wildfly.prospero.api.FileConflict;
 import org.wildfly.prospero.api.MavenOptions;
 import org.wildfly.prospero.cli.ActionFactory;
@@ -335,6 +337,118 @@ public class UpdateCommandTest extends AbstractMavenCommandTest {
 
         assertEquals(ReturnCodes.SUCCESS, exitCode);
         verify(applyCandidateAction).applyUpdate(ApplyCandidateAction.Type.UPDATE);
+    }
+
+    @Test
+    public void testBuildUpdateIsRejectedIfManifestDowngradeIsDetected() throws Exception {
+        System.setProperty(UpdateCommand.JBOSS_MODULE_PATH, installationDir.toString());
+        when(updateAction.findUpdates()).thenReturn(
+                new UpdateSet(
+                        List.of(change("1.0.0", "1.0.1")),
+                        List.of(new ChannelVersionChange.Builder("test")
+                                .setOldPhysicalVersion("1.0.1")
+                                .setNewPhysicalVersion("1.0.0")
+                                .build()
+                        ),
+                        false
+                )
+        );
+        final Path updatePath = tempFolder.newFolder().toPath();
+
+        int exitCode = commandLine.execute(CliConstants.Commands.UPDATE, CliConstants.Commands.PREPARE, CliConstants.CANDIDATE_DIR, updatePath.toString(),
+                CliConstants.DIR, installationDir.toAbsolutePath().toString());
+
+        assertEquals(ReturnCodes.PROCESSING_ERROR, exitCode);
+        Mockito.verify(actionFactory).update(eq(installationDir.toAbsolutePath()), any(), any(), any());
+        Mockito.verify(updateAction, never()).buildUpdate(updatePath);
+
+        // verify the error contains manifest downgrade
+        assertThat(getErrorOutput())
+                .contains(ProsperoLogger.ROOT_LOGGER.manifestDowngrade("test: 1.0.1 -> 1.0.0").getMessage());
+    }
+
+    @Test
+    public void tesListUpdateShowsOnlySummaryIfManifestsAreAuthoritative() throws Exception {
+        System.setProperty(UpdateCommand.JBOSS_MODULE_PATH, installationDir.toString());
+        when(updateAction.findUpdates()).thenReturn(
+                new UpdateSet(
+                        List.of(change("1.0.0", "1.0.1")),
+                        List.of(new ChannelVersionChange.Builder("test")
+                                .setOldPhysicalVersion("1.0.0")
+                                .setNewPhysicalVersion("1.0.1")
+                                .build()
+                        ),
+                        true
+                )
+        );
+        final Path updatePath = tempFolder.newFolder().toPath();
+
+        int exitCode = commandLine.execute(CliConstants.Commands.UPDATE, CliConstants.Commands.LIST,
+                CliConstants.DIR, installationDir.toAbsolutePath().toString());
+
+        assertEquals(ReturnCodes.SUCCESS, exitCode);
+        Mockito.verify(actionFactory).update(eq(installationDir.toAbsolutePath()), any(), any(), any());
+
+        // verify the error contains manifest downgrade
+        assertThat(getStandardOutput())
+                .contains("test: 1.0.0 -> 1.0.1")
+                .doesNotContain("org.foo:bar");
+    }
+
+    @Test
+    public void tesListUpdateShowFullUpdatesIfManifestsIsNotAuthoritative() throws Exception {
+        System.setProperty(UpdateCommand.JBOSS_MODULE_PATH, installationDir.toString());
+        when(updateAction.findUpdates()).thenReturn(
+                new UpdateSet(
+                        List.of(change("1.0.0", "1.0.1")),
+                        List.of(new ChannelVersionChange.Builder("test")
+                                .setOldPhysicalVersion("1.0.0")
+                                .setNewPhysicalVersion("1.0.1")
+                                .build()
+                        ),
+                        false
+                )
+        );
+        final Path updatePath = tempFolder.newFolder().toPath();
+
+        int exitCode = commandLine.execute(CliConstants.Commands.UPDATE, CliConstants.Commands.LIST,
+                CliConstants.DIR, installationDir.toAbsolutePath().toString());
+
+        assertEquals(ReturnCodes.SUCCESS, exitCode);
+        Mockito.verify(actionFactory).update(eq(installationDir.toAbsolutePath()), any(), any(), any());
+
+        // verify the error contains manifest downgrade
+        assertThat(getStandardOutput())
+                .contains("test: 1.0.0 -> 1.0.1")
+                .contains("org.foo:bar");
+    }
+
+    @Test
+    public void tesListUpdateShowFullUpdatesIfManifestsIsAuthoritativeAndVerboseOption() throws Exception {
+        System.setProperty(UpdateCommand.JBOSS_MODULE_PATH, installationDir.toString());
+        when(updateAction.findUpdates()).thenReturn(
+                new UpdateSet(
+                        List.of(change("1.0.0", "1.0.1")),
+                        List.of(new ChannelVersionChange.Builder("test")
+                                .setOldPhysicalVersion("1.0.0")
+                                .setNewPhysicalVersion("1.0.1")
+                                .build()
+                        ),
+                        true
+                )
+        );
+
+        int exitCode = commandLine.execute(CliConstants.Commands.UPDATE, CliConstants.Commands.LIST,
+                CliConstants.DIR, installationDir.toAbsolutePath().toString(),
+                CliConstants.VERBOSE);
+
+        assertEquals(ReturnCodes.SUCCESS, exitCode);
+        Mockito.verify(actionFactory).update(eq(installationDir.toAbsolutePath()), any(), any(), any());
+
+        // verify the error contains manifest downgrade
+        assertThat(getStandardOutput())
+                .contains("test: 1.0.0 -> 1.0.1")
+                .contains("org.foo:bar");
     }
 
     private ArtifactChange change(String oldVersion, String newVersion) {
