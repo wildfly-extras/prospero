@@ -38,6 +38,7 @@ public final class CliConstants {
         public static final String APPLY = "apply";
         public static final String CHANNEL = "channel";
         public static final String CLONE = "clone";
+        public static final String BUILD_IMAGE = "build-image";
         public static final String CUSTOMIZATION_INIT_CHANNEL = "init";
         public static final String CUSTOMIZATION_INITIALIZE_CHANNEL = "initialize";
         public static final String CUSTOMIZATION_PROMOTE = "promote";
@@ -81,8 +82,10 @@ public final class CliConstants {
     public static final String LAYERS = "--layers";
     public static final String LIST_PROFILES = "--list-profiles";
     public static final String LOCAL_CACHE = "--local-cache";
+    public static final String NAME = "--name";
     public static final String OFFLINE = "--offline";
     public static final String PACKAGE_STABILITY_LEVEL = "--package-stability-level";
+    public static final String PASSWORD = "--password";
     public static final String PATH = "<path>";
     public static final String PRODUCT = "--product";
     public static final String PROFILE = "--profile";
@@ -91,10 +94,12 @@ public final class CliConstants {
     public static final String REPO_URL = "<repo-url>";
     public static final String REPOSITORIES = "--repositories";
     public static final String REVISION = "--revision";
+    public static final String RUNTIME_VERSION = "--runtime-version";
     public static final String SELF = "--self";
     public static final String SHADE_REPOSITORIES = "--shade-repositories";
     public static final String STABILITY_LEVEL = "--stability-level";
     public static final String USE_LOCAL_MAVEN_CACHE = "--use-default-local-cache";
+    public static final String USER = "--user";
     public static final String TARGET_CONFIG = "--target-config";
     public static final String V = "-v";
     public static final String VERBOSE = "--verbose";
