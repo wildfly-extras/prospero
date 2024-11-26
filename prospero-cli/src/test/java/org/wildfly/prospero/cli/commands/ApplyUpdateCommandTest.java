@@ -24,6 +24,7 @@ import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
 import org.junit.runner.RunWith;
 import org.mockito.Mock;
+import org.mockito.Mockito;
 import org.mockito.junit.MockitoJUnitRunner;
 import org.wildfly.prospero.actions.ApplyCandidateAction;
 import org.wildfly.prospero.api.FileConflict;
@@ -43,6 +44,7 @@ import java.nio.file.Path;
 import java.util.Collections;
 import java.util.List;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
@@ -186,6 +188,54 @@ public class ApplyUpdateCommandTest extends AbstractConsoleTest {
 
         Assert.assertEquals(getErrorOutput(), ReturnCodes.SUCCESS, exitCode);
         assertEquals(1, askedConfirmation);
+    }
+
+    @Test
+    public void noConflictArgumentFailsCommand_WhenConflictsAreFound() throws Exception {
+        final Path updatePath = mockInstallation("update");
+        final Path targetPath = mockInstallation("target");
+        when(applyCandidateAction.getConflicts()).thenReturn(List.of(mock(FileConflict.class)));
+
+        int exitCode = commandLine.execute(CliConstants.Commands.UPDATE, CliConstants.Commands.APPLY,
+                CliConstants.CANDIDATE_DIR, updatePath.toString(),
+                CliConstants.DIR, targetPath.toString(),
+                CliConstants.NO_CONFLICTS_ONLY);
+
+        assertEquals(ReturnCodes.PROCESSING_ERROR, exitCode);
+        assertThat(getErrorOutput())
+                .contains(CliMessages.MESSAGES.cancelledByConfilcts().getMessage());
+
+        verify(applyCandidateAction, Mockito.never()).applyUpdate(any());
+    }
+
+    @Test
+    public void noConflictArgumentHasNoEffect_WhenNoConflictsAreFound() throws Exception {
+        final Path updatePath = mockInstallation("update");
+        final Path targetPath = mockInstallation("target");
+        when(applyCandidateAction.getConflicts()).thenReturn(Collections.emptyList());
+
+        int exitCode = commandLine.execute(CliConstants.Commands.UPDATE, CliConstants.Commands.APPLY,
+                CliConstants.CANDIDATE_DIR, updatePath.toString(),
+                CliConstants.DIR, targetPath.toString(),
+                CliConstants.NO_CONFLICTS_ONLY);
+
+        assertEquals(ReturnCodes.SUCCESS, exitCode);
+        verify(applyCandidateAction).applyUpdate(ApplyCandidateAction.Type.UPDATE);
+    }
+
+    @Test
+    public void dryRun_DoesntCallApplyAction() throws Exception {
+        final Path updatePath = mockInstallation("update");
+        final Path targetPath = mockInstallation("target");
+        when(applyCandidateAction.getConflicts()).thenReturn(Collections.emptyList());
+
+        int exitCode = commandLine.execute(CliConstants.Commands.UPDATE, CliConstants.Commands.APPLY,
+                CliConstants.CANDIDATE_DIR, updatePath.toString(),
+                CliConstants.DIR, targetPath.toString(),
+                CliConstants.DRY_RUN);
+
+        assertEquals(ReturnCodes.SUCCESS, exitCode);
+        verify(applyCandidateAction, Mockito.never()).applyUpdate(any());
     }
 
     private Path mockInstallation(String target) throws IOException, MetadataException, XMLStreamException {

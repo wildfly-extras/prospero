@@ -49,20 +49,22 @@ public class CliProviderImpl implements CliProvider {
     }
 
     @Override
-    public String getApplyUpdateCommand(Path installationPath, Path candidatePath) {
+    public String getApplyUpdateCommand(Path installationPath, Path candidatePath, boolean noConflictsOnly) {
         return CliConstants.Commands.UPDATE + " " + CliConstants.Commands.APPLY + " "
                 + CliConstants.DIR + " " + escape(installationPath.toAbsolutePath()) + " "
                 + CliConstants.CANDIDATE_DIR + " " + escape(candidatePath.toAbsolutePath()) + " "
                 + CliConstants.YES + " "
+                + (noConflictsOnly ? CliConstants.NO_CONFLICTS_ONLY + " " : "")
                 + CliConstants.REMOVE;
     }
 
     @Override
-    public String getApplyRevertCommand(Path installationPath, Path candidatePath) {
+    public String getApplyRevertCommand(Path installationPath, Path candidatePath, boolean noConflictsOnly) {
         return CliConstants.Commands.REVERT + " " + CliConstants.Commands.APPLY + " "
                 + CliConstants.DIR + " " + escape(installationPath.toAbsolutePath()) + " "
                 + CliConstants.CANDIDATE_DIR + " " + escape(candidatePath.toAbsolutePath()) + " "
                 + CliConstants.YES + " "
+                + (noConflictsOnly ? CliConstants.NO_CONFLICTS_ONLY + " " : "")
                 + CliConstants.REMOVE;
     }
 

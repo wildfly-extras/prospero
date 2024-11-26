@@ -15,3 +15,35 @@
         maven:
           groupId: "org.wildfly.channels"
           artifactId: "wildfly"
+- name: "wildfly-ee"
+  galleonConfiguration: "classpath:wildfly-ee-provisioning.xml"
+  channels:
+    - schemaVersion: "2.0.0"
+      name: "wildfly-ee"
+      repositories:
+        - id: "central"
+          url: "https://repo1.maven.org/maven2/"
+        - id: "jboss-public"
+          url: "https://repository.jboss.org/nexus/content/groups/public/"
+        - id: "mrrc"
+          url: "https://maven.repository.redhat.com/ga/"
+      manifest:
+        maven:
+          groupId: "org.wildfly.channels"
+          artifactId: "wildfly-ee"
+- name: "wildfly-preview"
+  galleonConfiguration: "classpath:wildfly-preview-provisioning.xml"
+  channels:
+    - schemaVersion: "2.0.0"
+      name: "wildfly-preview"
+      repositories:
+        - id: "central"
+          url: "https://repo1.maven.org/maven2/"
+        - id: "jboss-public"
+          url: "https://repository.jboss.org/nexus/content/groups/public/"
+        - id: "mrrc"
+          url: "https://maven.repository.redhat.com/ga/"
+      manifest:
+        maven:
+          groupId: "org.wildfly.channels"
+          artifactId: "wildfly-preview"
