@@ -20,6 +20,7 @@ package org.wildfly.prospero.installation.git;
 import org.eclipse.jgit.api.ResetCommand;
 import org.eclipse.jgit.lib.ObjectId;
 import org.eclipse.jgit.lib.StoredConfig;
+import org.eclipse.jgit.util.SystemReader;
 import org.wildfly.channel.Channel;
 import org.wildfly.channel.ChannelManifest;
 import org.wildfly.prospero.ProsperoLogger;
@@ -65,6 +66,12 @@ public class GitStorage implements AutoCloseable {
     private final Git git;
     private final Path base;
     private final SavedStateParser savedStateParser;
+
+    static {
+        // override the SystemReader to ignore git configuration files
+        final SystemReader systemReader = SystemReader.getInstance();
+        SystemReader.setInstance(new NonPersistingSystemReader(systemReader));
+    }
 
     public GitStorage(Path base) throws MetadataException {
         this.base = base.resolve(ProsperoMetadataUtils.METADATA_DIR);
