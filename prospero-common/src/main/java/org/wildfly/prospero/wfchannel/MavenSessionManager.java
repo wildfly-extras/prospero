@@ -64,12 +64,6 @@ public class MavenSessionManager {
         } else {
             this.provisioningRepo = mavenOptions.getLocalCache().toAbsolutePath();
         }
-
-        // allow to resolve file-system repositories in offline mode
-        if (System.getProperty(AETHER_OFFLINE_PROTOCOLS_PROPERTY) == null) {
-            System.setProperty(AETHER_OFFLINE_PROTOCOLS_PROPERTY, AETHER_OFFLINE_PROTOCOLS_VALUE);
-            Runtime.getRuntime().addShutdownHook(new Thread(()-> System.clearProperty(AETHER_OFFLINE_PROTOCOLS_PROPERTY)));
-        }
     }
 
     public MavenSessionManager(MavenSessionManager base) {
@@ -100,6 +94,7 @@ public class MavenSessionManager {
 
         final LocalRepository localRepo = new LocalRepository(provisioningRepo.toAbsolutePath().toFile());
         session.setLocalRepositoryManager(system.newLocalRepositoryManager(session, localRepo));
+        session.setConfigProperty(AETHER_OFFLINE_PROTOCOLS_PROPERTY, AETHER_OFFLINE_PROTOCOLS_VALUE);
         session.setOffline(offline);
         return session;
     }
