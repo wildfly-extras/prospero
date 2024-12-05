@@ -17,10 +17,6 @@
 
 package org.wildfly.prospero.it.cli;
 
-import org.eclipse.aether.DefaultRepositorySystemSession;
-import org.eclipse.aether.RepositorySystem;
-import org.eclipse.aether.artifact.DefaultArtifact;
-import org.eclipse.aether.resolution.ArtifactRequest;
 import org.eclipse.aether.resolution.ArtifactResolutionException;
 import org.jboss.galleon.ProvisioningException;
 import org.junit.Assert;
@@ -31,33 +27,46 @@ import org.junit.rules.TemporaryFolder;
 import org.wildfly.channel.ChannelManifest;
 import org.wildfly.channel.Stream;
 import org.wildfly.channel.version.VersionMatcher;
-import org.wildfly.prospero.api.InstallationProfilesManager;
 import org.wildfly.prospero.cli.ReturnCodes;
 import org.wildfly.prospero.cli.commands.CliConstants;
 import org.wildfly.prospero.it.ExecutionUtils;
 import org.wildfly.prospero.metadata.ProsperoMetadataUtils;
-import org.wildfly.prospero.model.InstallationProfile;
 import org.wildfly.prospero.model.ManifestYamlSupport;
 import org.wildfly.prospero.model.ProsperoConfig;
-import org.wildfly.prospero.wfchannel.MavenSessionManager;
 
-import java.io.File;
-import java.io.FileInputStream;
 import java.io.IOException;
+import java.io.InputStream;
+import java.net.URL;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
-import java.util.ArrayList;
+import java.util.Properties;
 import java.util.concurrent.TimeUnit;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
 
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
 public class GenerateTest {
 
-    private static final String PRODUCT = "wildfly";
-    private static final String VERSION = "28.0.0.Final";
+    private static final String PRODUCT;
+    private static final String VERSION;
+    protected static final String BASE_DIST_URL;
+    protected static final String CORE_VERSION;// = "20.0.1.Final";
+
+    static {
+        try {
+            final Properties properties = new Properties();
+            properties.load(GenerateTest.class.getClassLoader().getResourceAsStream("properties-from-pom.properties"));
+            PRODUCT = (String) properties.get("prospero.test.generate.server.profile");
+            VERSION = (String) properties.get("prospero.test.generate.server_dist.version");
+            BASE_DIST_URL = (String) properties.get("prospero.test.generate.server_dist.url");
+            CORE_VERSION = (String) properties.get("prospero.test.generate.server_core.version");
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+    }
 
     @Rule
     public TemporaryFolder tempDir = new TemporaryFolder();
@@ -90,7 +99,9 @@ public class GenerateTest {
         Path configurationPath = ProsperoMetadataUtils.configurationPath(serverDir);
         assertTrue(Files.exists(manifestPath));
         ChannelManifest manifest = ManifestYamlSupport.parse(manifestPath.toFile());
-        assertTrue(manifest.getStreams().contains(new Stream("org.wildfly.core", "wildfly-server", "20.0.1.Final")));
+        assertEquals(new Stream("org.wildfly.core", "wildfly-server", CORE_VERSION),
+                manifest.getStreams().stream().filter(s -> s.getGroupId().equals("org.wildfly.core")
+                        && s.getArtifactId().equals("wildfly-server")).findFirst().orElse(null));
         assertTrue(Files.exists(configurationPath));
         ProsperoConfig prosperoConfig = ProsperoConfig.readConfig(serverDir.resolve(ProsperoMetadataUtils.METADATA_DIR));
         Assert.assertFalse(prosperoConfig.getChannels().isEmpty());
@@ -104,22 +115,15 @@ public class GenerateTest {
 
         // check the vertx-core stream in manifest
         manifest = ManifestYamlSupport.parse(manifestPath.toFile());
-        assertTrue(VersionMatcher.COMPARATOR.compare("20.0.1.Final", manifest.getStreams().stream()
+        assertTrue(VersionMatcher.COMPARATOR.compare(CORE_VERSION, manifest.getStreams().stream()
                 .filter(s->s.getGroupId().equals("org.wildfly.core") && s.getArtifactId().equals("wildfly-server"))
                 .map(Stream::getVersion).findFirst().get()) < 0);
     }
 
     private void downloadAndUnzipServer() throws ProvisioningException, ArtifactResolutionException, IOException {
-        InstallationProfile knownFeaturePack = InstallationProfilesManager.getByName(PRODUCT);
-        ProsperoConfig prosperoConfig = new ProsperoConfig(knownFeaturePack.getChannels());
-        final MavenSessionManager mavenSessionManager = new MavenSessionManager();
-        final RepositorySystem system = mavenSessionManager.newRepositorySystem();
-        final DefaultRepositorySystemSession session = mavenSessionManager.newRepositorySystemSession(system);
-        File serverZip = system.resolveArtifact(session, new ArtifactRequest()
-            .setRepositories(new ArrayList<>(prosperoConfig.listAllRepositories()))
-          .setArtifact(new DefaultArtifact("org.wildfly", "wildfly-dist", "zip", VERSION)))
-          .getArtifact().getFile();
-        try (ZipInputStream zis = new ZipInputStream(new FileInputStream(serverZip))) {
+        final URL downloadUrl = new URL(BASE_DIST_URL);
+        final InputStream inputStream = downloadUrl.openStream();
+        try (ZipInputStream zis = new ZipInputStream(inputStream)) {
             ZipEntry entry;
             while ((entry = zis.getNextEntry()) != null) {
                 if (entry.isDirectory()) {
