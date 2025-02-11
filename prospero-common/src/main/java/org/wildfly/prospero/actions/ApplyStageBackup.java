@@ -2,7 +2,9 @@ package org.wildfly.prospero.actions;
 
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.IOUtils;
+import org.jboss.galleon.Constants;
 import org.wildfly.prospero.ProsperoLogger;
+import org.wildfly.prospero.metadata.ProsperoMetadataUtils;
 
 import java.io.File;
 import java.io.FileInputStream;
@@ -65,55 +67,104 @@ class ApplyStageBackup implements AutoCloseable {
     }
 
     /**
-     * add all the files in the server to cache
+     * add all the server-managed files in the server to cache
      *
      * @throws IOException - if unable to backup the files
      */
     public void recordAll() throws IOException {
-        Files.walkFileTree(serverRoot, new SimpleFileVisitor<>() {
+        ProsperoLogger.ROOT_LOGGER.debug("Starting building the update backup.");
 
+        // if the server doesn't conatain a galleon provisioning record, skip building the backup
+        final Path hashesRoot = serverRoot.resolve(Constants.PROVISIONED_STATE_DIR).resolve(Constants.HASHES);
+        if (!Files.exists(hashesRoot)) {
+            ProsperoLogger.ROOT_LOGGER.warn("Unable to perform the backup: No Galleon Hashes record found.");
+            return;
+        }
+
+
+        // walk the hashes to record server-managed files while ignoring non-managed files
+        final GalleonHashesFileWalker serverFS = new GalleonHashesFileWalker(serverRoot) {
             @Override
-            public FileVisitResult visitFileFailed(Path file, IOException exc) throws IOException {
-                // if the file in the installation is not readable AND it does not exist in the candidate
-                // we assume it is user controlled file and we ignore it
-                return ignoreUserManagedFiles(file, exc);
-            }
+            void visitFile(Path file) throws IOException {
+                final Path serverPath = serverRoot.resolve(file);
+                final Path backupPath = backupRoot.resolve(file);
 
-            @Override
-            public FileVisitResult preVisitDirectory(Path dir, BasicFileAttributes attrs) throws IOException {
-
-                if (dir.equals(backupRoot)) {
-                    return FileVisitResult.SKIP_SUBTREE;
+                if (!Files.exists(serverPath)) {
+                    ProsperoLogger.ROOT_LOGGER.debug("Unable to find managed file: " + serverPath + ". File backup skipped.");
                 } else {
-                    final Path relative = serverRoot.relativize(dir);
-                    Files.createDirectories(backupRoot.resolve(relative));
-                    return FileVisitResult.CONTINUE;
+                    backupFile(serverPath, backupPath);
                 }
             }
 
             @Override
-            public FileVisitResult visitFile(Path file, BasicFileAttributes attrs) throws IOException {
-                if (isUserProtectedFile(file)) {
-                    return FileVisitResult.SKIP_SUBTREE;
-                }
-                final Path relative = serverRoot.relativize(file);
-                if (relative.startsWith(Path.of(".installation", ".git"))) {
-                    // when using hardlinks, we need to remove the file and copy the new one in it's place otherwise both would be changed.
-                    // the git folder is manipulated by jgit and we can't control how it operates on the files
-                    // therefore we need to copy the files upfront rather than hardlinking them
-                    Files.copy(file, backupRoot.resolve(relative));
-                } else {
-                    // we try to use hardlinks instead of copy to save disk space
-                    // fallback on copy if Filesystem doesn't support hardlinks
-                    try {
-                        Files.createLink(backupRoot.resolve(relative), file);
-                    } catch (UnsupportedOperationException e) {
-                        Files.copy(file, backupRoot.resolve(relative));
+            void visitDirectory(Path relative) throws IOException {
+                ProsperoLogger.ROOT_LOGGER.tracef("Creating a directory in the backup folder: %s", relative);
+                Files.createDirectories(backupRoot.resolve(relative));
+            }
+        };
+        serverFS.walk();
+
+
+        // we need to walk the candidate tree as well and find files that might overwrite existing user files
+        ProsperoLogger.ROOT_LOGGER.trace("Checking candidate folder for overwriting files.");
+        final GalleonHashesFileWalker candidateFS = new GalleonHashesFileWalker(candidateRoot) {
+            @Override
+            void visitFile(Path file) throws IOException {
+                // if the file exists in the candidate folder, and it exists in the server folder,
+                // but is not backed up yet, it means there is a user modification that would be overwritten
+                // in this case we're going to check if the permissions match and if they do we'll copy the backup
+                // if not we're going to throw an exception and let user handle it
+
+                final Path serverFile = serverRoot
+                        .resolve(file);
+                final Path backupFile = backupRoot
+                        .resolve(file);
+
+                if (Files.exists(serverFile) && !Files.exists(backupFile)) {
+                    // the server file has to be read and write-able by the current user
+                    if (!Files.isReadable(serverFile) || !Files.isWritable(serverFile)) {
+                        throw new RuntimeException("The update is unable to modify file " + serverFile + " due to invalid file permissions.");
                     }
+
+                    if (!Files.exists(backupFile.getParent())) {
+                        ProsperoLogger.ROOT_LOGGER.tracef("Creating added directory based on the candidate folder:%s.", backupFile);
+                        Files.createDirectories(backupFile.getParent());
+                    }
+
+                    backupFile(serverFile, backupFile);
                 }
-                return FileVisitResult.CONTINUE;
             }
-        });
+
+            @Override
+            void visitDirectory(Path dir) throws IOException {
+
+            }
+        };
+        candidateFS.walk();
+
+        // copy .installation and .hashes folders as they are
+        if (Files.exists(serverRoot.resolve(Constants.PROVISIONED_STATE_DIR))) {
+            ProsperoLogger.ROOT_LOGGER.trace("Copying the Galleon provisioned state directory.");
+            FileUtils.copyDirectory(serverRoot.resolve(Constants.PROVISIONED_STATE_DIR).toFile(), backupRoot.resolve(Constants.PROVISIONED_STATE_DIR).toFile());
+        }
+        if (Files.exists(serverRoot.resolve(ProsperoMetadataUtils.METADATA_DIR))) {
+            ProsperoLogger.ROOT_LOGGER.trace("Copying the Prospero installation directory.");
+            FileUtils.copyDirectory(serverRoot.resolve(ProsperoMetadataUtils.METADATA_DIR).toFile(), backupRoot.resolve(ProsperoMetadataUtils.METADATA_DIR).toFile());
+        }
+
+        ProsperoLogger.ROOT_LOGGER.debug("Finished building the update backup.");
+    }
+
+    private static void backupFile(Path serverPath, Path backupPath) throws IOException {
+        // we try to use hardlinks instead of copy to save disk space
+        // fallback on copy if Filesystem doesn't support hardlinks
+        ProsperoLogger.ROOT_LOGGER.tracef("Backing up file %s to %s.", serverPath, backupPath);
+
+        try {
+            Files.createLink(backupPath, serverPath);
+        } catch (UnsupportedOperationException e) {
+            Files.copy(serverPath, backupPath);
+        }
     }
 
     /**
@@ -130,6 +181,10 @@ class ApplyStageBackup implements AutoCloseable {
      * @throws IOException - if unable to perform operations of the filesystem
      */
     public void restore() throws IOException {
+        if (backupRoot.toFile().listFiles() == null || backupRoot.toFile().listFiles().length == 0) {
+            return;
+        }
+
         if (ProsperoLogger.ROOT_LOGGER.isDebugEnabled()) {
             ProsperoLogger.ROOT_LOGGER.debug("Restoring server from the backup.");
         }
@@ -159,7 +214,10 @@ class ApplyStageBackup implements AutoCloseable {
                     return FileVisitResult.SKIP_SUBTREE;
                 }
                 final Path relativePath = serverRoot.relativize(file);
-                if (!Files.exists(backupRoot.resolve(relativePath))) {
+                // remove it only if it exists in the candidate but doesn't exist in the backup
+                // note that doesn't handle the case of a pre-existing file being overwritten by an update...
+                // in this case I think we need to compare the candidate before the update starts. Or record each replaced file separately
+                if (!Files.exists(backupRoot.resolve(relativePath)) && Files.exists(candidateRoot.resolve(relativePath))) {
                     if (ProsperoLogger.ROOT_LOGGER.isTraceEnabled()) {
                         ProsperoLogger.ROOT_LOGGER.trace("Removing added file " + relativePath);
                     }
@@ -172,7 +230,7 @@ class ApplyStageBackup implements AutoCloseable {
             @Override
             public FileVisitResult postVisitDirectory(Path dir, IOException exc) throws IOException {
                 final Path relativePath = serverRoot.relativize(dir);
-                if (!Files.exists(backupRoot.resolve(relativePath))) {
+                if (!Files.exists(backupRoot.resolve(relativePath)) && Files.exists(candidateRoot.resolve(relativePath))) {
                     if (ProsperoLogger.ROOT_LOGGER.isTraceEnabled()) {
                         ProsperoLogger.ROOT_LOGGER.trace("Removing added directory " + relativePath);
                     }
@@ -184,7 +242,8 @@ class ApplyStageBackup implements AutoCloseable {
 
             @Override
             public FileVisitResult preVisitDirectory(Path dir, BasicFileAttributes attrs) throws IOException {
-                if (dir.equals(backupRoot)) {
+                if (dir.equals(backupRoot) || dir.equals(serverRoot.resolve(Constants.PROVISIONED_STATE_DIR))
+                        || dir.equals(serverRoot.resolve(ProsperoMetadataUtils.METADATA_DIR))) {
                     return FileVisitResult.SKIP_SUBTREE;
                 } else {
                     return FileVisitResult.CONTINUE;

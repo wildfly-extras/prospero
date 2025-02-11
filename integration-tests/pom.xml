@@ -49,6 +49,11 @@
             <artifactId>xnio-nio</artifactId>
             <scope>test</scope>
         </dependency>
+        <dependency>
+            <groupId>org.testcontainers</groupId>
+            <artifactId>testcontainers</artifactId>
+            <scope>test</scope>
+        </dependency>
 
     </dependencies>
 
@@ -116,6 +121,19 @@
                         </exclusion>
                     </exclusions>
                 </dependency>
+                <!-- we need the prospero distribution to be build for integration tests -->
+                <dependency>
+                    <groupId>org.wildfly.prospero</groupId>
+                    <artifactId>prospero-build</artifactId>
+                    <version>${project.version}</version>
+                    <scope>test</scope>
+                    <exclusions>
+                        <exclusion>
+                            <groupId>*</groupId>
+                            <artifactId>*</artifactId>
+                        </exclusion>
+                    </exclusions>
+                </dependency>
             </dependencies>
             <build>
                 <plugins>
@@ -140,6 +158,32 @@
                                             <overWrite>true</overWrite>
                                             <outputDirectory>target/test-classes/manifests</outputDirectory>
                                             <destFileName>prospero-manifest.yaml</destFileName>
+                                        </artifactItem>
+                                    </artifactItems>
+                                </configuration>
+                            </execution>
+                            <execution>
+                                <id>copy-prospero-dist</id>
+                                <phase>compile</phase>
+                                <goals>
+                                    <goal>unpack</goal>
+                                </goals>
+                                <configuration>
+                                    <artifactItems>
+                                        <artifactItem>
+                                            <groupId>org.wildfly.prospero</groupId>
+                                            <artifactId>prospero-build</artifactId>
+                                            <version>${project.version}</version>
+                                            <type>zip</type>
+                                            <overWrite>true</overWrite>
+                                            <outputDirectory>target/test-classes/prospero-dist</outputDirectory>
+                                            <!-- use the file mapper to remove the top level folder -->
+                                            <fileMappers>
+                                                <org.codehaus.plexus.components.io.filemappers.RegExpFileMapper>
+                                                    <pattern>prospero-[^/]*/</pattern>
+                                                    <replacement>./</replacement>
+                                                </org.codehaus.plexus.components.io.filemappers.RegExpFileMapper>
+                                            </fileMappers>
                                         </artifactItem>
                                     </artifactItems>
                                 </configuration>

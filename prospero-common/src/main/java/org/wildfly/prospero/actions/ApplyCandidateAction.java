@@ -42,12 +42,10 @@ import org.eclipse.aether.artifact.Artifact;
 import org.jboss.galleon.Constants;
 import org.jboss.galleon.Errors;
 
-import org.jboss.galleon.ProvisioningManager;
 import org.wildfly.prospero.ProsperoLogger;
 import org.wildfly.prospero.api.ArtifactChange;
 import org.wildfly.prospero.api.FileConflict;
 import org.wildfly.prospero.api.InstallationMetadata;
-import org.wildfly.prospero.api.MavenOptions;
 import org.wildfly.prospero.api.SavedState;
 import org.wildfly.prospero.api.exceptions.ApplyCandidateException;
 import org.wildfly.prospero.api.exceptions.InvalidUpdateCandidateException;
@@ -74,13 +72,12 @@ import org.jboss.galleon.util.HashUtils;
 import org.jboss.galleon.util.IoUtils;
 import org.jboss.galleon.util.PathsUtils;
 import org.wildfly.prospero.galleon.ArtifactCache;
-import org.wildfly.prospero.galleon.GalleonEnvironment;
+import org.wildfly.prospero.galleon.GalleonUtils;
 import org.wildfly.prospero.installation.git.GitStorage;
 import org.wildfly.prospero.licenses.LicenseManager;
 import org.wildfly.prospero.metadata.ProsperoMetadataUtils;
 import org.wildfly.prospero.updates.MarkerFile;
 import org.wildfly.prospero.updates.UpdateSet;
-import org.wildfly.prospero.wfchannel.MavenSessionManager;
 
 /**
  * Merges a "candidate" server into base server. The "candidate" can be an update or revert.
@@ -173,7 +170,7 @@ public class ApplyCandidateAction {
             throw ex;
         }
 
-        final FsDiff diffs = findChanges();
+        final FsDiff diffs = GalleonUtils.findChanges(installationDir);
         ApplyStageBackup backup = null;
         try {
             backup = new ApplyStageBackup(installationDir, updateDir);
@@ -297,7 +294,7 @@ public class ApplyCandidateAction {
      */
     public List<FileConflict> getConflicts() throws ProvisioningException, OperationException {
         try {
-            return compareServers(findChanges());
+            return compareServers(GalleonUtils.findChanges(installationDir));
         } catch (IOException ex) {
             throw new ProvisioningException(ex);
         }
@@ -377,21 +374,6 @@ public class ApplyCandidateAction {
 
     private boolean targetServerIsRunning() {
         return Files.exists(installationDir.resolve(STANDALONE_STARTUP_MARKER)) || Files.exists(installationDir.resolve(DOMAIN_STARTUP_MARKER));
-    }
-
-    private FsDiff findChanges() throws ProvisioningException, OperationException {
-        // offline is enough - we just need to read the configuration
-        final MavenOptions mavenOptions = MavenOptions.builder()
-                .setOffline(true)
-                .setNoLocalCache(true)
-                .build();
-        try (GalleonEnvironment galleonEnv = GalleonEnvironment.builder(installationDir, Collections.emptyList(),
-                        new MavenSessionManager(mavenOptions))
-                .build()) {
-            ProvisioningManager provisioningManager = galleonEnv.getProvisioningManager();
-            return provisioningManager.getFsDiff();
-        }
-
     }
 
     private void updateMetadata(Type operation) throws IOException, MetadataException {
