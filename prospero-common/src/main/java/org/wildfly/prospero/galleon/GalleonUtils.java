@@ -19,6 +19,7 @@ package org.wildfly.prospero.galleon;
 
 import org.apache.commons.io.FileUtils;
 import org.jboss.galleon.ProvisioningException;
+import org.jboss.galleon.diff.FsDiff;
 import org.jboss.galleon.universe.FeaturePackLocation;
 import org.jboss.galleon.universe.UniverseResolver;
 import org.jboss.galleon.universe.maven.repo.MavenRepoManager;
@@ -34,6 +35,7 @@ import java.net.URISyntaxException;
 import java.net.URL;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -44,6 +46,9 @@ import org.jboss.galleon.api.GalleonBuilder;
 import org.jboss.galleon.api.Provisioning;
 import org.jboss.galleon.api.ProvisioningBuilder;
 import org.jboss.galleon.api.config.GalleonProvisioningConfig;
+import org.wildfly.prospero.api.MavenOptions;
+import org.wildfly.prospero.api.exceptions.OperationException;
+import org.wildfly.prospero.wfchannel.MavenSessionManager;
 
 public class GalleonUtils {
 
@@ -242,6 +247,27 @@ public class GalleonUtils {
         } else {
             throw new IllegalArgumentException(String.format("Can't use scheme '%s' for Galleon provisioning.xml URI.",
                     uri.getScheme()));
+        }
+    }
+
+    /**
+     * Returns list of files in the installation folder with their status (changed/added/removed)
+     *
+     * @param root
+     * @return
+     * @throws ProvisioningException
+     * @throws OperationException
+     */
+    public static FsDiff findChanges(Path root) throws ProvisioningException, OperationException {
+        // offline is enough - we just need to read the configuration
+        final MavenOptions mavenOptions = MavenOptions.builder()
+                .setOffline(true)
+                .setNoLocalCache(true)
+                .build();
+        try (GalleonEnvironment galleonEnv = GalleonEnvironment.builder(root, Collections.emptyList(),
+                        new MavenSessionManager(mavenOptions), true)
+                .build()) {
+            return galleonEnv.getProvisioning().getFsDiff();
         }
     }
 
