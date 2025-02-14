@@ -73,18 +73,19 @@ class ApplyStageBackup implements AutoCloseable {
      */
     public void recordAll() throws IOException {
         ProsperoLogger.ROOT_LOGGER.debug("Starting building the update backup.");
-        final Path hashesRoot = serverRoot.resolve(Constants.PROVISIONED_STATE_DIR).resolve(Constants.HASHES);
 
         // if the server doesn't conatain a galleon provisioning record, skip building the backup
+        final Path hashesRoot = serverRoot.resolve(Constants.PROVISIONED_STATE_DIR).resolve(Constants.HASHES);
         if (!Files.exists(hashesRoot)) {
             ProsperoLogger.ROOT_LOGGER.warn("Unable to perform the backup: No Galleon Hashes record found.");
             return;
         }
 
+
         // walk the hashes to record server-managed files while ignoring non-managed files
-        Files.walkFileTree(hashesRoot, new GalleonHashesFileVisitor(hashesRoot, backupRoot) {
+        final GalleonHashesFileWalker serverFS = new GalleonHashesFileWalker(serverRoot) {
             @Override
-            FileVisitResult doVisitFile(Path file) throws IOException {
+            void visitFile(Path file) throws IOException {
                 final Path serverPath = serverRoot.resolve(file);
                 final Path backupPath = backupRoot.resolve(file);
 
@@ -93,24 +94,22 @@ class ApplyStageBackup implements AutoCloseable {
                 } else {
                     backupFile(serverPath, backupPath);
                 }
-
-                return FileVisitResult.CONTINUE;
             }
 
-            protected FileVisitResult doPreVisitDirectory(Path relative) throws IOException {
+            @Override
+            void visitDirectory(Path relative) throws IOException {
                 ProsperoLogger.ROOT_LOGGER.tracef("Creating a directory in the backup folder: %s", relative);
                 Files.createDirectories(backupRoot.resolve(relative));
-                return FileVisitResult.CONTINUE;
             }
-        });
+        };
+        serverFS.walk();
 
 
         // we need to walk the candidate tree as well and find files that might overwrite existing user files
         ProsperoLogger.ROOT_LOGGER.trace("Checking candidate folder for overwriting files.");
-        final Path candidateHashes = candidateRoot.resolve(Constants.PROVISIONED_STATE_DIR).resolve(Constants.HASHES);
-        Files.walkFileTree(candidateHashes, new GalleonHashesFileVisitor(candidateHashes, backupRoot) {
+        final GalleonHashesFileWalker candidateFS = new GalleonHashesFileWalker(candidateRoot) {
             @Override
-            FileVisitResult doVisitFile(Path file) throws IOException {
+            void visitFile(Path file) throws IOException {
                 // if the file exists in the candidate folder, and it exists in the server folder,
                 // but is not backed up yet, it means there is a user modification that would be overwritten
                 // in this case we're going to check if the permissions match and if they do we'll copy the backup
@@ -134,15 +133,14 @@ class ApplyStageBackup implements AutoCloseable {
 
                     backupFile(serverFile, backupFile);
                 }
-
-                return FileVisitResult.CONTINUE;
             }
 
             @Override
-            public FileVisitResult preVisitDirectory(Path dir, BasicFileAttributes attrs) throws IOException {
-                return FileVisitResult.CONTINUE;
+            void visitDirectory(Path dir) throws IOException {
+
             }
-        });
+        };
+        candidateFS.walk();
 
         // copy .installation and .hashes folders as they are
         if (Files.exists(serverRoot.resolve(Constants.PROVISIONED_STATE_DIR))) {
@@ -183,6 +181,10 @@ class ApplyStageBackup implements AutoCloseable {
      * @throws IOException - if unable to perform operations of the filesystem
      */
     public void restore() throws IOException {
+        if (backupRoot.toFile().listFiles() == null || backupRoot.toFile().listFiles().length == 0) {
+            return;
+        }
+
         if (ProsperoLogger.ROOT_LOGGER.isDebugEnabled()) {
             ProsperoLogger.ROOT_LOGGER.debug("Restoring server from the backup.");
         }

@@ -44,7 +44,10 @@ public class ApplyStageBackupTest {
 
     private Path mockServer() throws IOException {
         final Path dir = temp.newFolder().toPath();
-        Files.createDirectories(dir.resolve(Constants.PROVISIONED_STATE_DIR).resolve(Constants.HASHES));
+        final Path hashes = Files.createDirectories(dir.resolve(Constants.PROVISIONED_STATE_DIR).resolve(Constants.HASHES));
+        Files.writeString(hashes.getParent().resolve(Constants.PROVISIONING_XML), "<installation xmlns=\"urn:jboss:galleon:provisioning:3.0\">\n" +
+                "    <feature-pack location=\"org.wildfly:wildfly-galleon-pack:zip\"/>\n" +
+                "</installation>");
         return dir;
     }
 
@@ -330,6 +333,26 @@ public class ApplyStageBackupTest {
             testFile.toFile().setReadable(true);
             testDir.toFile().setReadable(true);
         }
+    }
+
+    @Test
+    public void skipBackupIfHashesIsNotAvailable() throws Exception {
+        final Path testFile = server.resolve("test/test.txt");
+        final Path existing = createFile("test/existing.txt");
+        createCandidateFile("test/test.txt");
+
+        // remove hashes folder
+        FileUtils.deleteQuietly(server.resolve(Constants.PROVISIONED_STATE_DIR).toFile());
+        FileUtils.deleteQuietly(candidate.resolve(Constants.PROVISIONED_STATE_DIR).toFile());
+
+        backup.recordAll();
+        writeFile(testFile);
+        backup.restore();
+
+        assertThat(existing)
+                .hasContent("test text");
+        assertThat(testFile)
+                .hasContent("changed text");
     }
 
     private static void writeFile(Path testFile) throws IOException {
