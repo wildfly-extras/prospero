@@ -23,6 +23,7 @@ import org.jboss.galleon.ProvisioningManager;
 import org.jboss.galleon.config.ProvisioningConfig;
 import org.jboss.galleon.layout.ProvisioningLayoutFactory;
 import org.jboss.galleon.state.ProvisionedFeaturePack;
+import org.jboss.galleon.diff.FsDiff;
 import org.jboss.galleon.universe.FeaturePackLocation;
 import org.jboss.galleon.universe.UniverseResolver;
 import org.jboss.galleon.universe.maven.repo.MavenRepoManager;
@@ -33,6 +34,9 @@ import org.jboss.galleon.xml.XmlParsers;
 import org.jboss.logging.Logger;
 import org.wildfly.channel.UnresolvedMavenArtifactException;
 import org.wildfly.prospero.ProsperoLogger;
+import org.wildfly.prospero.api.MavenOptions;
+import org.wildfly.prospero.api.exceptions.OperationException;
+import org.wildfly.prospero.wfchannel.MavenSessionManager;
 
 import java.io.File;
 import java.io.IOException;
@@ -44,6 +48,7 @@ import java.net.URL;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -236,5 +241,29 @@ public class GalleonUtils {
                     uri.getScheme()));
         }
     }
+
+    /**
+     * Returns list of files in the installation folder with their status (changed/added/removed)
+     *
+     * @param root
+     * @return
+     * @throws ProvisioningException
+     * @throws OperationException
+     */
+    public static FsDiff findChanges(Path root) throws ProvisioningException, OperationException {
+        // offline is enough - we just need to read the configuration
+        final MavenOptions mavenOptions = MavenOptions.builder()
+                .setOffline(true)
+                .setNoLocalCache(true)
+                .build();
+        try (GalleonEnvironment galleonEnv = GalleonEnvironment.builder(root, Collections.emptyList(),
+                        new MavenSessionManager(mavenOptions))
+                .build()) {
+            ProvisioningManager provisioningManager = galleonEnv.getProvisioningManager();
+            return provisioningManager.getFsDiff();
+        }
+    }
+
+
 
 }

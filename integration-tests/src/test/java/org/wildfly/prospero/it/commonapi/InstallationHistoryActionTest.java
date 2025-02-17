@@ -71,7 +71,7 @@ public class InstallationHistoryActionTest extends WfCoreTestBase {
     @After
     public void tearDown() throws Exception {
         if (Files.exists(channelsFile)) {
-            Files.delete(channelsFile);
+            FileUtils.deleteQuietly(channelsFile.toFile());
         }
     }
 
