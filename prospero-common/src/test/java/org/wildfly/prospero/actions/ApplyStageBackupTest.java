@@ -2,6 +2,7 @@ package org.wildfly.prospero.actions;
 
 import org.apache.commons.io.FileUtils;
 import org.assertj.core.api.Assertions;
+import org.jboss.galleon.Constants;
 import org.junit.After;
 import org.junit.Assume;
 import org.junit.Before;
@@ -10,7 +11,7 @@ import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
 
 import java.io.IOException;
-import java.nio.file.AccessDeniedException;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.attribute.FileTime;
@@ -30,8 +31,8 @@ public class ApplyStageBackupTest {
 
     @Before
     public void setUp() throws Exception {
-        server = temp.newFolder().toPath();
-        candidate = temp.newFolder().toPath();
+        server = mockServer();
+        candidate = mockServer();
         backupFolder = server.resolve(ApplyStageBackup.BACKUP_FOLDER);
         backup = new ApplyStageBackup(server, candidate);
     }
@@ -41,13 +42,22 @@ public class ApplyStageBackupTest {
         backup.close();
     }
 
+    private Path mockServer() throws IOException {
+        final Path dir = temp.newFolder().toPath();
+        final Path hashes = Files.createDirectories(dir.resolve(Constants.PROVISIONED_STATE_DIR).resolve(Constants.HASHES));
+        Files.writeString(hashes.getParent().resolve(Constants.PROVISIONING_XML), "<installation xmlns=\"urn:jboss:galleon:provisioning:3.0\">\n" +
+                "    <feature-pack location=\"org.wildfly:wildfly-galleon-pack:zip\"/>\n" +
+                "</installation>");
+        return dir;
+    }
+
     @Test
     public void restoreWithEmptyList() throws Exception {
         backup.restore();
         backup.close(); // close to get rid of backup folder
 
-        assertThat(server)
-                .isEmptyDirectory();
+        FileUtils.deleteQuietly(server.resolve(Constants.PROVISIONED_STATE_DIR).toFile());
+        assertThat(server);
     }
 
     @Test
@@ -77,6 +87,7 @@ public class ApplyStageBackupTest {
     @Test
     public void restoreChangedFile() throws Exception {
         final Path testFile = createFile("test.txt");
+        createCandidateFile("test.txt");
 
         backup.recordAll();
         writeFile(testFile);
@@ -84,13 +95,6 @@ public class ApplyStageBackupTest {
 
         assertThat(testFile)
                 .hasContent("test text");
-    }
-
-    private static void writeFile(Path testFile) throws IOException {
-        if (Files.exists(testFile)) {
-            Files.delete(testFile);
-        }
-        Files.writeString(testFile, "changed text");
     }
 
     @Test
@@ -147,6 +151,7 @@ public class ApplyStageBackupTest {
     @Test
     public void removeAddedFile() throws Exception {
         final Path testFile = server.resolve("test.txt");
+        createCandidateFile("test.txt");
 
         backup.recordAll();
         writeFile(testFile);
@@ -160,6 +165,7 @@ public class ApplyStageBackupTest {
     public void removeAddedFileInDirectory() throws Exception {
         final Path existingFile = createFile("test/existing.txt");
         final Path testFile = server.resolve("test/test.txt");
+        createCandidateFile("test/test.txt");
 
         backup.recordAll();
         Files.createDirectories(testFile.getParent());
@@ -177,6 +183,7 @@ public class ApplyStageBackupTest {
     @Test
     public void preserveExistingFilesInDirectoryWithAddedFile() throws Exception {
         final Path testFile = server.resolve("test/test.txt");
+        createCandidateFile("test/test.txt");
 
         backup.recordAll();
         Files.createDirectories(testFile.getParent());
@@ -190,9 +197,22 @@ public class ApplyStageBackupTest {
     }
 
     @Test
+    public void preserveExistingNonServerFiles() throws Exception {
+        final Path testFile = server.resolve("test.txt");
+        writeFile(testFile);
+
+        backup.recordAll();
+        backup.restore();
+
+        assertThat(testFile)
+                .exists();
+    }
+
+    @Test
     public void removeAddedFileInRecordedDirectory() throws Exception {
+        final Path existingFile = createFile("test/existing.txt");
         final Path testFile = server.resolve("test/test.txt");
-        Files.createDirectories(testFile.getParent());
+        createCandidateFile("test/test.txt");
 
         backup.recordAll();
         writeFile(testFile);
@@ -202,12 +222,15 @@ public class ApplyStageBackupTest {
                 .doesNotExist();
         assertThat(testFile.getParent())
                 .exists();
+        assertThat(existingFile)
+                .exists();
     }
 
     @Test
     public void removeAddedFolderInRecordedDirectory() throws Exception {
+        createFile("test/existing.txt");
         final Path testFile = server.resolve("test/foo/test.txt");
-        Files.createDirectories(server.resolve("test"));
+        createCandidateFile("test/foo/test.txt");
 
         backup.recordAll();
         Files.createDirectories(server.resolve("test/foo"));
@@ -226,6 +249,7 @@ public class ApplyStageBackupTest {
     public void dontRemoveUnchangedFiles() throws Exception {
         final Path testFile = server.resolve("test/test.txt");
         final Path existing = createFile("test/existing.txt");
+        createCandidateFile("test/test.txt");
 
         backup.recordAll();
         writeFile(testFile);
@@ -273,6 +297,21 @@ public class ApplyStageBackupTest {
     }
 
     @Test
+    public void restoreUserFileOverwrittenByUpdate() throws Exception {
+        final Path testFile = server.resolve("test.txt");
+        writeFile(testFile, "test text");
+        createCandidateFile("test.txt");
+
+        backup.recordAll();
+        writeFile(testFile, "changed text");
+        backup.restore();
+
+        assertThat(testFile)
+                .hasContent("test text");
+
+    }
+
+    @Test
     public void ignoreNonReadableUserFiles() throws Exception {
         final Path testFile = server.resolve("test.txt");
         final Path testDir = server.resolve("test");
@@ -297,37 +336,66 @@ public class ApplyStageBackupTest {
     }
 
     @Test
-    public void throwExceptionOnNonReadableServerFiles() throws Exception {
-        final Path testFile = server.resolve("test");
-        final Path candidateFile = candidate.resolve("test");
-        Files.createDirectories(testFile);
-        Files.createDirectories(candidateFile);
+    public void skipBackupIfHashesIsNotAvailable() throws Exception {
+        final Path testFile = server.resolve("test/test.txt");
+        final Path existing = createFile("test/existing.txt");
+        createCandidateFile("test/test.txt");
 
-        try {
-            Assume.assumeTrue("Skipping test because OS doesn't support setting folders un-readable", testFile.toFile().setReadable(false));
+        // remove hashes folder
+        FileUtils.deleteQuietly(server.resolve(Constants.PROVISIONED_STATE_DIR).toFile());
+        FileUtils.deleteQuietly(candidate.resolve(Constants.PROVISIONED_STATE_DIR).toFile());
 
-        Assertions.assertThatThrownBy(()->backup.recordAll())
-                        .isInstanceOf(AccessDeniedException.class)
-                        .hasMessageContaining(testFile.toString());
+        backup.recordAll();
+        writeFile(testFile);
+        backup.restore();
 
-        Assertions.assertThatThrownBy(()->backup.restore())
-                .isInstanceOf(AccessDeniedException.class)
-                .hasMessageContaining(testFile.toString());
-
+        assertThat(existing)
+                .hasContent("test text");
         assertThat(testFile)
-                .exists();
-        } finally {
-            testFile.toFile().setReadable(true);
+                .hasContent("changed text");
+    }
+
+    private static void writeFile(Path testFile) throws IOException {
+        writeFile(testFile, "changed text");
+    }
+
+    private static void writeFile(Path testFile, String testText) throws IOException {
+        if (Files.exists(testFile)) {
+            Files.delete(testFile);
         }
+        Files.writeString(testFile, testText);
     }
 
     private Path createFile(String path) throws IOException {
         final Path testFile = server.resolve(path);
         if (!Files.exists(testFile.getParent())) {
             Files.createDirectories(testFile.getParent());
+
+            final Path directory = Files.createDirectories(server.resolve(Constants.PROVISIONED_STATE_DIR).resolve(Constants.HASHES).resolve(path).getParent());
+            Files.createFile(directory.resolve(Constants.HASHES));
         }
         Files.writeString(testFile, "test text");
+        FileUtils.writeStringToFile(server.resolve(Constants.PROVISIONED_STATE_DIR).resolve(Constants.HASHES).resolve(path).getParent().resolve(Constants.HASHES).toFile(),
+                testFile.getFileName().toString() + "\nabcd1234\n", StandardCharsets.UTF_8, true);
         return testFile;
+    }
+
+    private Path createCandidateFile(String path, String text) throws IOException {
+        final Path testFile = candidate.resolve(path);
+        if (!Files.exists(testFile.getParent())) {
+            Files.createDirectories(testFile.getParent());
+
+            final Path directory = Files.createDirectories(candidate.resolve(Constants.PROVISIONED_STATE_DIR).resolve(Constants.HASHES).resolve(path).getParent());
+            Files.createFile(directory.resolve(Constants.HASHES));
+        }
+        Files.writeString(testFile, text);
+        FileUtils.writeStringToFile(candidate.resolve(Constants.PROVISIONED_STATE_DIR).resolve(Constants.HASHES).resolve(path).getParent().resolve(Constants.HASHES).toFile(),
+                testFile.getFileName().toString() + "\nefgh5678\n", StandardCharsets.UTF_8, true);
+        return testFile;
+    }
+
+    private Path createCandidateFile(String path) throws IOException {
+        return createCandidateFile(path, "changed text");
     }
 
 }
