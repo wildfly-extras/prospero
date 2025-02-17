@@ -14,7 +14,6 @@ import java.util.stream.Collectors;
 import org.apache.commons.io.FileUtils;
 import org.jboss.galleon.ProvisioningException;
 import org.junit.After;
-import org.junit.Assume;
 import org.junit.Before;
 import org.junit.Test;
 import org.testcontainers.DockerClientFactory;
@@ -50,9 +49,6 @@ public class MultiUserServerDirectoryTest extends WfCoreTestBase {
     @Before
     public void setUp() throws Exception {
         super.setUp();
-
-        // check that the docker environment is available
-        Assume.assumeTrue(isDockerAvailable());
 
         // load prospero-dist created by the pom.xml dependency-plugin
         final URL resource = this.getClass().getClassLoader().getResource("prospero-dist");

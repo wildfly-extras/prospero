@@ -35,7 +35,11 @@ jobs:
           java-version: ${{ matrix.jdk }}
           distribution: 'adopt'
       - name: Build and test
-        run: mvn clean install -DallTests -Pdist
+        if: runner.os == 'Windows'
+        run: mvn clean install -DallTests -Pdist '-Dskip.container.tests=true'
+      - name: Build and test
+        if: runner.os != 'Windows'
+        run: mvn clean install -DallTests -Pdist '-Dskip.container.tests=false'
       - uses: actions/upload-artifact@v4
         if: failure()
         with:
