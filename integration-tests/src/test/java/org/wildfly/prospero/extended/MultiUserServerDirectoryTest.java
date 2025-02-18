@@ -27,6 +27,7 @@ import org.wildfly.channel.ChannelMapper;
 import org.wildfly.channel.Stream;
 import org.wildfly.prospero.api.ProvisioningDefinition;
 import org.wildfly.prospero.api.exceptions.OperationException;
+import org.wildfly.prospero.cli.DistributionInfo;
 import org.wildfly.prospero.it.commonapi.WfCoreTestBase;
 import org.wildfly.prospero.metadata.ProsperoMetadataUtils;
 import org.wildfly.prospero.test.MetadataTestUtils;
@@ -125,7 +126,7 @@ public class MultiUserServerDirectoryTest extends WfCoreTestBase {
         container.execInContainer("chmod", "-R", "0555", "serveradmin:serveradmin", "/home/serveradmin/wildfly/modules");
 
         // finally perform update
-        final Container.ExecResult updateRes = serveradmin.tryExecute("/home/serveradmin/prospero/bin/prospero.sh", "update", "perform",
+        final Container.ExecResult updateRes = serveradmin.tryExecute("/home/serveradmin/prospero/bin/" + DistributionInfo.DIST_NAME + ".sh", "update", "perform",
                 "--dir", "/home/serveradmin/wildfly", "--repositories", "/home/serveradmin/repository/", "-y", "-vv");
         assertEquals(updateRes.toString(), 1, updateRes.getExitCode());
 
@@ -151,7 +152,7 @@ public class MultiUserServerDirectoryTest extends WfCoreTestBase {
         siteadmin.execute("chmod", "0755", "/home/serveradmin/wildfly/test_dir/test");
 
         // finally perform update
-        serveradmin.execute("/home/serveradmin/prospero/bin/prospero.sh", "update", "perform",
+        serveradmin.execute("/home/serveradmin/prospero/bin/" + DistributionInfo.DIST_NAME + ".sh", "update", "perform",
                 "--dir", "/home/serveradmin/wildfly", "--repositories", "/home/serveradmin/repository/", "-y", "-vv");
 
         final Container.ExecResult res = container.execInContainer("ls", "-alF", "/home/serveradmin/wildfly");
