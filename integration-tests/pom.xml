@@ -184,7 +184,7 @@
                                             <!-- use the file mapper to remove the top level folder -->
                                             <fileMappers>
                                                 <org.codehaus.plexus.components.io.filemappers.RegExpFileMapper>
-                                                    <pattern>prospero-[^/]*/</pattern>
+                                                    <pattern>${prospero.dist.name}-[^/]*/</pattern>
                                                     <replacement>./</replacement>
                                                 </org.codehaus.plexus.components.io.filemappers.RegExpFileMapper>
                                             </fileMappers>
