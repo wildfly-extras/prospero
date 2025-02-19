@@ -19,7 +19,7 @@ package org.wildfly.prospero.cli.spi;
 
 import org.wildfly.installationmanager.spi.OsShell;
 import org.wildfly.prospero.spi.internal.CliProvider;
-import org.wildfly.prospero.cli.DistributionInfo;
+import org.wildfly.prospero.DistributionInfo;
 import org.wildfly.prospero.cli.commands.CliConstants;
 
 import java.nio.file.Path;

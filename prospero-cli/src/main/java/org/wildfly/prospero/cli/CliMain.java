@@ -22,6 +22,8 @@ import org.jboss.logmanager.Configurator;
 import org.jboss.logmanager.Level;
 import org.jboss.logmanager.PropertyConfigurator;
 import org.jboss.logmanager.config.LogContextConfiguration;
+import org.wildfly.prospero.DistributionInfo;
+import org.wildfly.prospero.VersionLogger;
 import org.wildfly.prospero.cli.commands.ChannelCommand;
 import org.wildfly.prospero.cli.commands.CliConstants;
 import org.wildfly.prospero.cli.commands.CloneCommand;
@@ -56,6 +58,12 @@ public class CliMain {
     private static final Logger logger = Logger.getLogger(CliMain.class);
 
     public static void main(String[] args) {
+        final boolean isDebug = Arrays.stream(args).anyMatch(CliConstants.DEBUG::equals);
+        if (isDebug) {
+            enableDebugLogging();
+        }
+        VersionLogger.logVersionOnStartup();
+
         try {
             CliConsole console = new CliConsole();
             CommandLine commandLine = createCommandLine(console, args);
@@ -112,21 +120,32 @@ public class CliMain {
 
         commandLine.setParameterExceptionHandler(new UnknownCommandParameterExceptionHandler(rootParameterExceptionHandler, System.err));
 
-        final boolean isDebug = Arrays.stream(args).anyMatch(CliConstants.DEBUG::equals);
-        if (isDebug) {
-            Configurator c = org.jboss.logmanager.Logger.getLogger("").getAttachment(Configurator.ATTACHMENT_KEY);
-            if (c instanceof PropertyConfigurator) {
-                LogContextConfiguration lcc = ((PropertyConfigurator) c).getLogContextConfiguration();
-                lcc.getLoggerConfiguration("org.wildfly.prospero").setLevel(Level.DEBUG.getName());
-                lcc.getLoggerConfiguration("org.wildfly.prospero").addHandlerName("CONSOLE");
-                lcc.getHandlerConfiguration("CONSOLE").setLevel(Level.DEBUG.getName());
-                lcc.commit();
-            } else {
-                logger.warn("Cannot change logging level, using default.");
-            }
-        }
-
         return commandLine;
     }
 
+    private static void enableDebugLogging() {
+        Configurator c = org.jboss.logmanager.Logger.getLogger("").getAttachment(Configurator.ATTACHMENT_KEY);
+        if (c instanceof PropertyConfigurator) {
+            LogContextConfiguration lcc = ((PropertyConfigurator) c).getLogContextConfiguration();
+            lcc.getLoggerConfiguration("org.wildfly.prospero").setLevel(Level.DEBUG.getName());
+            lcc.getHandlerConfiguration("CONSOLE").setLevel(Level.DEBUG.getName());
+            if (!lcc.getLoggerConfiguration("").getHandlerNames().contains("CONSOLE")) {
+                lcc.getLoggerConfiguration("").addHandlerName("CONSOLE");
+            }
+            lcc.commit();
+        } else {
+            logger.warn("Cannot change logging level, using default.");
+        }
+    }
+
+    static int execute(String[] args) {
+        CliConsole console = new CliConsole();
+        CommandLine commandLine = createCommandLine(console, args);
+        return commandLine.execute(args);
+    }
+
+    static void logException(Exception e) {
+        System.err.println(CliMessages.MESSAGES.errorWhenProcessingCommand() + e.getMessage());
+        logger.error(CliMessages.MESSAGES.errorWhenProcessingCommand(), e);
+    }
 }
