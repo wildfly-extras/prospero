@@ -18,12 +18,10 @@
 package org.wildfly.prospero.cli.commands;
 
 import java.io.IOException;
-import java.net.URL;
-import java.util.Enumeration;
 import java.util.ResourceBundle;
 import java.util.concurrent.Callable;
-import java.util.jar.Manifest;
 
+import org.wildfly.prospero.VersionLogger;
 import org.wildfly.prospero.cli.CliConsole;
 import org.wildfly.prospero.cli.ReturnCodes;
 import picocli.CommandLine;
@@ -67,16 +65,7 @@ public class MainCommand implements Callable<Integer> {
     static class VersionProvider implements CommandLine.IVersionProvider {
         @Override
         public String[] getVersion() throws Exception {
-            Enumeration<URL> resources = getClass().getClassLoader().getResources("META-INF/MANIFEST.MF");
-            while (resources.hasMoreElements()) {
-                URL url = resources.nextElement();
-                Manifest manifest = new Manifest(url.openStream());
-                if ("prospero-cli".equals(manifest.getMainAttributes().getValue("Specification-Title"))) {
-                    return new String[]{manifest.getMainAttributes().getValue("Implementation-Version")};
-                }
-            }
-
-            return new String[] {"unknown"};
+            return new String[] {VersionLogger.getVersion()};
         }
     }
 }
