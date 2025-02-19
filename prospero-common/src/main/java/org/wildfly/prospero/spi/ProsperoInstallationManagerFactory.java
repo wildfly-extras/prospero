@@ -24,6 +24,7 @@ import org.wildfly.installationmanager.MavenOptions;
 import org.wildfly.installationmanager.spi.InstallationManager;
 import org.wildfly.installationmanager.spi.InstallationManagerFactory;
 import org.wildfly.prospero.ProsperoLogger;
+import org.wildfly.prospero.VersionLogger;
 import org.wildfly.prospero.metadata.ProsperoMetadataUtils;
 
 import java.nio.file.Path;
@@ -31,6 +32,10 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 public class ProsperoInstallationManagerFactory implements InstallationManagerFactory {
+
+    static {
+        VersionLogger.logVersionOnStartup();
+    }
 
     protected static final List<Path> REQUIRED_FILES = List.of(
             Path.of(Constants.PROVISIONED_STATE_DIR, Constants.PROVISIONING_XML),
