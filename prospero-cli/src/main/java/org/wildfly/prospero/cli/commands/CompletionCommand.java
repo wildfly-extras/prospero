@@ -17,7 +17,7 @@
 
 package org.wildfly.prospero.cli.commands;
 
-import org.wildfly.prospero.cli.DistributionInfo;
+import org.wildfly.prospero.DistributionInfo;
 import picocli.AutoComplete;
 import picocli.CommandLine;
 
