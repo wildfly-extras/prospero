@@ -23,6 +23,7 @@ import org.jboss.galleon.ProvisioningException;
 import org.wildfly.channel.ArtifactCoordinate;
 import org.wildfly.channel.ChannelMetadataCoordinate;
 import org.wildfly.channel.Repository;
+import org.wildfly.prospero.ProsperoLogger;
 import org.wildfly.prospero.api.ArtifactUtils;
 import org.wildfly.prospero.api.exceptions.ApplyCandidateException;
 import org.wildfly.prospero.api.exceptions.ArtifactResolutionException;
@@ -125,6 +126,8 @@ public class ExecutionExceptionHandler implements CommandLine.IExecutionExceptio
         }
 
 
+        // make sure any error is logged in the logs as well
+        ProsperoLogger.ROOT_LOGGER.error(ex.getMessage(), ex);
         if (returnCode != null) {
             if (isVerbose) {
                 console.error("");
