@@ -49,6 +49,7 @@ import org.wildfly.prospero.api.InstallationMetadata;
 import org.wildfly.prospero.api.InstallationProfilesManager;
 import org.wildfly.prospero.api.MavenOptions;
 import org.wildfly.prospero.api.RepositoryUtils;
+import org.wildfly.prospero.api.TemporaryRepositoriesHandler;
 import org.wildfly.prospero.api.exceptions.OperationException;
 import org.wildfly.prospero.cli.ActionFactory;
 import org.wildfly.prospero.cli.ArgumentParsingException;
@@ -365,9 +366,15 @@ public class UpdateCommand extends AbstractParentCommand {
             FeaturePackLocation loc = getFpl(installationProfile, version);
             log.debugf("Will generate FeaturePackLocation %s.", loc.toString());
 
-            SubscribeNewServerAction subscribeNewServerAction = actionFactory.subscribeNewServerAction(parseMavenOptions(), console);
-            SubscribeNewServerAction.GenerateResult generateResult = subscribeNewServerAction.generateServerMetadata(channels, loc);
-            generateMeta(installDir, generateResult);
+            try (TemporaryFilesManager temporaryFiles = TemporaryFilesManager.getInstance()) {
+                final List<Repository> repositories = RepositoryUtils.unzipArchives(
+                        RepositoryDefinition.from(temporaryRepositories), temporaryFiles);
+                final List<Channel> tempChannels = TemporaryRepositoriesHandler.overrideRepositories(channels, repositories);
+
+                SubscribeNewServerAction subscribeNewServerAction = actionFactory.subscribeNewServerAction(parseMavenOptions(), console);
+                SubscribeNewServerAction.GenerateResult generateResult = subscribeNewServerAction.generateServerMetadata(tempChannels, loc);
+                generateMeta(installDir, generateResult);
+            }
 
             return ReturnCodes.SUCCESS;
         }

@@ -115,6 +115,7 @@ public class FeaturesAddTest {
                         CliConstants.LAYERS, "datasources-web-server,postgresql-datasource",
                         CliConstants.ACCEPT_AGREEMENTS,
                         CliConstants.YES,
+                        CliConstants.REPOSITORIES, String.join(",", TestProperties.TEST_REPO_URLS),
                         CliConstants.DIR, targetDir.getAbsolutePath())
                 .withTimeLimit(10, TimeUnit.MINUTES)
                 .execute()
@@ -138,6 +139,7 @@ public class FeaturesAddTest {
                         CliConstants.REVISION, savedState.getName(),
                         CliConstants.YES,
                         CliConstants.VERBOSE,
+                        CliConstants.REPOSITORIES, String.join(",", TestProperties.TEST_REPO_URLS),
                         CliConstants.DIR, targetDir.getAbsolutePath())
                 .withTimeLimit(10, TimeUnit.MINUTES)
                 .execute()
@@ -230,6 +232,7 @@ public class FeaturesAddTest {
                 CliConstants.Commands.INSTALL,
                 CliConstants.ACCEPT_AGREEMENTS,
                 CliConstants.PROFILE, profileName,
+                CliConstants.REPOSITORIES, String.join(",", TestProperties.TEST_REPO_URLS),
                 CliConstants.DIR, targetDir.getAbsolutePath()));
 
         if (profileName.equals("wildfly")) {
