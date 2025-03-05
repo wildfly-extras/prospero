@@ -20,6 +20,7 @@ package org.wildfly.prospero.cli;
 import org.apache.commons.lang3.StringUtils;
 import org.jboss.galleon.Constants;
 import org.jboss.logging.annotations.Cause;
+import org.wildfly.prospero.DistributionInfo;
 import org.wildfly.prospero.actions.ApplyCandidateAction;
 import org.wildfly.prospero.api.exceptions.OperationException;
 import org.wildfly.prospero.cli.commands.CliConstants;
