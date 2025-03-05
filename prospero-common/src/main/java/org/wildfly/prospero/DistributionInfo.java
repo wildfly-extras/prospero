@@ -1,5 +1,5 @@
 /*
- * Copyright 2022 Red Hat, Inc. and/or its affiliates
+ * Copyright 2025 Red Hat, Inc. and/or its affiliates
  * and other contributors as indicated by the @author tags.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -15,19 +15,13 @@
  * limitations under the License.
  */
 
-package org.wildfly.prospero.cli;
+package org.wildfly.prospero;
 
 import java.util.ResourceBundle;
 
 import org.apache.commons.lang3.StringUtils;
 import org.jboss.logging.Logger;
 
-/**
- * Retrieval of basic distribution information, like the distribution name under which Prospero is distributed to users.
- *
- * Use {@link org.wildfly.prospero.DistributionInfo} instead.
- */
-@Deprecated(forRemoval = true)
 public class DistributionInfo {
 
     private static final String PROSPERO_DIST_NAME_KEY = "prospero.dist.name";
