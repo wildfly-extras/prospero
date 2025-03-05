@@ -30,6 +30,7 @@ import org.wildfly.channel.version.VersionMatcher;
 import org.wildfly.prospero.cli.ReturnCodes;
 import org.wildfly.prospero.cli.commands.CliConstants;
 import org.wildfly.prospero.it.ExecutionUtils;
+import org.wildfly.prospero.it.utils.TestProperties;
 import org.wildfly.prospero.metadata.ProsperoMetadataUtils;
 import org.wildfly.prospero.model.ManifestYamlSupport;
 import org.wildfly.prospero.model.ProsperoConfig;
@@ -89,6 +90,7 @@ public class GenerateTest {
                         CliConstants.PRODUCT, PRODUCT,
                         CliConstants.VERSION, VERSION,
                         CliConstants.Y,
+                        CliConstants.REPOSITORIES, String.join(",", TestProperties.TEST_REPO_URLS),
                         CliConstants.DIR, serverDir.toString())
                 .withTimeLimit(10, TimeUnit.MINUTES)
                 .execute()
