@@ -20,6 +20,7 @@ package org.wildfly.prospero.cli;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.junit.MockitoJUnitRunner;
+import org.wildfly.prospero.DistributionInfo;
 import org.wildfly.prospero.cli.commands.CliConstants;
 
 import static org.junit.Assert.assertEquals;
