@@ -67,7 +67,7 @@ public class MultiUserServerDirectoryTest extends WfCoreTestBase {
         container = new GenericContainer(new ImageFromDockerfile()
                 .withDockerfileFromBuilder(builder ->
                         builder
-                                .from("fedora")
+                                .from("quay.io/fedora/fedora")
                                 .run("dnf install -y java-17-openjdk-devel")
                                 .run("mkdir -p /home/serveradmin && adduser serveradmin && adduser siteadmin")
                 ))
