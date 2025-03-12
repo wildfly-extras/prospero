@@ -25,11 +25,23 @@ jobs:
       - name: maven release ${{steps.metadata.outputs.current-version}}
         run: |
           java -version
+          gpg --quiet --batch --yes --decrypt --passphrase="${{ secrets.SECRET_PASSPHRASE }}" --output maven-settings.xml .github/release/maven-settings.xml.gpg
           git config --global user.name "WildFly Prospero CI"
           git config --global user.email "wildfly-dev@lists.jboss.org"
           git checkout -b release
-          mvn -B release:prepare -Pdist,jboss-release -DreleaseVersion=${{steps.metadata.outputs.current-version}} -DdevelopmentVersion=${{steps.metadata.outputs.next-version}}
+          mvn -B release:prepare -Pdist,jboss-release -DreleaseVersion=${{steps.metadata.outputs.current-version}} -DdevelopmentVersion=${{steps.metadata.outputs.next-version}} -s maven-settings.xml
           git checkout ${{github.base_ref}}
           git rebase release
+          mvn -B release:perform -Pdist,jboss-release -s maven-settings.xml
           git push
           git push --tags
+      - name: Prepare release ZIP
+        run: |
+          # maintain the prospero-build- prefix for the zip for historical reasons (to have a predictable URL)
+          mv dist/build/target/prospero-${{steps.metadata.outputs.current-version}}.zip prospero-build-${{steps.metadata.outputs.current-version}}.zip
+      - name: Create GH release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: prospero-build-${{steps.metadata.outputs.current-version}}.zip
+          tag_name: ${{steps.metadata.outputs.current-version}}
+          prerelease: contains(${{steps.metadata.outputs.current-version}}, "Beta")
