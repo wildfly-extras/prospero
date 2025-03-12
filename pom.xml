@@ -525,7 +525,7 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-release-plugin</artifactId>
-                <version>3.0.1</version>
+                <version>3.1.1</version>
                 <configuration>
                     <autoVersionSubmodules>true</autoVersionSubmodules>
                     <pushChanges>false</pushChanges>
@@ -533,6 +533,8 @@
                     <tagNameFormat>@{project.version}</tagNameFormat>
                     <!-- install is needed to make Galleon happy -->
                     <preparationGoals>clean install</preparationGoals>
+                    <localCheckout>true</localCheckout>
+                    <remoteTagging>false</remoteTagging>
                 </configuration>
             </plugin>
         </plugins>
