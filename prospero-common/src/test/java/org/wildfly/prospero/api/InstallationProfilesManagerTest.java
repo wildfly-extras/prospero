@@ -18,12 +18,8 @@
 package org.wildfly.prospero.api;
 
 import java.net.URI;
-import java.net.URISyntaxException;
 import java.util.Map;
 
-import javax.xml.stream.XMLStreamException;
-
-import org.jboss.galleon.ProvisioningException;
 import org.junit.Test;
 import org.wildfly.channel.MavenCoordinate;
 import org.wildfly.channel.Repository;
@@ -36,7 +32,7 @@ import org.jboss.galleon.api.config.GalleonProvisioningConfig;
 public class InstallationProfilesManagerTest {
 
     @Test
-    public void testFpFromGalleonConfig() throws ProvisioningException, XMLStreamException, URISyntaxException {
+    public void testFpFromGalleonConfig() throws Exception {
         InstallationProfile installationProfile = InstallationProfilesManager.getByName("known-fpl");
 
         assertThat(installationProfile).isNotNull();
@@ -47,7 +43,7 @@ public class InstallationProfilesManagerTest {
             assertThat(channel.getRepositories()).containsOnly(new Repository("central", "https://repo1.maven.org/maven2/"));
         });
 
-        GalleonProvisioningConfig galleonConfig = GalleonUtils.loadProvisioningConfig(installationProfile.getGalleonConfiguration());
+        GalleonProvisioningConfig galleonConfig = GalleonUtils.readProvisioningConfig(installationProfile.getGalleonConfiguration());
         assertThat(galleonConfig.getOptions()).containsOnly(Map.entry("jboss-bulk-resolve-artifacts", "true"));
         assertThat(galleonConfig.getFeaturePackDeps().iterator().next()).satisfies(fp -> {
             assertThat(fp.getLocation().toString()).isEqualTo("org.wildfly.core:wildfly-core-galleon-pack:zip");

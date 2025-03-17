@@ -19,7 +19,6 @@ package org.wildfly.prospero.api;
 
 import org.assertj.core.groups.Tuple;
 import org.jboss.galleon.Constants;
-import org.jboss.galleon.ProvisioningException;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
@@ -30,6 +29,7 @@ import org.wildfly.channel.Repository;
 import org.wildfly.channel.maven.VersionResolverFactory;
 import org.wildfly.prospero.ProsperoLogger;
 import org.wildfly.prospero.api.exceptions.ChannelDefinitionException;
+import org.wildfly.prospero.api.exceptions.MetadataException;
 import org.wildfly.prospero.api.exceptions.NoChannelException;
 import org.wildfly.prospero.galleon.GalleonUtils;
 import org.wildfly.prospero.test.MetadataTestUtils;
@@ -40,8 +40,6 @@ import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.Arrays;
 import java.util.List;
-
-import javax.xml.stream.XMLStreamException;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -337,9 +335,9 @@ public class ProvisioningDefinitionTest {
                         entry(Constants.CONFIG_STABILITY_LEVEL, Constants.STABILITY_COMMUNITY));
     }
 
-    private void verifyFeaturePackLocation(ProvisioningDefinition definition) throws ProvisioningException, XMLStreamException {
+    private void verifyFeaturePackLocation(ProvisioningDefinition definition) throws MetadataException {
         assertNull(definition.getFpl());
-        GalleonProvisioningConfig galleonConfig = GalleonUtils.loadProvisioningConfig(definition.getDefinition());
+        GalleonProvisioningConfig galleonConfig = GalleonUtils.readProvisioningConfig(definition.getDefinition());
         assertEquals(1, galleonConfig.getFeaturePackDeps().size());
         assertEquals("org.wildfly.core:wildfly-core-galleon-pack:zip",
                 galleonConfig.getFeaturePackDeps().iterator().next().getLocation().toString());
