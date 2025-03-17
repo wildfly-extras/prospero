@@ -29,8 +29,6 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
-import javax.xml.stream.XMLStreamException;
-
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.eclipse.aether.repository.RemoteRepository;
@@ -174,23 +172,19 @@ public class ProvisioningDefinition {
             return builder.build();
 
         } else if (definition != null) {
-            try {
-                final GalleonProvisioningConfig config = GalleonUtils.loadProvisioningConfig(definition);
-                final GalleonProvisioningConfig.Builder builder = GalleonProvisioningConfig.builder(config);
-                if (StringUtils.isNotEmpty(stabilityLevel)) {
-                    builder.addOption(Constants.STABILITY_LEVEL, stabilityLevel);
-                }
-                if (StringUtils.isNotEmpty(configStabilityLevel)) {
-                    builder.addOption(Constants.CONFIG_STABILITY_LEVEL, configStabilityLevel);
-                }
-                if (StringUtils.isNotEmpty(packageStabilityLevel)) {
-                    builder.addOption(Constants.PACKAGE_STABILITY_LEVEL, packageStabilityLevel);
-                }
-
-                return builder.build();
-            } catch (XMLStreamException e) {
-                throw ProsperoLogger.ROOT_LOGGER.unableToParseConfigurationUri(definition, e);
+            final GalleonProvisioningConfig config = GalleonUtils.readProvisioningConfig(definition);
+            final GalleonProvisioningConfig.Builder builder = GalleonProvisioningConfig.builder(config);
+            if (StringUtils.isNotEmpty(stabilityLevel)) {
+                builder.addOption(Constants.STABILITY_LEVEL, stabilityLevel);
             }
+            if (StringUtils.isNotEmpty(configStabilityLevel)) {
+                builder.addOption(Constants.CONFIG_STABILITY_LEVEL, configStabilityLevel);
+            }
+            if (StringUtils.isNotEmpty(packageStabilityLevel)) {
+                builder.addOption(Constants.PACKAGE_STABILITY_LEVEL, packageStabilityLevel);
+            }
+
+            return builder.build();
         } else {
             throw ProsperoLogger.ROOT_LOGGER.fplNorGalleonConfigWereSet();
         }
