@@ -50,6 +50,7 @@ import org.wildfly.prospero.api.InstallationProfilesManager;
 import org.wildfly.prospero.api.MavenOptions;
 import org.wildfly.prospero.api.RepositoryUtils;
 import org.wildfly.prospero.api.TemporaryRepositoriesHandler;
+import org.wildfly.prospero.api.exceptions.MetadataException;
 import org.wildfly.prospero.api.exceptions.OperationException;
 import org.wildfly.prospero.cli.ActionFactory;
 import org.wildfly.prospero.cli.ArgumentParsingException;
@@ -66,7 +67,6 @@ import org.wildfly.prospero.model.InstallationProfile;
 import org.wildfly.prospero.updates.UpdateSet;
 import picocli.CommandLine;
 
-import javax.xml.stream.XMLStreamException;
 import org.jboss.galleon.api.config.GalleonProvisioningConfig;
 
 @CommandLine.Command(
@@ -436,8 +436,8 @@ public class UpdateCommand extends AbstractParentCommand {
             return diff.hasAddedEntries() || diff.hasModifiedEntries() || diff.hasRemovedEntries();
         }
 
-        private FeaturePackLocation getFpl(InstallationProfile knownFeaturePack, String version) throws XMLStreamException, ProvisioningException {
-            GalleonProvisioningConfig config = GalleonUtils.loadProvisioningConfig(knownFeaturePack.getGalleonConfiguration());
+        private FeaturePackLocation getFpl(InstallationProfile knownFeaturePack, String version) throws MetadataException, ProvisioningException {
+            GalleonProvisioningConfig config = GalleonUtils.readProvisioningConfig(knownFeaturePack.getGalleonConfiguration());
             if (config.getFeaturePackDeps().isEmpty()) {
                 throw new ProvisioningException("At least one feature pack location must be specified in the provisioning configuration");
             }

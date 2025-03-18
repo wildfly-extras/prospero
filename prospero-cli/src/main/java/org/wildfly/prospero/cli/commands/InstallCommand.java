@@ -46,6 +46,7 @@ import org.wildfly.prospero.api.MavenOptions;
 import org.wildfly.prospero.api.ProvisioningDefinition;
 import org.wildfly.prospero.api.RepositoryUtils;
 import org.wildfly.prospero.api.TemporaryRepositoriesHandler;
+import org.wildfly.prospero.api.exceptions.MetadataException;
 import org.wildfly.prospero.cli.ActionFactory;
 import org.wildfly.prospero.cli.CliConsole;
 import org.wildfly.prospero.cli.CliMessages;
@@ -61,8 +62,6 @@ import org.wildfly.prospero.galleon.GalleonUtils;
 import org.wildfly.prospero.licenses.License;
 import org.wildfly.prospero.model.InstallationProfile;
 import picocli.CommandLine;
-
-import javax.xml.stream.XMLStreamException;
 
 
 @CommandLine.Command(
@@ -317,7 +316,7 @@ public class InstallCommand extends AbstractInstallCommand {
         }
     }
 
-    private int displayListOfProfiles() throws ProvisioningException {
+    private int displayListOfProfiles() throws ProvisioningException, MetadataException {
         final Set<String> profiles = InstallationProfilesManager.getNames();
         if (profiles.isEmpty()) {
             console.println(CliMessages.MESSAGES.noAvailableProfiles() + "\n");
@@ -346,19 +345,15 @@ public class InstallCommand extends AbstractInstallCommand {
         return ReturnCodes.SUCCESS;
     }
 
-    private List<FeaturePackLocation> getFeaturePacks(InstallationProfile profile) throws ProvisioningException {
-        try {
-            final GalleonProvisioningConfig config = GalleonUtils.loadProvisioningConfig(profile.getGalleonConfiguration());
-            if (config.getFeaturePackDeps().isEmpty()) {
-                throw new ProvisioningException("At least one feature pack location must be specified in the provisioning configuration");
-            }
-
-            return config.getFeaturePackDeps().stream()
-                    .map(GalleonFeaturePackConfig::getLocation)
-                    .collect(Collectors.toList());
-        } catch (XMLStreamException e) {
-            throw new ProvisioningException("Unable to parse provisioning configuration", e);
+    private List<FeaturePackLocation> getFeaturePacks(InstallationProfile profile) throws MetadataException, ProvisioningException {
+        final GalleonProvisioningConfig config = GalleonUtils.readProvisioningConfig(profile.getGalleonConfiguration());
+        if (config.getFeaturePackDeps().isEmpty()) {
+            throw new ProvisioningException("At least one feature pack location must be specified in the provisioning configuration");
         }
+
+        return config.getFeaturePackDeps().stream()
+                .map(GalleonFeaturePackConfig::getLocation)
+                .collect(Collectors.toList());
     }
 
 }

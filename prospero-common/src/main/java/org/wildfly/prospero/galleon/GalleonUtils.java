@@ -47,6 +47,7 @@ import org.jboss.galleon.api.Provisioning;
 import org.jboss.galleon.api.ProvisioningBuilder;
 import org.jboss.galleon.api.config.GalleonProvisioningConfig;
 import org.wildfly.prospero.api.MavenOptions;
+import org.wildfly.prospero.api.exceptions.MetadataException;
 import org.wildfly.prospero.api.exceptions.OperationException;
 import org.wildfly.prospero.wfchannel.MavenSessionManager;
 
@@ -210,32 +211,47 @@ public class GalleonUtils {
                 .setInstallationHome(installDir).build();
     }
 
-    /**
-     * {@link ProvisioningLayoutFactory} using {@code maven} to resolve artifacts.
-     *
-     * @param maven
-     * @return
-     * @throws ProvisioningException
-     */
-//    public static ProvisioningLayoutFactory getProvisioningLayoutFactory(MavenRepoManager maven) throws ProvisioningException {
-//        final UniverseResolver resolver = UniverseResolver.builder()
-//                .addArtifactResolver(maven).build();
-//
-//        return ProvisioningLayoutFactory.getInstance(resolver);
-//    }
-
     public static List<String> getInstalledPacks(Path dir) throws ProvisioningException {
         try (Provisioning provisioning = new GalleonBuilder().newProvisioningBuilder().build()) {
             return provisioning.getInstalledPacks(dir);
         }
     }
 
+    public static GalleonProvisioningConfig readProvisioningConfig(URI uri) throws MetadataException {
+        try {
+            if (CLASSPATH_SCHEME.equals(uri.getScheme())) {
+                InputStream is = GalleonUtils.class.getClassLoader().getResourceAsStream(uri.getSchemeSpecificPart());
+                return loadProvisioningConfig(is);
+            } else if (FILE_SCHEME.equals(uri.getScheme())) {
+                try (Provisioning p = new GalleonBuilder().newProvisioningBuilder().build()) {
+                    return p.loadProvisioningConfig(Path.of(uri));
+                }
+            } else {
+                throw new IllegalArgumentException(String.format("Can't use scheme '%s' for Galleon provisioning.xml URI.",
+                        uri.getScheme()));
+            }
+        } catch (ProvisioningException e) {
+            // check if ProvisioningException wraps (somewhere in stack) XmlStreamException
+            // if it does Galleon doesn't like the provisioning definition
+            final Optional<XMLStreamException> xmlEx = getXmlException(e);
+            if (xmlEx.isPresent()) {
+                throw ProsperoLogger.ROOT_LOGGER.unableToParseConfigurationUri(uri, e);
+            } else {
+                throw new MetadataException(e.getLocalizedMessage(), e);
+            }
+        } catch (XMLStreamException e) {
+            throw ProsperoLogger.ROOT_LOGGER.unableToParseConfigurationUri(uri, e);
+        }
+    }
+
+    @Deprecated (forRemoval = true)
     public static GalleonProvisioningConfig loadProvisioningConfig(InputStream is) throws ProvisioningException, XMLStreamException {
         try(Provisioning p = new GalleonBuilder().newProvisioningBuilder().build()) {
             return p.loadProvisioningConfig(is);
         }
     }
 
+    @Deprecated (forRemoval = true)
     public static GalleonProvisioningConfig loadProvisioningConfig(URI uri) throws ProvisioningException, XMLStreamException {
         if (CLASSPATH_SCHEME.equals(uri.getScheme())) {
             InputStream is = GalleonUtils.class.getClassLoader().getResourceAsStream(uri.getSchemeSpecificPart());
@@ -243,11 +259,34 @@ public class GalleonUtils {
         } else if (FILE_SCHEME.equals(uri.getScheme())) {
             try (Provisioning p = new GalleonBuilder().newProvisioningBuilder().build()) {
                 return p.loadProvisioningConfig(Path.of(uri));
+            } catch (ProvisioningException e) {
+                // check if ProvisioningException wraps (somewhere in stack) XmlStreamException
+                // if it does Galleon doesn't like the provisioning definition
+                // TODO: when possible (Prospero 2.0??) change this method to NOT throw XMLStreamException and handle it properly
+                final Optional<XMLStreamException> xmlEx = getXmlException(e);
+                if (xmlEx.isPresent()) {
+                    throw xmlEx.get();
+                } else {
+                    throw e;
+                }
             }
         } else {
             throw new IllegalArgumentException(String.format("Can't use scheme '%s' for Galleon provisioning.xml URI.",
                     uri.getScheme()));
         }
+    }
+
+    private static Optional<XMLStreamException> getXmlException(ProvisioningException rootException) {
+        Throwable e = rootException;
+        while (e.getCause() != null) {
+            if (e.getCause() instanceof XMLStreamException) {
+                return Optional.of((XMLStreamException) e.getCause());
+            } else {
+                e = e.getCause();
+            }
+        }
+
+        return Optional.empty();
     }
 
     /**
