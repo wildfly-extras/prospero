@@ -19,15 +19,27 @@ package org.wildfly.prospero.updates;
 
 import org.eclipse.aether.artifact.Artifact;
 import org.eclipse.aether.artifact.DefaultArtifact;
+import org.wildfly.channel.Channel;
+import org.wildfly.channel.ChannelManifest;
+import org.wildfly.channel.ChannelManifestCoordinate;
 import org.wildfly.channel.ChannelSession;
+import org.wildfly.channel.MavenCoordinate;
+import org.wildfly.channel.RuntimeChannel;
 import org.wildfly.channel.UnresolvedMavenArtifactException;
 import org.wildfly.channel.VersionResult;
 import org.wildfly.prospero.api.ArtifactChange;
+import org.wildfly.prospero.api.ChannelVersionChange;
+import org.wildfly.prospero.api.InstallationMetadata;
 import org.wildfly.prospero.api.exceptions.ArtifactResolutionException;
+import org.wildfly.prospero.metadata.ManifestVersionRecord;
 
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionException;
 import java.util.concurrent.ExecutorService;
@@ -40,10 +52,12 @@ public class UpdateFinder implements AutoCloseable {
 
     private final ChannelSession channelSession;
     private final ExecutorService executorService;
+    private final InstallationMetadata metadata;
 
-    public UpdateFinder(ChannelSession channelSession) {
+    public UpdateFinder(ChannelSession channelSession, InstallationMetadata metadata) {
         this.channelSession = channelSession;
         this.executorService = Executors.newWorkStealingPool(UPDATES_SEARCH_PARALLELISM);
+        this.metadata = metadata;
     }
 
     public UpdateSet findUpdates(List<Artifact> artifacts) throws ArtifactResolutionException {
@@ -77,7 +91,7 @@ public class UpdateFinder implements AutoCloseable {
                 .flatMap(Optional::stream)
                 .collect(Collectors.toList());
 
-        return new UpdateSet(updates);
+        return new UpdateSet(updates, findManifestUpdates(), areManifestVersionsAuthoritative());
     }
 
     private Optional<ArtifactChange> findUpdates(Artifact artifact) throws ArtifactResolutionException {
@@ -102,9 +116,103 @@ public class UpdateFinder implements AutoCloseable {
         }
     }
 
+    private List<ChannelVersionChange> findManifestUpdates() {
+        final Optional<ManifestVersionRecord> manifestRecord = metadata.getManifestVersions();
+
+        Map<String, ManifestVersion> currentManifests = new HashMap<>();
+        for (ManifestVersionRecord.MavenManifest manifest : manifestRecord
+                .map(ManifestVersionRecord::getMavenManifests)
+                .orElse(Collections.emptyList())) {
+            currentManifests.put(manifest.getGroupId() + ":" + manifest.getArtifactId(),
+                    new ManifestVersion(manifest.getVersion(), manifest.getDescription()));
+        }
+
+        final ArrayList<ChannelVersionChange> manifestChanges = new ArrayList<>();
+        final Set<String> removedGavs = currentManifests.keySet();
+
+        for (RuntimeChannel runtimeChannel : channelSession.getRuntimeChannels()) {
+            final Channel channelDefinition = runtimeChannel.getChannelDefinition();
+            final ChannelManifestCoordinate manifestCoordinate = channelDefinition.getManifestCoordinate();
+            if (manifestCoordinate == null || manifestCoordinate.getMaven() == null) {
+                // skip the no-manifest or URL-based channel
+                continue;
+            }
+
+            final MavenCoordinate newManifest = manifestCoordinate.getMaven();
+            final String ga = newManifest.getGroupId() + ":" + newManifest.getArtifactId();
+
+            final ChannelVersionChange.Builder builder = new ChannelVersionChange.Builder(channelDefinition.getName())
+                    .setNewPhysicalVersion(newManifest.getVersion())
+                    .setNewLogicalVersion(runtimeChannel.getChannelManifest().getName());
+
+            if (currentManifests.containsKey(ga)) {
+                final ManifestVersion oldManifest = currentManifests.get(ga);
+
+                builder
+                        .setOldPhysicalVersion(oldManifest.physicalVersion)
+                        .setOldLogicalVersion(oldManifest.logicalVersion);
+            }
+
+            removedGavs.remove(ga);
+            manifestChanges.add(builder.build());
+        }
+
+        for (String ga : removedGavs) {
+            final ManifestVersion oldManifest = currentManifests.get(ga);
+            final ChannelVersionChange.Builder builder = new ChannelVersionChange.Builder(ga)
+                    .setOldPhysicalVersion(oldManifest.physicalVersion)
+                    .setOldLogicalVersion(oldManifest.logicalVersion);
+            manifestChanges.add(builder.build());
+        }
+        return manifestChanges;
+    }
+
+    /*
+     * manifest updates are authoritative if all channels in the update:
+     *  * are maven based (and we can get the versions)
+     *  * are not using resolve-if-no-stream
+     *  * are not using versionPatterns
+     */
+    private boolean areManifestVersionsAuthoritative() {
+        if (metadata.getManifestVersions().isEmpty() || metadata.getManifestVersions().get().getMavenManifests().isEmpty()) {
+            return false;
+        }
+
+        if (channelSession.getRuntimeChannels().isEmpty()) {
+            return false;
+        }
+        for (RuntimeChannel runtimeChannel : channelSession.getRuntimeChannels()) {
+            final Channel channelDefinition = runtimeChannel.getChannelDefinition();
+            if (channelDefinition.getNoStreamStrategy() != Channel.NoStreamStrategy.NONE) {
+                return false;
+            }
+            if (channelDefinition.getManifestCoordinate() != null && channelDefinition.getManifestCoordinate().getMaven() == null) {
+                return false;
+            }
+            final ChannelManifest manifest = runtimeChannel.getChannelManifest();
+            if (manifest == null) {
+                return false;
+            }
+            if (manifest.getStreams().stream().anyMatch(s->s.getVersionPattern() != null)) {
+                return false;
+            }
+        }
+
+        return true;
+    }
+
     @Override
     public void close() {
         this.executorService.shutdown();
     }
 
+    private static class ManifestVersion {
+        private final String logicalVersion;
+        private final String physicalVersion;
+
+        public ManifestVersion(String physicalVersion, String logicalVersion) {
+            this.logicalVersion = logicalVersion;
+            this.physicalVersion = physicalVersion;
+        }
+    }
 }
