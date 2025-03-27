@@ -27,13 +27,13 @@ import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
-import java.util.stream.Collectors;
+import java.util.concurrent.TimeUnit;
 import java.util.stream.IntStream;
 
+import org.apache.commons.io.FileUtils;
 import org.eclipse.aether.artifact.Artifact;
 import org.eclipse.aether.artifact.DefaultArtifact;
 import org.jboss.galleon.ProvisioningException;
-import org.jboss.galleon.api.config.GalleonProvisioningConfig;
 import org.jboss.galleon.creator.FeaturePackBuilder;
 import org.jboss.galleon.creator.FeaturePackCreator;
 import org.jboss.galleon.creator.PackageBuilder;
@@ -43,14 +43,15 @@ import org.jboss.galleon.universe.maven.repo.SimplisticMavenRepoManager;
 import org.wildfly.channel.Channel;
 import org.wildfly.channel.Repository;
 import org.wildfly.prospero.actions.InstallationHistoryAction;
-import org.wildfly.prospero.actions.ProvisioningAction;
-import org.wildfly.prospero.actions.UpdateAction;
 import org.wildfly.prospero.api.Console;
 import org.wildfly.prospero.api.FileConflict;
 import org.wildfly.prospero.api.MavenOptions;
 import org.wildfly.prospero.api.SavedState;
 import org.wildfly.prospero.api.exceptions.OperationException;
+import org.wildfly.prospero.cli.ReturnCodes;
+import org.wildfly.prospero.cli.commands.CliConstants;
 import org.wildfly.prospero.it.AcceptingConsole;
+import org.wildfly.prospero.it.ExecutionUtils;
 import org.wildfly.prospero.metadata.ProsperoMetadataUtils;
 
 /**
@@ -93,12 +94,13 @@ public class TestInstallation {
      *
      * @param fplName
      * @param channels
+     * @param args
      * @throws ProvisioningException
      * @throws MalformedURLException
      * @throws OperationException
      */
-    public void install(String fplName, List<Channel> channels) throws ProvisioningException, MalformedURLException, OperationException {
-        install(fplName, channels, new AcceptingConsole());
+    public void install(String fplName, List<Channel> channels, String... args) throws Exception {
+        install(fplName, channels, new AcceptingConsole(), args);
     }
 
     /**
@@ -111,11 +113,35 @@ public class TestInstallation {
      * @throws MalformedURLException
      * @throws OperationException
      */
-    public void install(String fplName, List<Channel> channels, Console console) throws ProvisioningException, MalformedURLException, OperationException {
-        new ProvisioningAction(serverRoot, MavenOptions.OFFLINE_NO_CACHE, console)
-                .provision(GalleonProvisioningConfig.builder()
-                        .addFeaturePackDep(FeaturePackLocation.fromString(fplName))
-                        .build(), channels);
+    public void install(String fplName, List<Channel> channels, Console console, String... args)
+            throws Exception {
+
+        Path tempFile = null;
+        try {
+            tempFile = Files.createTempFile("provisioning", "xml");
+
+            ProsperoMetadataUtils.writeChannelsConfiguration(tempFile, channels);
+            final ArrayList<String> argList = new ArrayList<>();
+            argList.add(CliConstants.Commands.INSTALL);
+            argList.add(CliConstants.CHANNELS);
+            argList.add(tempFile.toAbsolutePath().toString());
+            argList.add(CliConstants.FPL);
+            argList.add(fplName);
+            argList.add(CliConstants.DIR);
+            argList.add(serverRoot.toAbsolutePath().toString());
+
+            Collections.addAll(argList, args);
+
+            ExecutionUtils.prosperoExecution(argList.toArray(new String[]{}))
+                    .withTimeLimit(10, TimeUnit.MINUTES)
+                    .execute()
+                    .assertReturnCode(ReturnCodes.SUCCESS);
+
+        } finally {
+            if (tempFile != null) {
+                FileUtils.deleteQuietly(tempFile.toFile());
+            }
+        }
     }
 
     /**
@@ -129,15 +155,12 @@ public class TestInstallation {
      * @throws MalformedURLException
      * @throws OperationException
      */
-    public void install(String fplName, List<Channel> channels, Console console, List<URL> overrideRepositoryUrls) throws ProvisioningException, MalformedURLException, OperationException {
-        final List<Repository> overrideRepositories = IntStream.range(0, overrideRepositoryUrls.size())
-                .mapToObj(i -> new Repository("test-" + i, overrideRepositoryUrls.get(i).toExternalForm()))
-                .collect(Collectors.toList());
+    public void install(String fplName, List<Channel> channels, Console console, List<URL> overrideRepositoryUrls) throws Exception {
+        final StringBuilder repoUrls = new StringBuilder();
+        IntStream.range(0, overrideRepositoryUrls.size())
+                .forEach(i->repoUrls.append("test-").append(i).append("::").append(overrideRepositoryUrls.get(i).toExternalForm()));
 
-        new ProvisioningAction(serverRoot, MavenOptions.OFFLINE_NO_CACHE, console)
-                .provision(GalleonProvisioningConfig.builder()
-                        .addFeaturePackDep(FeaturePackLocation.fromString(fplName))
-                        .build(), channels, overrideRepositories);
+        install(fplName, channels, console, CliConstants.REPOSITORIES, repoUrls.toString());
     }
 
     /**
@@ -146,7 +169,7 @@ public class TestInstallation {
      * @throws ProvisioningException
      * @throws OperationException
      */
-    public List<FileConflict> update() throws ProvisioningException, OperationException {
+    public List<FileConflict> update() throws Exception {
         return update(new AcceptingConsole());
     }
 
@@ -158,10 +181,18 @@ public class TestInstallation {
      * @throws ProvisioningException
      * @throws OperationException
      */
-    public List<FileConflict> update(Console console) throws ProvisioningException, OperationException {
-        try (UpdateAction updateAction = new UpdateAction(serverRoot, MavenOptions.OFFLINE_NO_CACHE, console, Collections.emptyList())) {
-            return updateAction.performUpdate();
-        }
+    public List<FileConflict> update(Console console) throws Exception {
+        final ArrayList<String> argList = new ArrayList<>();
+        Collections.addAll(argList, CliConstants.Commands.UPDATE, CliConstants.Commands.PERFORM,
+                CliConstants.YES,
+                CliConstants.DIR, serverRoot.toAbsolutePath().toString());
+
+        ExecutionUtils.prosperoExecution(argList.toArray(new String[]{}))
+                .withTimeLimit(10, TimeUnit.MINUTES)
+                .execute()
+                .assertReturnCode(ReturnCodes.SUCCESS);
+
+        return Collections.emptyList();
     }
 
     /**
