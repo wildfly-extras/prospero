@@ -723,4 +723,26 @@ public interface CliMessages {
                 bundle.getString("prospero.updates.apply.candidate.cancel_conflicts"),
                 CliConstants.NO_CONFLICTS_ONLY));
     }
+
+    default ArgumentParsingException invalidVersionOverrideString(String versionString) {
+        return new ArgumentParsingException(format(
+                bundle.getString("prospero.general.error.version_overwrite.invalid_format"),
+                versionString));
+    }
+
+    default ArgumentParsingException channelNotFoundException(String channelName) {
+        return new ArgumentParsingException(format(
+                bundle.getString("prospero.general.error.version_overwrite.channel_not_found"),
+                channelName));
+    }
+
+    default ArgumentParsingException versionOverrideHasToApplyToAllChannels() {
+        return new ArgumentParsingException(format(
+                bundle.getString("prospero.general.error.version_overwrite.not_complete")));
+    }
+
+    default ArgumentParsingException duplicatedVersionOverride(String channelName) {
+        return new ArgumentParsingException(format(
+                bundle.getString("prospero.general.error.version_overwrite.duplicated"), channelName));
+    }
 }
