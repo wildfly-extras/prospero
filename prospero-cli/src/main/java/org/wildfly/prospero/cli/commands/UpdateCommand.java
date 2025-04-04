@@ -23,6 +23,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.function.Supplier;
@@ -93,6 +94,12 @@ public class UpdateCommand extends AbstractParentCommand {
         @CommandLine.Option(names = {CliConstants.NO_CONFLICTS_ONLY})
         boolean noConflictsOnly;
 
+        @CommandLine.Option(
+                names = CliConstants.VERSION,
+                split = ","
+        )
+        List<String> versions = new ArrayList<>();
+
         public PerformCommand(CliConsole console, ActionFactory actionFactory) {
             super(console, actionFactory);
         }
@@ -122,7 +129,16 @@ public class UpdateCommand extends AbstractParentCommand {
 
                 console.println(CliMessages.MESSAGES.updateHeader(installationDir));
 
-                try (UpdateAction updateAction = actionFactory.update(installationDir, mavenOptions, console, repositories)) {
+                final List<Channel> overrideChannels;
+                try (InstallationMetadata im = InstallationMetadata.loadInstallation(installationDir)) {
+                    overrideChannels = OverrideBuilder
+                            .from(im.getProsperoConfig().getChannels())
+                            .withRepositories(repositories)
+                            .withManifestVersions(versions)
+                            .build();
+                }
+
+                try (UpdateAction updateAction = actionFactory.update(installationDir, overrideChannels, mavenOptions, console)) {
                     performUpdate(updateAction, yes, console, installationDir, noConflictsOnly);
                 }
             }

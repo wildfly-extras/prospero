@@ -10,11 +10,11 @@ import java.util.regex.Pattern;
 import org.eclipse.aether.artifact.Artifact;
 import org.eclipse.aether.artifact.DefaultArtifact;
 import org.junit.Before;
-import org.junit.Ignore;
 import org.junit.Test;
 import org.wildfly.channel.Channel;
 import org.wildfly.channel.ChannelManifest;
 import org.wildfly.channel.Stream;
+import org.wildfly.prospero.cli.commands.CliConstants;
 import org.wildfly.prospero.test.BuildProperties;
 import org.wildfly.prospero.test.TestInstallation;
 import org.wildfly.prospero.test.TestLocalRepository;
@@ -48,29 +48,27 @@ public class UpdateToVersionTest extends CliTestBase {
 
     @Test
     public void installSpecificVersionOfManifest() throws Exception {
-        testInstallation.install("org.test:pack-one:1.0.0", List.of(testChannel), "--version=test-channel::1.0.0");
+        testInstallation.install("org.test:pack-one:1.0.0", List.of(testChannel), CliConstants.VERSION, "test-channel::1.0.0");
 
         testInstallation.verifyModuleJar("commons-io", "commons-io", COMMONS_IO_VERSION);
         testInstallation.verifyInstallationMetadataPresent();
     }
 
     @Test
-    @Ignore
     public void updateServerToNonLatestVersion() throws Exception {
-//        testInstallation.install("org.test:pack-one:1.0.0", List.of(testChannel), "--version=test-channel:1.0.0");
-//
-//        testInstallation.update("--version=test-channel:1.0.1");
+        testInstallation.install("org.test:pack-one:1.0.0", List.of(testChannel), CliConstants.VERSION, "test-channel::1.0.0");
+
+        testInstallation.update(CliConstants.VERSION, "test-channel::1.0.1");
 
         testInstallation.verifyModuleJar("commons-io", "commons-io", bump(COMMONS_IO_VERSION));
         testInstallation.verifyInstallationMetadataPresent();
     }
 
     @Test
-    @Ignore
     public void downgradeServerToNonLatestVersion() throws Exception {
-//        testInstallation.install("org.test:pack-one:1.0.0", List.of(testChannel), "--version=test-channel:1.0.1");
-//
-//        testInstallation.update("--version=test-channel:1.0.0");
+        testInstallation.install("org.test:pack-one:1.0.0", List.of(testChannel), "--version=test-channel::1.0.1");
+
+        testInstallation.update("--version=test-channel::1.0.0");
 
         testInstallation.verifyModuleJar("commons-io", "commons-io", COMMONS_IO_VERSION);
         testInstallation.verifyInstallationMetadataPresent();
@@ -94,23 +92,23 @@ public class UpdateToVersionTest extends CliTestBase {
                         new Stream("org.test", "pack-one", "1.0.0")
                 )));
 
-//        testLocalRepository.deploy(
-//                new DefaultArtifact("org.test", "test-channel", "manifest", "yaml","1.0.1"),
-//                new ChannelManifest("test-manifest", null, null, List.of(
-//                        new Stream("org.wildfly.galleon-plugins", "wildfly-config-gen", GALLEON_PLUGINS_VERSION),
-//                        new Stream("org.wildfly.galleon-plugins", "wildfly-galleon-plugins", GALLEON_PLUGINS_VERSION),
-//                        new Stream("commons-io", "commons-io", bump(COMMONS_IO_VERSION)),
-//                        new Stream("org.test", "pack-one", "1.0.0")
-//                )));
+        testLocalRepository.deploy(
+                new DefaultArtifact("org.test", "test-channel", "manifest", "yaml","1.0.1"),
+                new ChannelManifest("test-manifest", null, null, List.of(
+                        new Stream("org.wildfly.galleon-plugins", "wildfly-config-gen", GALLEON_PLUGINS_VERSION),
+                        new Stream("org.wildfly.galleon-plugins", "wildfly-galleon-plugins", GALLEON_PLUGINS_VERSION),
+                        new Stream("commons-io", "commons-io", bump(COMMONS_IO_VERSION)),
+                        new Stream("org.test", "pack-one", "1.0.0")
+                )));
 
-//        testLocalRepository.deploy(
-//                new DefaultArtifact("org.test", "test-channel", "manifest", "yaml","1.0.2"),
-//                new ChannelManifest("test-manifest", null, null, List.of(
-//                        new Stream("org.wildfly.galleon-plugins", "wildfly-config-gen", GALLEON_PLUGINS_VERSION),
-//                        new Stream("org.wildfly.galleon-plugins", "wildfly-galleon-plugins", GALLEON_PLUGINS_VERSION),
-//                        new Stream("commons-io", "commons-io", bump(bump(COMMONS_IO_VERSION))),
-//                        new Stream("org.test", "pack-one", "1.0.0")
-//                )));
+        testLocalRepository.deploy(
+                new DefaultArtifact("org.test", "test-channel", "manifest", "yaml","1.0.2"),
+                new ChannelManifest("test-manifest", null, null, List.of(
+                        new Stream("org.wildfly.galleon-plugins", "wildfly-config-gen", GALLEON_PLUGINS_VERSION),
+                        new Stream("org.wildfly.galleon-plugins", "wildfly-galleon-plugins", GALLEON_PLUGINS_VERSION),
+                        new Stream("commons-io", "commons-io", bump(bump(COMMONS_IO_VERSION))),
+                        new Stream("org.test", "pack-one", "1.0.0")
+                )));
     }
 
     private String bump(String version) {

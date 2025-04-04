@@ -31,8 +31,9 @@ import org.wildfly.prospero.ProsperoLogger;
 import org.wildfly.prospero.api.Console;
 import org.wildfly.prospero.api.FileConflict;
 import org.wildfly.prospero.api.MavenOptions;
-import org.wildfly.prospero.api.TemporaryRepositoriesHandler;
 import org.wildfly.prospero.api.InstallationMetadata;
+import org.wildfly.prospero.api.TemporaryRepositoriesHandler;
+import org.wildfly.prospero.api.exceptions.MetadataException;
 import org.wildfly.prospero.api.exceptions.OperationException;
 import org.wildfly.prospero.galleon.GalleonEnvironment;
 import org.wildfly.prospero.model.ProsperoConfig;
@@ -55,10 +56,20 @@ public class UpdateAction implements AutoCloseable {
 
     public UpdateAction(Path installDir, MavenOptions mavenOptions, Console console, List<Repository> overrideRepositories)
             throws OperationException, ProvisioningException {
+        this(installDir, addTemporaryRepositories(installDir, overrideRepositories), mavenOptions, console);
+    }
+
+    public UpdateAction(Path installDir, List<Channel> overrideChannels, MavenOptions mavenOptions, Console console)
+            throws OperationException, ProvisioningException {
         this.installDir = InstallFolderUtils.toRealPath(installDir);
         this.metadata = InstallationMetadata.loadInstallation(this.installDir);
         this.console = console;
-        this.prosperoConfig = addTemporaryRepositories(overrideRepositories);
+        final ProsperoConfig prosperoConfig = metadata.getProsperoConfig();
+        if (overrideChannels.isEmpty()) {
+            this.prosperoConfig = prosperoConfig;
+        } else {
+            this.prosperoConfig = new ProsperoConfig(overrideChannels, prosperoConfig.getMavenOptions());
+        }
         this.mavenOptions = prosperoConfig.getMavenOptions().merge(mavenOptions);
 
         this.mavenSessionManager = new MavenSessionManager(this.mavenOptions);
@@ -164,11 +175,11 @@ public class UpdateAction implements AutoCloseable {
         metadata.close();
     }
 
-    private ProsperoConfig addTemporaryRepositories(List<Repository> repositories) {
-        final ProsperoConfig prosperoConfig = metadata.getProsperoConfig();
+    private static List<Channel> addTemporaryRepositories(Path installDir, List<Repository> repositories) throws MetadataException {
+        try(InstallationMetadata metadata = InstallationMetadata.loadInstallation(installDir)) {
+            final ProsperoConfig prosperoConfig = metadata.getProsperoConfig();
 
-        final List<Channel> channels = TemporaryRepositoriesHandler.overrideRepositories(prosperoConfig.getChannels(), repositories);
-
-        return new ProsperoConfig(channels, prosperoConfig.getMavenOptions());
+            return TemporaryRepositoriesHandler.overrideRepositories(prosperoConfig.getChannels(), repositories);
+        }
     }
 }

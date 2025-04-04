@@ -19,6 +19,7 @@ package org.wildfly.prospero.cli.commands;
 
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 
@@ -35,6 +36,8 @@ import org.mockito.Captor;
 import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.junit.MockitoJUnitRunner;
+import org.wildfly.channel.Channel;
+import org.wildfly.channel.ChannelManifestCoordinate;
 import org.wildfly.channel.Repository;
 import org.wildfly.prospero.actions.ApplyCandidateAction;
 import org.wildfly.prospero.actions.UpdateAction;
@@ -51,6 +54,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyList;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
@@ -77,7 +81,7 @@ public class UpdateCommandTest extends AbstractMavenCommandTest {
     private ArgumentCaptor<MavenOptions> mavenOptions;
 
     @Captor
-    private ArgumentCaptor<List<Repository>> repositories;
+    private ArgumentCaptor<List<Channel>> versionOverrideCaptor;
 
     @Rule
     public TemporaryFolder tempFolder = new TemporaryFolder();
@@ -92,7 +96,8 @@ public class UpdateCommandTest extends AbstractMavenCommandTest {
     @Before
     public void setUp() throws Exception {
         super.setUp();
-        when(actionFactory.update(any(), any(), any(), any())).thenReturn(updateAction);
+        when(actionFactory.update(any(), any(), any(), anyList())).thenReturn(updateAction);
+        when(actionFactory.update(any(), anyList(), any(), any())).thenReturn(updateAction);
         when(actionFactory.applyUpdate(any(), any())).thenReturn(applyCandidateAction);
         installationDir = tempFolder.newFolder().toPath();
 
@@ -143,7 +148,7 @@ public class UpdateCommandTest extends AbstractMavenCommandTest {
         int exitCode = commandLine.execute(CliConstants.Commands.UPDATE, CliConstants.Commands.PERFORM, CliConstants.SELF);
 
         assertEquals(ReturnCodes.SUCCESS, exitCode);
-        Mockito.verify(actionFactory).update(eq(installationDir.toAbsolutePath()), any(), any(), any());
+        Mockito.verify(actionFactory).update(eq(installationDir.toAbsolutePath()), anyList(), any(), any());
         Mockito.verify(updateAction).buildUpdate(any());
         Mockito.verify(applyCandidateAction).applyUpdate(ApplyCandidateAction.Type.UPDATE);
     }
@@ -158,7 +163,7 @@ public class UpdateCommandTest extends AbstractMavenCommandTest {
                 CliConstants.DIR, installationDir.toAbsolutePath().toString());
 
         assertEquals(ReturnCodes.SUCCESS, exitCode);
-        Mockito.verify(actionFactory).update(eq(installationDir.toAbsolutePath()), any(), any(), any());
+        Mockito.verify(actionFactory).update(eq(installationDir.toAbsolutePath()), anyList(), any(), any());
         Mockito.verify(updateAction).buildUpdate(any());
         Mockito.verify(applyCandidateAction).applyUpdate(ApplyCandidateAction.Type.UPDATE);
     }
@@ -195,7 +200,7 @@ public class UpdateCommandTest extends AbstractMavenCommandTest {
                 CliConstants.DIR, installationDir.toAbsolutePath().toString());
 
         assertEquals(ReturnCodes.SUCCESS, exitCode);
-        Mockito.verify(actionFactory).update(eq(installationDir.toAbsolutePath()), any(), any(), any());
+        Mockito.verify(actionFactory).update(eq(installationDir.toAbsolutePath()), anyList(), any(), any());
         assertEquals(1, getAskedConfirmation());
         Mockito.verify(updateAction, never()).performUpdate();
     }
@@ -210,7 +215,7 @@ public class UpdateCommandTest extends AbstractMavenCommandTest {
                 CliConstants.DIR, installationDir.toAbsolutePath().toString());
 
         assertEquals(ReturnCodes.SUCCESS, exitCode);
-        Mockito.verify(actionFactory).update(eq(installationDir.toAbsolutePath()), any(), any(), any());
+        Mockito.verify(actionFactory).update(eq(installationDir.toAbsolutePath()), anyList(), any(), any());
         assertEquals(1, getAskedConfirmation());
         Mockito.verify(updateAction).buildUpdate(any());
         Mockito.verify(applyCandidateAction).applyUpdate(ApplyCandidateAction.Type.UPDATE);
@@ -225,7 +230,7 @@ public class UpdateCommandTest extends AbstractMavenCommandTest {
                 CliConstants.DIR, installationDir.toAbsolutePath().toString());
 
         assertEquals(ReturnCodes.SUCCESS, exitCode);
-        Mockito.verify(actionFactory).update(eq(installationDir.toAbsolutePath()), any(), any(), any());
+        Mockito.verify(actionFactory).update(eq(installationDir.toAbsolutePath()), any(), any(), anyList());
         Mockito.verify(updateAction, never()).performUpdate();
         Mockito.verify(updateAction).findUpdates();
     }
@@ -249,7 +254,7 @@ public class UpdateCommandTest extends AbstractMavenCommandTest {
                 CliConstants.DIR, installationDir.toAbsolutePath().toString());
 
         assertEquals(ReturnCodes.SUCCESS, exitCode);
-        Mockito.verify(actionFactory).update(eq(installationDir.toAbsolutePath()), any(), any(), any());
+        Mockito.verify(actionFactory).update(eq(installationDir.toAbsolutePath()), any(), any(), anyList());
         assertEquals(1, getAskedConfirmation());
         Mockito.verify(updateAction).buildUpdate(updatePath);
     }
@@ -264,7 +269,7 @@ public class UpdateCommandTest extends AbstractMavenCommandTest {
                 CliConstants.DIR, installationDir.toAbsolutePath().toString());
 
         assertEquals(ReturnCodes.SUCCESS, exitCode);
-        Mockito.verify(actionFactory).update(eq(installationDir.toAbsolutePath()), any(), any(), any());
+        Mockito.verify(actionFactory).update(eq(installationDir.toAbsolutePath()), any(), any(), anyList());
         assertEquals(0, getAskedConfirmation());
         Mockito.verify(updateAction, never()).buildUpdate(updatePath);
     }
@@ -293,14 +298,15 @@ public class UpdateCommandTest extends AbstractMavenCommandTest {
     }
 
     @Test
-    public void spliRepositoriesFromArgument() throws Exception {
+    public void splitRepositoriesFromArgument() throws Exception {
         doLocalMock();
         int exitCode = commandLine.execute(CliConstants.Commands.UPDATE, CliConstants.Commands.PERFORM,
                 CliConstants.DIR, installationDir.toAbsolutePath().toString(),
                 CliConstants.REPOSITORIES, "http://foo,http://bar");
 
         assertEquals(ReturnCodes.SUCCESS, exitCode);
-        assertThat(getCapturedRepositories())
+        assertThat(getCapturedChannels())
+                .flatMap(Channel::getRepositories)
                 .map(Repository::getUrl)
                 .containsExactly("http://foo", "http://bar");
 
@@ -337,6 +343,23 @@ public class UpdateCommandTest extends AbstractMavenCommandTest {
         verify(applyCandidateAction).applyUpdate(ApplyCandidateAction.Type.UPDATE);
     }
 
+    @Test
+    public void versionStringWithChannelNameAndVersionIsAppliedToAChannel() throws Exception {
+        when(updateAction.findUpdates()).thenReturn(new UpdateSet(List.of(change("1.0.0", "1.0.1"))));
+        when(updateAction.buildUpdate(any())).thenReturn(true);
+        when(applyCandidateAction.getConflicts()).thenReturn(Collections.emptyList());
+
+        int exitCode = commandLine.execute(CliConstants.Commands.UPDATE, CliConstants.Commands.PERFORM,
+                CliConstants.DIR, installationDir.toString(),
+                CliConstants.VERSION, "test-channel::1.1.1");
+
+        assertEquals(ReturnCodes.SUCCESS, exitCode);
+
+        assertThat(getCapturedChannels())
+                .map(Channel::getManifestCoordinate)
+                .contains(new ChannelManifestCoordinate("org.test", "test", "1.1.1"));
+    }
+
     private ArtifactChange change(String oldVersion, String newVersion) {
         return ArtifactChange.updated(new DefaultArtifact("org.foo", "bar", null, oldVersion),
                 new DefaultArtifact("org.foo", "bar", null, newVersion));
@@ -349,13 +372,13 @@ public class UpdateCommandTest extends AbstractMavenCommandTest {
 
     @Override
     protected MavenOptions getCapturedMavenOptions() throws Exception {
-        Mockito.verify(actionFactory).update(any(), mavenOptions.capture(), any(), any());
+        Mockito.verify(actionFactory).update(any(), any(), mavenOptions.capture(), any());
         return mavenOptions.getValue();
     }
 
-    protected List<Repository> getCapturedRepositories() throws Exception {
-        Mockito.verify(actionFactory).update(any(), any(), any(), repositories.capture());
-        return repositories.getValue();
+    protected Collection<Channel> getCapturedChannels() throws Exception {
+        Mockito.verify(actionFactory).update(any(), versionOverrideCaptor.capture(), any(), any());
+        return versionOverrideCaptor.getValue();
     }
 
     @Override

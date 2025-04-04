@@ -14,6 +14,7 @@ import org.wildfly.channel.Channel;
 import org.wildfly.channel.ChannelManifestCoordinate;
 import org.wildfly.channel.Repository;
 import org.wildfly.prospero.ProsperoLogger;
+import org.wildfly.prospero.VersionOverride;
 import org.wildfly.prospero.cli.ArgumentParsingException;
 import org.wildfly.prospero.cli.CliMessages;
 
@@ -40,12 +41,16 @@ class OverrideBuilder {
         final Map<String, VersionOverride> channelsMap = new HashMap<>();
         if (!versions.isEmpty()) {
             for (String version : versions) {
-                final VersionOverride override = new VersionOverride(version);
-
-                if (channelsMap.containsKey(override.channelName)) {
-                    throw CliMessages.MESSAGES.duplicatedVersionOverride(override.channelName);
+                final String[] parts = version.split("::");
+                if (parts.length != 2) {
+                    throw CliMessages.MESSAGES.invalidVersionOverrideString(version);
                 }
-                channelsMap.put(override.channelName, override);
+                final VersionOverride override = new VersionOverride(parts[0], parts[1]);
+
+                if (channelsMap.containsKey(override.channelName())) {
+                    throw CliMessages.MESSAGES.duplicatedVersionOverride(override.channelName());
+                }
+                channelsMap.put(override.channelName(), override);
             }
             final Set<String> existingChannelNames = channels.stream().map(Channel::getName).collect(Collectors.toSet());
             for (String overrideKey : channelsMap.keySet()) {
@@ -83,33 +88,19 @@ class OverrideBuilder {
         return this;
     }
 
-    private static class VersionOverride {
-        final String channelName;
-        final String version;
-
-        public VersionOverride(String version) throws ArgumentParsingException {
-            final String[] parts = version.split("::");
-            if (parts.length != 2) {
-                throw CliMessages.MESSAGES.invalidVersionOverrideString(version);
-            }
-            this.channelName = parts[0];
-            this.version = parts[1];
-        }
-    }
-
     private Channel overrideChannel(Channel c, VersionOverride version) {
         final Channel.Builder builder = new Channel.Builder(c);
         if (version != null) {
-            if (c.getName().equals(version.channelName)) {
+            if (c.getName().equals(version.channelName())) {
                 final ChannelManifestCoordinate coord = c.getManifestCoordinate();
                 if (coord.getUrl() != null) {
                     try {
-                        builder.setManifestUrl(URI.create(version.version).toURL());
+                        builder.setManifestUrl(URI.create(version.version()).toURL());
                     } catch (MalformedURLException e) {
-                        throw ProsperoLogger.ROOT_LOGGER.invalidUrl(version.version, e);
+                        throw ProsperoLogger.ROOT_LOGGER.invalidUrl(version.version(), e);
                     }
                 } else {
-                    builder.setManifestCoordinate(coord.getGroupId(), coord.getArtifactId(), version.version);
+                    builder.setManifestCoordinate(coord.getGroupId(), coord.getArtifactId(), version.version());
                 }
             }
         }
