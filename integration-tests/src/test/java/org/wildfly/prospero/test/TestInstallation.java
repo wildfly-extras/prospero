@@ -169,8 +169,8 @@ public class TestInstallation {
      * @throws ProvisioningException
      * @throws OperationException
      */
-    public List<FileConflict> update() throws Exception {
-        return update(new AcceptingConsole());
+    public List<FileConflict> update(String... args) throws Exception {
+        return update(new AcceptingConsole(), args);
     }
 
     /**
@@ -181,11 +181,14 @@ public class TestInstallation {
      * @throws ProvisioningException
      * @throws OperationException
      */
-    public List<FileConflict> update(Console console) throws Exception {
+    public List<FileConflict> update(Console console, String... args) throws Exception {
         final ArrayList<String> argList = new ArrayList<>();
-        Collections.addAll(argList, CliConstants.Commands.UPDATE, CliConstants.Commands.PERFORM,
+        Collections.addAll(argList,
+                CliConstants.Commands.UPDATE, CliConstants.Commands.PERFORM,
                 CliConstants.YES,
                 CliConstants.DIR, serverRoot.toAbsolutePath().toString());
+
+        Collections.addAll(argList, args);
 
         ExecutionUtils.prosperoExecution(argList.toArray(new String[]{}))
                 .withTimeLimit(10, TimeUnit.MINUTES)
@@ -232,6 +235,36 @@ public class TestInstallation {
             list.add(new Repository("test-" + i, repositories.get(i).toExternalForm()));
         }
         installationHistoryAction.rollback(originalState, MavenOptions.OFFLINE_NO_CACHE, list);
+    }
+
+    public void prepareUpdate(Path candidate, String... args) throws Exception {
+        final ArrayList<String> argList = new ArrayList<>();
+        Collections.addAll(argList,
+                CliConstants.Commands.UPDATE, CliConstants.Commands.PREPARE,
+                CliConstants.YES,
+                CliConstants.DIR, serverRoot.toAbsolutePath().toString(),
+                CliConstants.CANDIDATE_DIR, candidate.toAbsolutePath().toString());
+
+        Collections.addAll(argList, args);
+
+        ExecutionUtils.prosperoExecution(argList.toArray(new String[]{}))
+                .withTimeLimit(10, TimeUnit.MINUTES)
+                .execute()
+                .assertReturnCode(ReturnCodes.SUCCESS);
+    }
+
+    public void apply(Path candidatePath) throws Exception {
+        final ArrayList<String> argList = new ArrayList<>();
+        Collections.addAll(argList,
+                CliConstants.Commands.UPDATE, CliConstants.Commands.APPLY,
+                CliConstants.YES,
+                CliConstants.DIR, serverRoot.toAbsolutePath().toString(),
+                CliConstants.CANDIDATE_DIR, candidatePath.toAbsolutePath().toString());
+
+        ExecutionUtils.prosperoExecution(argList.toArray(new String[]{}))
+                .withTimeLimit(10, TimeUnit.MINUTES)
+                .execute()
+                .assertReturnCode(ReturnCodes.SUCCESS);
     }
 
     /**
