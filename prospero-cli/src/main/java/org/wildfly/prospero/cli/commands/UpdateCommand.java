@@ -198,6 +198,12 @@ public class UpdateCommand extends AbstractParentCommand {
         @CommandLine.Option(names = {CliConstants.Y, CliConstants.YES})
         boolean yes;
 
+        @CommandLine.Option(
+                names = CliConstants.VERSION,
+                split = ","
+        )
+        List<String> versions = new ArrayList<>();
+
         public PrepareCommand(CliConsole console, ActionFactory actionFactory) {
             super(console, actionFactory);
         }
@@ -219,8 +225,17 @@ public class UpdateCommand extends AbstractParentCommand {
 
                 verifyTargetDirectoryIsEmpty(candidateDirectory);
 
-                try (UpdateAction updateAction = actionFactory.update(installationDir,
-                        mavenOptions, console, repositories)) {
+                final List<Channel> overrideChannels;
+                try (InstallationMetadata im = InstallationMetadata.loadInstallation(installationDir)) {
+                    overrideChannels = OverrideBuilder
+                            .from(im.getProsperoConfig().getChannels())
+                            .withRepositories(repositories)
+                            .withManifestVersions(versions)
+                            .build();
+                }
+
+                try (UpdateAction updateAction = actionFactory.update(installationDir, overrideChannels,
+                        mavenOptions, console)) {
                     if (buildUpdate(updateAction, candidateDirectory, yes, console, () -> console.confirmBuildUpdates())) {
                         console.println("");
                         console.buildUpdatesComplete();

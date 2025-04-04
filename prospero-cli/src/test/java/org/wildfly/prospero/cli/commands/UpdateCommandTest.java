@@ -17,8 +17,11 @@
 
 package org.wildfly.prospero.cli.commands;
 
+import java.io.IOException;
+import java.net.URL;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.StandardCopyOption;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
@@ -38,6 +41,7 @@ import org.mockito.Mockito;
 import org.mockito.junit.MockitoJUnitRunner;
 import org.wildfly.channel.Channel;
 import org.wildfly.channel.ChannelManifestCoordinate;
+import org.wildfly.channel.ChannelMapper;
 import org.wildfly.channel.Repository;
 import org.wildfly.prospero.actions.ApplyCandidateAction;
 import org.wildfly.prospero.actions.UpdateAction;
@@ -47,6 +51,7 @@ import org.wildfly.prospero.api.MavenOptions;
 import org.wildfly.prospero.cli.ActionFactory;
 import org.wildfly.prospero.cli.CliMessages;
 import org.wildfly.prospero.cli.ReturnCodes;
+import org.wildfly.prospero.metadata.ProsperoMetadataUtils;
 import org.wildfly.prospero.updates.UpdateSet;
 import org.wildfly.prospero.test.MetadataTestUtils;
 
@@ -254,7 +259,7 @@ public class UpdateCommandTest extends AbstractMavenCommandTest {
                 CliConstants.DIR, installationDir.toAbsolutePath().toString());
 
         assertEquals(ReturnCodes.SUCCESS, exitCode);
-        Mockito.verify(actionFactory).update(eq(installationDir.toAbsolutePath()), any(), any(), anyList());
+        Mockito.verify(actionFactory).update(eq(installationDir.toAbsolutePath()), anyList(), any(), any());
         assertEquals(1, getAskedConfirmation());
         Mockito.verify(updateAction).buildUpdate(updatePath);
     }
@@ -269,7 +274,7 @@ public class UpdateCommandTest extends AbstractMavenCommandTest {
                 CliConstants.DIR, installationDir.toAbsolutePath().toString());
 
         assertEquals(ReturnCodes.SUCCESS, exitCode);
-        Mockito.verify(actionFactory).update(eq(installationDir.toAbsolutePath()), any(), any(), anyList());
+        Mockito.verify(actionFactory).update(eq(installationDir.toAbsolutePath()), anyList(), any(), any());
         assertEquals(0, getAskedConfirmation());
         Mockito.verify(updateAction, never()).buildUpdate(updatePath);
     }
@@ -358,6 +363,159 @@ public class UpdateCommandTest extends AbstractMavenCommandTest {
         assertThat(getCapturedChannels())
                 .map(Channel::getManifestCoordinate)
                 .contains(new ChannelManifestCoordinate("org.test", "test", "1.1.1"));
+    }
+
+    @Test
+    public void versionStringsHaveToOverrideAllChannels() throws Exception {
+        final Path channelCfg = generateTwoChannelConfiguration();
+        Files.copy(channelCfg, installationDir.resolve(ProsperoMetadataUtils.METADATA_DIR).resolve(ProsperoMetadataUtils.INSTALLER_CHANNELS_FILE_NAME), StandardCopyOption.REPLACE_EXISTING);
+
+        int exitCode = commandLine.execute(CliConstants.Commands.UPDATE, CliConstants.Commands.PERFORM,
+                CliConstants.DIR, installationDir.toString(),
+                CliConstants.VERSION, "test-one::1.1.1");
+
+        assertEquals(ReturnCodes.INVALID_ARGUMENTS, exitCode);
+        assertThat(getErrorOutput())
+                .contains(CliMessages.MESSAGES.versionOverrideHasToApplyToAllChannels().getMessage());
+    }
+
+    @Test
+    public void versionArgumentWithNoSeparatorIsInvalid() throws Exception {
+        int exitCode = commandLine.execute(CliConstants.Commands.UPDATE, CliConstants.Commands.PERFORM,
+                CliConstants.DIR, installationDir.toAbsolutePath().toString(),
+                CliConstants.VERSION, "1.1.1");
+
+        assertEquals(ReturnCodes.INVALID_ARGUMENTS, exitCode);
+        assertThat(getErrorOutput())
+                .contains(CliMessages.MESSAGES.invalidVersionOverrideString("1.1.1").getMessage());
+    }
+
+    @Test
+    public void errorWhenVersionOverrideDoesNotMatchAnyChannels() throws Exception {
+        int exitCode = commandLine.execute(CliConstants.Commands.UPDATE, CliConstants.Commands.PERFORM,
+                CliConstants.DIR, installationDir.toAbsolutePath().toString(),
+                CliConstants.VERSION, "idontexist::1.1.1");
+
+        assertEquals(ReturnCodes.INVALID_ARGUMENTS, exitCode);
+        assertThat(getErrorOutput())
+                .contains(CliMessages.MESSAGES.channelNotFoundException("idontexist").getMessage());
+    }
+
+    @Test
+    public void multipleVersionOverrideAreApplied() throws Exception {
+        when(updateAction.findUpdates()).thenReturn(new UpdateSet(List.of(change("1.0.0", "1.0.1"))));
+        when(updateAction.buildUpdate(any())).thenReturn(true);
+        when(applyCandidateAction.getConflicts()).thenReturn(Collections.emptyList());
+
+        final Path channelCfg = generateTwoChannelConfiguration();
+        Files.copy(channelCfg, installationDir.resolve(ProsperoMetadataUtils.METADATA_DIR).resolve(ProsperoMetadataUtils.INSTALLER_CHANNELS_FILE_NAME), StandardCopyOption.REPLACE_EXISTING);
+
+        int exitCode = commandLine.execute(CliConstants.Commands.UPDATE, CliConstants.Commands.PERFORM,
+                CliConstants.DIR, installationDir.toAbsolutePath().toString(),
+                CliConstants.VERSION, "test-one::1.1.1",
+                CliConstants.VERSION, "test-two::2.2.2");
+
+        assertEquals(ReturnCodes.SUCCESS, exitCode);
+
+        assertThat(getCapturedChannels())
+                .map(Channel::getManifestCoordinate)
+                .contains(
+                        new ChannelManifestCoordinate("org.test", "test-one", "1.1.1"),
+                        new ChannelManifestCoordinate("org.test", "test-two", "2.2.2")
+                );
+    }
+
+    @Test
+    public void duplicateVersionOverrideIsAnError() throws Exception {
+        final Path channelCfg = generateTwoChannelConfiguration();
+        Files.copy(channelCfg, installationDir.resolve(ProsperoMetadataUtils.METADATA_DIR).resolve(ProsperoMetadataUtils.INSTALLER_CHANNELS_FILE_NAME), StandardCopyOption.REPLACE_EXISTING);
+
+        int exitCode = commandLine.execute(CliConstants.Commands.UPDATE, CliConstants.Commands.PERFORM,
+                CliConstants.DIR, installationDir.toAbsolutePath().toString(),
+                CliConstants.VERSION, "test-one::1.1.1",
+                CliConstants.VERSION, "test-one::1.1.2",
+                CliConstants.VERSION, "test-two::2.2.2");
+
+        assertEquals(ReturnCodes.INVALID_ARGUMENTS, exitCode);
+        assertThat(getErrorOutput())
+                .contains(CliMessages.MESSAGES.duplicatedVersionOverride("test-one").getMessage());
+    }
+
+    @Test
+    public void urlChannelIsOverrideByVersionArgument() throws Exception {
+        when(updateAction.findUpdates()).thenReturn(new UpdateSet(List.of(change("1.0.0", "1.0.1"))));
+        when(updateAction.buildUpdate(any())).thenReturn(true);
+        when(applyCandidateAction.getConflicts()).thenReturn(Collections.emptyList());
+
+        final Path channelCfg = generateUrlChannelConfiguration();
+        Files.copy(channelCfg, installationDir.resolve(ProsperoMetadataUtils.METADATA_DIR).resolve(ProsperoMetadataUtils.INSTALLER_CHANNELS_FILE_NAME), StandardCopyOption.REPLACE_EXISTING);
+
+        int exitCode = commandLine.execute(CliConstants.Commands.UPDATE, CliConstants.Commands.PERFORM,
+                CliConstants.DIR, installationDir.toAbsolutePath().toString(),
+                CliConstants.VERSION, "test-one::http://new.channel.com");
+
+        assertEquals(ReturnCodes.SUCCESS, exitCode);
+
+        assertThat(getCapturedChannels())
+                .map(Channel::getManifestCoordinate)
+                .contains(new ChannelManifestCoordinate(new URL("http://new.channel.com")));
+    }
+
+    @Test
+    public void urlChannelIsOverrideByVersionArgumentWithLocalFileUrl() throws Exception {
+        when(updateAction.findUpdates()).thenReturn(new UpdateSet(List.of(change("1.0.0", "1.0.1"))));
+        when(updateAction.buildUpdate(any())).thenReturn(true);
+        when(applyCandidateAction.getConflicts()).thenReturn(Collections.emptyList());
+
+        final Path channelCfg = generateUrlChannelConfiguration();
+        Files.copy(channelCfg, installationDir.resolve(ProsperoMetadataUtils.METADATA_DIR).resolve(ProsperoMetadataUtils.INSTALLER_CHANNELS_FILE_NAME), StandardCopyOption.REPLACE_EXISTING);
+
+        int exitCode = commandLine.execute(CliConstants.Commands.UPDATE, CliConstants.Commands.PERFORM,
+                CliConstants.DIR, installationDir.toAbsolutePath().toString(),
+                CliConstants.VERSION, "test-one::file:foo.yaml");
+
+        assertEquals(ReturnCodes.SUCCESS, exitCode);
+
+        assertThat(getCapturedChannels())
+                .map(Channel::getManifestCoordinate)
+                .contains(new ChannelManifestCoordinate(new URL("file:foo.yaml")));
+    }
+
+    private Path generateTwoChannelConfiguration() throws IOException {
+        // build a list of two channels
+        final List<Channel> channels = List.of(
+                new Channel.Builder()
+                        .setName("test-one")
+                        .setManifestCoordinate("org.test", "test-one")
+                        .addRepository("repo", "http://repo.test")
+                        .build(),
+                new Channel.Builder()
+                        .setName("test-two")
+                        .setManifestCoordinate("org.test", "test-two")
+                        .addRepository("repo", "http://repo.test")
+                        .build()
+        );
+
+        // serialize the channels to a file and pass it to the CLI
+        final Path channelFile = tempFolder.newFile("channels.yaml").toPath();
+        Files.writeString(channelFile, ChannelMapper.toYaml(channels));
+        return channelFile;
+    }
+
+    private Path generateUrlChannelConfiguration() throws IOException {
+        // build a list of two channels
+        final List<Channel> channels = List.of(
+                new Channel.Builder()
+                        .setName("test-one")
+                        .setManifestUrl(new URL("http://channel.com"))
+                        .addRepository("repo", "http://repo.test")
+                        .build()
+        );
+
+        // serialize the channels to a file and pass it to the CLI
+        final Path channelFile = tempFolder.newFile("channels.yaml").toPath();
+        Files.writeString(channelFile, ChannelMapper.toYaml(channels));
+        return channelFile;
     }
 
     private ArtifactChange change(String oldVersion, String newVersion) {
