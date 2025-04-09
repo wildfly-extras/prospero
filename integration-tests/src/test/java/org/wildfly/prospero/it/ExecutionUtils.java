@@ -17,16 +17,27 @@
 
 package org.wildfly.prospero.it;
 
+import java.io.BufferedReader;
 import java.io.File;
+import java.io.FileWriter;
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.io.PrintWriter;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
+import java.util.Iterator;
 import java.util.Locale;
 import java.util.concurrent.TimeUnit;
 
+import org.apache.commons.io.FileUtils;
 import org.assertj.core.api.Assertions;
+import org.testcontainers.shaded.org.apache.commons.lang3.tuple.Pair;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -46,20 +57,83 @@ public class ExecutionUtils {
         return new Execution(args);
     }
 
-    private static ExecutionResult execute(Execution execution) throws Exception {
-        return execute(PROSPERO_SCRIPT_PATH, execution);
+    private static ExecutionResult execute(Execution execution, Collection<Pair<String,String>> prompts) throws Exception {
+        return execute(PROSPERO_SCRIPT_PATH, execution, prompts);
     }
 
-    private static ExecutionResult execute(Path script, Execution execution) throws Exception {
+    @SuppressWarnings("BusyWait")
+    private static ExecutionResult execute(Path script, Execution execution, Collection<Pair<String,String>> prompts) throws Exception {
         String[] execArray = mergeArrays(new String[] {script.toString()}, execution.args);
         Process process = new ProcessBuilder(execArray)
                 .redirectErrorStream(true)
-                .redirectOutput(new File("target/test-out.log"))
                 .start();
 
-        if (!process.waitFor(execution.timeLimit, execution.timeUnit)) {
-            process.destroy();
-            Assertions.fail("The process didn't complete in time.");
+        final Iterator<Pair<String, String>> iterator = prompts.iterator();
+        Pair<String, String> nextPrompt;
+        if (iterator.hasNext()) {
+            nextPrompt = iterator.next();
+        } else {
+            nextPrompt = null;
+        }
+
+        FileUtils.deleteQuietly(new File("target/test-out.log"));
+
+        final InputStream inputStream = process.getInputStream();
+        try (BufferedReader reader = new BufferedReader(new InputStreamReader(inputStream));
+             FileWriter writer = new FileWriter(new File("target/test-out.log"));
+             PrintWriter console = new PrintWriter(process.getOutputStream())) {
+            final long startTime = System.currentTimeMillis();
+
+            StringBuilder lineBuffer = new StringBuilder();
+            while (process.isAlive()) {
+                // read new lines
+                while (reader.ready()) {
+                    final int c = reader.read();
+                    lineBuffer.append((char)c);
+                    String line = lineBuffer.toString();
+                    // we need to check the line before line separator for the prompt
+                    if (nextPrompt != null && line.equals(nextPrompt.getKey())) {
+                        // if they match expected prompts -> respond in scripted way
+                        console.println(nextPrompt.getValue());
+                        console.flush();
+
+                        if (iterator.hasNext()) {
+                            nextPrompt = iterator.next();
+                        } else {
+                            nextPrompt = null;
+                        }
+                        lineBuffer = new StringBuilder();
+                    } else if (c != '\n') {
+                        // we're looking for an end
+                        writer.write(c);
+                        writer.flush();
+                    } else {
+                        writer.write(c);
+                        writer.flush();
+                        lineBuffer = new StringBuilder();
+                    }
+                }
+                // if the timeout happened, exit and kill the process
+                if (System.currentTimeMillis() - startTime > execution.timeUnit.toMillis(execution.timeLimit)) {
+                    if (!lineBuffer.isEmpty()) {
+                        FileUtils.writeStringToFile(new File("target/test-out.log"), lineBuffer + System.lineSeparator(), StandardCharsets.UTF_8, true);
+                    }
+
+                    process.destroy();
+                    Assertions.fail("The process didn't complete in time.");
+                }
+                // finally sleep some more
+                Thread.sleep(100);
+            }
+
+            while (reader.ready()) {
+                final int c = reader.read();
+                writer.write(c);
+            }
+
+            if (nextPrompt != null) {
+                Assertions.fail("Expected prompt %s to be used in the command, but it wasn't.", nextPrompt.getKey());
+            }
         }
 
         return new ExecutionResult(process);
@@ -84,6 +158,8 @@ public class ExecutionUtils {
         private TimeUnit timeUnit = TimeUnit.MINUTES;
         private final String[] args;
 
+        private final ArrayList<Pair<String, String>> prompts = new ArrayList<>();
+
         public Execution(String[] args) {
             this.args = args;
         }
@@ -97,12 +173,17 @@ public class ExecutionUtils {
             return this;
         }
 
+        public Execution withPrompt(String prompt, String response) {
+            prompts.add(Pair.of(prompt, response));
+            return this;
+        }
+
         public ExecutionResult execute() throws Exception {
-            return ExecutionUtils.execute(this);
+            return ExecutionUtils.execute(this, prompts);
         }
 
         public ExecutionResult execute(Path script) throws Exception {
-            return ExecutionUtils.execute(script, this);
+            return ExecutionUtils.execute(script, this, prompts);
         }
     }
 
@@ -133,6 +214,10 @@ public class ExecutionUtils {
             final String output = getCommandOutput();
             assertThat(output).contains(text);
             return this;
+        }
+
+        public String getCommandOutput() throws IOException {
+            return ExecutionUtils.getCommandOutput();
         }
     }
 }

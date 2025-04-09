@@ -25,12 +25,15 @@ import java.net.URL;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
+import java.util.function.Consumer;
 import java.util.stream.IntStream;
 
 import org.apache.commons.io.FileUtils;
+import org.apache.commons.lang3.tuple.Pair;
 import org.eclipse.aether.artifact.Artifact;
 import org.eclipse.aether.artifact.DefaultArtifact;
 import org.jboss.galleon.ProvisioningException;
@@ -48,6 +51,7 @@ import org.wildfly.prospero.api.FileConflict;
 import org.wildfly.prospero.api.MavenOptions;
 import org.wildfly.prospero.api.SavedState;
 import org.wildfly.prospero.api.exceptions.OperationException;
+import org.wildfly.prospero.cli.CliMessages;
 import org.wildfly.prospero.cli.ReturnCodes;
 import org.wildfly.prospero.cli.commands.CliConstants;
 import org.wildfly.prospero.it.AcceptingConsole;
@@ -170,7 +174,7 @@ public class TestInstallation {
      * @throws OperationException
      */
     public List<FileConflict> update(String... args) throws Exception {
-        return update(new AcceptingConsole(), args);
+        return update(List.of(Pair.of(CliMessages.MESSAGES.continueWithUpdate(), "y")), args);
     }
 
     /**
@@ -181,19 +185,39 @@ public class TestInstallation {
      * @throws ProvisioningException
      * @throws OperationException
      */
-    public List<FileConflict> update(Console console, String... args) throws Exception {
+    public List<FileConflict> update(Collection<Pair<String, String>> prompts, String... args) throws Exception {
         final ArrayList<String> argList = new ArrayList<>();
         Collections.addAll(argList,
                 CliConstants.Commands.UPDATE, CliConstants.Commands.PERFORM,
-                CliConstants.YES,
                 CliConstants.DIR, serverRoot.toAbsolutePath().toString());
 
         Collections.addAll(argList, args);
 
-        ExecutionUtils.prosperoExecution(argList.toArray(new String[]{}))
-                .withTimeLimit(10, TimeUnit.MINUTES)
+        final ExecutionUtils.Execution execution = ExecutionUtils.prosperoExecution(argList.toArray(new String[]{}))
+                .withTimeLimit(10, TimeUnit.MINUTES);
+        prompts.forEach(p->execution.withPrompt(p.getKey(), p.getValue()));
+        execution
                 .execute()
                 .assertReturnCode(ReturnCodes.SUCCESS);
+
+        return Collections.emptyList();
+    }
+
+    public List<FileConflict> updateWithCheck(Collection<Pair<String, String>> prompts, Consumer<ExecutionUtils.ExecutionResult> verifier , String... args) throws Exception {
+        final ArrayList<String> argList = new ArrayList<>();
+        Collections.addAll(argList,
+                CliConstants.Commands.UPDATE, CliConstants.Commands.PERFORM,
+                CliConstants.DIR, serverRoot.toAbsolutePath().toString());
+
+        Collections.addAll(argList, args);
+
+        final ExecutionUtils.Execution execution = ExecutionUtils.prosperoExecution(argList.toArray(new String[]{}))
+                .withTimeLimit(10, TimeUnit.MINUTES);
+        prompts.forEach(p->execution.withPrompt(p.getKey(), p.getValue()));
+        final ExecutionUtils.ExecutionResult result = execution
+                .execute();
+
+        verifier.accept(result);
 
         return Collections.emptyList();
     }
@@ -265,6 +289,22 @@ public class TestInstallation {
                 .withTimeLimit(10, TimeUnit.MINUTES)
                 .execute()
                 .assertReturnCode(ReturnCodes.SUCCESS);
+    }
+
+    public String listUpdates(String... args) throws Exception {
+        final ArrayList<String> argList = new ArrayList<>();
+        Collections.addAll(argList,
+                CliConstants.Commands.UPDATE, CliConstants.Commands.LIST,
+                CliConstants.DIR, serverRoot.toAbsolutePath().toString());
+
+        Collections.addAll(argList, args);
+
+        final ExecutionUtils.ExecutionResult result = ExecutionUtils.prosperoExecution(argList.toArray(new String[]{}))
+                .withTimeLimit(10, TimeUnit.MINUTES)
+                .execute();
+        result.assertReturnCode(ReturnCodes.SUCCESS);
+
+        return result.getCommandOutput();
     }
 
     /**
