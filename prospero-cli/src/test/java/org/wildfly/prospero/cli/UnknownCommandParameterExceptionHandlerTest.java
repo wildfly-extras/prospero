@@ -44,7 +44,7 @@ public class UnknownCommandParameterExceptionHandlerTest {
     @Before
     public void setUp() {
         out = new ByteArrayOutputStream();
-        handler = new UnknownCommandParameterExceptionHandler(delegate, new PrintStream(out));
+        handler = new UnknownCommandParameterExceptionHandler(delegate, new PrintStream(out), false);
     }
 
     @Test
