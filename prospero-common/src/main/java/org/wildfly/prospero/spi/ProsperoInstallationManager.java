@@ -263,7 +263,7 @@ public class ProsperoInstallationManager implements InstallationManager {
 
     @Override
     public String generateApplyRevertCommand(Path scriptHome, Path candidatePath, OsShell shell) throws OperationNotAvailableException {
-        return generateApplyUpdateCommand(scriptHome, candidatePath, shell, false);
+        return generateApplyRevertCommand(scriptHome, candidatePath, shell, false);
     }
 
     @Override
