@@ -18,6 +18,7 @@
 package org.wildfly.prospero.cli;
 
 import org.apache.commons.lang3.StringUtils;
+import org.wildfly.prospero.ProsperoLogger;
 import picocli.CommandLine;
 
 import java.io.PrintStream;
@@ -32,39 +33,56 @@ class UnknownCommandParameterExceptionHandler implements CommandLine.IParameterE
     protected static final String COMMAND_SEPARATOR = " ";
     private final CommandLine.IParameterExceptionHandler delegate;
     private final PrintStream writer;
+    private final boolean isVerbose;
 
+    @Deprecated(forRemoval = true)
     public UnknownCommandParameterExceptionHandler(CommandLine.IParameterExceptionHandler delegate, PrintStream writer) {
+        this(delegate, writer, false);
+    }
+
+    public UnknownCommandParameterExceptionHandler(CommandLine.IParameterExceptionHandler delegate, PrintStream writer, boolean isVerbose) {
         this.delegate = delegate;
         this.writer = writer;
+        this.isVerbose = isVerbose;
     }
 
     @Override
     public int handleParseException(CommandLine.ParameterException ex, String[] args) throws Exception {
-        if (ex instanceof CommandLine.UnmatchedArgumentException) {
-            final CommandLine.UnmatchedArgumentException argEx = (CommandLine.UnmatchedArgumentException) ex;
 
-            if (argEx.isUnknownOption()) {
-                return delegate.handleParseException(ex, args);
+        try {
+            if (ex instanceof CommandLine.UnmatchedArgumentException) {
+                final CommandLine.UnmatchedArgumentException argEx = (CommandLine.UnmatchedArgumentException) ex;
+
+                if (argEx.isUnknownOption()) {
+                    return delegate.handleParseException(ex, args);
+                }
+
+                if (!currentCommandHasSubcommands(argEx)) {
+                    return delegate.handleParseException(ex, args);
+                }
+
+                final CommandLine.Help.ColorScheme colorScheme = CommandLine.Help.defaultColorScheme(CommandLine.Help.Ansi.AUTO);
+                final String commandName = argEx.getCommandLine().getCommandSpec().name();
+                final String fullCommand = commandName + COMMAND_SEPARATOR + StringUtils.join(argEx.getUnmatched(), COMMAND_SEPARATOR);
+                writer.println(colorScheme.errorText(CliMessages.MESSAGES.unknownCommand(fullCommand)));
+
+                final List<String> suggestions = argEx.getSuggestions();
+                if (suggestions.isEmpty()) {
+                    argEx.getCommandLine().usage(writer);
+                } else {
+                    writer.printf(CliMessages.MESSAGES.commandSuggestions(prefix(commandName, suggestions)));
+                }
+                return ReturnCodes.INVALID_ARGUMENTS;
             }
-
-            if (!currentCommandHasSubcommands(argEx)) {
-                return delegate.handleParseException(ex, args);
+            return delegate.handleParseException(ex, args);
+        } finally {
+            // make sure we log the exception before handling it
+            ProsperoLogger.ROOT_LOGGER.error(ex.getLocalizedMessage(), ex);
+            if (isVerbose) {
+                writer.println();
+                ex.printStackTrace(writer);
             }
-
-            final CommandLine.Help.ColorScheme colorScheme = CommandLine.Help.defaultColorScheme(CommandLine.Help.Ansi.AUTO);
-            final String commandName = argEx.getCommandLine().getCommandSpec().name();
-            final String fullCommand = commandName + COMMAND_SEPARATOR + StringUtils.join(argEx.getUnmatched(), COMMAND_SEPARATOR);
-            writer.println(colorScheme.errorText(CliMessages.MESSAGES.unknownCommand(fullCommand)));
-
-            final List<String> suggestions = argEx.getSuggestions();
-            if (suggestions.isEmpty()) {
-                argEx.getCommandLine().usage(writer);
-            } else {
-                writer.printf(CliMessages.MESSAGES.commandSuggestions(prefix(commandName, suggestions)));
-            }
-            return ReturnCodes.INVALID_ARGUMENTS;
         }
-        return delegate.handleParseException(ex, args);
     }
 
     private static boolean currentCommandHasSubcommands(CommandLine.UnmatchedArgumentException argEx) {

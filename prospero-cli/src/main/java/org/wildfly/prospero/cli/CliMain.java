@@ -115,7 +115,7 @@ public class CliMain {
         final CommandLine.IParameterExceptionHandler rootParameterExceptionHandler = commandLine.getParameterExceptionHandler();
         commandLine.setExecutionExceptionHandler(new ExecutionExceptionHandler(console, isVerbose));
 
-        commandLine.setParameterExceptionHandler(new UnknownCommandParameterExceptionHandler(rootParameterExceptionHandler, System.err));
+        commandLine.setParameterExceptionHandler(new UnknownCommandParameterExceptionHandler(rootParameterExceptionHandler, System.err, isVerbose));
 
         return commandLine;
     }
