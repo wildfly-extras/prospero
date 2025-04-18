@@ -40,7 +40,7 @@ public class VersionLogger {
                 if (!logged) {
                     logged = true;
                     try {
-                        ProsperoLogger.ROOT_LOGGER.info( " version: " + getVersion());
+                        ProsperoLogger.ROOT_LOGGER.info("%s version: %s".formatted(DistributionInfo.DIST_NAME, getVersion()));
                     } catch (Exception e) {
                         ProsperoLogger.ROOT_LOGGER.warn("Unable to read the prospero version", e);
                     }
