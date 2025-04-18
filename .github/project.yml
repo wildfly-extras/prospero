@@ -4,3 +4,4 @@ name: WildFly Prospero
 release:
   current-version: 1.3.4.Final
   next-version: 1.3.5.Final-SNAPSHOT
+
