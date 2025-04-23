@@ -18,6 +18,7 @@
 package org.wildfly.prospero.it.commonapi;
 
 import org.apache.commons.io.FileUtils;
+import org.assertj.core.api.Assertions;
 import org.eclipse.aether.DefaultRepositorySystemSession;
 import org.eclipse.aether.RepositorySystem;
 import org.eclipse.aether.artifact.Artifact;
@@ -36,6 +37,7 @@ import org.wildfly.channel.Repository;
 import org.wildfly.channel.Stream;
 import org.wildfly.prospero.actions.ApplyCandidateAction;
 import org.wildfly.prospero.api.exceptions.MetadataException;
+import org.wildfly.prospero.api.exceptions.OperationException;
 import org.wildfly.prospero.metadata.ManifestVersionRecord;
 import org.wildfly.prospero.actions.UpdateAction;
 import org.wildfly.prospero.api.MavenOptions;
@@ -78,6 +80,9 @@ public class UpdateTest extends WfCoreTestBase {
     public void setUp() throws Exception {
         super.setUp();
         mockRepo = temp.newFolder("repo");
+
+        // remove cached manifests between tests
+        FileUtils.deleteQuietly(localCachePath.resolve(Path.of("test", "channel")).toFile());
     }
 
     @After
@@ -250,6 +255,43 @@ public class UpdateTest extends WfCoreTestBase {
                         .buildUpdate(candidateFolder))
                 .isInstanceOf(IllegalArgumentException.class)
                 .message().contains("Can't install the server into a non empty directory");
+    }
+
+    @Test
+    public void rejectUpdateWhenManifestDowngradeIsDetected() throws Exception {
+        // deploy manifest file
+        File manifestFile = new File(MetadataTestUtils.class.getClassLoader().getResource(CHANNEL_BASE_CORE_19).toURI());
+        deployManifestFile(mockRepo.toURI().toURL(), manifestFile, "1.0.1");
+
+        // provision using channel gav
+        final ProvisioningDefinition provisioningDefinition = defaultWfCoreDefinition()
+                .setChannelCoordinates(buildConfigWithMockRepo().toPath().toString())
+                .setOverrideRepositories(Collections.emptyList()) // reset overrides from defaultWfCoreDefinition()
+                .build();
+        installation.provision(provisioningDefinition.toProvisioningConfig(),
+                provisioningDefinition.resolveChannels(CHANNELS_RESOLVER_FACTORY));
+
+        Optional<Artifact> wildflyCliArtifact = readArtifactFromManifest("org.wildfly.core", "wildfly-cli");
+        assertEquals(BASE_VERSION, wildflyCliArtifact.get().getVersion());
+
+        // delete the metadata file, so that the lower version of manifest can be resolved in an update
+        final Path manifestMetadata = mockRepo.toPath().resolve(Path.of("test", "channel", "maven-metadata.xml"));
+        Files.delete(manifestMetadata);
+
+        // update manifest file
+        final File updatedManifest = upgradeTestArtifactIn(manifestFile);
+        deployManifestFile(mockRepo.toURI().toURL(), updatedManifest, "1.0.0");
+
+
+        // update installation
+        Assertions.assertThatThrownBy(()->
+            new UpdateAction(outputPath, mavenOptions, new AcceptingConsole(), Collections.emptyList())
+                    .performUpdate())
+                .isInstanceOf(OperationException.class)
+                .hasMessageContaining("PRSP000276: Unable to perform the update");
+
+        wildflyCliArtifact = readArtifactFromManifest("org.wildfly.core", "wildfly-cli");
+        assertEquals(BASE_VERSION, wildflyCliArtifact.get().getVersion());
     }
 
     private File upgradeTestArtifactIn(File manifestFile) throws IOException, MetadataException {
