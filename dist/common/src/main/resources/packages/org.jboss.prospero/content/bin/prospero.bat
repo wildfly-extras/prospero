@@ -3,10 +3,6 @@ rem -------------------------------------------------------------------------
 rem JBoss Bootstrap Script for Windows
 rem -------------------------------------------------------------------------
 
-rem Use --debug to activate debug mode with an optional argument to specify the port
-rem Usage : ${prospero.dist.name}.bat --debug
-rem         ${prospero.dist.name}.bat --debug 9797
-
 @if not "%ECHO%" == ""  echo %ECHO%
 setlocal
 
@@ -34,41 +30,31 @@ if "%OS%" == "Windows_NT" (
 )
 
 rem Read command-line args, the ~ removes the quotes from the parameter
+rem We need to read the whole argument string and manually break it into arguments because Windows
+rem   uses commas and other signs as argument separators which breaks e.g. multi-value args
 set LOAD_COMMON=true
 set PARAMS=
-:READ-ARGS
-if "%~1" == "" (
-   goto MAIN
-) else if "%~1" == "--debug" (
-   goto READ-DEBUG-PORT
-) else if "%~1" == "-secmgr" (
-   set SECMGR=true
-) else if "%~1" == "--no-load-common" (
-   set LOAD_COMMON=false
-) else (
-   set "PARAMS=%PARAMS%%1 "
-)
-shift
-goto READ-ARGS
 
-:READ-DEBUG-PORT
-set "DEBUG_MODE=true"
-set DEBUG_ARG="%2"
-if not %DEBUG_ARG% == "" (
-   if x%DEBUG_ARG:-=%==x%DEBUG_ARG% (
-      shift
-      set DEBUG_PORT_VAR=%DEBUG_ARG%
-   )
-   shift
-   goto READ-ARGS
+setlocal EnableExtensions EnableDelayedExpansion
+set "args=%*"
+for %%a in ("%args: =" "%") do (
+    if "%%~a" == "-secmgr" (
+      set SECMGR=true
+    ) else if "%%~a" == "--no-load-common" (
+      set LOAD_COMMON=false
+    ) else (
+      if .!PARAMS!==. (
+        set "PARAMS=%%~a "
+      ) else (
+        set "PARAMS=!PARAMS!%%~a "
+      )
+    )
 )
 
-:MAIN
-
-setlocal EnableDelayedExpansion
 if "%LOAD_COMMON%" == "true" (
    call "!DIRNAME!common.bat" :commonConf
 )
+
 rem check for the security manager system property
 echo(!SERVER_OPTS! | findstr /r /c:"-Djava.security.manager" > nul
 if not errorlevel == 1 (
