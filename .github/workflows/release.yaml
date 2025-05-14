@@ -22,6 +22,7 @@ jobs:
       - uses: actions/setup-java@v4
         with:
           java-version: 11
+          distribution: 'adopt'
       - name: maven release ${{steps.metadata.outputs.current-version}}
         run: |
           java -version
