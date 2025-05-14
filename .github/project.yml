@@ -2,6 +2,6 @@ name: WildFly Prospero
 # Open the PR to do the PR from
 # the wildfly-extras/prospero repository
 release:
-  current-version: 1.1.17.Final
-  next-version: 1.1.18.Final-SNAPSHOT
+  current-version: 1.1.18.Final
+  next-version: 1.1.17.Final-SNAPSHOT
 
