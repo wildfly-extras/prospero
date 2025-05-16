@@ -17,16 +17,22 @@
 
 package org.wildfly.prospero.it.cli;
 
+import org.apache.commons.io.FileUtils;
+import org.eclipse.aether.artifact.DefaultArtifact;
+import org.eclipse.aether.deployment.DeploymentException;
 import org.eclipse.aether.resolution.ArtifactResolutionException;
 import org.jboss.galleon.ProvisioningException;
+import org.jetbrains.annotations.NotNull;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
+import org.wildfly.channel.Channel;
 import org.wildfly.channel.ChannelManifest;
+import org.wildfly.channel.ChannelMapper;
+import org.wildfly.channel.MavenCoordinate;
 import org.wildfly.channel.Stream;
-import org.wildfly.channel.version.VersionMatcher;
 import org.wildfly.prospero.cli.ReturnCodes;
 import org.wildfly.prospero.cli.commands.CliConstants;
 import org.wildfly.prospero.it.ExecutionUtils;
@@ -34,15 +40,19 @@ import org.wildfly.prospero.it.utils.TestProperties;
 import org.wildfly.prospero.metadata.ProsperoMetadataUtils;
 import org.wildfly.prospero.model.ManifestYamlSupport;
 import org.wildfly.prospero.model.ProsperoConfig;
+import org.wildfly.prospero.test.TestLocalRepository;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.net.MalformedURLException;
+import java.net.URI;
 import java.net.URL;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
 import java.util.Properties;
 import java.util.concurrent.TimeUnit;
+import java.util.stream.Collectors;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
 
@@ -81,10 +91,9 @@ public class GenerateTest {
 
     @Test
     public void testInstallWithProvisionConfig() throws Exception {
-        // prepare a wildfly-28.0.0.Final server by downloading and unzipping it
-        downloadAndUnzipServer();
+        // prepare a server by downloading and unzipping it
+        Path serverDir = downloadAndUnzipServer();
 
-        Path serverDir = targetDir.resolve(PRODUCT + "-" + VERSION);
         // generate the metadata using prospero CLI
         ExecutionUtils.prosperoExecution(CliConstants.Commands.UPDATE, CliConstants.Commands.SUBSCRIBE,
                         CliConstants.PRODUCT, PRODUCT,
@@ -92,7 +101,7 @@ public class GenerateTest {
                         CliConstants.Y,
                         CliConstants.REPOSITORIES, String.join(",", TestProperties.TEST_REPO_URLS),
                         CliConstants.DIR, serverDir.toString())
-                .withTimeLimit(10, TimeUnit.MINUTES)
+                .withTimeLimit(20, TimeUnit.MINUTES)
                 .execute()
                 .assertReturnCode(ReturnCodes.SUCCESS);
 
@@ -108,22 +117,68 @@ public class GenerateTest {
         ProsperoConfig prosperoConfig = ProsperoConfig.readConfig(serverDir.resolve(ProsperoMetadataUtils.METADATA_DIR));
         Assert.assertFalse(prosperoConfig.getChannels().isEmpty());
 
+        final MavenCoordinate channelMavenCoord = currentServerChannelCoord(serverDir);
+
+        final TestLocalRepository testLocalRepository = setUpTestRepository(manifest, channelMavenCoord);
+
         // run upgrade
         ExecutionUtils.prosperoExecution(CliConstants.Commands.UPDATE, CliConstants.Commands.PERFORM,
             CliConstants.Y,
-            CliConstants.DIR, serverDir.toString())
+            CliConstants.DIR, serverDir.toString(),
+            CliConstants.REPOSITORIES, String.join(",", TestProperties.TEST_REPO_URLS) + "," + testLocalRepository.getUri().toString())
+          .withTimeLimit(20, TimeUnit.MINUTES)
           .execute()
           .assertReturnCode(ReturnCodes.SUCCESS);
 
         // check the vertx-core stream in manifest
         manifest = ManifestYamlSupport.parse(manifestPath.toFile());
-        assertTrue(VersionMatcher.COMPARATOR.compare(CORE_VERSION, manifest.getStreams().stream()
-                .filter(s->s.getGroupId().equals("org.wildfly.core") && s.getArtifactId().equals("wildfly-server"))
-                .map(Stream::getVersion).findFirst().get()) < 0);
+        final String ver = manifest.getStreams().stream()
+                .filter(s -> s.getGroupId().equals("org.wildfly.core") && s.getArtifactId().equals("wildfly-server"))
+                .map(Stream::getVersion).findFirst().get();
+        assertEquals(CORE_VERSION + ".SP1", ver);
     }
 
-    private void downloadAndUnzipServer() throws ProvisioningException, ArtifactResolutionException, IOException {
-        final URL downloadUrl = new URL(BASE_DIST_URL);
+    private static MavenCoordinate currentServerChannelCoord(Path serverDir) throws MalformedURLException {
+        final Channel currentChannel = ChannelMapper.from(ProsperoMetadataUtils.configurationPath(serverDir).toUri().toURL());
+        return currentChannel.getManifestCoordinate().getMaven();
+    }
+
+    @NotNull
+    private TestLocalRepository setUpTestRepository(ChannelManifest manifest, MavenCoordinate channelMavenCoord) throws ProvisioningException, IOException, DeploymentException, ArtifactResolutionException {
+        // create local repository so that we can control exactly the updates
+        final TestLocalRepository testLocalRepository = new TestLocalRepository(tempDir.newFolder("test-repo").toPath(), TestProperties.TEST_REPO_URLS.stream().map(s -> {
+            try {
+                return URI.create(s).toURL();
+            } catch (MalformedURLException e) {
+                throw new RuntimeException(e);
+            }
+        }).collect(Collectors.toList()));
+        testLocalRepository.deployMockUpdate("org.wildfly.core", "wildfly-server", CORE_VERSION, ".SP1");
+
+        // modify the wildfly-server entry in the manifest
+        ChannelManifest.Builder cm = new ChannelManifest.Builder()
+                .setName(manifest.getName());
+        manifest.getStreams().stream().map(s -> {
+            if (s.getGroupId().equals("org.wildfly.core")
+                    && s.getArtifactId().equals("wildfly-server")) {
+                return new Stream("org.wildfly.core", "wildfly-server", CORE_VERSION + ".SP1");
+            } else {
+                return s;
+            }
+        }).forEach(cm::addStreams);
+        // and deploy the modified manifest
+        testLocalRepository.deploy(new DefaultArtifact(
+                        channelMavenCoord.getGroupId(),
+                        channelMavenCoord.getArtifactId(),
+                        ChannelManifest.CLASSIFIER,
+                        ChannelManifest.EXTENSION,
+                        "9999.99.99"), // some very big version to ensure this update wins
+                cm.build());
+        return testLocalRepository;
+    }
+
+    private Path downloadAndUnzipServer() throws IOException {
+        final URL downloadUrl = URI.create(BASE_DIST_URL).toURL();
         final InputStream inputStream = downloadUrl.openStream();
         try (ZipInputStream zis = new ZipInputStream(inputStream)) {
             ZipEntry entry;
@@ -134,6 +189,13 @@ public class GenerateTest {
                     Files.copy(zis, targetDir.resolve(entry.getName()), StandardCopyOption.REPLACE_EXISTING);
                 }
             }
+        }
+
+        // in case the distro contains installation metadata - erase them
+        try (java.util.stream.Stream<Path> files = Files.list(targetDir)) {
+            final Path serverDir = files.filter(Files::isDirectory).findFirst().orElseThrow();
+            FileUtils.deleteDirectory(serverDir.resolve(ProsperoMetadataUtils.METADATA_DIR).toFile());
+            return serverDir;
         }
     }
 }
