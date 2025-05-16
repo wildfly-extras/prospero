@@ -314,14 +314,30 @@ public class GitStorage implements AutoCloseable {
             throw ProsperoLogger.ROOT_LOGGER.unableToParseConfiguration(change, e);
         } finally {
             try {
-                if (change != null) {
-                    FileUtils.deleteDirectory(change.toFile());
-                }
-                if (base != null) {
-                    FileUtils.deleteDirectory(base.toFile());
-                }
+                deleteWithRetry(change);
+                deleteWithRetry(base);
             } catch (IOException e) {
                 throw new RuntimeException(e);
+            }
+        }
+    }
+
+    private static void deleteWithRetry(Path repo) throws IOException {
+        int retryCount = 0;
+        while (repo != null && Files.exists(repo)) {
+            try {
+                FileUtils.deleteDirectory(repo.toFile());
+            } catch (IOException e) {
+                if (retryCount++ < 3) {
+                    ProsperoLogger.ROOT_LOGGER.tracef(e, "Unable to delete temporary config in %s, attempt nr %d/3", repo, retryCount);
+                    try {
+                        Thread.sleep(100);
+                    } catch (InterruptedException ex) {
+                        throw new RuntimeException(ex);
+                    }
+                } else {
+                    throw e;
+                }
             }
         }
     }
