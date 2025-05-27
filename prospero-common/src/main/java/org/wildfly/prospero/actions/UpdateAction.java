@@ -156,7 +156,7 @@ public class UpdateAction implements AutoCloseable {
         try (GalleonEnvironment galleonEnv = getGalleonEnv(installDir);
              UpdateFinder updateFinder = new UpdateFinder(galleonEnv.getChannelSession())) {
 
-            final UpdateSet updates = updateFinder.findUpdates(metadata.getArtifacts());
+            final UpdateSet updates = updateFinder.findUpdates(metadata.getArtifacts(), metadata.getChannelVersions());
             ProsperoLogger.ROOT_LOGGER.updatesFound(updates.getArtifactUpdates().size());
             return updates;
         }

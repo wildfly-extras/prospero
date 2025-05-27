@@ -2,12 +2,16 @@ package org.wildfly.prospero.it.cli;
 
 import static org.wildfly.prospero.test.TestLocalRepository.GALLEON_PLUGINS_VERSION;
 
+import java.io.IOException;
 import java.net.URL;
 import java.nio.file.Path;
+import java.util.Collections;
 import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import org.apache.commons.lang3.tuple.Pair;
+import org.assertj.core.api.Assertions;
 import org.eclipse.aether.artifact.Artifact;
 import org.eclipse.aether.artifact.DefaultArtifact;
 import org.junit.Before;
@@ -15,7 +19,9 @@ import org.junit.Test;
 import org.wildfly.channel.Channel;
 import org.wildfly.channel.ChannelManifest;
 import org.wildfly.channel.Stream;
+import org.wildfly.prospero.cli.CliMessages;
 import org.wildfly.prospero.cli.commands.CliConstants;
+import org.wildfly.prospero.it.ExecutionUtils;
 import org.wildfly.prospero.test.BuildProperties;
 import org.wildfly.prospero.test.TestInstallation;
 import org.wildfly.prospero.test.TestLocalRepository;
@@ -69,7 +75,7 @@ public class UpdateToVersionTest extends CliTestBase {
     public void downgradeServerToNonLatestVersion() throws Exception {
         testInstallation.install("org.test:pack-one:1.0.0", List.of(testChannel), "--version=test-channel::1.0.1");
 
-        testInstallation.update("--version=test-channel::1.0.0");
+        testInstallation.update(Collections.emptyList(), "--version=test-channel::1.0.0", CliConstants.YES);
 
         testInstallation.verifyModuleJar("commons-io", "commons-io", COMMONS_IO_VERSION);
         testInstallation.verifyInstallationMetadataPresent();
@@ -85,11 +91,34 @@ public class UpdateToVersionTest extends CliTestBase {
 
         testInstallation.verifyModuleJar("commons-io", "commons-io", bump(COMMONS_IO_VERSION));
         testInstallation.verifyInstallationMetadataPresent();
+    }
+
+    @Test
+    public void warnIfDowngradeServerToNonLatestVersion() throws Exception {
+        testInstallation.install("org.test:pack-one:1.0.0", List.of(testChannel), "--version=test-channel::1.0.1", "-vv");
+
+        testInstallation.updateWithCheck(
+                List.of(
+                        Pair.of(CliMessages.MESSAGES.continueWithUpdate(), "y"),
+                        Pair.of(CliMessages.MESSAGES.continueWithUpdate(), "y")
+                ),
+                (ExecutionUtils.ExecutionResult e)-> {
+                    try {
+                        Assertions.assertThat(e.getCommandOutput())
+                                .contains("The update will downgrade following channels:")
+                                .contains("  * test-channel: 1.0.1  ->  1.0.0");
+                    } catch (IOException ex) {
+                        throw new RuntimeException(ex);
+                    }
+                },
+                "--version=test-channel::1.0.0", "-vv");
+
+        testInstallation.verifyModuleJar("commons-io", "commons-io", COMMONS_IO_VERSION);
         testInstallation.verifyInstallationMetadataPresent();
     }
 
-    // TODO: ask about downgrading
-    // TODO: non-interactive downgrade
+    // TODO: reject downgrade without explicit --version
+    // TODO: update list --version shows changes in the selected version
 
     private void prepareRequiredArtifacts(TestLocalRepository localRepository) throws Exception {
         localRepository.deployGalleonPlugins();

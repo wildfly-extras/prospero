@@ -45,6 +45,7 @@ import org.wildfly.prospero.ProsperoLogger;
 import org.wildfly.prospero.actions.ApplyCandidateAction;
 import org.wildfly.prospero.actions.SubscribeNewServerAction;
 import org.wildfly.prospero.actions.UpdateAction;
+import org.wildfly.prospero.api.ChannelVersionChange;
 import org.wildfly.prospero.api.FileConflict;
 import org.wildfly.prospero.api.InstallationMetadata;
 import org.wildfly.prospero.api.InstallationProfilesManager;
@@ -61,6 +62,7 @@ import org.wildfly.prospero.cli.FileConflictPrinter;
 import org.wildfly.prospero.cli.RepositoryDefinition;
 import org.wildfly.prospero.cli.ReturnCodes;
 import org.wildfly.prospero.api.TemporaryFilesManager;
+import org.wildfly.prospero.cli.printers.ChannelVersionChangesPrinter;
 import org.wildfly.prospero.galleon.FeaturePackLocationParser;
 import org.wildfly.prospero.galleon.GalleonUtils;
 import org.wildfly.prospero.metadata.ProsperoMetadataUtils;
@@ -492,6 +494,15 @@ public class UpdateCommand extends AbstractParentCommand {
 
     private static boolean buildUpdate(UpdateAction updateAction, Path updateDirectory, boolean yes, CliConsole console, Supplier<Boolean> confirmation) throws OperationException, ProvisioningException {
         final UpdateSet updateSet = updateAction.findUpdates();
+
+        final List<ChannelVersionChange> channelChanges = updateSet.getChannelVersionChanges();
+        final List<ChannelVersionChange> downgrades = channelChanges.stream().filter(ChannelVersionChange::isDowngrade).toList();
+        if (!downgrades.isEmpty()) {
+            new ChannelVersionChangesPrinter(console).printDowngrades(downgrades);
+            if (!yes && !console.confirm(CliMessages.MESSAGES.continueWithUpdate(), "", CliMessages.MESSAGES.updateCancelled())) {
+                return false;
+            }
+        }
 
         console.updatesFound(updateSet.getArtifactUpdates());
         if (updateSet.isEmpty()) {

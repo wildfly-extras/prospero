@@ -745,4 +745,8 @@ public interface CliMessages {
         return new ArgumentParsingException(format(
                 bundle.getString("prospero.general.error.version_overwrite.duplicated"), channelName));
     }
+
+    default String channelDowngradeWarningHeader() {
+        return bundle.getString("prospero.downgrade.warning.header");
+    }
 }

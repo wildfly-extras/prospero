@@ -46,6 +46,8 @@ import org.wildfly.channel.Repository;
 import org.wildfly.prospero.actions.ApplyCandidateAction;
 import org.wildfly.prospero.actions.UpdateAction;
 import org.wildfly.prospero.api.ArtifactChange;
+import org.wildfly.prospero.api.ChannelVersion;
+import org.wildfly.prospero.api.ChannelVersionChange;
 import org.wildfly.prospero.api.FileConflict;
 import org.wildfly.prospero.api.MavenOptions;
 import org.wildfly.prospero.cli.ActionFactory;
@@ -479,6 +481,49 @@ public class UpdateCommandTest extends AbstractMavenCommandTest {
         assertThat(getCapturedChannels())
                 .map(Channel::getManifestCoordinate)
                 .contains(new ChannelManifestCoordinate(new URL("file:foo.yaml")));
+    }
+
+    @Test
+    public void askForConfirmationIfUpdateSetContainsDowngradeAndVersionIsSpecified() throws Exception {
+        when(updateAction.findUpdates()).thenReturn(new UpdateSet(List.of(change("1.0.0", "1.0.1")),
+                List.of(new ChannelVersionChange("test-channel",
+                        new ChannelVersion.Builder().setPhysicalVersion("1.0.1").setType(ChannelVersion.Type.MAVEN).build(),
+                        new ChannelVersion.Builder().setPhysicalVersion("1.0.0").setType(ChannelVersion.Type.MAVEN).build()
+                ))));
+
+        int exitCode = commandLine.execute(CliConstants.Commands.UPDATE, CliConstants.Commands.PERFORM,
+                CliConstants.DIR, installationDir.toAbsolutePath().toString(),
+                CliConstants.VERSION, "test-channel::1.0.0");
+
+        assertEquals(ReturnCodes.SUCCESS, exitCode);
+        // expecting two confirmations - one to verify downgrade, another to verify the component list
+        assertEquals(2, getAskedConfirmation());
+        assertThat(getStandardOutput())
+                .contains(CliMessages.MESSAGES.channelDowngradeWarningHeader())
+                .contains("test-channel: 1.0.1  ->  1.0.0");
+
+    }
+
+    @Test
+    public void skipConfirmationIfUpdateSetContainsDowngradeAndVersionIsSpecifiedAndYesIsSet() throws Exception {
+        when(updateAction.findUpdates()).thenReturn(new UpdateSet(List.of(change("1.0.0", "1.0.1")),
+                List.of(new ChannelVersionChange("test-channel",
+                        new ChannelVersion.Builder().setPhysicalVersion("1.0.1").setType(ChannelVersion.Type.MAVEN).build(),
+                        new ChannelVersion.Builder().setPhysicalVersion("1.0.0").setType(ChannelVersion.Type.MAVEN).build()
+                ))));
+
+        int exitCode = commandLine.execute(CliConstants.Commands.UPDATE, CliConstants.Commands.PERFORM,
+                CliConstants.DIR, installationDir.toAbsolutePath().toString(),
+                CliConstants.VERSION, "test-channel::1.0.0",
+                CliConstants.YES);
+
+        assertEquals(ReturnCodes.SUCCESS, exitCode);
+        // expecting two confirmations - one to verify downgrade, another to verify the component list
+        assertEquals(0, getAskedConfirmation());
+        assertThat(getStandardOutput())
+                .contains(CliMessages.MESSAGES.channelDowngradeWarningHeader())
+                .contains("test-channel: 1.0.1  ->  1.0.0");
+
     }
 
     private Path generateTwoChannelConfiguration() throws IOException {
