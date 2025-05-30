@@ -749,4 +749,8 @@ public interface CliMessages {
     default String channelDowngradeWarningHeader() {
         return bundle.getString("prospero.downgrade.warning.header");
     }
+
+    default String unexpectedVersionsHeader(String command) {
+        return bundle.getString("prospero.downgrade.unexpected_versions").formatted(command);
+    }
 }

@@ -20,6 +20,7 @@ import org.wildfly.channel.Channel;
 import org.wildfly.channel.ChannelManifest;
 import org.wildfly.channel.Stream;
 import org.wildfly.prospero.cli.CliMessages;
+import org.wildfly.prospero.cli.ReturnCodes;
 import org.wildfly.prospero.cli.commands.CliConstants;
 import org.wildfly.prospero.it.ExecutionUtils;
 import org.wildfly.prospero.test.BuildProperties;
@@ -104,6 +105,7 @@ public class UpdateToVersionTest extends CliTestBase {
                 ),
                 (ExecutionUtils.ExecutionResult e)-> {
                     try {
+                        e.assertReturnCode(ReturnCodes.SUCCESS);
                         Assertions.assertThat(e.getCommandOutput())
                                 .contains("The update will downgrade following channels:")
                                 .contains("  * test-channel: 1.0.1  ->  1.0.0");
@@ -117,7 +119,40 @@ public class UpdateToVersionTest extends CliTestBase {
         testInstallation.verifyInstallationMetadataPresent();
     }
 
-    // TODO: reject downgrade without explicit --version
+    @Test
+    public void rejectDowngradeServerIfVersionNotSpecified() throws Exception {
+        testInstallation.install("org.test:pack-one:1.0.0", List.of(testChannel), "--version=test-channel::1.0.1", "-vv");
+
+        final TestLocalRepository newRepo = new TestLocalRepository(temp.newFolder("downgrade-repo").toPath(), List.of(new URL("https://repo1.maven.org/maven2")));
+
+        newRepo.deploy(
+                new DefaultArtifact("org.test", "test-channel", "manifest", "yaml","1.0.0"),
+                new ChannelManifest("test-manifest", null, null, List.of(
+                        new Stream("org.wildfly.galleon-plugins", "wildfly-config-gen", GALLEON_PLUGINS_VERSION),
+                        new Stream("org.wildfly.galleon-plugins", "wildfly-galleon-plugins", GALLEON_PLUGINS_VERSION),
+                        new Stream("commons-io", "commons-io", COMMONS_IO_VERSION),
+                        new Stream("org.test", "pack-one", "1.0.0")
+        )));
+
+        testInstallation.updateWithCheck(
+                Collections.emptyList(),
+                (ExecutionUtils.ExecutionResult e)-> {
+                    try {
+                        e.assertReturnCode(ReturnCodes.PROCESSING_ERROR);
+                        Assertions.assertThat(e.getCommandOutput())
+                                .contains("The update will downgrade following channels:")
+                                .contains("  * test-channel: 1.0.1  ->  1.0.0");
+                    } catch (IOException ex) {
+                        throw new RuntimeException(ex);
+                    }
+
+                },
+                "--repositories", newRepo.getUri().toString());
+
+        testInstallation.verifyModuleJar("commons-io", "commons-io", COMMONS_IO_VERSION);
+        testInstallation.verifyInstallationMetadataPresent();
+    }
+
     // TODO: update list --version shows changes in the selected version
 
     private void prepareRequiredArtifacts(TestLocalRepository localRepository) throws Exception {

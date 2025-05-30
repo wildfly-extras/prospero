@@ -206,7 +206,7 @@ public class UpdateCommandTest extends AbstractMavenCommandTest {
         int exitCode = commandLine.execute(CliConstants.Commands.UPDATE, CliConstants.Commands.PERFORM, CliConstants.SELF,
                 CliConstants.DIR, installationDir.toAbsolutePath().toString());
 
-        assertEquals(ReturnCodes.SUCCESS, exitCode);
+        assertEquals(ReturnCodes.PROCESSING_ERROR, exitCode);
         Mockito.verify(actionFactory).update(eq(installationDir.toAbsolutePath()), anyList(), any(), any());
         assertEquals(1, getAskedConfirmation());
         Mockito.verify(updateAction, never()).performUpdate();
@@ -518,12 +518,30 @@ public class UpdateCommandTest extends AbstractMavenCommandTest {
                 CliConstants.YES);
 
         assertEquals(ReturnCodes.SUCCESS, exitCode);
-        // expecting two confirmations - one to verify downgrade, another to verify the component list
         assertEquals(0, getAskedConfirmation());
         assertThat(getStandardOutput())
                 .contains(CliMessages.MESSAGES.channelDowngradeWarningHeader())
                 .contains("test-channel: 1.0.1  ->  1.0.0");
+    }
 
+    @Test
+    public void rejectDowngradeWithoutExplicitCommand() throws Exception {
+        when(updateAction.findUpdates()).thenReturn(new UpdateSet(List.of(change("1.0.0", "1.0.1")),
+                List.of(new ChannelVersionChange("test-channel",
+                        new ChannelVersion.Builder().setPhysicalVersion("1.0.1").setType(ChannelVersion.Type.MAVEN).build(),
+                        new ChannelVersion.Builder().setPhysicalVersion("1.0.0").setType(ChannelVersion.Type.MAVEN).build()
+                ))));
+
+        int exitCode = commandLine.execute(CliConstants.Commands.UPDATE, CliConstants.Commands.PERFORM,
+                CliConstants.DIR, installationDir.toAbsolutePath().toString(),
+                CliConstants.YES);
+
+        assertEquals(ReturnCodes.PROCESSING_ERROR, exitCode);
+        assertEquals(0, getAskedConfirmation());
+        assertThat(getStandardOutput())
+                .contains("The update would introduce one or more unexpected channel downgrades.")
+                .contains("test-channel: 1.0.1  ->  1.0.0")
+                ;
     }
 
     private Path generateTwoChannelConfiguration() throws IOException {

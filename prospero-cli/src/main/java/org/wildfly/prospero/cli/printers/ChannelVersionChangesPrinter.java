@@ -1,10 +1,12 @@
 package org.wildfly.prospero.cli.printers;
 
 import java.util.Collection;
+import java.util.List;
 
 import org.wildfly.prospero.api.ChannelVersionChange;
 import org.wildfly.prospero.api.Console;
 import org.wildfly.prospero.cli.CliMessages;
+import picocli.CommandLine;
 
 public class ChannelVersionChangesPrinter {
 
@@ -34,5 +36,27 @@ public class ChannelVersionChangesPrinter {
             sb.append(System.lineSeparator());
         }
         console.println(sb.toString());
+    }
+
+    public void printUnexpectedDowngradesError(Collection<ChannelVersionChange> downgrades, CommandLine.Model.CommandSpec spec) {
+        final StringBuilder versionArg = new StringBuilder();
+        for (ChannelVersionChange downgrade : downgrades) {
+            versionArg.append("--version=")
+                    .append(downgrade.channelName())
+                    .append("::")
+                    .append(downgrade.newVersion().getPhysicalVersion())
+                    .append(" ");
+        }
+        console.println(CliMessages.MESSAGES.unexpectedVersionsHeader(buildCommandString(spec) + versionArg));
+    }
+
+    private String buildCommandString(CommandLine.Model.CommandSpec spec) {
+        final List<String> args = spec.commandLine().getParseResult().originalArgs();
+        final StringBuilder sb = new StringBuilder();
+
+        sb.append(spec.root().name()).append(" ");
+        args.forEach(a->sb.append(a).append(" "));
+
+        return sb.toString().trim();
     }
 }
