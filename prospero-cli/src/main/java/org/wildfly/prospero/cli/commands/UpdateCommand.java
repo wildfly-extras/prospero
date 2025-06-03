@@ -69,6 +69,7 @@ import org.wildfly.prospero.galleon.FeaturePackLocationParser;
 import org.wildfly.prospero.galleon.GalleonUtils;
 import org.wildfly.prospero.metadata.ProsperoMetadataUtils;
 import org.wildfly.prospero.model.InstallationProfile;
+import org.wildfly.prospero.updates.ChannelsUpdateResult;
 import org.wildfly.prospero.updates.UpdateSet;
 import picocli.CommandLine;
 
@@ -348,6 +349,36 @@ public class UpdateCommand extends AbstractParentCommand {
         }
     }
 
+    @CommandLine.Command(name = "list-channels", sortOptions = false)
+    public static class ChannelListCommand extends AbstractMavenCommand {
+
+        public ChannelListCommand(CliConsole console, ActionFactory actionFactory) {
+            super(console, actionFactory);
+        }
+        @Override
+        public Integer call() throws Exception {
+            final long startTime = System.currentTimeMillis();
+            final Path installationDir = determineInstallationDirectory(directory);
+
+            final MavenOptions mavenOptions = parseMavenOptions();
+
+            try (TemporaryFilesManager temporaryFiles = TemporaryFilesManager.getInstance()) {
+                final List<Repository> repositories = RepositoryUtils.unzipArchives(
+                        RepositoryDefinition.from(temporaryRepositories), temporaryFiles);
+                console.println(CliMessages.MESSAGES.checkUpdatesHeader(installationDir));
+                try (UpdateAction updateAction = actionFactory.update(installationDir, mavenOptions, console, repositories)) {
+                    final ChannelsUpdateResult result = updateAction.findChannelUpdates();
+                    new ChannelVersionChangesPrinter(console).printAvailableChannelChanges(result, installationDir.toString());
+                }
+
+                final float totalTime = (System.currentTimeMillis() - startTime) / 1000f;
+                console.println("");
+                console.println(CliMessages.MESSAGES.operationCompleted(totalTime));
+                return ReturnCodes.SUCCESS;
+            }
+        }
+    }
+
     @CommandLine.Command(name = CliConstants.Commands.SUBSCRIBE, sortOptions = false)
     public static class SubscribeCommand extends AbstractMavenCommand {
 
@@ -545,6 +576,7 @@ public class UpdateCommand extends AbstractParentCommand {
                     new UpdateCommand.ApplyCommand(console, actionFactory),
                     new UpdateCommand.PerformCommand(console, actionFactory),
                     new UpdateCommand.ListCommand(console, actionFactory),
+                    new UpdateCommand.ChannelListCommand(console, actionFactory),
                     new SubscribeCommand(console, actionFactory))
         );
     }

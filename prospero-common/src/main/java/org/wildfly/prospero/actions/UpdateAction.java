@@ -18,16 +18,23 @@
 package org.wildfly.prospero.actions;
 
 import java.io.IOException;
+import java.net.MalformedURLException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Collections;
 import java.util.List;
+import java.util.Optional;
 
 import org.apache.commons.io.FileUtils;
+import org.eclipse.aether.DefaultRepositorySystemSession;
+import org.eclipse.aether.RepositorySystem;
+import org.eclipse.aether.resolution.ArtifactResolutionException;
+import org.eclipse.aether.resolution.VersionRangeResolutionException;
 import org.jboss.galleon.util.PathsUtils;
 import org.wildfly.channel.Channel;
 import org.wildfly.channel.Repository;
 import org.wildfly.prospero.ProsperoLogger;
+import org.wildfly.prospero.api.ChannelVersion;
 import org.wildfly.prospero.api.Console;
 import org.wildfly.prospero.api.FileConflict;
 import org.wildfly.prospero.api.MavenOptions;
@@ -37,6 +44,8 @@ import org.wildfly.prospero.api.exceptions.MetadataException;
 import org.wildfly.prospero.api.exceptions.OperationException;
 import org.wildfly.prospero.galleon.GalleonEnvironment;
 import org.wildfly.prospero.model.ProsperoConfig;
+import org.wildfly.prospero.updates.ChannelUpdateFinder;
+import org.wildfly.prospero.updates.ChannelsUpdateResult;
 import org.wildfly.prospero.updates.UpdateFinder;
 import org.wildfly.prospero.updates.UpdateSet;
 import org.wildfly.prospero.wfchannel.MavenSessionManager;
@@ -181,5 +190,34 @@ public class UpdateAction implements AutoCloseable {
 
             return TemporaryRepositoriesHandler.overrideRepositories(prosperoConfig.getChannels(), repositories);
         }
+    }
+
+    public ChannelsUpdateResult findChannelUpdates() throws MetadataException {
+        final RepositorySystem system = mavenSessionManager.newRepositorySystem();
+        final DefaultRepositorySystemSession session = mavenSessionManager.newRepositorySystemSession(system);
+        final ChannelUpdateFinder finder = new ChannelUpdateFinder(system, session);
+        ChannelsUpdateResult versions = new ChannelsUpdateResult();
+        for (Channel channel : prosperoConfig.getChannels()) {
+            final List<ChannelVersion> channelVersions = metadata.getChannelVersions();
+            final Optional<ChannelVersion> cv = channelVersions.stream().filter(c -> c.getChannelName().equals(channel.getName())).findFirst();
+
+            if (cv.isPresent()) {
+                final ChannelVersion channelVersion = cv.get();
+                if (channelVersion.getType() == ChannelVersion.Type.MAVEN) {
+                    try {
+                        versions.addChannelVersions(channel.getName(), channelVersion.getPhysicalVersion(), finder.findNewerVersions(channel, channelVersion));
+                    } catch (VersionRangeResolutionException e) {
+                        throw new RuntimeException(e);
+                    } catch (ArtifactResolutionException e) {
+                        throw new RuntimeException(e);
+                    } catch (MalformedURLException e) {
+                        throw new RuntimeException(e);
+                    }
+                } else {
+                    versions.addUnsupportedChannel(channel.getName());
+                }
+            }
+        }
+        return versions;
     }
 }

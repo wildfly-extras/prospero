@@ -2,7 +2,9 @@ package org.wildfly.prospero.api;
 
 import java.util.Objects;
 
-public class ChannelVersion {
+import org.wildfly.channel.version.VersionMatcher;
+
+public class ChannelVersion implements Comparable<ChannelVersion> {
 
     public enum Type {MAVEN, URL, OPEN};
     private final String channelName;
@@ -61,6 +63,11 @@ public class ChannelVersion {
     @Override
     public int hashCode() {
         return Objects.hash(channelName, type, location, physicalVersion, logicalVersion);
+    }
+
+    @Override
+    public int compareTo(ChannelVersion o) {
+        return VersionMatcher.COMPARATOR.compare(this.physicalVersion, o.physicalVersion);
     }
 
     public static class Builder {

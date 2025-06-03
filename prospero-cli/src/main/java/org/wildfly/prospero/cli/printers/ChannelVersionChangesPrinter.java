@@ -2,10 +2,13 @@ package org.wildfly.prospero.cli.printers;
 
 import java.util.Collection;
 import java.util.List;
+import java.util.Set;
 
+import org.wildfly.prospero.api.ChannelVersion;
 import org.wildfly.prospero.api.ChannelVersionChange;
 import org.wildfly.prospero.api.Console;
 import org.wildfly.prospero.cli.CliMessages;
+import org.wildfly.prospero.updates.ChannelsUpdateResult;
 import picocli.CommandLine;
 
 public class ChannelVersionChangesPrinter {
@@ -48,6 +51,40 @@ public class ChannelVersionChangesPrinter {
                     .append(" ");
         }
         console.println(CliMessages.MESSAGES.unexpectedVersionsHeader(buildCommandString(spec) + versionArg));
+    }
+
+    public void printAvailableChannelChanges(ChannelsUpdateResult result, String dir) {
+        if (!result.getUnsupportedChannels().isEmpty()) {
+            console.println("Some of the channels the server is subscribed to do not support the versioned manifests. The server has to be subscribed only to Maven channels to use this feature.");
+            return;
+        }
+
+        if (!result.hasUpdates()) {
+            console.println("All the server channels are at the latest versions.");
+            return;
+        }
+
+        final StringBuilder versionArg = new StringBuilder();
+        console.println("Found new versions of channel manifests available:");
+        for (String channelName : result.getUpdatedChannels()) {
+            final Set<ChannelVersion> updatedVersion = result.getUpdatedVersion(channelName);
+            if (!updatedVersion.isEmpty()) {
+                versionArg.append(channelName).append("::").append(updatedVersion.iterator().next().getPhysicalVersion());
+
+                console.println(" - channel-name: %s".formatted(channelName));
+                console.println("   current-version: %s".formatted(result.getOriginalVersions(channelName)));
+                console.println("   available-versions:");
+                for (ChannelVersion channelVersion : updatedVersion) {
+                    console.println("   - %s(%s)".formatted(channelVersion.getPhysicalVersion(), channelVersion.getLogicalVersion()));
+                }
+            } else {
+                versionArg.append(channelName).append("::").append(result.getOriginalVersions(channelName));
+            }
+        }
+
+        console.println("");
+        console.println("To perform the update to selected version use update operation with --version parameter like:");
+        console.println("  prospero update perform --dir " + dir + " --version " + versionArg.toString());
     }
 
     private String buildCommandString(CommandLine.Model.CommandSpec spec) {
