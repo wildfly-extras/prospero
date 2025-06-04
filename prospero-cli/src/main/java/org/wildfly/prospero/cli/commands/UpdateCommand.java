@@ -349,10 +349,13 @@ public class UpdateCommand extends AbstractParentCommand {
         }
     }
 
-    @CommandLine.Command(name = "list-channels", sortOptions = false)
-    public static class ChannelListCommand extends AbstractMavenCommand {
+    @CommandLine.Command(name = CliConstants.Commands.LIST_CHANNELS, sortOptions = false)
+    public static class ListChannelsCommand extends AbstractMavenCommand {
 
-        public ChannelListCommand(CliConsole console, ActionFactory actionFactory) {
+        @CommandLine.Option(names = "--all")
+        boolean all;
+
+        public ListChannelsCommand(CliConsole console, ActionFactory actionFactory) {
             super(console, actionFactory);
         }
         @Override
@@ -367,7 +370,7 @@ public class UpdateCommand extends AbstractParentCommand {
                         RepositoryDefinition.from(temporaryRepositories), temporaryFiles);
                 console.println(CliMessages.MESSAGES.checkUpdatesHeader(installationDir));
                 try (UpdateAction updateAction = actionFactory.update(installationDir, mavenOptions, console, repositories)) {
-                    final ChannelsUpdateResult result = updateAction.findChannelUpdates();
+                    final ChannelsUpdateResult result = updateAction.findChannelUpdates(all);
                     new ChannelVersionChangesPrinter(console).printAvailableChannelChanges(result, installationDir.toString());
                 }
 
@@ -576,7 +579,7 @@ public class UpdateCommand extends AbstractParentCommand {
                     new UpdateCommand.ApplyCommand(console, actionFactory),
                     new UpdateCommand.PerformCommand(console, actionFactory),
                     new UpdateCommand.ListCommand(console, actionFactory),
-                    new UpdateCommand.ChannelListCommand(console, actionFactory),
+                    new ListChannelsCommand(console, actionFactory),
                     new SubscribeCommand(console, actionFactory))
         );
     }

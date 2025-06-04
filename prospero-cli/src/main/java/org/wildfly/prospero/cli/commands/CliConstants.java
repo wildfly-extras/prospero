@@ -47,6 +47,7 @@ public final class CliConstants {
         public static final String HISTORY = "history";
         public static final String INSTALL = "install";
         public static final String LIST = "list";
+        public static final String LIST_CHANNELS = "list-channels";
         public static final String PERFORM = "perform";
         public static final String PREPARE = "prepare";
         public static final String PRINT_LICENSES = "print-licenses";

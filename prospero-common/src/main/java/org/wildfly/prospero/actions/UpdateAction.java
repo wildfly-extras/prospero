@@ -192,11 +192,12 @@ public class UpdateAction implements AutoCloseable {
         }
     }
 
-    public ChannelsUpdateResult findChannelUpdates() throws MetadataException {
+    public ChannelsUpdateResult findChannelUpdates(boolean allowDowngrades) throws MetadataException {
         final RepositorySystem system = mavenSessionManager.newRepositorySystem();
         final DefaultRepositorySystemSession session = mavenSessionManager.newRepositorySystemSession(system);
         final ChannelUpdateFinder finder = new ChannelUpdateFinder(system, session);
-        ChannelsUpdateResult versions = new ChannelsUpdateResult();
+        final ChannelsUpdateResult versions = new ChannelsUpdateResult();
+
         for (Channel channel : prosperoConfig.getChannels()) {
             final List<ChannelVersion> channelVersions = metadata.getChannelVersions();
             final Optional<ChannelVersion> cv = channelVersions.stream().filter(c -> c.getChannelName().equals(channel.getName())).findFirst();
@@ -205,7 +206,8 @@ public class UpdateAction implements AutoCloseable {
                 final ChannelVersion channelVersion = cv.get();
                 if (channelVersion.getType() == ChannelVersion.Type.MAVEN) {
                     try {
-                        versions.addChannelVersions(channel.getName(), channelVersion.getPhysicalVersion(), finder.findNewerVersions(channel, channelVersion));
+                        versions.addChannelVersions(channel.getName(), channelVersion.getPhysicalVersion(),
+                                finder.findNewerVersions(channel, channelVersion, allowDowngrades));
                     } catch (VersionRangeResolutionException e) {
                         throw new RuntimeException(e);
                     } catch (ArtifactResolutionException e) {

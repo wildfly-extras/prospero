@@ -32,7 +32,7 @@ public class ChannelUpdateFinder {
         this.system = system;
     }
 
-    public Collection<ChannelVersion> findNewerVersions(Channel channel, ChannelVersion channelVersion) throws VersionRangeResolutionException, ArtifactResolutionException, MalformedURLException {
+    public Collection<ChannelVersion> findNewerVersions(Channel channel, ChannelVersion channelVersion, boolean allowDowngrades) throws VersionRangeResolutionException, ArtifactResolutionException, MalformedURLException {
         // TODO: verify it's a maven manifest and that it has a version
 
         final ChannelManifestCoordinate coord = channel.getManifestCoordinate();
@@ -41,7 +41,7 @@ public class ChannelUpdateFinder {
                 coord.getArtifactId(),
                 coord.getClassifier(),
                 coord.getExtension(),
-                "(" + channelVersion.getPhysicalVersion() + ",)");
+                "(" + (allowDowngrades ? "0" : channelVersion.getPhysicalVersion()) + ",)");
         final List<RemoteRepository> repos = channel.getRepositories().stream()
                 .map(r -> new RemoteRepository.Builder(r.getId(), "default", r.getUrl()).build())
                 .toList();

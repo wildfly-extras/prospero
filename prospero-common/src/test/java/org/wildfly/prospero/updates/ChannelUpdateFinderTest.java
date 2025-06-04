@@ -19,7 +19,8 @@ public class ChannelUpdateFinderTest {
                         .setName("test-channel")
                         .setManifestCoordinate("org.wildfly.channels", "wildfly-ee")
                         .addRepository("central", "https://repo1.maven.org/maven2/")
-                        .build(), new ChannelVersion.Builder().setChannelName("test-channel").setPhysicalVersion("35.0.0.Final").build());
+                        .build(), new ChannelVersion.Builder().setChannelName("test-channel").setPhysicalVersion("35.0.0.Final").build(),
+                        false);
 
         for (ChannelVersion newerVersion : newerVersions) {
             System.out.println(newerVersion);

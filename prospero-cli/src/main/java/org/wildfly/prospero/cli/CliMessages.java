@@ -753,4 +753,33 @@ public interface CliMessages {
     default String unexpectedVersionsHeader(String command) {
         return bundle.getString("prospero.downgrade.unexpected_versions").formatted(command);
     }
+
+    default String noChannelVersionUpdates() {
+        return bundle.getString("prospero.update.channel-list.no_updates");
+    }
+
+    default String channelVersionListUnsupportedChannelType() {
+        return bundle.getString("prospero.update.channel-list.unsupported_channel");
+    }
+
+    default String channelVersionUpdateListHeader() {
+        return bundle.getString("prospero.update.channel-list.updates_found.header");
+    }
+
+    default String channelVersionUpdateListChannelName() {
+        return bundle.getString("prospero.update.channel-list.updates.channel_name");
+    }
+
+    default String channelVersionUpdateListCurrentVersion() {
+        return bundle.getString("prospero.update.channel-list.updates.current_version");
+    }
+
+    default String channelVersionUpdateListAvailableVersions() {
+        return bundle.getString("prospero.update.channel-list.updates.available_versions");
+    }
+
+    default String channelVersionUpdateListUpdateCommandSuggestion(String cmd) {
+        return bundle.getString("prospero.update.channel-list.updates.update_command_suggestion")
+                .formatted(cmd);
+    }
 }
