@@ -80,8 +80,10 @@ public class UpdateListChannelCommandTest extends AbstractMavenCommandTest {
 
     @Test
     public void unsupportedChannelType() throws Exception {
-        final ChannelsUpdateResult updates = new ChannelsUpdateResult();
-        updates.addUnsupportedChannel("test-channel");
+        final ChannelsUpdateResult updates = new ChannelsUpdateResult(
+                new ChannelsUpdateResult.ChannelResult(
+                        "test-channel",
+                        null));
         when(updateAction.findChannelUpdates(anyBoolean())).thenReturn(updates);
 
         int exitCode = commandLine.execute(getDefaultArguments());
@@ -93,10 +95,12 @@ public class UpdateListChannelCommandTest extends AbstractMavenCommandTest {
 
     @Test
     public void mavenChannelUpdateList() throws Exception {
-        final ChannelsUpdateResult updates = new ChannelsUpdateResult();
-        updates.addChannelVersions("test-channel", "1.0.0", List.of(new ChannelVersion.Builder()
-                        .setPhysicalVersion("1.0.1")
-                .build()));
+        final ChannelsUpdateResult updates = new ChannelsUpdateResult(
+                new ChannelsUpdateResult.ChannelResult(
+                        "test-channel",
+                        "1.0.0",
+                        List.of(new ChannelVersion.Builder().setPhysicalVersion("1.0.1").build()))
+        );
         when(updateAction.findChannelUpdates(anyBoolean())).thenReturn(updates);
 
         int exitCode = commandLine.execute(getDefaultArguments());
@@ -104,8 +108,8 @@ public class UpdateListChannelCommandTest extends AbstractMavenCommandTest {
         Assert.assertEquals(ReturnCodes.SUCCESS, exitCode);
         assertThat(getStandardOutput())
                 .contains(CliMessages.MESSAGES.channelVersionUpdateListHeader())
-                .contains(CliMessages.MESSAGES.channelVersionUpdateListChannelName() + " test-channel")
-                .contains(CliMessages.MESSAGES.channelVersionUpdateListCurrentVersion() + " 1.0.0")
+                .contains(CliMessages.MESSAGES.channelVersionUpdateListChannelName() + ": test-channel")
+                .contains(CliMessages.MESSAGES.channelVersionUpdateListCurrentVersion() + ": 1.0.0")
                 .contains(CliMessages.MESSAGES.channelVersionUpdateListAvailableVersions())
                 .contains("- 1.0.1");
     }

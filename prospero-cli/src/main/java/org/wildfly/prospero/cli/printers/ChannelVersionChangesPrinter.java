@@ -69,18 +69,19 @@ public class ChannelVersionChangesPrinter {
         final StringBuilder versionArg = new StringBuilder();
         console.println(CliMessages.MESSAGES.channelVersionUpdateListHeader());
         for (String channelName : result.getUpdatedChannels()) {
-            final Set<ChannelVersion> updatedVersion = result.getUpdatedVersion(channelName);
-            if (!updatedVersion.isEmpty()) {
-                versionArg.append(channelName).append("::").append(updatedVersion.iterator().next().getPhysicalVersion());
+            final ChannelsUpdateResult.ChannelResult channelResult = result.getUpdatedVersion(channelName);
+            if (channelResult.getStatus() == ChannelsUpdateResult.Status.UpdatesFound) {
+                final Set<ChannelVersion> availableVersions = channelResult.getAvailableVersions();
+                versionArg.append(channelName).append("::").append(availableVersions.iterator().next().getPhysicalVersion());
 
                 console.println(" - %s: %s".formatted(CliMessages.MESSAGES.channelVersionUpdateListChannelName(), channelName));
-                console.println("   %s: %s".formatted(CliMessages.MESSAGES.channelVersionUpdateListCurrentVersion(), result.getOriginalVersions(channelName)));
+                console.println("   %s: %s".formatted(CliMessages.MESSAGES.channelVersionUpdateListCurrentVersion(), channelResult.getCurrentVersion()));
                 console.println("   %s:".formatted(CliMessages.MESSAGES.channelVersionUpdateListAvailableVersions()));
-                for (ChannelVersion channelVersion : updatedVersion) {
+                for (ChannelVersion channelVersion : availableVersions) {
                     console.println("   - %s(%s)".formatted(channelVersion.getPhysicalVersion(), channelVersion.getLogicalVersion()));
                 }
             } else {
-                versionArg.append(channelName).append("::").append(result.getOriginalVersions(channelName));
+                versionArg.append(channelName).append("::").append(channelResult.getCurrentVersion());
             }
         }
 

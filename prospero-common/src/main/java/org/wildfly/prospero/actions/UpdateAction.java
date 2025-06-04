@@ -21,6 +21,7 @@ import java.io.IOException;
 import java.net.MalformedURLException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
@@ -196,7 +197,7 @@ public class UpdateAction implements AutoCloseable {
         final RepositorySystem system = mavenSessionManager.newRepositorySystem();
         final DefaultRepositorySystemSession session = mavenSessionManager.newRepositorySystemSession(system);
         final ChannelUpdateFinder finder = new ChannelUpdateFinder(system, session);
-        final ChannelsUpdateResult versions = new ChannelsUpdateResult();
+        final List<ChannelsUpdateResult.ChannelResult> results = new ArrayList<>();
 
         for (Channel channel : prosperoConfig.getChannels()) {
             final List<ChannelVersion> channelVersions = metadata.getChannelVersions();
@@ -206,8 +207,10 @@ public class UpdateAction implements AutoCloseable {
                 final ChannelVersion channelVersion = cv.get();
                 if (channelVersion.getType() == ChannelVersion.Type.MAVEN) {
                     try {
-                        versions.addChannelVersions(channel.getName(), channelVersion.getPhysicalVersion(),
-                                finder.findNewerVersions(channel, channelVersion, allowDowngrades));
+                        results.add(new ChannelsUpdateResult.ChannelResult(
+                                channel.getName(),
+                                channelVersion.getPhysicalVersion(),
+                                finder.findNewerVersions(channel, channelVersion, allowDowngrades)));
                     } catch (VersionRangeResolutionException e) {
                         throw new RuntimeException(e);
                     } catch (ArtifactResolutionException e) {
@@ -216,10 +219,12 @@ public class UpdateAction implements AutoCloseable {
                         throw new RuntimeException(e);
                     }
                 } else {
-                    versions.addUnsupportedChannel(channel.getName());
+                    results.add(new ChannelsUpdateResult.ChannelResult(
+                            channel.getName(),
+                            channelVersion.getPhysicalVersion()));
                 }
             }
         }
-        return versions;
+        return new ChannelsUpdateResult(results);
     }
 }
