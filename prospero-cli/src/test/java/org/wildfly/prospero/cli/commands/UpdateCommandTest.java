@@ -103,7 +103,6 @@ public class UpdateCommandTest extends AbstractMavenCommandTest {
     @Before
     public void setUp() throws Exception {
         super.setUp();
-        when(actionFactory.update(any(), any(), any(), anyList())).thenReturn(updateAction);
         when(actionFactory.update(any(), anyList(), any(), any())).thenReturn(updateAction);
         when(actionFactory.applyUpdate(any(), any())).thenReturn(applyCandidateAction);
         installationDir = tempFolder.newFolder().toPath();
@@ -237,9 +236,24 @@ public class UpdateCommandTest extends AbstractMavenCommandTest {
                 CliConstants.DIR, installationDir.toAbsolutePath().toString());
 
         assertEquals(ReturnCodes.SUCCESS, exitCode);
-        Mockito.verify(actionFactory).update(eq(installationDir.toAbsolutePath()), any(), any(), anyList());
+        Mockito.verify(actionFactory).update(eq(installationDir.toAbsolutePath()), anyList(), any(), any());
         Mockito.verify(updateAction, never()).performUpdate();
         Mockito.verify(updateAction).findUpdates();
+    }
+
+    @Test
+    public void testListWithVersionsAdjustsChannels() throws Exception {
+        System.setProperty(UpdateCommand.JBOSS_MODULE_PATH, installationDir.toString());
+        when(updateAction.findUpdates()).thenReturn(new UpdateSet(List.of(change("1.0.0", "1.0.1"))));
+
+        int exitCode = commandLine.execute(CliConstants.Commands.UPDATE, CliConstants.Commands.LIST,
+                CliConstants.DIR, installationDir.toAbsolutePath().toString(),
+                CliConstants.VERSION, "test-channel::2.0.1");
+
+        assertEquals(ReturnCodes.SUCCESS, exitCode);
+        final ArgumentCaptor<List<Channel>> channelsCaptor = ArgumentCaptor.forClass(List.class);
+        Mockito.verify(actionFactory).update(any(), channelsCaptor.capture(), any(), any());
+        assertEquals("2.0.1", channelsCaptor.getValue().get(0).getManifestCoordinate().getVersion());
     }
 
     @Test

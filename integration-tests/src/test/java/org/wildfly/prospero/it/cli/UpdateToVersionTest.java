@@ -170,7 +170,13 @@ public class UpdateToVersionTest extends CliTestBase {
                 .contains("1.0.0", "1.0.1", "1.0.2");
     }
 
-    // TODO: update list --version shows changes in the selected version
+    @Test
+    public void listUpdatesToSpecificVersion() throws Exception {
+        testInstallation.install("org.test:pack-one:1.0.0", List.of(testChannel), "--version=test-channel::1.0.0", "-vv");
+
+        assertThat(testInstallation.listUpdates(CliConstants.VERSION, "test-channel::1.0.1"))
+                .containsPattern("commons-io:commons-io\\s+2.18.0\\s+==>\\s+2.18.0.CP-01");
+    }
 
     private void prepareRequiredArtifacts(TestLocalRepository localRepository) throws Exception {
         localRepository.deployGalleonPlugins();

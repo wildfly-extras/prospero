@@ -44,8 +44,7 @@ public class ActionFactory {
         return new ProvisioningAction(targetPath, mavenOptions, console);
     }
 
-    // Option for BETA update support
-    // TODO: evaluate in GA - replace by repository:add / custom channels?
+    @Deprecated(forRemoval = true)
     public UpdateAction update(Path targetPath, MavenOptions mavenOptions, Console console, List<Repository> additionalRepositories)
             throws OperationException,
             ProvisioningException {

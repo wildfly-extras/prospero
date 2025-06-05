@@ -51,7 +51,7 @@ public class UpdateListChannelCommandTest extends AbstractMavenCommandTest {
     @Before
     public void setUp() throws Exception {
         super.setUp();
-        when(actionFactory.update(any(), any(), any(), anyList())).thenReturn(updateAction);
+        when(actionFactory.update(any(), anyList(), any(), any())).thenReturn(updateAction);
         installationDir = tempFolder.newFolder().toPath();
 
         MetadataTestUtils.createInstallationMetadata(installationDir);
@@ -116,7 +116,7 @@ public class UpdateListChannelCommandTest extends AbstractMavenCommandTest {
 
     @Override
     protected MavenOptions getCapturedMavenOptions() throws Exception {
-        Mockito.verify(actionFactory).update(any(), mavenOptions.capture(), any(), any());
+        Mockito.verify(actionFactory).update(any(), anyList(), mavenOptions.capture(), any());
         return mavenOptions.getValue();
     }
 

@@ -322,6 +322,12 @@ public class UpdateCommand extends AbstractParentCommand {
     @CommandLine.Command(name = CliConstants.Commands.LIST, sortOptions = false)
     public static class ListCommand extends AbstractMavenCommand {
 
+        @CommandLine.Option(
+                names = CliConstants.VERSION,
+                split = ","
+        )
+        protected List<String> versions = new ArrayList<>();
+
         public ListCommand(CliConsole console, ActionFactory actionFactory) {
             super(console, actionFactory);
         }
@@ -336,7 +342,15 @@ public class UpdateCommand extends AbstractParentCommand {
                 final List<Repository> repositories = RepositoryUtils.unzipArchives(
                         RepositoryDefinition.from(temporaryRepositories), temporaryFiles);
                 console.println(CliMessages.MESSAGES.checkUpdatesHeader(installationDir));
-                try (UpdateAction updateAction = actionFactory.update(installationDir, mavenOptions, console, repositories)) {
+                final List<Channel> overrideChannels;
+                try (InstallationMetadata im = InstallationMetadata.loadInstallation(installationDir)) {
+                    overrideChannels = OverrideBuilder
+                            .from(im.getProsperoConfig().getChannels())
+                            .withRepositories(repositories)
+                            .withManifestVersions(versions)
+                            .build();
+                }
+                try (UpdateAction updateAction = actionFactory.update(installationDir, overrideChannels, mavenOptions, console)) {
                     final UpdateSet updateSet = updateAction.findUpdates();
                     console.updatesFound(updateSet.getArtifactUpdates());
                 }
@@ -369,7 +383,15 @@ public class UpdateCommand extends AbstractParentCommand {
                 final List<Repository> repositories = RepositoryUtils.unzipArchives(
                         RepositoryDefinition.from(temporaryRepositories), temporaryFiles);
                 console.println(CliMessages.MESSAGES.checkUpdatesHeader(installationDir));
-                try (UpdateAction updateAction = actionFactory.update(installationDir, mavenOptions, console, repositories)) {
+                final List<Channel> overrideChannels;
+                try (InstallationMetadata im = InstallationMetadata.loadInstallation(installationDir)) {
+                    overrideChannels = OverrideBuilder
+                            .from(im.getProsperoConfig().getChannels())
+                            .withRepositories(repositories)
+                            .build();
+                }
+
+                try (UpdateAction updateAction = actionFactory.update(installationDir, overrideChannels, mavenOptions, console)) {
                     final ChannelsUpdateResult result = updateAction.findChannelUpdates(all);
                     new ChannelVersionChangesPrinter(console).printAvailableChannelChanges(result, installationDir.toString());
                 }
