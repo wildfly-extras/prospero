@@ -18,19 +18,18 @@
 package org.wildfly.prospero.actions;
 
 import java.io.IOException;
-import java.net.MalformedURLException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
-import java.util.Optional;
+import java.util.Map;
 
 import org.apache.commons.io.FileUtils;
 import org.eclipse.aether.DefaultRepositorySystemSession;
 import org.eclipse.aether.RepositorySystem;
-import org.eclipse.aether.resolution.ArtifactResolutionException;
-import org.eclipse.aether.resolution.VersionRangeResolutionException;
 import org.jboss.galleon.util.PathsUtils;
 import org.wildfly.channel.Channel;
 import org.wildfly.channel.Repository;
@@ -63,6 +62,7 @@ public class UpdateAction implements AutoCloseable {
     private final Console console;
     private final ProsperoConfig prosperoConfig;
     private final MavenOptions mavenOptions;
+    private volatile ChannelUpdateFinder finder;
 
     public UpdateAction(Path installDir, MavenOptions mavenOptions, Console console, List<Repository> overrideRepositories)
             throws OperationException, ProvisioningException {
@@ -172,6 +172,59 @@ public class UpdateAction implements AutoCloseable {
         }
     }
 
+    /**
+     * generates a list of maven manifest updates that can be applied to each of the channels the server is subscribed to.
+     *
+     * @param allowDowngrades - if true includes all possible versions, else only newer versions.
+     * @return
+     * @throws MetadataException - if the version information cannot be resolved.
+     */
+    public ChannelsUpdateResult findChannelUpdates(boolean allowDowngrades) throws MetadataException {
+        final List<ChannelsUpdateResult.ChannelResult> results = new ArrayList<>();
+
+        // gather current installed versions of the channels
+        final List<ChannelVersion> channelVersions = metadata.getChannelVersions();
+        final Map<String, ChannelVersion> currentVersions = new HashMap<>();
+        for (ChannelVersion channelVersion : channelVersions) {
+            currentVersions.put(channelVersion.getChannelName(), channelVersion);
+        }
+
+        for (Channel channel : prosperoConfig.getChannels()) {
+            final ChannelVersion channelVersion = currentVersions.get(channel.getName());
+
+            if (channelVersion == null) {
+                // if we don't know what version is currently installed, mark this channel as unsupported
+                results.add(new ChannelsUpdateResult.ChannelResult(
+                        channel.getName(),
+                        null));
+            } else {
+                if (channelVersion.getType() == ChannelVersion.Type.MAVEN) {
+                    // get available versions - either all or just updates
+                    final ChannelUpdateFinder finder = getChannelUpdateFinder();
+                    final Collection<ChannelVersion> availableChannelVersions;
+                    if (allowDowngrades) {
+                        availableChannelVersions = finder.findAvailableChannelVersions(channel);
+                    } else {
+                        availableChannelVersions = finder.findNewerChannelVersions(channel, channelVersion.getPhysicalVersion());
+                    }
+
+                    // add the discovered versions to the result list
+                    results.add(new ChannelsUpdateResult.ChannelResult(
+                            channel.getName(),
+                            channelVersion.getPhysicalVersion(),
+                            availableChannelVersions));
+                } else {
+                    // only Maven channels can have manifest versions.
+                    // If it is not a maven channel, mark it as unsupported
+                    results.add(new ChannelsUpdateResult.ChannelResult(
+                            channel.getName(),
+                            channelVersion.getPhysicalVersion()));
+                }
+            }
+        }
+        return new ChannelsUpdateResult(results);
+    }
+
     private GalleonEnvironment getGalleonEnv(Path target) throws ProvisioningException, OperationException {
         return GalleonEnvironment
                 .builder(target, prosperoConfig.getChannels(), mavenSessionManager, false)
@@ -193,38 +246,16 @@ public class UpdateAction implements AutoCloseable {
         }
     }
 
-    public ChannelsUpdateResult findChannelUpdates(boolean allowDowngrades) throws MetadataException {
+    private ChannelUpdateFinder getChannelUpdateFinder() {
         final RepositorySystem system = mavenSessionManager.newRepositorySystem();
         final DefaultRepositorySystemSession session = mavenSessionManager.newRepositorySystemSession(system);
-        final ChannelUpdateFinder finder = new ChannelUpdateFinder(system, session);
-        final List<ChannelsUpdateResult.ChannelResult> results = new ArrayList<>();
-
-        for (Channel channel : prosperoConfig.getChannels()) {
-            final List<ChannelVersion> channelVersions = metadata.getChannelVersions();
-            final Optional<ChannelVersion> cv = channelVersions.stream().filter(c -> c.getChannelName().equals(channel.getName())).findFirst();
-
-            if (cv.isPresent()) {
-                final ChannelVersion channelVersion = cv.get();
-                if (channelVersion.getType() == ChannelVersion.Type.MAVEN) {
-                    try {
-                        results.add(new ChannelsUpdateResult.ChannelResult(
-                                channel.getName(),
-                                channelVersion.getPhysicalVersion(),
-                                finder.findNewerVersions(channel, channelVersion, allowDowngrades)));
-                    } catch (VersionRangeResolutionException e) {
-                        throw new RuntimeException(e);
-                    } catch (ArtifactResolutionException e) {
-                        throw new RuntimeException(e);
-                    } catch (MalformedURLException e) {
-                        throw new RuntimeException(e);
-                    }
-                } else {
-                    results.add(new ChannelsUpdateResult.ChannelResult(
-                            channel.getName(),
-                            channelVersion.getPhysicalVersion()));
+        if (finder == null) {
+            synchronized (this) {
+                if (finder == null) {
+                    finder = new ChannelUpdateFinder(system, session);
                 }
             }
         }
-        return new ChannelsUpdateResult(results);
+        return finder;
     }
 }

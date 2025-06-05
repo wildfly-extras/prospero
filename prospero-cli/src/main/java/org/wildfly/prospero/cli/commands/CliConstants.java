@@ -60,6 +60,7 @@ public final class CliConstants {
     }
 
     public static final String ACCEPT_AGREEMENTS = "--accept-license-agreements";
+    public static final String ALL = "--all";
     public static final String ARG_PATH = "--path";
     public static final String CANDIDATE_DIR = "--candidate-dir";
     public static final String CHANNEL = "--channel";

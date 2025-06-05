@@ -78,7 +78,8 @@ public class ChannelVersionChangesPrinter {
                 console.println("   %s: %s".formatted(CliMessages.MESSAGES.channelVersionUpdateListCurrentVersion(), channelResult.getCurrentVersion()));
                 console.println("   %s:".formatted(CliMessages.MESSAGES.channelVersionUpdateListAvailableVersions()));
                 for (ChannelVersion channelVersion : availableVersions) {
-                    console.println("   - %s(%s)".formatted(channelVersion.getPhysicalVersion(), channelVersion.getLogicalVersion()));
+                    final String logicalVersion =  channelVersion.getLogicalVersion() == null ? "" : " (%s)".formatted(channelVersion.getLogicalVersion());
+                    console.println("   - %s%s".formatted(channelVersion.getPhysicalVersion(), logicalVersion));
                 }
             } else {
                 versionArg.append(channelName).append("::").append(channelResult.getCurrentVersion());

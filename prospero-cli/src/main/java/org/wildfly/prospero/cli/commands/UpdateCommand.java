@@ -352,7 +352,7 @@ public class UpdateCommand extends AbstractParentCommand {
     @CommandLine.Command(name = CliConstants.Commands.LIST_CHANNELS, sortOptions = false)
     public static class ListChannelsCommand extends AbstractMavenCommand {
 
-        @CommandLine.Option(names = "--all")
+        @CommandLine.Option(names = CliConstants.ALL)
         boolean all;
 
         public ListChannelsCommand(CliConsole console, ActionFactory actionFactory) {

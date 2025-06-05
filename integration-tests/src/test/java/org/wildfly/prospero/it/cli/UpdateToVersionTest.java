@@ -1,5 +1,6 @@
 package org.wildfly.prospero.it.cli;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.wildfly.prospero.test.TestLocalRepository.GALLEON_PLUGINS_VERSION;
 
 import java.io.IOException;
@@ -11,7 +12,6 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import org.apache.commons.lang3.tuple.Pair;
-import org.assertj.core.api.Assertions;
 import org.eclipse.aether.artifact.Artifact;
 import org.eclipse.aether.artifact.DefaultArtifact;
 import org.junit.Before;
@@ -106,7 +106,7 @@ public class UpdateToVersionTest extends CliTestBase {
                 (ExecutionUtils.ExecutionResult e)-> {
                     try {
                         e.assertReturnCode(ReturnCodes.SUCCESS);
-                        Assertions.assertThat(e.getCommandOutput())
+                        assertThat(e.getCommandOutput())
                                 .contains("The update will downgrade following channels:")
                                 .contains("  * test-channel: 1.0.1  ->  1.0.0");
                     } catch (IOException ex) {
@@ -139,7 +139,7 @@ public class UpdateToVersionTest extends CliTestBase {
                 (ExecutionUtils.ExecutionResult e)-> {
                     try {
                         e.assertReturnCode(ReturnCodes.PROCESSING_ERROR);
-                        Assertions.assertThat(e.getCommandOutput())
+                        assertThat(e.getCommandOutput())
                                 .contains("The update will downgrade following channels:")
                                 .contains("  * test-channel: 1.0.1  ->  1.0.0");
                     } catch (IOException ex) {
@@ -149,8 +149,25 @@ public class UpdateToVersionTest extends CliTestBase {
                 },
                 "--repositories", newRepo.getUri().toString());
 
-        testInstallation.verifyModuleJar("commons-io", "commons-io", COMMONS_IO_VERSION);
+        testInstallation.verifyModuleJar("commons-io", "commons-io", COMMONS_IO_VERSION + ".CP-01");
         testInstallation.verifyInstallationMetadataPresent();
+    }
+
+    @Test
+    public void listChannelVersionUpdates() throws Exception {
+        testInstallation.install("org.test:pack-one:1.0.0", List.of(testChannel), "--version=test-channel::1.0.1", "-vv");
+
+        assertThat(testInstallation.listChannelManifestUpdates(false).split("available versions")[1])
+                .contains("1.0.2")
+                .doesNotContain("1.0.0", "1.0.1");
+    }
+
+    @Test
+    public void listAllChannelVersion() throws Exception {
+        testInstallation.install("org.test:pack-one:1.0.0", List.of(testChannel), "--version=test-channel::1.0.1", "-vv");
+
+        assertThat(testInstallation.listChannelManifestUpdates(true).split("available versions")[1])
+                .contains("1.0.0", "1.0.1", "1.0.2");
     }
 
     // TODO: update list --version shows changes in the selected version
