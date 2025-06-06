@@ -6,7 +6,7 @@ import org.wildfly.channel.version.VersionMatcher;
 
 public class ChannelVersion implements Comparable<ChannelVersion> {
 
-    public enum Type {MAVEN, URL, OPEN};
+    public enum Type {MAVEN, URL, OPEN}
     private final String channelName;
     private final Type type;
     private final String location;

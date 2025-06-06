@@ -90,18 +90,16 @@ class OverrideBuilder {
 
     private Channel overrideChannel(Channel c, VersionOverride version) {
         final Channel.Builder builder = new Channel.Builder(c);
-        if (version != null) {
-            if (c.getName().equals(version.channelName())) {
-                final ChannelManifestCoordinate coord = c.getManifestCoordinate();
-                if (coord.getUrl() != null) {
-                    try {
-                        builder.setManifestUrl(URI.create(version.version()).toURL());
-                    } catch (MalformedURLException e) {
-                        throw ProsperoLogger.ROOT_LOGGER.invalidUrl(version.version(), e);
-                    }
-                } else {
-                    builder.setManifestCoordinate(coord.getGroupId(), coord.getArtifactId(), version.version());
+        if (version != null && c.getName().equals(version.channelName())) {
+            final ChannelManifestCoordinate coord = c.getManifestCoordinate();
+            if (coord.getUrl() != null) {
+                try {
+                    builder.setManifestUrl(URI.create(version.version()).toURL());
+                } catch (MalformedURLException e) {
+                    throw ProsperoLogger.ROOT_LOGGER.invalidUrl(version.version(), e);
                 }
+            } else {
+                builder.setManifestCoordinate(coord.getGroupId(), coord.getArtifactId(), version.version());
             }
         }
         if (!shadowRepositories.isEmpty()) {
