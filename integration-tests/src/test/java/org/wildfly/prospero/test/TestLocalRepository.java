@@ -45,6 +45,7 @@ import org.wildfly.prospero.wfchannel.MavenSessionManager;
  * Utility class to generate a local Maven repository and deploy artifacts to it
  */
 public class TestLocalRepository {
+    public static final String GALLEON_PLUGINS_VERSION = BuildProperties.getProperty("version.org.wildfly.galleon-plugins");
 
     private final Path root;
     private final RepositorySystem system;
@@ -107,11 +108,14 @@ public class TestLocalRepository {
      * Resolves an artifact in upstream repositories, and if successful, deploys it locally.
      *
      * @param artifact
+     * @return the resolved artifact
      * @throws ArtifactResolutionException
      * @throws DeploymentException
      */
-    public void resolveAndDeploy(Artifact artifact) throws ArtifactResolutionException, DeploymentException {
-        deploy(resolveUpstream(artifact));
+    public Artifact resolveAndDeploy(Artifact artifact) throws ArtifactResolutionException, DeploymentException {
+        final Artifact resolved = resolveUpstream(artifact);
+        deploy(resolved);
+        return resolved;
     }
 
     /**
@@ -130,6 +134,17 @@ public class TestLocalRepository {
     public void deployMockUpdate(String groupId, String artifactId, String version, String newVersionSuffix) throws DeploymentException, ArtifactResolutionException {
         Artifact artifact = resolveUpstream(new DefaultArtifact(groupId, artifactId, null, "jar", version));
         deploy(artifact.setVersion(version + newVersionSuffix));
+    }
+
+    /**
+     * Deploys default Galleon jars needed by the provisioning
+     *
+     * @throws ArtifactResolutionException
+     * @throws DeploymentException
+     */
+    public void deployGalleonPlugins() throws ArtifactResolutionException, DeploymentException {
+        resolveAndDeploy(new DefaultArtifact("org.wildfly.galleon-plugins", "wildfly-galleon-plugins", "jar", GALLEON_PLUGINS_VERSION));
+        resolveAndDeploy(new DefaultArtifact("org.wildfly.galleon-plugins", "wildfly-config-gen", "jar", GALLEON_PLUGINS_VERSION));
     }
 
     /**
