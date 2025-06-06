@@ -41,6 +41,7 @@ import org.mockito.Mockito;
 import org.mockito.junit.MockitoJUnitRunner;
 import org.wildfly.channel.Channel;
 import org.wildfly.channel.ChannelManifestCoordinate;
+import org.wildfly.channel.ChannelMapper;
 import org.wildfly.channel.InvalidChannelMetadataException;
 import org.wildfly.channel.Repository;
 import org.wildfly.prospero.ProsperoLogger;
@@ -166,7 +167,7 @@ public class InstallCommandTest extends AbstractMavenCommandTest {
                 CliConstants.FPL, "org.wildfly:wildfly-ee-galleon-pack",
                 CliConstants.CHANNELS, channelsFile.getAbsolutePath());
         assertEquals(ReturnCodes.SUCCESS, exitCode);
-        Mockito.verify(provisionAction).provision(configCaptor.capture(), channelCaptor.capture(), any());
+        Mockito.verify(provisionAction).provisionWithChannels(configCaptor.capture(), channelCaptor.capture(), any());
         assertThat(configCaptor.getValue().getFeaturePackDeps())
                 .map(fp->fp.getLocation().getProducerName())
                 .containsExactly("org.wildfly:wildfly-ee-galleon-pack::zip");
@@ -179,7 +180,7 @@ public class InstallCommandTest extends AbstractMavenCommandTest {
         commandLine.getErr();
 
         assertEquals(ReturnCodes.SUCCESS, exitCode);
-        Mockito.verify(provisionAction).provision(configCaptor.capture(), channelCaptor.capture(), any());
+        Mockito.verify(provisionAction).provisionWithChannels(configCaptor.capture(), channelCaptor.capture(), any());
         assertThat(configCaptor.getValue().getFeaturePackDeps())
                 .map(fp->fp.getLocation().getProducerName())
                 .containsExactly("org.wildfly.core:wildfly-core-galleon-pack::zip");
@@ -195,7 +196,7 @@ public class InstallCommandTest extends AbstractMavenCommandTest {
                 CliConstants.CHANNELS, channelsFile.getAbsolutePath());
 
         assertEquals(ReturnCodes.SUCCESS, exitCode);
-        Mockito.verify(provisionAction).provision(configCaptor.capture(), channelCaptor.capture(), any());
+        Mockito.verify(provisionAction).provisionWithChannels(configCaptor.capture(), channelCaptor.capture(), any());
         assertThat(configCaptor.getValue().getFeaturePackDeps())
                 .map(fp->fp.getLocation().getProducerName())
                 .containsExactly("org.wildfly.core:wildfly-core-galleon-pack::zip");
@@ -223,7 +224,7 @@ public class InstallCommandTest extends AbstractMavenCommandTest {
                 CliConstants.DEFINITION, provisionDefinitionFile.getAbsolutePath());
 
         assertEquals(ReturnCodes.SUCCESS, exitCode);
-        Mockito.verify(provisionAction).provision(configCaptor.capture(), channelCaptor.capture(), any());
+        Mockito.verify(provisionAction).provisionWithChannels(configCaptor.capture(), channelCaptor.capture(), any());
         assertThat(configCaptor.getValue().getFeaturePackDeps())
                 .map(fp->fp.getLocation().getProducerName())
                 .containsExactly("org.wildfly.core:wildfly-core-galleon-pack::zip");
@@ -275,7 +276,7 @@ public class InstallCommandTest extends AbstractMavenCommandTest {
                 CliConstants.FPL, "g:a");
 
         assertEquals(ReturnCodes.SUCCESS, exitCode);
-        Mockito.verify(provisionAction).provision(configCaptor.capture(), channelCaptor.capture(), any());
+        Mockito.verify(provisionAction).provisionWithChannels(configCaptor.capture(), channelCaptor.capture(), any());
         assertThat(channelCaptor.getValue().get(0).getRepositories()
                 .stream().map(Repository::getUrl).collect(Collectors.toList()))
                 .containsOnly(testURL);
@@ -297,9 +298,10 @@ public class InstallCommandTest extends AbstractMavenCommandTest {
                 CliConstants.FPL, "g:a");
 
         assertEquals(ReturnCodes.SUCCESS, exitCode);
-        final ArgumentCaptor<List<Repository>> listArgumentCaptor = ArgumentCaptor.forClass(List.class);
-        Mockito.verify(provisionAction).provision(configCaptor.capture(), channelCaptor.capture(), listArgumentCaptor.capture());
+        final ArgumentCaptor<List<Channel>> listArgumentCaptor = ArgumentCaptor.forClass(List.class);
+        Mockito.verify(provisionAction).provisionWithChannels(configCaptor.capture(), channelCaptor.capture(), listArgumentCaptor.capture());
         assertThat(listArgumentCaptor.getValue())
+                .flatMap(Channel::getRepositories)
                 .map(Repository::getUrl)
                 .contains(testURL);
     }
@@ -315,7 +317,7 @@ public class InstallCommandTest extends AbstractMavenCommandTest {
                 CliConstants.CHANNELS, channelsFile.getAbsolutePath(),
                 CliConstants.STABILITY_LEVEL, "default");
         assertEquals(ReturnCodes.SUCCESS, exitCode);
-        Mockito.verify(provisionAction).provision(configCaptor.capture(), any(), any());
+        Mockito.verify(provisionAction).provisionWithChannels(configCaptor.capture(), any(), any());
         assertThat(configCaptor.getValue().getOptions())
                 .contains(entry(Constants.STABILITY_LEVEL, "default"));
     }
@@ -363,7 +365,7 @@ public class InstallCommandTest extends AbstractMavenCommandTest {
                 CliConstants.CONFIG_STABILITY_LEVEL, "community",
                 CliConstants.PACKAGE_STABILITY_LEVEL, "experimental");
         assertEquals(ReturnCodes.SUCCESS, exitCode);
-        Mockito.verify(provisionAction).provision(configCaptor.capture(), any(), any());
+        Mockito.verify(provisionAction).provisionWithChannels(configCaptor.capture(), any(), any());
         assertThat(configCaptor.getValue().getOptions())
                 .contains(entry(Constants.PACKAGE_STABILITY_LEVEL, "experimental"),
                         entry(Constants.CONFIG_STABILITY_LEVEL, "community"));
@@ -430,7 +432,7 @@ public class InstallCommandTest extends AbstractMavenCommandTest {
                 CliConstants.FPL, "feature:pack");
 
         assertEquals(ReturnCodes.SUCCESS, exitCode);
-        Mockito.verify(provisionAction).provision(configCaptor.capture(), channelCaptor.capture(), any());
+        Mockito.verify(provisionAction).provisionWithChannels(configCaptor.capture(), channelCaptor.capture(), any());
         assertThat(channelCaptor.getValue())
                 // TODO: implement equals toHash in wildfly-channels objects and remove the toString mapping
                 .map(Channel::toString)
@@ -444,6 +446,138 @@ public class InstallCommandTest extends AbstractMavenCommandTest {
                                 .addRepository("repo1", testURL)
                                 .build().toString()
                 );
+    }
+
+    @Test
+    public void versionStringWithChannelNameAndVersionIsAppliedToAChannel() throws Exception {
+        int exitCode = commandLine.execute(CliConstants.Commands.INSTALL, CliConstants.DIR, "test",
+                CliConstants.PROFILE, "known-fpl",
+                CliConstants.VERSION, "wildfly-core::1.1.1");
+
+        assertEquals(ReturnCodes.SUCCESS, exitCode);
+        Mockito.verify(provisionAction).provisionWithChannels(any(), any(), channelCaptor.capture());
+
+        assertThat(channelCaptor.getValue())
+                .map(c->c.getManifestCoordinate())
+                .contains(new ChannelManifestCoordinate("org.wildfly.channels", "wildfly-core", "1.1.1"));
+    }
+
+    @Test
+    public void versionStringsHaveToOverrideAllChannels() throws Exception {
+        final Path channelFile = generateTwoChannelConfiguration();
+        int exitCode = commandLine.execute(CliConstants.Commands.INSTALL, CliConstants.DIR, "test",
+                CliConstants.PROFILE, "known-fpl",
+                CliConstants.CHANNELS, channelFile.toUri().toString(),
+                CliConstants.VERSION, "test-one::1.1.1");
+
+        assertEquals(ReturnCodes.INVALID_ARGUMENTS, exitCode);
+        assertThat(getErrorOutput())
+                .contains(CliMessages.MESSAGES.versionOverrideHasToApplyToAllChannels().getMessage());
+    }
+
+    @Test
+    public void versionArgumentWithNoSeparatorIsInvalid() {
+        int exitCode = commandLine.execute(CliConstants.Commands.INSTALL, CliConstants.DIR, "test",
+                CliConstants.PROFILE, "known-fpl",
+                CliConstants.VERSION, "1.1.1");
+
+        assertEquals(ReturnCodes.INVALID_ARGUMENTS, exitCode);
+        assertThat(getErrorOutput())
+                .contains(CliMessages.MESSAGES.invalidVersionOverrideString("1.1.1").getMessage());
+    }
+
+    @Test
+    public void versionStringNeedsToConsistOfChannelNameAndVersion() throws Exception {
+        int exitCode = commandLine.execute(CliConstants.Commands.INSTALL, CliConstants.DIR, "test",
+                CliConstants.PROFILE, "known-fpl",
+                CliConstants.VERSION, "wildfly-core::1.1.1");
+
+        assertEquals(ReturnCodes.SUCCESS, exitCode);
+        Mockito.verify(provisionAction).provisionWithChannels(any(), any(), channelCaptor.capture());
+
+        assertThat(channelCaptor.getValue())
+                .map(c->c.getManifestCoordinate())
+                .contains(new ChannelManifestCoordinate("org.wildfly.channels", "wildfly-core", "1.1.1"));
+    }
+
+    @Test
+    public void errorWhenVersionOverrideDoesNotMatchAnyChannels() throws Exception {
+        int exitCode = commandLine.execute(CliConstants.Commands.INSTALL, CliConstants.DIR, "test",
+                CliConstants.PROFILE, "known-fpl",
+                CliConstants.VERSION, "idontexist::1.1.1");
+
+        assertEquals(ReturnCodes.INVALID_ARGUMENTS, exitCode);
+        assertThat(getErrorOutput())
+                .contains(CliMessages.MESSAGES.channelNotFoundException("idontexist").getMessage());
+    }
+
+    @Test
+    public void multipleVersionOverrideAreApplied() throws Exception {
+        final Path config = generateTwoChannelConfiguration();
+
+        int exitCode = commandLine.execute(CliConstants.Commands.INSTALL, CliConstants.DIR, "test",
+                CliConstants.PROFILE, "known-fpl",
+                CliConstants.CHANNELS, config.toUri().toString(),
+                CliConstants.VERSION, "test-one::1.1.1",
+                CliConstants.VERSION, "test-two::2.2.2");
+
+        assertEquals(ReturnCodes.SUCCESS, exitCode);
+
+        Mockito.verify(provisionAction).provisionWithChannels(any(), any(), channelCaptor.capture());
+        assertThat(channelCaptor.getValue())
+                .map(c->c.getManifestCoordinate())
+                .contains(
+                        new ChannelManifestCoordinate("org.test", "test-one", "1.1.1"),
+                        new ChannelManifestCoordinate("org.test", "test-two", "2.2.2")
+                );
+    }
+
+    @Test
+    public void duplicateVersionOverrideIsAnError() throws Exception {
+        final Path config = generateTwoChannelConfiguration();
+
+        int exitCode = commandLine.execute(CliConstants.Commands.INSTALL, CliConstants.DIR, "test",
+                CliConstants.PROFILE, "known-fpl",
+                CliConstants.CHANNELS, config.toUri().toString(),
+                CliConstants.VERSION, "test-one::1.1.1",
+                CliConstants.VERSION, "test-one::1.1.2",
+                CliConstants.VERSION, "test-two::2.2.2");
+
+        assertEquals(ReturnCodes.INVALID_ARGUMENTS, exitCode);
+        assertThat(getErrorOutput())
+                .contains(CliMessages.MESSAGES.duplicatedVersionOverride("test-one").getMessage());
+    }
+
+    @Test
+    public void urlChannelIsOverrideByVersionArgument() throws Exception {
+        final Path channelFile = generateUrlChannelConfiguration();
+        int exitCode = commandLine.execute(CliConstants.Commands.INSTALL, CliConstants.DIR, "test",
+                CliConstants.PROFILE, "known-fpl",
+                CliConstants.CHANNELS, channelFile.toUri().toString(),
+                CliConstants.VERSION, "test-one::http://new.channel.com");
+
+        assertEquals(ReturnCodes.SUCCESS, exitCode);
+        Mockito.verify(provisionAction).provisionWithChannels(any(), any(), channelCaptor.capture());
+
+        assertThat(channelCaptor.getValue())
+                .map(c->c.getManifestCoordinate())
+                .contains(new ChannelManifestCoordinate(new URL("http://new.channel.com")));
+    }
+
+    @Test
+    public void urlChannelIsOverrideByVersionArgumentWithLocalFileUrl() throws Exception {
+        final Path channelFile = generateUrlChannelConfiguration();
+        int exitCode = commandLine.execute(CliConstants.Commands.INSTALL, CliConstants.DIR, "test",
+                CliConstants.PROFILE, "known-fpl",
+                CliConstants.CHANNELS, channelFile.toUri().toString(),
+                CliConstants.VERSION, "test-one::file:foo.yaml");
+
+        assertEquals(ReturnCodes.SUCCESS, exitCode);
+        Mockito.verify(provisionAction).provisionWithChannels(any(), any(), channelCaptor.capture());
+
+        assertThat(channelCaptor.getValue())
+                .map(c->c.getManifestCoordinate())
+                .contains(new ChannelManifestCoordinate(new URL("file:foo.yaml")));
     }
 
     @Override
@@ -464,5 +598,42 @@ public class InstallCommandTest extends AbstractMavenCommandTest {
                 new ChannelManifestCoordinate(groupId, test1),
                 null, null);
         return channel;
+    }
+
+    private Path generateTwoChannelConfiguration() throws IOException {
+        // build a list of two channels
+        final List<Channel> channels = List.of(
+                new Channel.Builder()
+                        .setName("test-one")
+                        .setManifestCoordinate("org.test", "test-one")
+                        .addRepository("repo", "http://repo.test")
+                        .build(),
+                new Channel.Builder()
+                        .setName("test-two")
+                        .setManifestCoordinate("org.test", "test-two")
+                        .addRepository("repo", "http://repo.test")
+                        .build()
+        );
+
+        // serialize the channels to a file and pass it to the CLI
+        final Path channelFile = temporaryFolder.newFile("channels.yaml").toPath();
+        Files.writeString(channelFile, ChannelMapper.toYaml(channels));
+        return channelFile;
+    }
+
+    private Path generateUrlChannelConfiguration() throws IOException {
+        // build a list of two channels
+        final List<Channel> channels = List.of(
+                new Channel.Builder()
+                        .setName("test-one")
+                        .setManifestUrl(new URL("http://channel.com"))
+                        .addRepository("repo", "http://repo.test")
+                        .build()
+        );
+
+        // serialize the channels to a file and pass it to the CLI
+        final Path channelFile = temporaryFolder.newFile("channels.yaml").toPath();
+        Files.writeString(channelFile, ChannelMapper.toYaml(channels));
+        return channelFile;
     }
 }
