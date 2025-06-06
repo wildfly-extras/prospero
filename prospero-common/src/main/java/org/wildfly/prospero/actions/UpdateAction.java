@@ -64,6 +64,7 @@ public class UpdateAction implements AutoCloseable {
     private final MavenOptions mavenOptions;
     private volatile ChannelUpdateFinder finder;
 
+    @Deprecated(forRemoval = true)
     public UpdateAction(Path installDir, MavenOptions mavenOptions, Console console, List<Repository> overrideRepositories)
             throws OperationException, ProvisioningException {
         this(installDir, addTemporaryRepositories(installDir, overrideRepositories), mavenOptions, console);
