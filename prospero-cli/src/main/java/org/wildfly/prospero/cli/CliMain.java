@@ -22,6 +22,9 @@ import org.jboss.logmanager.Configurator;
 import org.jboss.logmanager.Level;
 import org.jboss.logmanager.PropertyConfigurator;
 import org.jboss.logmanager.config.LogContextConfiguration;
+import org.wildfly.prospero.DistributionInfo;
+import org.wildfly.prospero.ProsperoLogger;
+import org.wildfly.prospero.Stability;
 import org.wildfly.prospero.VersionLogger;
 import org.wildfly.prospero.cli.commands.CliConstants;
 import org.wildfly.prospero.cli.commands.MainCommand;
@@ -64,6 +67,12 @@ public class CliMain {
     }
 
     public static CommandLine createCommandLine(CliConsole console, String[] args, ActionFactory actionFactory) {
+        final Stability overrideStability = parseStability(args);
+
+        if (overrideStability != null) {
+            DistributionInfo.setStability(overrideStability);
+        }
+
         final CommandLine commandLine = new StabilityAwareCommandBuilder().build(new MainCommand(console, actionFactory));
 
         commandLine.setUsageHelpAutoWidth(true);
@@ -74,6 +83,34 @@ public class CliMain {
         commandLine.setParameterExceptionHandler(new UnknownCommandParameterExceptionHandler(rootParameterExceptionHandler, System.err, isVerbose));
 
         return commandLine;
+    }
+
+    private static Stability parseStability(String[] args) {
+        // we need to manually parse stability argument
+        //   it can either be one or two arguments - --stability=Preview OR --stability Preview
+        //   we need to handle a case where the value is not provided - e.g. --stability -vv
+        Stability overrideStability = null;
+        for (int i = 0; i < args.length; i++) {
+            if (args[i].startsWith("--stability=")) {
+                final String[] arg = args[i].split("=");
+                if (arg.length == 1) {
+                    throw new IllegalArgumentException("Missing value for argument --stability");
+                }
+                final String value = arg[1].trim();
+                overrideStability = Stability.from(value);
+            } else if (args[i].equals("--stability")) {
+                if (args.length -1  <= i+1) {
+                    overrideStability = Stability.from(args[i + 1]);
+                } else {
+                    throw new IllegalArgumentException("Missing value for argument --stability");
+                }
+            }
+        }
+
+        if (overrideStability != null) {
+            ProsperoLogger.ROOT_LOGGER.debug("Switching to stability level: " + overrideStability);
+        }
+        return overrideStability;
     }
 
     private static void enableDebugLogging() {
