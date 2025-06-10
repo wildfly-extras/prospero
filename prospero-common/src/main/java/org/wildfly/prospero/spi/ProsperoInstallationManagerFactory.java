@@ -23,6 +23,7 @@ import org.jboss.galleon.Constants;
 import org.wildfly.installationmanager.MavenOptions;
 import org.wildfly.installationmanager.spi.InstallationManager;
 import org.wildfly.installationmanager.spi.InstallationManagerFactory;
+import org.wildfly.prospero.DistributionInfo;
 import org.wildfly.prospero.ProsperoLogger;
 import org.wildfly.prospero.Stability;
 import org.wildfly.prospero.StabilityLevel;
@@ -48,6 +49,13 @@ public class ProsperoInstallationManagerFactory implements InstallationManagerFa
             Path.of(ProsperoMetadataUtils.METADATA_DIR, ProsperoMetadataUtils.INSTALLER_CHANNELS_FILE_NAME),
             Path.of(ProsperoMetadataUtils.METADATA_DIR, ProsperoMetadataUtils.MANIFEST_FILE_NAME)
     );
+
+    // TODO: use stability from the API
+    public InstallationManager create(Path installationDir, MavenOptions mavenOptions, Stability stability) throws Exception {
+        DistributionInfo.setStability(stability);
+
+        return create(installationDir, mavenOptions);
+    }
 
     @Override
     public InstallationManager create(Path installationDir, MavenOptions mavenOptions) throws Exception {

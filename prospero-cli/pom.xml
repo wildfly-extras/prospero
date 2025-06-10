@@ -146,6 +146,7 @@
                                     <mainClass>org.wildfly.prospero.cli.CliMain</mainClass>
                                     <manifestEntries>
                                         <JBoss-Product-Stability>${prospero.dist.stability}</JBoss-Product-Stability>
+                                        <JBoss-Product-Minimal-Stability>${prospero.dist.min-stability}</JBoss-Product-Minimal-Stability>
                                     </manifestEntries>
                                 </transformer>
                             </transformers>
