@@ -17,10 +17,15 @@
 
 package org.wildfly.prospero;
 
+import java.io.IOException;
+import java.net.URL;
+import java.util.Enumeration;
 import java.util.ResourceBundle;
+import java.util.jar.Manifest;
 
 import org.apache.commons.lang3.StringUtils;
 import org.jboss.logging.Logger;
+import org.wildfly.prospero.actions.ProvisioningAction;
 
 public class DistributionInfo {
 
@@ -43,6 +48,46 @@ public class DistributionInfo {
         } else {
             LOG.warnf("UsageMessages bundle couldn't be located, unable to retrieve distribution name.");
             DIST_NAME = DEFAULT_DIST_NAME;
+        }
+    }
+
+    public static String getVersion() throws Exception {
+        final Enumeration<URL> resources = ProvisioningAction.class.getClassLoader().getResources("META-INF/MANIFEST.MF");
+        while (resources.hasMoreElements()) {
+            final URL url = resources.nextElement();
+            final Manifest manifest = new Manifest(url.openStream());
+            final String specTitle = manifest.getMainAttributes().getValue("Specification-Title");
+            if ("prospero-common".equals(specTitle) || "prospero-cli".equals(specTitle)) {
+                return StringUtils.join(manifest.getMainAttributes().getValue("Implementation-Version"));
+            }
+        }
+
+        return "unknown";
+    }
+
+    private static final class StabilityHolder {
+        private static final Stability stability = loadStability();
+    }
+
+    public static Stability getStability() {
+        return StabilityHolder.stability;
+    }
+
+    private static Stability loadStability() {
+        try {
+            final Enumeration<URL> resources = ProvisioningAction.class.getClassLoader().getResources("META-INF/MANIFEST.MF");
+            while (resources.hasMoreElements()) {
+                final URL url = resources.nextElement();
+                final Manifest manifest = new Manifest(url.openStream());
+                final String stability = manifest.getMainAttributes().getValue("JBoss-Product-Stability");
+                if (stability != null) {
+                    return Stability.from(stability);
+                }
+            }
+
+            return Stability.Default;
+        } catch (IOException e) {
+            throw new RuntimeException("Unable to read the distribution info.", e);
         }
     }
 

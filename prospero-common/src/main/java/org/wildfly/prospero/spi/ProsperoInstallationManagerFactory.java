@@ -24,9 +24,15 @@ import org.wildfly.installationmanager.MavenOptions;
 import org.wildfly.installationmanager.spi.InstallationManager;
 import org.wildfly.installationmanager.spi.InstallationManagerFactory;
 import org.wildfly.prospero.ProsperoLogger;
+import org.wildfly.prospero.Stability;
+import org.wildfly.prospero.StabilityLevel;
+import org.wildfly.prospero.StabilityUtils;
 import org.wildfly.prospero.VersionLogger;
 import org.wildfly.prospero.metadata.ProsperoMetadataUtils;
 
+import java.lang.reflect.InvocationHandler;
+import java.lang.reflect.Method;
+import java.lang.reflect.Proxy;
 import java.nio.file.Path;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -46,7 +52,23 @@ public class ProsperoInstallationManagerFactory implements InstallationManagerFa
     @Override
     public InstallationManager create(Path installationDir, MavenOptions mavenOptions) throws Exception {
         verifyInstallationDirectory(installationDir);
-        return new ProsperoInstallationManager(installationDir, mavenOptions);
+        final ProsperoInstallationManager pim = new ProsperoInstallationManager(installationDir, mavenOptions);
+        final Object proxy = Proxy.newProxyInstance(ProsperoInstallationManager.class.getClassLoader(), new Class[]{InstallationManager.class}, new InvocationHandler() {
+            @Override
+            public Object invoke(Object proxy, Method method, Object[] args) throws Throwable {
+                final StabilityLevel annotation = pim.getClass().getDeclaredMethod(method.getName(), method.getParameterTypes()).getAnnotation(StabilityLevel.class);
+                final Stability level;
+                if (annotation == null) {
+                    level = Stability.Default;
+                } else {
+                    level = annotation.level();
+                }
+                StabilityUtils.ensureAllowed(level, InstallationManager.class.getName(), method.getName());
+
+                return method.invoke(pim, args);
+            }
+        });
+        return (InstallationManager) proxy;
     }
 
     @Override

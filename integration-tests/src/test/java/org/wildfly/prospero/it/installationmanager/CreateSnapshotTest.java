@@ -28,7 +28,6 @@ import org.wildfly.prospero.api.InstallationMetadata;
 import org.wildfly.prospero.api.ProvisioningDefinition;
 import org.wildfly.prospero.cli.commands.CliConstants;
 import org.wildfly.prospero.it.commonapi.WfCoreTestBase;
-import org.wildfly.prospero.spi.ProsperoInstallationManager;
 import org.wildfly.prospero.spi.ProsperoInstallationManagerFactory;
 import org.wildfly.prospero.test.MetadataTestUtils;
 import org.wildfly.prospero.wfchannel.MavenSessionManager;
@@ -70,10 +69,13 @@ public class CreateSnapshotTest extends WfCoreTestBase {
         final Path channelsFile = MetadataTestUtils.prepareChannel(CHANNEL_BASE_CORE_19);
         final StringBuffer expected = new StringBuffer("\"")
                 .append(outputPath.resolve("bin").resolve(DistributionInfo.DIST_NAME));
+        OsShell osShell;
         if (System.getProperty("os.name").toLowerCase(Locale.getDefault()).contains("windows")) {
             expected.append(".bat");
+            osShell = OsShell.WindowsBash;
         } else {
             expected.append(".sh");
+            osShell = OsShell.Linux;
         }
         expected.append("\"");
         expected.append(" ");
@@ -95,8 +97,8 @@ public class CreateSnapshotTest extends WfCoreTestBase {
                 provisioningDefinition.resolveChannels(CHANNELS_RESOLVER_FACTORY));
 
 
-        final ProsperoInstallationManager manager = (ProsperoInstallationManager) new ProsperoInstallationManagerFactory().create(outputPath, new MavenOptions(MavenSessionManager.LOCAL_MAVEN_REPO, false));
-        final String command = manager.generateApplyUpdateCommand(outputPath.resolve("bin"), Paths.get("foo"));
+        final InstallationManager manager = new ProsperoInstallationManagerFactory().create(outputPath, new MavenOptions(MavenSessionManager.LOCAL_MAVEN_REPO, false));
+        final String command = manager.generateApplyUpdateCommand(outputPath.resolve("bin"), Paths.get("foo"), osShell, false);
         assertEquals(expected.toString(), command);
     }
 
@@ -128,15 +130,15 @@ public class CreateSnapshotTest extends WfCoreTestBase {
                 provisioningDefinition.resolveChannels(CHANNELS_RESOLVER_FACTORY));
 
 
-        final ProsperoInstallationManager manager = (ProsperoInstallationManager) new ProsperoInstallationManagerFactory().create(outputPath, new MavenOptions(MavenSessionManager.LOCAL_MAVEN_REPO, false));
+        final InstallationManager manager = new ProsperoInstallationManagerFactory().create(outputPath, new MavenOptions(MavenSessionManager.LOCAL_MAVEN_REPO, false));
 
-        String command = manager.generateApplyUpdateCommand(outputPath.resolve("bin"), Paths.get("foo"), OsShell.Linux);
+        String command = manager.generateApplyUpdateCommand(outputPath.resolve("bin"), Paths.get("foo"), OsShell.Linux, false);
         assertEquals(expected.toString().replace("<SUFFIX>", "sh"), command);
 
-        command = manager.generateApplyUpdateCommand(outputPath.resolve("bin"), Paths.get("foo"), OsShell.WindowsBash);
+        command = manager.generateApplyUpdateCommand(outputPath.resolve("bin"), Paths.get("foo"), OsShell.WindowsBash, false);
         assertEquals(expected.toString().replace("<SUFFIX>", "bat"), command);
 
-        command = manager.generateApplyUpdateCommand(outputPath.resolve("bin"), Paths.get("foo"), OsShell.WindowsPowerShell);
+        command = manager.generateApplyUpdateCommand(outputPath.resolve("bin"), Paths.get("foo"), OsShell.WindowsPowerShell, false);
         assertEquals(expected.toString().replace("<SUFFIX>", "ps1"), command);
     }
 }

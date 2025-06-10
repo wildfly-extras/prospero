@@ -37,11 +37,19 @@ public abstract class AbstractParentCommand extends AbstractCommand {
         this.subcommands = subcommands;
     }
 
+    /**
+     * Deprecated way to register subcommands. Instead use {@link this#getSubcommands()} and {@code org.wildfly.prospero.cli.StabilityAwareCommandBuilder}
+     */
+    @Deprecated(forRemoval = true)
     public void addSubCommands(CommandLine rootCmd) {
         CommandLine cmd = rootCmd.getSubcommands().get(name);
         for (AbstractCommand subcommand : subcommands) {
             cmd.addSubcommand(subcommand);
         }
+    }
+
+    public List<AbstractCommand> getSubcommands() {
+        return subcommands;
     }
 
     @Override

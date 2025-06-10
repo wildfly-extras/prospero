@@ -18,36 +18,41 @@
 package org.wildfly.prospero.cli.commands;
 
 import java.io.IOException;
+import java.util.List;
 import java.util.ResourceBundle;
-import java.util.concurrent.Callable;
 
-import org.wildfly.prospero.VersionLogger;
+import org.wildfly.prospero.DistributionInfo;
+import org.wildfly.prospero.cli.ActionFactory;
 import org.wildfly.prospero.cli.CliConsole;
 import org.wildfly.prospero.cli.ReturnCodes;
 import picocli.CommandLine;
 
 @CommandLine.Command(name = "${prospero.dist.name}", resourceBundle = "UsageMessages",
         versionProvider = MainCommand.VersionProvider.class)
-public class MainCommand implements Callable<Integer> {
+public class MainCommand extends AbstractParentCommand {
 
     @CommandLine.Spec
     protected CommandLine.Model.CommandSpec spec;
-
-    private final CliConsole console;
-
-    @SuppressWarnings("unused")
-    @CommandLine.Option(names = {CliConstants.H, CliConstants.HELP}, usageHelp = true)
-    boolean help;
 
     @SuppressWarnings("unused")
     @CommandLine.Option(names = {CliConstants.V, CliConstants.VERSION}, versionHelp = true)
     boolean version;
 
-    @CommandLine.Option(names = {CliConstants.VV, CliConstants.VERBOSE})
-    boolean verbose;
+    public MainCommand(CliConsole console, ActionFactory actionFactory) {
 
-    public MainCommand(CliConsole console) {
-        this.console = console;
+        super(console, actionFactory, "prospero",
+                List.of(
+                        new InstallCommand(console, actionFactory),
+                        new UpdateCommand(console, actionFactory),
+                        new PrintLicensesCommand(console, actionFactory),
+                        new HistoryCommand(console, actionFactory),
+                        new RevertCommand(console, actionFactory),
+                        new ChannelCommand(console, actionFactory),
+                        new CompletionCommand(console, actionFactory),
+                        new CloneCommand(console, actionFactory),
+                        new FeaturesCommand(console, actionFactory)
+                )
+        );
     }
 
     @Override
@@ -65,7 +70,7 @@ public class MainCommand implements Callable<Integer> {
     static class VersionProvider implements CommandLine.IVersionProvider {
         @Override
         public String[] getVersion() throws Exception {
-            return new String[] {VersionLogger.getVersion()};
+            return new String[] {DistributionInfo.getVersion()};
         }
     }
 }

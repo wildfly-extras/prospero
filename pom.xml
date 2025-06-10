@@ -23,6 +23,7 @@
 
     <properties>
         <prospero.dist.name>prospero</prospero.dist.name>
+        <prospero.dist.stability>community</prospero.dist.stability>
         <prospero.target.server>Wildfly</prospero.target.server>
         <prospero.base.feature-pack.groupId>org.wildfly</prospero.base.feature-pack.groupId>
         <prospero.base.feature-pack.artifactId>wildfly-ee-galleon-pack</prospero.base.feature-pack.artifactId>

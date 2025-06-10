@@ -17,13 +17,6 @@
 
 package org.wildfly.prospero;
 
-import java.net.URL;
-import java.util.Enumeration;
-import java.util.jar.Manifest;
-
-import org.apache.commons.lang3.StringUtils;
-import org.wildfly.prospero.actions.ProvisioningAction;
-
 /**
  * Utility class to log a version of prospero
  */
@@ -40,26 +33,13 @@ public class VersionLogger {
                 if (!logged) {
                     logged = true;
                     try {
-                        ProsperoLogger.ROOT_LOGGER.info("%s version: %s".formatted(DistributionInfo.DIST_NAME, getVersion()));
+                        ProsperoLogger.ROOT_LOGGER.info(
+                                "%s version: %s".formatted(DistributionInfo.DIST_NAME, DistributionInfo.getVersion()));
                     } catch (Exception e) {
                         ProsperoLogger.ROOT_LOGGER.warn("Unable to read the prospero version", e);
                     }
                 }
             }
         }
-    }
-
-    public static String getVersion() throws Exception {
-        Enumeration<URL> resources = ProvisioningAction.class.getClassLoader().getResources("META-INF/MANIFEST.MF");
-        while (resources.hasMoreElements()) {
-            URL url = resources.nextElement();
-            Manifest manifest = new Manifest(url.openStream());
-            final String specTitle = manifest.getMainAttributes().getValue("Specification-Title");
-            if ("prospero-common".equals(specTitle) || "prospero-cli".equals(specTitle)) {
-                return StringUtils.join(manifest.getMainAttributes().getValue("Implementation-Version"));
-            }
-        }
-
-        return "unknown";
     }
 }

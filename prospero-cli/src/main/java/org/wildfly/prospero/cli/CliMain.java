@@ -22,23 +22,9 @@ import org.jboss.logmanager.Configurator;
 import org.jboss.logmanager.Level;
 import org.jboss.logmanager.PropertyConfigurator;
 import org.jboss.logmanager.config.LogContextConfiguration;
-import org.wildfly.prospero.DistributionInfo;
 import org.wildfly.prospero.VersionLogger;
-import org.wildfly.prospero.cli.commands.ChannelCommand;
 import org.wildfly.prospero.cli.commands.CliConstants;
-import org.wildfly.prospero.cli.commands.CloneCommand;
-import org.wildfly.prospero.cli.commands.CompletionCommand;
-import org.wildfly.prospero.cli.commands.FeaturesCommand;
-import org.wildfly.prospero.cli.commands.HistoryCommand;
-import org.wildfly.prospero.cli.commands.InstallCommand;
 import org.wildfly.prospero.cli.commands.MainCommand;
-import org.wildfly.prospero.cli.commands.PrintLicensesCommand;
-import org.wildfly.prospero.cli.commands.RevertCommand;
-import org.wildfly.prospero.cli.commands.UpdateCommand;
-import org.wildfly.prospero.cli.commands.channel.ChannelAddCommand;
-import org.wildfly.prospero.cli.commands.channel.ChannelInitializeCommand;
-import org.wildfly.prospero.cli.commands.channel.ChannelPromoteCommand;
-import org.wildfly.prospero.cli.commands.channel.ChannelRemoveCommand;
 import picocli.CommandLine;
 
 import java.util.Arrays;
@@ -78,37 +64,7 @@ public class CliMain {
     }
 
     public static CommandLine createCommandLine(CliConsole console, String[] args, ActionFactory actionFactory) {
-        CommandLine commandLine = new CommandLine(new MainCommand(console));
-        // override main command name - this cannot be done via annotation as the value needs to be loaded at runtime
-        commandLine.setCommandName(DistributionInfo.DIST_NAME);
-
-        commandLine.addSubcommand(new InstallCommand(console, actionFactory));
-        final UpdateCommand updateCommand = new UpdateCommand(console, actionFactory);
-        commandLine.addSubcommand(updateCommand);
-        updateCommand.addSubCommands(commandLine);
-        commandLine.addSubcommand(new PrintLicensesCommand(console, actionFactory));
-        commandLine.addSubcommand(new HistoryCommand(console, actionFactory));
-        final RevertCommand revertCommand = new RevertCommand(console, actionFactory);
-        commandLine.addSubcommand(revertCommand);
-        revertCommand.addSubCommands(commandLine);
-        commandLine.addSubcommand(new ChannelCommand(console, actionFactory));
-        commandLine.addSubcommand(new CompletionCommand());
-
-        CommandLine channelCmd = commandLine.getSubcommands().get(CliConstants.Commands.CHANNEL);
-        channelCmd.addSubcommand(new ChannelAddCommand(console, actionFactory));
-        channelCmd.addSubcommand(new ChannelRemoveCommand(console, actionFactory));
-        channelCmd.addSubcommand(new ChannelCommand.ChannelListCommand(console, actionFactory));
-        channelCmd.addSubcommand(new ChannelCommand.ChannelVersionCommand(console, actionFactory));
-        channelCmd.addSubcommand(new ChannelInitializeCommand(console, actionFactory));
-        channelCmd.addSubcommand(new ChannelPromoteCommand(console, actionFactory));
-
-        CloneCommand cloneCommand = new CloneCommand(console, actionFactory);
-        commandLine.addSubcommand(cloneCommand);
-        cloneCommand.addSubCommands(commandLine);
-
-        final FeaturesCommand featuresCommand = new FeaturesCommand(console, actionFactory);
-        commandLine.addSubcommand(featuresCommand);
-        featuresCommand.addSubCommands(commandLine);
+        final CommandLine commandLine = new StabilityAwareCommandBuilder().build(new MainCommand(console, actionFactory));
 
         commandLine.setUsageHelpAutoWidth(true);
         final boolean isVerbose = Arrays.stream(args).anyMatch(s -> s.equals(CliConstants.VV) || s.equals(CliConstants.VERBOSE));
