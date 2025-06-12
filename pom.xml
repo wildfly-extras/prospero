@@ -38,6 +38,7 @@
         <prospero.test.generate.server_dist.version>28.0.0.Final</prospero.test.generate.server_dist.version>
         <prospero.test.generate.server_dist.url>https://repo1.maven.org/maven2/org/wildfly/wildfly-dist/28.0.0.Final/wildfly-dist-28.0.0.Final.zip</prospero.test.generate.server_dist.url>
         <prospero.test.generate.server_core.version>20.0.1.Final</prospero.test.generate.server_core.version>
+        <prospero.test.stability-level>experimental</prospero.test.stability-level>
         <prospero.test.server.profile>wildfly</prospero.test.server.profile>
         <prospero.repo.id>central</prospero.repo.id>
         <prospero.repo.url>https://repo1.maven.org/maven2/</prospero.repo.url>
@@ -109,6 +110,12 @@
             <dependency>
                 <groupId>org.wildfly.prospero</groupId>
                 <artifactId>prospero-common</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.wildfly.prospero</groupId>
+                <artifactId>prospero-common</artifactId>
+                <classifier>tests</classifier>
                 <version>${project.version}</version>
             </dependency>
             <dependency>

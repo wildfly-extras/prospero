@@ -30,6 +30,11 @@
             <artifactId>prospero-common</artifactId>
         </dependency>
         <dependency>
+            <groupId>org.wildfly.prospero</groupId>
+            <artifactId>prospero-common</artifactId>
+            <classifier>tests</classifier>
+        </dependency>
+        <dependency>
             <groupId>org.jboss.galleon</groupId>
             <artifactId>galleon-core</artifactId>
             <scope>test</scope>

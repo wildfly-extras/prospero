@@ -142,6 +142,16 @@
                             <goal>jar</goal>
                         </goals>
                     </execution>
+                    <!-- this builds a jar with test utils that can be reused in other tests -->
+                    <!-- it's not a separate subproject, because then we'd need to put Stability stuff in yet another subproject -->
+                    <execution>
+                        <goals>
+                            <goal>test-jar</goal>
+                        </goals>
+                        <configuration>
+                            <includes>org/wildfly/utils/*.*</includes>
+                        </configuration>
+                    </execution>
                 </executions>
                 <configuration>
                     <archive>
