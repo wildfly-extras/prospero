@@ -24,10 +24,11 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.PrintWriter;
+import java.net.URISyntaxException;
+import java.net.URL;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -37,6 +38,7 @@ import java.util.concurrent.TimeUnit;
 
 import org.apache.commons.io.FileUtils;
 import org.assertj.core.api.Assertions;
+import org.jetbrains.annotations.NotNull;
 import org.testcontainers.shaded.org.apache.commons.lang3.tuple.Pair;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -49,9 +51,27 @@ import static org.assertj.core.api.Assertions.assertThat;
  */
 public class ExecutionUtils {
 
-    private static final Path PROSPERO_SCRIPT_PATH = isWindows()?
-            Paths.get("..", "prospero.bat"):
-            Paths.get("..", "prospero");
+    private static final Path PROSPERO_SCRIPT_PATH = findProsperoDist();
+
+    @NotNull
+    private static Path findProsperoDist() {
+        try {
+            final URL resource = ExecutionUtils.class.getClassLoader().getResource("prospero-dist");
+            if (resource == null) {
+                throw new RuntimeException("Unable to discover prospero distribution.");
+            }
+
+            final Path prosperoDistBase = Path.of(resource.toURI());
+
+            if (isWindows()) {
+                return prosperoDistBase.resolve("bin\\prospero.bat");
+            } else {
+                return prosperoDistBase.resolve("bin/prospero.sh");
+            }
+        } catch (URISyntaxException e) {
+            throw new RuntimeException(e);
+        }
+    }
 
     public static Execution prosperoExecution(String... args) {
         return new Execution(args);
