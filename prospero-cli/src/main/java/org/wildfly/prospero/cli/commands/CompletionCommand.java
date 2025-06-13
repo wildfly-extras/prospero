@@ -18,6 +18,9 @@
 package org.wildfly.prospero.cli.commands;
 
 import org.wildfly.prospero.DistributionInfo;
+import org.wildfly.prospero.cli.ActionFactory;
+import org.wildfly.prospero.cli.CliConsole;
+import org.wildfly.prospero.cli.ReturnCodes;
 import picocli.AutoComplete;
 import picocli.CommandLine;
 
@@ -33,16 +36,23 @@ import picocli.CommandLine;
         name = "completion",
         mixinStandardHelpOptions = true,
         helpCommand = true)
-public class CompletionCommand implements Runnable {
+public class CompletionCommand extends AbstractCommand {
 
     @CommandLine.Spec
     CommandLine.Model.CommandSpec spec;
 
-    public void run() {
+    public CompletionCommand(CliConsole console, ActionFactory actionFactory) {
+        super(console, actionFactory);
+    }
+
+    @Override
+    public Integer call() {
         String script = AutoComplete.bash(DistributionInfo.DIST_NAME, spec.root().commandLine());
         // not PrintWriter.println: scripts with Windows line separators fail in strange ways!
         spec.commandLine().getOut().print(script);
         spec.commandLine().getOut().print('\n');
         spec.commandLine().getOut().flush();
+
+        return ReturnCodes.SUCCESS;
     }
 }
