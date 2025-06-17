@@ -205,13 +205,19 @@ public class RepositoryDefinitionTest {
                     RepositoryDefinition.parseRepositoryLocation("file://../prospero-cli", true); // This is interpreted as local absolute path "/../path".                });
                 });
 
-        // On Linux following is interpreted as relative path, on Windows it's an absolute path
+        // On Linux following is interpreted as relative path, on Windows the beginning is interpreted as a drive name
         if (SystemUtils.IS_OS_WINDOWS) {
-            assertThat(RepositoryDefinition.parseRepositoryLocation("a:foo/bar", false)) // interpreted as local relative path
-                    .isEqualTo("file:/A:/foo/bar");
+            // Windows is being difficult...
+            // the path needs to be located on a dist that actually exists and can be resolved
+            // and will be relative to a current working directory on this disk.
+            // so first we try to get the drive letter from current path's root
+            final String driveName = Path.of(".").toAbsolutePath().getRoot().toString().split(":")[0];
+            // then build the evaluated path based on it. note the expected value is a sub-dir of current working dir!
+            assertThat(RepositoryDefinition.parseRepositoryLocation(driveName + ":foo/bar", false)) // interpreted as local relative path
+                    .isEqualTo("file:" + cwdPath + "foo/bar");
             assertThatExceptionOfType(ArgumentParsingException.class)
                     .isThrownBy(() -> {
-                        RepositoryDefinition.parseRepositoryLocation("a:foo/bar", true); // This is interpreted as local absolute path "/../path".                });
+                        RepositoryDefinition.parseRepositoryLocation(driveName + ":foo/bar", true); // This is interpreted as local absolute path "/../path".                });
                     });
         } else {
             assertThat(RepositoryDefinition.parseRepositoryLocation("a:foo/bar", false)) // interpreted as local relative path
