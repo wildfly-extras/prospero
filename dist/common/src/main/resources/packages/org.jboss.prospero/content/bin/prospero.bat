@@ -255,6 +255,6 @@ if %errorlevel% equ 10 (
 if "x%NOPAUSE%" == "x" pause
 
 :END_NO_PAUSE
-set EXIT_LEVEL="%errorlevel%"
+set "EXIT_LEVEL=%errorlevel%"
 if exist "%TMP_JBOSS_MODULES%" del /Q "%TMP_JBOSS_MODULES%"
 exit /b %EXIT_LEVEL%
