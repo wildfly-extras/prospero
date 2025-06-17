@@ -1,0 +1,2 @@
+JBoss-Product-Stability: ${prospero.test.stability-level}
+JBoss-Product-Minimal-Stability: ${prospero.test.stability-level}

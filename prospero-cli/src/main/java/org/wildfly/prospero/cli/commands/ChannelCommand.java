@@ -31,17 +31,28 @@ import org.wildfly.prospero.cli.ActionFactory;
 import org.wildfly.prospero.cli.CliConsole;
 import org.wildfly.prospero.cli.CliMessages;
 import org.wildfly.prospero.cli.ReturnCodes;
+import org.wildfly.prospero.cli.commands.channel.ChannelAddCommand;
+import org.wildfly.prospero.cli.commands.channel.ChannelInitializeCommand;
+import org.wildfly.prospero.cli.commands.channel.ChannelPromoteCommand;
+import org.wildfly.prospero.cli.commands.channel.ChannelRemoveCommand;
 import org.wildfly.prospero.metadata.ManifestVersionRecord;
 import picocli.CommandLine;
 
 @CommandLine.Command(name = CliConstants.Commands.CHANNEL)
-public class ChannelCommand extends AbstractCommand {
+public class ChannelCommand extends AbstractParentCommand {
 
     @CommandLine.Spec
     protected CommandLine.Model.CommandSpec spec;
 
     public ChannelCommand(CliConsole console, ActionFactory actionFactory) {
-        super(console, actionFactory);
+        super(console, actionFactory, CliConstants.Commands.CHANNEL, List.of(
+                new ChannelAddCommand(console, actionFactory),
+                new ChannelRemoveCommand(console, actionFactory),
+                new ChannelCommand.ChannelListCommand(console, actionFactory),
+                new ChannelCommand.ChannelVersionCommand(console, actionFactory),
+                new ChannelInitializeCommand(console, actionFactory),
+                new ChannelPromoteCommand(console, actionFactory)
+        ));
     }
 
     @Override
