@@ -81,14 +81,19 @@ public class GitStorageTest {
     private Path revertPath;
 
     private final ChannelManifest manifest = new ChannelManifest("test", "test-id", "", new ArrayList<>());
+    private GitStorage gitStorage;
 
     @Before
     public void setUp() throws Exception {
         base = folder.newFolder().toPath().resolve(ProsperoMetadataUtils.METADATA_DIR);
+        gitStorage = new GitStorage(base.getParent());
     }
 
     @After
     public void tearDown() throws Exception {
+        if (gitStorage != null) {
+            gitStorage.close();
+        }
         if (revertPath != null) {
             FileUtils.deleteQuietly(revertPath.toFile());
         }
@@ -96,7 +101,7 @@ public class GitStorageTest {
 
     @Test
     public void testChangedArtifactVersion() throws Exception {
-        final GitStorage gitStorage = new GitStorage(base.getParent());
+        final GitStorage gitStorage = this.gitStorage;
 
         setArtifact(manifest, "org.test:test:1.2.3");
         gitStorage.record();
@@ -115,8 +120,6 @@ public class GitStorageTest {
 
     @Test
     public void testRemovedArtifact() throws Exception {
-        final GitStorage gitStorage = new GitStorage(base.getParent());
-
         setArtifact(manifest, "org.test:test:1.2.3");
         gitStorage.record();
 
@@ -135,8 +138,6 @@ public class GitStorageTest {
 
     @Test
     public void testAddedArtifact() throws Exception {
-        final GitStorage gitStorage = new GitStorage(base.getParent());
-
         ProsperoMetadataUtils.writeManifest(base.resolve(ProsperoMetadataUtils.MANIFEST_FILE_NAME), manifest);
         gitStorage.record();
 
@@ -154,7 +155,6 @@ public class GitStorageTest {
 
     @Test
     public void initialRecordStoresConfigState() throws Exception {
-        final GitStorage gitStorage = new GitStorage(base.getParent());
         ProsperoMetadataUtils.writeManifest(base.resolve(ProsperoMetadataUtils.MANIFEST_FILE_NAME), manifest);
         generateProsperoConfig(List.of(new Channel("", "", null, null, null, null, null)));
 
@@ -172,7 +172,6 @@ public class GitStorageTest {
 
     @Test
     public void testChangedChannel() throws Exception {
-        final GitStorage gitStorage = new GitStorage(base.getParent());
         ProsperoMetadataUtils.writeManifest(base.resolve(ProsperoMetadataUtils.MANIFEST_FILE_NAME), manifest);
         generateProsperoConfig(List.of(new Channel("channel-1", "old", null,
                 List.of(new Repository("test", "http://test.te")),
@@ -196,7 +195,6 @@ public class GitStorageTest {
 
     @Test
     public void testAddedChannel() throws Exception {
-        final GitStorage gitStorage = new GitStorage(base.getParent());
         ProsperoMetadataUtils.writeManifest(base.resolve(ProsperoMetadataUtils.MANIFEST_FILE_NAME), manifest);
         final Channel channel1 = new Channel("channel-1", "old", null,
                 List.of(new Repository("test", "http://test.te")),
@@ -223,7 +221,6 @@ public class GitStorageTest {
 
     @Test
     public void testRemovedChannel() throws Exception {
-        final GitStorage gitStorage = new GitStorage(base.getParent());
         ProsperoMetadataUtils.writeManifest(base.resolve(ProsperoMetadataUtils.MANIFEST_FILE_NAME), manifest);
         final Channel channel1 = new Channel("channel-1", "old", null,
                 List.of(new Repository("test", "http://test.te")),
@@ -250,7 +247,6 @@ public class GitStorageTest {
 
     @Test
     public void testNoChangedChannels() throws Exception {
-        final GitStorage gitStorage = new GitStorage(base.getParent());
         ProsperoMetadataUtils.writeManifest(base.resolve(ProsperoMetadataUtils.MANIFEST_FILE_NAME), manifest);
         final Channel channel1 = new Channel("channel-1", "old", null,
                 List.of(new Repository("test", "http://test.te")),
@@ -282,7 +278,6 @@ public class GitStorageTest {
 
     @Test
     public void initialRecordAdjustTimeForFolderCreationDate() throws Exception {
-        final GitStorage gitStorage = new GitStorage(base.getParent());
         ProsperoMetadataUtils.writeManifest(base.resolve(ProsperoMetadataUtils.MANIFEST_FILE_NAME), manifest);
         generateProsperoConfig(List.of(new Channel("", "", null, null, null, null, null)));
 
@@ -300,7 +295,6 @@ public class GitStorageTest {
 
     @Test
     public void showChangesForInitialCommit() throws Exception {
-        final GitStorage gitStorage = new GitStorage(base.getParent());
         setArtifact(manifest, "org.test:test:1.2.3");
         final Channel channel1 = new Channel("channel-1", "old", null,
                 List.of(new Repository("test", "http://test.te")),
@@ -328,7 +322,6 @@ public class GitStorageTest {
 
     @Test
     public void recordWithAdditionalInformation() throws Exception {
-        final GitStorage gitStorage = new GitStorage(base.getParent());
         setArtifact(manifest, "org.test:test:1.2.3");
         final Channel channel1 = new Channel("channel-1", "old", null,
                 List.of(new Repository("test", "http://test.te")),
@@ -349,7 +342,6 @@ public class GitStorageTest {
 
     @Test
     public void readCommitWithOnlyType() throws Exception {
-        final GitStorage gitStorage = new GitStorage(base.getParent());
         setArtifact(manifest, "org.test:test:1.2.3");
         final Channel channel1 = new Channel("channel-1", "old", null,
                 List.of(new Repository("test", "http://test.te")),
@@ -366,8 +358,6 @@ public class GitStorageTest {
     @Test
     public void testRevert() throws Exception {
         // record INSTALL and UPDATE
-        final GitStorage gitStorage = new GitStorage(base.getParent());
-
         setArtifact(manifest, "org.test:test:1.2.3");
         ManifestVersionRecord record = new ManifestVersionRecord();
         record.addManifest(new ManifestVersionRecord.MavenManifest("foo", "bar", "1.0.0"));
@@ -400,7 +390,6 @@ public class GitStorageTest {
 
     @Test
     public void includeAddedFeaturesInHistory() throws Exception {
-        final GitStorage gitStorage = new GitStorage(base.getParent());
         ProsperoMetadataUtils.writeManifest(base.resolve(ProsperoMetadataUtils.MANIFEST_FILE_NAME), manifest);
 
         generateProsperoConfig(List.of(A_CHANNEL));
@@ -429,7 +418,6 @@ public class GitStorageTest {
 
     @Test
     public void includeChangedLayersInHistory() throws Exception {
-        final GitStorage gitStorage = new GitStorage(base.getParent());
         ProsperoMetadataUtils.writeManifest(base.resolve(ProsperoMetadataUtils.MANIFEST_FILE_NAME), manifest);
 
         generateProsperoConfig(List.of(A_CHANNEL));
@@ -466,7 +454,6 @@ public class GitStorageTest {
 
     @Test
     public void dontIncludeConfigChangesIfNotModified() throws Exception {
-        final GitStorage gitStorage = new GitStorage(base.getParent());
         ProsperoMetadataUtils.writeManifest(base.resolve(ProsperoMetadataUtils.MANIFEST_FILE_NAME), manifest);
 
         generateProsperoConfig(List.of(A_CHANNEL));
@@ -500,7 +487,6 @@ public class GitStorageTest {
 
     @Test
     public void includeAddedConfigChange() throws Exception {
-        final GitStorage gitStorage = new GitStorage(base.getParent());
         ProsperoMetadataUtils.writeManifest(base.resolve(ProsperoMetadataUtils.MANIFEST_FILE_NAME), manifest);
 
         generateProsperoConfig(List.of(A_CHANNEL));
@@ -532,7 +518,6 @@ public class GitStorageTest {
 
     @Test
     public void includeRemovedConfigChange() throws Exception {
-        final GitStorage gitStorage = new GitStorage(base.getParent());
         ProsperoMetadataUtils.writeManifest(base.resolve(ProsperoMetadataUtils.MANIFEST_FILE_NAME), manifest);
 
         generateProsperoConfig(List.of(A_CHANNEL));
@@ -564,7 +549,6 @@ public class GitStorageTest {
 
     @Test
     public void includeAllProvisioningChangesInInstallStage() throws Exception {
-        final GitStorage gitStorage = new GitStorage(base.getParent());
         ProsperoMetadataUtils.writeManifest(base.resolve(ProsperoMetadataUtils.MANIFEST_FILE_NAME), manifest);
 
         generateProsperoConfig(List.of(A_CHANNEL));
@@ -591,7 +575,6 @@ public class GitStorageTest {
 
     @Test
     public void findLatestVersionOfProvisioningRecord_OnRevert() throws Exception {
-        final GitStorage gitStorage = new GitStorage(base.getParent());
         setArtifact(manifest, "org.test:test:1.2.3");
         gitStorage.record();
 
@@ -612,7 +595,6 @@ public class GitStorageTest {
 
     @Test
     public void useRecordedVersionOfProvisioningRecord_OnRevert() throws Exception {
-        final GitStorage gitStorage = new GitStorage(base.getParent());
         setArtifact(manifest, "org.test:test:1.2.3");
         gitStorage.record();
 
@@ -636,7 +618,6 @@ public class GitStorageTest {
 
     @Test
     public void storeOnlySelectedFiles() throws Exception {
-        final GitStorage gitStorage = new GitStorage(base.getParent());
         setArtifact(manifest, "org.test:test:1.2.3");
         gitStorage.record();
 
@@ -652,8 +633,6 @@ public class GitStorageTest {
 
     @Test
     public void getArtifactChangesToCurrent() throws Exception {
-        final GitStorage gitStorage = new GitStorage(base.getParent());
-
         setArtifact(manifest, "org.test:test:1.2.3");
         gitStorage.record();
 
@@ -674,7 +653,6 @@ public class GitStorageTest {
 
     @Test
     public void testChangedChannelToCurrent() throws Exception {
-        final GitStorage gitStorage = new GitStorage(base.getParent());
         ProsperoMetadataUtils.writeManifest(base.resolve(ProsperoMetadataUtils.MANIFEST_FILE_NAME), manifest);
         generateProsperoConfig(List.of(new Channel("channel-1", "old", null,
                 List.of(new Repository("test", "http://test.te")),
@@ -704,7 +682,6 @@ public class GitStorageTest {
 
     @Test
     public void includeAddedFeaturesInHistoryToCurrent() throws Exception {
-        final GitStorage gitStorage = new GitStorage(base.getParent());
         ProsperoMetadataUtils.writeManifest(base.resolve(ProsperoMetadataUtils.MANIFEST_FILE_NAME), manifest);
 
         generateProsperoConfig(List.of(A_CHANNEL));
