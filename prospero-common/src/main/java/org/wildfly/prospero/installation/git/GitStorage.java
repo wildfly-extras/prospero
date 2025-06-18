@@ -310,10 +310,11 @@ public class GitStorage implements AutoCloseable {
             try {
                 FileUtils.deleteDirectory(repo.toFile());
             } catch (IOException e) {
-                if (retryCount++ < 3) {
+                // Sometimes on Windows the file lock is not released straight away
+                if (retryCount++ < 4) {
                     ProsperoLogger.ROOT_LOGGER.tracef(e, "Unable to delete temporary config in %s, attempt nr %d/3", repo, retryCount);
                     try {
-                        Thread.sleep(100);
+                        Thread.sleep(500);
                     } catch (InterruptedException ex) {
                         throw new RuntimeException(ex);
                     }
