@@ -38,7 +38,6 @@ import java.util.concurrent.TimeUnit;
 
 import org.apache.commons.io.FileUtils;
 import org.assertj.core.api.Assertions;
-import org.jetbrains.annotations.NotNull;
 import org.testcontainers.shaded.org.apache.commons.lang3.tuple.Pair;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -53,7 +52,6 @@ public class ExecutionUtils {
 
     private static final Path PROSPERO_SCRIPT_PATH = findProsperoDist();
 
-    @NotNull
     private static Path findProsperoDist() {
         try {
             final URL resource = ExecutionUtils.class.getClassLoader().getResource("prospero-dist");

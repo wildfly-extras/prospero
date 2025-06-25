@@ -69,7 +69,7 @@ public class CreateSnapshotTest extends WfCoreTestBase {
         final Path channelsFile = MetadataTestUtils.prepareChannel(CHANNEL_BASE_CORE_19);
         final StringBuffer expected = new StringBuffer("\"")
                 .append(outputPath.resolve("bin").resolve(DistributionInfo.DIST_NAME));
-        OsShell osShell;
+        final OsShell osShell;
         if (System.getProperty("os.name").toLowerCase(Locale.getDefault()).contains("windows")) {
             expected.append(".bat");
             osShell = OsShell.WindowsBash;
