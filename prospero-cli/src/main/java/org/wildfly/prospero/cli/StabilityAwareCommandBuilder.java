@@ -9,12 +9,12 @@ import org.wildfly.prospero.Stability;
 import org.wildfly.prospero.StabilityLevel;
 import org.wildfly.prospero.cli.commands.AbstractCommand;
 import org.wildfly.prospero.cli.commands.AbstractParentCommand;
-import org.wildfly.prospero.cli.commands.MainCommand;
+
 import picocli.CommandLine;
 
 class StabilityAwareCommandBuilder {
 
-    CommandLine build(MainCommand mainCommand) {
+    CommandLine build(BuildableCommand mainCommand) {
         final CommandLine.Model.CommandSpec mainSpec = removeRestrictedArguments(CommandLine.Model.CommandSpec.forAnnotatedObject(mainCommand));
 
         final CommandLine commandLine = new CommandLine(mainSpec);

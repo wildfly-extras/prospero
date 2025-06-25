@@ -23,13 +23,14 @@ import java.util.ResourceBundle;
 
 import org.wildfly.prospero.DistributionInfo;
 import org.wildfly.prospero.cli.ActionFactory;
+import org.wildfly.prospero.cli.BuildableCommand;
 import org.wildfly.prospero.cli.CliConsole;
 import org.wildfly.prospero.cli.ReturnCodes;
 import picocli.CommandLine;
 
 @CommandLine.Command(name = "${prospero.dist.name}", resourceBundle = "UsageMessages",
         versionProvider = MainCommand.VersionProvider.class)
-public class MainCommand extends AbstractParentCommand {
+public class MainCommand extends AbstractParentCommand implements BuildableCommand {
 
     @CommandLine.Spec
     protected CommandLine.Model.CommandSpec spec;
