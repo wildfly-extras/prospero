@@ -89,10 +89,21 @@ public class CliMain {
         // we need to manually parse stability argument
         //   it can either be one or two arguments - --stability=Preview OR --stability Preview
         //   we need to handle a case where the value is not provided - e.g. --stability -vv
+
+        // First pass: check if --stability argument is present before verifying permission
+        for (String arg : args) {
+            if (arg.equals(CliConstants.STABILITY) || arg.startsWith(CliConstants.STABILITY + "=")) {
+                if (!DistributionInfo.isStabilityLevelChangeAllowed()) {
+                    throw new IllegalArgumentException("Unknown parameter " + CliConstants.STABILITY);
+                }
+                break;
+            }
+        }
+
+        // Second pass: parse the actual value
         Stability overrideStability = null;
         for (int i = 0; i < args.length; i++) {
             if (args[i].startsWith(CliConstants.STABILITY + "=")) {
-                verifyStabilityArgumentAllowed();
                 final String[] arg = args[i].split("=");
                 if (arg.length == 1) {
                     throw new IllegalArgumentException("Missing value for argument " + CliConstants.STABILITY);
@@ -100,7 +111,6 @@ public class CliMain {
                 final String value = arg[1].trim();
                 overrideStability = Stability.from(value);
             } else if (args[i].equals(CliConstants.STABILITY)) {
-                verifyStabilityArgumentAllowed();
                 if (i + 1 < args.length) {
                     overrideStability = Stability.from(args[i + 1]);
                 } else {
@@ -113,15 +123,6 @@ public class CliMain {
             ProsperoLogger.ROOT_LOGGER.debug("Switching to stability level: " + overrideStability);
         }
         return overrideStability;
-    }
-
-    private static void verifyStabilityArgumentAllowed() {
-        final Stability defaultStability = DistributionInfo.getStability();
-        if (!defaultStability.permits(Stability.Community)) {
-            throw new IllegalArgumentException(
-                "The " + CliConstants.STABILITY + " argument is not available at the current distribution stability level '" +
-                defaultStability + "'. This argument is only available on 'community' or lower stability levels.");
-        }
     }
 
     private static void enableDebugLogging() {

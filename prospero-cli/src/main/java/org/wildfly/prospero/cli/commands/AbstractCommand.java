@@ -62,9 +62,17 @@ public abstract class AbstractCommand implements Callable<Integer> {
     )
     boolean debug;
 
-    @CommandLine.Option(names = CliConstants.STABILITY)
+    @CommandLine.Option(names = CliConstants.STABILITY, converter = StabilityConverter.class )
     @StabilityLevel(level = Stability.Community)
     Stability stability;
+
+    private static class StabilityConverter implements CommandLine.ITypeConverter<Stability> {
+
+        @Override
+        public Stability convert(String value) throws Exception {
+            return Stability.from(value);
+        }
+    }
 
     public AbstractCommand(CliConsole console, ActionFactory actionFactory) {
         this.console = console;

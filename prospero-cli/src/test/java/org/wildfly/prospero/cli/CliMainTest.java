@@ -75,7 +75,7 @@ public class CliMainTest extends AbstractConsoleTest {
     public void stabilityArgumentRejectedAtDefaultLevel() {
         // Given - Mock distribution at Default stability level
         distributionInfoMock = Mockito.mockStatic(DistributionInfo.class);
-        distributionInfoMock.when(DistributionInfo::getStability).thenReturn(Stability.Default);
+        distributionInfoMock.when(DistributionInfo::isStabilityLevelChangeAllowed).thenReturn(false);
 
         // When - Try to use --stability argument
         CliConsole console = new CliConsole();
@@ -84,7 +84,7 @@ public class CliMainTest extends AbstractConsoleTest {
         } catch (IllegalArgumentException e) {
             // Then - Should be rejected
             assertTrue("Should reject --stability at Default level",
-                      e.getMessage().contains(CliConstants.STABILITY + " argument is not available at the current distribution stability level 'Default'"));
+                      e.getMessage().contains("Unknown parameter " + CliConstants.STABILITY));
             return;
         }
 
@@ -96,6 +96,7 @@ public class CliMainTest extends AbstractConsoleTest {
     public void stabilityArgumentAcceptedAtCommunityLevel() {
         // Given - Mock distribution at Community stability level
         distributionInfoMock = Mockito.mockStatic(DistributionInfo.class);
+        distributionInfoMock.when((DistributionInfo::isStabilityLevelChangeAllowed)).thenReturn(true);
         distributionInfoMock.when(DistributionInfo::getStability).thenReturn(Stability.Community);
         distributionInfoMock.when(DistributionInfo::getMinStability).thenReturn(Stability.Experimental);
 

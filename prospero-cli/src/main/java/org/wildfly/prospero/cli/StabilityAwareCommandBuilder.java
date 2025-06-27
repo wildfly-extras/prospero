@@ -7,7 +7,6 @@ import java.util.Objects;
 import java.util.Stack;
 
 import org.wildfly.prospero.DistributionInfo;
-import org.wildfly.prospero.ProsperoLogger;
 import org.wildfly.prospero.Stability;
 import org.wildfly.prospero.StabilityLevel;
 import org.wildfly.prospero.cli.commands.AbstractCommand;
@@ -16,10 +15,15 @@ import picocli.CommandLine;
 
 class StabilityAwareCommandBuilder {
 
-    private static final ProsperoLogger logger = ProsperoLogger.ROOT_LOGGER;
+
+    // Cache stability level per build operation to avoid repeated calls
+    private volatile Stability currentStability;
 
     CommandLine build(BuildableCommand mainCommand) {
         Objects.requireNonNull(mainCommand);
+
+        // Cache the stability level for this build operation (thread-safe)
+        this.currentStability = DistributionInfo.getStability();
 
         final CommandLine.Model.CommandSpec mainSpec = removeRestrictedArguments(
             CommandLine.Model.CommandSpec.forAnnotatedObject(mainCommand)
@@ -79,7 +83,7 @@ class StabilityAwareCommandBuilder {
 
         final StabilityLevel annotation = command.getClass().getAnnotation(StabilityLevel.class);
         final Stability level = annotation != null ? annotation.level() : Stability.Default;
-        return DistributionInfo.getStability().permits(level);
+        return currentStability.permits(level);
     }
 
     private CommandLine.Model.CommandSpec removeRestrictedArguments(CommandLine.Model.CommandSpec commandSpec) {
@@ -117,6 +121,6 @@ class StabilityAwareCommandBuilder {
         final Field field = (Field) option.userObject();
         final StabilityLevel annotation = field.getAnnotation(StabilityLevel.class);
         final Stability level = annotation != null ? annotation.level() : Stability.Default;
-        return DistributionInfo.getStability().permits(level);
+        return currentStability.permits(level);
     }
 }

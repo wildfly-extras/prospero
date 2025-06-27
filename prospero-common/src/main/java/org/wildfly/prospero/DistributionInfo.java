@@ -22,6 +22,7 @@ import java.net.URL;
 import java.util.Enumeration;
 import java.util.ResourceBundle;
 import java.util.jar.Manifest;
+import java.util.Objects;
 
 import org.apache.commons.lang3.StringUtils;
 import org.jboss.logging.Logger;
@@ -33,6 +34,9 @@ public class DistributionInfo {
     private static final Logger LOG = Logger.getLogger(DistributionInfo.class);
 
     public static final String DIST_NAME;
+
+    private static volatile Stability stability;
+    private static final Object STABILITY_LOCK = new Object();
 
     static {
         ResourceBundle usageMessages = ResourceBundle.getBundle("UsageMessages");
@@ -65,44 +69,54 @@ public class DistributionInfo {
     }
 
     public static Stability getStability() {
-        if (stability == null) {
-            synchronized (KEY) {
-                if (stability == null) {
-                    stability = loadStability();
+        Stability result = stability;
+        if (result == null) {
+            synchronized (STABILITY_LOCK) {
+                result = stability;
+                if (result == null) {
+                    stability = result = loadStability();
                 }
             }
         }
-        return stability;
+        return result;
     }
 
     public static Stability getMinStability() {
         return MinStabilityHolder.stability;
     }
 
-    private static volatile Stability stability;
-    private static final Object KEY = new Object();
-
     public static void setStability(Stability overrideStability) {
+        Objects.requireNonNull(overrideStability, "overrideStability cannot be null");
+
         if (!getMinStability().permits(overrideStability)) {
             throw new IllegalStateException("The requested stability level %s is not allowed by this distribution. The minimum supported stability level is %s"
                     .formatted(overrideStability, getMinStability()));
         }
 
-        if (stability == null) {
-            synchronized (KEY) {
-                if (stability == null) {
-                    final Stability defaultLevel = loadStability();
-                    if (!defaultLevel.permits(Stability.Community)) {
-                        throw new IllegalStateException("Changing stability levels is not allowed at %s stability level.".formatted(defaultLevel));
-                    }
-                    stability = overrideStability;
-                } else if (stability != overrideStability) {
-                    throw new IllegalStateException("Attempting to set the stability level after it was already set.");
+        synchronized (STABILITY_LOCK) {
+            if (stability == null) {
+                final Stability defaultLevel = loadStability();
+                if (!defaultLevel.permits(Stability.Community)) {
+                    throw new IllegalStateException("Changing stability levels is not allowed at %s stability level.".formatted(defaultLevel));
                 }
+                stability = overrideStability;
+            } else if (stability != overrideStability) {
+                throw new IllegalStateException("Attempting to set the stability level after it was already set.");
             }
-        } else if (stability != overrideStability) {
-            throw new IllegalStateException("Attempting to set the stability level after it was already set.");
+            // If stability == overrideStability, this is a no-op (thread-safe)
         }
+    }
+
+    /**
+     * checks if the current distribution allows changing stability levels.
+     *
+     * <p>The distribution allows changing stability levels if it was created at a "community" or lower level.</p>
+     *
+     * @return
+     */
+    public static boolean isStabilityLevelChangeAllowed() {
+        final Stability defaultStability = loadStability();
+        return defaultStability.permits(Stability.Community);
     }
 
     private static final class MinStabilityHolder {
