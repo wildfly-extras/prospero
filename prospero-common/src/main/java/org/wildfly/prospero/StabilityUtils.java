@@ -4,7 +4,7 @@ public class StabilityUtils {
     public static void ensureAllowed(Stability minLevel, String className, String methodName) {
         final Stability currentStability = DistributionInfo.getStability();
         if (!currentStability.permits(minLevel)) {
-            throw new IllegalAccessError("The operation %s.%s is not allowed at a current stability level %s.".formatted(
+            throw new UnsupportedOperationException("The operation %s.%s is not supported at the current stability level %s.".formatted(
                     className, methodName, currentStability));
         }
     }
