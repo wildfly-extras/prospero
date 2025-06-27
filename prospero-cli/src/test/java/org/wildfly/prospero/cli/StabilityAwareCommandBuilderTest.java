@@ -14,6 +14,7 @@ import org.wildfly.prospero.StabilityLevel;
 
 import org.wildfly.prospero.cli.commands.AbstractCommand;
 import org.wildfly.prospero.cli.commands.AbstractParentCommand;
+import org.wildfly.prospero.cli.commands.CliConstants;
 import org.wildfly.prospero.cli.commands.MainCommand;
 import picocli.CommandLine;
 
@@ -243,6 +244,40 @@ public class StabilityAwareCommandBuilderTest {
 
         // But verify other commands that should be included are still there, ye scallywag!
         assertTrue("Regular default command should still be included", subcommands.containsKey("default-cmd"));
+    }
+
+    @Test
+    public void testStabilityOptionFilteringWithDefaultStability() {
+        // Given - Distribution at Default stability level
+        distributionInfoMock.when(DistributionInfo::getStability).thenReturn(Stability.Default);
+        MainCommand mainCommand = new MainCommand(console, actionFactory);
+
+        // When
+        CommandLine commandLine = builder.build(mainCommand);
+
+        // Then - The --stability option should be filtered out
+        List<String> optionNames = getOptionNames(commandLine.getCommandSpec());
+        assertFalse("--stability option should be excluded at Default stability level",
+                   optionNames.contains(CliConstants.STABILITY));
+
+        // But other options should still be present
+        assertTrue("--help option should be included", optionNames.contains("--help"));
+        assertTrue("--verbose option should be included", optionNames.contains("--verbose"));
+    }
+
+    @Test
+    public void testStabilityOptionFilteringWithCommunityStability() {
+        // Given - Distribution at Community stability level
+        distributionInfoMock.when(DistributionInfo::getStability).thenReturn(Stability.Community);
+        MainCommand mainCommand = new MainCommand(console, actionFactory);
+
+        // When
+        CommandLine commandLine = builder.build(mainCommand);
+
+        // Then - The --stability option should be included
+        List<String> optionNames = getOptionNames(commandLine.getCommandSpec());
+        assertTrue("--stability option should be included at Community stability level",
+                  optionNames.contains(CliConstants.STABILITY));
     }
 
     // Helper methods

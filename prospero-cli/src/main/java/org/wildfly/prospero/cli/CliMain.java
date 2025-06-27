@@ -91,18 +91,20 @@ public class CliMain {
         //   we need to handle a case where the value is not provided - e.g. --stability -vv
         Stability overrideStability = null;
         for (int i = 0; i < args.length; i++) {
-            if (args[i].startsWith("--stability=")) {
+            if (args[i].startsWith(CliConstants.STABILITY + "=")) {
+                verifyStabilityArgumentAllowed();
                 final String[] arg = args[i].split("=");
                 if (arg.length == 1) {
-                    throw new IllegalArgumentException("Missing value for argument --stability");
+                    throw new IllegalArgumentException("Missing value for argument " + CliConstants.STABILITY);
                 }
                 final String value = arg[1].trim();
                 overrideStability = Stability.from(value);
-            } else if (args[i].equals("--stability")) {
-                if (args.length -1  <= i+1) {
+            } else if (args[i].equals(CliConstants.STABILITY)) {
+                verifyStabilityArgumentAllowed();
+                if (i + 1 < args.length) {
                     overrideStability = Stability.from(args[i + 1]);
                 } else {
-                    throw new IllegalArgumentException("Missing value for argument --stability");
+                    throw new IllegalArgumentException("Missing value for argument " + CliConstants.STABILITY);
                 }
             }
         }
@@ -111,6 +113,15 @@ public class CliMain {
             ProsperoLogger.ROOT_LOGGER.debug("Switching to stability level: " + overrideStability);
         }
         return overrideStability;
+    }
+
+    private static void verifyStabilityArgumentAllowed() {
+        final Stability defaultStability = DistributionInfo.getStability();
+        if (!defaultStability.permits(Stability.Community)) {
+            throw new IllegalArgumentException(
+                "The " + CliConstants.STABILITY + " argument is not available at the current distribution stability level '" +
+                defaultStability + "'. This argument is only available on 'community' or lower stability levels.");
+        }
     }
 
     private static void enableDebugLogging() {

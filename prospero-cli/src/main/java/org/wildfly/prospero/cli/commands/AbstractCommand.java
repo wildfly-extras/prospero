@@ -62,7 +62,7 @@ public abstract class AbstractCommand implements Callable<Integer> {
     )
     boolean debug;
 
-    @CommandLine.Option(names = "--stability")
+    @CommandLine.Option(names = CliConstants.STABILITY)
     @StabilityLevel(level = Stability.Community)
     Stability stability;
 
