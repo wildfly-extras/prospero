@@ -5,8 +5,8 @@ import org.junit.runners.model.FrameworkMethod;
 import org.junit.runners.model.InitializationError;
 import org.junit.runners.model.TestClass;
 import org.wildfly.prospero.DistributionInfo;
-import org.wildfly.prospero.Stability;
-import org.wildfly.prospero.StabilityLevel;
+import org.wildfly.prospero.stability.Stability;
+import org.wildfly.prospero.stability.StabilityLevel;
 
 /**
  * Ignores tests that have stability level lower than allowed by the project

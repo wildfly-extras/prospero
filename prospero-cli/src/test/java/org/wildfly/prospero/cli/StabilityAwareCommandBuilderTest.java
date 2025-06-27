@@ -9,8 +9,8 @@ import org.mockito.MockedStatic;
 import org.mockito.Mockito;
 import org.mockito.junit.MockitoJUnitRunner;
 import org.wildfly.prospero.DistributionInfo;
-import org.wildfly.prospero.Stability;
-import org.wildfly.prospero.StabilityLevel;
+import org.wildfly.prospero.stability.Stability;
+import org.wildfly.prospero.stability.StabilityLevel;
 
 import org.wildfly.prospero.cli.commands.AbstractCommand;
 import org.wildfly.prospero.cli.commands.AbstractParentCommand;

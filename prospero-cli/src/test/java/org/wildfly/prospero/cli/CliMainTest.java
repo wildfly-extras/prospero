@@ -24,7 +24,7 @@ import org.mockito.MockedStatic;
 import org.mockito.Mockito;
 import org.mockito.junit.MockitoJUnitRunner;
 import org.wildfly.prospero.DistributionInfo;
-import org.wildfly.prospero.Stability;
+import org.wildfly.prospero.stability.Stability;
 import org.wildfly.prospero.cli.commands.CliConstants;
 
 import static org.junit.Assert.assertEquals;

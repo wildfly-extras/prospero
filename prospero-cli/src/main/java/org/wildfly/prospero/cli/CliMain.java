@@ -24,7 +24,7 @@ import org.jboss.logmanager.PropertyConfigurator;
 import org.jboss.logmanager.config.LogContextConfiguration;
 import org.wildfly.prospero.DistributionInfo;
 import org.wildfly.prospero.ProsperoLogger;
-import org.wildfly.prospero.Stability;
+import org.wildfly.prospero.stability.Stability;
 import org.wildfly.prospero.VersionLogger;
 import org.wildfly.prospero.cli.commands.CliConstants;
 import org.wildfly.prospero.cli.commands.MainCommand;

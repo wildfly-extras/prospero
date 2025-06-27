@@ -26,6 +26,7 @@ import java.util.Objects;
 
 import org.apache.commons.lang3.StringUtils;
 import org.jboss.logging.Logger;
+import org.wildfly.prospero.stability.Stability;
 
 public class DistributionInfo {
 
@@ -68,6 +69,27 @@ public class DistributionInfo {
         return "unknown";
     }
 
+    /**
+     * Returns the current stability level of the distribution.
+     * <p>
+     * This method returns the effective stability level, which may be either:
+     * </p>
+     * <ul>
+     * <li>The default stability level loaded from the distribution manifest</li>
+     * <li>An override stability level set via {@link #setStability(Stability)}</li>
+     * </ul>
+     *
+     * <p>
+     * The stability level is loaded lazily on first access and cached for subsequent calls.
+     * This method is thread-safe and uses double-checked locking for optimal performance.
+     * </p>
+     *
+     * @return the current stability level, never {@code null}
+     * @throws RuntimeException if the distribution info cannot be read
+     *
+     * @see #setStability(Stability)
+     * @see #getMinStability()
+     */
     public static Stability getStability() {
         Stability result = stability;
         if (result == null) {
@@ -81,10 +103,59 @@ public class DistributionInfo {
         return result;
     }
 
+    /**
+     * Returns the minimum stability level supported by this distribution.
+     * <p>
+     * The minimum stability level defines the lowest stability level that this distribution
+     * supports. Attempts to set the stability to a level lower than this minimum will fail.
+     * This value is loaded from the distribution manifest and cannot be changed at runtime.
+     * </p>
+     *
+     * @return the minimum supported stability level, never {@code null}
+     * @throws RuntimeException if the distribution info cannot be read
+     *
+     * @see #setStability(Stability)
+     */
     public static Stability getMinStability() {
         return MinStabilityHolder.stability;
     }
 
+    /**
+     * Sets an override stability level for the distribution.
+     * <p>
+     * This method allows overriding the default stability level loaded from the distribution
+     * manifest. The override is subject to several restrictions:
+     * </p>
+     *
+     * <h4>Restrictions</h4>
+     * <ul>
+     * <li>The override level must be supported by the distribution (checked against minimum stability)</li>
+     * <li>The default distribution level must permit Community-level features (i.e., not be Default-only)</li>
+     * <li>The stability can only be set once - subsequent calls with different values will fail</li>
+     * <li>Subsequent calls with the same value are ignored (no-op)</li>
+     * </ul>
+     *
+     * <h4>Thread Safety</h4>
+     * <p>
+     * This method is thread-safe. Concurrent calls will be properly synchronized, and only
+     * the first successful call will set the stability level.
+     * </p>
+     *
+     * <h4>Usage</h4>
+     * <p>
+     * This method is typically called during CLI initialization when the user specifies
+     * a {@code --stability} argument, or by the API when creating installation managers
+     * with specific stability requirements.
+     * </p>
+     *
+     * @param overrideStability the stability level to set
+     * @throws NullPointerException if overrideStability is null
+     * @throws IllegalStateException if the override is not allowed by the distribution,
+     *         or if a different stability level has already been set
+     *
+     * @see #getStability()
+     * @see #getMinStability()
+     */
     public static void setStability(Stability overrideStability) {
         Objects.requireNonNull(overrideStability, "overrideStability cannot be null");
 
