@@ -25,9 +25,9 @@ import org.wildfly.installationmanager.spi.InstallationManager;
 import org.wildfly.installationmanager.spi.InstallationManagerFactory;
 import org.wildfly.prospero.DistributionInfo;
 import org.wildfly.prospero.ProsperoLogger;
-import org.wildfly.prospero.stability.Stability;
 import org.wildfly.prospero.VersionLogger;
 import org.wildfly.prospero.metadata.ProsperoMetadataUtils;
+import org.wildfly.prospero.stability.Stability;
 import org.wildfly.prospero.stability.StabilityAwareInvocationHandler;
 
 import java.lang.reflect.Proxy;
@@ -47,9 +47,9 @@ public class ProsperoInstallationManagerFactory implements InstallationManagerFa
             Path.of(ProsperoMetadataUtils.METADATA_DIR, ProsperoMetadataUtils.MANIFEST_FILE_NAME)
     );
 
-    // TODO: use stability from the API
-    public InstallationManager create(Path installationDir, MavenOptions mavenOptions, Stability stability) throws Exception {
-        DistributionInfo.setStability(stability);
+    @Override
+    public InstallationManager create(Path installationDir, MavenOptions mavenOptions, org.wildfly.installationmanager.spi.Stability stability) throws Exception {
+        DistributionInfo.setStability(map(stability));
 
         return create(installationDir, mavenOptions);
     }
@@ -65,6 +65,15 @@ public class ProsperoInstallationManagerFactory implements InstallationManagerFa
     @Override
     public String getName() {
         return "prospero";
+    }
+
+    private Stability map(org.wildfly.installationmanager.spi.Stability apiStability) {
+        return switch (apiStability) {
+            case Experimental -> Stability.Experimental;
+            case Preview -> Stability.Preview;
+            case Community -> Stability.Community;
+            case Default -> Stability.Default;
+        };
     }
 
     private void verifyInstallationDirectory(Path path) {
