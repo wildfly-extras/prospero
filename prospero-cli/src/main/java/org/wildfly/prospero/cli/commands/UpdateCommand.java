@@ -543,22 +543,44 @@ public class UpdateCommand extends AbstractParentCommand {
 
         protected boolean buildUpdate(UpdateAction updateAction, Path updateDirectory,
                                            Supplier<Boolean> confirmation) throws OperationException, ProvisioningException {
+            // Log version overrides being applied
+            if (!versions.isEmpty()) {
+                log.infof("Applying version overrides: %s", versions);
+                console.println(CliMessages.MESSAGES.applyingVersionOverrides(versions.size()));
+            }
+
             final UpdateSet updateSet = updateAction.findUpdates();
 
             final List<ChannelVersionChange> channelChanges = updateSet.getChannelVersionChanges();
+            log.debugf("Found %d channel version changes", channelChanges.size());
+
             final List<ChannelVersionChange> downgrades = channelChanges.stream().filter(ChannelVersionChange::isDowngrade).toList();
             if (!downgrades.isEmpty()) {
+                log.warnf("Detected %d potential downgrade(s)", downgrades.size());
+                for (ChannelVersionChange downgrade : downgrades) {
+                    log.warnf("Downgrade detected: %s: %s -> %s",
+                        downgrade.channelName(),
+                        downgrade.oldVersion().getPhysicalVersion(),
+                        downgrade.newVersion().getPhysicalVersion());
+                }
+
                 // check that each flagged downgrade is listed specifically in the versions
                 final ChannelVersionChangesPrinter printer = new ChannelVersionChangesPrinter(console);
                 printer.printDowngrades(downgrades);
 
                 if (hasUnexpectedDowngrade(downgrades)) {
+                    log.errorf("Found unexpected downgrade(s) - user must explicitly specify version overrides");
                     printer.printUnexpectedDowngradesError(downgrades, spec);
                     return false;
+                } else {
+                    log.infof("All downgrades are explicitly requested via version overrides");
                 }
+
                 if (!yes && !console.confirm(CliMessages.MESSAGES.continueWithUpdate(), "", CliMessages.MESSAGES.updateCancelled())) {
+                    log.infof("Update cancelled by user due to downgrades");
                     return false;
                 }
+                log.infof("User confirmed downgrade operation");
             }
 
             console.updatesFound(updateSet.getArtifactUpdates());

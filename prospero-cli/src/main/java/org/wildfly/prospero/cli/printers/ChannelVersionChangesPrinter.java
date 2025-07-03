@@ -5,6 +5,7 @@ import java.util.List;
 import java.util.Set;
 
 import org.wildfly.prospero.DistributionInfo;
+import org.wildfly.prospero.ProsperoLogger;
 import org.wildfly.prospero.api.ChannelVersion;
 import org.wildfly.prospero.api.ChannelVersionChange;
 import org.wildfly.prospero.api.Console;
@@ -14,6 +15,8 @@ import org.wildfly.prospero.updates.ChannelsUpdateResult;
 import picocli.CommandLine;
 
 public class ChannelVersionChangesPrinter {
+
+    private static final ProsperoLogger logger = ProsperoLogger.ROOT_LOGGER;
 
     private final Console console;
     private static final String INDENT = "  ";
@@ -25,9 +28,15 @@ public class ChannelVersionChangesPrinter {
     }
 
     public void printDowngrades(Collection<ChannelVersionChange> downgrades) {
+        logger.infof("Displaying %d downgrade(s) to user", downgrades.size());
         console.println(CliMessages.MESSAGES.channelDowngradeWarningHeader());
         final StringBuilder sb = new StringBuilder();
         for (ChannelVersionChange downgrade : downgrades) {
+            logger.debugf("Preparing downgrade display: %s: %s -> %s",
+                downgrade.channelName(),
+                downgrade.oldVersion().getPhysicalVersion(),
+                downgrade.newVersion().getPhysicalVersion());
+
             sb.append(INDENT).append(ITEM_ELEM).append(downgrade.channelName()).append(": ");
             sb.append(downgrade.oldVersion().getPhysicalVersion());
             if (downgrade.oldVersion().getLogicalVersion() != null) {
@@ -36,16 +45,21 @@ public class ChannelVersionChangesPrinter {
 
             sb.append("  ->  ").append(downgrade.newVersion().getPhysicalVersion());
             if (downgrade.newVersion().getLogicalVersion() != null) {
-                sb.append(" (").append(downgrade.oldVersion().getLogicalVersion()).append(")");
+                sb.append(" (").append(downgrade.newVersion().getLogicalVersion()).append(")");
             }
             sb.append(System.lineSeparator());
         }
         console.println(sb.toString());
+        logger.infof("Downgrade warning displayed to user");
     }
 
     public void printUnexpectedDowngradesError(Collection<ChannelVersionChange> downgrades, CommandLine.Model.CommandSpec spec) {
+        logger.errorf("Displaying unexpected downgrade error to user for %d channel(s)", downgrades.size());
         final StringBuilder versionArg = new StringBuilder();
         for (ChannelVersionChange downgrade : downgrades) {
+            logger.debugf("Building version arg for unexpected downgrade: %s::%s",
+                downgrade.channelName(),
+                downgrade.newVersion().getPhysicalVersion());
             versionArg.append("--version=")
                     .append(downgrade.channelName())
                     .append("::")

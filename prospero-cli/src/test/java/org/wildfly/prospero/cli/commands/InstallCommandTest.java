@@ -483,7 +483,7 @@ public class InstallCommandTest extends AbstractMavenCommandTest {
 
         assertEquals(ReturnCodes.INVALID_ARGUMENTS, exitCode);
         assertThat(getErrorOutput())
-                .contains(CliMessages.MESSAGES.invalidVersionOverrideString("1.1.1").getMessage());
+                .contains(CliMessages.MESSAGES.invalidVersionOverrideMissingDelimiter("1.1.1").getMessage());
     }
 
     @Test
@@ -509,6 +509,86 @@ public class InstallCommandTest extends AbstractMavenCommandTest {
         assertEquals(ReturnCodes.INVALID_ARGUMENTS, exitCode);
         assertThat(getErrorOutput())
                 .contains(CliMessages.MESSAGES.channelNotFoundException("idontexist").getMessage());
+    }
+
+    @Test
+    public void versionArgumentWithMissingDelimiterIsInvalid() throws Exception {
+        int exitCode = commandLine.execute(CliConstants.Commands.INSTALL, CliConstants.DIR, "test",
+                CliConstants.PROFILE, "known-fpl",
+                CliConstants.VERSION, "channel1.0.0");
+
+        assertEquals(ReturnCodes.INVALID_ARGUMENTS, exitCode);
+        assertThat(getErrorOutput())
+                .contains(CliMessages.MESSAGES.invalidVersionOverrideMissingDelimiter("channel1.0.0").getMessage());
+    }
+
+    @Test
+    public void versionArgumentWithTooManyDelimitersIsInvalid() throws Exception {
+        int exitCode = commandLine.execute(CliConstants.Commands.INSTALL, CliConstants.DIR, "test",
+                CliConstants.PROFILE, "known-fpl",
+                CliConstants.VERSION, "wildfly-core::1.0.0::extra");
+
+        assertEquals(ReturnCodes.INVALID_ARGUMENTS, exitCode);
+        assertThat(getErrorOutput())
+                .contains(CliMessages.MESSAGES.invalidVersionOverrideTooManyDelimiters("wildfly-core::1.0.0::extra").getMessage());
+    }
+
+    @Test
+    public void versionArgumentWithEmptyChannelNameIsInvalid() throws Exception {
+        int exitCode = commandLine.execute(CliConstants.Commands.INSTALL, CliConstants.DIR, "test",
+                CliConstants.PROFILE, "known-fpl",
+                CliConstants.VERSION, "::1.0.0");
+
+        assertEquals(ReturnCodes.INVALID_ARGUMENTS, exitCode);
+        assertThat(getErrorOutput())
+                .contains(CliMessages.MESSAGES.invalidVersionOverrideEmptyChannel("::1.0.0").getMessage());
+    }
+
+    @Test
+    public void versionArgumentWithEmptyVersionIsInvalid() throws Exception {
+        int exitCode = commandLine.execute(CliConstants.Commands.INSTALL, CliConstants.DIR, "test",
+                CliConstants.PROFILE, "known-fpl",
+                CliConstants.VERSION, "wildfly-core::");
+
+        assertEquals(ReturnCodes.INVALID_ARGUMENTS, exitCode);
+        assertThat(getErrorOutput())
+                .contains(CliMessages.MESSAGES.invalidVersionOverrideEmptyVersion("wildfly-core::").getMessage());
+    }
+
+    @Test
+    public void versionArgumentWithWhitespaceOnlyChannelNameIsInvalid() throws Exception {
+        int exitCode = commandLine.execute(CliConstants.Commands.INSTALL, CliConstants.DIR, "test",
+                CliConstants.PROFILE, "known-fpl",
+                CliConstants.VERSION, "   ::1.0.0");
+
+        assertEquals(ReturnCodes.INVALID_ARGUMENTS, exitCode);
+        assertThat(getErrorOutput())
+                .contains(CliMessages.MESSAGES.invalidVersionOverrideEmptyChannel("   ::1.0.0").getMessage());
+    }
+
+    @Test
+    public void versionArgumentWithWhitespaceOnlyVersionIsInvalid() throws Exception {
+        int exitCode = commandLine.execute(CliConstants.Commands.INSTALL, CliConstants.DIR, "test",
+                CliConstants.PROFILE, "known-fpl",
+                CliConstants.VERSION, "wildfly-core::   ");
+
+        assertEquals(ReturnCodes.INVALID_ARGUMENTS, exitCode);
+        assertThat(getErrorOutput())
+                .contains(CliMessages.MESSAGES.invalidVersionOverrideEmptyVersion("wildfly-core::   ").getMessage());
+    }
+
+    @Test
+    public void versionArgumentTrimsWhitespaceAroundValidValues() throws Exception {
+        int exitCode = commandLine.execute(CliConstants.Commands.INSTALL, CliConstants.DIR, "test",
+                CliConstants.PROFILE, "known-fpl",
+                CliConstants.VERSION, "  wildfly-core  ::  1.1.1  ");
+
+        assertEquals(ReturnCodes.SUCCESS, exitCode);
+        Mockito.verify(provisionAction).provisionWithChannels(any(), any(), channelCaptor.capture());
+
+        assertThat(channelCaptor.getValue())
+                .map(c->c.getManifestCoordinate())
+                .contains(new ChannelManifestCoordinate("org.wildfly.channels", "wildfly-core", "1.1.1"));
     }
 
     @Test

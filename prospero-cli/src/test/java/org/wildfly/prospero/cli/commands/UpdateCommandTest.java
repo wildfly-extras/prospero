@@ -403,7 +403,7 @@ public class UpdateCommandTest extends AbstractMavenCommandTest {
 
         assertEquals(ReturnCodes.INVALID_ARGUMENTS, exitCode);
         assertThat(getErrorOutput())
-                .contains(CliMessages.MESSAGES.invalidVersionOverrideString("1.1.1").getMessage());
+                .contains(CliMessages.MESSAGES.invalidVersionOverrideMissingDelimiter("1.1.1").getMessage());
     }
 
     @Test
@@ -415,6 +415,89 @@ public class UpdateCommandTest extends AbstractMavenCommandTest {
         assertEquals(ReturnCodes.INVALID_ARGUMENTS, exitCode);
         assertThat(getErrorOutput())
                 .contains(CliMessages.MESSAGES.channelNotFoundException("idontexist").getMessage());
+    }
+
+    @Test
+    public void versionArgumentWithMissingDelimiterIsInvalid() throws Exception {
+        int exitCode = commandLine.execute(CliConstants.Commands.UPDATE, CliConstants.Commands.PERFORM,
+                CliConstants.DIR, installationDir.toAbsolutePath().toString(),
+                CliConstants.VERSION, "channel1.0.0");
+
+        assertEquals(ReturnCodes.INVALID_ARGUMENTS, exitCode);
+        assertThat(getErrorOutput())
+                .contains(CliMessages.MESSAGES.invalidVersionOverrideMissingDelimiter("channel1.0.0").getMessage());
+    }
+
+    @Test
+    public void versionArgumentWithTooManyDelimitersIsInvalid() throws Exception {
+        int exitCode = commandLine.execute(CliConstants.Commands.UPDATE, CliConstants.Commands.PERFORM,
+                CliConstants.DIR, installationDir.toAbsolutePath().toString(),
+                CliConstants.VERSION, "channel::1.0.0::extra");
+
+        assertEquals(ReturnCodes.INVALID_ARGUMENTS, exitCode);
+        assertThat(getErrorOutput())
+                .contains(CliMessages.MESSAGES.invalidVersionOverrideTooManyDelimiters("channel::1.0.0::extra").getMessage());
+    }
+
+    @Test
+    public void versionArgumentWithEmptyChannelNameIsInvalid() throws Exception {
+        int exitCode = commandLine.execute(CliConstants.Commands.UPDATE, CliConstants.Commands.PERFORM,
+                CliConstants.DIR, installationDir.toAbsolutePath().toString(),
+                CliConstants.VERSION, "::1.0.0");
+
+        assertEquals(ReturnCodes.INVALID_ARGUMENTS, exitCode);
+        assertThat(getErrorOutput())
+                .contains(CliMessages.MESSAGES.invalidVersionOverrideEmptyChannel("::1.0.0").getMessage());
+    }
+
+    @Test
+    public void versionArgumentWithEmptyVersionIsInvalid() throws Exception {
+        int exitCode = commandLine.execute(CliConstants.Commands.UPDATE, CliConstants.Commands.PERFORM,
+                CliConstants.DIR, installationDir.toAbsolutePath().toString(),
+                CliConstants.VERSION, "channel::");
+
+        assertEquals(ReturnCodes.INVALID_ARGUMENTS, exitCode);
+        assertThat(getErrorOutput())
+                .contains(CliMessages.MESSAGES.invalidVersionOverrideEmptyVersion("channel::").getMessage());
+    }
+
+    @Test
+    public void versionArgumentWithWhitespaceOnlyChannelNameIsInvalid() throws Exception {
+        int exitCode = commandLine.execute(CliConstants.Commands.UPDATE, CliConstants.Commands.PERFORM,
+                CliConstants.DIR, installationDir.toAbsolutePath().toString(),
+                CliConstants.VERSION, "   ::1.0.0");
+
+        assertEquals(ReturnCodes.INVALID_ARGUMENTS, exitCode);
+        assertThat(getErrorOutput())
+                .contains(CliMessages.MESSAGES.invalidVersionOverrideEmptyChannel("   ::1.0.0").getMessage());
+    }
+
+    @Test
+    public void versionArgumentWithWhitespaceOnlyVersionIsInvalid() throws Exception {
+        int exitCode = commandLine.execute(CliConstants.Commands.UPDATE, CliConstants.Commands.PERFORM,
+                CliConstants.DIR, installationDir.toAbsolutePath().toString(),
+                CliConstants.VERSION, "channel::   ");
+
+        assertEquals(ReturnCodes.INVALID_ARGUMENTS, exitCode);
+        assertThat(getErrorOutput())
+                .contains(CliMessages.MESSAGES.invalidVersionOverrideEmptyVersion("channel::   ").getMessage());
+    }
+
+    @Test
+    public void versionArgumentTrimsWhitespaceAroundValidValues() throws Exception {
+        when(updateAction.findUpdates()).thenReturn(new UpdateSet(List.of(change("1.0.0", "1.0.1"))));
+        when(updateAction.buildUpdate(any())).thenReturn(true);
+        when(applyCandidateAction.getConflicts()).thenReturn(Collections.emptyList());
+
+        int exitCode = commandLine.execute(CliConstants.Commands.UPDATE, CliConstants.Commands.PERFORM,
+                CliConstants.DIR, installationDir.toString(),
+                CliConstants.VERSION, "  test-channel  ::  1.1.1  ");
+
+        assertEquals(ReturnCodes.SUCCESS, exitCode);
+
+        assertThat(getCapturedChannels())
+                .map(Channel::getManifestCoordinate)
+                .contains(new ChannelManifestCoordinate("org.test", "test", "1.1.1"));
     }
 
     @Test
