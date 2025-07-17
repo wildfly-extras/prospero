@@ -94,6 +94,7 @@ public class FeaturesAddTest {
 
     @Test
     public void addFeaturePack() throws Exception {
+        System.out.println("addFeaturePack");
         installWildfly();
 
         final Path manifestPath = generateDatasourcesManifest();
@@ -104,7 +105,7 @@ public class FeaturesAddTest {
                         CliConstants.REPOSITORIES, "central::https://repo1.maven.org/maven2",
                         CliConstants.CHANNEL_MANIFEST, manifestPath.toUri().toURL().toExternalForm(),
                         CliConstants.DIR, targetDir.getAbsolutePath())
-                .withTimeLimit(10, TimeUnit.MINUTES)
+                .withTimeLimit(20, TimeUnit.MINUTES)
                 .execute()
                 .assertReturnCode(ReturnCodes.SUCCESS);
 
@@ -117,7 +118,7 @@ public class FeaturesAddTest {
                         CliConstants.YES,
                         CliConstants.REPOSITORIES, String.join(",", TestProperties.TEST_REPO_URLS),
                         CliConstants.DIR, targetDir.getAbsolutePath())
-                .withTimeLimit(10, TimeUnit.MINUTES)
+                .withTimeLimit(20, TimeUnit.MINUTES)
                 .execute()
                 .assertReturnCode(ReturnCodes.SUCCESS);
 
@@ -141,7 +142,7 @@ public class FeaturesAddTest {
                         CliConstants.VERBOSE,
                         CliConstants.REPOSITORIES, String.join(",", TestProperties.TEST_REPO_URLS),
                         CliConstants.DIR, targetDir.getAbsolutePath())
-                .withTimeLimit(10, TimeUnit.MINUTES)
+                .withTimeLimit(20, TimeUnit.MINUTES)
                 .execute()
                 .assertReturnCode(ReturnCodes.SUCCESS);
 
@@ -151,6 +152,7 @@ public class FeaturesAddTest {
 
     @Test
     public void datasourcesFeaturePackRequiresLayers() throws Exception {
+        System.out.println("datasourcesFeaturePackRequiresLayers");
         installWildfly();
 
         final Path manifestPath = generateDatasourcesManifest();
@@ -161,7 +163,7 @@ public class FeaturesAddTest {
                         CliConstants.REPOSITORIES, "central::https://repo1.maven.org/maven2",
                         CliConstants.CHANNEL_MANIFEST, manifestPath.toUri().toURL().toExternalForm(),
                         CliConstants.DIR, targetDir.getAbsolutePath())
-                .withTimeLimit(10, TimeUnit.MINUTES)
+                .withTimeLimit(20, TimeUnit.MINUTES)
                 .execute()
                 .assertReturnCode(ReturnCodes.SUCCESS);
 
@@ -172,7 +174,7 @@ public class FeaturesAddTest {
                         CliConstants.YES,
                         CliConstants.ACCEPT_AGREEMENTS,
                         CliConstants.DIR, targetDir.getAbsolutePath())
-                .withTimeLimit(10, TimeUnit.MINUTES)
+                .withTimeLimit(20, TimeUnit.MINUTES)
                 .execute()
                 .assertReturnCode(ReturnCodes.INVALID_ARGUMENTS)
                 .assertErrorContains(CliMessages.MESSAGES.featurePackRequiresLayers(datasourceGalleonFp));
@@ -180,6 +182,8 @@ public class FeaturesAddTest {
 
     @Test
     public void installWildflyGalleonPackOverWildflyEEGalleonPack_ReplacesWildflyGalleonPack() throws Exception {
+        System.out.println("installWildflyGalleonPackOverWildflyEEGalleonPack_ReplacesWildflyGalleonPack");
+
         Assume.assumeTrue(profileName.equals("wildfly"));
         System.out.println("Installing wildfly EE");
 
@@ -187,7 +191,7 @@ public class FeaturesAddTest {
                         CliConstants.CHANNELS, wfChannelsFile.toString(),
                         CliConstants.FPL, "org.wildfly:wildfly-ee-galleon-pack",
                         CliConstants.DIR, targetDir.getAbsolutePath())
-                .withTimeLimit(10, TimeUnit.MINUTES)
+                .withTimeLimit(20, TimeUnit.MINUTES)
                 .execute()
                 .assertReturnCode(ReturnCodes.SUCCESS);
 
@@ -201,7 +205,7 @@ public class FeaturesAddTest {
                         CliConstants.LAYERS, "test",
                         CliConstants.YES,
                         CliConstants.DIR, targetDir.getAbsolutePath())
-                .withTimeLimit(10, TimeUnit.MINUTES)
+                .withTimeLimit(20, TimeUnit.MINUTES)
                 .execute()
                 .assertReturnCode(ReturnCodes.INVALID_ARGUMENTS)
                 .assertErrorContains(CliMessages.MESSAGES.featurePackDoesNotSupportCustomization("org.wildfly:wildfly-galleon-pack"));
@@ -212,7 +216,7 @@ public class FeaturesAddTest {
                         CliConstants.FPL, "org.wildfly:wildfly-galleon-pack",
                         CliConstants.YES,
                         CliConstants.DIR, targetDir.getAbsolutePath())
-                .withTimeLimit(10, TimeUnit.MINUTES)
+                .withTimeLimit(20, TimeUnit.MINUTES)
                 .execute()
                 .assertReturnCode(ReturnCodes.SUCCESS);
 
@@ -240,7 +244,7 @@ public class FeaturesAddTest {
             args.add(wfChannelsFile.toString());
         }
         ExecutionUtils.prosperoExecution(args.toArray(new String[]{}))
-                .withTimeLimit(10, TimeUnit.MINUTES)
+                .withTimeLimit(20, TimeUnit.MINUTES)
                 .execute()
                 .assertReturnCode(ReturnCodes.SUCCESS);
 

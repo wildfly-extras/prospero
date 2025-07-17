@@ -17,7 +17,8 @@
 
 package org.wildfly.prospero.it;
 
-import java.io.File;
+import org.assertj.core.api.Assertions;
+
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -25,8 +26,6 @@ import java.nio.file.Paths;
 import java.util.Arrays;
 import java.util.Locale;
 import java.util.concurrent.TimeUnit;
-
-import org.assertj.core.api.Assertions;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -54,7 +53,7 @@ public class ExecutionUtils {
         String[] execArray = mergeArrays(new String[] {script.toString()}, execution.args);
         Process process = new ProcessBuilder(execArray)
                 .redirectErrorStream(true)
-                .redirectOutput(new File("target/test-out.log"))
+                .redirectOutput(ProcessBuilder.Redirect.INHERIT)
                 .start();
 
         if (!process.waitFor(execution.timeLimit, execution.timeUnit)) {
