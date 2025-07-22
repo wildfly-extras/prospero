@@ -29,6 +29,7 @@ import java.util.stream.Collectors;
 import org.jboss.galleon.config.ProvisioningConfig;
 import org.jboss.galleon.universe.FeaturePackLocation;
 import org.jboss.galleon.xml.ProvisioningXmlWriter;
+import org.jboss.galleon.util.ZipUtils;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Rule;
@@ -63,6 +64,7 @@ import static org.mockito.Mockito.when;
 public class InstallCommandTest extends AbstractMavenCommandTest {
 
     public static final String KNOWN_FPL = "known-fpl";
+    private static final String REPOSITORY_ZIP_PATH = "archive/maven-repository/";
 
     @Rule
     public TemporaryFolder temporaryFolder = new TemporaryFolder();
@@ -149,8 +151,6 @@ public class InstallCommandTest extends AbstractMavenCommandTest {
     @Test
     public void callProvisionOnInstallKnownCommand() throws Exception {
         int exitCode = commandLine.execute(CliConstants.Commands.INSTALL, CliConstants.DIR, "test", CliConstants.PROFILE, KNOWN_FPL);
-        commandLine.getOut();
-        commandLine.getErr();
 
         assertEquals(ReturnCodes.SUCCESS, exitCode);
         Mockito.verify(provisionAction).provision(configCaptor.capture(), channelCaptor.capture(), any());
@@ -277,6 +277,31 @@ public class InstallCommandTest extends AbstractMavenCommandTest {
                 .contains(testURL);
     }
 
+    @Test
+    public void testZippedRepositoryAsInput() throws Exception {
+        String repoZipUrl = createRepositoryZip();
+        int exitCode = commandLine.execute(CliConstants.Commands.INSTALL, CliConstants.DIR, "test",
+                CliConstants.PROFILE, KNOWN_FPL, CliConstants.REPOSITORIES, "repozip::" + repoZipUrl);
+
+        assertEquals(ReturnCodes.SUCCESS, exitCode);
+
+        // provisionAction.getPendingLicenses() should have been called with channels containing unzipped repo
+        Mockito.verify(provisionAction).getPendingLicenses(configCaptor.capture(), channelCaptor.capture());
+        assertThat(channelCaptor.getValue().get(0).getRepositories())
+                .satisfies(list -> {
+                    assertThat(list.size()).isEqualTo(1);
+                    assertThat(list.get(0).getUrl()).endsWith(REPOSITORY_ZIP_PATH); // Expect unzipped path, not the zip file path
+                });
+
+        // provisionAction.provision() should have been called with channels containing unzipped repo
+        Mockito.verify(provisionAction).provision(configCaptor.capture(), channelCaptor.capture(), any());
+        assertThat(channelCaptor.getValue().get(0).getRepositories())
+                .satisfies(list -> {
+                    assertThat(list.size()).isEqualTo(1);
+                    assertThat(list.get(0).getUrl()).endsWith(REPOSITORY_ZIP_PATH); // Expect unzipped path, not the zip file path
+                });
+    }
+
     @Override
     protected MavenOptions getCapturedMavenOptions() throws Exception {
         Mockito.verify(actionFactory).install(any(), mavenOptions.capture(), any());
@@ -287,6 +312,20 @@ public class InstallCommandTest extends AbstractMavenCommandTest {
     protected String[] getDefaultArguments() {
         return new String[]{CliConstants.Commands.INSTALL, CliConstants.DIR, "test",
                 CliConstants.PROFILE, KNOWN_FPL};
+    }
+
+    /**
+     * Creates an (empty) repository ZIP.
+     *
+     * @return String URL of the ZIP file
+     */
+    private String createRepositoryZip() throws IOException {
+        Path zipDir = temporaryFolder.newFolder().toPath();
+        zipDir.resolve(REPOSITORY_ZIP_PATH).toFile().mkdirs(); // directory structure expected by the unzipping logic
+        File zipFile = temporaryFolder.newFile("repo.zip");
+        zipFile.delete(); // need a non-existent file path
+        ZipUtils.zip(zipDir, zipFile.toPath());
+        return zipFile.toURI().toURL().toExternalForm();
     }
 
     private static Channel createChannel(String test, String test1, String url, String groupId) {
