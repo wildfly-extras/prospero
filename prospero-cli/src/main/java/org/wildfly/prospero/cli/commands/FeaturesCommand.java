@@ -87,7 +87,7 @@ public class FeaturesCommand extends AbstractParentCommand {
 
             final MavenOptions mavenOptions = parseMavenOptions();
 
-            try (TemporaryFilesManager temporaryFiles = TemporaryFilesManager.newInstance()) {
+            try (TemporaryFilesManager temporaryFiles = TemporaryFilesManager.getInstance()) {
                 final List<Repository> repositories = RepositoryUtils.unzipArchives(
                         RepositoryDefinition.from(temporaryRepositories), temporaryFiles);
 
@@ -138,7 +138,7 @@ public class FeaturesCommand extends AbstractParentCommand {
                 }
 
                 if (accepted) {
-                    try (TemporaryFilesManager temporaryFilesManager = TemporaryFilesManager.newInstance()) {
+                    try (TemporaryFilesManager temporaryFilesManager = TemporaryFilesManager.getInstance()) {
                         final Path candidate = temporaryFilesManager.createTempDirectory("prospero-fp-candidate");
                         final ConfigId configId = parseConfigName(config.orElse(null));
                         if (layers.isEmpty()) {

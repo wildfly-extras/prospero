@@ -145,11 +145,11 @@ public class InstallCommand extends AbstractInstallCommand {
 
         verifyTargetDirectoryIsEmpty(directory);
 
-        try (TemporaryFilesManager temporaryFiles = TemporaryFilesManager.newInstance()) {
-            final ProvisioningDefinition provisioningDefinition = buildDefinition(temporaryFiles);
-            final MavenOptions mavenOptions = getMavenOptions();
-            final ProvisioningConfig provisioningConfig = provisioningDefinition.toProvisioningConfig();
-            final List<Channel> channels = resolveChannels(provisioningDefinition, mavenOptions);
+        final ProvisioningDefinition provisioningDefinition = buildDefinition();
+        final MavenOptions mavenOptions = getMavenOptions();
+        final ProvisioningConfig provisioningConfig = provisioningDefinition.toProvisioningConfig();
+        final List<Channel> channels = resolveChannels(provisioningDefinition, mavenOptions);
+        try (TemporaryFilesManager temporaryFiles = TemporaryFilesManager.getInstance()) {
             List<Repository> repositories = RepositoryDefinition.from(this.shadowRepositories);
             final List<Repository> shadowRepositories = RepositoryUtils.unzipArchives(repositories, temporaryFiles);
 
