@@ -21,10 +21,14 @@ import org.eclipse.aether.DefaultRepositorySystemSession;
 import org.eclipse.aether.RepositorySystem;
 import org.jboss.galleon.ProvisioningException;
 import org.wildfly.channel.Channel;
+import org.wildfly.channel.Repository;
 import org.wildfly.channel.maven.VersionResolverFactory;
 import org.wildfly.prospero.api.MavenOptions;
 import org.wildfly.prospero.api.ProvisioningDefinition;
+import org.wildfly.prospero.api.RepositoryUtils;
+import org.wildfly.prospero.api.TemporaryFilesManager;
 import org.wildfly.prospero.api.exceptions.ChannelDefinitionException;
+import org.wildfly.prospero.api.exceptions.InvalidRepositoryArchiveException;
 import org.wildfly.prospero.api.exceptions.MetadataException;
 import org.wildfly.prospero.api.exceptions.NoChannelException;
 import org.wildfly.prospero.cli.ActionFactory;
@@ -100,13 +104,16 @@ public abstract class AbstractInstallCommand extends AbstractCommand {
         return mavenOptions.build();
     }
 
-    protected ProvisioningDefinition buildDefinition() throws MetadataException, NoChannelException, ArgumentParsingException {
+    protected ProvisioningDefinition buildDefinition(TemporaryFilesManager temporaryFiles)
+            throws ArgumentParsingException, InvalidRepositoryArchiveException, NoChannelException, MetadataException {
+        final List<Repository> repositories = RepositoryUtils.unzipArchives(
+                RepositoryDefinition.from(remoteRepositories), temporaryFiles);
         return ProvisioningDefinition.builder()
                 .setFpl(featurePackOrDefinition.fpl.orElse(null))
                 .setProfile(featurePackOrDefinition.profile.orElse(null))
                 .setManifest(manifestCoordinate.orElse(null))
                 .setChannelCoordinates(channelCoordinates)
-                .setOverrideRepositories(RepositoryDefinition.from(remoteRepositories))
+                .setOverrideRepositories(repositories)
                 .setDefinitionFile(featurePackOrDefinition.definition.map(Path::toUri).orElse(null))
                 .build();
     }

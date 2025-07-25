@@ -169,7 +169,7 @@ public class RepositoryDefinitionTest {
     public void testNonExistingFile() throws Exception {
         Assertions.assertThatThrownBy(() -> from(List.of("idontexist")))
                 .hasMessageContaining(String.format(
-                        "The provided path [%s] doesn't exist or is not accessible. The local repository has to an existing, readable folder.",
+                        "The provided path [%s] doesn't exist or is not accessible. The local repository has to be an existing, readable folder.",
                         Path.of("idontexist").toAbsolutePath()));
     }
 
@@ -177,7 +177,7 @@ public class RepositoryDefinitionTest {
     public void testNonExistingFileUri() throws Exception {
         Assertions.assertThatThrownBy(() -> from(List.of("file:idontexist")))
                 .hasMessageContaining(String.format(
-                        "The provided path [%s] doesn't exist or is not accessible. The local repository has to an existing, readable folder.",
+                        "The provided path [%s] doesn't exist or is not accessible. The local repository has to be an existing, readable folder.",
                         Path.of("idontexist").toAbsolutePath()));
     }
 
@@ -206,8 +206,8 @@ public class RepositoryDefinitionTest {
 
         // On Linux following is interpreted as relative path, on Windows it's an absolute path
         if (SystemUtils.IS_OS_WINDOWS) {
-            assertThat(RepositoryDefinition.parseRepositoryLocation("a:foo/bar", false)) // interpreted as local relative path
-                    .isEqualTo("file:/A:/foo/bar");
+            assertThat(RepositoryDefinition.parseRepositoryLocation("c:foo/bar", false)) // interpreted as local relative path
+                    .isEqualTo("file:/C:/foo/bar");
         } else {
             assertThat(RepositoryDefinition.parseRepositoryLocation("a:foo/bar", false)) // interpreted as local relative path
                     .isEqualTo("file:" + cwdPath + "a:foo/bar");

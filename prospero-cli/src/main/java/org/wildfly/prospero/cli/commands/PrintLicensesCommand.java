@@ -17,12 +17,12 @@
 
 package org.wildfly.prospero.cli.commands;
 
-import org.apache.commons.io.FileUtils;
 import org.jboss.galleon.config.ProvisioningConfig;
 import org.wildfly.channel.Channel;
 import org.wildfly.prospero.actions.ProvisioningAction;
 import org.wildfly.prospero.api.MavenOptions;
 import org.wildfly.prospero.api.ProvisioningDefinition;
+import org.wildfly.prospero.api.TemporaryFilesManager;
 import org.wildfly.prospero.cli.ActionFactory;
 import org.wildfly.prospero.cli.CliConsole;
 import org.wildfly.prospero.cli.CliMessages;
@@ -31,7 +31,6 @@ import org.wildfly.prospero.cli.ReturnCodes;
 import org.wildfly.prospero.licenses.License;
 import picocli.CommandLine;
 
-import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
 
@@ -48,9 +47,9 @@ public class PrintLicensesCommand extends AbstractInstallCommand {
     @Override
     public Integer call() throws Exception {
 
-        final Path tempDirectory = Files.createTempDirectory("tmp-installer");
-        try {
-            final ProvisioningDefinition provisioningDefinition = buildDefinition();
+        try (TemporaryFilesManager temporaryFiles = TemporaryFilesManager.newInstance()) {
+            final Path tempDirectory = temporaryFiles.createTempDirectory("tmp-installer");
+            final ProvisioningDefinition provisioningDefinition = buildDefinition(temporaryFiles);
             final MavenOptions mavenOptions = getMavenOptions();
             final ProvisioningConfig provisioningConfig = provisioningDefinition.toProvisioningConfig();
             final List<Channel> channels = resolveChannels(provisioningDefinition, mavenOptions);
@@ -69,8 +68,6 @@ public class PrintLicensesCommand extends AbstractInstallCommand {
                 console.println(CliMessages.MESSAGES.noAgreementsNeeded());
             }
             return ReturnCodes.SUCCESS;
-        } finally {
-            FileUtils.deleteQuietly(tempDirectory.toFile());
         }
     }
 }
