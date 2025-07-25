@@ -114,7 +114,7 @@ public class UpdateCommand extends AbstractParentCommand {
             }
 
             final MavenOptions mavenOptions = parseMavenOptions();
-            try (TemporaryFilesManager temporaryFiles = TemporaryFilesManager.getInstance()) {
+            try (TemporaryFilesManager temporaryFiles = TemporaryFilesManager.newInstance()) {
                 final List<Repository> repositories = RepositoryUtils.unzipArchives(
                         RepositoryDefinition.from(temporaryRepositories), temporaryFiles);
 
@@ -192,7 +192,7 @@ public class UpdateCommand extends AbstractParentCommand {
             final Path installationDir = determineInstallationDirectory(directory);
 
             final MavenOptions mavenOptions = parseMavenOptions();
-            try (TemporaryFilesManager temporaryFiles = TemporaryFilesManager.getInstance()) {
+            try (TemporaryFilesManager temporaryFiles = TemporaryFilesManager.newInstance()) {
                 final List<Repository> repositories = RepositoryUtils.unzipArchives(
                         RepositoryDefinition.from(temporaryRepositories), temporaryFiles);
 
@@ -312,7 +312,7 @@ public class UpdateCommand extends AbstractParentCommand {
 
             final MavenOptions mavenOptions = parseMavenOptions();
 
-            try (TemporaryFilesManager temporaryFiles = TemporaryFilesManager.getInstance()) {
+            try (TemporaryFilesManager temporaryFiles = TemporaryFilesManager.newInstance()) {
                 final List<Repository> repositories = RepositoryUtils.unzipArchives(
                         RepositoryDefinition.from(temporaryRepositories), temporaryFiles);
                 console.println(CliMessages.MESSAGES.checkUpdatesHeader(installationDir));
@@ -366,7 +366,7 @@ public class UpdateCommand extends AbstractParentCommand {
             FeaturePackLocation loc = getFpl(installationProfile, version);
             log.debugf("Will generate FeaturePackLocation %s.", loc.toString());
 
-            try (TemporaryFilesManager temporaryFiles = TemporaryFilesManager.getInstance()) {
+            try (TemporaryFilesManager temporaryFiles = TemporaryFilesManager.newInstance()) {
                 final List<Repository> repositories = RepositoryUtils.unzipArchives(
                         RepositoryDefinition.from(temporaryRepositories), temporaryFiles);
                 final List<Channel> tempChannels = TemporaryRepositoriesHandler.overrideRepositories(channels, repositories);
