@@ -24,6 +24,8 @@ import java.util.Optional;
 import java.util.concurrent.Callable;
 
 import org.jboss.logging.Logger;
+import org.wildfly.prospero.stability.Stability;
+import org.wildfly.prospero.stability.StabilityLevel;
 import org.wildfly.prospero.api.InstallationMetadata;
 import org.wildfly.prospero.cli.ActionFactory;
 import org.wildfly.prospero.cli.ArgumentParsingException;
@@ -59,6 +61,18 @@ public abstract class AbstractCommand implements Callable<Integer> {
             order = 102
     )
     boolean debug;
+
+    @CommandLine.Option(names = CliConstants.STABILITY, converter = StabilityConverter.class )
+    @StabilityLevel(level = Stability.Community)
+    Stability stability;
+
+    private static class StabilityConverter implements CommandLine.ITypeConverter<Stability> {
+
+        @Override
+        public Stability convert(String value) throws Exception {
+            return Stability.from(value);
+        }
+    }
 
     public AbstractCommand(CliConsole console, ActionFactory actionFactory) {
         this.console = console;

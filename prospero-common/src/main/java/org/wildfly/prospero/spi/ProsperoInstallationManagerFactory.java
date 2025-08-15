@@ -23,10 +23,14 @@ import org.jboss.galleon.Constants;
 import org.wildfly.installationmanager.MavenOptions;
 import org.wildfly.installationmanager.spi.InstallationManager;
 import org.wildfly.installationmanager.spi.InstallationManagerFactory;
+import org.wildfly.prospero.DistributionInfo;
 import org.wildfly.prospero.ProsperoLogger;
 import org.wildfly.prospero.VersionLogger;
 import org.wildfly.prospero.metadata.ProsperoMetadataUtils;
+import org.wildfly.prospero.stability.Stability;
+import org.wildfly.prospero.stability.StabilityAwareInvocationHandler;
 
+import java.lang.reflect.Proxy;
 import java.nio.file.Path;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -44,14 +48,32 @@ public class ProsperoInstallationManagerFactory implements InstallationManagerFa
     );
 
     @Override
+    public InstallationManager create(Path installationDir, MavenOptions mavenOptions, org.wildfly.installationmanager.spi.Stability stability) throws Exception {
+        DistributionInfo.setStability(map(stability));
+
+        return create(installationDir, mavenOptions);
+    }
+
+    @Override
     public InstallationManager create(Path installationDir, MavenOptions mavenOptions) throws Exception {
         verifyInstallationDirectory(installationDir);
-        return new ProsperoInstallationManager(installationDir, mavenOptions);
+        final ProsperoInstallationManager pim = new ProsperoInstallationManager(installationDir, mavenOptions);
+        final Object proxy = Proxy.newProxyInstance(ProsperoInstallationManager.class.getClassLoader(), new Class[]{InstallationManager.class}, new StabilityAwareInvocationHandler(pim));
+        return (InstallationManager) proxy;
     }
 
     @Override
     public String getName() {
         return "prospero";
+    }
+
+    private Stability map(org.wildfly.installationmanager.spi.Stability apiStability) {
+        return switch (apiStability) {
+            case Experimental -> Stability.Experimental;
+            case Preview -> Stability.Preview;
+            case Community -> Stability.Community;
+            case Default -> Stability.Default;
+        };
     }
 
     private void verifyInstallationDirectory(Path path) {
@@ -64,4 +86,5 @@ public class ProsperoInstallationManagerFactory implements InstallationManagerFa
             throw ProsperoLogger.ROOT_LOGGER.invalidInstallationDir(path, missingPaths);
         }
     }
+
 }

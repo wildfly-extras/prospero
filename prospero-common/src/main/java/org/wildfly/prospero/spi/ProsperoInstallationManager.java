@@ -56,6 +56,14 @@ public class ProsperoInstallationManager implements InstallationManager {
     private final ActionFactory actionFactory;
     private Path installationDir;
 
+    /**
+     * Deprecated: use {@link ProsperoInstallationManagerFactory#create(Path, MavenOptions)} instead.
+     * This constructor will be eventually replaced with a protected scope one
+     * @param installationDir
+     * @param mavenOptions
+     * @throws Exception
+     */
+    @Deprecated(forRemoval = true)
     public ProsperoInstallationManager(Path installationDir, MavenOptions mavenOptions) throws Exception {
         final Builder options = org.wildfly.prospero.api.MavenOptions.builder()
                 .setOffline(mavenOptions.isOffline());

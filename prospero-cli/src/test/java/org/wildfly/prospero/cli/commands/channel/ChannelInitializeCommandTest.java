@@ -301,7 +301,7 @@ public class ChannelInitializeCommandTest extends AbstractConsoleTest {
     private List<Repository> actualRepositories() throws MetadataException {
         return InstallationMetadata.loadInstallation(installationDir).getProsperoConfig()
                 .getChannels().stream()
-                .flatMap((Channel channel) -> channel.getRepositories().stream())
+                .flatMap(channel -> channel.getRepositories().stream())
                 .collect(Collectors.toList());
     }
 }

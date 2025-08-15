@@ -30,6 +30,11 @@
             <artifactId>prospero-common</artifactId>
         </dependency>
         <dependency>
+            <groupId>org.wildfly.prospero</groupId>
+            <artifactId>prospero-common</artifactId>
+            <classifier>tests</classifier>
+        </dependency>
+        <dependency>
             <groupId>org.jboss.galleon</groupId>
             <artifactId>galleon-core</artifactId>
             <scope>test</scope>
@@ -144,6 +149,10 @@
                                 <transformer implementation="org.apache.maven.plugins.shade.resource.ServicesResourceTransformer" />
                                 <transformer implementation="org.apache.maven.plugins.shade.resource.ManifestResourceTransformer">
                                     <mainClass>org.wildfly.prospero.cli.CliMain</mainClass>
+                                    <manifestEntries>
+                                        <JBoss-Product-Stability>${prospero.dist.stability}</JBoss-Product-Stability>
+                                        <JBoss-Product-Minimal-Stability>${prospero.dist.min-stability}</JBoss-Product-Minimal-Stability>
+                                    </manifestEntries>
                                 </transformer>
                             </transformers>
                         </configuration>

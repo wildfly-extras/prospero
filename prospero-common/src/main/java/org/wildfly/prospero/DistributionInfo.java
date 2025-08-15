@@ -17,10 +17,16 @@
 
 package org.wildfly.prospero;
 
+import java.io.IOException;
+import java.net.URL;
+import java.util.Enumeration;
 import java.util.ResourceBundle;
+import java.util.jar.Manifest;
+import java.util.Objects;
 
 import org.apache.commons.lang3.StringUtils;
 import org.jboss.logging.Logger;
+import org.wildfly.prospero.stability.Stability;
 
 public class DistributionInfo {
 
@@ -29,6 +35,9 @@ public class DistributionInfo {
     private static final Logger LOG = Logger.getLogger(DistributionInfo.class);
 
     public static final String DIST_NAME;
+
+    private static volatile Stability stability;
+    private static final Object STABILITY_LOCK = new Object();
 
     static {
         ResourceBundle usageMessages = ResourceBundle.getBundle("UsageMessages");
@@ -43,6 +52,182 @@ public class DistributionInfo {
         } else {
             LOG.warnf("UsageMessages bundle couldn't be located, unable to retrieve distribution name.");
             DIST_NAME = DEFAULT_DIST_NAME;
+        }
+    }
+
+    public static String getVersion() throws Exception {
+        final Enumeration<URL> resources = DistributionInfo.class.getClassLoader().getResources("META-INF/MANIFEST.MF");
+        while (resources.hasMoreElements()) {
+            final URL url = resources.nextElement();
+            final Manifest manifest = new Manifest(url.openStream());
+            final String specTitle = manifest.getMainAttributes().getValue("Specification-Title");
+            if ("prospero-common".equals(specTitle) || "prospero-cli".equals(specTitle)) {
+                return StringUtils.join(manifest.getMainAttributes().getValue("Implementation-Version"));
+            }
+        }
+
+        return "unknown";
+    }
+
+    /**
+     * Returns the current stability level of the distribution.
+     * <p>
+     * This method returns the effective stability level, which may be either:
+     * </p>
+     * <ul>
+     * <li>The default stability level loaded from the distribution manifest</li>
+     * <li>An override stability level set via {@link #setStability(Stability)}</li>
+     * </ul>
+     *
+     * <p>
+     * The stability level is loaded lazily on first access and cached for subsequent calls.
+     * This method is thread-safe and uses double-checked locking for optimal performance.
+     * </p>
+     *
+     * @return the current stability level, never {@code null}
+     * @throws RuntimeException if the distribution info cannot be read
+     *
+     * @see #setStability(Stability)
+     * @see #getMinStability()
+     */
+    public static Stability getStability() {
+        Stability result = stability;
+        if (result == null) {
+            synchronized (STABILITY_LOCK) {
+                result = stability;
+                if (result == null) {
+                    stability = result = loadStability();
+                }
+            }
+        }
+        return result;
+    }
+
+    /**
+     * Returns the minimum stability level supported by this distribution.
+     * <p>
+     * The minimum stability level defines the lowest stability level that this distribution
+     * supports. Attempts to set the stability to a level lower than this minimum will fail.
+     * This value is loaded from the distribution manifest and cannot be changed at runtime.
+     * </p>
+     *
+     * @return the minimum supported stability level, never {@code null}
+     * @throws RuntimeException if the distribution info cannot be read
+     *
+     * @see #setStability(Stability)
+     */
+    public static Stability getMinStability() {
+        return MinStabilityHolder.stability;
+    }
+
+    /**
+     * Sets an override stability level for the distribution.
+     * <p>
+     * This method allows overriding the default stability level loaded from the distribution
+     * manifest. The override is subject to several restrictions:
+     * </p>
+     *
+     * <h4>Restrictions</h4>
+     * <ul>
+     * <li>The override level must be supported by the distribution (checked against minimum stability)</li>
+     * <li>The default distribution level must permit Community-level features (i.e., not be Default-only)</li>
+     * <li>The stability can only be set once - subsequent calls with different values will fail</li>
+     * <li>Subsequent calls with the same value are ignored (no-op)</li>
+     * </ul>
+     *
+     * <h4>Thread Safety</h4>
+     * <p>
+     * This method is thread-safe. Concurrent calls will be properly synchronized, and only
+     * the first successful call will set the stability level.
+     * </p>
+     *
+     * <h4>Usage</h4>
+     * <p>
+     * This method is typically called during CLI initialization when the user specifies
+     * a {@code --stability} argument, or by the API when creating installation managers
+     * with specific stability requirements.
+     * </p>
+     *
+     * @param overrideStability the stability level to set
+     * @throws NullPointerException if overrideStability is null
+     * @throws IllegalStateException if the override is not allowed by the distribution,
+     *         or if a different stability level has already been set
+     *
+     * @see #getStability()
+     * @see #getMinStability()
+     */
+    public static void setStability(Stability overrideStability) {
+        Objects.requireNonNull(overrideStability, "overrideStability cannot be null");
+
+        if (!getMinStability().permits(overrideStability)) {
+            throw new IllegalStateException("The requested stability level %s is not allowed by this distribution. The minimum supported stability level is %s"
+                    .formatted(overrideStability, getMinStability()));
+        }
+
+        synchronized (STABILITY_LOCK) {
+            if (stability == null) {
+                final Stability defaultLevel = loadStability();
+                if (!defaultLevel.permits(Stability.Community)) {
+                    throw new IllegalStateException("Changing stability levels is not allowed at %s stability level.".formatted(defaultLevel));
+                }
+                stability = overrideStability;
+            } else if (stability != overrideStability) {
+                throw new IllegalStateException("Attempting to set the stability level after it was already set.");
+            }
+            // If stability == overrideStability, this is a no-op (thread-safe)
+        }
+    }
+
+    /**
+     * checks if the current distribution allows changing stability levels.
+     *
+     * <p>The distribution allows changing stability levels if it was created at a "community" or lower level.</p>
+     *
+     * @return
+     */
+    public static boolean isStabilityLevelChangeAllowed() {
+        final Stability defaultStability = loadStability();
+        return defaultStability.permits(Stability.Community);
+    }
+
+    private static final class MinStabilityHolder {
+        private static final Stability stability = loadMinStability();
+
+    }
+
+    private static Stability loadStability() {
+        try {
+            final Enumeration<URL> resources = DistributionInfo.class.getClassLoader().getResources("META-INF/MANIFEST.MF");
+            while (resources.hasMoreElements()) {
+                final URL url = resources.nextElement();
+                final Manifest manifest = new Manifest(url.openStream());
+                final String stability = manifest.getMainAttributes().getValue("JBoss-Product-Stability");
+                if (stability != null) {
+                    return Stability.from(stability);
+                }
+            }
+
+            return Stability.Default;
+        } catch (IOException e) {
+            throw new RuntimeException("Unable to read the distribution info.", e);
+        }
+    }
+
+    private static Stability loadMinStability() {
+        try {
+            final Enumeration<URL> resources = DistributionInfo.class.getClassLoader().getResources("META-INF/MANIFEST.MF");
+            while (resources.hasMoreElements()) {
+                final URL url = resources.nextElement();
+                final Manifest manifest = new Manifest(url.openStream());
+                final String stability = manifest.getMainAttributes().getValue("JBoss-Product-Minimal-Stability");
+                if (stability != null) {
+                    return Stability.from(stability);
+                }
+            }
+
+            return Stability.Default;
+        } catch (IOException e) {
+            throw new RuntimeException("Unable to read the distribution info.", e);
         }
     }
 

@@ -42,19 +42,16 @@ import java.util.Optional;
 import org.jboss.galleon.api.config.GalleonFeaturePackConfig;
 
 @CommandLine.Command(name = CliConstants.Commands.CLONE)
-public class CloneCommand extends AbstractCommand {
+public class CloneCommand extends AbstractParentCommand {
 
     @CommandLine.Spec
     protected CommandLine.Model.CommandSpec spec;
 
     public CloneCommand(CliConsole console, ActionFactory actionFactory) {
-        super(console, actionFactory);
-    }
-
-    public void addSubCommands(CommandLine rootCmd) {
-        CommandLine cloneCmd = rootCmd.getSubcommands().get(CliConstants.Commands.CLONE);
-        cloneCmd.addSubcommand(new CloneExportCommand(console, actionFactory))
-          .addSubcommand(new CloneRecreateCommand(console, actionFactory));
+        super(console, actionFactory, CliConstants.Commands.CLONE, List.of(
+                new CloneExportCommand(console, actionFactory),
+                new CloneRecreateCommand(console, actionFactory)
+        ));
     }
 
     @Override

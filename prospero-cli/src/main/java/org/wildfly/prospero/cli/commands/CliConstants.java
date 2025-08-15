@@ -93,6 +93,7 @@ public final class CliConstants {
     public static final String REVISION = "--revision";
     public static final String SELF = "--self";
     public static final String SHADE_REPOSITORIES = "--shade-repositories";
+    public static final String STABILITY = "--stability";
     public static final String STABILITY_LEVEL = "--stability-level";
     public static final String USE_LOCAL_MAVEN_CACHE = "--use-default-local-cache";
     public static final String TARGET_CONFIG = "--target-config";
