@@ -17,6 +17,8 @@
 
 package org.wildfly.prospero.cli.commands;
 
+import static org.wildfly.prospero.cli.commands.CliConstants.VERBOSE;
+
 import java.io.IOException;
 import java.net.MalformedURLException;
 import java.nio.file.Files;
@@ -137,7 +139,8 @@ public class UpdateCommand extends AbstractParentCommand {
             Path targetDir = null;
             try {
                 targetDir = Files.createTempDirectory("update-candidate");
-                if (buildUpdate(updateAction, targetDir, yes, console, () -> console.confirmUpdates())) {
+
+                if (buildUpdate(updateAction, targetDir, yes, console, () -> console.confirmUpdates(), verbose)) {
                     console.println("");
                     console.buildUpdatesComplete();
 
@@ -205,7 +208,7 @@ public class UpdateCommand extends AbstractParentCommand {
 
                 try (UpdateAction updateAction = actionFactory.update(installationDir,
                         mavenOptions, console, repositories)) {
-                    if (buildUpdate(updateAction, candidateDirectory, yes, console, () -> console.confirmBuildUpdates())) {
+                    if (buildUpdate(updateAction, candidateDirectory, yes, console, () -> console.confirmBuildUpdates(), verbose)) {
                         console.println("");
                         console.buildUpdatesComplete();
                         console.println(CliMessages.MESSAGES.updateCandidateGenerated(candidateDirectory));
@@ -268,7 +271,9 @@ public class UpdateCommand extends AbstractParentCommand {
                 throw CliMessages.MESSAGES.notCandidate(candidateDir.toAbsolutePath());
             }
 
-            console.updatesFound(applyCandidateAction.findUpdates().getArtifactUpdates());
+            final UpdateSet updates = applyCandidateAction.findUpdates();
+            printUpdates(console, updates, verbose);
+
             final List<FileConflict> conflicts = applyCandidateAction.getConflicts();
             FileConflictPrinter.print(conflicts, console);
 
@@ -317,8 +322,8 @@ public class UpdateCommand extends AbstractParentCommand {
                         RepositoryDefinition.from(temporaryRepositories), temporaryFiles);
                 console.println(CliMessages.MESSAGES.checkUpdatesHeader(installationDir));
                 try (UpdateAction updateAction = actionFactory.update(installationDir, mavenOptions, console, repositories)) {
-                    final UpdateSet updateSet = updateAction.findUpdates();
-                    console.updatesFound(updateSet.getArtifactUpdates());
+                    final UpdateSet updates = updateAction.findUpdates();
+                    printUpdates(console, updates, verbose);
                 }
 
                 final float totalTime = (System.currentTimeMillis() - startTime) / 1000f;
@@ -451,18 +456,21 @@ public class UpdateCommand extends AbstractParentCommand {
     public UpdateCommand(CliConsole console, ActionFactory actionFactory) {
         super(console, actionFactory, CliConstants.Commands.UPDATE,
                 List.of(
-                    new UpdateCommand.PrepareCommand(console, actionFactory),
-                    new UpdateCommand.ApplyCommand(console, actionFactory),
-                    new UpdateCommand.PerformCommand(console, actionFactory),
-                    new UpdateCommand.ListCommand(console, actionFactory),
+                    new PrepareCommand(console, actionFactory),
+                    new ApplyCommand(console, actionFactory),
+                    new PerformCommand(console, actionFactory),
+                    new ListCommand(console, actionFactory),
                     new SubscribeCommand(console, actionFactory))
         );
+
     }
 
-    private static boolean buildUpdate(UpdateAction updateAction, Path updateDirectory, boolean yes, CliConsole console, Supplier<Boolean> confirmation) throws OperationException, ProvisioningException {
+    private static boolean buildUpdate(UpdateAction updateAction, Path updateDirectory,
+                                       boolean yes, CliConsole console, Supplier<Boolean> confirmation,
+                                       boolean verbose) throws OperationException, ProvisioningException {
         final UpdateSet updateSet = updateAction.findUpdates();
+        printUpdates(console, updateSet, verbose);
 
-        console.updatesFound(updateSet.getArtifactUpdates());
         if (updateSet.isEmpty()) {
             return false;
         }
@@ -474,6 +482,26 @@ public class UpdateCommand extends AbstractParentCommand {
         updateAction.buildUpdate(updateDirectory.toAbsolutePath());
 
         return true;
+    }
+
+    private static void printUpdates(CliConsole console, UpdateSet updates, boolean verbose) throws OperationException {
+        if (updates.hasManifestDowngrade()) {
+            final String summary = String.join(";", updates.getManifestDowngradeDescriptions());
+            throw ProsperoLogger.ROOT_LOGGER.manifestDowngrade(summary);
+        }
+
+        // only print the full list of components if asked for or if the manifests versions are not complete
+        if (!updates.isAuthoritativeManifestVersions() || verbose) {
+            if (!updates.getManifestChanges().isEmpty()) {
+                console.manifestUpdate(updates.getManifestChanges());
+                console.println("");
+            }
+            console.updatesFound(updates.getArtifactUpdates());
+        } else {
+            console.manifestUpdate(updates.getManifestChanges());
+            console.println("");
+            console.println(CliMessages.MESSAGES.fullUpdatesOption(VERBOSE));
+        }
     }
 
     public static void verifyInstallationContainsOnlyProspero(Path dir) throws ArgumentParsingException {

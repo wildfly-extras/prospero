@@ -82,7 +82,7 @@ public class WfCoreTestBase {
 
     protected static Artifact resolvedUpgradeArtifact;
     protected static Artifact resolvedUpgradeClientArtifact;
-    private static Path localCachePath;
+    protected static Path localCachePath;
     protected Path outputPath;
     protected Path manifestPath;
     protected ProvisioningAction installation;

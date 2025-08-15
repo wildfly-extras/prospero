@@ -114,9 +114,15 @@ public class UpdateAction implements AutoCloseable {
         targetDir = InstallFolderUtils.toRealPath(targetDir);
 
         final UpdateSet updateSet = findUpdates();
+
         if (updateSet.isEmpty()) {
             ProsperoLogger.ROOT_LOGGER.noUpdatesFound(installDir);
             return false;
+        }
+
+        if (updateSet.hasManifestDowngrade()) {
+            final String summary = String.join(";", updateSet.getManifestDowngradeDescriptions());
+            throw ProsperoLogger.ROOT_LOGGER.manifestDowngrade(summary);
         }
 
         ProsperoLogger.ROOT_LOGGER.updateCandidateStarted(installDir);
@@ -143,7 +149,7 @@ public class UpdateAction implements AutoCloseable {
     public UpdateSet findUpdates() throws OperationException, ProvisioningException {
         ProsperoLogger.ROOT_LOGGER.checkingUpdates();
         try (GalleonEnvironment galleonEnv = getGalleonEnv(installDir);
-             UpdateFinder updateFinder = new UpdateFinder(galleonEnv.getChannelSession())) {
+             UpdateFinder updateFinder = new UpdateFinder(galleonEnv.getChannelSession(), metadata)) {
 
             final UpdateSet updates = updateFinder.findUpdates(metadata.getArtifacts());
             ProsperoLogger.ROOT_LOGGER.updatesFound(updates.getArtifactUpdates().size());

@@ -35,6 +35,7 @@ import java.util.ResourceBundle;
 import java.util.Set;
 
 import static java.lang.String.format;
+import static org.wildfly.prospero.cli.commands.CliConstants.VERBOSE;
 
 public interface CliMessages {
 
@@ -722,5 +723,17 @@ public interface CliMessages {
         return new OperationException(format(
                 bundle.getString("prospero.updates.apply.candidate.cancel_conflicts"),
                 CliConstants.NO_CONFLICTS_ONLY));
+    }
+
+    default String fullUpdatesOption(String paramName) {
+        return format(bundle.getString("prospero.updates.full_list_option"), VERBOSE);
+    }
+
+    default String unableToChannelVersions() {
+        return bundle.getString("prospero.updates.channel_versions_unknown");
+    }
+
+    default String updatededChannelVersionsHeader() {
+        return bundle.getString("prospero.updates.channel_updates_header");
     }
 }
