@@ -67,12 +67,8 @@
     </scm>
 
     <properties>
-        <nexus.repository.staging>wildfly-extras-staging</nexus.repository.staging>
-        <nexus.staging.tag>prospero-${project.version}</nexus.staging.tag>
-        <nexus.repository.release>wildfly-extras</nexus.repository.release>
-
+        <nexus.staging.tag>prospero-${project.version}</nexus.staging.tag>    
         <maven.compiler.release>17</maven.compiler.release>
-
         <prospero.dist.name>prospero</prospero.dist.name>
         <prospero.target.server>Wildfly</prospero.target.server>
         <prospero.base.feature-pack.groupId>org.wildfly</prospero.base.feature-pack.groupId>
@@ -576,16 +572,6 @@
             </plugins>
         </pluginManagement>
         <plugins>
-            <!--<plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-compiler-plugin</artifactId>
-                <configuration>
-                    <source>17</source>
-                    <target>17</target>
-                    <testSource>17</testSource>
-                    <testTarget>17</testTarget>
-                </configuration>
-            </plugin>-->
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-checkstyle-plugin</artifactId>
